@@ -5,6 +5,11 @@
 
 @use "../abstracts/variables" as *;
 
+:root {
+  --font-title: #{$font-title};
+  --font-body: #{$font-body};
+}
+
 body {
   font-family: $font-body;
 }
