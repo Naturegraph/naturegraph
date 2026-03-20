@@ -1,88 +1,89 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { ArrowLeft } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { ArrowLeft } from 'lucide-react'
 
-const CODE_LENGTH = 6;
-const TIMER_SECONDS = 120;
+const CODE_LENGTH = 6
+const TIMER_SECONDS = 120
 
 export default function VerifyCode() {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const email = (location.state as { email?: string })?.email || "email@example.com";
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const email = (location.state as { email?: string })?.email || 'email@example.com'
 
-  const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(""));
-  const [timer, setTimer] = useState(TIMER_SECONDS);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(''))
+  const [timer, setTimer] = useState(TIMER_SECONDS)
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   // Timer countdown
   useEffect(() => {
-    if (timer <= 0) return;
-    const interval = setInterval(() => setTimer((t) => t - 1), 1000);
-    return () => clearInterval(interval);
-  }, [timer]);
+    if (timer <= 0) return
+    const interval = setInterval(() => setTimer((t) => t - 1), 1000)
+    return () => clearInterval(interval)
+  }, [timer])
 
   const formatTime = useCallback((seconds: number) => {
-    const m = String(Math.floor(seconds / 60)).padStart(2, "0");
-    const s = String(seconds % 60).padStart(2, "0");
-    return `${m}:${s}`;
-  }, []);
+    const m = String(Math.floor(seconds / 60)).padStart(2, '0')
+    const s = String(seconds % 60).padStart(2, '0')
+    return `${m}:${s}`
+  }, [])
 
   function handleChange(index: number, value: string) {
-    if (!/^\d?$/.test(value)) return;
+    if (!/^\d?$/.test(value)) return
 
-    const next = [...code];
-    next[index] = value;
-    setCode(next);
+    const next = [...code]
+    next[index] = value
+    setCode(next)
 
     // Auto-focus next input
     if (value && index < CODE_LENGTH - 1) {
-      inputRefs.current[index + 1]?.focus();
+      inputRefs.current[index + 1]?.focus()
     }
 
     // Auto-submit when complete
-    if (next.every((d) => d !== "")) {
-      handleVerify(next.join(""));
+    if (next.every((d) => d !== '')) {
+      handleVerify(next.join(''))
     }
   }
 
   function handleKeyDown(index: number, e: React.KeyboardEvent) {
-    if (e.key === "Backspace" && !code[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+    if (e.key === 'Backspace' && !code[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus()
     }
   }
 
   function handlePaste(e: React.ClipboardEvent) {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, CODE_LENGTH);
-    if (!pasted) return;
+    e.preventDefault()
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, CODE_LENGTH)
+    if (!pasted) return
 
-    const next = [...code];
+    const next = [...code]
     for (let i = 0; i < pasted.length; i++) {
-      next[i] = pasted[i];
+      next[i] = pasted[i]
     }
-    setCode(next);
+    setCode(next)
 
-    const focusIndex = Math.min(pasted.length, CODE_LENGTH - 1);
-    inputRefs.current[focusIndex]?.focus();
+    const focusIndex = Math.min(pasted.length, CODE_LENGTH - 1)
+    inputRefs.current[focusIndex]?.focus()
 
-    if (next.every((d) => d !== "")) {
-      handleVerify(next.join(""));
+    if (next.every((d) => d !== '')) {
+      handleVerify(next.join(''))
     }
   }
 
-  function handleVerify(_code: string) {
+  function handleVerify(code: string) {
+    void code
     // TODO: Supabase OTP verification
     setTimeout(() => {
-      navigate("/onboarding");
-    }, 600);
+      navigate('/onboarding')
+    }, 600)
   }
 
   function handleResend() {
-    setCode(Array(CODE_LENGTH).fill(""));
-    setTimer(TIMER_SECONDS);
-    inputRefs.current[0]?.focus();
+    setCode(Array(CODE_LENGTH).fill(''))
+    setTimer(TIMER_SECONDS)
+    inputRefs.current[0]?.focus()
     // TODO: Supabase resend OTP
   }
 
@@ -95,27 +96,25 @@ export default function VerifyCode() {
           <button
             onClick={() => navigate(-1)}
             className="w-12 h-12 flex items-center justify-center rounded-xl border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors"
-            aria-label={t("common.back")}
+            aria-label={t('common.back')}
           >
             <ArrowLeft size={20} />
           </button>
-          <span className="text-xl font-bold text-[var(--color-primary)]">
-            Naturegraph
-          </span>
+          <span className="text-xl font-bold text-[var(--color-primary)]">Naturegraph</span>
         </div>
 
         {/* Content — vertically centered */}
         <div className="flex-1 flex flex-col justify-center max-w-sm">
           <h1 className="text-2xl lg:text-3xl font-bold text-[var(--color-text-primary)] mb-4">
-            {t("auth.verifyTitle")}
+            {t('auth.verifyTitle')}
           </h1>
           <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed mb-10">
-            {t("auth.verifySubtitle", { email })}
+            {t('auth.verifySubtitle', { email })}
           </p>
 
           {/* Code label */}
           <p className="text-sm font-medium text-[var(--color-text-primary)] mb-2">
-            {t("auth.verifyCodeLabel")}
+            {t('auth.verifyCodeLabel')}
           </p>
 
           {/* Code inputs */}
@@ -123,7 +122,9 @@ export default function VerifyCode() {
             {code.map((digit, i) => (
               <input
                 key={i}
-                ref={(el) => { inputRefs.current[i] = el; }}
+                ref={(el) => {
+                  inputRefs.current[i] = el
+                }}
                 type="text"
                 inputMode="numeric"
                 maxLength={1}
@@ -138,20 +139,18 @@ export default function VerifyCode() {
 
           {/* Timer */}
           <p className="text-sm text-[var(--color-text-tertiary)] mb-12">
-            {t("auth.verifyTimer", { time: formatTime(timer) })}
+            {t('auth.verifyTimer', { time: formatTime(timer) })}
           </p>
 
           {/* Resend */}
           <div>
-            <p className="text-sm text-[var(--color-text-secondary)]">
-              {t("auth.verifyNoCode")}
-            </p>
+            <p className="text-sm text-[var(--color-text-secondary)]">{t('auth.verifyNoCode')}</p>
             <button
               onClick={handleResend}
               disabled={timer > 0}
               className="text-sm font-semibold text-[var(--color-primary)] hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {t("auth.verifyResend")}
+              {t('auth.verifyResend')}
             </button>
           </div>
         </div>
@@ -168,5 +167,5 @@ export default function VerifyCode() {
         </div>
       </div>
     </div>
-  );
+  )
 }
