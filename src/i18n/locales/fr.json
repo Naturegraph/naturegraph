@@ -1,0 +1,132 @@
+{
+  "common": {
+    "appName": "Naturegraph",
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "search": "Rechercher",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Precedent",
+    "close": "Fermer",
+    "finish": "Terminer",
+    "or": "ou",
+    "step": "Etape",
+    "of": "sur"
+  },
+  "nav": {
+    "home": "Accueil",
+    "explore": "Explorer",
+    "contribute": "Contribuer",
+    "notifications": "Notifications",
+    "profile": "Profil"
+  },
+  "auth": {
+    "login": "Se connecter",
+    "signup": "S'inscrire",
+    "logout": "Se deconnecter",
+    "email": "Adresse email",
+    "emailPlaceholder": "ton@email.com",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "Ton mot de passe",
+    "forgotPassword": "Mot de passe oublie ?",
+    "rememberMe": "Se souvenir de moi",
+    "signupTitle": "Rejoins-nous !",
+    "signupSubtitle": "Decouvre et partage la nature qui t'entoure. Cree ton compte en quelques secondes ou explore Naturegraph librement, sans engagement.",
+    "loginTitle": "Bon retour !",
+    "loginSubtitle": "Connecte-toi pour retrouver tes observations et continuer l'aventure.",
+    "continueWith": "ou continuer avec",
+    "hasAccount": "Tu as deja un compte ?",
+    "noAccount": "Pas encore inscrit ?",
+    "createAccount": "Creer ton compte",
+    "connectNow": "Connecte-toi",
+    "verifyTitle": "Verification en deux etapes",
+    "verifySubtitle": "Entre le code a 6 chiffres que nous venons de t'envoyer a {{email}} (pense a verifier tes spams si besoin)",
+    "verifyCodeLabel": "Code de verification*",
+    "verifyTimer": "Ce code est valable pendant {{time}} minutes",
+    "verifyNoCode": "Tu n'as pas recu le code ?",
+    "verifyResend": "Renvoyer un nouveau code"
+  },
+  "onboarding": {
+    "profile": "Profil",
+    "step1Title": "Quels sont tes centres d'interet ?",
+    "step1Subtitle": "Aide-nous a mieux te connaitre en selectionnant 3 preferences.",
+    "step1Hint": "Tu pourras renseigner tes preferences a tout moment dans ton profil",
+    "step2Title": "A quelle frequence explores-tu la nature ?",
+    "step2Subtitle": "Cela nous permettra d'adapter ton experience et de limiter les notifications pour respecter ton temps.",
+    "step3Title": "Pourquoi souhaites-tu utiliser Naturegraph ?",
+    "step3Subtitle": "Dis-nous ce qui te motive le plus ! Cela nous aidera a mieux comprendre tes besoins.",
+    "step4Title": "Tu es pret(e) a explorer la nature !",
+    "step4Subtitle": "Avant de commencer, dis-nous comment tu souhaites etre appele(e).",
+    "displayNameLabel": "Nom d'affichage",
+    "displayNamePlaceholder": "Ton pseudo ou prenom",
+    "interests": {
+      "birds": "Oiseaux",
+      "mammals": "Mammiferes",
+      "insects": "Insectes",
+      "amphibians": "Amphibiens",
+      "reptiles": "Reptiles",
+      "arachnids": "Arachnides",
+      "mollusks": "Mollusques",
+      "fish": "Poissons",
+      "plants": "Plantes"
+    },
+    "frequency": {
+      "daily": "Tous les jours",
+      "dailyDesc": "Je sors regulierement et j'observe la nature quotidiennement.",
+      "weekly": "Quelques fois par semaine",
+      "weeklyDesc": "Je profite de mes sorties pour observer la faune et la flore.",
+      "monthly": "Quelques fois par mois",
+      "monthlyDesc": "J'explore la nature lors de balades ou randonnees ponctuelles.",
+      "occasionally": "Occasionnellement",
+      "occasionallyDesc": "Je decouvre la nature quand l'occasion se presente."
+    },
+    "motivation": {
+      "observe": "Observer et identifier les especes",
+      "share": "Partager mes decouvertes avec d'autres",
+      "learn": "Apprendre sur la biodiversite locale",
+      "contribute": "Contribuer a la science participative"
+    }
+  },
+  "home": {
+    "title": "Explorez la biodiversite",
+    "subtitle": "Observez, documentez et partagez vos decouvertes nature",
+    "feedEmpty": "Aucune observation pour le moment"
+  },
+  "observation": {
+    "instantNature": "Instant Nature",
+    "meetingNature": "Rencontre Nature",
+    "species": "Espece",
+    "location": "Lieu",
+    "date": "Date",
+    "description": "Description",
+    "unidentified": "En attente d'identification",
+    "comments": "Commentaires",
+    "propose": "Proposer une identification"
+  },
+  "notebook": {
+    "title": "Carnets d'observations",
+    "create": "Creer un carnet",
+    "private": "Prive",
+    "public": "Public",
+    "collaborative": "Collaboratif"
+  },
+  "profile": {
+    "journal": "Journal Nature",
+    "inspirations": "Inspirations",
+    "community": "Communaute",
+    "stats": "Statistiques",
+    "settings": "Parametres"
+  },
+  "settings": {
+    "theme": "Theme",
+    "language": "Langue",
+    "notifications": "Notifications",
+    "accessibility": "Accessibilite",
+    "privacy": "Confidentialite",
+    "deleteAccount": "Supprimer mon compte"
+  }
+}

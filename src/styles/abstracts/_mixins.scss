@@ -1,0 +1,86 @@
+// ============================================
+// Mixins — Design System Naturegraph
+// ============================================
+
+@use "breakpoints" as *;
+@use "variables" as *;
+@use "spacing" as *;
+
+// ---- Responsive ----
+@mixin respond-to($breakpoint) {
+  @if $breakpoint == sm {
+    @media (min-width: $breakpoint-sm) { @content; }
+  } @else if $breakpoint == md {
+    @media (min-width: $breakpoint-md) { @content; }
+  } @else if $breakpoint == lg {
+    @media (min-width: $breakpoint-lg) { @content; }
+  } @else if $breakpoint == xl {
+    @media (min-width: $breakpoint-xl) { @content; }
+  }
+}
+
+// ---- Theme ----
+@mixin theme-dark {
+  [data-theme="dark"] & {
+    @content;
+  }
+}
+
+// ---- Accessibility ----
+@mixin focus-visible {
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+@mixin sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+// ---- Layout ----
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin container {
+  width: 100%;
+  max-width: $breakpoint-xl;
+  margin-inline: auto;
+  padding-inline: $spacing-md;
+
+  @include respond-to(md) {
+    padding-inline: $spacing-lg;
+  }
+}
+
+// ---- Truncate text ----
+@mixin text-truncate($lines: 1) {
+  @if $lines == 1 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  } @else {
+    display: -webkit-box;
+    -webkit-line-clamp: $lines;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+// ---- Transition ----
+@mixin transition($properties...) {
+  transition-property: $properties;
+  transition-duration: 250ms;
+  transition-timing-function: ease;
+}

@@ -1,0 +1,132 @@
+{
+  "common": {
+    "appName": "Naturegraph",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "finish": "Finish",
+    "or": "or",
+    "step": "Step",
+    "of": "of"
+  },
+  "nav": {
+    "home": "Home",
+    "explore": "Explore",
+    "contribute": "Contribute",
+    "notifications": "Notifications",
+    "profile": "Profile"
+  },
+  "auth": {
+    "login": "Log in",
+    "signup": "Sign up",
+    "logout": "Log out",
+    "email": "Email address",
+    "emailPlaceholder": "your@email.com",
+    "password": "Password",
+    "passwordPlaceholder": "Your password",
+    "forgotPassword": "Forgot password?",
+    "rememberMe": "Remember me",
+    "signupTitle": "Join us!",
+    "signupSubtitle": "Discover and share the nature around you. Create your account in seconds or explore Naturegraph freely, no strings attached.",
+    "loginTitle": "Welcome back!",
+    "loginSubtitle": "Log in to find your observations and continue the adventure.",
+    "continueWith": "or continue with",
+    "hasAccount": "Already have an account?",
+    "noAccount": "Not registered yet?",
+    "createAccount": "Create your account",
+    "connectNow": "Log in",
+    "verifyTitle": "Two-step verification",
+    "verifySubtitle": "Enter the 6-digit code we just sent to {{email}} (check your spam folder if needed)",
+    "verifyCodeLabel": "Verification code*",
+    "verifyTimer": "This code is valid for {{time}} minutes",
+    "verifyNoCode": "Didn't receive the code?",
+    "verifyResend": "Resend a new code"
+  },
+  "onboarding": {
+    "profile": "Profile",
+    "step1Title": "What are your interests?",
+    "step1Subtitle": "Help us get to know you by selecting 3 preferences.",
+    "step1Hint": "You can update your preferences anytime in your profile",
+    "step2Title": "How often do you explore nature?",
+    "step2Subtitle": "This will help us tailor your experience and limit notifications to respect your time.",
+    "step3Title": "Why do you want to use Naturegraph?",
+    "step3Subtitle": "Tell us what motivates you most! This will help us better understand your needs.",
+    "step4Title": "You're ready to explore nature!",
+    "step4Subtitle": "Before we start, tell us what you'd like to be called.",
+    "displayNameLabel": "Display name",
+    "displayNamePlaceholder": "Your nickname or first name",
+    "interests": {
+      "birds": "Birds",
+      "mammals": "Mammals",
+      "insects": "Insects",
+      "amphibians": "Amphibians",
+      "reptiles": "Reptiles",
+      "arachnids": "Arachnids",
+      "mollusks": "Mollusks",
+      "fish": "Fish",
+      "plants": "Plants"
+    },
+    "frequency": {
+      "daily": "Every day",
+      "dailyDesc": "I regularly go out and observe nature daily.",
+      "weekly": "A few times a week",
+      "weeklyDesc": "I take advantage of my outings to observe wildlife and flora.",
+      "monthly": "A few times a month",
+      "monthlyDesc": "I explore nature during occasional walks or hikes.",
+      "occasionally": "Occasionally",
+      "occasionallyDesc": "I discover nature when the opportunity arises."
+    },
+    "motivation": {
+      "observe": "Observe and identify species",
+      "share": "Share my discoveries with others",
+      "learn": "Learn about local biodiversity",
+      "contribute": "Contribute to citizen science"
+    }
+  },
+  "home": {
+    "title": "Explore biodiversity",
+    "subtitle": "Observe, document and share your nature discoveries",
+    "feedEmpty": "No observations yet"
+  },
+  "observation": {
+    "instantNature": "Nature Instant",
+    "meetingNature": "Nature Encounter",
+    "species": "Species",
+    "location": "Location",
+    "date": "Date",
+    "description": "Description",
+    "unidentified": "Awaiting identification",
+    "comments": "Comments",
+    "propose": "Propose identification"
+  },
+  "notebook": {
+    "title": "Observation notebooks",
+    "create": "Create notebook",
+    "private": "Private",
+    "public": "Public",
+    "collaborative": "Collaborative"
+  },
+  "profile": {
+    "journal": "Nature Journal",
+    "inspirations": "Inspirations",
+    "community": "Community",
+    "stats": "Statistics",
+    "settings": "Settings"
+  },
+  "settings": {
+    "theme": "Theme",
+    "language": "Language",
+    "notifications": "Notifications",
+    "accessibility": "Accessibility",
+    "privacy": "Privacy",
+    "deleteAccount": "Delete my account"
+  }
+}

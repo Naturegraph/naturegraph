@@ -1,0 +1,67 @@
+// ============================================
+// Dark Theme — Naturegraph
+// ============================================
+// Synced from Figma "Colors Tokens" collection — Dark mode (2026-03-19)
+
+@use "../abstracts/colors" as *;
+
+[data-theme="dark"] {
+  // ── Background / Neutral ──
+  --color-bg-primary: #{$greyscale-900};          // #0C0C14
+  --color-bg-secondary: #{$greyscale-800};        // #20203D
+  --color-bg-tertiary: #{$greyscale-700};         // #13131A
+  --color-bg-menthe: #{$color-menthe};            // #99FFCC
+
+  // ── Background / Highlight ──
+  --color-highlight-primary: #{$brand-highlight-400};    // #33B6B6
+  --color-highlight-secondary: #{$brand-highlight-500};  // #006666
+  --color-highlight-tertiary: #{$brand-highlight-300};   // #66C9C9
+
+  // ── Content / Action ──
+  --color-action-default: #{$brand-main-500};     // #5F5DD8
+  --color-action-hover: #{$brand-main-600};       // #525AAA
+  --color-action-active: #{$brand-main-600};      // #525AAA
+  --color-action-disabled: #{$brand-main-700};    // #3C4380
+  --color-action-light: #{$brand-main-800};       // #262B55
+
+  // ── Content / Neutral ──
+  --color-text-primary: #{$greyscale-50};         // #F0F0F5
+  --color-text-secondary: #{$greyscale-100};      // #EBEBF0
+  --color-text-tertiary: #{$greyscale-200};       // #C4C4CC
+  --color-text-disabled: #{$greyscale-200};       // #C4C4CC
+  --color-text-inverse: #{$greyscale-900};        // #0C0C14
+  --color-text-white: #{$brand-bg-50};            // #FFFDF8
+  --color-text-black: #{$greyscale-black};        // #000000
+
+  // ── Stroke ──
+  --color-border: #{$greyscale-600};              // #565666
+  --color-border-light: #{$greyscale-600};        // #565666 (Stroke/Light)
+  --color-border-dark: #{$greyscale-200};         // #C4C4CC (Stroke/Dark)
+
+  // ── Semantic / Content ──
+  --color-success: #{$semantic-green-100};        // #C7F2DF
+  --color-warning: #{$semantic-orange-100};       // #FEE1C8
+  --color-error: #{$semantic-red-100};            // #FCCDD5
+  --color-info: #{$semantic-blue-100};            // #BADEFA
+
+  // ── Semantic / Background ──
+  --color-success-bg: #{$semantic-green-700};     // #00673F
+  --color-warning-bg: #{$semantic-orange-700};    // #AF5115
+  --color-error-bg: #{$semantic-red-700};         // #9E0F22
+  --color-info-bg: #{$semantic-blue-700};         // #004178
+
+  // ── Neutral ──
+  --color-neutral-0: #{$greyscale-999};           // #000000
+  --color-neutral-999: #{$greyscale-0};           // #FFFFFF
+
+  // ── Surfaces ──
+  --color-surface: #{$greyscale-800};
+  --color-surface-hover: #{$greyscale-700};
+  --color-overlay: rgba(0, 0, 0, 0.7);
+
+  // ── Legacy aliases (backward compat with Landing.tsx) ──
+  --color-primary: #{$brand-main-400};
+  --color-primary-light: #{$brand-main-300};
+  --color-primary-dark: #{$brand-main-600};
+  --color-secondary: #{$brand-highlight-400};
+}

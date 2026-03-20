@@ -1,0 +1,52 @@
+// ============================================
+// Variables — Design System Naturegraph
+// ============================================
+// Synced from Figma variables (2026-03-19)
+
+// ── Font families ──
+$font-title: "Quicksand", sans-serif;
+$font-body: "Mulish", sans-serif;
+
+// ── Font sizes (Desktop values, responsive via CSS clamp or media queries) ──
+$font-size-xs: 0.75rem;    // 12px
+$font-size-sm: 0.875rem;   // 14px
+$font-size-md: 1rem;        // 16px
+$font-size-lg: 1.125rem;    // 18px (desktop) / 16px (mobile)
+$font-size-xl: 1.5rem;      // 24px (desktop) / 18px (mobile)
+$font-size-2xl: 2rem;       // 32px (desktop) / 24px (mobile)
+$font-size-3xl: 3rem;       // 48px (desktop) / 32px (mobile)
+$font-size-4xl: 4rem;       // 64px (desktop) / 40px (mobile)
+
+// ── Font weights ──
+$font-weight-regular: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+$font-weight-extrabold: 900;
+
+// ── Line heights ──
+$line-height-tight: 1.2;
+$line-height-normal: 1.5;
+$line-height-relaxed: 1.75;
+
+// ── Border radius ──
+$radius-none: 0;
+$radius-xxs: 2px;
+$radius-xs: 4px;
+$radius-sm: 8px;
+$radius-md: 12px;
+$radius-lg: 20px;
+$radius-xl: 32px;
+$radius-xxl: 48px;
+$radius-full: 999px;
+
+// ── Stroke ──
+$stroke-xs: 0.5px;
+$stroke-sm: 1px;
+$stroke-md: 2px;
+$stroke-lg: 4px;
+
+// ── Transitions ──
+$transition-fast: 150ms ease;
+$transition-base: 250ms ease;
+$transition-slow: 400ms ease;

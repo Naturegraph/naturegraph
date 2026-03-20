@@ -1,0 +1,31 @@
+// ============================================
+// Main SCSS — Naturegraph Design System
+// ============================================
+
+// Themes (CSS custom properties)
+@use "themes/light-theme";
+@use "themes/dark-theme";
+
+// Base
+@use "base/reset";
+@use "base/fonts";
+@use "base/typography";
+@use "base/base";
+
+// Layout
+@use "layout/grid";
+@use "layout/containers";
+@use "layout/header";
+@use "layout/footer";
+
+// Components
+@use "components/buttons";
+@use "components/cards";
+@use "components/inputs";
+@use "components/modals";
+@use "components/notifications";
+
+// Utilities
+@use "utilities/helpers";
+@use "utilities/visibility";
+@use "utilities/accessibility";

@@ -1,0 +1,52 @@
+// ============================================
+// Breakpoints — Design System Naturegraph
+// ============================================
+// Synced from Figma Layout variables (2026-03-19)
+
+$breakpoint-mobile: 402px;
+$breakpoint-tablet: 768px;
+$breakpoint-desktop: 1440px;
+
+// Legacy aliases (used by _mixins.scss, _visibility.scss)
+$breakpoint-sm: 480px;
+$breakpoint-md: $breakpoint-tablet;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1280px;
+
+// Layout grid
+$layout-columns-mobile: 4;
+$layout-columns-tablet: 8;
+$layout-columns-desktop: 12;
+
+$layout-margin-mobile: 20px;
+$layout-margin-tablet: 40px;
+$layout-margin-desktop: 80px;
+
+$layout-gutter-mobile: 16px;
+$layout-gutter-tablet: 24px;
+$layout-gutter-desktop: 32px;
+
+// Responsive mixins
+@mixin mobile {
+  @media (max-width: #{$breakpoint-tablet - 1px}) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (min-width: $breakpoint-tablet) and (max-width: #{$breakpoint-desktop - 1px}) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: $breakpoint-desktop) {
+    @content;
+  }
+}
+
+@mixin tablet-up {
+  @media (min-width: $breakpoint-tablet) {
+    @content;
+  }
+}

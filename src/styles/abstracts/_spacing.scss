@@ -1,0 +1,31 @@
+// ============================================
+// Spacing — Design System Naturegraph
+// ============================================
+// Synced from Figma Grid/sp-* variables (2026-03-19)
+// Values = Desktop; Tablet/Mobile scale down automatically
+
+$sp-0: 0;
+$sp-4: 0.25rem;    // 4px
+$sp-8: 0.5rem;     // 8px
+$sp-12: 0.75rem;   // 12px
+$sp-16: 1rem;      // 16px
+$sp-20: 1.25rem;   // 20px
+$sp-24: 1.5rem;    // 24px
+$sp-32: 2rem;      // 32px
+$sp-40: 2.5rem;    // 40px
+$sp-48: 3rem;      // 48px
+$sp-64: 4rem;      // 64px
+$sp-80: 5rem;      // 80px
+$sp-128: 8rem;     // 128px
+$sp-160: 10rem;    // 160px
+$sp-180: 11.25rem; // 180px
+
+// Legacy aliases (used by _mixins.scss)
+$spacing-0: 0;
+$spacing-xs: $sp-4;
+$spacing-sm: $sp-8;
+$spacing-md: $sp-16;
+$spacing-lg: $sp-24;
+$spacing-xl: $sp-32;
+$spacing-2xl: $sp-48;
+$spacing-3xl: $sp-64;
