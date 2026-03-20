@@ -11,6 +11,16 @@
     <title>Naturegraph</title>
   </head>
   <body>
+    <script>
+      // Synchronous theme init — prevents FOUC / black flash
+      (function(){
+        var t = localStorage.getItem('naturegraph-theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
