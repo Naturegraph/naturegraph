@@ -1,27 +1,53 @@
 /**
- * Types pour les données de l'application
- * Réutilisables pour l'intégration backend
+ * Types utilitaires pour l'application
+ * Réexporte les types database pour usage simplifié
  */
 
-export type { Species, SpeciesCategory, ConservationStatus } from '../data/mock/species'
-
-export type { UserProfile, Gender, Interest, SocialMedia } from '../data/mock/users'
-
+// Re-export all database types for convenience
 export type {
-  Post,
+  Gender,
+  Interest,
   PostType,
-  NatureEncounter,
-  NatureInstant,
+  PostStatus,
+  Visibility,
+  IdentificationStatus,
   TimeOfDay,
   WeatherCondition,
   HabitatType,
   TaxonomicGroup,
-} from '../data/mock/posts'
+  ReactionType,
+  MediaType,
+  MediaFormat,
+  MediaOrientation,
+  MediaStatus,
+  NotebookVisibility,
+  NotificationType,
+  IdentificationConfidence,
+  ConservationStatus,
+  Profile,
+  Post,
+  Media,
+  Reaction,
+  Comment,
+  IdentificationProposal,
+  Follow,
+  Notebook,
+  NotebookObservation,
+  Notification,
+  TaxrefEntry,
+  PostWithAuthor,
+  PostFeedItem,
+  ProfileWithFollowStatus,
+  ProposalWithAuthor,
+} from './database'
 
-export type { Media, MediaType, MediaFormat, MediaOrientation } from '../data/mock/media'
+// Re-export mock data types (backward compat)
+export type { Species, SpeciesCategory } from '../data/mock/species'
+export type { UserProfile, SocialMedia, Location } from '../data/mock/users'
+export type { NatureEncounter, NatureInstant } from '../data/mock/posts'
 
 /**
- * Types utilitaires pour les réponses API
+ * API response wrappers
  */
 export interface PaginatedResponse<T> {
   data: T[]
@@ -44,16 +70,21 @@ export interface ApiResponse<T> {
   error?: ApiError
 }
 
+/**
+ * Search & filtering
+ */
 export interface SearchFilters {
   query?: string
-  category?: string
-  status?: string
+  type?: PostType
+  taxonomicGroup?: TaxonomicGroup
+  habitat?: HabitatType
+  status?: PostStatus
   dateFrom?: string
   dateTo?: string
   location?: {
     latitude: number
     longitude: number
-    radius: number
+    radius: number // km
   }
 }
 
