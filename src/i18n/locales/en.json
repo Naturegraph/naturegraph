@@ -3,11 +3,14 @@
     "appName": "Naturegraph",
     "loading": "Loading...",
     "error": "An error occurred",
+    "retry": "Retry",
     "save": "Save",
     "cancel": "Cancel",
+    "confirm": "Confirm",
     "delete": "Delete",
     "edit": "Edit",
     "search": "Search",
+    "filter": "Filter",
     "back": "Back",
     "next": "Next",
     "previous": "Previous",
@@ -15,54 +18,184 @@
     "finish": "Finish",
     "or": "or",
     "step": "Step",
-    "of": "of"
+    "of": "of",
+    "yes": "Yes",
+    "no": "No"
   },
+
   "nav": {
     "home": "Home",
+    "discover": "Discover",
     "explore": "Explore",
     "contribute": "Contribute",
+    "community": "Community",
     "notifications": "Notifications",
-    "profile": "Profile"
+    "profile": "Profile",
+    "settings": "Settings"
   },
+
+  "landing": {
+    "nav": {
+      "discover": "Discover",
+      "values": "Values",
+      "community": "Community",
+      "faq": "FAQ",
+      "signup": "Join the adventure",
+      "login": "Sign in",
+      "menu": "Menu",
+      "closeMenu": "Close menu"
+    },
+    "hero": {
+      "titleLine1": "Together, let's bring",
+      "titleLine2": "your encounters to life!",
+      "subtitle": "Every outing becomes a memory, every observation a story to share.",
+      "ctaShare": "Share an observation",
+      "ctaDiscover": "Discover our solution"
+    },
+    "features": {
+      "title": "Discover Naturegraph",
+      "subtitle": "Observe and discover nature, together.",
+      "card1Title": "Observe at your own pace",
+      "card1Desc": "Note what you see during your outings, whether it's a species, a landscape or a memorable moment.",
+      "card2Title": "Share your moments",
+      "card2Desc": "Publish your encounters, add photos and tell what you felt. Each outing becomes a story.",
+      "card3Title": "Build together",
+      "card3Desc": "Join a caring community that shares their outings and contributes to the evolution of Naturegraph."
+    },
+    "values": {
+      "title": "What guides us daily",
+      "item1Title": "Transparency & Co-construction",
+      "item1Desc": "We share our progress, our choices and our thoughts with the community.",
+      "item2Title": "Community at Heart",
+      "item2Desc": "Naturegraph exists thanks to its migrators. Together, we explore and bring nature to life.",
+      "item3Title": "Sharing and Emotions",
+      "item3Desc": "Every outing is an experience to share: photos, stories or unique moments."
+    },
+    "detailedFeatures": {
+      "title": "Discover what the app brings you",
+      "subtitle": "Publish your observations, add photos and tell what you experienced.",
+      "item1Title": "Immortalize your nature encounters!",
+      "item1Desc": "Publish your observations, add photos and tell what you experienced. Each encounter becomes a shared moment.",
+      "item2Title": "Manage your profile and track your discoveries",
+      "item2Desc": "Easily find your history, your observations and all your contributions in your profile.",
+      "item3Title": "Discover the latest observations",
+      "item3Desc": "Discover the latest encounters shared by the community and explore the biodiversity around you.",
+      "item4Title": "Get help to identify a species",
+      "item4Desc": "Publish a photo and describe your observation. The community can help you identify a species."
+    },
+    "cta": {
+      "title": "What if every outing became a story?",
+      "description": "Naturegraph allows you to keep track of your observations, discover those of others and experience each outing.",
+      "button": "Start the adventure"
+    },
+    "mission": {
+      "title": "Give meaning to every observation",
+      "paragraph1": "Nature is present everywhere, in everyday life. Naturegraph helps keep track of encounters and share discoveries.",
+      "paragraph2": "By combining technology and collective intelligence, Naturegraph offers a new way to explore local biodiversity."
+    },
+    "discord": {
+      "title": "Join us on Discord!",
+      "description": "An open space to exchange, whether you are curious, passionate or just passing through.",
+      "benefit1": "Share your outings and discoveries with other members",
+      "benefit2": "Discuss observations, species and nature practices",
+      "benefit3": "Follow the project evolution and upcoming features",
+      "benefit4": "Contribute with your ideas and feedback to improve Naturegraph",
+      "benefit5": "Be informed in advance of news and tests",
+      "button": "Become a migrator"
+    },
+    "faq": {
+      "title": "Answers to your questions",
+      "q1": "Is the app free?",
+      "a1": "Yes! Naturegraph is completely free. Later, a premium version with advanced features will support the project.",
+      "q2": "Do I need to be an expert to contribute?",
+      "a2": "Absolutely not! Naturegraph is designed for everyone, from beginner to experienced enthusiast.",
+      "q3": "When will the app be available?",
+      "a3": "The MVP will be available in early 2026 for the first registered users.",
+      "q4": "How can I track my observations?",
+      "a4": "Each user has a profile that centralizes their observations and shares."
+    },
+    "partners": {
+      "title": "They support Naturegraph"
+    }
+  },
+
   "auth": {
-    "login": "Log in",
+    "login": "Sign in",
     "signup": "Sign up",
-    "logout": "Log out",
+    "logout": "Sign out",
     "email": "Email address",
     "emailPlaceholder": "your@email.com",
+    "emailHelper": "We will send you a secure login code.",
     "password": "Password",
     "passwordPlaceholder": "Your password",
     "forgotPassword": "Forgot password?",
     "rememberMe": "Remember me",
     "signupTitle": "Join us!",
-    "signupSubtitle": "Discover and share the nature around you. Create your account in seconds or explore Naturegraph freely, no strings attached.",
+    "signupSubtitle": "Discover and share the nature around you. Create your account in a few seconds.",
     "loginTitle": "Welcome back!",
-    "loginSubtitle": "Log in to find your observations and continue the adventure.",
+    "loginSubtitle": "Sign in to find your observations and continue the adventure.",
     "continueWith": "or continue with",
     "hasAccount": "Already have an account?",
-    "noAccount": "Not registered yet?",
-    "createAccount": "Create your account",
-    "connectNow": "Log in",
+    "noAccount": "Don't have an account yet?",
+    "createAccount": "Create my account",
+    "discoverWithout": "Discover without account",
+    "connectNow": "Sign in",
     "verifyTitle": "Two-step verification",
-    "verifySubtitle": "Enter the 6-digit code we just sent to {{email}} (check your spam folder if needed)",
-    "verifyCodeLabel": "Verification code*",
+    "verifySubtitle": "Enter the 6-digit code we just sent to {{email}}",
+    "verifyCodeLabel": "Verification code",
     "verifyTimer": "This code is valid for {{time}} minutes",
     "verifyNoCode": "Didn't receive the code?",
-    "verifyResend": "Resend a new code"
+    "verifyResend": "Resend a new code",
+    "verifying": "Verifying...",
+    "resetPassword": {
+      "title": "Reset your password",
+      "description": "Enter your new password",
+      "passwordLabel": "New password",
+      "passwordPlaceholder": "Minimum 8 characters",
+      "confirmLabel": "Confirm password",
+      "confirmPlaceholder": "Repeat the password",
+      "submit": "Reset password",
+      "backToLogin": "Back to sign in"
+    },
+    "errors": {
+      "required": "This field is required",
+      "invalidFormat": "Invalid format. Please enter a valid email address.",
+      "accountExists": "An account already exists with this information.",
+      "accountNotFound": "No account found. Would you like to create one?",
+      "generic": "An error occurred",
+      "invalidCode": "Incorrect verification code",
+      "expiredCode": "The verification code has expired"
+    },
+    "success": {
+      "signupTitle": "Account created!",
+      "signupDesc": "Welcome to the Naturegraph community",
+      "loginTitle": "Signed in!",
+      "loginDesc": "Great to see you again!",
+      "codeSent": "Code sent",
+      "codeSentDesc": "Check your email",
+      "passwordReset": "Password updated",
+      "passwordResetDesc": "You can now sign in with your new password"
+    }
   },
+
   "onboarding": {
     "profile": "Profile",
+    "stepLabel": "Step",
     "step1Title": "What are your interests?",
-    "step1Subtitle": "Help us get to know you by selecting 3 preferences.",
+    "step1Subtitle": "Help us get to know you better by selecting your preferences.",
     "step1Hint": "You can update your preferences anytime in your profile",
     "step2Title": "How often do you explore nature?",
-    "step2Subtitle": "This will help us tailor your experience and limit notifications to respect your time.",
+    "step2Subtitle": "This will help us tailor your experience and limit notifications.",
     "step3Title": "Why do you want to use Naturegraph?",
-    "step3Subtitle": "Tell us what motivates you most! This will help us better understand your needs.",
+    "step3Subtitle": "Tell us what motivates you most!",
     "step4Title": "You're ready to explore nature!",
     "step4Subtitle": "Before we start, tell us what you'd like to be called.",
-    "displayNameLabel": "Display name",
-    "displayNamePlaceholder": "Your nickname or first name",
+    "usernameLabel": "Username",
+    "usernamePlaceholder": "Your username",
+    "usernameHelper": "Letters, numbers, periods (.) and underscores (_) allowed",
+    "usernameMax": "25 characters maximum",
+    "buttonDisabled": "Choose your username",
+    "buttonEnabled": "Let's go!",
     "interests": {
       "birds": "Birds",
       "mammals": "Mammals",
@@ -78,24 +211,55 @@
       "daily": "Every day",
       "dailyDesc": "I regularly go out and observe nature daily.",
       "weekly": "A few times a week",
-      "weeklyDesc": "I take advantage of my outings to observe wildlife and flora.",
+      "weeklyDesc": "I take advantage of weekends and my free time to explore.",
       "monthly": "A few times a month",
-      "monthlyDesc": "I explore nature during occasional walks or hikes.",
+      "monthlyDesc": "I like to discover new places from time to time.",
       "occasionally": "Occasionally",
-      "occasionallyDesc": "I discover nature when the opportunity arises."
+      "occasionallyDesc": "When the opportunity arises during trips or outings."
     },
     "motivation": {
-      "observe": "Observe and identify species",
-      "share": "Share my discoveries with others",
-      "learn": "Learn about local biodiversity",
-      "contribute": "Contribute to citizen science"
+      "learn": "Learn about nature",
+      "share": "Share my discoveries",
+      "community": "Join a community",
+      "identify": "Identify species"
+    },
+    "usernameErrors": {
+      "tooShort": "Username must be at least 3 characters",
+      "tooLong": "Username cannot exceed 25 characters",
+      "invalidFormat": "Only letters, numbers, periods (.) and underscores (_) are allowed",
+      "invalidStart": "Username cannot start with a period or underscore",
+      "alreadyTaken": "This username is already taken",
+      "checking": "Checking..."
+    },
+    "exitModal": {
+      "title": "Leave onboarding?",
+      "description": "You can come back to complete your profile anytime.",
+      "goHome": "Leave onboarding",
+      "goLogin": "Sign in",
+      "continue": "Continue onboarding"
     }
   },
+
   "home": {
     "title": "Explore biodiversity",
     "subtitle": "Observe, document and share your nature discoveries",
-    "feedEmpty": "No observations yet"
+    "feedEmpty": "No observations yet",
+    "trending": {
+      "title": "Trending",
+      "thisWeek": "This week",
+      "viewAll": "View all trends"
+    },
+    "location": {
+      "title": "Location",
+      "currentLocation": "Use my current location",
+      "currentLocationDesc": "Enable geolocation to discover observations around you",
+      "enableLocation": "Enable my location",
+      "searchPlaceholder": "Search for a city...",
+      "suggestedCities": "Suggested cities",
+      "noResults": "No city found"
+    }
   },
+
   "observation": {
     "instantNature": "Nature Instant",
     "meetingNature": "Nature Encounter",
@@ -105,15 +269,17 @@
     "description": "Description",
     "unidentified": "Awaiting identification",
     "comments": "Comments",
-    "propose": "Propose identification"
+    "propose": "Propose an identification"
   },
+
   "notebook": {
     "title": "Observation notebooks",
-    "create": "Create notebook",
+    "create": "Create a notebook",
     "private": "Private",
     "public": "Public",
     "collaborative": "Collaborative"
   },
+
   "profile": {
     "journal": "Nature Journal",
     "inspirations": "Inspirations",
@@ -121,12 +287,76 @@
     "stats": "Statistics",
     "settings": "Settings"
   },
+
   "settings": {
-    "theme": "Theme",
-    "language": "Language",
-    "notifications": "Notifications",
+    "title": "Settings",
+    "general": "General",
+    "appearance": "Appearance",
     "accessibility": "Accessibility",
+    "language": "Language",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "fontSize": "Text size",
+    "fontSizeSmall": "Small",
+    "fontSizeMedium": "Medium",
+    "fontSizeLarge": "Large",
+    "notifications": "Notifications",
     "privacy": "Privacy",
+    "languageFr": "Français",
+    "languageEn": "English",
     "deleteAccount": "Delete my account"
+  },
+
+  "footer": {
+    "tagline": "Naturegraph is a space to share your encounters and discover others' perspectives.",
+    "product": {
+      "title": "Product",
+      "values": "Our values",
+      "features": "Key features",
+      "community": "The community",
+      "mission": "Our mission"
+    },
+    "about": {
+      "title": "About",
+      "contact": "Contact us",
+      "privacy": "Privacy policy",
+      "legal": "Legal notice"
+    },
+    "cta": {
+      "title": "Want to join the adventure?",
+      "button": "Become a migrator"
+    },
+    "copyright": "© 2026 Naturegraph. All rights reserved.",
+    "madeWithLove": "Made with love",
+    "team": "by the Naturegraph team"
+  },
+
+  "legal": {
+    "privacy": {
+      "title": "Privacy Policy",
+      "comingSoon": "This page will be available soon.",
+      "backHome": "Back to home"
+    },
+    "terms": {
+      "title": "Legal Notice",
+      "comingSoon": "This page will be available soon.",
+      "backHome": "Back to home"
+    }
+  },
+
+  "contact": {
+    "title": "Contact us",
+    "comingSoon": "Contact form coming soon.",
+    "backHome": "Back to home",
+    "socialMedia": "Join us on"
+  },
+
+  "notifications": {
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information"
   }
 }

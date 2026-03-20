@@ -1,0 +1,500 @@
+/**
+ * Données mockées pour les profils utilisateurs
+ * Structure extensible préparée pour l'intégration backend
+ */
+
+export type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say'
+
+export type Interest =
+  | 'birds'
+  | 'mammals'
+  | 'insects'
+  | 'amphibians'
+  | 'reptiles'
+  | 'arachnids'
+  | 'mollusks'
+  | 'fish'
+  | 'plants'
+  | 'other'
+
+export interface SocialMedia {
+  instagram?: string
+  twitter?: string
+  website?: string
+}
+
+export interface Location {
+  city: string
+  region: string
+  country: 'France' | 'Québec'
+}
+
+export interface UserProfile {
+  id: string
+  username: string
+  firstName: string
+  lastName: string
+  gender: Gender
+  birthDate: string // ISO date format
+  bio: string
+  interests: Interest[]
+  location: Location
+  socialMedia?: SocialMedia
+  createdAt: string // ISO date format
+  avatarUrl?: string
+  badge?: string // Emoji représentant la spécialité principale (basé sur top observations)
+  // Stats calculées
+  postsCount: number
+  followersCount: number
+  followingCount: number
+}
+
+/**
+ * 25 profils utilisateurs variés et réalistes
+ */
+export const mockUsers: UserProfile[] = [
+  {
+    id: 'user_001',
+    username: 'naturescape_marie',
+    firstName: 'Marie',
+    lastName: 'Dubois',
+    gender: 'female',
+    birthDate: '1992-04-15',
+    bio: 'Photographe nature passionnée. Je capture la beauté éphémère des paysages et de la faune sauvage.',
+    interests: ['birds', 'mammals', 'plants'],
+    location: { city: 'Lyon', region: 'Auvergne-Rhône-Alpes', country: 'France' },
+    socialMedia: { instagram: '@naturescape.marie', website: 'mariedubois-photo.fr' },
+    createdAt: '2022-03-12T10:30:00Z',
+    badge: '🦅',
+    postsCount: 0,
+    followersCount: 342,
+    followingCount: 189,
+  },
+  {
+    id: 'user_002',
+    username: 'birdwatcher_tom',
+    firstName: 'Thomas',
+    lastName: 'Martin',
+    gender: 'male',
+    birthDate: '1985-11-22',
+    bio: 'Ornithologue amateur depuis 15 ans. Chaque oiseau a son histoire.',
+    interests: ['birds'],
+    location: { city: 'Rennes', region: 'Bretagne', country: 'France' },
+    socialMedia: { instagram: '@birdwatcher.tom' },
+    createdAt: '2021-05-08T14:20:00Z',
+    badge: '🦆',
+    postsCount: 0,
+    followersCount: 523,
+    followingCount: 145,
+  },
+  {
+    id: 'user_003',
+    username: 'wild_sophie',
+    firstName: 'Sophie',
+    lastName: 'Bernard',
+    gender: 'female',
+    birthDate: '1998-07-03',
+    bio: 'Botaniste en herbe. Les plantes sauvages sont mes meilleures amies 🌿',
+    interests: ['plants', 'insects'],
+    location: { city: 'Toulouse', region: 'Occitanie', country: 'France' },
+    socialMedia: { instagram: '@wild.sophie' },
+    createdAt: '2023-01-20T09:15:00Z',
+    badge: '🌸',
+    postsCount: 0,
+    followersCount: 267,
+    followingCount: 312,
+  },
+  {
+    id: 'user_004',
+    username: 'forest_explorer',
+    firstName: 'Lucas',
+    lastName: 'Petit',
+    gender: 'male',
+    birthDate: '1990-09-17',
+    bio: 'Garde forestier et amoureux des grands espaces. La forêt est mon terrain de jeu.',
+    interests: ['mammals', 'birds', 'plants', 'insects'],
+    location: { city: 'Grenoble', region: 'Auvergne-Rhône-Alpes', country: 'France' },
+    socialMedia: { website: 'forestexplorer.blog' },
+    createdAt: '2020-11-05T16:45:00Z',
+    badge: '🦌',
+    postsCount: 0,
+    followersCount: 892,
+    followingCount: 234,
+  },
+  {
+    id: 'user_005',
+    username: 'macro_julie',
+    firstName: 'Julie',
+    lastName: 'Leroy',
+    gender: 'female',
+    birthDate: '1995-02-28',
+    bio: 'Photographe macro. Le monde des insectes est fascinant vu de près !',
+    interests: ['insects', 'arachnids', 'mollusks'],
+    location: { city: 'Bordeaux', region: 'Nouvelle-Aquitaine', country: 'France' },
+    socialMedia: { instagram: '@macro.julie', website: 'julieleroy-macro.com' },
+    createdAt: '2022-08-14T11:30:00Z',
+    badge: '🦋',
+    postsCount: 0,
+    followersCount: 445,
+    followingCount: 198,
+  },
+  {
+    id: 'user_006',
+    username: 'ocean_watcher',
+    firstName: 'Antoine',
+    lastName: 'Rousseau',
+    gender: 'male',
+    birthDate: '1988-06-12',
+    bio: 'Biologiste marin amateur. Les océans recèlent tant de merveilles.',
+    interests: ['fish', 'mollusks', 'other'],
+    location: { city: 'Brest', region: 'Bretagne', country: 'France' },
+    socialMedia: { instagram: '@ocean.watcher' },
+    createdAt: '2021-03-22T08:00:00Z',
+    badge: '🐟',
+    postsCount: 0,
+    followersCount: 678,
+    followingCount: 156,
+  },
+  {
+    id: 'user_007',
+    username: 'wild_camille',
+    firstName: 'Camille',
+    lastName: 'Moreau',
+    gender: 'female',
+    birthDate: '1993-12-05',
+    bio: 'Éducatrice en environnement. Partager ma passion pour la nature avec les enfants.',
+    interests: ['birds', 'mammals', 'amphibians', 'reptiles'],
+    location: { city: 'Strasbourg', region: 'Grand Est', country: 'France' },
+    socialMedia: { website: 'education-nature.fr' },
+    createdAt: '2022-06-10T13:20:00Z',
+    badge: '🦉',
+    postsCount: 0,
+    followersCount: 389,
+    followingCount: 421,
+  },
+  {
+    id: 'user_008',
+    username: 'nature_alex',
+    firstName: 'Alexandre',
+    lastName: 'Laurent',
+    gender: 'male',
+    birthDate: '1987-03-30',
+    bio: 'Randonneur et photographe du dimanche. Capturer les moments magiques de la nature.',
+    interests: ['mammals', 'birds', 'plants'],
+    location: { city: 'Annecy', region: 'Auvergne-Rhône-Alpes', country: 'France' },
+    socialMedia: { instagram: '@nature.alex' },
+    createdAt: '2020-09-17T10:45:00Z',
+    badge: '🦊',
+    postsCount: 0,
+    followersCount: 512,
+    followingCount: 267,
+  },
+  {
+    id: 'user_009',
+    username: 'flora_emma',
+    firstName: 'Emma',
+    lastName: 'Simon',
+    gender: 'female',
+    birthDate: '1996-08-19',
+    bio: 'Herboriste passionnée. Les plantes médicinales sont ma spécialité.',
+    interests: ['plants'],
+    location: { city: 'Montpellier', region: 'Occitanie', country: 'France' },
+    socialMedia: { instagram: '@flora.emma', website: 'herboristerie-emma.fr' },
+    createdAt: '2023-02-28T15:10:00Z',
+    badge: '🌿',
+    postsCount: 0,
+    followersCount: 234,
+    followingCount: 145,
+  },
+  {
+    id: 'user_010',
+    username: 'wild_hugo',
+    firstName: 'Hugo',
+    lastName: 'Lefebvre',
+    gender: 'male',
+    birthDate: '1991-10-08',
+    bio: "Guide naturaliste. Transmettre l'amour de la nature est ma mission.",
+    interests: ['birds', 'mammals', 'reptiles', 'amphibians'],
+    location: { city: 'Nantes', region: 'Pays de la Loire', country: 'France' },
+    createdAt: '2021-07-15T09:30:00Z',
+    badge: '🦅',
+    postsCount: 0,
+    followersCount: 623,
+    followingCount: 198,
+  },
+  {
+    id: 'user_011',
+    username: 'butterfly_lea',
+    firstName: 'Léa',
+    lastName: 'Roux',
+    gender: 'female',
+    birthDate: '1994-05-25',
+    bio: 'Spécialiste des papillons et pollinisateurs. Chaque espèce est unique !',
+    interests: ['insects', 'plants'],
+    location: { city: 'Nice', region: "Provence-Alpes-Côte d'Azur", country: 'France' },
+    socialMedia: { instagram: '@butterfly.lea' },
+    createdAt: '2022-04-03T14:25:00Z',
+    badge: '🦋',
+    postsCount: 0,
+    followersCount: 456,
+    followingCount: 289,
+  },
+  {
+    id: 'user_012',
+    username: 'quebec_nature',
+    firstName: 'Gabriel',
+    lastName: 'Tremblay',
+    gender: 'male',
+    birthDate: '1989-01-14',
+    bio: 'Amoureux des grands espaces québécois. La nature boréale est extraordinaire.',
+    interests: ['mammals', 'birds', 'fish'],
+    location: { city: 'Québec', region: 'Capitale-Nationale', country: 'Québec' },
+    socialMedia: { instagram: '@quebec.nature' },
+    createdAt: '2021-10-12T11:40:00Z',
+    badge: '🦌',
+    postsCount: 0,
+    followersCount: 734,
+    followingCount: 312,
+  },
+  {
+    id: 'user_013',
+    username: 'amphibian_chloe',
+    firstName: 'Chloé',
+    lastName: 'Garnier',
+    gender: 'female',
+    birthDate: '1997-11-30',
+    bio: "Passionnée d'amphibiens. Les grenouilles et salamandres sont fascinantes !",
+    interests: ['amphibians', 'reptiles'],
+    location: { city: 'Lille', region: 'Hauts-de-France', country: 'France' },
+    createdAt: '2023-05-18T10:15:00Z',
+    badge: '🐸',
+    postsCount: 0,
+    followersCount: 189,
+    followingCount: 234,
+  },
+  {
+    id: 'user_014',
+    username: 'wild_maxime',
+    firstName: 'Maxime',
+    lastName: 'Blanc',
+    gender: 'male',
+    birthDate: '1986-07-21',
+    bio: 'Photographe animalier professionnel. 20 ans à traquer les animaux sauvages.',
+    interests: ['mammals', 'birds', 'reptiles'],
+    location: { city: 'Marseille', region: "Provence-Alpes-Côte d'Azur", country: 'France' },
+    socialMedia: { instagram: '@wild.maxime', website: 'maximeblanc-wildlife.com' },
+    createdAt: '2020-02-08T08:50:00Z',
+    badge: '🦊',
+    postsCount: 0,
+    followersCount: 1245,
+    followingCount: 87,
+  },
+  {
+    id: 'user_015',
+    username: 'urban_nature',
+    firstName: 'Inès',
+    lastName: 'Girard',
+    gender: 'female',
+    birthDate: '1999-04-02',
+    bio: 'La nature en ville est partout ! Je documente la biodiversité urbaine.',
+    interests: ['birds', 'plants', 'insects'],
+    location: { city: 'Paris', region: 'Île-de-France', country: 'France' },
+    socialMedia: { instagram: '@urban.nature' },
+    createdAt: '2023-03-15T16:30:00Z',
+    badge: '🦆',
+    postsCount: 0,
+    followersCount: 312,
+    followingCount: 456,
+  },
+  {
+    id: 'user_016',
+    username: 'mountain_paul',
+    firstName: 'Paul',
+    lastName: 'Bonnet',
+    gender: 'male',
+    birthDate: '1984-09-09',
+    bio: 'Alpiniste et naturaliste. Les sommets alpins abritent une faune incroyable.',
+    interests: ['mammals', 'birds'],
+    location: { city: 'Chamonix', region: 'Auvergne-Rhône-Alpes', country: 'France' },
+    socialMedia: { website: 'alpinisme-nature.fr' },
+    createdAt: '2020-06-20T12:15:00Z',
+    badge: '🦌',
+    postsCount: 0,
+    followersCount: 567,
+    followingCount: 123,
+  },
+  {
+    id: 'user_017',
+    username: 'botanical_iris',
+    firstName: 'Iris',
+    lastName: 'Mercier',
+    gender: 'female',
+    birthDate: '1992-02-17',
+    bio: 'Botaniste de terrain. Les orchidées sauvages sont ma passion.',
+    interests: ['plants'],
+    location: { city: 'Dijon', region: 'Bourgogne-Franche-Comté', country: 'France' },
+    socialMedia: { instagram: '@botanical.iris' },
+    createdAt: '2022-01-25T09:40:00Z',
+    badge: '🌸',
+    postsCount: 0,
+    followersCount: 398,
+    followingCount: 267,
+  },
+  {
+    id: 'user_018',
+    username: 'river_watcher',
+    firstName: 'Mathis',
+    lastName: 'Durand',
+    gender: 'male',
+    birthDate: '1995-06-28',
+    bio: 'Écologiste aquatique. Les rivières sont le cœur de nos écosystèmes.',
+    interests: ['fish', 'amphibians', 'insects'],
+    location: { city: 'Tours', region: 'Centre-Val de Loire', country: 'France' },
+    createdAt: '2021-11-30T14:50:00Z',
+    badge: '🐟',
+    postsCount: 0,
+    followersCount: 423,
+    followingCount: 334,
+  },
+  {
+    id: 'user_019',
+    username: 'nocturnal_lisa',
+    firstName: 'Lisa',
+    lastName: 'Fontaine',
+    gender: 'female',
+    birthDate: '1993-08-11',
+    bio: 'Passionnée de faune nocturne. Les chouettes et chauves-souris sont mes sujets favoris.',
+    interests: ['birds', 'mammals'],
+    location: { city: 'Montréal', region: 'Montréal', country: 'Québec' },
+    socialMedia: { instagram: '@nocturnal.lisa' },
+    createdAt: '2022-09-08T19:20:00Z',
+    badge: '🦉',
+    postsCount: 0,
+    followersCount: 489,
+    followingCount: 245,
+  },
+  {
+    id: 'user_020',
+    username: 'spider_lover',
+    firstName: 'Nathan',
+    lastName: 'Chevalier',
+    gender: 'male',
+    birthDate: '1990-12-19',
+    bio: 'Arachnologue amateur. Les araignées sont injustement mal-aimées !',
+    interests: ['arachnids', 'insects'],
+    location: { city: 'Poitiers', region: 'Nouvelle-Aquitaine', country: 'France' },
+    createdAt: '2021-04-14T10:30:00Z',
+    badge: '🕷️',
+    postsCount: 0,
+    followersCount: 234,
+    followingCount: 178,
+  },
+  {
+    id: 'user_021',
+    username: 'prairie_observer',
+    firstName: 'Manon',
+    lastName: 'Leclerc',
+    gender: 'female',
+    birthDate: '1996-03-07',
+    bio: 'Écologue spécialisée dans les prairies. Ces milieux abritent une biodiversité incroyable.',
+    interests: ['plants', 'insects', 'birds'],
+    location: { city: 'Clermont-Ferrand', region: 'Auvergne-Rhône-Alpes', country: 'France' },
+    socialMedia: { website: 'prairies-biodiversite.fr' },
+    createdAt: '2022-11-22T15:10:00Z',
+    badge: '🌿',
+    postsCount: 0,
+    followersCount: 356,
+    followingCount: 289,
+  },
+  {
+    id: 'user_022',
+    username: 'wildlife_theo',
+    firstName: 'Théo',
+    lastName: 'Perrin',
+    gender: 'male',
+    birthDate: '1988-10-23',
+    bio: 'Documentariste animalier. Raconter des histoires à travers la faune sauvage.',
+    interests: ['mammals', 'birds', 'reptiles', 'amphibians'],
+    location: { city: 'Aix-en-Provence', region: "Provence-Alpes-Côte d'Azur", country: 'France' },
+    socialMedia: { instagram: '@wildlife.theo', website: 'theoperrin-doc.com' },
+    createdAt: '2020-08-05T11:25:00Z',
+    badge: '🦊',
+    postsCount: 0,
+    followersCount: 923,
+    followingCount: 156,
+  },
+  {
+    id: 'user_023',
+    username: 'coastal_nature',
+    firstName: 'Océane',
+    lastName: 'Renard',
+    gender: 'female',
+    birthDate: '1994-01-16',
+    bio: 'Amoureuse du littoral. Entre terre et mer, la vie foisonne.',
+    interests: ['birds', 'mollusks', 'plants'],
+    location: { city: 'La Rochelle', region: 'Nouvelle-Aquitaine', country: 'France' },
+    socialMedia: { instagram: '@coastal.nature' },
+    createdAt: '2021-12-10T13:45:00Z',
+    badge: '🦆',
+    postsCount: 0,
+    followersCount: 467,
+    followingCount: 312,
+  },
+  {
+    id: 'user_024',
+    username: 'fungi_expert',
+    firstName: 'Julien',
+    lastName: 'Marchand',
+    gender: 'male',
+    birthDate: '1991-05-04',
+    bio: "Mycologue passionné. Le royaume fongique est d'une diversité extraordinaire.",
+    interests: ['other', 'plants'],
+    location: { city: 'Nancy', region: 'Grand Est', country: 'France' },
+    createdAt: '2022-03-18T09:55:00Z',
+    badge: '🍄',
+    postsCount: 0,
+    followersCount: 512,
+    followingCount: 234,
+  },
+  {
+    id: 'user_025',
+    username: 'seasonal_witness',
+    firstName: 'Sarah',
+    lastName: 'Lemoine',
+    gender: 'female',
+    birthDate: '1997-07-26',
+    bio: 'Photographe des saisons. Documenter les cycles naturels année après année.',
+    interests: ['plants', 'birds', 'insects', 'mammals'],
+    location: { city: 'Reims', region: 'Grand Est', country: 'France' },
+    socialMedia: { instagram: '@seasonal.witness', website: 'saisons-nature.com' },
+    createdAt: '2023-01-08T14:30:00Z',
+    badge: '🌸',
+    postsCount: 0,
+    followersCount: 378,
+    followingCount: 423,
+  },
+]
+
+/**
+ * Fonction utilitaire pour simuler un appel API
+ */
+export async function fetchUsers(): Promise<UserProfile[]> {
+  await new Promise((resolve) => setTimeout(resolve, 500))
+  return mockUsers
+}
+
+/**
+ * Fonction utilitaire pour récupérer un utilisateur par son ID
+ */
+export async function fetchUserById(id: string): Promise<UserProfile | undefined> {
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  return mockUsers.find((user) => user.id === id)
+}
+
+/**
+ * Fonction utilitaire pour récupérer un utilisateur par son username
+ */
+export async function fetchUserByUsername(username: string): Promise<UserProfile | undefined> {
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  return mockUsers.find((user) => user.username === username)
+}

@@ -3,69 +3,202 @@
     "appName": "Naturegraph",
     "loading": "Chargement...",
     "error": "Une erreur est survenue",
+    "retry": "Réessayer",
     "save": "Enregistrer",
     "cancel": "Annuler",
+    "confirm": "Confirmer",
     "delete": "Supprimer",
     "edit": "Modifier",
     "search": "Rechercher",
+    "filter": "Filtrer",
     "back": "Retour",
     "next": "Suivant",
-    "previous": "Precedent",
+    "previous": "Précédent",
     "close": "Fermer",
     "finish": "Terminer",
     "or": "ou",
-    "step": "Etape",
-    "of": "sur"
+    "step": "Étape",
+    "of": "sur",
+    "yes": "Oui",
+    "no": "Non"
   },
+
   "nav": {
     "home": "Accueil",
+    "discover": "Découvrir",
     "explore": "Explorer",
     "contribute": "Contribuer",
+    "community": "Communauté",
     "notifications": "Notifications",
-    "profile": "Profil"
+    "profile": "Profil",
+    "settings": "Paramètres"
   },
+
+  "landing": {
+    "nav": {
+      "discover": "Découvrir",
+      "values": "Valeurs",
+      "community": "Communauté",
+      "faq": "FAQ",
+      "signup": "Rejoindre l'aventure",
+      "login": "Se connecter",
+      "menu": "Menu",
+      "closeMenu": "Fermer le menu"
+    },
+    "hero": {
+      "titleLine1": "Ensemble, donnons",
+      "titleLine2": "vie à tes rencontres !",
+      "subtitle": "Chaque sortie devient un souvenir, chaque observation une histoire à partager.",
+      "ctaShare": "Partager une observation",
+      "ctaDiscover": "Découvrir notre solution"
+    },
+    "features": {
+      "title": "Découvre Naturegraph",
+      "subtitle": "Observer et découvrir la nature, ensemble.",
+      "card1Title": "Observe à ton rythme",
+      "card1Desc": "Note ce que tu vois lors de tes sorties, qu'il s'agisse d'une espèce, d'un paysage ou d'un moment marquant.",
+      "card2Title": "Partage tes instants",
+      "card2Desc": "Publie tes rencontres, ajoute des photos et raconte ce que tu as ressenti. Chaque sortie devient une histoire.",
+      "card3Title": "Construire ensemble",
+      "card3Desc": "Rejoins une communauté bienveillante qui partage ses sorties et contribue à l'évolution de Naturegraph."
+    },
+    "values": {
+      "title": "Ce qui nous guide au quotidien",
+      "item1Title": "Transparence & co-construction",
+      "item1Desc": "Nous partageons nos avancées, nos choix et nos réflexions avec la communauté.",
+      "item2Title": "Communauté au cœur",
+      "item2Desc": "Naturegraph existe grâce à ses migrateurs. Ensemble, nous explorons et faisons vivre la nature.",
+      "item3Title": "Partage et émotions",
+      "item3Desc": "Chaque sortie est une expérience à partager : photos, récits ou moments uniques."
+    },
+    "detailedFeatures": {
+      "title": "Découvre ce que l'app t'apporte",
+      "subtitle": "Publie tes observations, ajoute des photos et raconte ce que tu as vécu.",
+      "item1Title": "Immortalise tes rencontres nature !",
+      "item1Desc": "Publie tes observations, ajoute des photos et raconte ce que tu as vécu. Chaque rencontre devient un moment partagé.",
+      "item2Title": "Gère ton profil et suis tes découvertes",
+      "item2Desc": "Retrouve facilement ton historique, tes observations et l'ensemble de tes contributions dans ton profil.",
+      "item3Title": "Découvre les dernières observations",
+      "item3Desc": "Découvre les dernières rencontres partagées par la communauté et explore la biodiversité autour de toi.",
+      "item4Title": "Obtiens de l'aide pour identifier une espèce",
+      "item4Desc": "Publie une photo et décris ton observation. La communauté peut t'aider à identifier une espèce."
+    },
+    "cta": {
+      "title": "Et si chaque sortie devenait une histoire ?",
+      "description": "Naturegraph te permet de garder une trace de tes observations, de découvrir celles des autres et de vivre chaque sortie comme une expérience.",
+      "button": "Commencer l'aventure"
+    },
+    "mission": {
+      "title": "Donner du sens à chaque observation",
+      "paragraph1": "La nature est présente partout, au quotidien. Naturegraph permet de mieux garder une trace de ses rencontres et de partager ses découvertes.",
+      "paragraph2": "En combinant technologie et intelligence collective, Naturegraph propose une nouvelle manière d'explorer la biodiversité locale."
+    },
+    "discord": {
+      "title": "Rejoins-nous sur Discord !",
+      "description": "Un espace ouvert pour échanger, que tu sois curieux, passionné ou simplement de passage.",
+      "benefit1": "Partager tes sorties et découvertes avec d'autres membres",
+      "benefit2": "Discuter d'observations, d'espèces et de pratiques nature",
+      "benefit3": "Suivre l'évolution du projet et les prochaines fonctionnalités",
+      "benefit4": "Contribuer avec tes idées et retours pour améliorer Naturegraph",
+      "benefit5": "Être informé en avant-première des nouveautés et tests",
+      "button": "Devenir migrateur"
+    },
+    "faq": {
+      "title": "Réponses à tes questions",
+      "q1": "L'application est-elle gratuite ?",
+      "a1": "Oui ! Naturegraph est entièrement gratuite. Plus tard, une version premium avec des fonctionnalités avancées viendra soutenir le projet.",
+      "q2": "Dois-je être expert pour contribuer ?",
+      "a2": "Absolument pas ! Naturegraph est conçu pour tous, du débutant au passionné confirmé.",
+      "q3": "Quand l'application sera-t-elle disponible ?",
+      "a3": "Le MVP sera accessible début 2026 pour les premiers utilisateurs inscrits.",
+      "q4": "Comment puis-je suivre mes observations ?",
+      "a4": "Chaque utilisateur a un profil qui centralise ses observations et ses partages."
+    },
+    "partners": {
+      "title": "Ils soutiennent Naturegraph"
+    }
+  },
+
   "auth": {
     "login": "Se connecter",
     "signup": "S'inscrire",
-    "logout": "Se deconnecter",
+    "logout": "Se déconnecter",
     "email": "Adresse email",
     "emailPlaceholder": "ton@email.com",
+    "emailHelper": "Nous t'enverrons un code de connexion sécurisé.",
     "password": "Mot de passe",
     "passwordPlaceholder": "Ton mot de passe",
-    "forgotPassword": "Mot de passe oublie ?",
+    "forgotPassword": "Mot de passe oublié ?",
     "rememberMe": "Se souvenir de moi",
     "signupTitle": "Rejoins-nous !",
-    "signupSubtitle": "Decouvre et partage la nature qui t'entoure. Cree ton compte en quelques secondes ou explore Naturegraph librement, sans engagement.",
+    "signupSubtitle": "Découvre et partage la nature qui t'entoure. Crée ton compte en quelques secondes.",
     "loginTitle": "Bon retour !",
     "loginSubtitle": "Connecte-toi pour retrouver tes observations et continuer l'aventure.",
     "continueWith": "ou continuer avec",
-    "hasAccount": "Tu as deja un compte ?",
+    "hasAccount": "Tu as déjà un compte ?",
     "noAccount": "Pas encore inscrit ?",
-    "createAccount": "Creer ton compte",
+    "createAccount": "Créer mon compte",
+    "discoverWithout": "Découvrir sans compte",
     "connectNow": "Connecte-toi",
-    "verifyTitle": "Verification en deux etapes",
-    "verifySubtitle": "Entre le code a 6 chiffres que nous venons de t'envoyer a {{email}} (pense a verifier tes spams si besoin)",
-    "verifyCodeLabel": "Code de verification*",
+    "verifyTitle": "Vérification en deux étapes",
+    "verifySubtitle": "Entre le code à 6 chiffres que nous venons de t'envoyer à {{email}}",
+    "verifyCodeLabel": "Code de vérification",
     "verifyTimer": "Ce code est valable pendant {{time}} minutes",
-    "verifyNoCode": "Tu n'as pas recu le code ?",
-    "verifyResend": "Renvoyer un nouveau code"
+    "verifyNoCode": "Tu n'as pas reçu le code ?",
+    "verifyResend": "Renvoyer un nouveau code",
+    "verifying": "Vérification...",
+    "resetPassword": {
+      "title": "Réinitialiser votre mot de passe",
+      "description": "Entrez votre nouveau mot de passe",
+      "passwordLabel": "Nouveau mot de passe",
+      "passwordPlaceholder": "Minimum 8 caractères",
+      "confirmLabel": "Confirmer le mot de passe",
+      "confirmPlaceholder": "Répétez le mot de passe",
+      "submit": "Réinitialiser le mot de passe",
+      "backToLogin": "Retour à la connexion"
+    },
+    "errors": {
+      "required": "Ce champ est requis",
+      "invalidFormat": "Format invalide. Veuillez entrer une adresse email valide.",
+      "accountExists": "Un compte existe déjà avec ces informations.",
+      "accountNotFound": "Aucun compte trouvé. Voulez-vous créer un compte ?",
+      "generic": "Une erreur est survenue",
+      "invalidCode": "Code de vérification incorrect",
+      "expiredCode": "Le code de vérification a expiré"
+    },
+    "success": {
+      "signupTitle": "Compte créé !",
+      "signupDesc": "Bienvenue dans la communauté Naturegraph",
+      "loginTitle": "Connecté !",
+      "loginDesc": "Ravi de te revoir !",
+      "codeSent": "Code envoyé",
+      "codeSentDesc": "Vérifie ta boîte email",
+      "passwordReset": "Mot de passe mis à jour",
+      "passwordResetDesc": "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe"
+    }
   },
+
   "onboarding": {
     "profile": "Profil",
-    "step1Title": "Quels sont tes centres d'interet ?",
-    "step1Subtitle": "Aide-nous a mieux te connaitre en selectionnant 3 preferences.",
-    "step1Hint": "Tu pourras renseigner tes preferences a tout moment dans ton profil",
-    "step2Title": "A quelle frequence explores-tu la nature ?",
-    "step2Subtitle": "Cela nous permettra d'adapter ton experience et de limiter les notifications pour respecter ton temps.",
+    "stepLabel": "Étape",
+    "step1Title": "Quels sont tes centres d'intérêt ?",
+    "step1Subtitle": "Aide-nous à mieux te connaître en sélectionnant tes préférences.",
+    "step1Hint": "Tu pourras renseigner tes préférences à tout moment dans ton profil",
+    "step2Title": "À quelle fréquence explores-tu la nature ?",
+    "step2Subtitle": "Cela nous permettra d'adapter ton expérience et de limiter les notifications.",
     "step3Title": "Pourquoi souhaites-tu utiliser Naturegraph ?",
-    "step3Subtitle": "Dis-nous ce qui te motive le plus ! Cela nous aidera a mieux comprendre tes besoins.",
-    "step4Title": "Tu es pret(e) a explorer la nature !",
-    "step4Subtitle": "Avant de commencer, dis-nous comment tu souhaites etre appele(e).",
-    "displayNameLabel": "Nom d'affichage",
-    "displayNamePlaceholder": "Ton pseudo ou prenom",
+    "step3Subtitle": "Dis-nous ce qui te motive le plus !",
+    "step4Title": "Tu es prêt(e) à explorer la nature !",
+    "step4Subtitle": "Avant de commencer, dis-nous comment tu souhaites être appelé(e).",
+    "usernameLabel": "Nom d'utilisateur",
+    "usernamePlaceholder": "Ton pseudo",
+    "usernameHelper": "Lettres, chiffres, points (.) et underscores (_) autorisés",
+    "usernameMax": "25 caractères maximum",
+    "buttonDisabled": "Choisis ton pseudo",
+    "buttonEnabled": "C'est parti !",
     "interests": {
       "birds": "Oiseaux",
-      "mammals": "Mammiferes",
+      "mammals": "Mammifères",
       "insects": "Insectes",
       "amphibians": "Amphibiens",
       "reptiles": "Reptiles",
@@ -76,30 +209,61 @@
     },
     "frequency": {
       "daily": "Tous les jours",
-      "dailyDesc": "Je sors regulierement et j'observe la nature quotidiennement.",
+      "dailyDesc": "Je sors régulièrement et j'observe la nature quotidiennement.",
       "weekly": "Quelques fois par semaine",
-      "weeklyDesc": "Je profite de mes sorties pour observer la faune et la flore.",
+      "weeklyDesc": "Je profite du week-end et de mon temps libre pour explorer.",
       "monthly": "Quelques fois par mois",
-      "monthlyDesc": "J'explore la nature lors de balades ou randonnees ponctuelles.",
+      "monthlyDesc": "J'aime découvrir de nouveaux endroits de temps en temps.",
       "occasionally": "Occasionnellement",
-      "occasionallyDesc": "Je decouvre la nature quand l'occasion se presente."
+      "occasionallyDesc": "Quand l'occasion se présente lors de voyages ou sorties."
     },
     "motivation": {
-      "observe": "Observer et identifier les especes",
-      "share": "Partager mes decouvertes avec d'autres",
-      "learn": "Apprendre sur la biodiversite locale",
-      "contribute": "Contribuer a la science participative"
+      "learn": "Apprendre sur la nature",
+      "share": "Partager mes découvertes",
+      "community": "Rejoindre une communauté",
+      "identify": "Identifier des espèces"
+    },
+    "usernameErrors": {
+      "tooShort": "Le pseudo doit contenir au moins 3 caractères",
+      "tooLong": "Le pseudo ne peut pas dépasser 25 caractères",
+      "invalidFormat": "Seules les lettres, chiffres, points (.) et underscores (_) sont autorisés",
+      "invalidStart": "Le pseudo ne peut pas commencer par un point ou un underscore",
+      "alreadyTaken": "Ce pseudo est déjà utilisé",
+      "checking": "Vérification..."
+    },
+    "exitModal": {
+      "title": "Quitter l'onboarding ?",
+      "description": "Tu peux revenir finaliser ton profil à tout moment.",
+      "goHome": "Quitter l'onboarding",
+      "goLogin": "Se connecter",
+      "continue": "Continuer l'onboarding"
     }
   },
+
   "home": {
-    "title": "Explorez la biodiversite",
-    "subtitle": "Observez, documentez et partagez vos decouvertes nature",
-    "feedEmpty": "Aucune observation pour le moment"
+    "title": "Explorez la biodiversité",
+    "subtitle": "Observez, documentez et partagez vos découvertes nature",
+    "feedEmpty": "Aucune observation pour le moment",
+    "trending": {
+      "title": "Tendances",
+      "thisWeek": "Cette semaine",
+      "viewAll": "Voir toutes les tendances"
+    },
+    "location": {
+      "title": "Localisation",
+      "currentLocation": "Utiliser ma position actuelle",
+      "currentLocationDesc": "Active ta géolocalisation pour découvrir les observations autour de toi",
+      "enableLocation": "Activer ma position",
+      "searchPlaceholder": "Rechercher une ville...",
+      "suggestedCities": "Villes suggérées",
+      "noResults": "Aucune ville trouvée"
+    }
   },
+
   "observation": {
     "instantNature": "Instant Nature",
     "meetingNature": "Rencontre Nature",
-    "species": "Espece",
+    "species": "Espèce",
     "location": "Lieu",
     "date": "Date",
     "description": "Description",
@@ -107,26 +271,92 @@
     "comments": "Commentaires",
     "propose": "Proposer une identification"
   },
+
   "notebook": {
     "title": "Carnets d'observations",
-    "create": "Creer un carnet",
-    "private": "Prive",
+    "create": "Créer un carnet",
+    "private": "Privé",
     "public": "Public",
     "collaborative": "Collaboratif"
   },
+
   "profile": {
     "journal": "Journal Nature",
     "inspirations": "Inspirations",
-    "community": "Communaute",
+    "community": "Communauté",
     "stats": "Statistiques",
-    "settings": "Parametres"
+    "settings": "Paramètres"
   },
+
   "settings": {
-    "theme": "Theme",
+    "title": "Paramètres",
+    "general": "Général",
+    "appearance": "Apparence",
+    "accessibility": "Accessibilité",
     "language": "Langue",
+    "theme": "Thème",
+    "themeLight": "Clair",
+    "themeDark": "Sombre",
+    "themeSystem": "Système",
+    "fontSize": "Taille du texte",
+    "fontSizeSmall": "Petit",
+    "fontSizeMedium": "Moyen",
+    "fontSizeLarge": "Grand",
     "notifications": "Notifications",
-    "accessibility": "Accessibilite",
-    "privacy": "Confidentialite",
+    "privacy": "Confidentialité",
+    "languageFr": "Français",
+    "languageEn": "English",
     "deleteAccount": "Supprimer mon compte"
+  },
+
+  "footer": {
+    "tagline": "Naturegraph est un espace pour partager tes rencontres et découvrir les regards des autres.",
+    "product": {
+      "title": "Produit",
+      "values": "Nos valeurs",
+      "features": "Fonctionnalités clés",
+      "community": "La communauté",
+      "mission": "Notre mission"
+    },
+    "about": {
+      "title": "À propos",
+      "contact": "Contactez-nous",
+      "privacy": "Politique de confidentialité",
+      "legal": "Mentions légales"
+    },
+    "cta": {
+      "title": "Envie de rejoindre l'aventure ?",
+      "button": "Devenir un migrateur"
+    },
+    "copyright": "© 2026 Naturegraph. Tous droits réservés.",
+    "madeWithLove": "Fait avec cœur",
+    "team": "par l'équipe Naturegraph"
+  },
+
+  "legal": {
+    "privacy": {
+      "title": "Politique de confidentialité",
+      "comingSoon": "Cette page sera bientôt disponible.",
+      "backHome": "Retour à l'accueil"
+    },
+    "terms": {
+      "title": "Mentions légales",
+      "comingSoon": "Cette page sera bientôt disponible.",
+      "backHome": "Retour à l'accueil"
+    }
+  },
+
+  "contact": {
+    "title": "Contactez-nous",
+    "comingSoon": "Formulaire de contact bientôt disponible.",
+    "backHome": "Retour à l'accueil",
+    "socialMedia": "Rejoignez-nous sur"
+  },
+
+  "notifications": {
+    "success": "Succès",
+    "error": "Erreur",
+    "warning": "Attention",
+    "info": "Information"
   }
 }
