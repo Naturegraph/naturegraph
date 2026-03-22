@@ -2,8 +2,10 @@
 // Containers — Naturegraph
 // ============================================
 
-@use "../abstracts/mixins" as *;
+@use '../abstracts/mixins' as *;
 
-.container {
-  @include container;
+@layer base {
+  .container {
+    @include container;
+  }
 }

@@ -1,26 +1,6 @@
 // ============================================
 // Visibility — Naturegraph
 // ============================================
-
-@use "../abstracts/mixins" as *;
-@use "../abstracts/breakpoints" as *;
-
-.hidden { display: none !important; }
-.visible { visibility: visible; }
-.invisible { visibility: hidden; }
-
-.sr-only {
-  @include sr-only;
-}
-
-.hidden-mobile {
-  @media (max-width: $breakpoint-md) {
-    display: none !important;
-  }
-}
-
-.hidden-desktop {
-  @include respond-to(md) {
-    display: none !important;
-  }
-}
+// Supprimé : ces utilitaires sont fournis par Tailwind CSS v4
+// (.hidden, .visible, .invisible, .sr-only, responsive variants)
+// Les garder ici avec !important cassait la spécificité Tailwind.

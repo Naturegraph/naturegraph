@@ -28,7 +28,6 @@ import {
   Compass,
   BookOpen,
   HelpCircle,
-  ChevronDown,
   ArrowRight,
   Menu,
   X,
@@ -38,12 +37,12 @@ import {
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 
 // ─── Assets ────────────────────────────────────────────────────────
-import logoNaturegraph from '@/assets/logo-naturegraph.png'
+import logoColor from '@/assets/logos/logo-wordmark-color.svg'
+import logoWhite from '@/assets/logos/logo-wordmark-white.svg'
 import heroImg1 from '@/assets/hero-img1.png'
 import heroImg2 from '@/assets/hero-img2.png'
 import heroImg3 from '@/assets/hero-img3.png'
 import valuesNature from '@/assets/values-nature.png'
-import ctaKingfisher from '@/assets/cta-kingfisher.png'
 import missionObserver from '@/assets/mission-observer.png'
 import discordPreview from '@/assets/discord-preview.png'
 import faqNature from '@/assets/faq-nature.png'
@@ -123,7 +122,6 @@ export default function Landing() {
       {/* Injection des styles d'animation (une seule fois) */}
       <style>{REVEAL_STYLES}</style>
 
-      <LandingHeader />
       <HeroSection />
       <DiscoverSection />
       <ValuesSection />
@@ -139,10 +137,14 @@ export default function Landing() {
 }
 
 /* ================================================================== */
-/*  HEADER — Navbar responsive avec logo, liens et CTA                 */
+/*  HERO — Section principale : navbar intégrée + titre + phones       */
+/*  Fidèle au Figma node 6449:259 (Desktop)                           */
+/*  Structure : Section (cream bg, 32px padding) > Container (teal,    */
+/*  rounded-[32px]) > Header + Main content + Scroll indicator         */
+/*  Les phone mockups sont positionnés en absolu en bas du container   */
 /* ================================================================== */
 
-function LandingHeader() {
+function HeroSection() {
   const { t } = useTranslation()
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -154,182 +156,223 @@ function LandingHeader() {
     { label: t('landing.nav.faq'), href: '#faq' },
   ]
 
-  /** Smooth scroll vers une section avec offset pour le header sticky */
+  /** Smooth scroll vers une section */
   const scrollToSection = (href: string) => {
     const id = href.replace('#', '')
     const el = document.getElementById(id)
     if (el) {
-      const offset = 80
-      const top = el.getBoundingClientRect().top + window.scrollY - offset
+      const top = el.getBoundingClientRect().top + window.scrollY - 20
       window.scrollTo({ top, behavior: 'smooth' })
     }
     setMobileOpen(false)
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-[var(--color-bg-primary)]/95 backdrop-blur-sm border-b border-[var(--color-border-light)]">
-      <div className="max-w-[1440px] mx-auto flex items-center justify-between h-16 px-5 lg:px-10">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 shrink-0">
-          <img
-            src={logoNaturegraph}
-            alt={t('common.appName')}
-            className="h-8 w-auto"
-            width={160}
-            height={32}
-          />
-        </Link>
-
-        {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-8" aria-label="Navigation principale">
-          {navLinks.map((link) => (
-            <button
-              key={link.href}
-              onClick={() => scrollToSection(link.href)}
-              className="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-action-default)] transition-colors bg-transparent border-none cursor-pointer"
-            >
-              {link.label}
-            </button>
-          ))}
-        </nav>
-
-        {/* Desktop CTA */}
-        <div className="hidden lg:flex items-center gap-3">
-          <Link
-            to="/login"
-            className="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-action-default)] transition-colors px-4 py-2"
-          >
-            {t('landing.nav.login')}
+    <section
+      className="w-full bg-[var(--color-bg-primary)] flex justify-center p-0 md:px-8 md:pt-8"
+      aria-label="Introduction"
+    >
+      <div className="relative w-full max-w-[1440px] bg-[var(--color-highlight-primary)] rounded-none md:rounded-[32px] overflow-hidden flex flex-col">
+        {/* ── Header / Navbar (intégré dans le hero teal) ──────────── */}
+        <header className="relative z-30 flex items-center justify-between px-6 py-6 lg:px-12 lg:py-10">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2 shrink-0">
+            <img
+              src={logoWhite}
+              alt={t('common.appName')}
+              className="h-10 w-auto"
+              width={204}
+              height={40}
+            />
           </Link>
-          <Link
-            to="/signup"
-            className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-[var(--color-text-inverse)] bg-[var(--color-action-default)] rounded-xl hover:bg-[var(--color-action-hover)] transition-colors"
-          >
-            {t('landing.nav.signup')}
-          </Link>
-        </div>
 
-        {/* Mobile burger */}
-        <button
-          className="lg:hidden p-2 text-[var(--color-text-secondary)]"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label={mobileOpen ? t('landing.nav.closeMenu') : t('landing.nav.menu')}
-          aria-expanded={mobileOpen}
-        >
-          {mobileOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </div>
+          {/* Desktop nav — liens blancs centrés */}
+          <nav className="hidden lg:flex items-center gap-10" aria-label="Navigation principale">
+            {navLinks.map((link) => (
+              <button
+                key={link.href}
+                onClick={() => scrollToSection(link.href)}
+                className="text-base font-normal text-white/90 hover:text-white transition-colors bg-transparent border-none cursor-pointer font-[var(--font-body)]"
+              >
+                {link.label}
+              </button>
+            ))}
+          </nav>
 
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="lg:hidden border-t border-[var(--color-border-light)] bg-[var(--color-bg-primary)] px-5 py-4 space-y-3">
-          {navLinks.map((link) => (
-            <button
-              key={link.href}
-              onClick={() => scrollToSection(link.href)}
-              className="block w-full text-left text-sm font-medium text-[var(--color-text-secondary)] py-2 bg-transparent border-none cursor-pointer"
-            >
-              {link.label}
-            </button>
-          ))}
-          <div className="pt-2 space-y-2">
-            <Link
-              to="/login"
-              className="block text-center text-sm font-medium text-[var(--color-action-default)] py-2"
-              onClick={() => setMobileOpen(false)}
-            >
-              {t('landing.nav.login')}
-            </Link>
+          {/* Desktop CTA — pill violet */}
+          <div className="hidden lg:block">
             <Link
               to="/signup"
-              className="block text-center px-5 py-2.5 text-sm font-semibold text-[var(--color-text-inverse)] bg-[var(--color-action-default)] rounded-xl"
+              className="inline-flex items-center justify-center h-12 px-6 text-base font-bold text-white bg-[var(--color-action-default)] rounded-full hover:bg-[var(--color-action-hover)] transition-colors font-[var(--font-body)]"
+            >
+              {t('landing.nav.signup')}
+            </Link>
+          </div>
+
+          {/* Mobile burger */}
+          <button
+            className="lg:hidden p-2 text-white"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label={mobileOpen ? t('landing.nav.closeMenu') : t('landing.nav.menu')}
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </header>
+
+        {/* Mobile menu overlay */}
+        {mobileOpen && (
+          <div className="lg:hidden relative z-30 bg-[var(--color-highlight-primary)] px-6 pb-6 space-y-3">
+            {navLinks.map((link) => (
+              <button
+                key={link.href}
+                onClick={() => scrollToSection(link.href)}
+                className="block w-full text-left text-base text-white/90 py-2 bg-transparent border-none cursor-pointer"
+              >
+                {link.label}
+              </button>
+            ))}
+            <Link
+              to="/signup"
+              className="block text-center h-12 leading-[48px] font-bold text-white bg-[var(--color-action-default)] rounded-full"
               onClick={() => setMobileOpen(false)}
             >
               {t('landing.nav.signup')}
             </Link>
           </div>
-        </div>
-      )}
-    </header>
-  )
-}
+        )}
 
-/* ================================================================== */
-/*  HERO — Section principale avec fond teal, titre et images          */
-/* ================================================================== */
+        {/* ── Contenu principal (titre, sous-titre, CTA) ───────────── */}
+        <div className="relative z-10 flex flex-col items-center text-center px-6 md:px-16 pt-8 pb-40 md:pt-16 md:pb-56 lg:pt-16 lg:pb-64">
+          {/* Titre H1 — Quicksand Bold 64px */}
+          <h1 className="text-4xl md:text-5xl lg:text-[64px] font-bold text-white leading-[1.2] font-[var(--font-title)] max-w-4xl">
+            {t('landing.hero.titleLine1')}
+            <br />
+            {t('landing.hero.titleLine2')}
+          </h1>
 
-function HeroSection() {
-  const { t } = useTranslation()
+          {/* Sous-titre — Quicksand Regular 18px */}
+          <p className="mt-8 text-base lg:text-lg text-white/85 max-w-2xl font-[var(--font-body)]">
+            {t('landing.hero.subtitle')}
+          </p>
 
-  return (
-    <section
-      className="w-full bg-[var(--color-bg-primary)] flex justify-center p-0 md:p-6 lg:p-8"
-      aria-label="Introduction"
-    >
-      <div className="relative w-full max-w-[1440px] bg-[var(--color-highlight-primary)] rounded-none md:rounded-[32px] overflow-hidden min-h-[520px] md:min-h-[600px] lg:min-h-[680px] flex flex-col items-center">
-        {/* Images décoratives (desktop uniquement) */}
-        <div className="hidden lg:block absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Image gauche */}
-          <div className="absolute left-[8%] bottom-0 w-[180px] h-[380px] rounded-t-[20px] overflow-hidden border-4 border-[var(--color-text-primary)] rotate-[-12deg] origin-bottom opacity-80">
-            <img src={heroImg1} alt="" className="w-full h-full object-cover" aria-hidden="true" />
-          </div>
-          {/* Image centre-gauche */}
-          <div className="absolute left-[22%] bottom-0 w-[180px] h-[380px] rounded-t-[20px] overflow-hidden border-4 border-[var(--color-text-primary)] rotate-[4deg] origin-bottom opacity-80">
-            <img src={heroImg3} alt="" className="w-full h-full object-cover" aria-hidden="true" />
-          </div>
-          {/* Image centre-droite */}
-          <div className="absolute right-[22%] bottom-0 w-[180px] h-[380px] rounded-t-[20px] overflow-hidden border-4 border-[var(--color-text-primary)] rotate-[8deg] origin-bottom opacity-80">
-            <img src={heroImg2} alt="" className="w-full h-full object-cover" aria-hidden="true" />
-          </div>
-          {/* Image droite */}
-          <div className="absolute right-[8%] bottom-0 w-[180px] h-[380px] rounded-t-[20px] overflow-hidden border-4 border-[var(--color-text-primary)] rotate-[-15deg] origin-bottom opacity-80">
-            <img src={heroImg1} alt="" className="w-full h-full object-cover" aria-hidden="true" />
-          </div>
-        </div>
-
-        {/* Contenu Hero */}
-        <div className="relative z-10 flex-1 w-full flex flex-col items-center justify-center px-6 md:px-10 py-16 lg:py-24">
-          <div className="flex flex-col items-center gap-6 md:gap-8 text-center max-w-3xl mx-auto">
-            {/* Titre H1 — SEO */}
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[var(--color-text-white)] leading-tight font-[var(--font-title)]">
-              <span className="block">{t('landing.hero.titleLine1')}</span>
-              <span className="block">{t('landing.hero.titleLine2')}</span>
-            </h1>
-
-            {/* Sous-titre */}
-            <p className="text-base lg:text-lg text-white/85 max-w-xl">
-              {t('landing.hero.subtitle')}
-            </p>
-
-            {/* CTA */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 mt-2 w-full sm:w-auto px-4 sm:px-0">
-              <Link
-                to="/signup"
-                className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold text-[var(--color-highlight-primary)] bg-white rounded-xl hover:bg-gray-50 transition-colors w-full sm:w-auto"
-              >
-                {t('landing.hero.ctaShare')}
-              </Link>
-              <button
-                onClick={() => {
-                  const el = document.getElementById('features')
-                  if (el) el.scrollIntoView({ behavior: 'smooth' })
-                }}
-                className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold text-white border border-white/30 rounded-xl hover:bg-white/10 transition-colors w-full sm:w-auto bg-transparent cursor-pointer"
-              >
-                {t('landing.hero.ctaDiscover')}
-              </button>
-            </div>
+          {/* Boutons CTA — pills */}
+          <div className="flex flex-col sm:flex-row items-center gap-4 mt-8 w-full sm:w-auto">
+            {/* Bouton primaire — violet pill */}
+            <Link
+              to="/signup"
+              className="inline-flex items-center justify-center h-12 px-8 text-base font-bold text-white bg-[var(--color-action-default)] rounded-full hover:bg-[var(--color-action-hover)] transition-colors w-full sm:w-auto font-[var(--font-body)]"
+            >
+              {t('landing.hero.ctaShare')}
+            </Link>
+            {/* Bouton secondaire — outline pill */}
+            <button
+              onClick={() => {
+                const el = document.getElementById('discover')
+                if (el) el.scrollIntoView({ behavior: 'smooth' })
+              }}
+              className="inline-flex items-center justify-center h-12 px-8 text-base font-bold text-white border border-white/40 rounded-full hover:bg-white/10 transition-colors w-full sm:w-auto bg-transparent cursor-pointer font-[var(--font-body)]"
+            >
+              {t('landing.hero.ctaDiscover')}
+            </button>
           </div>
         </div>
 
-        {/* Scroll indicator (souris animée) */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
+        {/* ── Phone mockups (desktop) ──────────────────────────────── */}
+        <div className="hidden lg:block absolute bottom-0 left-0 right-0 h-[420px] pointer-events-none z-10 overflow-visible">
+          {/* Blobs décoratifs (violet/vert) derrière les phones */}
+          <div className="absolute left-[18%] bottom-[10%] w-[200px] h-[200px] bg-[var(--color-action-default)]/30 rounded-full blur-[60px]" />
+          <div className="absolute left-[25%] bottom-[25%] w-[150px] h-[150px] bg-[#7ECFB0]/30 rounded-full blur-[50px]" />
+          <div className="absolute right-[18%] bottom-[10%] w-[200px] h-[200px] bg-[var(--color-action-default)]/30 rounded-full blur-[60px]" />
+          <div className="absolute right-[25%] bottom-[25%] w-[150px] h-[150px] bg-[#7ECFB0]/30 rounded-full blur-[50px]" />
+
+          {/* Phone 1 — gauche extérieur */}
+          <div className="absolute left-[6%] bottom-[-20px] w-[220px] h-[476px] rounded-[24px] overflow-hidden shadow-2xl rotate-[-12deg] origin-bottom border-[6px] border-[#1a1a2e]">
+            <img
+              src={heroImg1}
+              alt=""
+              className="w-full h-full object-cover"
+              aria-hidden="true"
+              loading="lazy"
+            />
+          </div>
+          {/* Phone 2 — gauche intérieur */}
+          <div className="absolute left-[20%] bottom-[-40px] w-[220px] h-[476px] rounded-[24px] overflow-hidden shadow-2xl rotate-[-4deg] origin-bottom border-[6px] border-[#1a1a2e]">
+            <img
+              src={heroImg2}
+              alt=""
+              className="w-full h-full object-cover"
+              aria-hidden="true"
+              loading="lazy"
+            />
+          </div>
+          {/* Phone 3 — droite intérieur */}
+          <div className="absolute right-[20%] bottom-[-40px] w-[220px] h-[476px] rounded-[24px] overflow-hidden shadow-2xl rotate-[4deg] origin-bottom border-[6px] border-[#1a1a2e]">
+            <img
+              src={heroImg3}
+              alt=""
+              className="w-full h-full object-cover"
+              aria-hidden="true"
+              loading="lazy"
+            />
+          </div>
+          {/* Phone 4 — droite extérieur */}
+          <div className="absolute right-[6%] bottom-[-20px] w-[220px] h-[476px] rounded-[24px] overflow-hidden shadow-2xl rotate-[12deg] origin-bottom border-[6px] border-[#1a1a2e]">
+            <img
+              src={heroImg1}
+              alt=""
+              className="w-full h-full object-cover"
+              aria-hidden="true"
+              loading="lazy"
+            />
+          </div>
+        </div>
+
+        {/* Phone mockups (tablette) */}
+        <div className="hidden md:block lg:hidden absolute bottom-0 left-0 right-0 h-[300px] pointer-events-none z-10">
+          <div className="absolute left-[10%] bottom-[-20px] w-[160px] h-[346px] rounded-[20px] overflow-hidden shadow-xl rotate-[-10deg] origin-bottom border-[5px] border-[#1a1a2e]">
+            <img
+              src={heroImg1}
+              alt=""
+              className="w-full h-full object-cover"
+              aria-hidden="true"
+              loading="lazy"
+            />
+          </div>
+          <div className="absolute right-[10%] bottom-[-20px] w-[160px] h-[346px] rounded-[20px] overflow-hidden shadow-xl rotate-[10deg] origin-bottom border-[5px] border-[#1a1a2e]">
+            <img
+              src={heroImg2}
+              alt=""
+              className="w-full h-full object-cover"
+              aria-hidden="true"
+              loading="lazy"
+            />
+          </div>
+        </div>
+
+        {/* ── Scroll indicator (souris) ────────────────────────────── */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20">
           <button
-            className="flex flex-col items-center gap-2 cursor-pointer bg-transparent border-none p-2 rounded-full focus-visible:ring-2 focus-visible:ring-white/50"
+            className="flex flex-col items-center cursor-pointer bg-transparent border-none p-2 rounded-full focus-visible:ring-2 focus-visible:ring-white/50"
             onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
             aria-label="Défiler vers le contenu"
           >
-            <ChevronDown size={24} className="text-white/60 animate-bounce" />
+            {/* Icône souris SVG (20×32 comme dans le Figma) */}
+            <svg width="20" height="32" viewBox="0 0 20 32" fill="none" aria-hidden="true">
+              <rect
+                x="1"
+                y="1"
+                width="18"
+                height="30"
+                rx="9"
+                stroke="white"
+                strokeOpacity="0.6"
+                strokeWidth="2"
+              />
+              <circle cx="10" cy="10" r="2" fill="white" fillOpacity="0.8">
+                <animate attributeName="cy" values="10;14;10" dur="1.5s" repeatCount="indefinite" />
+              </circle>
+            </svg>
           </button>
         </div>
       </div>
@@ -344,53 +387,64 @@ function HeroSection() {
 function DiscoverSection() {
   const { t } = useTranslation()
 
+  /** Données des 3 cartes — icônes Lucide matchant le Figma */
   const cards = [
     {
-      icon: <Binoculars size={24} />,
+      icon: <Binoculars size={32} strokeWidth={1.5} />,
       title: t('landing.features.card1Title'),
       description: t('landing.features.card1Desc'),
     },
     {
-      icon: <Camera size={24} />,
+      icon: <Camera size={32} strokeWidth={1.5} />,
       title: t('landing.features.card2Title'),
       description: t('landing.features.card2Desc'),
     },
     {
-      icon: <HeartHandshake size={24} />,
+      icon: <HeartHandshake size={32} strokeWidth={1.5} />,
       title: t('landing.features.card3Title'),
       description: t('landing.features.card3Desc'),
     },
   ]
 
   return (
-    <RevealSection id="discover" className="py-16 lg:py-24 bg-[var(--color-bg-primary)]">
-      <div className="max-w-[1440px] mx-auto px-5 lg:px-10">
-        {/* En-tête */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-12">
-          <h2 className="text-2xl lg:text-3xl font-bold text-[var(--color-text-primary)]">
+    <RevealSection id="discover" className="bg-[var(--color-bg-primary)] py-20 md:py-28 lg:py-40">
+      {/* Container — px-128 desktop (Figma), adapté mobile/tablette */}
+      <div className="mx-auto max-w-[1440px] px-5 md:px-10 lg:px-20 xl:px-32">
+        {/* ── Titre + sous-titre — même ligne desktop, empilé mobile ── */}
+        <div className="mb-8 flex flex-col gap-3 md:mb-12 lg:mb-12 lg:flex-row lg:items-center lg:justify-between">
+          {/* H2 — Quicksand Bold 48px desktop / 32px mobile */}
+          <h2 className="font-[family-name:var(--font-title)] text-[32px] font-bold leading-[1.2] text-[var(--color-text-primary)] md:text-[40px] lg:text-[48px]">
             {t('landing.features.title')}
           </h2>
-          <p className="text-sm text-[var(--color-text-disabled)] lg:max-w-xs lg:text-right">
+          {/* Sous-titre — Quicksand Regular 18px, couleur secondary (pas disabled) */}
+          <p className="font-[family-name:var(--font-title)] text-[16px] font-normal leading-[1.2] text-[var(--color-text-secondary)] md:text-[18px] lg:whitespace-nowrap">
             {t('landing.features.subtitle')}
           </p>
         </div>
 
-        {/* Cartes */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* ── 3 cartes — gap-32px, fond tertiary #FFF4E0 ── */}
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 lg:grid-cols-3 lg:gap-8">
           {cards.map((card, i) => (
             <div
               key={i}
-              className={`bg-[var(--color-bg-secondary)] rounded-[32px] p-8 reveal-base revealed reveal-delay-${i + 1}`}
+              className={`flex flex-col gap-8 rounded-[32px] bg-[var(--color-bg-tertiary)] p-6 md:p-8 reveal-base revealed reveal-delay-${i + 1}`}
             >
-              <div className="w-14 h-14 rounded-full bg-[var(--color-action-default)] text-[var(--color-bg-primary)] flex items-center justify-center mb-6">
+              {/* Cercle icône — 56px, violet */}
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[var(--color-action-default)] text-white">
                 {card.icon}
               </div>
-              <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-3">
-                {card.title}
-              </h3>
-              <p className="text-sm text-[var(--color-text-disabled)] leading-relaxed">
-                {card.description}
-              </p>
+
+              {/* Contenu — gap 16px entre titre et description */}
+              <div className="flex flex-col gap-4">
+                {/* Titre carte — Quicksand Bold 24px */}
+                <h3 className="font-[family-name:var(--font-title)] text-[20px] font-bold leading-[1.2] text-[var(--color-text-primary)] md:text-[24px]">
+                  {card.title}
+                </h3>
+                {/* Description — Mulish Regular 16px, line-height 1.5 */}
+                <p className="font-[family-name:var(--font-body)] text-[16px] font-normal leading-[1.5] text-[var(--color-text-secondary)]">
+                  {card.description}
+                </p>
+              </div>
             </div>
           ))}
         </div>
@@ -413,45 +467,46 @@ function ValuesSection() {
   ]
 
   return (
-    <RevealSection id="values" className="py-16 lg:py-24 bg-[var(--color-bg-primary)]">
-      <div className="max-w-[1440px] mx-auto px-5 lg:px-10">
-        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-24">
-          {/* Image gauche */}
-          <div className="w-full lg:flex-1 h-[320px] md:h-[480px] lg:h-[560px] rounded-[32px] lg:rounded-[48px] overflow-hidden">
+    <RevealSection id="values" className="bg-[var(--color-bg-primary)] py-20 md:py-28 lg:py-40">
+      <div className="mx-auto max-w-[1440px] px-5 md:px-10 lg:px-20 xl:px-32">
+        <div className="flex flex-col gap-10 lg:flex-row lg:items-stretch lg:gap-16 xl:gap-24">
+          {/* Image gauche — 50% desktop */}
+          <div className="w-full overflow-hidden rounded-[32px] lg:w-1/2">
             <img
               src={valuesNature}
               alt="Naturegraph values — explorer la nature"
-              className="w-full h-full object-cover"
+              className="h-[320px] w-full object-cover md:h-[480px] lg:h-full"
               loading="lazy"
             />
           </div>
 
-          {/* Contenu droite */}
-          <div className="w-full lg:flex-1 flex flex-col gap-8 lg:gap-10">
-            <h2 className="text-2xl lg:text-3xl font-bold text-[var(--color-text-primary)]">
+          {/* Contenu droite — 50% desktop */}
+          <div className="flex w-full flex-col justify-center gap-10 lg:w-1/2 lg:gap-12">
+            <h2 className="font-[family-name:var(--font-title)] text-[32px] font-bold leading-[1.2] text-[var(--color-text-primary)] md:text-[40px] lg:text-[48px]">
               {t('landing.values.title')}
             </h2>
 
-            <div className="flex flex-col gap-6 lg:gap-8">
+            <div className="flex flex-col gap-0">
               {values.map((value, i) => (
-                <div key={i}>
-                  <div className="flex items-center gap-4 mb-3">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[var(--color-bg-tertiary)] shrink-0">
-                      <span className="text-sm font-bold text-[var(--color-text-primary)]">
+                <div
+                  key={i}
+                  className={`flex flex-col gap-4 ${i > 0 ? 'border-t border-[var(--color-border-light)] pt-8' : ''} ${i < values.length - 1 ? 'pb-8' : ''}`}
+                >
+                  {/* Badge numéro + titre */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-text-primary)]">
+                      <span className="font-[family-name:var(--font-title)] text-[14px] font-bold text-white">
                         {i + 1}
                       </span>
                     </div>
-                    <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+                    <h3 className="font-[family-name:var(--font-title)] text-[18px] font-bold leading-[1.3] text-[var(--color-text-primary)] md:text-[20px]">
                       {value.title}
                     </h3>
                   </div>
-                  <p className="text-sm text-[var(--color-text-disabled)] leading-relaxed pl-14">
+                  {/* Description */}
+                  <p className="font-[family-name:var(--font-body)] text-[15px] font-normal leading-[1.6] text-[var(--color-text-secondary)] md:text-[16px]">
                     {value.description}
                   </p>
-                  {/* Séparateur (sauf dernier) */}
-                  {i < values.length - 1 && (
-                    <div className="mt-6 lg:mt-8 h-px bg-[var(--color-border-light)]" />
-                  )}
                 </div>
               ))}
             </div>
@@ -493,30 +548,33 @@ function AppFeaturesSection() {
   ]
 
   return (
-    <RevealSection id="features" className="py-16 lg:py-24 bg-[var(--color-bg-secondary)]">
-      <div className="max-w-[1440px] mx-auto px-5 lg:px-10">
-        {/* En-tête */}
-        <div className="text-center mb-12 lg:mb-16">
-          <h2 className="text-2xl lg:text-3xl font-bold text-[var(--color-text-primary)] mb-4">
+    <RevealSection id="features" className="bg-[var(--color-bg-primary)] py-20 md:py-28 lg:py-40">
+      <div className="mx-auto max-w-[1440px] px-5 md:px-10 lg:px-20 xl:px-32">
+        {/* En-tête centré */}
+        <div className="mb-12 text-center lg:mb-20">
+          <h2 className="font-[family-name:var(--font-title)] text-[32px] font-bold leading-[1.2] text-[var(--color-text-primary)] md:text-[40px] lg:text-[48px]">
             {t('landing.detailedFeatures.title')}
           </h2>
-          <p className="text-sm text-[var(--color-text-disabled)] max-w-xl mx-auto">
+          <p className="mx-auto mt-4 max-w-2xl font-[family-name:var(--font-title)] text-[16px] font-normal leading-[1.4] text-[var(--color-text-secondary)] md:text-[18px]">
             {t('landing.detailedFeatures.subtitle')}
           </p>
         </div>
 
-        {/* Mobile/Tablet: liste empilée */}
-        <div className="lg:hidden space-y-4">
+        {/* Mobile/Tablet : liste empilée */}
+        <div className="flex flex-col gap-4 lg:hidden">
           {features.map((f, i) => (
-            <div key={i} className="flex gap-4 bg-[var(--color-bg-primary)] rounded-2xl p-5">
-              <div className="w-10 h-10 shrink-0 rounded-full bg-[var(--color-highlight-primary)] text-white flex items-center justify-center">
+            <div
+              key={i}
+              className="flex items-start gap-4 rounded-[24px] bg-[var(--color-bg-tertiary)] p-5 md:p-6"
+            >
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--color-highlight-primary)] text-white">
                 {f.icon}
               </div>
-              <div>
-                <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">
+              <div className="flex flex-col gap-1">
+                <h3 className="font-[family-name:var(--font-title)] text-[16px] font-bold leading-[1.3] text-[var(--color-text-primary)] md:text-[18px]">
                   {f.title}
                 </h3>
-                <p className="text-xs text-[var(--color-text-disabled)] leading-relaxed">
+                <p className="font-[family-name:var(--font-body)] text-[14px] font-normal leading-[1.5] text-[var(--color-text-secondary)] md:text-[15px]">
                   {f.description}
                 </p>
               </div>
@@ -524,21 +582,21 @@ function AppFeaturesSection() {
           ))}
         </div>
 
-        {/* Desktop: grille 3 colonnes avec phone au centre */}
-        <div className="hidden lg:grid grid-cols-3 gap-12 items-center">
-          {/* Colonne gauche */}
-          <div className="space-y-12">
+        {/* Desktop : grille 3 colonnes avec phone au centre */}
+        <div className="hidden items-center gap-10 lg:grid lg:grid-cols-[1fr_auto_1fr] xl:gap-16">
+          {/* Colonne gauche — features 1 & 2, alignées à droite */}
+          <div className="flex flex-col gap-16">
             {features.slice(0, 2).map((f, i) => (
               <div key={i} className="text-right">
-                <div className="flex items-center justify-end gap-3 mb-3">
-                  <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+                <div className="mb-3 flex items-center justify-end gap-4">
+                  <h3 className="font-[family-name:var(--font-title)] text-[18px] font-bold leading-[1.3] text-[var(--color-text-primary)] xl:text-[20px]">
                     {f.title}
                   </h3>
-                  <div className="w-10 h-10 shrink-0 rounded-full bg-[var(--color-highlight-primary)] text-white flex items-center justify-center">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--color-highlight-primary)] text-white">
                     {f.icon}
                   </div>
                 </div>
-                <p className="text-sm text-[var(--color-text-disabled)] leading-relaxed">
+                <p className="font-[family-name:var(--font-body)] text-[15px] font-normal leading-[1.6] text-[var(--color-text-secondary)] xl:text-[16px]">
                   {f.description}
                 </p>
               </div>
@@ -547,29 +605,29 @@ function AppFeaturesSection() {
 
           {/* Phone mockup centre */}
           <div className="flex justify-center">
-            <div className="w-[240px] h-[480px] rounded-[36px] bg-[var(--color-highlight-primary)] shadow-2xl flex items-center justify-center border-4 border-[var(--color-text-primary)] overflow-hidden">
+            <div className="h-[480px] w-[240px] overflow-hidden rounded-[36px] border-4 border-[var(--color-text-primary)] bg-[var(--color-bg-tertiary)] shadow-2xl xl:h-[520px] xl:w-[260px]">
               <img
                 src={heroImg2}
                 alt="Aperçu de l'application Naturegraph"
-                className="w-full h-full object-cover"
+                className="h-full w-full object-cover"
                 loading="lazy"
               />
             </div>
           </div>
 
-          {/* Colonne droite */}
-          <div className="space-y-12">
+          {/* Colonne droite — features 3 & 4, alignées à gauche */}
+          <div className="flex flex-col gap-16">
             {features.slice(2).map((f, i) => (
               <div key={i} className="text-left">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 shrink-0 rounded-full bg-[var(--color-highlight-primary)] text-white flex items-center justify-center">
+                <div className="mb-3 flex items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--color-highlight-primary)] text-white">
                     {f.icon}
                   </div>
-                  <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+                  <h3 className="font-[family-name:var(--font-title)] text-[18px] font-bold leading-[1.3] text-[var(--color-text-primary)] xl:text-[20px]">
                     {f.title}
                   </h3>
                 </div>
-                <p className="text-sm text-[var(--color-text-disabled)] leading-relaxed">
+                <p className="font-[family-name:var(--font-body)] text-[15px] font-normal leading-[1.6] text-[var(--color-text-secondary)] xl:text-[16px]">
                   {f.description}
                 </p>
               </div>
@@ -589,33 +647,33 @@ function StoryCtaSection() {
   const { t } = useTranslation()
 
   return (
-    <RevealSection className="w-full" threshold={0.2}>
-      <div className="max-w-[1440px] mx-auto flex flex-col lg:flex-row min-h-[400px] lg:min-h-[500px] overflow-hidden rounded-none lg:rounded-[32px]">
-        {/* Contenu gauche — fond teal */}
-        <div className="lg:w-1/2 bg-[var(--color-highlight-primary)] px-6 lg:px-16 py-16 lg:py-24 flex flex-col justify-center">
-          <h2 className="text-2xl lg:text-3xl font-bold text-white leading-tight mb-4">
+    <RevealSection className="bg-[var(--color-bg-primary)] py-20 md:py-28 lg:py-40" threshold={0.2}>
+      <div className="mx-auto max-w-[1440px] px-5 md:px-10 lg:px-20 xl:px-32">
+        {/* Carte CTA — fond tertiaire, coins arrondis */}
+        <div className="flex flex-col gap-6 rounded-[32px] bg-[var(--color-bg-tertiary)] p-8 md:p-12 lg:gap-8 lg:p-16">
+          {/* Icône */}
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-action-default)] text-white">
+            <Binoculars size={28} strokeWidth={1.5} />
+          </div>
+
+          {/* Titre */}
+          <h2 className="font-[family-name:var(--font-title)] text-[28px] font-bold leading-[1.2] text-[var(--color-text-primary)] md:text-[36px] lg:max-w-2xl lg:text-[40px]">
             {t('landing.cta.title')}
           </h2>
-          <p className="text-sm text-white/70 leading-relaxed mb-8 max-w-md">
+
+          {/* Description */}
+          <p className="max-w-2xl font-[family-name:var(--font-body)] text-[15px] font-normal leading-[1.6] text-[var(--color-text-secondary)] md:text-[16px]">
             {t('landing.cta.description')}
           </p>
+
+          {/* Bouton CTA */}
           <Link
             to="/signup"
-            className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-[var(--color-highlight-primary)] bg-white rounded-xl hover:bg-gray-50 transition-colors w-fit"
+            className="inline-flex w-fit items-center gap-2 rounded-full bg-[var(--color-action-default)] px-6 py-3 font-[family-name:var(--font-title)] text-[14px] font-semibold text-white transition-colors hover:opacity-90 md:px-8 md:py-3.5 md:text-[16px]"
           >
             {t('landing.cta.button')}
             <ArrowRight size={16} />
           </Link>
-        </div>
-
-        {/* Image droite — martin-pêcheur */}
-        <div className="lg:w-1/2 min-h-[300px] lg:min-h-0">
-          <img
-            src={ctaKingfisher}
-            alt="Martin-pêcheur — symbole de la biodiversité"
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
         </div>
       </div>
     </RevealSection>
@@ -630,28 +688,28 @@ function MissionSection() {
   const { t } = useTranslation()
 
   return (
-    <RevealSection className="py-16 lg:py-24 bg-[var(--color-bg-secondary)]">
-      <div className="max-w-[1440px] mx-auto px-5 lg:px-10">
-        <div className="flex flex-col lg:flex-row gap-12 lg:gap-24 items-center">
-          {/* Image gauche */}
-          <div className="w-full lg:w-[400px] lg:shrink-0">
+    <RevealSection className="bg-[var(--color-bg-primary)] py-20 md:py-28 lg:py-40">
+      <div className="mx-auto max-w-[1440px] px-5 md:px-10 lg:px-20 xl:px-32">
+        <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:gap-16 xl:gap-24">
+          {/* Image gauche — 50% desktop */}
+          <div className="w-full overflow-hidden rounded-[32px] lg:w-1/2">
             <img
               src={missionObserver}
               alt="Observateur nature au coucher du soleil"
-              className="w-full h-auto aspect-square rounded-[48px] object-cover"
+              className="h-[320px] w-full object-cover md:h-[400px] lg:h-[480px]"
               loading="lazy"
             />
           </div>
 
-          {/* Contenu droite */}
-          <div className="flex flex-col gap-6 w-full">
-            <h2 className="text-2xl lg:text-3xl font-bold text-[var(--color-text-primary)]">
+          {/* Contenu droite — 50% desktop */}
+          <div className="flex w-full flex-col gap-6 lg:w-1/2 lg:gap-8">
+            <h2 className="font-[family-name:var(--font-title)] text-[28px] font-bold leading-[1.2] text-[var(--color-text-primary)] md:text-[36px] lg:text-[40px]">
               {t('landing.mission.title')}
             </h2>
-            <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+            <p className="font-[family-name:var(--font-body)] text-[15px] font-normal leading-[1.6] text-[var(--color-text-secondary)] md:text-[16px]">
               {t('landing.mission.paragraph1')}
             </p>
-            <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+            <p className="font-[family-name:var(--font-body)] text-[15px] font-normal leading-[1.6] text-[var(--color-text-secondary)] md:text-[16px]">
               {t('landing.mission.paragraph2')}
             </p>
           </div>
@@ -679,22 +737,25 @@ function DiscordSection() {
   return (
     <RevealSection
       id="community"
-      className="w-full bg-[var(--color-highlight-primary)]"
+      className="bg-[var(--color-highlight-primary)] py-20 md:py-28 lg:py-40"
       threshold={0.15}
     >
-      <div className="max-w-[1440px] mx-auto px-5 lg:px-10 py-16 lg:py-24">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-12 lg:gap-20">
+      <div className="mx-auto max-w-[1440px] px-5 md:px-10 lg:px-20 xl:px-32">
+        <div className="flex flex-col items-start gap-10 lg:flex-row lg:items-center lg:gap-16 xl:gap-24">
           {/* Contenu gauche */}
-          <div className="flex flex-col gap-8 flex-1">
-            <h2 className="text-2xl lg:text-3xl font-bold text-white">
+          <div className="flex flex-1 flex-col gap-6 lg:gap-8">
+            <h2 className="font-[family-name:var(--font-title)] text-[28px] font-bold leading-[1.2] text-white md:text-[36px] lg:text-[40px]">
               {t('landing.discord.title')}
             </h2>
-            <p className="text-sm text-white/70 leading-relaxed">
+            <p className="font-[family-name:var(--font-body)] text-[15px] font-normal leading-[1.6] text-white/80 md:text-[16px]">
               {t('landing.discord.description')}
             </p>
 
             {/* Avantages */}
-            <ul className="flex flex-col gap-2 text-white/80 text-sm list-disc pl-5">
+            <ul
+              className="flex flex-col gap-2.5 pl-5 font-[family-name:var(--font-body)] text-[14px] leading-[1.5] text-white/80 md:text-[15px]"
+              style={{ listStyleType: 'disc' }}
+            >
               {benefits.map((b, i) => (
                 <li key={i}>{b}</li>
               ))}
@@ -705,7 +766,7 @@ function DiscordSection() {
               href="https://discord.gg/WVFQw2Zh"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 px-6 py-3 text-sm font-semibold text-white bg-[#5865F2] rounded-xl hover:bg-[#4752C4] transition-colors w-fit"
+              className="inline-flex w-fit items-center gap-3 rounded-full bg-[#5865F2] px-6 py-3 font-[family-name:var(--font-title)] text-[14px] font-semibold text-white transition-colors hover:bg-[#4752C4] md:px-8 md:py-3.5 md:text-[16px]"
             >
               {/* Icône Discord inline */}
               <svg
@@ -723,12 +784,12 @@ function DiscordSection() {
 
           {/* Image droite — Aperçu Discord */}
           <div className="w-full lg:w-[480px] lg:shrink-0">
-            <div className="bg-[var(--color-highlight-secondary)] rounded-[32px] h-[320px] md:h-[400px] lg:h-[480px] relative overflow-hidden flex items-start justify-center pt-12">
-              <div className="w-[220px] md:w-[260px] rounded-[16px] overflow-hidden border-4 border-[var(--color-text-primary)]">
+            <div className="relative flex h-[320px] items-start justify-center overflow-hidden rounded-[32px] bg-[var(--color-highlight-secondary)] pt-12 md:h-[400px] lg:h-[480px]">
+              <div className="w-[220px] overflow-hidden rounded-[16px] border-4 border-[var(--color-text-primary)] md:w-[260px]">
                 <img
                   src={discordPreview}
                   alt="Aperçu de la communauté Discord Naturegraph"
-                  className="w-full h-auto object-cover"
+                  className="h-auto w-full object-cover"
                   loading="lazy"
                 />
               </div>
@@ -765,45 +826,48 @@ function FaqSection() {
   ]
 
   return (
-    <RevealSection id="faq" className="py-16 lg:py-24 bg-[var(--color-bg-primary)]">
-      <div className="max-w-[1440px] mx-auto px-5 lg:px-10">
+    <RevealSection id="faq" className="bg-[var(--color-bg-primary)] py-20 md:py-28 lg:py-40">
+      <div className="mx-auto max-w-[1440px] px-5 md:px-10 lg:px-20 xl:px-32">
         {/* Desktop : image + questions côte à côte */}
-        <div className="flex flex-col lg:flex-row gap-12 lg:gap-20">
+        <div className="flex flex-col gap-10 lg:flex-row lg:gap-16 xl:gap-24">
           {/* Image gauche */}
-          <div className="w-full lg:w-[380px] lg:shrink-0">
+          <div className="w-full overflow-hidden rounded-[32px] lg:w-2/5 lg:shrink-0">
             <img
               src={faqNature}
               alt="Racines d'arbre couvertes de mousse"
-              className="w-full h-auto aspect-square lg:aspect-auto lg:h-full rounded-[32px] lg:rounded-[48px] object-cover"
+              className="h-[300px] w-full object-cover md:h-[400px] lg:h-full"
               loading="lazy"
             />
           </div>
 
           {/* Questions */}
-          <div className="flex-1 flex flex-col gap-8">
-            <h2 className="text-2xl lg:text-3xl font-bold text-[var(--color-text-primary)]">
+          <div className="flex flex-1 flex-col gap-8 lg:gap-10">
+            <h2 className="font-[family-name:var(--font-title)] text-[28px] font-bold leading-[1.2] text-[var(--color-text-primary)] md:text-[36px] lg:text-[40px]">
               {t('landing.faq.title')}
             </h2>
 
             <div className="flex flex-col gap-3">
               {questions.map((item, i) => (
-                <div key={i} className="bg-[var(--color-bg-secondary)] rounded-[20px]">
+                <div
+                  key={i}
+                  className="overflow-hidden rounded-[20px] border border-[var(--color-border-light)]"
+                >
                   <button
                     onClick={() => toggleItem(i)}
-                    className="flex items-center gap-4 w-full text-left p-5 bg-transparent border-none cursor-pointer"
+                    className="flex w-full cursor-pointer items-center gap-4 border-none bg-transparent p-5 text-left md:p-6"
                     aria-expanded={openItems.has(i)}
                     aria-controls={`faq-answer-${i}`}
                   >
-                    <h3 className="flex-1 text-sm font-semibold text-[var(--color-text-primary)]">
+                    <h3 className="flex-1 font-[family-name:var(--font-title)] text-[15px] font-semibold text-[var(--color-text-primary)] md:text-[16px]">
                       {item.q}
                     </h3>
-                    <span className="shrink-0 w-6 h-6 flex items-center justify-center text-[var(--color-text-secondary)]">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center text-[var(--color-text-secondary)]">
                       {openItems.has(i) ? <Minus size={18} /> : <Plus size={18} />}
                     </span>
                   </button>
                   {openItems.has(i) && (
-                    <div id={`faq-answer-${i}`} className="px-5 pb-5">
-                      <p className="text-sm text-[var(--color-text-disabled)] leading-relaxed">
+                    <div id={`faq-answer-${i}`} className="px-5 pb-5 md:px-6 md:pb-6">
+                      <p className="font-[family-name:var(--font-body)] text-[14px] leading-[1.6] text-[var(--color-text-secondary)] md:text-[15px]">
                         {item.a}
                       </p>
                     </div>
@@ -836,9 +900,9 @@ function PartnersSection() {
   ]
 
   return (
-    <RevealSection className="py-12 lg:py-16 bg-[var(--color-bg-secondary)]">
-      <div className="max-w-[1440px] mx-auto px-5 lg:px-10 text-center">
-        <h2 className="text-lg font-semibold text-[var(--color-text-disabled)] uppercase tracking-wider mb-10">
+    <RevealSection className="bg-[var(--color-bg-primary)] py-16 md:py-20 lg:py-28">
+      <div className="mx-auto max-w-[1440px] px-5 md:px-10 lg:px-20 xl:px-32 text-center">
+        <h2 className="mb-10 font-[family-name:var(--font-title)] text-[14px] font-semibold uppercase tracking-[0.15em] text-[var(--color-text-secondary)] md:mb-12 md:text-[16px]">
           {t('landing.partners.title')}
         </h2>
         <div className="flex flex-wrap items-center justify-center gap-10 lg:gap-16">
@@ -848,7 +912,7 @@ function PartnersSection() {
               href={p.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="h-16 md:h-20 transition-opacity hover:opacity-70"
+              className="h-16 transition-opacity hover:opacity-70 md:h-20"
               aria-label={`Visiter le site web de ${p.name}`}
             >
               <img
@@ -883,29 +947,29 @@ function LandingFooter() {
   }
 
   return (
-    <footer className="bg-[var(--color-bg-primary)] border-t border-[var(--color-border-light)]">
-      <div className="max-w-[1440px] mx-auto px-5 lg:px-10 py-12 lg:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+    <footer className="border-t border-[var(--color-border-light)] bg-[var(--color-bg-primary)]">
+      <div className="mx-auto max-w-[1440px] px-5 py-12 md:px-10 lg:px-20 lg:py-16 xl:px-32">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div className="lg:col-span-1">
             <img
-              src={logoNaturegraph}
+              src={logoColor}
               alt={t('common.appName')}
-              className="h-8 w-auto mb-4"
+              className="mb-4 h-8 w-auto"
               width={160}
               height={32}
             />
-            <p className="text-sm text-[var(--color-text-disabled)] leading-relaxed">
+            <p className="font-[family-name:var(--font-body)] text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
               {t('footer.tagline')}
             </p>
           </div>
 
           {/* Produit */}
           <div>
-            <h4 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4">
+            <h4 className="mb-4 font-[family-name:var(--font-title)] text-[14px] font-semibold text-[var(--color-text-primary)]">
               {t('footer.product.title')}
             </h4>
-            <ul className="space-y-2.5">
+            <ul className="flex flex-col gap-2.5">
               {[
                 { label: t('footer.product.values'), section: 'values' },
                 { label: t('footer.product.features'), section: 'features' },
@@ -915,7 +979,7 @@ function LandingFooter() {
                 <li key={item.section}>
                   <button
                     onClick={() => scrollToSection(item.section)}
-                    className="text-sm text-[var(--color-text-disabled)] hover:text-[var(--color-action-default)] transition-colors bg-transparent border-none cursor-pointer p-0"
+                    className="cursor-pointer border-none bg-transparent p-0 font-[family-name:var(--font-body)] text-[14px] text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-action-default)]"
                   >
                     {item.label}
                   </button>
@@ -926,14 +990,14 @@ function LandingFooter() {
 
           {/* À propos */}
           <div>
-            <h4 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4">
+            <h4 className="mb-4 font-[family-name:var(--font-title)] text-[14px] font-semibold text-[var(--color-text-primary)]">
               {t('footer.about.title')}
             </h4>
-            <ul className="space-y-2.5">
+            <ul className="flex flex-col gap-2.5">
               <li>
                 <Link
                   to="/contact"
-                  className="text-sm text-[var(--color-text-disabled)] hover:text-[var(--color-action-default)] transition-colors"
+                  className="font-[family-name:var(--font-body)] text-[14px] text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-action-default)]"
                 >
                   {t('footer.about.contact')}
                 </Link>
@@ -941,7 +1005,7 @@ function LandingFooter() {
               <li>
                 <Link
                   to="/privacy"
-                  className="text-sm text-[var(--color-text-disabled)] hover:text-[var(--color-action-default)] transition-colors"
+                  className="font-[family-name:var(--font-body)] text-[14px] text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-action-default)]"
                 >
                   {t('footer.about.privacy')}
                 </Link>
@@ -949,7 +1013,7 @@ function LandingFooter() {
               <li>
                 <Link
                   to="/legal"
-                  className="text-sm text-[var(--color-text-disabled)] hover:text-[var(--color-action-default)] transition-colors"
+                  className="font-[family-name:var(--font-body)] text-[14px] text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-action-default)]"
                 >
                   {t('footer.about.legal')}
                 </Link>
@@ -959,11 +1023,13 @@ function LandingFooter() {
 
           {/* CTA Card */}
           <div>
-            <div className="bg-[var(--color-action-default)] rounded-2xl p-6">
-              <p className="text-sm font-semibold text-white mb-2">{t('footer.cta.title')}</p>
+            <div className="rounded-2xl bg-[var(--color-action-default)] p-6">
+              <p className="mb-2 font-[family-name:var(--font-title)] text-[14px] font-semibold text-white">
+                {t('footer.cta.title')}
+              </p>
               <Link
                 to="/signup"
-                className="inline-flex items-center justify-center w-full px-4 py-2.5 mt-3 text-sm font-semibold text-[var(--color-action-default)] bg-white rounded-xl hover:bg-gray-50 transition-colors"
+                className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-white px-4 py-2.5 font-[family-name:var(--font-title)] text-[14px] font-semibold text-[var(--color-action-default)] transition-colors hover:bg-gray-50"
               >
                 {t('footer.cta.button')}
               </Link>
@@ -972,9 +1038,11 @@ function LandingFooter() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-12 pt-6 border-t border-[var(--color-border-light)] flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-[var(--color-text-disabled)]">{t('footer.copyright')}</p>
-          <p className="text-xs text-[var(--color-text-disabled)]">
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-[var(--color-border-light)] pt-6 md:flex-row">
+          <p className="font-[family-name:var(--font-body)] text-[12px] text-[var(--color-text-secondary)]">
+            {t('footer.copyright')}
+          </p>
+          <p className="font-[family-name:var(--font-body)] text-[12px] text-[var(--color-text-secondary)]">
             Données taxonomiques : TAXREF v18.0 — PatriNat (OFB-CNRS-MNHN-IRD)
           </p>
         </div>

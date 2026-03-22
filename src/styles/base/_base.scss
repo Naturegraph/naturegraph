@@ -2,19 +2,23 @@
 // Base styles — Naturegraph
 // ============================================
 
-body {
-  background-color: var(--color-bg-primary);
-  color: var(--color-text-primary);
-  transition: background-color 250ms ease, color 250ms ease;
-}
+@layer base {
+  body {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    transition:
+      background-color 250ms ease,
+      color 250ms ease;
+  }
 
-#root {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
 
-::selection {
-  background-color: var(--color-primary);
-  color: var(--color-neutral-white);
+  ::selection {
+    background-color: var(--color-primary);
+    color: var(--color-neutral-white);
+  }
 }

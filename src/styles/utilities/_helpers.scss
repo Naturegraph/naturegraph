@@ -1,16 +1,6 @@
 // ============================================
 // Helpers — Naturegraph
 // ============================================
-
-.text-center { text-align: center; }
-.text-left { text-align: left; }
-.text-right { text-align: right; }
-
-.flex { display: flex; }
-.flex-col { flex-direction: column; }
-.items-center { align-items: center; }
-.justify-center { justify-content: center; }
-.justify-between { justify-content: space-between; }
-.gap-sm { gap: 0.5rem; }
-.gap-md { gap: 1rem; }
-.gap-lg { gap: 1.5rem; }
+// Supprimé : ces utilitaires sont fournis par Tailwind CSS v4
+// (.text-center, .flex, .items-center, .gap-*, etc.)
+// Les garder ici en non-layered cassait la spécificité Tailwind.
