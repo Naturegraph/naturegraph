@@ -34,6 +34,7 @@ export function CTABanner() {
               src={hermineIcon}
               alt="Hermine Naturegraph"
               className="w-full h-full object-contain p-2"
+              loading="lazy"
             />
           </div>
 
@@ -57,6 +58,7 @@ export function CTABanner() {
             src={ctaKingfisher}
             alt="Martin-pêcheur — Naturegraph"
             className="absolute inset-0 w-full h-full object-cover"
+            loading="lazy"
           />
         </div>
       </div>

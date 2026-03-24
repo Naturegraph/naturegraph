@@ -31,6 +31,7 @@ export function Mission() {
               src={missionObserver}
               alt="Observer la nature avec Naturegraph"
               className="w-full h-full object-cover"
+              loading="lazy"
             />
           </div>
 

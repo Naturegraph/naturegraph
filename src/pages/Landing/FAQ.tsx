@@ -149,6 +149,7 @@ export function FAQ() {
               src={faqNature}
               alt="Nature FAQ Naturegraph"
               className="w-full h-full object-cover"
+              loading="lazy"
             />
           </div>
           {QuestionList}
@@ -161,6 +162,7 @@ export function FAQ() {
               src={faqNature}
               alt="Nature FAQ Naturegraph"
               className="w-full h-full object-cover"
+              loading="lazy"
             />
           </div>
           {QuestionList}

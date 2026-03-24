@@ -52,6 +52,7 @@ export function Storytelling() {
               src={hermineIcon}
               alt="Hermine — Animal totem Naturegraph"
               className="w-full h-full object-contain p-2"
+              loading="lazy"
             />
           </div>
 

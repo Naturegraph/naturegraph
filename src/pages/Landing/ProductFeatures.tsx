@@ -64,7 +64,12 @@ function PhoneDisplay({ activeIndex }: { activeIndex: number }) {
           transition={{ duration: 0.6, ease: 'easeInOut' }}
           className="absolute inset-0 w-full h-full"
         >
-          <img src={img} alt={`Feature ${index + 1}`} className="w-full h-full object-cover" />
+          <img
+            src={img}
+            alt={`Feature ${index + 1}`}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
         </motion.div>
       ))}
     </div>
@@ -93,6 +98,7 @@ function MobileFeatureSlide({
             src={FEATURE_IMAGES[imageIndex]}
             alt={`Feature ${imageIndex + 1}`}
             className="w-full h-full object-cover"
+            loading="lazy"
           />
         </div>
       </div>

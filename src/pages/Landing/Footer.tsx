@@ -145,6 +145,7 @@ export function Footer({ onNavigate }: FooterProps) {
                   src={hermineIcon}
                   alt="Hermine Naturegraph"
                   className="w-full h-full object-contain p-1"
+                  loading="lazy"
                 />
               </div>
               <h4 className="text-[var(--color-text-white)]">{t('footer.cta.title')}</h4>

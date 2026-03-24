@@ -85,6 +85,7 @@ export function Discord() {
                       src={discordPreview}
                       alt="Aperçu Discord Naturegraph"
                       className="w-full h-full object-cover"
+                      loading="lazy"
                     />
                   </div>
                 </div>

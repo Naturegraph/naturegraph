@@ -68,6 +68,7 @@ export function Partners() {
                   src={partner.logo!}
                   alt={partner.name}
                   className="h-16 md:h-20 w-auto object-contain max-w-[220px]"
+                  loading="lazy"
                 />
               </a>
             ))}

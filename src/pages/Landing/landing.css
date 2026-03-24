@@ -74,6 +74,13 @@
   transition-duration: 0.04s;
 }
 
+.btn-press:focus-visible {
+  outline: 2px solid var(--color-action-default);
+  outline-offset: 3px;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 0 var(--btn-shadow-color, rgba(0, 0, 0, 0.25));
+}
+
 /** Variante primaire — shadow plus foncée que le bg */
 .btn-press-primary {
   --btn-shadow-color: color-mix(in srgb, var(--color-action-default) 70%, black);
@@ -97,6 +104,14 @@
   box-shadow:
     0 1px 0 0 var(--btn-shadow-color),
     inset 0 0 0 1px color-mix(in srgb, var(--color-text-white) 30%, transparent);
+}
+
+.btn-press-outline:focus-visible {
+  outline: 2px solid var(--color-text-white);
+  outline-offset: 3px;
+  box-shadow:
+    0 6px 0 0 var(--btn-shadow-color),
+    inset 0 0 0 1px color-mix(in srgb, var(--color-text-white) 40%, transparent);
 }
 
 /* ── Titres de section landing (override responsive du DS) ────────────── */

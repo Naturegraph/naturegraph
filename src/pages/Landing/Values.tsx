@@ -83,6 +83,7 @@ export function Values() {
             src={valuesNature}
             alt="Nature et valeurs Naturegraph"
             className="w-full h-full object-cover"
+            loading="lazy"
           />
         </motion.div>
 
