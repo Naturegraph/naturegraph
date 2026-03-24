@@ -2,6 +2,9 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import logoColor from '@/assets/logos/logo-simplified-color.svg'
+import missionObserver from '@/assets/images/mission-observer.png'
 
 const CODE_LENGTH = 6
 const TIMER_SECONDS = 120
@@ -14,6 +17,7 @@ export default function VerifyCode() {
 
   const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(''))
   const [timer, setTimer] = useState(TIMER_SECONDS)
+  const [error, setError] = useState<string | null>(null)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   // Timer countdown
@@ -72,12 +76,23 @@ export default function VerifyCode() {
     }
   }
 
-  function handleVerify(code: string) {
-    void code
-    // TODO: Supabase OTP verification
-    setTimeout(() => {
-      navigate('/onboarding')
-    }, 600)
+  async function handleVerify(fullCode: string) {
+    if (!supabase) {
+      setTimeout(() => navigate('/onboarding'), 600)
+      return
+    }
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: fullCode,
+      type: 'email',
+    })
+    if (error) {
+      setCode(Array(CODE_LENGTH).fill(''))
+      inputRefs.current[0]?.focus()
+      setError(t('auth.errors.invalidCode'))
+      return
+    }
+    navigate('/onboarding')
   }
 
   function handleResend() {
@@ -95,12 +110,12 @@ export default function VerifyCode() {
         <div className="flex items-center gap-4 mb-14">
           <button
             onClick={() => navigate(-1)}
-            className="w-12 h-12 flex items-center justify-center rounded-xl border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors"
+            className="w-12 h-12 flex items-center justify-center rounded-xl border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
             aria-label={t('common.back')}
           >
             <ArrowLeft size={20} />
           </button>
-          <span className="text-xl font-bold text-[var(--color-primary)]">Naturegraph</span>
+          <img src={logoColor} alt="Naturegraph" className="h-8 w-auto" />
         </div>
 
         {/* Content — vertically centered */}
@@ -137,6 +152,15 @@ export default function VerifyCode() {
             ))}
           </div>
 
+          {error && (
+            <div
+              role="alert"
+              className="p-3 rounded-lg bg-[var(--color-error-bg)] text-[var(--color-error)] text-sm mb-3"
+            >
+              {error}
+            </div>
+          )}
+
           {/* Timer */}
           <p className="text-sm text-[var(--color-text-tertiary)] mb-12">
             {t('auth.verifyTimer', { time: formatTime(timer) })}
@@ -157,8 +181,15 @@ export default function VerifyCode() {
       </div>
 
       {/* Right panel — image (desktop only) */}
-      <div className="hidden lg:block flex-1 relative bg-[var(--color-neutral-800)] rounded-l-2xl overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-primary)]/20 to-[var(--color-primary-dark)]/40" />
+      <div className="hidden lg:block flex-1 relative bg-[var(--color-highlight-primary)] rounded-l-2xl overflow-hidden">
+        <img
+          src={missionObserver}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover opacity-60"
+          aria-hidden="true"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-highlight-secondary)]/80 to-transparent" />
         <div className="absolute bottom-6 left-6 right-6">
           <div className="bg-black/40 backdrop-blur-sm rounded-lg px-4 py-3 flex items-center gap-3">
             <span className="text-xs text-white/70">Credit photo</span>
