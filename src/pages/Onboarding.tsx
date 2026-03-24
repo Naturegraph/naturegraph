@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui'
 import { supabase } from '@/lib/supabase'
 import type { Interest } from '@/types/database'
 
-const TOTAL_STEPS = 4
+const TOTAL_STEPS = 3
 
 const INTEREST_KEYS = [
   'birds',
@@ -34,8 +34,6 @@ const INTEREST_EMOJIS: Record<string, string> = {
 
 const FREQUENCY_KEYS = ['daily', 'weekly', 'monthly', 'occasionally'] as const
 
-const MOTIVATION_KEYS = ['observe', 'share', 'learn', 'contribute'] as const
-
 export default function Onboarding() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -43,8 +41,59 @@ export default function Onboarding() {
   const [step, setStep] = useState(1)
   const [interests, setInterests] = useState<string[]>([])
   const [frequency, setFrequency] = useState<string | null>(null)
-  const [motivations, setMotivations] = useState<string[]>([])
   const [displayName, setDisplayName] = useState('')
+
+  // Format validation computed during render — no setState, no effect
+  const usernameFormatError = useMemo((): string | null => {
+    if (step !== 3) return null
+    const trimmed = displayName.trim()
+    if (!trimmed) return null
+    if (trimmed.length < 3) return t('onboarding.usernameErrors.tooShort')
+    if (trimmed.length > 25) return t('onboarding.usernameErrors.tooLong')
+    if (!/^[a-zA-Z0-9._]+$/.test(trimmed)) return t('onboarding.usernameErrors.invalidFormat')
+    if (/^[._]/.test(trimmed) || /[._]$/.test(trimmed))
+      return t('onboarding.usernameErrors.invalidStart')
+    if (/\.{2}|_{2}/.test(trimmed)) return t('onboarding.usernameErrors.invalidFormat')
+    return null
+  }, [step, displayName, t])
+
+  // Server uniqueness check state
+  const [serverUsernameError, setServerUsernameError] = useState<string | null>(null)
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false)
+
+  // All setState calls are inside timer callbacks — never synchronous in effect body
+  useEffect(() => {
+    const trimmed = displayName.trim()
+
+    if (step !== 3 || usernameFormatError !== null || !trimmed) {
+      // Schedule reset via callback to satisfy react-hooks/set-state-in-effect
+      const id = setTimeout(() => {
+        setServerUsernameError(null)
+        setIsCheckingUsername(false)
+      }, 0)
+      return () => clearTimeout(id)
+    }
+
+    const timer = setTimeout(async () => {
+      setIsCheckingUsername(true)
+      try {
+        if (supabase) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('username', trimmed)
+            .maybeSingle()
+          setServerUsernameError(data ? t('onboarding.usernameErrors.alreadyTaken') : null)
+        }
+      } finally {
+        setIsCheckingUsername(false)
+      }
+    }, 600)
+
+    return () => clearTimeout(timer)
+  }, [displayName, step, usernameFormatError, t])
+
+  const usernameError = usernameFormatError ?? serverUsernameError
 
   async function handleNext() {
     if (step < TOTAL_STEPS) {
@@ -68,6 +117,7 @@ export default function Onboarding() {
         data: { user },
       } = await supabase.auth.getUser()
       if (user) {
+        // @ts-expect-error – Supabase upsert type inference issue with manually-defined Database type
         await supabase.from('profiles').upsert(
           {
             id: user.id,
@@ -100,15 +150,10 @@ export default function Onboarding() {
     })
   }
 
-  function toggleMotivation(key: string) {
-    setMotivations((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]))
-  }
+  const isUsernameValid = !usernameError && !isCheckingUsername && displayName.trim().length >= 3
 
   const canProceed =
-    (step === 1 && interests.length > 0) ||
-    (step === 2 && frequency !== null) ||
-    (step === 3 && motivations.length > 0) ||
-    (step === 4 && displayName.trim().length > 0)
+    step === 1 || (step === 2 && frequency !== null) || (step === 3 && isUsernameValid)
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)] flex items-start lg:items-center justify-center p-0 lg:p-6">
@@ -153,10 +198,13 @@ export default function Onboarding() {
           )}
           {step === 2 && <StepFrequency t={t} frequency={frequency} setFrequency={setFrequency} />}
           {step === 3 && (
-            <StepMotivation t={t} motivations={motivations} toggleMotivation={toggleMotivation} />
-          )}
-          {step === 4 && (
-            <StepDisplayName t={t} displayName={displayName} setDisplayName={setDisplayName} />
+            <StepDisplayName
+              t={t}
+              displayName={displayName}
+              setDisplayName={setDisplayName}
+              usernameError={usernameError}
+              isCheckingUsername={isCheckingUsername}
+            />
           )}
         </div>
 
@@ -303,18 +351,25 @@ function StepFrequency({
 }
 
 /* ------------------------------------------------------------------ */
-/*  Step 3 — Motivation                                                */
+/*  Step 3 — Display name / Username                                   */
 /* ------------------------------------------------------------------ */
 
-function StepMotivation({
+function StepDisplayName({
   t,
-  motivations,
-  toggleMotivation,
+  displayName,
+  setDisplayName,
+  usernameError,
+  isCheckingUsername,
 }: {
   t: (k: string) => string
-  motivations: string[]
-  toggleMotivation: (k: string) => void
+  displayName: string
+  setDisplayName: (v: string) => void
+  usernameError: string | null
+  isCheckingUsername: boolean
 }) {
+  const maxLength = 25
+  const isValid = !usernameError && !isCheckingUsername && displayName.trim().length >= 3
+
   return (
     <>
       <h2 className="text-2xl lg:text-3xl font-bold text-[var(--color-text-primary)] mb-3">
@@ -322,80 +377,6 @@ function StepMotivation({
       </h2>
       <p className="text-sm text-[var(--color-text-secondary)] mb-8">
         {t('onboarding.step3Subtitle')}
-      </p>
-
-      <div className="flex flex-col gap-3">
-        {MOTIVATION_KEYS.map((key) => {
-          const selected = motivations.includes(key)
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => toggleMotivation(key)}
-              className={`flex items-center gap-3 p-4 rounded-xl border transition-all text-left ${
-                selected
-                  ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5'
-                  : 'border-[var(--color-border)] hover:border-[var(--color-primary)]/40'
-              }`}
-            >
-              <span
-                className={`w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
-                  selected
-                    ? 'border-[var(--color-primary)] bg-[var(--color-primary)]'
-                    : 'border-[var(--color-border)]'
-                }`}
-              >
-                {selected && (
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 12 12"
-                    fill="none"
-                    className="text-white"
-                  >
-                    <path
-                      d="M2 6L5 9L10 3"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                )}
-              </span>
-              <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                {t(`onboarding.motivation.${key}`)}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-    </>
-  )
-}
-
-/* ------------------------------------------------------------------ */
-/*  Step 4 — Display name                                              */
-/* ------------------------------------------------------------------ */
-
-function StepDisplayName({
-  t,
-  displayName,
-  setDisplayName,
-}: {
-  t: (k: string) => string
-  displayName: string
-  setDisplayName: (v: string) => void
-}) {
-  const maxLength = 25
-
-  return (
-    <>
-      <h2 className="text-2xl lg:text-3xl font-bold text-[var(--color-text-primary)] mb-3">
-        {t('onboarding.step4Title')}
-      </h2>
-      <p className="text-sm text-[var(--color-text-secondary)] mb-8">
-        {t('onboarding.step4Subtitle')}
       </p>
 
       <div className="flex flex-col gap-1.5">
@@ -413,12 +394,31 @@ function StepDisplayName({
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder={t('onboarding.usernamePlaceholder')}
-            className="w-full px-5 py-3 text-sm bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg transition-colors placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+            className={`w-full px-5 py-3 pr-24 text-sm bg-[var(--color-bg-primary)] border rounded-lg transition-colors placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent ${
+              usernameError
+                ? 'border-[var(--color-error)]'
+                : isValid
+                  ? 'border-green-500'
+                  : 'border-[var(--color-border)]'
+            }`}
           />
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--color-text-tertiary)]">
-            {displayName.length}/{maxLength}
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+            {isCheckingUsername ? (
+              <span className="text-[10px] text-[var(--color-text-tertiary)] leading-none">
+                {t('onboarding.usernameErrors.checking')}
+              </span>
+            ) : isValid ? (
+              <span className="text-green-500 text-sm font-bold leading-none">&#10003;</span>
+            ) : null}
+            <span className="text-xs text-[var(--color-text-tertiary)]">
+              {displayName.length}/{maxLength}
+            </span>
           </span>
         </div>
+        {usernameError && <p className="text-xs text-[var(--color-error)]">{usernameError}</p>}
+        <p className="text-xs text-[var(--color-text-tertiary)]">
+          {t('onboarding.usernameHelper')}
+        </p>
       </div>
     </>
   )

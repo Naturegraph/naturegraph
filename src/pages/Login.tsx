@@ -189,7 +189,7 @@ function SocialButton({ label, icon }: { label: string; icon: string }) {
   return (
     <button
       type="button"
-      className="flex-1 flex items-center justify-center h-16 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] transition-colors"
+      className="flex-1 flex items-center justify-center h-16 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-bg-secondary)] transition-colors"
       aria-label={`Continuer avec ${label}`}
     >
       <span className="text-lg font-bold text-[var(--color-text-primary)]">{iconMap[icon]}</span>

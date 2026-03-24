@@ -283,12 +283,17 @@ type AutoCounters = 'posts_count' | 'followers_count' | 'following_count'
 
 export interface Database {
   public: {
+    Views: { [_ in never]: never }
+    Functions: { [_ in never]: never }
+    Enums: { [_ in never]: never }
+    CompositeTypes: { [_ in never]: never }
     Tables: {
       profiles: {
         Row: Profile
         Insert: Omit<Profile, AutoTimestamps | 'last_login_at' | AutoCounters | 'email_verified'> &
           Partial<Pick<Profile, 'is_public' | 'gender' | 'birth_date' | 'bio' | 'interests'>>
         Update: Partial<Omit<Profile, AutoId | 'email' | AutoTimestamps | AutoCounters>>
+        Relationships: []
       }
       posts: {
         Row: Post
@@ -320,21 +325,25 @@ export interface Database {
             | 'views_count'
           >
         >
+        Relationships: []
       }
       media: {
         Row: Media
         Insert: Omit<Media, AutoId | AutoTimestamps | 'status' | 'thumbnail_url' | 'original_url'>
         Update: Partial<Omit<Media, AutoId | 'post_id' | 'user_id' | AutoTimestamps>>
+        Relationships: []
       }
       reactions: {
         Row: Reaction
         Insert: Omit<Reaction, AutoId | 'created_at'>
         Update: never
+        Relationships: []
       }
       comments: {
         Row: Comment
         Insert: Omit<Comment, AutoId | AutoTimestamps>
         Update: Pick<Comment, 'content'>
+        Relationships: []
       }
       identification_proposals: {
         Row: IdentificationProposal
@@ -345,31 +354,37 @@ export interface Database {
             'species_name' | 'scientific_name' | 'taxref_id' | 'confidence' | 'notes'
           >
         >
+        Relationships: []
       }
       follows: {
         Row: Follow
         Insert: Omit<Follow, 'created_at'>
         Update: never
+        Relationships: []
       }
       notebooks: {
         Row: Notebook
         Insert: Omit<Notebook, AutoId | AutoTimestamps>
         Update: Partial<Omit<Notebook, AutoId | 'author_id' | AutoTimestamps>>
+        Relationships: []
       }
       notebook_observations: {
         Row: NotebookObservation
         Insert: Omit<NotebookObservation, 'added_at'>
         Update: never
+        Relationships: []
       }
       notifications: {
         Row: Notification
         Insert: Omit<Notification, AutoId | 'created_at' | 'read'>
         Update: Pick<Notification, 'read'>
+        Relationships: []
       }
       taxref_cache: {
         Row: TaxrefEntry
         Insert: Omit<TaxrefEntry, 'cached_at'>
         Update: Partial<TaxrefEntry>
+        Relationships: []
       }
     }
   }
