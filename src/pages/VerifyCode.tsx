@@ -103,7 +103,10 @@ export default function VerifyCode() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-[var(--color-bg-primary)]">
+    <div
+      data-theme="light"
+      className="min-h-screen flex flex-col lg:flex-row bg-[var(--color-bg-primary)]"
+    >
       {/* Left panel — form */}
       <div className="flex-1 flex flex-col px-6 py-16 lg:px-16 lg:max-w-[512px] xl:max-w-[640px]">
         {/* Back + logo */}

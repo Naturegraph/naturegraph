@@ -156,7 +156,10 @@ export default function Onboarding() {
     step === 1 || (step === 2 && frequency !== null) || (step === 3 && isUsernameValid)
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-primary)] flex items-start lg:items-center justify-center p-0 lg:p-6">
+    <div
+      data-theme="light"
+      className="min-h-screen bg-[var(--color-bg-primary)] flex items-start lg:items-center justify-center p-0 lg:p-6"
+    >
       <div className="w-full lg:max-w-[636px] min-h-screen lg:min-h-0 lg:rounded-2xl bg-[var(--color-surface)] lg:border lg:border-[var(--color-border-light)] flex flex-col">
         {/* Top bar */}
         <div className="px-6 pt-6 lg:px-16 lg:pt-16">
