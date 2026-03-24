@@ -1,0 +1,160 @@
+/**
+ * Landing Page — CSS utilitaires et animations
+ * =============================================
+ * Variables de couleur spécifiques à la landing (mapping Figma Make → design system),
+ * animations, et classes utilitaires réutilisables.
+ */
+
+/* Les couleurs de la landing utilisent directement les tokens DS     */
+/* définis dans _light-theme.scss (--color-surface-cream, etc.)       */
+
+/* ── Tokens dérivés pour le Hero (opacités sur tokens DS) ────────────── */
+:root,
+[data-theme='light'] {
+  --hero-orb-mint-20: color-mix(in srgb, var(--color-accent-mint) 20%, transparent);
+  --hero-orb-mint-12: color-mix(in srgb, var(--color-accent-mint) 12%, transparent);
+  --hero-orb-action-15: color-mix(in srgb, var(--color-action-default) 15%, transparent);
+  --hero-orb-teal-10: color-mix(in srgb, var(--color-highlight-tertiary) 10%, transparent);
+  --hero-spot-mint-15: color-mix(in srgb, var(--color-accent-mint) 15%, transparent);
+  --hero-spot-action-04: color-mix(in srgb, var(--color-action-default) 4%, transparent);
+}
+
+/* ── Animations ──────────────────────────────────────────────────────── */
+
+/* Mouvement léger du fond gradient du Hero */
+@keyframes hero-gradient-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.hero-gradient-bg {
+  background: linear-gradient(
+    135deg,
+    var(--color-highlight-primary) 0%,
+    color-mix(in srgb, var(--color-highlight-primary) 85%, var(--color-accent-mint)) 35%,
+    var(--color-highlight-primary) 65%,
+    color-mix(in srgb, var(--color-highlight-primary) 90%, var(--color-action-default)) 100%
+  );
+  background-size: 200% 200%;
+  animation: hero-gradient-shift 12s ease-in-out infinite;
+}
+
+/* ── Boutons — Effet 3D press (gamifié) ────────────────────────────── */
+
+/**
+ * Bouton 3D avec shadow : le bouton "flotte" légèrement et s'enfonce au clic.
+ * --btn-shadow-color : couleur de l'ombre (à définir par variante).
+ */
+.btn-press {
+  position: relative;
+  transform: translateY(0);
+  box-shadow: 0 4px 0 0 var(--btn-shadow-color, rgba(0, 0, 0, 0.25));
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease,
+    filter 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-press:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 0 var(--btn-shadow-color, rgba(0, 0, 0, 0.25));
+  filter: brightness(1.08);
+}
+
+.btn-press:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 0 var(--btn-shadow-color, rgba(0, 0, 0, 0.25));
+  filter: brightness(0.95);
+  transition-duration: 0.04s;
+}
+
+/** Variante primaire — shadow plus foncée que le bg */
+.btn-press-primary {
+  --btn-shadow-color: color-mix(in srgb, var(--color-action-default) 70%, black);
+}
+
+/** Variante outline — shadow blanche translucide (token DS) */
+.btn-press-outline {
+  --btn-shadow-color: color-mix(in srgb, var(--color-text-white) 20%, transparent);
+  box-shadow:
+    0 4px 0 0 var(--btn-shadow-color),
+    inset 0 0 0 1px color-mix(in srgb, var(--color-text-white) 30%, transparent);
+}
+
+.btn-press-outline:hover {
+  box-shadow:
+    0 6px 0 0 var(--btn-shadow-color),
+    inset 0 0 0 1px color-mix(in srgb, var(--color-text-white) 40%, transparent);
+}
+
+.btn-press-outline:active {
+  box-shadow:
+    0 1px 0 0 var(--btn-shadow-color),
+    inset 0 0 0 1px color-mix(in srgb, var(--color-text-white) 30%, transparent);
+}
+
+/* ── Titres de section landing (override responsive du DS) ────────────── */
+
+/**
+ * Les titres h2 du DS global font 2rem (32px).
+ * Sur la landing, les titres de section doivent être plus impactants
+ * pour matcher le Figma (~48-56px desktop).
+ */
+.landing-section-title {
+  font-size: 1.875rem; /* 30px mobile */
+  line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+  .landing-section-title {
+    font-size: 2.5rem; /* 40px tablet */
+  }
+}
+
+@media (min-width: 1024px) {
+  .landing-section-title {
+    font-size: 3.25rem; /* 52px desktop */
+  }
+}
+
+/* ── Utilitaires ─────────────────────────────────────────────────────── */
+
+/* Masquer la scrollbar (pour les sliders) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Text balance pour les titres longs */
+.text-balance {
+  text-wrap: balance;
+}
+
+/* Smooth scroll global */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ── Accessibilité — Réduire les animations ──────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}

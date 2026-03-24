@@ -14,6 +14,10 @@ dist-ssr
 .env
 .env.local
 
+# Design references & mockups (not versioned)
+design-references/
+*.old.tsx
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

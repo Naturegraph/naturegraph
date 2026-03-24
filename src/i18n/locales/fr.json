@@ -46,6 +46,7 @@
       "closeMenu": "Fermer le menu"
     },
     "hero": {
+      "badge": "Explore, partage & connecte-toi à la nature",
       "titleLine1": "Ensemble, donnons",
       "titleLine2": "vie à tes rencontres !",
       "subtitle": "Chaque sortie devient un souvenir, chaque observation une histoire à partager.",
@@ -65,11 +66,11 @@
     "values": {
       "title": "Ce qui nous guide au quotidien",
       "item1Title": "Transparence & co-construction",
-      "item1Desc": "Nous partageons nos avancées, nos choix et nos réflexions avec la communauté.",
+      "item1Desc": "Nous partageons nos avancées, nos choix et nos réflexions avec la communauté. Chaque utilisateur peut suivre l'évolution du projet et contribuer par ses idées.",
       "item2Title": "Communauté au cœur",
-      "item2Desc": "Naturegraph existe grâce à ses migrateurs. Ensemble, nous explorons et faisons vivre la nature.",
+      "item2Desc": "Naturegraph existe grâce à ses migrateurs. Ensemble, nous explorons, partageons et faisons vivre la nature à travers nos observations et nos histoires.",
       "item3Title": "Partage et émotions",
-      "item3Desc": "Chaque sortie est une expérience à partager : photos, récits ou moments uniques."
+      "item3Desc": "Chaque sortie est une expérience à partager : photos, récits ou moments uniques. La richesse du projet vient de ce que chacun apporte."
     },
     "detailedFeatures": {
       "title": "Découvre ce que l'app t'apporte",
@@ -80,8 +81,8 @@
       "item2Desc": "Retrouve facilement ton historique, tes observations et l'ensemble de tes contributions dans ton profil.",
       "item3Title": "Découvre les dernières observations",
       "item3Desc": "Découvre les dernières rencontres partagées par la communauté et explore la biodiversité autour de toi.",
-      "item4Title": "Obtiens de l'aide pour identifier une espèce",
-      "item4Desc": "Publie une photo et décris ton observation. La communauté peut t'aider à identifier une espèce."
+      "item4Title": "Mets en avant ton profil et tes préférences",
+      "item4Desc": "Personnalise ton profil et gère tes préférences à tout moment pour une expérience adaptée à ta façon d'explorer la nature."
     },
     "cta": {
       "title": "Et si chaque sortie devenait une histoire ?",
@@ -116,6 +117,17 @@
     },
     "partners": {
       "title": "Ils soutiennent Naturegraph"
+    },
+    "storytelling": {
+      "title": "L'hermine, notre animal totem",
+      "intro": "Chaque projet a besoin d'un guide. L'hermine incarne les valeurs qui nous animent au quotidien.",
+      "trait1Title": "Résilience",
+      "trait1Desc": "Comme l'hermine qui s'adapte aux saisons en changeant de pelage, Naturegraph évolue avec sa communauté.",
+      "trait2Title": "Curiosité",
+      "trait2Desc": "Toujours en mouvement, l'hermine explore son territoire avec la même curiosité qui anime nos migrateurs.",
+      "trait3Title": "Discrétion",
+      "trait3Desc": "L'hermine observe avant d'agir. Naturegraph respecte ton rythme et ta manière d'explorer la nature.",
+      "closing": "L'hermine nous rappelle que la force d'une communauté réside dans l'attention portée à chaque détail de la nature."
     }
   },
 
@@ -336,21 +348,54 @@
   "legal": {
     "privacy": {
       "title": "Politique de confidentialité",
-      "comingSoon": "Cette page sera bientôt disponible.",
+      "lastUpdated": "Dernière mise à jour : mars 2026",
+      "intro": "Naturegraph accorde une importance fondamentale à la protection de vos données personnelles. Cette politique explique comment nous collectons, utilisons et protégeons vos informations.",
+      "section1Title": "Données collectées",
+      "section1Content": "Nous collectons uniquement les données nécessaires au fonctionnement du service : adresse email, nom d'utilisateur, observations publiées (texte, photos, localisation) et données de navigation anonymisées. Aucune donnée n'est collectée à votre insu.",
+      "section2Title": "Utilisation des données",
+      "section2Content": "Vos données sont utilisées exclusivement pour : faire fonctionner votre compte, afficher vos observations, personnaliser votre expérience et améliorer le service. Nous ne vendons jamais vos données à des tiers.",
+      "section3Title": "Cookies",
+      "section3Content": "Naturegraph utilise uniquement des cookies essentiels au fonctionnement du site (session, préférences de langue). Aucun cookie publicitaire ou de traçage n'est utilisé. Notre engagement éco-responsable passe aussi par la sobriété numérique.",
+      "section4Title": "Conservation des données",
+      "section4Content": "Vos données sont conservées tant que votre compte est actif. Vous pouvez demander la suppression de votre compte et de toutes vos données à tout moment. Les données sont alors supprimées sous 30 jours.",
+      "section5Title": "Vos droits (RGPD)",
+      "section5Content": "Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, de suppression, de portabilité et d'opposition concernant vos données personnelles. Pour exercer ces droits, contactez-nous à privacy@naturegraph.fr.",
+      "section6Title": "Contact",
+      "section6Content": "Pour toute question relative à la protection de vos données : privacy@naturegraph.fr. Responsable du traitement : Naturegraph, France.",
       "backHome": "Retour à l'accueil"
     },
     "terms": {
       "title": "Mentions légales",
-      "comingSoon": "Cette page sera bientôt disponible.",
+      "editorTitle": "Éditeur du site",
+      "editorContent": "Naturegraph — Projet collaboratif dédié à l'observation et au partage de la biodiversité.\nContact : contact@naturegraph.fr\nDirecteur de la publication : Équipe Naturegraph",
+      "hostingTitle": "Hébergement",
+      "hostingContent": "Le site est hébergé par Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis.\nBase de données hébergée par Supabase Inc.",
+      "ipTitle": "Propriété intellectuelle",
+      "ipContent": "L'ensemble du contenu du site Naturegraph (textes, images, graphismes, logo, icônes) est protégé par le droit d'auteur. Toute reproduction, même partielle, est interdite sans autorisation préalable. Les données naturalistes partagées par les utilisateurs restent leur propriété.",
+      "liabilityTitle": "Responsabilité",
+      "liabilityContent": "Naturegraph s'efforce de fournir des informations fiables mais ne garantit pas l'exactitude des identifications d'espèces proposées par les utilisateurs. Les observations sont partagées à titre indicatif et communautaire.",
+      "lawTitle": "Droit applicable",
+      "lawContent": "Le présent site est soumis au droit français. En cas de litige, les tribunaux français seront seuls compétents. L'utilisation du service implique l'acceptation des présentes mentions légales.",
       "backHome": "Retour à l'accueil"
     }
   },
 
   "contact": {
     "title": "Contactez-nous",
-    "comingSoon": "Formulaire de contact bientôt disponible.",
+    "description": "Une question, une idée ou un retour à partager ? Nous serions ravis d'échanger avec toi.",
+    "emailLabel": "Par email",
+    "socialMedia": "Sur les réseaux",
     "backHome": "Retour à l'accueil",
-    "socialMedia": "Rejoignez-nous sur"
+    "form": {
+      "name": "Ton nom",
+      "namePlaceholder": "Comment t'appelles-tu ?",
+      "email": "Ton email",
+      "emailPlaceholder": "ton@email.com",
+      "message": "Ton message",
+      "messagePlaceholder": "Raconte-nous tout...",
+      "submit": "Envoyer le message",
+      "success": "Message envoyé ! Nous te répondrons rapidement."
+    }
   },
 
   "notifications": {

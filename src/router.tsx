@@ -27,6 +27,9 @@ const Onboarding = lazy(() => import('./pages/Onboarding'))
 const Home = lazy(() => import('./pages/Home'))
 const Explore = lazy(() => import('./pages/Explore'))
 const Profile = lazy(() => import('./pages/Profile'))
+const Contact = lazy(() => import('./pages/Contact'))
+const Privacy = lazy(() => import('./pages/Privacy'))
+const Legal = lazy(() => import('./pages/Legal'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 /**
@@ -144,6 +147,32 @@ export const router = createBrowserRouter([
             ),
           },
         ],
+      },
+
+      // Pages légales — publiques, standalone
+      {
+        path: 'contact',
+        element: (
+          <LazyPage>
+            <Contact />
+          </LazyPage>
+        ),
+      },
+      {
+        path: 'privacy',
+        element: (
+          <LazyPage>
+            <Privacy />
+          </LazyPage>
+        ),
+      },
+      {
+        path: 'legal',
+        element: (
+          <LazyPage>
+            <Legal />
+          </LazyPage>
+        ),
       },
 
       // 404 — page non trouvée

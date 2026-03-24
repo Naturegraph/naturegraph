@@ -46,6 +46,7 @@
       "closeMenu": "Close menu"
     },
     "hero": {
+      "badge": "Explore, share & connect with nature",
       "titleLine1": "Together, let's bring",
       "titleLine2": "your encounters to life!",
       "subtitle": "Every outing becomes a memory, every observation a story to share.",
@@ -65,11 +66,11 @@
     "values": {
       "title": "What guides us daily",
       "item1Title": "Transparency & Co-construction",
-      "item1Desc": "We share our progress, our choices and our thoughts with the community.",
+      "item1Desc": "We share our progress, our choices and our thoughts with the community. Every user can follow the project's evolution and contribute with their ideas.",
       "item2Title": "Community at Heart",
-      "item2Desc": "Naturegraph exists thanks to its migrators. Together, we explore and bring nature to life.",
+      "item2Desc": "Naturegraph exists thanks to its migrators. Together, we explore, share and bring nature to life through our observations and stories.",
       "item3Title": "Sharing and Emotions",
-      "item3Desc": "Every outing is an experience to share: photos, stories or unique moments."
+      "item3Desc": "Every outing is an experience to share: photos, stories or unique moments. The richness of the project comes from what each person contributes."
     },
     "detailedFeatures": {
       "title": "Discover what the app brings you",
@@ -80,8 +81,8 @@
       "item2Desc": "Easily find your history, your observations and all your contributions in your profile.",
       "item3Title": "Discover the latest observations",
       "item3Desc": "Discover the latest encounters shared by the community and explore the biodiversity around you.",
-      "item4Title": "Get help to identify a species",
-      "item4Desc": "Publish a photo and describe your observation. The community can help you identify a species."
+      "item4Title": "Showcase your profile and manage your preferences",
+      "item4Desc": "Customize your profile and manage your preferences at any time for an experience tailored to the way you explore nature."
     },
     "cta": {
       "title": "What if every outing became a story?",
@@ -116,6 +117,17 @@
     },
     "partners": {
       "title": "They support Naturegraph"
+    },
+    "storytelling": {
+      "title": "The stoat, our animal totem",
+      "intro": "Every project needs a guide. The stoat embodies the values that drive us daily.",
+      "trait1Title": "Resilience",
+      "trait1Desc": "Like the stoat that adapts to seasons by changing its coat, Naturegraph evolves with its community.",
+      "trait2Title": "Curiosity",
+      "trait2Desc": "Always on the move, the stoat explores its territory with the same curiosity that drives our migrators.",
+      "trait3Title": "Discretion",
+      "trait3Desc": "The stoat observes before acting. Naturegraph respects your pace and your way of exploring nature.",
+      "closing": "The stoat reminds us that a community's strength lies in the attention paid to every detail of nature."
     }
   },
 
@@ -336,21 +348,54 @@
   "legal": {
     "privacy": {
       "title": "Privacy Policy",
-      "comingSoon": "This page will be available soon.",
+      "lastUpdated": "Last updated: March 2026",
+      "intro": "Naturegraph places fundamental importance on the protection of your personal data. This policy explains how we collect, use and protect your information.",
+      "section1Title": "Data Collected",
+      "section1Content": "We only collect data necessary for the service to function: email address, username, published observations (text, photos, location) and anonymized browsing data. No data is collected without your knowledge.",
+      "section2Title": "Use of Data",
+      "section2Content": "Your data is used exclusively to: operate your account, display your observations, personalize your experience and improve the service. We never sell your data to third parties.",
+      "section3Title": "Cookies",
+      "section3Content": "Naturegraph only uses essential cookies for the site to function (session, language preferences). No advertising or tracking cookies are used. Our eco-responsible commitment also includes digital sobriety.",
+      "section4Title": "Data Retention",
+      "section4Content": "Your data is retained as long as your account is active. You can request deletion of your account and all your data at any time. Data is then deleted within 30 days.",
+      "section5Title": "Your Rights (GDPR)",
+      "section5Content": "In accordance with the GDPR, you have the right to access, rectify, delete, port and object to your personal data. To exercise these rights, contact us at privacy@naturegraph.fr.",
+      "section6Title": "Contact",
+      "section6Content": "For any questions regarding data protection: privacy@naturegraph.fr. Data controller: Naturegraph, France.",
       "backHome": "Back to home"
     },
     "terms": {
       "title": "Legal Notice",
-      "comingSoon": "This page will be available soon.",
+      "editorTitle": "Site Editor",
+      "editorContent": "Naturegraph — Collaborative project dedicated to observing and sharing biodiversity.\nContact: contact@naturegraph.fr\nPublication Director: Naturegraph Team",
+      "hostingTitle": "Hosting",
+      "hostingContent": "The site is hosted by Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, USA.\nDatabase hosted by Supabase Inc.",
+      "ipTitle": "Intellectual Property",
+      "ipContent": "All content on the Naturegraph site (texts, images, graphics, logo, icons) is protected by copyright. Any reproduction, even partial, is prohibited without prior authorization. Naturalist data shared by users remains their property.",
+      "liabilityTitle": "Liability",
+      "liabilityContent": "Naturegraph strives to provide reliable information but does not guarantee the accuracy of species identifications proposed by users. Observations are shared for informational and community purposes.",
+      "lawTitle": "Applicable Law",
+      "lawContent": "This site is subject to French law. In case of dispute, French courts shall have sole jurisdiction. Use of the service implies acceptance of these legal notices.",
       "backHome": "Back to home"
     }
   },
 
   "contact": {
-    "title": "Contact us",
-    "comingSoon": "Contact form coming soon.",
+    "title": "Contact Us",
+    "description": "A question, an idea or feedback to share? We'd love to hear from you.",
+    "emailLabel": "By email",
+    "socialMedia": "On social media",
     "backHome": "Back to home",
-    "socialMedia": "Join us on"
+    "form": {
+      "name": "Your name",
+      "namePlaceholder": "What's your name?",
+      "email": "Your email",
+      "emailPlaceholder": "your@email.com",
+      "message": "Your message",
+      "messagePlaceholder": "Tell us everything...",
+      "submit": "Send message",
+      "success": "Message sent! We'll get back to you soon."
+    }
   },
 
   "notifications": {
