@@ -1,1 +1,42 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+/**
+ * Bridge CSS — Semantic aliases pour les composants Figma Make
+ * Ces variables font le pont entre les noms Figma et notre design system SCSS.
+ * Les valeurs réelles sont définies dans src/styles/themes/_light-theme.scss
+ */
+:root {
+  --off-white: var(--color-bg-primary);
+  --warm-beige: var(--color-bg-tertiary);
+  --teal-dark: var(--color-highlight-primary);
+  --teal-darker: var(--color-highlight-secondary);
+  --text-light: var(--color-text-inverse);
+  --text-dark: var(--color-text-secondary);
+}
+
+/**
+ * @theme inline — Expose les variables bridge comme utilitaires Tailwind 4
+ * Exemples générés : bg-off-white, text-text-dark, rounded-card, etc.
+ */
+@theme inline {
+  /* Backgrounds sémantiques */
+  --color-off-white: var(--off-white);
+  --color-warm-beige: var(--warm-beige);
+  --color-teal-dark: var(--teal-dark);
+  --color-teal-darker: var(--teal-darker);
+
+  /* Couleurs texte sémantiques */
+  --color-text-light: var(--text-light);
+  --color-text-dark: var(--text-dark);
+  --color-foreground: var(--color-text-primary);
+
+  /* Couleur primaire (violet) */
+  --color-primary: var(--color-primary);
+
+  /* Bordure */
+  --color-border: var(--color-border);
+
+  /* Rayons de bordure */
+  --radius-card: 8px;
+  --radius-button: 99px;
+}

@@ -17,7 +17,7 @@ interface PublicRouteProps {
 }
 
 export function PublicRoute({ children }: PublicRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, onboardingCompleted } = useAuth()
 
   // Pendant la vérification de session, afficher un spinner
   if (isLoading) {
@@ -28,8 +28,9 @@ export function PublicRoute({ children }: PublicRouteProps) {
     )
   }
 
-  // Si déjà connecté, rediriger vers le feed
-  if (isAuthenticated) {
+  // Rediriger vers /home seulement si connecté ET onboarding terminé
+  // (un user connecté sans onboarding doit rester sur AuthPage pour finir l'onboarding)
+  if (isAuthenticated && onboardingCompleted) {
     return <Navigate to="/home" replace />
   }
 

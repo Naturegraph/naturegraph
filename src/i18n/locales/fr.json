@@ -183,12 +183,47 @@
     "success": {
       "signupTitle": "Compte créé !",
       "signupDesc": "Bienvenue dans la communauté Naturegraph",
+      "signupDescription": "Bienvenue dans la communauté Naturegraph !",
       "loginTitle": "Connecté !",
       "loginDesc": "Ravi de te revoir !",
-      "codeSent": "Code envoyé",
+      "loginDescription": "Ravi de te revoir sur Naturegraph !",
+      "codeSent": "Code envoyé !",
       "codeSentDesc": "Vérifie ta boîte email",
+      "codeSentDescription": "Vérifie ta boîte mail pour le code de connexion.",
       "passwordReset": "Mot de passe mis à jour",
       "passwordResetDesc": "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe"
+    },
+    "signup": {
+      "title": "Rejoins-nous !",
+      "description": "Découvre et partage la nature qui t'entoure. Crée ton compte en quelques secondes ou explore Naturegraph librement, sans engagement.",
+      "emailLabel": "Adresse e-mail ou numéro de téléphone",
+      "emailHelper": "Nous t'enverrons un code de connexion sécurisé.",
+      "createAccount": "Créer mon compte",
+      "discoverWithout": "Découvrir sans compte",
+      "orContinueWith": "ou continuer avec",
+      "alreadyAccount": "Tu as déjà un compte ?",
+      "login": "Se connecter",
+      "photoCredit": "Crédit photo",
+      "photographer": "@emie_photographie_nature"
+    },
+    "login": {
+      "title": "Bon retour !",
+      "description": "Content de te revoir. Entre ton adresse pour recevoir un code de connexion.",
+      "emailLabel": "Adresse e-mail ou numéro de téléphone",
+      "emailHelper": "Nous t'enverrons un code de connexion sécurisé.",
+      "login": "Se connecter",
+      "discoverWithout": "Découvrir sans compte",
+      "orContinueWith": "ou continuer avec",
+      "noAccount": "Pas encore de compte ?",
+      "signup": "Créer un compte"
+    },
+    "verify": {
+      "title": "Vérifie ta messagerie",
+      "description": "Nous t'avons envoyé un code à 6 chiffres à {{email}}.",
+      "codeLabel": "Code de vérification",
+      "noCode": "Tu n'as pas reçu le code ?",
+      "resend": "Renvoyer le code",
+      "timer": "Code valide pendant {{time}}"
     }
   },
 

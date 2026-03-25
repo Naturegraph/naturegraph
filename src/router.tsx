@@ -20,9 +20,7 @@ import { ProtectedRoute, PublicRoute } from '@/components/guards'
 // ─── Lazy-loaded pages (code splitting pour éco-conception) ────────
 
 const Landing = lazy(() => import('./pages/Landing'))
-const Signup = lazy(() => import('./pages/Signup'))
-const Login = lazy(() => import('./pages/Login'))
-const VerifyCode = lazy(() => import('./pages/VerifyCode'))
+const AuthPage = lazy(() => import('./pages/AuthPage'))
 const Onboarding = lazy(() => import('./pages/Onboarding'))
 const Home = lazy(() => import('./pages/Home'))
 const Explore = lazy(() => import('./pages/Explore'))
@@ -70,13 +68,14 @@ export const router = createBrowserRouter([
         ),
       },
 
-      // Auth pages — accessibles uniquement si NON connecté
+      // Auth — signup et login via AuthPage unifiée
+      // La vérification OTP et l'onboarding sont gérés en interne par AuthPage.
       {
         path: 'signup',
         element: (
           <LazyPage>
             <PublicRoute>
-              <Signup />
+              <AuthPage initialMode="signup" />
             </PublicRoute>
           </LazyPage>
         ),
@@ -86,23 +85,13 @@ export const router = createBrowserRouter([
         element: (
           <LazyPage>
             <PublicRoute>
-              <Login />
-            </PublicRoute>
-          </LazyPage>
-        ),
-      },
-      {
-        path: 'verify',
-        element: (
-          <LazyPage>
-            <PublicRoute>
-              <VerifyCode />
+              <AuthPage initialMode="login" />
             </PublicRoute>
           </LazyPage>
         ),
       },
 
-      // Onboarding — accessible uniquement si connecté (post-inscription)
+      // Onboarding standalone — fallback pour les accès directs
       {
         path: 'onboarding',
         element: (

@@ -183,12 +183,47 @@
     "success": {
       "signupTitle": "Account created!",
       "signupDesc": "Welcome to the Naturegraph community",
+      "signupDescription": "Welcome to the Naturegraph community!",
       "loginTitle": "Signed in!",
       "loginDesc": "Great to see you again!",
-      "codeSent": "Code sent",
+      "loginDescription": "Great to see you again on Naturegraph!",
+      "codeSent": "Code sent!",
       "codeSentDesc": "Check your email",
+      "codeSentDescription": "Check your inbox for the login code.",
       "passwordReset": "Password updated",
       "passwordResetDesc": "You can now sign in with your new password"
+    },
+    "signup": {
+      "title": "Join us!",
+      "description": "Discover and share the nature around you. Create your account in seconds or explore Naturegraph freely, no commitment.",
+      "emailLabel": "Email address or phone number",
+      "emailHelper": "We will send you a secure login code.",
+      "createAccount": "Create my account",
+      "discoverWithout": "Discover without account",
+      "orContinueWith": "or continue with",
+      "alreadyAccount": "Already have an account?",
+      "login": "Sign in",
+      "photoCredit": "Photo credit",
+      "photographer": "@emie_photographie_nature"
+    },
+    "login": {
+      "title": "Welcome back!",
+      "description": "Good to see you. Enter your email to receive a login code.",
+      "emailLabel": "Email address or phone number",
+      "emailHelper": "We will send you a secure login code.",
+      "login": "Sign in",
+      "discoverWithout": "Discover without account",
+      "orContinueWith": "or continue with",
+      "noAccount": "Don't have an account yet?",
+      "signup": "Create an account"
+    },
+    "verify": {
+      "title": "Check your inbox",
+      "description": "We sent you a 6-digit code to {{email}}.",
+      "codeLabel": "Verification code",
+      "noCode": "Didn't receive the code?",
+      "resend": "Resend code",
+      "timer": "Code valid for {{time}}"
     }
   },
 
