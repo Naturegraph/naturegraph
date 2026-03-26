@@ -1,151 +1,108 @@
 /**
- * Onboarding — Composant d'onboarding post-inscription
+ * Onboarding — Orchestrateur 4 étapes
  *
- * Version composant (callbacks) de la page Onboarding.tsx.
- * Utilisé dans AuthPage pour gérer l'onboarding inline sans changement de route.
+ * Étapes : interests → frequency → motivations → username
+ * Gère la navigation entre étapes, la persistance des données
+ * et la sauvegarde du profil Supabase à la fin.
  *
  * Props :
- *  - onComplete  : appelé quand l'onboarding est terminé (profil sauvegardé)
- *  - onGoHome    : appelé quand l'utilisateur clique "Passer"
- *  - onGoLogin   : appelé pour retourner au login (non utilisé dans l'UI actuelle)
+ *  - onComplete  : appelé une fois le profil sauvegardé
+ *  - onGoHome    : naviguer vers l'accueil/invité
+ *  - onGoLogin   : naviguer vers le login
  */
 
-import { useState, useEffect, useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
-import { X } from 'lucide-react'
-import { Button } from '@/components/ui'
+import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Interest } from '@/types/database'
-
-// ─── Constantes ──────────────────────────────────────────────────────────────
-
-const TOTAL_STEPS = 3
-
-const INTEREST_KEYS = [
-  'birds',
-  'mammals',
-  'insects',
-  'amphibians',
-  'reptiles',
-  'arachnids',
-  'mollusks',
-  'fish',
-  'plants',
-] as const
-
-const INTEREST_EMOJIS: Record<string, string> = {
-  birds: '🐦',
-  mammals: '🦌',
-  insects: '🦋',
-  amphibians: '🐸',
-  reptiles: '🦎',
-  arachnids: '🕷️',
-  mollusks: '🐌',
-  fish: '🐟',
-  plants: '🌿',
-}
-
-const FREQUENCY_KEYS = ['daily', 'weekly', 'monthly', 'occasionally'] as const
+import { OnboardingInterests } from './OnboardingInterests'
+import { OnboardingStep2 } from './OnboardingStep2'
+import { OnboardingStep3 } from './OnboardingStep3'
+import { OnboardingStep4 } from './OnboardingStep4'
+import { OnboardingExitModal } from './OnboardingExitModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+type Step = 'interests' | 'frequency' | 'motivations' | 'username'
+type FrequencyOption = 'daily' | 'weekly' | 'monthly' | 'occasionally'
+
 interface OnboardingProps {
   onComplete: () => void | Promise<void>
-  onGoHome: () => void
-  onGoLogin: () => void
+  onGoHome?: () => void
+  onGoLogin?: () => void
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
+interface UserData {
+  interests: string[]
+  frequency?: FrequencyOption
+  motivations: string[]
+  username?: string
+}
 
-export default function OnboardingComponent({ onComplete, onGoHome }: OnboardingProps) {
-  const { t } = useTranslation()
+// ─── Composant ───────────────────────────────────────────────────────────────
 
-  const [step, setStep] = useState(1)
-  const [interests, setInterests] = useState<string[]>([])
-  const [frequency, setFrequency] = useState<string | null>(null)
-  const [displayName, setDisplayName] = useState('')
+export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }: OnboardingProps) {
+  const [step, setStep] = useState<Step>('interests')
+  const [exitModalOpen, setExitModalOpen] = useState(false)
+  const [userData, setUserData] = useState<UserData>({ interests: [], motivations: [] })
 
-  // Validation format — calculée au render, pas de setState dans l'effet
-  const usernameFormatError = useMemo((): string | null => {
-    if (step !== 3) return null
-    const trimmed = displayName.trim()
-    if (!trimmed) return null
-    if (trimmed.length < 3) return t('onboarding.usernameErrors.tooShort')
-    if (trimmed.length > 25) return t('onboarding.usernameErrors.tooLong')
-    if (!/^[a-zA-Z0-9._]+$/.test(trimmed)) return t('onboarding.usernameErrors.invalidFormat')
-    if (/^[._]/.test(trimmed) || /[._]$/.test(trimmed))
-      return t('onboarding.usernameErrors.invalidStart')
-    if (/\.{2}|_{2}/.test(trimmed)) return t('onboarding.usernameErrors.invalidFormat')
-    return null
-  }, [step, displayName, t])
-
-  const [serverUsernameError, setServerUsernameError] = useState<string | null>(null)
-  const [isCheckingUsername, setIsCheckingUsername] = useState(false)
-
-  // Vérification unicité serveur — tous les setState dans des callbacks setTimeout
-  useEffect(() => {
-    const trimmed = displayName.trim()
-
-    if (step !== 3 || usernameFormatError !== null || !trimmed) {
-      const id = setTimeout(() => {
-        setServerUsernameError(null)
-        setIsCheckingUsername(false)
-      }, 0)
-      return () => clearTimeout(id)
-    }
-
-    const timer = setTimeout(async () => {
-      setIsCheckingUsername(true)
-      try {
-        if (supabase) {
-          const { data } = await supabase
-            .from('profiles')
-            .select('username')
-            .eq('username', trimmed)
-            .maybeSingle()
-          setServerUsernameError(data ? t('onboarding.usernameErrors.alreadyTaken') : null)
-        }
-      } finally {
-        setIsCheckingUsername(false)
-      }
-    }, 600)
-
-    return () => clearTimeout(timer)
-  }, [displayName, step, usernameFormatError, t])
-
-  const usernameError = usernameFormatError ?? serverUsernameError
-  const isUsernameValid = !usernameError && !isCheckingUsername && displayName.trim().length >= 3
-
-  const canProceed =
-    step === 1 || (step === 2 && frequency !== null) || (step === 3 && isUsernameValid)
-
-  async function handleNext() {
-    if (step < TOTAL_STEPS) {
-      setStep(step + 1)
-    } else {
-      await handleFinish()
-    }
+  // ─── Handlers étape 1
+  function handleInterestsContinue(interests: string[]) {
+    setUserData((prev) => ({ ...prev, interests }))
+    setStep('frequency')
   }
 
-  function handlePrev() {
-    if (step > 1) setStep(step - 1)
+  function handleInterestsSkip() {
+    setStep('frequency')
   }
 
-  async function handleFinish() {
+  // ─── Handlers étape 2
+  function handleFrequencyNext(frequency: FrequencyOption) {
+    setUserData((prev) => ({ ...prev, frequency }))
+    setStep('motivations')
+  }
+
+  // ─── Handlers étape 3
+  function handleMotivationsContinue(motivations: string[]) {
+    setUserData((prev) => ({ ...prev, motivations }))
+    setStep('username')
+  }
+
+  // ─── Handler étape 4 + sauvegarde Supabase
+  async function handleUsernameComplete(username: string) {
+    setUserData((prev) => ({ ...prev, username }))
+
     if (supabase) {
       const {
         data: { user },
       } = await supabase.auth.getUser()
+
       if (user) {
+        /**
+         * TODO [BACKEND] — Étendre l'upsert avec les champs manquants :
+         *   - `notification_frequency` : mapper FrequencyOption → ENUM DB
+         *     ('daily' → 'realtime', 'weekly' → 'daily_digest',
+         *      'monthly' → 'weekly_digest', 'occasionally' → 'disabled')
+         *     Créer également une entrée dans `notification_settings` pour
+         *     les préférences push/email initiales selon la fréquence choisie.
+         *   - `motivations` : tableau ENUM[] dans `profiles` (ou table dédiée
+         *     `user_motivations` si évolution future vers pondération ML).
+         *   Schéma DB : ALTER TABLE profiles
+         *     ADD COLUMN notification_frequency TEXT DEFAULT 'weekly',
+         *     ADD COLUMN motivations TEXT[] DEFAULT '{}';
+         */
         // @ts-expect-error – incompatibilité de type Supabase upsert
         await supabase.from('profiles').upsert(
           {
             id: user.id,
-            username: displayName.trim(),
+            username: username,
             email: user.email ?? '',
-            first_name: displayName.trim(),
+            first_name: username,
             last_name: '',
-            interests: interests as Interest[],
+            interests: userData.interests as Interest[],
+            // TODO [BACKEND] — Mapper vers ENUM DB (voir commentaire ci-dessus)
+            notification_frequency: userData.frequency ?? 'weekly',
+            // TODO [BACKEND] — Stocker dans profiles.motivations TEXT[]
+            motivations: userData.motivations,
             city: null,
             region: null,
             country: null,
@@ -159,275 +116,63 @@ export default function OnboardingComponent({ onComplete, onGoHome }: Onboarding
         )
       }
     }
+
     await onComplete()
   }
 
-  function toggleInterest(key: string) {
-    setInterests((prev) => {
-      if (prev.includes(key)) return prev.filter((k) => k !== key)
-      if (prev.length >= 3) return prev
-      return [...prev, key]
-    })
-  }
-
   return (
-    <div
-      data-theme="light"
-      className="min-h-screen bg-[var(--color-bg-primary)] flex items-start lg:items-center justify-center p-0 lg:p-6"
-    >
-      <div className="w-full lg:max-w-[636px] min-h-screen lg:min-h-0 lg:rounded-2xl bg-[var(--color-surface)] lg:border lg:border-[var(--color-border-light)] flex flex-col">
-        {/* Barre supérieure */}
-        <div className="px-6 pt-6 lg:px-16 lg:pt-16">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-[var(--color-text-primary)]">
-              {t('onboarding.profile')}
-            </span>
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-[var(--color-text-tertiary)]">
-                {t('common.step')} {step}/{TOTAL_STEPS}
-              </span>
-              <button
-                onClick={onGoHome}
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
-                aria-label={t('common.close')}
-              >
-                <X size={18} />
-              </button>
-            </div>
-          </div>
-
-          {/* Barre de progression */}
-          <div className="flex gap-1.5">
-            {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-              <div
-                key={i}
-                className={`h-1.5 flex-1 rounded-full transition-colors ${
-                  i < step ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-bg-tertiary)]'
-                }`}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Contenu de l'étape */}
-        <div className="flex-1 px-6 py-8 lg:px-16 overflow-y-auto">
-          {step === 1 && (
-            <StepInterests t={t} interests={interests} toggleInterest={toggleInterest} />
-          )}
-          {step === 2 && <StepFrequency t={t} frequency={frequency} setFrequency={setFrequency} />}
-          {step === 3 && (
-            <StepDisplayName
-              t={t}
-              displayName={displayName}
-              setDisplayName={setDisplayName}
-              usernameError={usernameError}
-              isCheckingUsername={isCheckingUsername}
-            />
-          )}
-        </div>
-
-        {/* Actions bas */}
-        <div className="px-6 pb-6 lg:px-16 lg:pb-16">
-          {step === 1 && (
-            <p className="text-xs text-center text-[var(--color-text-tertiary)] mb-4">
-              {t('onboarding.step1Hint')}
-            </p>
-          )}
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={step === 1 ? onGoHome : handlePrev}
-              className="flex-1"
-            >
-              {step === 1 ? t('common.cancel') : t('common.previous')}
-            </Button>
-            <Button size="lg" onClick={handleNext} disabled={!canProceed} className="flex-1">
-              {step === TOTAL_STEPS ? t('common.finish') : t('common.next')}
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Étape 1 — Centres d'intérêt ─────────────────────────────────────────────
-
-function StepInterests({
-  t,
-  interests,
-  toggleInterest,
-}: {
-  t: (k: string) => string
-  interests: string[]
-  toggleInterest: (k: string) => void
-}) {
-  return (
-    <>
-      <h2 className="text-2xl lg:text-3xl font-bold text-[var(--color-text-primary)] mb-3">
-        {t('onboarding.step1Title')}
-      </h2>
-      <p className="text-sm text-[var(--color-text-secondary)] mb-8">
-        {t('onboarding.step1Subtitle')}
-      </p>
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-        {INTEREST_KEYS.map((key) => {
-          const selected = interests.includes(key)
-          const order = selected ? interests.indexOf(key) + 1 : null
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => toggleInterest(key)}
-              className={`relative flex flex-col items-center justify-center gap-2 p-5 rounded-xl border transition-all ${
-                selected
-                  ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5'
-                  : 'border-[var(--color-border)] hover:border-[var(--color-primary)]/40'
-              }`}
-            >
-              {order && (
-                <span className="absolute top-2 right-2 w-5 h-5 flex items-center justify-center rounded-full bg-[var(--color-primary)] text-[10px] font-bold text-white">
-                  {order}
-                </span>
-              )}
-              <span className="text-2xl">{INTEREST_EMOJIS[key]}</span>
-              <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                {t(`onboarding.interests.${key}`)}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-    </>
-  )
-}
-
-// ─── Étape 2 — Fréquence ─────────────────────────────────────────────────────
-
-function StepFrequency({
-  t,
-  frequency,
-  setFrequency,
-}: {
-  t: (k: string) => string
-  frequency: string | null
-  setFrequency: (v: string) => void
-}) {
-  return (
-    <>
-      <h2 className="text-2xl lg:text-3xl font-bold text-[var(--color-text-primary)] mb-3">
-        {t('onboarding.step2Title')}
-      </h2>
-      <p className="text-sm text-[var(--color-text-secondary)] mb-8">
-        {t('onboarding.step2Subtitle')}
-      </p>
-      <div className="flex flex-col gap-3">
-        {FREQUENCY_KEYS.map((key) => {
-          const selected = frequency === key
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setFrequency(key)}
-              className={`text-left p-5 rounded-xl border transition-all ${
-                selected
-                  ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5'
-                  : 'border-[var(--color-border)] hover:border-[var(--color-primary)]/40'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-[var(--color-text-primary)]">
-                  {t(`onboarding.frequency.${key}`)}
-                </span>
-                <span
-                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                    selected ? 'border-[var(--color-primary)]' : 'border-[var(--color-border)]'
-                  }`}
-                >
-                  {selected && (
-                    <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-primary)]" />
-                  )}
-                </span>
-              </div>
-              <p className="text-sm text-[var(--color-text-secondary)]">
-                {t(`onboarding.frequency.${key}Desc`)}
-              </p>
-            </button>
-          )
-        })}
-      </div>
-    </>
-  )
-}
-
-// ─── Étape 3 — Nom d'utilisateur ─────────────────────────────────────────────
-
-function StepDisplayName({
-  t,
-  displayName,
-  setDisplayName,
-  usernameError,
-  isCheckingUsername,
-}: {
-  t: (k: string) => string
-  displayName: string
-  setDisplayName: (v: string) => void
-  usernameError: string | null
-  isCheckingUsername: boolean
-}) {
-  const maxLength = 25
-  const isValid = !usernameError && !isCheckingUsername && displayName.trim().length >= 3
-
-  return (
-    <>
-      <h2 className="text-2xl lg:text-3xl font-bold text-[var(--color-text-primary)] mb-3">
-        {t('onboarding.step3Title')}
-      </h2>
-      <p className="text-sm text-[var(--color-text-secondary)] mb-8">
-        {t('onboarding.step3Subtitle')}
-      </p>
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="displayName"
-          className="text-sm font-medium text-[var(--color-text-primary)]"
-        >
-          {t('onboarding.usernameLabel')}
-        </label>
-        <div className="relative">
-          <input
-            id="displayName"
-            type="text"
-            maxLength={maxLength}
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder={t('onboarding.usernamePlaceholder')}
-            className={`w-full px-5 py-3 pr-24 text-sm bg-[var(--color-bg-primary)] border rounded-lg transition-colors placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent ${
-              usernameError
-                ? 'border-[var(--color-error)]'
-                : isValid
-                  ? 'border-green-500'
-                  : 'border-[var(--color-border)]'
-            }`}
+    <div className="flex items-center overflow-clip relative rounded-card md:rounded-[32px] w-full h-full">
+      {/* Fond blanc — contenu centré */}
+      <div className="bg-off-white flex flex-col items-center justify-center w-full md:w-[636px] h-full">
+        {step === 'interests' && (
+          <OnboardingInterests
+            onContinue={handleInterestsContinue}
+            onSkip={handleInterestsSkip}
+            onExit={() => setExitModalOpen(true)}
           />
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-            {isCheckingUsername ? (
-              <span className="text-[10px] text-[var(--color-text-tertiary)] leading-none">
-                {t('onboarding.usernameErrors.checking')}
-              </span>
-            ) : isValid ? (
-              <span className="text-green-500 text-sm font-bold leading-none">✓</span>
-            ) : null}
-            <span className="text-xs text-[var(--color-text-tertiary)]">
-              {displayName.length}/{maxLength}
-            </span>
-          </span>
-        </div>
-        {usernameError && <p className="text-xs text-[var(--color-error)]">{usernameError}</p>}
-        <p className="text-xs text-[var(--color-text-tertiary)]">
-          {t('onboarding.usernameHelper')}
-        </p>
+        )}
+
+        {step === 'frequency' && (
+          <OnboardingStep2
+            onNext={handleFrequencyNext}
+            onBack={() => setStep('interests')}
+            initialValue={userData.frequency}
+            onExit={() => setExitModalOpen(true)}
+          />
+        )}
+
+        {step === 'motivations' && (
+          <OnboardingStep3
+            onContinue={handleMotivationsContinue}
+            onBack={() => setStep('frequency')}
+            initialMotivations={userData.motivations}
+            onExit={() => setExitModalOpen(true)}
+          />
+        )}
+
+        {step === 'username' && (
+          <OnboardingStep4
+            onComplete={handleUsernameComplete}
+            onBack={() => setStep('motivations')}
+            initialUsername={userData.username}
+            onExit={() => setExitModalOpen(true)}
+          />
+        )}
       </div>
-    </>
+
+      {/* Modal de sortie */}
+      <OnboardingExitModal
+        isOpen={exitModalOpen}
+        onClose={() => setExitModalOpen(false)}
+        onGoHome={() => {
+          setExitModalOpen(false)
+          onGoHome?.()
+        }}
+        onGoLogin={() => {
+          setExitModalOpen(false)
+          onGoLogin?.()
+        }}
+      />
+    </div>
   )
 }

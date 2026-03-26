@@ -103,6 +103,16 @@ export const router = createBrowserRouter([
         ),
       },
 
+      // Home — accessible sans auth (mode invité), layout autonome sans MainLayout
+      {
+        path: 'home',
+        element: (
+          <LazyPage>
+            <Home />
+          </LazyPage>
+        ),
+      },
+
       // App principale — authentification requise + layout avec header/footer
       {
         element: (
@@ -111,14 +121,6 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         children: [
-          {
-            path: 'home',
-            element: (
-              <LazyPage>
-                <Home />
-              </LazyPage>
-            ),
-          },
           {
             path: 'explore',
             element: (

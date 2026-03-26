@@ -6,9 +6,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
+import { isSupabaseConfigured } from '@/lib/supabase'
+import { getDemoOtp } from '@/lib/demoAuth'
 import { Logo } from './Logo'
-import heroPhoto from '@/assets/images/mission-observer.png'
+import { AuthHeroPhoto } from './AuthHeroPhoto'
 
 const CODE_LENGTH = 6
 const TIMER_SECONDS = 120
@@ -27,12 +29,18 @@ export function VerificationForm({
   onNavigateToLanding,
 }: VerificationFormProps) {
   const { t } = useTranslation()
+  const { verifyOtp, signInWithOtp } = useAuth()
 
   const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(''))
   const [timer, setTimer] = useState(TIMER_SECONDS)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
+
+  // Hint OTP en mode démo — recalculé après chaque renvoi
+  const [demoOtp, setDemoOtp] = useState<string | null>(() =>
+    !isSupabaseConfigured ? getDemoOtp(email) : null,
+  )
 
   // Countdown
   useEffect(() => {
@@ -87,18 +95,9 @@ export function VerificationForm({
   async function handleVerify(fullCode: string) {
     if (isLoading) return
 
-    // Simulation sans Supabase configuré
-    if (!supabase) {
-      setTimeout(() => onSuccess?.(), 600)
-      return
-    }
-
     setIsLoading(true)
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      email,
-      token: fullCode,
-      type: 'email',
-    })
+    // Routé via le contexte — fonctionne en mode démo ET avec Supabase réel
+    const { error: verifyError } = await verifyOtp(email, fullCode)
     setIsLoading(false)
 
     if (verifyError) {
@@ -111,12 +110,20 @@ export function VerificationForm({
     onSuccess?.()
   }
 
-  function handleResend() {
+  async function handleResend() {
     setCode(Array(CODE_LENGTH).fill(''))
     setTimer(TIMER_SECONDS)
     setError(null)
+
+    // Régénère le code OTP — fonctionne en mode démo et Supabase réel
+    await signInWithOtp(email)
+
+    // En mode démo : mettre à jour le hint OTP affiché dans l'UI
+    if (!isSupabaseConfigured) {
+      setDemoOtp(getDemoOtp(email))
+    }
+
     inputRefs.current[0]?.focus()
-    // TODO: Supabase resend OTP
   }
 
   return (
@@ -177,9 +184,19 @@ export function VerificationForm({
           )}
 
           {/* Timer */}
-          <p className="text-sm text-[var(--color-text-tertiary)] mb-10">
+          <p className="text-sm text-[var(--color-text-tertiary)] mb-4">
             {t('auth.verify.timer', { time: formatTime(timer) })}
           </p>
+
+          {/* Hint OTP — mode démo uniquement (Supabase non configuré) */}
+          {!isSupabaseConfigured && demoOtp && (
+            <div className="mb-6 flex items-center gap-2 px-4 py-3 rounded-xl bg-[#f3e8ff] border border-[#a78bfa]">
+              <span className="text-[#7c3aed] text-lg">🔐</span>
+              <p className="text-sm font-semibold text-[#7c3aed]">
+                {t('auth.verify.demoCode', { code: demoOtp })}
+              </p>
+            </div>
+          )}
 
           {/* Renvoyer */}
           <div>
@@ -197,14 +214,7 @@ export function VerificationForm({
       </div>
 
       {/* ── Colonne photo héro (desktop uniquement) ────────────────────────── */}
-      <div className="hidden lg:flex relative h-full shrink-0 w-[512px]">
-        <img
-          src={heroPhoto}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover rounded-r-[32px]"
-          aria-hidden="true"
-        />
-      </div>
+      <AuthHeroPhoto />
     </div>
   )
 }

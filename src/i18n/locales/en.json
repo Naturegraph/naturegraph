@@ -208,10 +208,12 @@
     },
     "login": {
       "title": "Welcome back!",
-      "description": "Good to see you. Enter your email to receive a login code.",
-      "emailLabel": "Email address or phone number",
-      "emailHelper": "We will send you a secure login code.",
-      "login": "Sign in",
+      "description": "Good to see you. Sign in to find your observations and continue the adventure.",
+      "emailLabel": "Email address or username",
+      "passwordLabel": "Password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "connect": "Sign in",
       "discoverWithout": "Discover without account",
       "orContinueWith": "or continue with",
       "noAccount": "Don't have an account yet?",
@@ -223,64 +225,91 @@
       "codeLabel": "Verification code",
       "noCode": "Didn't receive the code?",
       "resend": "Resend code",
-      "timer": "Code valid for {{time}}"
+      "timer": "Code valid for {{time}}",
+      "demoCode": "Demo mode — Your OTP code: {{code}}"
     }
   },
 
   "onboarding": {
-    "profile": "Profile",
     "stepLabel": "Step",
-    "step1Title": "What are your interests?",
-    "step1Subtitle": "Help us get to know you better by selecting your preferences.",
-    "step1Hint": "You can update your preferences anytime in your profile",
-    "step2Title": "How often do you explore nature?",
-    "step2Subtitle": "This will help us tailor your experience and limit notifications.",
-    "step3Title": "You're ready to explore nature!",
-    "step3Subtitle": "Before we start, tell us what you'd like to be called.",
-    "usernameLabel": "Username",
-    "usernamePlaceholder": "Your username",
-    "usernameHelper": "Letters, numbers, periods (.) and underscores (_) allowed",
-    "usernameMax": "25 characters maximum",
-    "buttonDisabled": "Choose your username",
-    "buttonEnabled": "Let's go!",
+    "back": "Back",
+    "continue": "Continue",
+    "exitButtonLabel": "Exit onboarding",
+    "progressLabel": "Step {{current}} of {{total}}",
+    "categories": {
+      "profile": "Profile"
+    },
     "interests": {
-      "birds": "Birds",
-      "mammals": "Mammals",
-      "insects": "Insects",
-      "amphibians": "Amphibians",
-      "reptiles": "Reptiles",
-      "arachnids": "Arachnids",
-      "mollusks": "Mollusks",
-      "fish": "Fish",
-      "plants": "Plants"
+      "title": "What are your interests?",
+      "description": "Help us get to know you better by selecting your preferences.",
+      "categories": {
+        "birds": "Birds",
+        "mammals": "Mammals",
+        "insects": "Insects",
+        "reptiles": "Reptiles",
+        "amphibians": "Amphibians",
+        "arachnids": "Arachnids",
+        "mollusks": "Mollusks",
+        "fish": "Fish",
+        "plants": "Plants"
+      },
+      "skip": "Skip",
+      "continue": "Continue",
+      "counter": "{{count}} / {{max}} selected",
+      "helperText": "You can update your preferences anytime in your profile"
     },
     "frequency": {
-      "daily": "Every day",
-      "dailyDesc": "I regularly go out and observe nature daily.",
-      "weekly": "A few times a week",
-      "weeklyDesc": "I take advantage of weekends and my free time to explore.",
-      "monthly": "A few times a month",
-      "monthlyDesc": "I like to discover new places from time to time.",
-      "occasionally": "Occasionally",
-      "occasionallyDesc": "When the opportunity arises during trips or outings."
+      "title": "How often do you explore nature?",
+      "description": "This will help us tailor your experience and limit notifications to respect your time.",
+      "options": {
+        "daily": {
+          "title": "Every day",
+          "description": "I regularly go out and observe nature daily"
+        },
+        "weekly": {
+          "title": "A few times a week",
+          "description": "I take advantage of weekends and my free time to explore"
+        },
+        "monthly": {
+          "title": "A few times a month",
+          "description": "I like to discover new places from time to time"
+        },
+        "occasionally": {
+          "title": "Occasionally",
+          "description": "When the opportunity arises during trips or outings"
+        }
+      }
     },
-    "motivation": {
-      "learn": "Learn about nature",
-      "share": "Share my discoveries",
-      "community": "Join a community",
-      "identify": "Identify species"
+    "motivations": {
+      "title": "Why do you want to use Naturegraph?",
+      "description": "Tell us what motivates you most! This will help us better understand your needs.",
+      "options": {
+        "learn": "Learn about nature",
+        "share": "Share my discoveries",
+        "community": "Join a community",
+        "identify": "Identify species"
+      }
     },
-    "usernameErrors": {
-      "tooShort": "Username must be at least 3 characters",
-      "tooLong": "Username cannot exceed 25 characters",
-      "invalidFormat": "Only letters, numbers, periods (.) and underscores (_) are allowed",
-      "invalidStart": "Username cannot start with a period or underscore",
-      "alreadyTaken": "This username is already taken",
-      "checking": "Checking..."
+    "username": {
+      "title": "You're ready to explore nature!",
+      "description": "Before we start, tell us what you'd like to be called.",
+      "inputLabel": "Username",
+      "inputRequired": "*",
+      "inputHelper": "Letters, numbers, periods (.) and underscores (_) allowed",
+      "buttonDisabled": "Choose your username",
+      "buttonEnabled": "Let's go!",
+      "errors": {
+        "tooShort": "Username must be at least 3 characters",
+        "tooLong": "Username cannot exceed 25 characters",
+        "invalidFormat": "Only letters, numbers, periods (.) and underscores (_) are allowed",
+        "alreadyTaken": "This username is already taken",
+        "bannedWord": "This username is not available",
+        "checking": "Checking..."
+      }
     },
     "exitModal": {
       "title": "Leave onboarding?",
-      "description": "You can come back to complete your profile anytime.",
+      "description": "You can come back to complete your profile anytime. What would you like to do?",
       "goHome": "Leave onboarding",
       "goLogin": "Sign in",
       "continue": "Continue onboarding"
@@ -304,6 +333,78 @@
       "searchPlaceholder": "Search for a city...",
       "suggestedCities": "Suggested cities",
       "noResults": "No city found"
+    },
+    "navbar": {
+      "backToHome": "Naturegraph — Back to home",
+      "changeLocation": "Change location",
+      "search": "Search",
+      "notifications": "Notifications",
+      "contribute": "Contribute",
+      "profileMenu": "Profile menu",
+      "login": "Sign in"
+    },
+    "sidebar": {
+      "joinTitle": "Join the community",
+      "joinDescription": "Share your observations, identify species and explore biodiversity around you.",
+      "createAccount": "Create my account",
+      "login": "Sign in",
+      "migratorsTitle": "Migrators to follow",
+      "migratorsDaily": "Popular today",
+      "migratorsTerritory": "Popular in {{region}}",
+      "migratorsInterests": "Based on your interests"
+    },
+    "profile": {
+      "obs": "Obs",
+      "species": "Species",
+      "days": "Days",
+      "thisWeek": "This week",
+      "avatarAlt": "Profile picture of {{name}}",
+      "progressLabel": "{{current}} observations out of {{goal}} this week"
+    },
+    "feed": {
+      "recent": "Recent",
+      "forYou": "For you",
+      "popular": "Popular",
+      "trends": "Trending",
+      "filterFeed": "Filter feed",
+      "listView": "List view",
+      "gridView": "Grid view",
+      "filterObs": "Filter observations",
+      "guestLimitTitle": "Join the Naturegraph community",
+      "guestLimitDesc": "Create a free account to see all observations, react and share your own discoveries.",
+      "guestLimitCreate": "Create my account",
+      "guestLimitLogin": "Sign in"
+    },
+    "post": {
+      "seeMore": "See more",
+      "seeLess": "See less",
+      "optionsMenu": "Post options",
+      "react": "React",
+      "comments": "Comments",
+      "save": "Save",
+      "share": "Share",
+      "imageOf": "Image {{current}} of {{total}}",
+      "navImages": "Image navigation",
+      "viewImage": "View image {{index}}",
+      "reactLoginPrompt": "Sign in to react",
+      "reactions": {
+        "love": "Love",
+        "admire": "Admire",
+        "fire": "Amazing",
+        "wow": "Wow",
+        "curious": "Curious"
+      },
+      "commentCount": "{{count}} comment",
+      "commentCount_other": "{{count}} comments"
+    },
+    "stats": {
+      "impact": "Impact",
+      "changePeriod": "Change period",
+      "observations": "Observations",
+      "migrators": "Migrators",
+      "changeTrendPeriod": "Change trend period",
+      "thisMonth": "This month",
+      "observationCount": "{{count}} observations"
     }
   },
 

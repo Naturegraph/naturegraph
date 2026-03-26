@@ -8,6 +8,7 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <NotificationProvider>
+          {/* Skip link global — pointe vers l'id="main-content" de chaque page */}
           <a href="#main-content" className="skip-link">
             Aller au contenu principal
           </a>

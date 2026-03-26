@@ -15,6 +15,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { generateAndStoreOtp, validateOtp } from '@/lib/demoAuth'
 import type { Profile } from '@/types/database'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -43,8 +44,8 @@ interface SocialResult {
 interface AuthContextValue extends AuthState {
   /** Inscription / connexion via magic link OTP (email ou téléphone) */
   signUp: (emailOrPhone: string) => Promise<SignUpResult>
-  /** Connexion par mot de passe (legacy) */
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>
+  /** Connexion par mot de passe */
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
   /** OTP direct via Supabase */
   signInWithOtp: (email: string) => Promise<{ error: Error | null }>
   /** OAuth social (stub — affiche un message en attendant l'implémentation) */
@@ -70,20 +71,140 @@ const defaultState: AuthState = {
   onboardingCompleted: false,
 }
 
-const noopAuth: AuthContextValue = {
-  ...defaultState,
-  signUp: async () => ({
-    success: false,
-    requiresVerification: false,
-    error: 'Supabase not configured',
-  }),
-  signIn: async () => ({ error: new Error('Supabase not configured') }),
-  signInWithOtp: async () => ({ error: new Error('Supabase not configured') }),
-  signInWithSocial: async () => ({ success: false, error: 'Supabase not configured' }),
-  verifyOtp: async () => ({ error: new Error('Supabase not configured') }),
-  completeOnboarding: async () => {},
-  signOut: async () => {},
-  refreshProfile: async () => {},
+// ─── Demo Auth Provider (mode sans Supabase) ─────────────────────────────
+
+/**
+ * Fournisseur d'authentification en mode démo.
+ * Actif lorsque Supabase n'est pas configuré (variables d'env manquantes).
+ *
+ * Flux : signup → OTP console → verification → onboarding → home
+ * Toutes les interfaces sont identiques au flux Supabase réel.
+ */
+function DemoAuthProvider({ children }: { children: React.ReactNode }) {
+  const [state, setState] = useState<AuthState>(defaultState)
+
+  /** Calcul dérivé : onboarding terminé si le profil a un username */
+  function deriveState(base: Omit<AuthState, 'onboardingCompleted'>): AuthState {
+    return { ...base, onboardingCompleted: !!base.profile?.username }
+  }
+
+  // ── signUp : génère et logue l'OTP, retourne requiresVerification ────────
+  async function signUp(emailOrPhone: string): Promise<SignUpResult> {
+    generateAndStoreOtp(emailOrPhone)
+    return { success: true, requiresVerification: true }
+  }
+
+  // ── signIn : non disponible en démo ─────────────────────────────────────
+  async function signIn(): Promise<{ success: boolean; error?: string }> {
+    return { success: false, error: 'Connexion par mot de passe non disponible en mode démo' }
+  }
+
+  // ── signInWithOtp : génère un nouvel OTP (flux login) ───────────────────
+  async function signInWithOtp(email: string) {
+    generateAndStoreOtp(email)
+    return { error: null }
+  }
+
+  // ── signInWithSocial : stub ──────────────────────────────────────────────
+  async function signInWithSocial(): Promise<SocialResult> {
+    return { success: false, error: 'Connexion sociale non disponible en mode démo' }
+  }
+
+  // ── verifyOtp : valide le code et crée un utilisateur démo en mémoire ───
+  async function verifyOtp(email: string, token: string) {
+    if (!validateOtp(email, token)) {
+      return { error: new Error('Code invalide — vérifiez la console de votre navigateur') }
+    }
+
+    // Utilisateur démo : shape identique à supabase.auth.User
+    const demoUser = {
+      id: `demo-${Date.now()}`,
+      email,
+      app_metadata: {},
+      user_metadata: {},
+      aud: 'authenticated',
+      created_at: new Date().toISOString(),
+    } as unknown as User
+
+    setState(
+      deriveState({
+        user: demoUser,
+        session: null,
+        profile: null, // Peuplé après l'onboarding via completeOnboarding()
+        isLoading: false,
+        isAuthenticated: true,
+      }),
+    )
+
+    return { error: null }
+  }
+
+  // ── completeOnboarding : crée un profil démo minimal ────────────────────
+  async function completeOnboarding() {
+    setState((prev) => {
+      // Dérive le username depuis l'email (ex: alice@example.com → alice)
+      const username = prev.user?.email?.split('@')[0] ?? 'demo-user'
+      const now = new Date().toISOString()
+
+      const demoProfile: Profile = {
+        id: prev.user?.id ?? 'demo',
+        username,
+        email: prev.user?.email ?? '',
+        first_name: username,
+        last_name: '',
+        gender: null,
+        birth_date: null,
+        bio: null,
+        interests: [],
+        city: null,
+        region: null,
+        country: null,
+        instagram: null,
+        twitter: null,
+        website: null,
+        is_public: true,
+        email_verified: true,
+        avatar_url: null,
+        banner_url: null,
+        posts_count: 0,
+        followers_count: 0,
+        following_count: 0,
+        created_at: now,
+        updated_at: now,
+        last_login_at: now,
+      }
+
+      return deriveState({ ...prev, profile: demoProfile })
+    })
+  }
+
+  // ── signOut : réinitialise l'état ────────────────────────────────────────
+  async function signOut() {
+    setState(defaultState)
+  }
+
+  // ── refreshProfile : no-op en démo ──────────────────────────────────────
+  async function refreshProfile() {
+    // Profil géré localement — pas d'appel réseau en mode démo
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{
+        ...state,
+        signUp,
+        signIn,
+        signInWithOtp,
+        signInWithSocial,
+        verifyOtp,
+        completeOnboarding,
+        signOut,
+        refreshProfile,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 // ─── Provider ────────────────────────────────────────────────────────────────
@@ -147,11 +268,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // ─── Connexion par mot de passe (legacy) ─────────────────────────────────
+  // ─── Connexion par mot de passe ───────────────────────────────────────────
   async function signIn(email: string, password: string) {
-    if (!supabase) return { error: new Error('Supabase not configured') }
+    if (!supabase) return { success: false, error: 'Supabase not configured' }
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    return { error: error ? new Error(error.message) : null }
+    return { success: !error, error: error?.message }
   }
 
   // ─── OTP direct ──────────────────────────────────────────────────────────
@@ -165,11 +286,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   // ─── OAuth social (stub) ─────────────────────────────────────────────────
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // TODO [BACKEND] — Implémenter avec supabase.auth.signInWithOAuth() :
+  //   const { error } = await supabase.auth.signInWithOAuth({
+  //     provider,  // 'google' | 'apple' (Facebook = 'facebook', vérifier support Supabase)
+  //     options: { redirectTo: `${window.location.origin}/auth/callback` }
+  //   })
+  //   Créer la route /auth/callback dans le router pour capturer le token de retour.
+  //   Configurer les OAuth providers dans le dashboard Supabase (Auth > Providers).
+  //   Apple Sign In requiert un compte Apple Developer ($99/an).
   async function signInWithSocial(
-    provider: 'google' | 'apple' | 'facebook',
+    provider: 'google' | 'apple' | 'facebook', // eslint-disable-line @typescript-eslint/no-unused-vars
   ): Promise<SocialResult> {
-    // TODO: implémenter OAuth avec Supabase signInWithOAuth
+    // TODO [BACKEND] — Remplacer par supabase.auth.signInWithOAuth (voir commentaire ci-dessus)
     return { success: false, error: 'Connexion sociale bientôt disponible' }
   }
 
@@ -193,7 +321,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   if (!isSupabaseConfigured) {
-    return <AuthContext.Provider value={noopAuth}>{children}</AuthContext.Provider>
+    return <DemoAuthProvider>{children}</DemoAuthProvider>
   }
 
   return (

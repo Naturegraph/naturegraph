@@ -3,19 +3,9 @@
  * Structure extensible préparée pour l'intégration backend
  */
 
-export type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say'
-
-export type Interest =
-  | 'birds'
-  | 'mammals'
-  | 'insects'
-  | 'amphibians'
-  | 'reptiles'
-  | 'arachnids'
-  | 'mollusks'
-  | 'fish'
-  | 'plants'
-  | 'other'
+// Réutilise les types canoniques depuis types/database.ts — pas de duplication
+export type { Gender, Interest } from '@/types/database'
+import type { Gender, Interest } from '@/types/database'
 
 export interface SocialMedia {
   instagram?: string

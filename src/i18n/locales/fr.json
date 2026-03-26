@@ -208,10 +208,12 @@
     },
     "login": {
       "title": "Bon retour !",
-      "description": "Content de te revoir. Entre ton adresse pour recevoir un code de connexion.",
-      "emailLabel": "Adresse e-mail ou numéro de téléphone",
-      "emailHelper": "Nous t'enverrons un code de connexion sécurisé.",
-      "login": "Se connecter",
+      "description": "Content de te revoir. Connecte-toi pour retrouver tes observations et continuer l'aventure.",
+      "emailLabel": "Adresse e-mail ou nom d'utilisateur",
+      "passwordLabel": "Mot de passe",
+      "rememberMe": "Se souvenir de moi",
+      "forgotPassword": "Mot de passe oublié ?",
+      "connect": "Se connecter",
       "discoverWithout": "Découvrir sans compte",
       "orContinueWith": "ou continuer avec",
       "noAccount": "Pas encore de compte ?",
@@ -223,64 +225,91 @@
       "codeLabel": "Code de vérification",
       "noCode": "Tu n'as pas reçu le code ?",
       "resend": "Renvoyer le code",
-      "timer": "Code valide pendant {{time}}"
+      "timer": "Code valide pendant {{time}}",
+      "demoCode": "Mode démo — Ton code OTP : {{code}}"
     }
   },
 
   "onboarding": {
-    "profile": "Profil",
     "stepLabel": "Étape",
-    "step1Title": "Quels sont tes centres d'intérêt ?",
-    "step1Subtitle": "Aide-nous à mieux te connaître en sélectionnant tes préférences.",
-    "step1Hint": "Tu pourras renseigner tes préférences à tout moment dans ton profil",
-    "step2Title": "À quelle fréquence explores-tu la nature ?",
-    "step2Subtitle": "Cela nous permettra d'adapter ton expérience et de limiter les notifications.",
-    "step3Title": "Tu es prêt(e) à explorer la nature !",
-    "step3Subtitle": "Avant de commencer, dis-nous comment tu souhaites être appelé(e).",
-    "usernameLabel": "Nom d'utilisateur",
-    "usernamePlaceholder": "Ton pseudo",
-    "usernameHelper": "Lettres, chiffres, points (.) et underscores (_) autorisés",
-    "usernameMax": "25 caractères maximum",
-    "buttonDisabled": "Choisis ton pseudo",
-    "buttonEnabled": "C'est parti !",
+    "back": "Retour",
+    "continue": "Continuer",
+    "exitButtonLabel": "Quitter l'onboarding",
+    "progressLabel": "Étape {{current}} sur {{total}}",
+    "categories": {
+      "profile": "Profil"
+    },
     "interests": {
-      "birds": "Oiseaux",
-      "mammals": "Mammifères",
-      "insects": "Insectes",
-      "amphibians": "Amphibiens",
-      "reptiles": "Reptiles",
-      "arachnids": "Arachnides",
-      "mollusks": "Mollusques",
-      "fish": "Poissons",
-      "plants": "Plantes"
+      "title": "Quels sont tes centres d'intérêt ?",
+      "description": "Aide-nous à mieux te connaître en sélectionnant tes préférences.",
+      "categories": {
+        "birds": "Oiseaux",
+        "mammals": "Mammifères",
+        "insects": "Insectes",
+        "reptiles": "Reptiles",
+        "amphibians": "Amphibiens",
+        "arachnids": "Arachnides",
+        "mollusks": "Mollusques",
+        "fish": "Poissons",
+        "plants": "Plantes"
+      },
+      "skip": "Passer",
+      "continue": "Continuer",
+      "counter": "{{count}} / {{max}} sélectionnés",
+      "helperText": "Tu pourras renseigner tes préférences à tout moment dans ton profil"
     },
     "frequency": {
-      "daily": "Tous les jours",
-      "dailyDesc": "Je sors régulièrement et j'observe la nature quotidiennement.",
-      "weekly": "Quelques fois par semaine",
-      "weeklyDesc": "Je profite du week-end et de mon temps libre pour explorer.",
-      "monthly": "Quelques fois par mois",
-      "monthlyDesc": "J'aime découvrir de nouveaux endroits de temps en temps.",
-      "occasionally": "Occasionnellement",
-      "occasionallyDesc": "Quand l'occasion se présente lors de voyages ou sorties."
+      "title": "À quelle fréquence explores-tu la nature ?",
+      "description": "Cela nous permettra d'adapter ton expérience et de limiter les notifications pour respecter ton temps.",
+      "options": {
+        "daily": {
+          "title": "Tous les jours",
+          "description": "Je sors régulièrement et j'observe la nature quotidiennement"
+        },
+        "weekly": {
+          "title": "Quelques fois par semaine",
+          "description": "Je profite du week-end et de mon temps libre pour explorer"
+        },
+        "monthly": {
+          "title": "Quelques fois par mois",
+          "description": "J'aime découvrir de nouveaux endroits de temps en temps"
+        },
+        "occasionally": {
+          "title": "Occasionnellement",
+          "description": "Quand l'occasion se présente lors de voyages ou sorties"
+        }
+      }
     },
-    "motivation": {
-      "learn": "Apprendre sur la nature",
-      "share": "Partager mes découvertes",
-      "community": "Rejoindre une communauté",
-      "identify": "Identifier des espèces"
+    "motivations": {
+      "title": "Pourquoi souhaites-tu utiliser Naturegraph ?",
+      "description": "Dis-nous ce qui te motive le plus ! Cela nous aidera à mieux comprendre tes besoins.",
+      "options": {
+        "learn": "Apprendre sur la nature",
+        "share": "Partager mes découvertes",
+        "community": "Rejoindre une communauté",
+        "identify": "Identifier des espèces"
+      }
     },
-    "usernameErrors": {
-      "tooShort": "Le pseudo doit contenir au moins 3 caractères",
-      "tooLong": "Le pseudo ne peut pas dépasser 25 caractères",
-      "invalidFormat": "Seules les lettres, chiffres, points (.) et underscores (_) sont autorisés",
-      "invalidStart": "Le pseudo ne peut pas commencer par un point ou un underscore",
-      "alreadyTaken": "Ce pseudo est déjà utilisé",
-      "checking": "Vérification..."
+    "username": {
+      "title": "Tu es prêt(e) à explorer la nature !",
+      "description": "Avant de commencer, dis-nous comment tu souhaites être appelé(e).",
+      "inputLabel": "Nom d'utilisateur",
+      "inputRequired": "*",
+      "inputHelper": "Lettres, chiffres, points (.) et underscores (_) autorisés",
+      "buttonDisabled": "Choisis ton pseudo",
+      "buttonEnabled": "C'est parti !",
+      "errors": {
+        "tooShort": "Le pseudo doit contenir au moins 3 caractères",
+        "tooLong": "Le pseudo ne peut pas dépasser 25 caractères",
+        "invalidFormat": "Seules les lettres, chiffres, points (.) et underscores (_) sont autorisés",
+        "alreadyTaken": "Ce pseudo est déjà utilisé",
+        "bannedWord": "Ce pseudo n'est pas disponible",
+        "checking": "Vérification..."
+      }
     },
     "exitModal": {
       "title": "Quitter l'onboarding ?",
-      "description": "Tu peux revenir finaliser ton profil à tout moment.",
+      "description": "Tu peux revenir finaliser ton profil à tout moment. Que souhaites-tu faire ?",
       "goHome": "Quitter l'onboarding",
       "goLogin": "Se connecter",
       "continue": "Continuer l'onboarding"
@@ -304,6 +333,78 @@
       "searchPlaceholder": "Rechercher une ville...",
       "suggestedCities": "Villes suggérées",
       "noResults": "Aucune ville trouvée"
+    },
+    "navbar": {
+      "backToHome": "Naturegraph — Retour à l'accueil",
+      "changeLocation": "Changer de localisation",
+      "search": "Rechercher",
+      "notifications": "Notifications",
+      "contribute": "Contribuer",
+      "profileMenu": "Menu profil",
+      "login": "Se connecter"
+    },
+    "sidebar": {
+      "joinTitle": "Rejoins la communauté",
+      "joinDescription": "Partage tes observations, identifie des espèces et explore la biodiversité autour de toi.",
+      "createAccount": "Créer mon compte",
+      "login": "Se connecter",
+      "migratorsTitle": "Migrateurs à suivre",
+      "migratorsDaily": "Populaires aujourd'hui",
+      "migratorsTerritory": "Populaires en {{region}}",
+      "migratorsInterests": "Basé sur tes intérêts"
+    },
+    "profile": {
+      "obs": "Obs",
+      "species": "Espèces",
+      "days": "Jours",
+      "thisWeek": "Cette semaine",
+      "avatarAlt": "Photo de profil de {{name}}",
+      "progressLabel": "{{current}} observations sur {{goal}} cette semaine"
+    },
+    "feed": {
+      "recent": "Récent",
+      "forYou": "Pour vous",
+      "popular": "Populaire",
+      "trends": "Tendances",
+      "filterFeed": "Filtrer le feed",
+      "listView": "Vue liste",
+      "gridView": "Vue grille",
+      "filterObs": "Filtrer les observations",
+      "guestLimitTitle": "Rejoins la communauté Naturegraph",
+      "guestLimitDesc": "Crée un compte gratuit pour voir toutes les observations, réagir et partager tes propres découvertes.",
+      "guestLimitCreate": "Créer mon compte",
+      "guestLimitLogin": "Se connecter"
+    },
+    "post": {
+      "seeMore": "Voir plus",
+      "seeLess": "Voir moins",
+      "optionsMenu": "Options du post",
+      "react": "Réagir",
+      "comments": "Commentaires",
+      "save": "Sauvegarder",
+      "share": "Partager",
+      "imageOf": "Image {{current}} sur {{total}}",
+      "navImages": "Navigation images",
+      "viewImage": "Voir l'image {{index}}",
+      "reactLoginPrompt": "Connecte-toi pour réagir",
+      "reactions": {
+        "love": "Aimer",
+        "admire": "Admirer",
+        "fire": "Incroyable",
+        "wow": "Wow",
+        "curious": "Curieux"
+      },
+      "commentCount": "{{count}} commentaire",
+      "commentCount_other": "{{count}} commentaires"
+    },
+    "stats": {
+      "impact": "Impact",
+      "changePeriod": "Changer la période",
+      "observations": "Observations",
+      "migrators": "Migrateurs",
+      "changeTrendPeriod": "Changer la période des tendances",
+      "thisMonth": "Ce mois-ci",
+      "observationCount": "{{count}} observations"
     }
   },
 

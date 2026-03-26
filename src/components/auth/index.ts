@@ -3,6 +3,7 @@
  */
 
 export { Logo } from './Logo'
+export { AuthHeroPhoto } from './AuthHeroPhoto'
 export { AuthInput } from './AuthInput'
 export { AuthButton } from './AuthButton'
 export { SocialButton } from './SocialButton'

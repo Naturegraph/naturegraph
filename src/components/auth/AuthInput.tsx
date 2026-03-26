@@ -60,10 +60,8 @@ export function AuthInput({
         placeholder={placeholder}
         autoComplete={autoComplete}
         required={isRequired}
-        className={`w-full px-4 py-3 text-sm bg-[var(--color-action-light)] border rounded-xl transition-colors placeholder:text-[var(--color-text-disabled)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed ${
-          error
-            ? 'border-[var(--color-error)]'
-            : 'border-transparent hover:border-[var(--color-border)]'
+        className={`h-12 w-full rounded-button border-[0.5px] px-6 text-base bg-off-white text-foreground placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset focus:border-primary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+          error ? 'border-[var(--color-error)]' : 'border-border'
         }`}
       />
 
