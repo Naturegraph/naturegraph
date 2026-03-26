@@ -4,116 +4,122 @@
 // Synced from Figma variables (2026-03-19)
 
 // ── Brand / Main ──
-$brand-main-50: #F3F4FB;
-$brand-main-100: #E7E9F7;
-$brand-main-200: #CED3F0;
-$brand-main-300: #B5BDEA;
-$brand-main-400: #9BA6E3;
-$brand-main-500: #5F5DD8;
-$brand-main-600: #525AAA;
-$brand-main-700: #3C4380;
-$brand-main-800: #262B55;
-$brand-main-900: #13152B;
+$brand-main-50: #f3f4fb;
+$brand-main-100: #e7e9f7;
+$brand-main-200: #ced3f0;
+$brand-main-300: #b5bdea;
+$brand-main-400: #9ba6e3;
+$brand-main-500: #5f5dd8;
+$brand-main-600: #525aaa;
+$brand-main-700: #3c4380;
+$brand-main-800: #262b55;
+$brand-main-900: #13152b;
 
 // ── Brand / Highlight (Teal) ──
-$brand-highlight-50: #E5F7F7;
-$brand-highlight-100: #CCEDED;
-$brand-highlight-200: #99DBDB;
-$brand-highlight-300: #66C9C9;
-$brand-highlight-400: #33B6B6;
+$brand-highlight-50: #e5f7f7;
+$brand-highlight-100: #cceded;
+$brand-highlight-200: #99dbdb;
+$brand-highlight-300: #66c9c9;
+$brand-highlight-400: #33b6b6;
 $brand-highlight-500: #006666;
 $brand-highlight-600: #005353;
-$brand-highlight-700: #003F3F;
+$brand-highlight-700: #003f3f;
 $brand-highlight-800: #002929;
 $brand-highlight-900: #001414;
 
 // ── Brand / Background (Warm) ──
-$brand-bg-50: #FFFDF8;
-$brand-bg-100: #FFFAF0;
-$brand-bg-200: #FFF9EF;
-$brand-bg-300: #FFF4E0;
-$brand-bg-400: #FFEDD1;
-$brand-bg-500: #FFE8C3;
-$brand-bg-600: #E6DCCC;
-$brand-bg-700: #CCBDA8;
-$brand-bg-800: #B3A085;
+$brand-bg-50: #fffdf8;
+$brand-bg-100: #fffaf0;
+$brand-bg-200: #fff9ef;
+$brand-bg-300: #fff4e0;
+$brand-bg-400: #ffedd1;
+$brand-bg-500: #ffe8c3;
+$brand-bg-600: #e6dccc;
+$brand-bg-700: #ccbda8;
+$brand-bg-800: #b3a085;
 $brand-bg-900: #998366;
 
 // ── Brand / Greyscale ──
-$greyscale-0: #FFFFFF;
-$greyscale-50: #F0F0F5;
-$greyscale-100: #EBEBF0;
-$greyscale-200: #C4C4CC;
-$greyscale-300: #ADADB8;
-$greyscale-400: #9696A3;
-$greyscale-500: #7E7E8F;
+$greyscale-0: #ffffff;
+$greyscale-50: #f0f0f5;
+$greyscale-100: #ebebf0;
+$greyscale-200: #c4c4cc;
+$greyscale-300: #adadb8;
+$greyscale-400: #9696a3;
+$greyscale-500: #7e7e8f;
 $greyscale-600: #565666;
-$greyscale-700: #13131A;
-$greyscale-800: #20203D;
-$greyscale-900: #0C0C14;
+$greyscale-700: #13131a;
+$greyscale-800: #20203d;
+$greyscale-900: #0c0c14;
 $greyscale-999: #000000;
-$greyscale-white: #FFFFFF;
+$greyscale-white: #ffffff;
 $greyscale-black: #000000;
 
 // ── Semantic / Red ──
-$semantic-red-50: #FBE9ED;
-$semantic-red-100: #FCCDD5;
-$semantic-red-200: #FD98AA;
-$semantic-red-300: #FF7088;
-$semantic-red-400: #FD4B67;
-$semantic-red-500: #F12F53;
-$semantic-red-600: #E8122C;
-$semantic-red-700: #9E0F22;
-$semantic-red-800: #5E0D1B;
-$semantic-red-900: #2C0812;
+$semantic-red-50: #fbe9ed;
+$semantic-red-100: #fccdd5;
+$semantic-red-200: #fd98aa;
+$semantic-red-300: #ff7088;
+$semantic-red-400: #fd4b67;
+$semantic-red-500: #f12f53;
+$semantic-red-600: #e8122c;
+$semantic-red-700: #9e0f22;
+$semantic-red-800: #5e0d1b;
+$semantic-red-900: #2c0812;
 
 // ── Semantic / Orange ──
-$semantic-orange-50: #FEEFE2;
-$semantic-orange-100: #FEE1C8;
-$semantic-orange-200: #FBCA9F;
-$semantic-orange-300: #FDB175;
-$semantic-orange-400: #FE9A51;
-$semantic-orange-500: #FA8938;
-$semantic-orange-600: #FD7416;
-$semantic-orange-700: #AF5115;
-$semantic-orange-800: #6C350D;
-$semantic-orange-900: #311A06;
+$semantic-orange-50: #feefe2;
+$semantic-orange-100: #fee1c8;
+$semantic-orange-200: #fbca9f;
+$semantic-orange-300: #fdb175;
+$semantic-orange-400: #fe9a51;
+$semantic-orange-500: #fa8938;
+$semantic-orange-600: #fd7416;
+$semantic-orange-700: #af5115;
+$semantic-orange-800: #6c350d;
+$semantic-orange-900: #311a06;
 
 // ── Semantic / Yellow ──
-$semantic-yellow-50: #FEFAEF;
-$semantic-yellow-100: #FFF6D7;
-$semantic-yellow-200: #FEEFB2;
-$semantic-yellow-300: #FEE78F;
-$semantic-yellow-400: #FEE178;
-$semantic-yellow-500: #FEDC5D;
-$semantic-yellow-600: #FFC726;
-$semantic-yellow-700: #CF961B;
-$semantic-yellow-800: #7C5C13;
-$semantic-yellow-900: #392C0A;
+$semantic-yellow-50: #fefaef;
+$semantic-yellow-100: #fff6d7;
+$semantic-yellow-200: #feefb2;
+$semantic-yellow-300: #fee78f;
+$semantic-yellow-400: #fee178;
+$semantic-yellow-500: #fedc5d;
+$semantic-yellow-600: #ffc726;
+$semantic-yellow-700: #cf961b;
+$semantic-yellow-800: #7c5c13;
+$semantic-yellow-900: #392c0a;
 
 // ── Semantic / Green ──
-$semantic-green-50: #E1F6ED;
-$semantic-green-100: #C7F2DF;
-$semantic-green-200: #8DE6C2;
-$semantic-green-300: #5CDCA7;
-$semantic-green-400: #24CD8B;
-$semantic-green-500: #26C77D;
-$semantic-green-600: #008D56;
-$semantic-green-700: #00673F;
-$semantic-green-800: #00412B;
+$semantic-green-50: #e1f6ed;
+$semantic-green-100: #c7f2df;
+$semantic-green-200: #8de6c2;
+$semantic-green-300: #5cdca7;
+$semantic-green-400: #24cd8b;
+$semantic-green-500: #26c77d;
+$semantic-green-600: #008d56;
+$semantic-green-700: #00673f;
+$semantic-green-800: #00412b;
 $semantic-green-900: #052119;
 
 // ── Semantic / Blue ──
-$semantic-blue-50: #DBEBFA;
-$semantic-blue-100: #BADEFA;
-$semantic-blue-200: #7BBFF5;
-$semantic-blue-300: #41A0F1;
-$semantic-blue-400: #047BED;
-$semantic-blue-500: #1382E9;
-$semantic-blue-600: #015BAD;
+$semantic-blue-50: #dbebfa;
+$semantic-blue-100: #badefa;
+$semantic-blue-200: #7bbff5;
+$semantic-blue-300: #41a0f1;
+$semantic-blue-400: #047bed;
+$semantic-blue-500: #1382e9;
+$semantic-blue-600: #015bad;
 $semantic-blue-700: #004178;
-$semantic-blue-800: #002A49;
+$semantic-blue-800: #002a49;
 $semantic-blue-900: #011626;
 
 // ── Special ──
-$color-menthe: #99FFCC;
+$color-menthe: #99ffcc;
+
+// ── Surfaces / Landing (Figma Make tokens 2026-03-21) ──
+$surface-cream: #f4f1e8;
+$surface-cream-light: #f9f7f0;
+$color-text-muted: #6b6b6b;
+$color-accent-mint: #83c5be;

@@ -3,62 +3,70 @@
 // ============================================
 // Synced from Figma "Colors Tokens" collection — Light mode (2026-03-19)
 
-@use "../abstracts/colors" as *;
+@use '../abstracts/colors' as *;
 
 :root,
-[data-theme="light"] {
+[data-theme='light'] {
   // ── Background / Neutral ──
-  --color-bg-primary: #{$brand-bg-50};           // #FFFDF8
-  --color-bg-secondary: #{$brand-bg-100};         // #FFFAF0
-  --color-bg-tertiary: #{$brand-bg-300};          // #FFF4E0
-  --color-bg-menthe: #{$color-menthe};            // #99FFCC
+  --color-bg-primary: #{$brand-bg-50}; // #FFFDF8
+  --color-bg-secondary: #{$brand-bg-100}; // #FFFAF0
+  --color-bg-tertiary: #{$brand-bg-300}; // #FFF4E0
+  --color-bg-menthe: #{$color-menthe}; // #99FFCC
 
   // ── Background / Highlight ──
-  --color-highlight-primary: #{$brand-highlight-500};    // #006666
-  --color-highlight-secondary: #{$brand-highlight-600};  // #005353
-  --color-highlight-tertiary: #{$brand-highlight-400};   // #33B6B6
+  --color-highlight-primary: #{$brand-highlight-500}; // #006666
+  --color-highlight-secondary: #{$brand-highlight-600}; // #005353
+  --color-highlight-tertiary: #{$brand-highlight-400}; // #33B6B6
 
   // ── Content / Action ──
-  --color-action-default: #{$brand-main-500};     // #5F5DD8
-  --color-action-hover: #{$brand-main-700};       // #3C4380
-  --color-action-active: #{$brand-main-600};      // #525AAA
-  --color-action-disabled: #{$brand-main-200};    // #CED3F0
-  --color-action-light: #{$brand-main-100};       // #E7E9F7
+  --color-action-default: #{$brand-main-500}; // #5F5DD8
+  --color-action-hover: #{$brand-main-700}; // #3C4380
+  --color-action-active: #{$brand-main-600}; // #525AAA
+  --color-action-disabled: #{$brand-main-200}; // #CED3F0
+  --color-action-light: #{$brand-main-100}; // #E7E9F7
 
   // ── Content / Neutral ──
-  --color-text-primary: #{$greyscale-900};        // #0C0C14
-  --color-text-secondary: #{$greyscale-800};      // #20203D
-  --color-text-tertiary: #{$greyscale-700};       // #13131A
-  --color-text-disabled: #{$greyscale-500};       // #7E7E8F
-  --color-text-inverse: #{$greyscale-50};         // #F0F0F5
-  --color-text-white: #{$brand-bg-50};            // #FFFDF8
-  --color-text-black: #{$greyscale-black};        // #000000
+  --color-text-primary: #{$greyscale-900}; // #0C0C14
+  --color-text-secondary: #{$greyscale-800}; // #20203D
+  --color-text-tertiary: #{$greyscale-700}; // #13131A
+  --color-text-disabled: #{$greyscale-500}; // #7E7E8F
+  --color-text-inverse: #{$greyscale-50}; // #F0F0F5
+  --color-text-white: #{$brand-bg-50}; // #FFFDF8
+  --color-text-black: #{$greyscale-black}; // #000000
 
   // ── Stroke ──
-  --color-border: #{$greyscale-200};              // #C4C4CC
-  --color-border-light: #{$greyscale-200};        // #C4C4CC (Stroke/Light)
-  --color-border-dark: #{$greyscale-600};         // #565666 (Stroke/Dark)
+  --color-border: #{$greyscale-200}; // #C4C4CC
+  --color-border-light: #{$greyscale-200}; // #C4C4CC (Stroke/Light)
+  --color-border-dark: #{$greyscale-600}; // #565666 (Stroke/Dark)
 
   // ── Semantic / Content ──
-  --color-success: #{$semantic-green-700};        // #00673F
-  --color-warning: #{$semantic-orange-800};       // #6C350D
-  --color-error: #{$semantic-red-700};            // #9E0F22
-  --color-info: #{$semantic-blue-700};            // #004178
+  --color-success: #{$semantic-green-700}; // #00673F
+  --color-warning: #{$semantic-orange-800}; // #6C350D
+  --color-error: #{$semantic-red-700}; // #9E0F22
+  --color-info: #{$semantic-blue-700}; // #004178
 
   // ── Semantic / Background ──
-  --color-success-bg: #{$semantic-green-100};     // #C7F2DF
-  --color-warning-bg: #{$semantic-orange-100};    // #FEE1C8
-  --color-error-bg: #{$semantic-red-100};         // #FCCDD5
-  --color-info-bg: #{$semantic-blue-100};         // #BADEFA
+  --color-success-bg: #{$semantic-green-100}; // #C7F2DF
+  --color-warning-bg: #{$semantic-orange-100}; // #FEE1C8
+  --color-error-bg: #{$semantic-red-100}; // #FCCDD5
+  --color-info-bg: #{$semantic-blue-100}; // #BADEFA
 
   // ── Neutral ──
-  --color-neutral-0: #{$greyscale-0};             // #FFFFFF
-  --color-neutral-999: #{$greyscale-999};         // #000000
+  --color-neutral-0: #{$greyscale-0}; // #FFFFFF
+  --color-neutral-999: #{$greyscale-999}; // #000000
 
   // ── Surfaces ──
   --color-surface: #{$greyscale-white};
   --color-surface-hover: #{$brand-bg-100};
+  --color-surface-cream: #{$surface-cream}; // #F4F1E8
+  --color-surface-cream-light: #{$surface-cream-light}; // #F9F7F0
   --color-overlay: rgba(0, 0, 0, 0.5);
+
+  // ── Text / Muted ──
+  --color-text-muted: #{$color-text-muted}; // #6B6B6B
+
+  // ── Accents ──
+  --color-accent-mint: #{$color-accent-mint}; // #83C5BE
 
   // ── Legacy aliases (backward compat with Landing.tsx) ──
   --color-primary: #{$brand-main-500};

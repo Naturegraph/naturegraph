@@ -1,1 +1,77 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+/**
+ * Bridge CSS — Semantic aliases pour les composants Figma Make
+ * Ces variables font le pont entre les noms Figma et notre design system SCSS.
+ * Les valeurs réelles sont définies dans src/styles/themes/_light-theme.scss
+ */
+:root {
+  --off-white: var(--color-bg-primary);
+  --warm-beige: var(--color-bg-tertiary);
+  --teal-dark: var(--color-highlight-primary);
+  --teal-darker: var(--color-highlight-secondary);
+  --text-light: var(--color-text-inverse);
+  --text-dark: var(--color-text-secondary);
+
+  /* Tokens Home / Feed — mappés sur le design system SCSS */
+  --cream-lighter: var(--color-bg-secondary);
+  --cream: var(--color-surface-cream, #f4f1e8);
+  --card: var(--color-surface, #ffffff);
+  --background: var(--color-bg-primary);
+  --muted: var(--color-action-disabled, #ced3f0);
+}
+
+/**
+ * @theme inline — Expose les variables bridge comme utilitaires Tailwind 4
+ * Exemples générés : bg-off-white, text-text-dark, rounded-card, etc.
+ */
+/**
+ * Figma Make compatibility aliases
+ * Ces variables font le pont entre le design system Figma Make et notre SCSS.
+ */
+:root {
+  --primary-light: var(--color-action-light, rgba(231, 233, 247, 1));
+  --primary-foreground: var(--color-text-inverse, #ffffff);
+  --muted-foreground: var(--color-text-secondary, rgba(32, 32, 61, 1));
+  --destructive: var(--color-error-bg, rgba(253, 232, 232, 1));
+  --destructive-foreground: var(--color-error, rgba(204, 82, 82, 1));
+  --elevation-sm: 0px 4px 16px 0px rgba(0, 0, 0, 0.08);
+}
+
+@theme inline {
+  /* Backgrounds sémantiques */
+  --color-off-white: var(--off-white);
+  --color-warm-beige: var(--warm-beige);
+  --color-teal-dark: var(--teal-dark);
+  --color-teal-darker: var(--teal-darker);
+  --color-cream-lighter: var(--cream-lighter);
+  --color-cream: var(--cream);
+  --color-card: var(--card);
+  --color-background: var(--background);
+  --color-muted: var(--muted);
+
+  /* Couleurs texte sémantiques */
+  --color-text-light: var(--text-light);
+  --color-text-dark: var(--text-dark);
+  --color-foreground: var(--color-text-primary);
+
+  /* Couleur primaire (violet) */
+  --color-primary: var(--color-primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-foreground: var(--primary-foreground);
+
+  /* Muted / Destructive */
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  /* Bordure */
+  --color-border: var(--color-border);
+
+  /* Rayons de bordure */
+  --radius-card: 8px;
+  --radius-button: 99px;
+
+  /* Ombres */
+  --shadow-elevation-sm: var(--elevation-sm);
+}

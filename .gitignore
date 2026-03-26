@@ -14,6 +14,16 @@ dist-ssr
 .env
 .env.local
 
+# Design references & mockups (not versioned)
+design-references/
+*.old.tsx
+
+# Figma Make generated source (reference only, not part of the app)
+naturegraph-make/
+
+# Claude Code config (machine-specific)
+.claude/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
