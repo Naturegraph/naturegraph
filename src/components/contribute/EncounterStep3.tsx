@@ -1,22 +1,26 @@
 /**
- * EncounterStep3 — Étape 3 du formulaire Rencontre Nature
+ * EncounterStep3 — Étape 3 : Contexte & détails de la rencontre
  *
- * Contenu : contexte de l'observation + lieu + visibilité
+ * Contenu :
+ *   - Titre (optionnel) et description (obligatoire, max 1500 car.)
  *   - Date et moment de la journée
  *   - Météo et habitat (chips à sélection unique, désélectionnable)
  *   - Lieu avec option masquage
+ *   - Tags libres
  *   - Visibilité de la publication
+ *
+ * La description a été déplacée ici depuis l'étape 1 (Figma v2).
+ *
+ * ChipGroup est défini au niveau module pour respecter react-hooks/static-components.
  */
 
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TimeOfDay, WeatherCondition, HabitatType, Visibility } from '@/types/database'
 import { LocationPicker } from './LocationPicker'
+import { TagInput } from './TagInput'
 
 // ─── ChipGroup ────────────────────────────────────────────────────────────────
-//
-// Défini au niveau module (pas dans le composant) pour éviter la recréation
-// à chaque rendu et satisfaire la règle react-hooks/static-components.
 
 interface ChipGroupProps<T extends string> {
   label: string
@@ -26,7 +30,7 @@ interface ChipGroupProps<T extends string> {
   tPrefix: string
 }
 
-/** Groupe de chips à sélection unique (désélectionnable) */
+/** Groupe de chips à sélection unique et désélectionnable */
 function ChipGroup<T extends string>({
   label,
   options,
@@ -46,7 +50,8 @@ function ChipGroup<T extends string>({
             onClick={() => onToggle(selected === opt ? '' : opt)}
             aria-pressed={selected === opt}
             className={[
-              'px-3 py-1.5 rounded-full text-sm border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+              'px-3 py-1.5 rounded-full text-sm border transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
               selected === opt
                 ? 'border-primary bg-primary-light text-primary font-medium'
                 : 'border-border text-foreground hover:border-primary/50',
@@ -60,7 +65,16 @@ function ChipGroup<T extends string>({
   )
 }
 
+// ─── Props ────────────────────────────────────────────────────────────────────
+
 interface EncounterStep3Props {
+  title: string
+  onTitleChange: (v: string) => void
+  description: string
+  onDescriptionChange: (v: string) => void
+  tags: string[]
+  onTagsChange: (tags: string[]) => void
+  errors: Record<string, string>
   encounterDate: string
   onDateChange: (v: string) => void
   timeOfDay: TimeOfDay | ''
@@ -77,12 +91,20 @@ interface EncounterStep3Props {
   onVisibilityChange: (v: Visibility) => void
 }
 
-/** Retourne la date du jour au format YYYY-MM-DD */
+const MAX_DESC = 1500
+
 function todayISO() {
   return new Date().toISOString().slice(0, 10)
 }
 
 export function EncounterStep3({
+  title,
+  onTitleChange,
+  description,
+  onDescriptionChange,
+  tags,
+  onTagsChange,
+  errors,
   encounterDate,
   onDateChange,
   timeOfDay,
@@ -99,9 +121,9 @@ export function EncounterStep3({
   onVisibilityChange,
 }: EncounterStep3Props) {
   const { t } = useTranslation()
+  const titleId = useId()
+  const descId = useId()
   const dateId = useId()
-
-  // ── Options chips ─────────────────────────────────────────────────────────
 
   const TIME_OPTIONS: TimeOfDay[] = ['morning', 'afternoon', 'dusk', 'evening', 'night']
   const WEATHER_OPTIONS: WeatherCondition[] = ['sunny', 'cloudy', 'rainy', 'windy', 'snowy']
@@ -134,9 +156,59 @@ export function EncounterStep3({
   ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
+      {/* Titre (optionnel) */}
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor={titleId} className="text-sm font-semibold text-foreground">
+          {t('contribute.panel.obsTitle')}
+        </label>
+        <input
+          id={titleId}
+          type="text"
+          value={title}
+          onChange={(e) => onTitleChange(e.target.value)}
+          placeholder={t('contribute.panel.obsTitlePlaceholder')}
+          className="w-full px-4 py-3 rounded-xl border border-border bg-cream-lighter text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+        />
+      </div>
+
+      {/* Description (obligatoire) */}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between">
+          <label htmlFor={descId} className="text-sm font-semibold text-foreground">
+            {t('contribute.description.label')}{' '}
+            <span aria-hidden="true" className="text-[var(--color-error)]">
+              *
+            </span>
+          </label>
+          <span
+            aria-live="polite"
+            className={`text-xs tabular-nums ${description.length > MAX_DESC ? 'text-[var(--color-error)]' : 'text-muted-foreground'}`}
+          >
+            {t('contribute.description.chars', { count: description.length, max: MAX_DESC })}
+          </span>
+        </div>
+        <textarea
+          id={descId}
+          value={description}
+          onChange={(e) => onDescriptionChange(e.target.value)}
+          placeholder={t('contribute.description.placeholder')}
+          rows={4}
+          required
+          aria-required="true"
+          aria-invalid={!!errors.description}
+          aria-describedby={errors.description ? `${descId}-error` : undefined}
+          className="w-full px-4 py-3 rounded-xl border border-border bg-cream-lighter text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
+        />
+        {errors.description && (
+          <p id={`${descId}-error`} role="alert" className="text-xs text-[var(--color-error)]">
+            {errors.description}
+          </p>
+        )}
+      </div>
+
       {/* Date + moment */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         <label htmlFor={dateId} className="text-sm font-semibold text-foreground">
           {t('contribute.date.label')}
         </label>
@@ -180,8 +252,10 @@ export function EncounterStep3({
         onHiddenChange={onLocationHiddenChange}
       />
 
+      <TagInput tags={tags} onTagsChange={onTagsChange} />
+
       {/* Visibilité */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         <span className="text-sm font-semibold text-foreground">
           {t('contribute.visibility.label')}
         </span>

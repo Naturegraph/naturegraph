@@ -1,212 +1,402 @@
 /**
- * EncounterStep2 — Étape 2 du formulaire Rencontre Nature
+ * EncounterStep2 — Étape 2 : Carnet d'observations
  *
- * Contenu : identification de l'espèce observée
- *   - Statut : identifiée / en attente / inconnue
- *   - Recherche d'espèce (si identifiée) via SpeciesSearch
- *   - Groupe taxonomique (si identifiée et pas de résultat TAXREF)
- *   - Observations multiples
+ * Permet d'ajouter une ou plusieurs espèces observées à l'observation :
+ *   - Recherche par nom commun ou scientifique (données TAXREF mock)
+ *   - Chaque entrée comporte un compteur d'individus modifiable
+ *   - Option "Je ne connais pas l'espèce" pour une entrée inconnue
+ *   - Toggle "Activer l'aide à l'identification" pour les mystères
  *
- * Aucun champ obligatoire à cette étape — l'observation peut rester
- * "en attente d'identification" et être complétée plus tard.
+ * Design inspiré du pattern "Carnet d'observations" Figma.
+ * TODO [BACKEND] — Brancher sur la vraie API TAXREF (voir SpeciesSearch.tsx).
  */
 
-import { useId } from 'react'
+import { useState, useId } from 'react'
+import { Search, Trash2, Plus, Minus, HelpCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
-import { SpeciesSearch, type MockSpecies } from './SpeciesSearch'
+import hermineImg from '@/assets/images/hermine-empty-state.png'
 
-// Statuts d'identification disponibles à la saisie
-type IdentificationChoice = 'identified' | 'pending' | 'unknown'
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-const TAXONOMIC_GROUPS: TaxonomicGroup[] = [
-  'birds',
-  'mammals',
-  'insects',
-  'amphibians',
-  'reptiles',
-  'arachnids',
-  'mollusks',
-  'fish',
-  'plants',
-  'other',
+export interface ObservationEntry {
+  /** Identifiant temporaire local */
+  id: string
+  species: { id: string; commonName: string; scientificName: string; group: TaxonomicGroup } | null
+  /** true = espèce non déterminée (mystère) */
+  isUnknown: boolean
+  count: number
+}
+
+// Données TAXREF mock — source : INPN, licence CC-BY
+const MOCK_SPECIES = [
+  {
+    id: '4001',
+    commonName: 'Mésange charbonnière',
+    scientificName: 'Parus major',
+    group: 'birds' as TaxonomicGroup,
+  },
+  {
+    id: '3562',
+    commonName: 'Rougegorge familier',
+    scientificName: 'Erithacus rubecula',
+    group: 'birds' as TaxonomicGroup,
+  },
+  {
+    id: '3586',
+    commonName: 'Hirondelle rustique',
+    scientificName: 'Hirundo rustica',
+    group: 'birds' as TaxonomicGroup,
+  },
+  {
+    id: '3248',
+    commonName: 'Buse variable',
+    scientificName: 'Buteo buteo',
+    group: 'birds' as TaxonomicGroup,
+  },
+  {
+    id: '3861',
+    commonName: 'Cygne tuberculé',
+    scientificName: 'Cygnus olor',
+    group: 'birds' as TaxonomicGroup,
+  },
+  {
+    id: '3664',
+    commonName: "Martin-pêcheur d'Europe",
+    scientificName: 'Alcedo atthis',
+    group: 'birds' as TaxonomicGroup,
+  },
+  {
+    id: '60612',
+    commonName: 'Renard roux',
+    scientificName: 'Vulpes vulpes',
+    group: 'mammals' as TaxonomicGroup,
+  },
+  {
+    id: '100376',
+    commonName: "Hérisson d'Europe",
+    scientificName: 'Erinaceus europaeus',
+    group: 'mammals' as TaxonomicGroup,
+  },
+  {
+    id: '4831',
+    commonName: 'Écureuil roux',
+    scientificName: 'Sciurus vulgaris',
+    group: 'mammals' as TaxonomicGroup,
+  },
+  {
+    id: '7021',
+    commonName: 'Chevreuil européen',
+    scientificName: 'Capreolus capreolus',
+    group: 'mammals' as TaxonomicGroup,
+  },
+  {
+    id: '290',
+    commonName: 'Grenouille rousse',
+    scientificName: 'Rana temporaria',
+    group: 'amphibians' as TaxonomicGroup,
+  },
+  {
+    id: '84913',
+    commonName: 'Lézard vert occidental',
+    scientificName: 'Lacerta bilineata',
+    group: 'reptiles' as TaxonomicGroup,
+  },
+  {
+    id: '236193',
+    commonName: 'Coccinelle à sept points',
+    scientificName: 'Coccinella septempunctata',
+    group: 'insects' as TaxonomicGroup,
+  },
+  {
+    id: '65474',
+    commonName: 'Pissenlit officinal',
+    scientificName: 'Taraxacum officinale',
+    group: 'plants' as TaxonomicGroup,
+  },
 ]
 
+// ─── Sous-composants ──────────────────────────────────────────────────────────
+
+/** Barre de recherche avec autocomplétion pour ajouter une espèce */
+function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['species']) => void }) {
+  const { t } = useTranslation()
+  const listId = useId()
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+
+  const results =
+    query.length >= 2
+      ? MOCK_SPECIES.filter(
+          (s) =>
+            s.commonName.toLowerCase().includes(query.toLowerCase()) ||
+            s.scientificName.toLowerCase().includes(query.toLowerCase()),
+        ).slice(0, 6)
+      : []
+
+  function handleSelect(species: (typeof MOCK_SPECIES)[0]) {
+    onAdd(species)
+    setQuery('')
+    setOpen(false)
+  }
+
+  return (
+    <div className="relative">
+      <div className="flex items-center gap-2 h-11 px-3 rounded-xl border border-border bg-cream-lighter focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors">
+        <Search className="size-4 text-muted-foreground shrink-0" aria-hidden="true" />
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value)
+            setOpen(true)
+          }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          placeholder={t('contribute.panel.searchSpecies')}
+          role="combobox"
+          aria-expanded={open && results.length > 0}
+          aria-autocomplete="list"
+          aria-controls={listId}
+          autoComplete="off"
+          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+        />
+      </div>
+
+      {/* Résultats */}
+      {open && results.length > 0 && (
+        <ul
+          id={listId}
+          role="listbox"
+          className="absolute z-20 w-full mt-1 rounded-xl border border-border bg-cream-lighter shadow-lg overflow-hidden"
+        >
+          {results.map((s) => (
+            <li key={s.id} role="option" aria-selected={false}>
+              <button
+                type="button"
+                onMouseDown={() => handleSelect(s)}
+                className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-primary-light/30 transition-colors text-left"
+              >
+                <span>
+                  <span className="text-sm font-medium text-foreground block">{s.commonName}</span>
+                  <span className="text-xs text-muted-foreground italic">{s.scientificName}</span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Aucun résultat */}
+      {open && query.length >= 2 && results.length === 0 && (
+        <div className="absolute z-20 w-full mt-1 rounded-xl border border-border bg-cream-lighter shadow-sm px-4 py-3">
+          <p className="text-sm text-muted-foreground">{t('contribute.panel.noResults')}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Ligne d'une observation dans le carnet */
+function ObservationRow({
+  entry,
+  onCountChange,
+  onRemove,
+}: {
+  entry: ObservationEntry
+  onCountChange: (id: string, delta: number) => void
+  onRemove: (id: string) => void
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-cream-lighter">
+      {/* Icône espèce */}
+      <div
+        className="size-9 rounded-full bg-primary-light/40 flex items-center justify-center shrink-0"
+        aria-hidden="true"
+      >
+        {entry.isUnknown ? (
+          <HelpCircle className="size-4 text-primary" />
+        ) : (
+          <span className="text-sm">🐾</span>
+        )}
+      </div>
+
+      {/* Nom + groupe */}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-foreground truncate">
+          {entry.isUnknown ? t('contribute.panel.unknownSpecies') : entry.species?.commonName}
+        </p>
+        <p className="text-xs text-muted-foreground italic truncate">
+          {entry.isUnknown ? t('contribute.panel.unknownSubtitle') : entry.species?.scientificName}
+        </p>
+      </div>
+
+      {/* Compteur individus */}
+      <div
+        className="flex items-center gap-1.5 shrink-0"
+        role="group"
+        aria-label={t('contribute.panel.individualCount')}
+      >
+        <button
+          type="button"
+          onClick={() => onCountChange(entry.id, -1)}
+          disabled={entry.count <= 1}
+          aria-label="Diminuer"
+          className="size-6 rounded-full border border-border flex items-center justify-center hover:border-primary/60 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <Minus className="size-3" aria-hidden="true" />
+        </button>
+        <span className="text-sm font-medium w-5 text-center tabular-nums">{entry.count}</span>
+        <button
+          type="button"
+          onClick={() => onCountChange(entry.id, +1)}
+          aria-label="Augmenter"
+          className="size-6 rounded-full border border-border flex items-center justify-center hover:border-primary/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <Plus className="size-3" aria-hidden="true" />
+        </button>
+      </div>
+
+      {/* Supprimer */}
+      <button
+        type="button"
+        onClick={() => onRemove(entry.id)}
+        aria-label={`Supprimer ${entry.species?.commonName ?? 'cette observation'}`}
+        className="size-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
+      >
+        <Trash2 className="size-3.5" aria-hidden="true" />
+      </button>
+    </div>
+  )
+}
+
+// ─── Composant principal ──────────────────────────────────────────────────────
+
 interface EncounterStep2Props {
-  identificationChoice: IdentificationChoice
-  onIdentificationChange: (v: IdentificationChoice) => void
-  selectedSpecies: MockSpecies | null
-  onSelectSpecies: (s: MockSpecies) => void
-  onClearSpecies: () => void
-  taxonomicGroup: TaxonomicGroup | ''
-  onGroupChange: (g: TaxonomicGroup | '') => void
-  multipleObservations: boolean
-  onMultipleChange: (v: boolean) => void
+  observations: ObservationEntry[]
+  onAdd: (entry: ObservationEntry) => void
+  onRemove: (id: string) => void
+  onCountChange: (id: string, delta: number) => void
+  helpIdentification: boolean
+  onHelpIdentificationChange: (v: boolean) => void
 }
 
 export function EncounterStep2({
-  identificationChoice,
-  onIdentificationChange,
-  selectedSpecies,
-  onSelectSpecies,
-  onClearSpecies,
-  taxonomicGroup,
-  onGroupChange,
-  multipleObservations,
-  onMultipleChange,
+  observations,
+  onAdd,
+  onRemove,
+  onCountChange,
+  helpIdentification,
+  onHelpIdentificationChange,
 }: EncounterStep2Props) {
   const { t } = useTranslation()
-  const groupId = useId()
-  const multipleId = useId()
+  const toggleId = useId()
 
-  const STATUS_OPTIONS: { value: IdentificationChoice; label: string; desc: string }[] = [
-    {
-      value: 'identified',
-      label: t('contribute.species.identified'),
-      desc: t('contribute.species.identifiedDesc'),
-    },
-    {
-      value: 'pending',
-      label: t('contribute.species.pending'),
-      desc: t('contribute.species.pendingDesc'),
-    },
-    {
-      value: 'unknown',
-      label: t('contribute.species.unknown'),
-      desc: t('contribute.species.unknownDesc'),
-    },
-  ]
+  /** Crée une nouvelle entrée espèce et l'ajoute au carnet */
+  function handleAddSpecies(species: ObservationEntry['species']) {
+    onAdd({
+      id: `obs-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      species,
+      isUnknown: false,
+      count: 1,
+    })
+  }
+
+  const hasObservations = observations.length > 0
+  const hasUnknown = observations.some((o) => o.isUnknown)
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Choix du statut d'identification */}
-      <div className="flex flex-col gap-3">
-        <span className="text-sm font-semibold text-foreground">
-          {t('contribute.species.statusLabel')}
-        </span>
-        <div
-          className="flex flex-col gap-2"
-          role="radiogroup"
-          aria-label={t('contribute.species.statusLabel')}
-        >
-          {STATUS_OPTIONS.map((opt) => (
-            <label
-              key={opt.value}
-              className={[
-                'flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-colors',
-                identificationChoice === opt.value
-                  ? 'border-primary bg-primary-light/20'
-                  : 'border-border hover:border-primary/40',
-              ].join(' ')}
-            >
-              <input
-                type="radio"
-                name="identification"
-                value={opt.value}
-                checked={identificationChoice === opt.value}
-                onChange={() => onIdentificationChange(opt.value)}
-                className="sr-only"
-              />
-              <div
-                className={[
-                  'size-4 rounded-full border-2 flex items-center justify-center shrink-0',
-                  identificationChoice === opt.value ? 'border-primary' : 'border-border',
-                ].join(' ')}
-              >
-                {identificationChoice === opt.value && (
-                  <div className="size-2 rounded-full bg-primary" />
-                )}
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">{opt.label}</p>
-                <p className="text-xs text-muted-foreground">{opt.desc}</p>
-              </div>
-            </label>
-          ))}
-        </div>
-      </div>
+    <div className="flex flex-col gap-4">
+      {/* Barre de recherche */}
+      <SpeciesSearchBar onAdd={handleAddSpecies} />
 
-      {/* Recherche d'espèce — visible seulement si "identifiée" */}
-      {identificationChoice === 'identified' && (
-        <>
-          <SpeciesSearch
-            selected={selectedSpecies}
-            onSelect={onSelectSpecies}
-            onClear={onClearSpecies}
+      {/* État vide — hermine + hint */}
+      {!hasObservations && (
+        <div className="flex flex-col items-center gap-3 py-6 text-center">
+          <img
+            src={hermineImg}
+            alt=""
+            width={80}
+            height={80}
+            className="opacity-70"
+            loading="lazy"
           />
-
-          {/* Groupe taxonomique — utilisé si l'espèce n'est pas dans TAXREF */}
-          {!selectedSpecies && (
-            <div className="flex flex-col gap-2">
-              <label htmlFor={groupId} className="text-sm font-semibold text-foreground">
-                {t('contribute.species.group')}
-              </label>
-              <div
-                id={groupId}
-                role="group"
-                aria-label={t('contribute.species.group')}
-                className="flex flex-wrap gap-2"
-              >
-                {TAXONOMIC_GROUPS.map((g) => (
-                  <button
-                    key={g}
-                    type="button"
-                    onClick={() => onGroupChange(taxonomicGroup === g ? '' : g)}
-                    aria-pressed={taxonomicGroup === g}
-                    className={[
-                      'px-3 py-1.5 rounded-full text-sm border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                      taxonomicGroup === g
-                        ? 'border-primary bg-primary-light text-primary font-medium'
-                        : 'border-border text-foreground hover:border-primary/50',
-                    ].join(' ')}
-                  >
-                    {t(`contribute.species.groups.${g}`)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
+          <p className="text-sm text-muted-foreground px-4">{t('contribute.panel.emptyHint')}</p>
+        </div>
       )}
 
-      {/* Observations multiples */}
-      <label
-        htmlFor={multipleId}
-        aria-label={t('contribute.multipleObs')}
-        className="flex items-start gap-3 cursor-pointer"
-      >
-        <div className="relative mt-0.5 shrink-0">
+      {/* Carnet d'observations */}
+      {hasObservations && (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            {t('contribute.panel.notebook')} ({observations.length})
+          </p>
+          {observations.map((entry) => (
+            <ObservationRow
+              key={entry.id}
+              entry={entry}
+              onCountChange={onCountChange}
+              onRemove={onRemove}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Ajouter une nouvelle observation */}
+      {hasObservations && (
+        <button
+          type="button"
+          onClick={() => {
+            /* scrolls to search bar — handled by focus on search */
+          }}
+          className="flex items-center gap-2 text-sm text-primary font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+        >
+          <Plus className="size-4" aria-hidden="true" />
+          {t('contribute.panel.addObservation')}
+        </button>
+      )}
+
+      {/* Toggle aide à l'identification — visible si mystère présent */}
+      {hasUnknown && (
+        <label
+          htmlFor={toggleId}
+          aria-label={t('contribute.panel.helpIdentification')}
+          className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-border bg-cream-lighter cursor-pointer"
+        >
+          <span className="text-sm font-medium text-foreground">
+            {t('contribute.panel.helpIdentification')}
+          </span>
           <input
-            id={multipleId}
+            id={toggleId}
             type="checkbox"
-            checked={multipleObservations}
-            onChange={(e) => onMultipleChange(e.target.checked)}
+            checked={helpIdentification}
+            onChange={(e) => onHelpIdentificationChange(e.target.checked)}
+            role="switch"
+            aria-checked={helpIdentification}
             className="sr-only peer"
           />
-          <div className="size-5 rounded border border-border bg-cream-lighter peer-checked:bg-primary peer-checked:border-primary transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-1 flex items-center justify-center">
-            {multipleObservations && (
-              <svg
-                className="size-3 text-primary-foreground"
-                viewBox="0 0 12 12"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M2 6l3 3 5-5"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            )}
+          {/* Toggle visuel */}
+          <div
+            aria-hidden="true"
+            className={[
+              'relative w-10 h-5 rounded-full transition-colors shrink-0',
+              helpIdentification ? 'bg-primary' : 'bg-muted',
+            ].join(' ')}
+          >
+            <span
+              className={[
+                'absolute top-0.5 size-4 rounded-full bg-white shadow transition-transform',
+                helpIdentification ? 'translate-x-5' : 'translate-x-0.5',
+              ].join(' ')}
+            />
           </div>
-        </div>
-        <div>
-          <p className="text-sm font-medium text-foreground">{t('contribute.multipleObs')}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{t('contribute.multipleObsDesc')}</p>
-        </div>
-      </label>
+        </label>
+      )}
+
+      {/* Attribution TAXREF obligatoire — voir CLAUDE.md */}
+      <p className="text-[10px] text-muted-foreground">{t('contribute.species.taxrefCredit')}</p>
     </div>
   )
 }

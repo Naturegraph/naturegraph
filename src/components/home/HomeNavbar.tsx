@@ -55,6 +55,11 @@ interface HomeNavbarProps {
   onOpenFeedFilters?: () => void
   /** Affiche le badge sur l'icône filtre si des filtres actifs */
   feedHasActiveFilters?: boolean
+  /**
+   * Rappelé quand l'utilisateur choisit un type de contribution dans le menu desktop.
+   * Si fourni, ouvre le panneau inline (panel overlay) plutôt que de naviguer.
+   */
+  onContributeTypeSelect?: (type: string) => void
 }
 
 // ─── Composant ───────────────────────────────────────────────────────────────
@@ -64,6 +69,7 @@ export function HomeNavbar({
   onToggleFeedView,
   onOpenFeedFilters,
   feedHasActiveFilters = false,
+  onContributeTypeSelect,
 }: HomeNavbarProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -276,7 +282,10 @@ export function HomeNavbar({
                   </div>
 
                   {showContribute && isAuthenticated && (
-                    <ContributeModal onClose={() => setShowContribute(false)} />
+                    <ContributeModal
+                      onClose={() => setShowContribute(false)}
+                      onTypeSelect={onContributeTypeSelect}
+                    />
                   )}
                 </div>
 

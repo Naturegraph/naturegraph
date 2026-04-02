@@ -1,49 +1,42 @@
 /**
- * ContributeEncounterForm — Orchestrateur du formulaire Rencontre Nature (3 étapes)
+ * ContributeEncounterForm — Panel latéral Rencontre Nature (3 étapes)
  *
- * Étape 1 : Photos + description + tags
- * Étape 2 : Identification de l'espèce
- * Étape 3 : Contexte (météo, habitat, lieu, date, visibilité)
+ * Rendu sous forme de panneau droit fixe superposé au feed (design Figma v2).
+ * Sur mobile le panneau prend toute la largeur de l'écran.
  *
- * Type de post créé : 'nature_encounter'
+ * Étape 1 : Photos + format d'affichage
+ * Étape 2 : Carnet d'observations (espèces + compteurs)
+ * Étape 3 : Contexte & détails (titre, description, date, lieu, visibilité)
  *
- * TODO [BACKEND] — Brancher la création de post :
- *   1. Upload médias → Supabase Storage bucket 'post-media'
- *   2. Insérer le post → table 'posts' (type: 'nature_encounter')
- *   3. Invalider le cache : queryClient.invalidateQueries({ queryKey: ['feed'] })
+ * TODO [BACKEND] :
+ *   1. Upload médias → Supabase Storage 'post-media'
+ *   2. POST /posts { type: 'nature_encounter', ... }
+ *   3. queryClient.invalidateQueries({ queryKey: ['feed'] })
  */
 
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, ChevronRight, Send } from 'lucide-react'
-import type {
-  TimeOfDay,
-  WeatherCondition,
-  HabitatType,
-  Visibility,
-  TaxonomicGroup,
-} from '@/types/database'
-import type { MockSpecies } from './SpeciesSearch'
+import { ArrowLeft, X } from 'lucide-react'
+import type { TimeOfDay, WeatherCondition, HabitatType, Visibility } from '@/types/database'
 import { EncounterStep1 } from './EncounterStep1'
 import { EncounterStep2 } from './EncounterStep2'
 import { EncounterStep3 } from './EncounterStep3'
+import type { PhotoAspectRatio } from './EncounterStep1'
+import type { ObservationEntry } from './EncounterStep2'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-type IdentificationChoice = 'identified' | 'pending' | 'unknown'
 
 interface EncounterFormData {
   // Étape 1
   files: File[]
+  aspectRatio: PhotoAspectRatio
+  // Étape 2
+  observations: ObservationEntry[]
+  helpIdentification: boolean
+  // Étape 3
+  title: string
   description: string
   tags: string[]
-  // Étape 2
-  identificationChoice: IdentificationChoice
-  selectedSpecies: MockSpecies | null
-  taxonomicGroup: TaxonomicGroup | ''
-  multipleObservations: boolean
-  // Étape 3
   encounterDate: string
   timeOfDay: TimeOfDay | ''
   weather: WeatherCondition | ''
@@ -57,19 +50,23 @@ const TOTAL_STEPS = 3
 
 // ─── Composant ────────────────────────────────────────────────────────────────
 
-export function ContributeEncounterForm() {
+interface ContributeEncounterFormProps {
+  /** Ferme le panneau (retour au feed) */
+  onClose: () => void
+}
+
+export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProps) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
 
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<EncounterFormData>({
     files: [],
+    aspectRatio: 'landscape',
+    observations: [],
+    helpIdentification: false,
+    title: '',
     description: '',
     tags: [],
-    identificationChoice: 'pending',
-    selectedSpecies: null,
-    taxonomicGroup: '',
-    multipleObservations: false,
     encounterDate: new Date().toISOString().slice(0, 10),
     timeOfDay: '',
     weather: '',
@@ -81,6 +78,23 @@ export function ContributeEncounterForm() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Fermer sur Escape
+  useEffect(() => {
+    const fn = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', fn)
+    return () => document.removeEventListener('keydown', fn)
+  }, [onClose])
+
+  // Bloquer le scroll du body quand le panneau est ouvert
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [])
+
   function set<K extends keyof EncounterFormData>(key: K, value: EncounterFormData[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
     if (errors[key as string])
@@ -89,30 +103,49 @@ export function ContributeEncounterForm() {
       )
   }
 
-  /** Validation de l'étape 1 avant passage à l'étape 2 */
-  function validateStep1() {
+  // ── Gestion carnet d'observations (étape 2) ──────────────────────────────
+
+  function handleAddObservation(entry: ObservationEntry) {
+    setForm((prev) => ({ ...prev, observations: [...prev.observations, entry] }))
+  }
+
+  function handleRemoveObservation(id: string) {
+    setForm((prev) => ({
+      ...prev,
+      observations: prev.observations.filter((o) => o.id !== id),
+    }))
+  }
+
+  function handleCountChange(id: string, delta: number) {
+    setForm((prev) => ({
+      ...prev,
+      observations: prev.observations.map((o) =>
+        o.id === id ? { ...o, count: Math.max(1, o.count + delta) } : o,
+      ),
+    }))
+  }
+
+  // ── Navigation entre étapes ──────────────────────────────────────────────
+
+  /** Validation step 3 avant soumission */
+  function validateStep3() {
     const e: Record<string, string> = {}
-    if (form.files.length === 0) e.files = t('contribute.errors.mediaRequired')
     if (!form.description.trim()) e.description = t('contribute.errors.descriptionRequired')
+    if (form.description.length > 1500)
+      e.description = t('contribute.errors.descriptionTooLong', { max: 1500 })
     return e
   }
 
   function handleNext() {
-    if (step === 1) {
-      const errs = validateStep1()
-      if (Object.keys(errs).length > 0) {
-        setErrors(errs)
-        return
-      }
-    }
     setErrors({})
     setStep((s) => Math.min(s + 1, TOTAL_STEPS))
   }
 
+  /** Retour à l'étape précédente, ou ferme le panneau depuis l'étape 1 */
   function handleBack() {
     setErrors({})
     if (step === 1) {
-      navigate(-1)
+      onClose()
       return
     }
     setStep((s) => s - 1)
@@ -120,135 +153,219 @@ export function ContributeEncounterForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    const errs = validateStep3()
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs)
+      return
+    }
     setIsSubmitting(true)
-    // TODO [BACKEND] — Remplacer par l'appel réel (voir en-tête du fichier)
-    console.info('[MOCK] Rencontre Nature :', { type: 'nature_encounter', ...form })
+    // TODO [BACKEND] — Remplacer par l'appel réel (voir en-tête)
+    console.warn('[MOCK] Rencontre Nature soumise :', { type: 'nature_encounter', ...form })
     await new Promise((r) => setTimeout(r, 600))
-    navigate('/home')
+    onClose()
   }
 
-  const progressPct = Math.round((step / TOTAL_STEPS) * 100)
+  // ── Titres par étape ─────────────────────────────────────────────────────
+
+  const stepTitles: Record<number, string> = {
+    1: t('contribute.panel.immortaliseEncounter'),
+    2: t('contribute.panel.whatObserved'),
+    3: t('contribute.panel.moreDetails'),
+  }
 
   return (
-    <div className="min-h-screen bg-cream-lighter flex flex-col">
-      {/* Header sticky */}
-      <header className="sticky top-0 z-40 bg-cream-lighter border-b border-border">
-        <div className="max-w-2xl mx-auto flex items-center justify-between px-4 md:px-6 h-16">
-          <button
-            type="button"
-            onClick={handleBack}
-            className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-          >
-            <ArrowLeft className="size-4" aria-hidden="true" />
-            <span className="hidden sm:inline">
-              {step === 1 ? t('contribute.backToFeed') : t('common.back')}
-            </span>
-          </button>
+    <>
+      {/* ── Backdrop — clic ferme le panneau ────────────────────────────── */}
+      <div
+        className="fixed inset-0 z-40 bg-foreground/30 backdrop-blur-sm md:block hidden"
+        aria-hidden="true"
+        onClick={onClose}
+      />
 
-          <div className="flex flex-col items-center gap-0.5">
-            <h1 className="font-bold text-foreground text-sm">{t('contribute.encounterTitle')}</h1>
-            <span className="text-xs text-muted-foreground">
+      {/* ── Panneau droit ────────────────────────────────────────────────── */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('contribute.encounterTitle')}
+        className="fixed inset-y-0 right-0 z-50 w-full md:w-[380px] bg-cream-lighter flex flex-col shadow-2xl"
+      >
+        {/* ── Header sticky ──────────────────────────────────────────────── */}
+        <div className="shrink-0">
+          <div className="flex items-center justify-between px-5 py-4">
+            {/* Badge type */}
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal text-white text-xs font-bold">
+              <span aria-hidden="true">🦅</span>
+              {t('contribute.encounterTitle')}
+            </span>
+
+            {/* Étape */}
+            <span className="text-sm text-muted-foreground" aria-live="polite">
               {t('contribute.step', { current: step, total: TOTAL_STEPS })}
             </span>
+
+            {/* Fermer */}
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={t('common.close')}
+              className="size-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <X className="size-4" aria-hidden="true" />
+            </button>
           </div>
 
-          {step < TOTAL_STEPS ? (
+          {/* Barre de progression — 3 segments */}
+          <div
+            className="flex gap-1 px-5 pb-3"
+            role="progressbar"
+            aria-valuenow={step}
+            aria-valuemin={1}
+            aria-valuemax={TOTAL_STEPS}
+            aria-label={t('contribute.step', { current: step, total: TOTAL_STEPS })}
+          >
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className={[
+                  'h-1 flex-1 rounded-full transition-colors duration-300',
+                  step >= i ? 'bg-teal' : 'bg-muted',
+                ].join(' ')}
+                aria-hidden="true"
+              />
+            ))}
+          </div>
+
+          <div className="h-px bg-border" aria-hidden="true" />
+        </div>
+
+        {/* ── Contenu scrollable ─────────────────────────────────────────── */}
+        <div className="flex-1 overflow-y-auto">
+          <form
+            id="encounter-panel-form"
+            onSubmit={handleSubmit}
+            noValidate
+            className="px-5 pt-5 pb-4 flex flex-col gap-1"
+          >
+            {/* Titre de l'étape */}
+            <h2 className="font-title font-bold text-lg text-foreground mb-4">
+              {stepTitles[step]}
+            </h2>
+
+            {step === 1 && (
+              <EncounterStep1
+                files={form.files}
+                onFilesChange={(f) => set('files', f)}
+                aspectRatio={form.aspectRatio}
+                onAspectRatioChange={(r) => set('aspectRatio', r)}
+                error={errors.files}
+              />
+            )}
+
+            {step === 2 && (
+              <EncounterStep2
+                observations={form.observations}
+                onAdd={handleAddObservation}
+                onRemove={handleRemoveObservation}
+                onCountChange={handleCountChange}
+                helpIdentification={form.helpIdentification}
+                onHelpIdentificationChange={(v) => set('helpIdentification', v)}
+              />
+            )}
+
+            {step === 3 && (
+              <EncounterStep3
+                title={form.title}
+                onTitleChange={(v) => set('title', v)}
+                description={form.description}
+                onDescriptionChange={(v) => set('description', v)}
+                tags={form.tags}
+                onTagsChange={(tgs) => set('tags', tgs)}
+                errors={errors}
+                encounterDate={form.encounterDate}
+                onDateChange={(v) => set('encounterDate', v)}
+                timeOfDay={form.timeOfDay}
+                onTimeChange={(v) => set('timeOfDay', v)}
+                weather={form.weather}
+                onWeatherChange={(v) => set('weather', v)}
+                habitat={form.habitat}
+                onHabitatChange={(v) => set('habitat', v)}
+                locationName={form.locationName}
+                onLocationChange={(v) => set('locationName', v)}
+                locationHidden={form.locationHidden}
+                onLocationHiddenChange={(v) => set('locationHidden', v)}
+                visibility={form.visibility}
+                onVisibilityChange={(v) => set('visibility', v)}
+              />
+            )}
+          </form>
+        </div>
+
+        {/* ── Footer sticky ──────────────────────────────────────────────── */}
+        <div className="shrink-0 border-t border-border bg-cream-lighter px-5 py-4 flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            {/* Bouton retour */}
+            <button
+              type="button"
+              onClick={handleBack}
+              aria-label={step === 1 ? t('common.close') : t('common.back')}
+              className="size-11 shrink-0 rounded-full border border-border flex items-center justify-center text-foreground hover:border-primary/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <ArrowLeft className="size-4" aria-hidden="true" />
+            </button>
+
+            {/* CTA principal */}
+            {step < TOTAL_STEPS ? (
+              /* Étape 2 vide : "Je ne connais pas l'espèce" comme CTA secondaire */
+              step === 2 && form.observations.length === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Ajoute une entrée "espèce inconnue" puis avance
+                    handleAddObservation({
+                      id: `obs-unknown-${Date.now()}`,
+                      species: null,
+                      isUnknown: true,
+                      count: 1,
+                    })
+                    handleNext()
+                  }}
+                  className="flex-1 h-11 rounded-button bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                >
+                  {t('contribute.panel.dontKnow')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="flex-1 h-11 rounded-button bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                >
+                  {t('common.next')}
+                </button>
+              )
+            ) : (
+              <button
+                type="submit"
+                form="encounter-panel-form"
+                disabled={isSubmitting}
+                className="flex-1 h-11 rounded-button bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              >
+                {isSubmitting ? t('common.loading') : t('contribute.panel.publishBtn')}
+              </button>
+            )}
+          </div>
+
+          {/* Lien "continuer sans photo" — étape 1 uniquement */}
+          {step === 1 && (
             <button
               type="button"
               onClick={handleNext}
-              className="flex items-center gap-1.5 h-9 px-4 rounded-button bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="text-xs text-muted-foreground hover:text-foreground text-center transition-colors focus-visible:outline-none focus-visible:underline"
             >
-              {t('common.next')}
-              <ChevronRight className="size-4" aria-hidden="true" />
-            </button>
-          ) : (
-            <button
-              type="submit"
-              form="encounter-form"
-              disabled={isSubmitting}
-              className="flex items-center gap-2 h-9 px-4 rounded-button bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            >
-              <Send className="size-4" aria-hidden="true" />
-              {isSubmitting ? t('common.loading') : t('contribute.publish')}
+              {t('contribute.panel.skipPhotos')}
             </button>
           )}
         </div>
-
-        {/* Barre de progression — annotée pour les lecteurs d'écran */}
-        <div
-          className="h-1 bg-muted"
-          role="progressbar"
-          aria-valuenow={progressPct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={t('contribute.step', { current: step, total: TOTAL_STEPS })}
-        >
-          <div
-            className="h-full bg-primary motion-safe:transition-all motion-safe:duration-300 rounded-full"
-            style={{ width: `${progressPct}%` }}
-          />
-        </div>
-      </header>
-
-      {/* Contenu */}
-      <main id="main-content">
-        <form
-          id="encounter-form"
-          onSubmit={handleSubmit}
-          noValidate
-          className="max-w-2xl mx-auto px-4 md:px-6 py-6 flex flex-col gap-6 pb-24 md:pb-6"
-        >
-          {/* Titre de l'étape courante */}
-          <p className="text-xs font-medium text-primary uppercase tracking-wide">
-            {t(`contribute.steps.step${step}`)}
-          </p>
-
-          {step === 1 && (
-            <EncounterStep1
-              files={form.files}
-              onFilesChange={(f) => set('files', f)}
-              description={form.description}
-              onDescriptionChange={(v) => set('description', v)}
-              tags={form.tags}
-              onTagsChange={(t) => set('tags', t)}
-              errors={errors}
-            />
-          )}
-
-          {step === 2 && (
-            <EncounterStep2
-              identificationChoice={form.identificationChoice}
-              onIdentificationChange={(v) => set('identificationChoice', v)}
-              selectedSpecies={form.selectedSpecies}
-              onSelectSpecies={(s) => set('selectedSpecies', s)}
-              onClearSpecies={() => set('selectedSpecies', null)}
-              taxonomicGroup={form.taxonomicGroup}
-              onGroupChange={(g) => set('taxonomicGroup', g)}
-              multipleObservations={form.multipleObservations}
-              onMultipleChange={(v) => set('multipleObservations', v)}
-            />
-          )}
-
-          {step === 3 && (
-            <EncounterStep3
-              encounterDate={form.encounterDate}
-              onDateChange={(v) => set('encounterDate', v)}
-              timeOfDay={form.timeOfDay}
-              onTimeChange={(v) => set('timeOfDay', v)}
-              weather={form.weather}
-              onWeatherChange={(v) => set('weather', v)}
-              habitat={form.habitat}
-              onHabitatChange={(v) => set('habitat', v)}
-              locationName={form.locationName}
-              onLocationChange={(v) => set('locationName', v)}
-              locationHidden={form.locationHidden}
-              onLocationHiddenChange={(v) => set('locationHidden', v)}
-              visibility={form.visibility}
-              onVisibilityChange={(v) => set('visibility', v)}
-            />
-          )}
-        </form>
-      </main>
-    </div>
+      </div>
+    </>
   )
 }

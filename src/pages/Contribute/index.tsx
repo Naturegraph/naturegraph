@@ -13,7 +13,7 @@
  */
 
 import { lazy, Suspense } from 'react'
-import { useSearchParams, Navigate } from 'react-router-dom'
+import { useSearchParams, Navigate, useNavigate } from 'react-router-dom'
 
 // Chargés à la demande — séparation de bundle pour l'éco-conception
 const ContributeInstantForm = lazy(() =>
@@ -49,6 +49,7 @@ function FormFallback() {
 
 export default function Contribute() {
   const [params] = useSearchParams()
+  const navigate = useNavigate()
   const type = params.get('type')
 
   // Type invalide ou absent → retour au fil
@@ -58,7 +59,11 @@ export default function Contribute() {
 
   return (
     <Suspense fallback={<FormFallback />}>
-      {type === 'nature_instant' ? <ContributeInstantForm /> : <ContributeEncounterForm />}
+      {type === 'nature_instant' ? (
+        <ContributeInstantForm />
+      ) : (
+        <ContributeEncounterForm onClose={() => navigate('/home', { replace: true })} />
+      )}
     </Suspense>
   )
 }

@@ -59,9 +59,14 @@ const CONTRIBUTION_TYPES = [
 
 interface ContributeModalProps {
   onClose: () => void
+  /**
+   * Si fourni, appelé à la sélection d'un type — ouvre le panneau inline
+   * sans naviguer vers /contribute. Sinon : navigation classique.
+   */
+  onTypeSelect?: (type: string) => void
 }
 
-export function ContributeModal({ onClose }: ContributeModalProps) {
+export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps) {
   const navigate = useNavigate()
   const firstItemRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -94,7 +99,12 @@ export function ContributeModal({ onClose }: ContributeModalProps) {
 
   function handleSelect(id: string) {
     onClose()
-    navigate(`/contribute?type=${id}`)
+    if (onTypeSelect) {
+      // Ouvre le panneau inline sur la même page (design panel overlay)
+      onTypeSelect(id)
+    } else {
+      navigate(`/contribute?type=${id}`)
+    }
   }
 
   /** Rendu des options partagé entre dropdown et bottom sheet */

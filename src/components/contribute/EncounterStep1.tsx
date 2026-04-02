@@ -1,85 +1,78 @@
 /**
- * EncounterStep1 — Étape 1 du formulaire Rencontre Nature
+ * EncounterStep1 — Étape 1 : Photos de la rencontre
  *
- * Contenu : photos + description + tags
- * Validation déclenchée par le parent (ContributeEncounterForm)
- * avant de passer à l'étape suivante.
+ * Contenu : upload des photos uniquement + sélection du format d'affichage.
+ * La description et les tags ont été déplacés à l'étape 3.
+ *
+ * Validation : les photos sont optionnelles — l'utilisateur peut
+ * poursuivre sans photo (gérée par le parent via le bouton "skip").
  */
 
-import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MediaUploader } from './MediaUploader'
-import { TagInput } from './TagInput'
 
-const MAX_DESC = 1000
+export type PhotoAspectRatio = 'landscape' | 'portrait' | 'square'
 
 interface EncounterStep1Props {
   files: File[]
   onFilesChange: (files: File[]) => void
-  description: string
-  onDescriptionChange: (v: string) => void
-  tags: string[]
-  onTagsChange: (tags: string[]) => void
-  errors: Record<string, string>
+  aspectRatio: PhotoAspectRatio
+  onAspectRatioChange: (r: PhotoAspectRatio) => void
+  error?: string
 }
+
+/** Options de format d'affichage des photos */
+const ASPECT_RATIO_OPTIONS: { value: PhotoAspectRatio; labelKey: string }[] = [
+  { value: 'landscape', labelKey: 'contribute.panel.formatLandscape' },
+  { value: 'portrait', labelKey: 'contribute.panel.formatPortrait' },
+  { value: 'square', labelKey: 'contribute.panel.formatSquare' },
+]
 
 export function EncounterStep1({
   files,
   onFilesChange,
-  description,
-  onDescriptionChange,
-  tags,
-  onTagsChange,
-  errors,
+  aspectRatio,
+  onAspectRatioChange,
+  error,
 }: EncounterStep1Props) {
   const { t } = useTranslation()
-  const descId = useId()
 
   return (
-    <div className="flex flex-col gap-6">
-      <MediaUploader files={files} onChange={onFilesChange} error={errors.files} />
+    <div className="flex flex-col gap-5">
+      {/* Upload photos */}
+      <MediaUploader files={files} onChange={onFilesChange} error={error} />
 
-      {/* Description */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <label htmlFor={descId} className="text-sm font-semibold text-foreground">
-            {t('contribute.description.label')}{' '}
-            <span aria-hidden="true" className="text-[var(--color-error)]">
-              *
-            </span>
-          </label>
-          <span
-            aria-live="polite"
-            className={`text-xs tabular-nums ${
-              description.length > MAX_DESC ? 'text-[var(--color-error)]' : 'text-muted-foreground'
-            }`}
-          >
-            {t('contribute.description.chars', {
-              count: description.length,
-              max: MAX_DESC,
-            })}
+      {/* Format d'affichage — visible seulement si des photos sont ajoutées */}
+      {files.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-semibold text-foreground">
+            {t('contribute.panel.photoFormat')}
           </span>
+          <div
+            className="flex flex-wrap gap-2"
+            role="group"
+            aria-label={t('contribute.panel.photoFormat')}
+          >
+            {ASPECT_RATIO_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onAspectRatioChange(opt.value)}
+                aria-pressed={aspectRatio === opt.value}
+                className={[
+                  'px-3 py-1.5 rounded-full text-sm border transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                  aspectRatio === opt.value
+                    ? 'border-primary bg-primary-light text-primary font-medium'
+                    : 'border-border text-foreground hover:border-primary/50',
+                ].join(' ')}
+              >
+                {t(opt.labelKey)}
+              </button>
+            ))}
+          </div>
         </div>
-        <textarea
-          id={descId}
-          value={description}
-          onChange={(e) => onDescriptionChange(e.target.value)}
-          placeholder={t('contribute.description.placeholder')}
-          rows={5}
-          required
-          aria-required="true"
-          aria-invalid={!!errors.description}
-          aria-describedby={errors.description ? `${descId}-error` : undefined}
-          className="w-full px-4 py-3 rounded-xl border border-border bg-cream-lighter text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
-        />
-        {errors.description && (
-          <p id={`${descId}-error`} role="alert" className="text-xs text-[var(--color-error)]">
-            {errors.description}
-          </p>
-        )}
-      </div>
-
-      <TagInput tags={tags} onTagsChange={onTagsChange} />
+      )}
     </div>
   )
 }
