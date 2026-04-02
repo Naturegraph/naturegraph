@@ -49,7 +49,9 @@ export type TaxonomicGroup =
   | 'plants'
   | 'other'
 
-export type ReactionType = 'love' | 'fire' | 'hands' | 'trophy' | 'star'
+// Réactions disponibles sur un post — aligné avec FeedPost.tsx REACTION_CONFIG
+// 'disappointed' ajouté suite à la décision Nicolas (2026-04-01)
+export type ReactionType = 'love' | 'admire' | 'fire' | 'wow' | 'curious' | 'disappointed'
 
 export type MediaType = 'photo' | 'video'
 export type MediaFormat = 'square' | 'portrait' | 'landscape' | 'free'

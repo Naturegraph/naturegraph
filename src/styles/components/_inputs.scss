@@ -1,3 +1,58 @@
 // ============================================
 // Inputs — Naturegraph
 // ============================================
+
+// ─── Slider de localisation ────────────────────────────────────────────────────
+// Utilisé dans LocationModal sur <input type="range">
+// Le remplissage de la piste est géré via inline style background-gradient (React)
+.location-slider {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 99px;
+  outline: none;
+  cursor: pointer;
+  border: none;
+
+  // Thumb — Chrome / Safari / Edge (Chromium)
+  &::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    border: 2.5px solid white;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    transition: transform 150ms ease;
+  }
+
+  &:hover::-webkit-slider-thumb {
+    transform: scale(1.15);
+  }
+
+  // Thumb — Firefox
+  &::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    border: 2.5px solid white;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    transition: transform 150ms ease;
+  }
+
+  &:hover::-moz-range-thumb {
+    transform: scale(1.15);
+  }
+
+  // Focus visible
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 4px;
+    border-radius: 99px;
+  }
+}

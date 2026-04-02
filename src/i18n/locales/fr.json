@@ -373,7 +373,30 @@
       "guestLimitTitle": "Rejoins la communauté Naturegraph",
       "guestLimitDesc": "Crée un compte gratuit pour voir toutes les observations, réagir et partager tes propres découvertes.",
       "guestLimitCreate": "Créer mon compte",
-      "guestLimitLogin": "Se connecter"
+      "guestLimitLogin": "Se connecter",
+      "emptyTitle": "Aucune observation trouvée",
+      "emptyDesc": "Essayez de modifier vos filtres pour voir plus de résultats.",
+      "emptyDescLocation": "Sois le premier à partager une observation à {{location}} !",
+      "emptyReset": "Réinitialiser les filtres",
+      "emptyContribute": "Partager une observation"
+    },
+    "filters": {
+      "title": "Filtres",
+      "sortResults": "Trier les résultats",
+      "byCategory": "Par catégorie d'espèces",
+      "helpOnly": "Afficher uniquement les demandes d'aide",
+      "byShareType": "Par type de partages",
+      "natureEncounter": "Rencontre nature",
+      "instantNature": "Instant nature",
+      "radiusTitle": "Résultats autour de toi, dans un rayon de",
+      "radiusAll": "Tout",
+      "period": "Période",
+      "periodAll": "Tout",
+      "periodToday": "Aujourd'hui",
+      "periodWeek": "Cette semaine",
+      "periodMonth": "Ce mois",
+      "save": "Sauvegarder les filtres",
+      "reset": "Réinitialiser"
     },
     "post": {
       "seeMore": "Voir plus",
@@ -392,10 +415,53 @@
         "admire": "Admirer",
         "fire": "Incroyable",
         "wow": "Wow",
-        "curious": "Curieux"
+        "curious": "Curieux",
+        "disappointed": "Décevant"
       },
       "commentCount": "{{count}} commentaire",
-      "commentCount_other": "{{count}} commentaires"
+      "commentCount_other": "{{count}} commentaires",
+      "options": {
+        "unfollow": "Ne plus suivre @{{username}}",
+        "unfollowDesc": "Vous ne verrez plus ses publications",
+        "addFavorite": "Ajouter aux favoris",
+        "addFavoriteDesc": "Enregistrer pour plus tard",
+        "copyLink": "Copier le lien",
+        "copyLinkDesc": "Partager facilement l'observation",
+        "copyLinkDone": "Lien copié !",
+        "muteUser": "Masquer @{{username}}",
+        "muteUserDesc": "Ne plus voir ses publications",
+        "hidePost": "Masquer cette publication",
+        "hidePostDesc": "Voir moins de contenu comme celui-ci",
+        "report": "Signaler la publication",
+        "reportDesc": "Contenu inapproprié ou spam",
+        "edit": "Modifier mon observation",
+        "editDesc": "Vous pouvez corriger les informations",
+        "delete": "Supprimer mon observation",
+        "deleteDesc": "Êtes-vous sûr de vouloir supprimer ?",
+        "report": "Signaler la publication",
+        "reportDesc": "Contenu inapproprié ou spam"
+      },
+      "reportModal": {
+        "title": "Signaler",
+        "description": "Sélectionnez la raison du signalement, puis cliquez sur *Soumettre*. L'équipe examinera la demande et prendra les mesures appropriées.",
+        "placeholder": "Raison du signalement...",
+        "reason1": "Contenu inapproprié ou offensant",
+        "reason2": "Harcèlement ou intimidation",
+        "reason3": "Informations fausses ou trompeuses",
+        "reason4": "Spam ou publicité non sollicitée",
+        "reason5": "Autre",
+        "cancel": "Annuler",
+        "submit": "Soumettre",
+        "successTitle": "Signalement envoyé",
+        "successDesc": "Merci, notre équipe va examiner cette publication."
+      },
+      "deleteModal": {
+        "title": "Supprimer l'observation ?",
+        "description": "Tu es sur le point de supprimer cette observation de façon définitive.",
+        "warning": "Cette action est irréversible.",
+        "cancel": "Annuler",
+        "confirm": "Confirmer"
+      }
     },
     "stats": {
       "impact": "Impact",
@@ -405,6 +471,160 @@
       "changeTrendPeriod": "Changer la période des tendances",
       "thisMonth": "Ce mois-ci",
       "observationCount": "{{count}} observations"
+    },
+    "search": {
+      "title": "Recherche",
+      "filterSpecies": "Espèces",
+      "filterAccounts": "Comptes",
+      "recentLabel": "Recherches récentes",
+      "clearAll": "Tout effacer",
+      "placeholder": "Espèce, utilisateur...",
+      "empty": "Recherche une espèce ou un utilisateur…",
+      "noResults": "Aucun résultat pour «\u00a0{{query}}\u00a0»"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "typeReaction": "Nouvelle réaction",
+      "typeFollow": "Nouveau migrateur",
+      "seeProfile": "Voir son profil",
+      "viewAll": "Voir toutes les notifications"
+    },
+    "profileMenu": {
+      "principal": "Principal",
+      "myProfile": "Mon profil",
+      "settings": "Paramètres",
+      "theme": "Thème",
+      "appearance": "Apparence",
+      "themeLight": "Clair",
+      "themeDark": "Sombre",
+      "accessibility": "Accessibilité",
+      "textSize": "Taille du texte",
+      "textSizeSmall": "Petite",
+      "textSizeMedium": "Moyenne",
+      "textSizeLarge": "Grande",
+      "highContrast": "Contraste renforcé",
+      "logout": "Déconnexion",
+      "version": "App version 0.0.1"
+    },
+    "contributeDropdown": {
+      "instantNature": "Instant nature",
+      "instantNatureDesc": "Capture un moment spontané : paysage, ambiance, phénomène.",
+      "natureEncounter": "Rencontre nature",
+      "natureEncounterDesc": "Documente l'observation d'une espèce avec lieu et identification.",
+      "share": "Partager"
+    }
+  },
+
+  "contribute": {
+    "pageTitle": "Nouvelle observation",
+    "instantTitle": "Instant Nature",
+    "encounterTitle": "Rencontre Nature",
+    "backToFeed": "Retour au fil",
+    "publish": "Publier",
+    "step": "Étape {{current}}/{{total}}",
+    "steps": {
+      "step1": "Photos & description",
+      "step2": "Identification",
+      "step3": "Contexte & lieu"
+    },
+    "media": {
+      "label": "Photos",
+      "addPhotos": "Ajouter des photos",
+      "dragDrop": "Glisse tes photos ici ou",
+      "browse": "parcourir",
+      "maxFiles": "{{count}} photos max",
+      "remove": "Supprimer la photo {{index}}"
+    },
+    "description": {
+      "label": "Description",
+      "placeholder": "Décris ce que tu as observé...",
+      "instantPlaceholder": "Décris ce moment de nature...",
+      "chars": "{{count}}/{{max}}"
+    },
+    "phenomenon": {
+      "label": "Phénomène ou ambiance",
+      "placeholder": "Brume matinale, floraison, migration..."
+    },
+    "date": {
+      "label": "Date d'observation",
+      "timeLabel": "Moment de la journée",
+      "morning": "Matin",
+      "afternoon": "Après-midi",
+      "dusk": "Crépuscule",
+      "evening": "Soirée",
+      "night": "Nuit"
+    },
+    "weather": {
+      "label": "Météo",
+      "sunny": "Ensoleillé",
+      "cloudy": "Nuageux",
+      "rainy": "Pluvieux",
+      "windy": "Venteux",
+      "snowy": "Neigeux"
+    },
+    "habitat": {
+      "label": "Habitat",
+      "forest": "Forêt",
+      "park_garden": "Parc / Jardin",
+      "prairie_heath": "Prairie / Lande",
+      "urban": "Urbain",
+      "river": "Rivière",
+      "lake_wetland": "Lac / Zone humide",
+      "mountain": "Montagne",
+      "sea_coast": "Mer / Côte"
+    },
+    "location": {
+      "label": "Lieu",
+      "placeholder": "Ville, forêt, lieu-dit...",
+      "hide": "Masquer la localisation précise",
+      "hideDesc": "Seule la région sera visible publiquement"
+    },
+    "species": {
+      "label": "Espèce observée",
+      "statusLabel": "L'espèce est-elle identifiée ?",
+      "identified": "Identifiée",
+      "identifiedDesc": "Je connais le nom de l'espèce",
+      "pending": "En attente",
+      "pendingDesc": "J'aimerais que la communauté m'aide à identifier",
+      "unknown": "Inconnue",
+      "unknownDesc": "Je ne cherche pas à identifier",
+      "searchPlaceholder": "Mésange, renard...",
+      "noResults": "Aucune espèce trouvée",
+      "taxrefCredit": "Données TAXREF — INPN, licence CC-BY",
+      "group": "Groupe taxonomique",
+      "groups": {
+        "birds": "Oiseaux",
+        "mammals": "Mammifères",
+        "insects": "Insectes",
+        "amphibians": "Amphibiens",
+        "reptiles": "Reptiles",
+        "arachnids": "Arachnides",
+        "mollusks": "Mollusques",
+        "fish": "Poissons",
+        "plants": "Plantes",
+        "other": "Autre"
+      }
+    },
+    "visibility": {
+      "label": "Visibilité",
+      "public": "Public",
+      "publicDesc": "Visible par tous",
+      "followers": "Abonnés",
+      "followersDesc": "Tes abonnés uniquement",
+      "private": "Privé",
+      "privateDesc": "Toi uniquement"
+    },
+    "tags": {
+      "label": "Tags",
+      "placeholder": "Ajoute un tag + Entrée",
+      "remove": "Supprimer le tag {{tag}}"
+    },
+    "multipleObs": "Plusieurs individus observés",
+    "multipleObsDesc": "Coche si tu as observé plusieurs individus de la même espèce",
+    "errors": {
+      "mediaRequired": "Ajoute au moins une photo",
+      "descriptionRequired": "La description est obligatoire",
+      "descriptionTooLong": "Maximum {{max}} caractères"
     }
   },
 
@@ -433,7 +653,37 @@
     "inspirations": "Inspirations",
     "community": "Communauté",
     "stats": "Statistiques",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "editProfile": "Modifier le profil",
+    "follow": "Suivre",
+    "following": "Suivi(e)",
+    "unfollow": "Ne plus suivre",
+    "message": "Message",
+    "publications": "Publications",
+    "notebooks": "Carnets",
+    "identifications": "Identifications",
+    "joinedDate": "Membre depuis {{date}}",
+    "postsCount": "{{count}} publication",
+    "postsCount_other": "{{count}} publications",
+    "followers": "abonnés",
+    "followingCount": "abonnements",
+    "noPostsYet": "Aucune publication pour le moment",
+    "noPostsDesc": "Les observations partagées apparaîtront ici.",
+    "comingSoon": "Bientôt disponible",
+    "notebooksDesc": "Les carnets d'observations seront bientôt disponibles.",
+    "identificationsDesc": "Les identifications collaboratives arrivent bientôt.",
+    "userNotFound": "Utilisateur introuvable",
+    "userNotFoundDesc": "Ce profil n'existe pas ou a été supprimé.",
+    "backToFeed": "Retour au fil",
+    "tabs": {
+      "label": "Sections du profil",
+      "publications": "Publications",
+      "notebooks": "Carnets",
+      "identifications": "Identifications",
+      "noPosts": "{{name}} n'a pas encore partagé d'observation.",
+      "notebooksEmpty": "Les carnets d'observations seront bientôt disponibles.",
+      "identificationsEmpty": "Les identifications collaboratives arrivent bientôt."
+    }
   },
 
   "settings": {
@@ -454,7 +704,57 @@
     "privacy": "Confidentialité",
     "languageFr": "Français",
     "languageEn": "English",
-    "deleteAccount": "Supprimer mon compte"
+    "deleteAccount": "Supprimer mon compte",
+    "profileSection": "Profil",
+    "accountSection": "Compte",
+    "notificationsSection": "Notifications",
+    "dangerZone": "Zone de danger",
+    "avatar": "Photo de profil",
+    "changeAvatar": "Changer la photo",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "username": "Nom d'utilisateur",
+    "bio": "Bio",
+    "bioPlaceholder": "Parle-nous de toi et de ta passion pour la nature...",
+    "bioChars": "{{count}}/{{max}}",
+    "location": "Localisation",
+    "city": "Ville",
+    "region": "Région",
+    "interests": "Centres d'intérêts",
+    "socialLinks": "Réseaux sociaux",
+    "instagram": "Instagram",
+    "twitter": "X (Twitter)",
+    "website": "Site web",
+    "saveChanges": "Enregistrer les modifications",
+    "email": "Adresse email",
+    "verified": "Vérifié",
+    "publicProfile": "Profil public",
+    "publicProfileDesc": "Ton profil est visible par tous les utilisateurs",
+    "privateProfileDesc": "Ton profil est visible uniquement par tes abonnés",
+    "notificationsComingSoon": "La gestion des notifications arrive bientôt.",
+    "logout": "Se déconnecter",
+    "logoutDesc": "Tu seras redirigé vers la page d'accueil",
+    "deleteAccountDesc": "Cette action est irréversible. Toutes tes données seront supprimées.",
+    "deleteAccountConfirm": "Es-tu sûr de vouloir supprimer ton compte ?"
+  },
+
+  "comments": {
+    "title": "Commentaires",
+    "titleCount": "Commentaires ({{count}})",
+    "placeholder": "Ajouter un commentaire...",
+    "send": "Envoyer",
+    "loginPrompt": "Connecte-toi pour commenter",
+    "loginLink": "Créer un compte",
+    "empty": "Aucun commentaire pour le moment",
+    "emptyDesc": "Sois le premier à commenter cette observation !"
+  },
+
+  "mobileNav": {
+    "home": "Accueil",
+    "explore": "Explorer",
+    "contribute": "Contribuer",
+    "search": "Recherche",
+    "profile": "Profil"
   },
 
   "footer": {

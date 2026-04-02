@@ -12,7 +12,7 @@
  *  - refreshProfile()
  */
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { generateAndStoreOtp, validateOtp } from '@/lib/demoAuth'
@@ -232,6 +232,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => deriveState({ ...prev, profile }))
   }
 
+  // ─── Initialisation de session et écoute des changements d'état auth ────
+  const lastOtpSentAtRef = useRef(0)
+  const lastSignInAtRef = useRef(0)
+
   useEffect(() => {
     if (!supabase) return
 
@@ -249,40 +253,118 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState(deriveState({ user, session, profile, isLoading: false, isAuthenticated: !!user }))
     })
 
-    return () => subscription.unsubscribe()
+    // Refresh automatique de session toutes les 30 minutes
+    // Évite qu'une session expirée côté serveur reste valide côté client
+    const refreshInterval = setInterval(
+      () => {
+        supabase?.auth.refreshSession().catch((err) => {
+          console.warn('[Auth] Session refresh failed:', err)
+        })
+      },
+      30 * 60 * 1000,
+    )
+
+    return () => {
+      subscription.unsubscribe()
+      clearInterval(refreshInterval)
+    }
   }, [])
+
+  // ─── Rate limiting côté client ────────────────────────────────────────────
+  //
+  // Protection contre le brute-force / spam d'OTP côté navigateur.
+  // Note : le vrai rate limiting DOIT être implémenté côté serveur (Supabase edge functions
+  // ou règles Supabase Auth). Ceci est une couche supplémentaire, pas une garantie.
+
+  // Refs initialisées dans le useEffect ci-dessous pour éviter des re-renders
+  const OTP_RATE_LIMIT_MS = 30_000 // 30 secondes entre deux envois OTP
+  const SIGNIN_RATE_LIMIT_MS = 5_000 // 5 secondes entre deux tentatives de login
+
+  /**
+   * Sanitise les messages d'erreur Supabase avant de les exposer à l'utilisateur.
+   * Évite la fuite d'informations internes (énumération d'emails, structure DB, etc.)
+   */
+  function sanitizeAuthError(message: string): string {
+    // Messages Supabase qu'on peut exposer à l'utilisateur (non-sensibles)
+    const safeMessages: Record<string, string> = {
+      'Invalid login credentials': 'Identifiants incorrects.',
+      'Email not confirmed': 'Adresse e-mail non confirmée. Vérifie ta boîte mail.',
+      'User already registered': 'Un compte existe déjà avec cette adresse.',
+      'Email rate limit exceeded': 'Trop de tentatives. Réessaie dans quelques minutes.',
+      'Phone not confirmed': 'Numéro de téléphone non confirmé.',
+    }
+    return safeMessages[message] ?? 'Une erreur est survenue. Réessaie plus tard.'
+  }
 
   // ─── Magic link OTP signup/login ─────────────────────────────────────────
   async function signUp(emailOrPhone: string): Promise<SignUpResult> {
     if (!supabase)
       return { success: false, requiresVerification: false, error: 'Supabase not configured' }
+
+    // Rate limiting côté client
+    const now = Date.now()
+    if (now - lastOtpSentAtRef.current < OTP_RATE_LIMIT_MS) {
+      const remaining = Math.ceil((OTP_RATE_LIMIT_MS - (now - lastOtpSentAtRef.current)) / 1000)
+      return {
+        success: false,
+        requiresVerification: false,
+        error: `Attends ${remaining} secondes avant de renvoyer un code.`,
+      }
+    }
+
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email: emailOrPhone,
         options: { shouldCreateUser: true },
       })
-      if (error) return { success: false, requiresVerification: false, error: error.message }
+      if (error)
+        return {
+          success: false,
+          requiresVerification: false,
+          error: sanitizeAuthError(error.message),
+        }
+      lastOtpSentAtRef.current = Date.now()
       return { success: true, requiresVerification: true }
     } catch {
-      return { success: false, requiresVerification: false, error: 'Une erreur est survenue' }
+      return {
+        success: false,
+        requiresVerification: false,
+        error: 'Une erreur est survenue. Réessaie plus tard.',
+      }
     }
   }
 
   // ─── Connexion par mot de passe ───────────────────────────────────────────
   async function signIn(email: string, password: string) {
     if (!supabase) return { success: false, error: 'Supabase not configured' }
+
+    // Rate limiting côté client
+    const now = Date.now()
+    if (now - lastSignInAtRef.current < SIGNIN_RATE_LIMIT_MS) {
+      return { success: false, error: 'Trop de tentatives. Attends quelques secondes.' }
+    }
+
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    return { success: !error, error: error?.message }
+    lastSignInAtRef.current = Date.now()
+    return { success: !error, error: error ? sanitizeAuthError(error.message) : undefined }
   }
 
   // ─── OTP direct ──────────────────────────────────────────────────────────
   async function signInWithOtp(email: string) {
     if (!supabase) return { error: new Error('Supabase not configured') }
+
+    const now = Date.now()
+    if (now - lastOtpSentAtRef.current < OTP_RATE_LIMIT_MS) {
+      const remaining = Math.ceil((OTP_RATE_LIMIT_MS - (now - lastOtpSentAtRef.current)) / 1000)
+      return { error: new Error(`Attends ${remaining} secondes avant de renvoyer un code.`) }
+    }
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { shouldCreateUser: true },
     })
-    return { error: error ? new Error(error.message) : null }
+    if (!error) lastOtpSentAtRef.current = Date.now()
+    return { error: error ? new Error(sanitizeAuthError(error.message)) : null }
   }
 
   // ─── OAuth social (stub) ─────────────────────────────────────────────────
@@ -317,7 +399,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function signOut() {
     if (!supabase) return
-    await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut()
+    // En cas d'échec réseau, forcer la déconnexion côté client quand même
+    if (error) {
+      console.error('[Auth] signOut error (forced local logout):', error.message)
+      setState(
+        deriveState({
+          user: null,
+          session: null,
+          profile: null,
+          isLoading: false,
+          isAuthenticated: false,
+        }),
+      )
+    }
   }
 
   if (!isSupabaseConfigured) {

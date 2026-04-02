@@ -34,7 +34,7 @@ Plateforme web citoyenne biodiversite. React 19 + TypeScript + Vite + Tailwind +
 
 - Source de verite : `docs/DATA_ARCHITECTURE.md`
 - Types TS : `src/types/database.ts` — TOUJOURS maintenir en sync avec le schema SQL
-- Migrations SQL : `supabase/migrations/` — nuneroter sequentiellement (001*, 002*...)
+- Migrations SQL : `supabase/migrations/` — format timestamp YYYYMMDD_nom.sql (ex: 20260401_rls_fixes.sql)
 - Toute modification de schema doit mettre a jour : SQL, database.ts, DATA_ARCHITECTURE.md
 - Compteurs denormalises maintenus par triggers PostgreSQL (pas cote client)
 - PostGIS pour les requetes geographiques (ST_DWithin)
@@ -80,6 +80,45 @@ docs/
 supabase/
   migrations/        Migrations SQL PostgreSQL + PostGIS
 ```
+
+## Strategie de branches Git
+
+```
+main      →  production publique  (Supabase PROD)
+staging   →  beta testers / UAT   (Supabase DEV — donnees ephemeres)
+develop   →  dev interne           (Supabase DEV)
+```
+
+**Flux de promotion (sens unique) :**
+
+```
+feat/xxx  →  develop  →  staging  →  main
+```
+
+**Regles :**
+
+- `develop` : push direct OK pour petits changements, PR recommandee pour features
+- `staging` : PR obligatoire depuis develop (jamais depuis une feature branch)
+- `main` : PR obligatoire depuis staging — JAMAIS de push direct
+- Hotfix urgents : `hotfix/xxx` depuis `main` → merger dans `main` → remonter dans `staging` → `develop`
+
+**Supabase (Phase 1 MVP) :**
+
+- `naturegraph-dev` : utilise par develop + staging
+- `naturegraph-prod` : utilise par main uniquement
+- Variables Vercel configurees separement par branche (Production vs Preview)
+
+**Convention migrations SQL :**
+
+- Format : `YYYYMMDD_description.sql` (ex: `20260401_rls_security_fixes.sql`)
+- Appliquer manuellement sur le bon projet Supabase lors de chaque merge vers staging et main
+- Ne jamais laisser les schemas diverger entre environnements sans le documenter
+
+**URLs cibles :**
+
+- `naturegraph.fr` → main (production)
+- `staging.naturegraph.fr` → staging (beta testers — URL stable)
+- Preview Vercel auto → feature branches (URL changeante, pour review interne uniquement)
 
 ## Legacy project
 

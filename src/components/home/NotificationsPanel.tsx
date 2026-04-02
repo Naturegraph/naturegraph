@@ -1,90 +1,127 @@
 /**
  * NotificationsPanel — Dropdown des notifications
  *
- * Affiche les dernières activités : commentaires, identifications,
- * nouveaux abonnés, invitations carnets.
+ * Affiche les notifications groupées par date :
+ *   - "Nouvelle réaction" (chip orange) → quelqu'un a réagi à une observation
+ *   - "Nouveau migrateur" (chip vert)   → quelqu'un a commencé à te suivre
+ *
+ * Responsive :
+ *   - Desktop : dropdown absolue ancré au bouton cloche (top-[calc(100%+8px)] right-0)
+ *   - Mobile  : bottom sheet (fixed inset-x-0 bottom-0)
  *
  * Accessibilité :
  *   - role="dialog" + aria-modal + aria-label
- *   - Escape pour fermer
- *   - Focus sur le premier élément à l'ouverture
+ *   - Escape pour fermer, clic backdrop (mobile) ferme
+ *   - Points bleus non-lus décrits via aria-label sur le bouton parent
+ *
+ * TODO [BACKEND] — Remplacer MOCK_NOTIFS par :
+ *   - notificationService.getNotifications() → SELECT FROM notifications ORDER BY created_at DESC
+ *   - Temps réel : Supabase Realtime channel 'notifications:user_id=eq.{userId}'
+ *   - Marquer comme lu : PATCH /notifications/:id { read: true }
+ *   - Compteur non-lu remonté vers HomeNavbar via un context ou prop callback
  */
 
 import { useEffect, useRef } from 'react'
-import { Bell, MessageCircle, Users, CheckCircle, BookOpen, X } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { X } from 'lucide-react'
 
-// ─── Données mock ─────────────────────────────────────────────────────────────
-// TODO [BACKEND] — Remplacer MOCK_NOTIFS par un appel à notificationService.getNotifications() :
-//   - Table Supabase : `notifications` (id, type, actor_id, target_id, post_id, read, created_at)
-//   - Temps réel : Supabase Realtime (channel 'notifications:user_id=eq.{userId}')
-//     → Mettre à jour le compteur unread dans HomeNavbar en temps réel via onInsert
-//   - Marquer comme lu : PATCH /notifications/:id { read: true } ou batch UPDATE
-//   - "Voir toutes les notifications" → route /notifications (à créer)
-//   Ref: src/services/index.ts — notificationService (TODO noté, à créer)
+// ─── Types & données mock ─────────────────────────────────────────────────────
 
-type NotifType = 'comment' | 'follow' | 'identification' | 'notebook'
+type NotifType = 'reaction' | 'follow'
 
 interface MockNotif {
   id: string
   type: NotifType
   username: string
-  avatar?: string
+  /** Emoji animal affiché en badge sur l'avatar */
+  avatarBadge: string
+  avatarUrl?: string
   message: string
+  /** Heure affichée (ex. "14:30") */
   time: string
+  /** Groupe de date affiché en séparateur (ex. "Hier", "Il y a 3 jours") */
+  dateGroup: string
   read: boolean
+  /** Pour les follows : lien vers le profil */
+  profileHref?: string
 }
 
 const MOCK_NOTIFS: MockNotif[] = [
   {
     id: '1',
-    type: 'comment',
+    type: 'reaction',
     username: 'Marie_Nature',
-    message: 'a commenté ton observation de Chevreuil européen',
-    time: 'Il y a 5 min',
+    avatarBadge: '🦊',
+    message: 'a réagi à ta photo de Faucon crécerelle',
+    time: '14:30',
+    dateGroup: 'Hier',
     read: false,
   },
   {
     id: '2',
-    type: 'identification',
+    type: 'reaction',
     username: 'Oiseaux_et_Nature',
-    message: 'a proposé une identification pour ton instant nature',
-    time: 'Il y a 22 min',
+    avatarBadge: '🦅',
+    message: 'a réagi à ta rencontre avec le Chevreuil',
+    time: '09:15',
+    dateGroup: 'Hier',
     read: false,
   },
   {
     id: '3',
     type: 'follow',
     username: 'Thomas.Wildlife',
+    avatarBadge: '🐺',
     message: 'a commencé à te suivre',
-    time: 'Il y a 1h',
-    read: false,
+    time: '18:42',
+    dateGroup: 'Il y a 3 jours',
+    read: true,
+    profileHref: '/profile/Thomas.Wildlife',
   },
   {
     id: '4',
-    type: 'notebook',
+    type: 'follow',
     username: 'Lucas_Ornitho',
-    message: 't\'a invité à contribuer au carnet "Oiseaux de Bretagne"',
-    time: 'Il y a 3h',
+    avatarBadge: '🦉',
+    message: 'a commencé à te suivre',
+    time: '10:05',
+    dateGroup: 'Il y a 3 jours',
     read: true,
-  },
-  {
-    id: '5',
-    type: 'comment',
-    username: 'Sophie_Biodiv',
-    message: 'a aimé ta photo de Rouge-gorge familier',
-    time: 'Hier',
-    read: true,
+    profileHref: '/profile/Lucas_Ornitho',
   },
 ]
 
-const NOTIF_ICON: Record<NotifType, React.ReactNode> = {
-  comment: <MessageCircle className="size-4 text-primary" aria-hidden="true" />,
-  follow: <Users className="size-4 text-teal-dark" aria-hidden="true" />,
-  identification: <CheckCircle className="size-4 text-[#00673f]" aria-hidden="true" />,
-  notebook: <BookOpen className="size-4 text-foreground" aria-hidden="true" />,
+// ─── Chip type notification ───────────────────────────────────────────────────
+
+/** Rendu du chip coloré indiquant le type de notification */
+function NotifChip({ type }: { type: NotifType }) {
+  if (type === 'reaction') {
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-warning-bg)] text-[var(--color-warning)]">
+        Nouvelle réaction
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-teal-light/30 text-teal-dark">
+      Nouveau migrateur
+    </span>
+  )
 }
 
-// ─── Composant ───────────────────────────────────────────────────────────────
+// ─── Groupement par date ──────────────────────────────────────────────────────
+
+/** Regroupe les notifications par dateGroup en préservant l'ordre d'apparition */
+function groupByDate(notifs: MockNotif[]): Array<{ label: string; items: MockNotif[] }> {
+  const map = new Map<string, MockNotif[]>()
+  for (const n of notifs) {
+    if (!map.has(n.dateGroup)) map.set(n.dateGroup, [])
+    map.get(n.dateGroup)!.push(n)
+  }
+  return Array.from(map.entries()).map(([label, items]) => ({ label, items }))
+}
+
+// ─── Composant ────────────────────────────────────────────────────────────────
 
 interface NotificationsPanelProps {
   anchorRef: React.RefObject<HTMLButtonElement | null>
@@ -93,42 +130,36 @@ interface NotificationsPanelProps {
 
 export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null)
+  const groups = groupByDate(MOCK_NOTIFS)
   const unreadCount = MOCK_NOTIFS.filter((n) => !n.read).length
 
   // Fermer sur Escape
   useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
+    const fn = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
-    document.addEventListener('keydown', handleKey)
-    return () => document.removeEventListener('keydown', handleKey)
+    document.addEventListener('keydown', fn)
+    return () => document.removeEventListener('keydown', fn)
   }, [onClose])
 
-  // Fermer si clic en dehors
+  // Fermer si clic en dehors du panel
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
+    const fn = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose()
     }
-    const t = setTimeout(() => document.addEventListener('mousedown', handleClick), 50)
+    const t = setTimeout(() => document.addEventListener('mousedown', fn), 50)
     return () => {
       clearTimeout(t)
-      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('mousedown', fn)
     }
   }, [onClose])
 
-  return (
-    <div
-      ref={panelRef}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Notifications"
-      className="absolute top-[calc(100%+8px)] right-0 w-[380px] bg-cream-lighter border-[0.5px] border-border rounded-card shadow-xl z-50 overflow-hidden"
-    >
+  const panelContent = (
+    <>
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <div className="flex items-center gap-2">
-          <Bell className="size-4 text-foreground" aria-hidden="true" />
-          <p className="font-bold text-foreground">Notifications</p>
+          <p className="font-title font-bold text-foreground">Notifications</p>
           {unreadCount > 0 && (
             <span className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">
               {unreadCount}
@@ -139,41 +170,85 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
           type="button"
           onClick={onClose}
           aria-label="Fermer les notifications"
-          className="flex items-center justify-center size-8 rounded-full hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="size-8 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <X className="size-4 text-foreground" aria-hidden="true" />
+          <X className="size-5 text-foreground" aria-hidden="true" />
         </button>
       </div>
 
-      {/* Liste */}
+      {/* Liste groupée par date */}
       <div className="max-h-[420px] overflow-y-auto">
-        {MOCK_NOTIFS.map((notif) => (
-          <button
-            key={notif.id}
-            type="button"
-            className={[
-              'w-full flex items-start gap-3 px-5 py-4 text-left hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:bg-muted/30',
-              !notif.read ? 'bg-primary-light/30' : '',
-            ].join(' ')}
-          >
-            {/* Indicateur non-lu */}
-            <div className="relative shrink-0 mt-0.5">
-              <div className="size-9 rounded-full bg-primary-light flex items-center justify-center">
-                {NOTIF_ICON[notif.type]}
-              </div>
-              {!notif.read && (
-                <div className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-primary border-2 border-cream-lighter" />
-              )}
-            </div>
+        {groups.map((group, gi) => (
+          <div key={group.label}>
+            {/* Séparateur de groupe */}
+            {gi > 0 && <div className="h-px bg-border mx-5" aria-hidden="true" />}
 
-            {/* Contenu */}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-foreground leading-relaxed">
-                <span className="font-bold">{notif.username}</span> {notif.message}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">{notif.time}</p>
-            </div>
-          </button>
+            {/* Label de groupe */}
+            <p className="px-5 pt-4 pb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              {group.label}
+            </p>
+
+            {/* Items du groupe */}
+            {group.items.map((notif, i) => (
+              <div key={notif.id}>
+                {i > 0 && <div className="h-px bg-border mx-5" aria-hidden="true" />}
+
+                <div className="flex items-start gap-3 px-5 py-3">
+                  {/* Avatar avec badge animal */}
+                  <div className="relative shrink-0 mt-0.5">
+                    <div className="size-10 rounded-full bg-primary-light flex items-center justify-center overflow-hidden">
+                      {notif.avatarUrl ? (
+                        <img src={notif.avatarUrl} alt="" className="size-full object-cover" />
+                      ) : (
+                        <span className="text-sm font-bold text-primary" aria-hidden="true">
+                          {notif.username.slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    {/* Badge animal en bas à droite de l'avatar */}
+                    <span
+                      className="absolute -bottom-1 -right-1 text-sm leading-none"
+                      aria-hidden="true"
+                    >
+                      {notif.avatarBadge}
+                    </span>
+                  </div>
+
+                  {/* Contenu */}
+                  <div className="flex-1 min-w-0">
+                    {/* Chip type */}
+                    <div className="mb-1">
+                      <NotifChip type={notif.type} />
+                    </div>
+
+                    {/* Message */}
+                    <p className="text-sm text-foreground leading-snug">
+                      <span className="font-bold">{notif.username}</span> {notif.message}
+                    </p>
+
+                    {/* Lien "Voir son profil" pour les follows */}
+                    {notif.type === 'follow' && notif.profileHref && (
+                      <Link
+                        to={notif.profileHref}
+                        onClick={onClose}
+                        className="text-xs text-primary font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded mt-1 inline-block"
+                      >
+                        Voir son profil
+                      </Link>
+                    )}
+                  </div>
+
+                  {/* Heure + point non-lu */}
+                  <div className="flex flex-col items-end gap-2 shrink-0 ml-1">
+                    <span className="text-xs text-muted-foreground">{notif.time}</span>
+                    {!notif.read && (
+                      <div className="size-2.5 rounded-full bg-primary" aria-label="Non lu" />
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ))}
       </div>
 
@@ -186,6 +261,42 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
           Voir toutes les notifications
         </button>
       </div>
-    </div>
+    </>
+  )
+
+  return (
+    <>
+      {/* Backdrop mobile uniquement */}
+      <div
+        className="md:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40"
+        aria-hidden="true"
+        onClick={onClose}
+      />
+
+      {/* Desktop : dropdown absolue (positionnée par le parent relative) */}
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Notifications"
+        className="hidden md:block absolute top-[calc(100%+8px)] right-0 w-[400px] bg-cream-lighter border border-border rounded-xl shadow-xl z-50 overflow-hidden"
+      >
+        {panelContent}
+      </div>
+
+      {/* Mobile : bottom sheet */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Notifications"
+        className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-cream-lighter border-t border-border rounded-t-2xl shadow-xl overflow-hidden"
+      >
+        {/* Handle bar */}
+        <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
+          <div className="w-10 h-1 bg-border rounded-full" />
+        </div>
+        {panelContent}
+      </div>
+    </>
   )
 }

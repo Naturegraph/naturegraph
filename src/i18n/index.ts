@@ -1,9 +1,9 @@
-import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
-import fr from "./locales/fr.json";
-import en from "./locales/en.json";
+import i18n from 'i18next'
+import { initReactI18next } from 'react-i18next'
+import fr from './locales/fr.json'
+import en from './locales/en.json'
 
-const savedLanguage = localStorage.getItem("naturegraph-lang") || "fr";
+const savedLanguage = localStorage.getItem('naturegraph-lang') || 'fr'
 
 i18n.use(initReactI18next).init({
   resources: {
@@ -11,10 +11,13 @@ i18n.use(initReactI18next).init({
     en: { translation: en },
   },
   lng: savedLanguage,
-  fallbackLng: "fr",
+  fallbackLng: 'fr',
   interpolation: {
+    // false est INTENTIONNEL et SÉCURISÉ avec React :
+    // React échappe automatiquement toutes les valeurs dans le JSX (XSS nativement bloqué).
+    // N'activer escapeValue: true que si i18n est utilisé hors de React (ex: emails serveur).
     escapeValue: false,
   },
-});
+})
 
-export default i18n;
+export default i18n
