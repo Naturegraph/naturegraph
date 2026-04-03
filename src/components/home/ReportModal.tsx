@@ -24,7 +24,7 @@ interface ReportModalProps {
 
 // ─── Composant ────────────────────────────────────────────────────────────────
 
-export function ReportModal({ postId, onClose }: ReportModalProps) {
+export function ReportModal({ postId: _postId, onClose }: ReportModalProps) {
   const { t } = useTranslation()
   const [reason, setReason] = useState('')
   const [submitted, setSubmitted] = useState(false)
@@ -68,8 +68,7 @@ export function ReportModal({ postId, onClose }: ReportModalProps) {
    */
   function handleSubmit() {
     if (!reason) return
-    // TODO [BACKEND] — appel API ici
-    console.log('[TODO BACKEND] Report post:', postId, 'Reason:', reason)
+    // TODO [BACKEND] — reportService.createReport({ postId, reason }) → POST /reports
     setSubmitted(true)
     setTimeout(() => onClose(), 2000)
   }

@@ -72,7 +72,6 @@ export default function Settings() {
 
   function handleSave() {
     // TODO [BACKEND] — profileService.updateProfile(profile.id, form)
-    console.log('[TODO BACKEND] Save profile:', form)
   }
 
   function handleLogout() {
@@ -321,7 +320,6 @@ export default function Settings() {
             type="button"
             onClick={() => {
               // TODO [BACKEND] — modale de confirmation + profileService.deleteAccount()
-              console.log('[TODO BACKEND] Delete account')
             }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
           >

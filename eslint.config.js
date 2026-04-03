@@ -26,6 +26,12 @@ export default defineConfig([
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       // Allow hooks export alongside components in context files
       'react-refresh/only-export-components': ['warn', { allowExportNames: ['useAuth', 'useThemeContext'] }],
+      // Autoriser les variables prefixees par _ comme intentionnellement inutilisees (ex: props TODO BACKEND)
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_',
+      }],
     },
   },
 ])

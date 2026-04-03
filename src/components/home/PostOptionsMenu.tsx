@@ -207,8 +207,7 @@ export function PostOptionsMenu({
       setShowReport(true)
       return
     }
-    // TODO [BACKEND] — action: 'unfollow' | 'favorite' | 'mute-user' | 'hide-post'
-    console.log('[TODO BACKEND] Post action:', action, 'postId:', postId)
+    // TODO [BACKEND] — action: 'unfollow' | 'favorite' | 'mute-user' | 'hide-post' → postService
     onClose()
   }
 
@@ -353,7 +352,6 @@ export function PostOptionsMenu({
           }}
           onConfirm={() => {
             // TODO [BACKEND] — postService.deletePost(postId) + invalider cache ['feed']
-            console.log('[TODO BACKEND] Delete post:', postId)
           }}
         />
       )}

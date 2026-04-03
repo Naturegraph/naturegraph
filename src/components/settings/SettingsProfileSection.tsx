@@ -107,7 +107,6 @@ export function SettingsProfileSection({
           className="text-sm font-medium text-[var(--color-primary)] hover:underline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] focus-visible:outline-offset-2 rounded"
           onClick={() => {
             // TODO [BACKEND] — Ouvrir le picker d'image et uploader vers Supabase Storage
-            console.log('TODO [BACKEND] — Changement de photo de profil')
           }}
         >
           {t('settings.changePhoto', 'Changer la photo')}
