@@ -18,10 +18,10 @@ import { Navbar } from './Navbar'
 
 /** Valeurs de motion partagées entre les sous-composants du Hero */
 interface MouseTracking {
-  mouseXPx: ReturnType<typeof useSpring>
-  mouseYPx: ReturnType<typeof useSpring>
-  containerW: ReturnType<typeof useMotionValue>
-  containerH: ReturnType<typeof useMotionValue>
+  mouseXPx: MotionValue<number>
+  mouseYPx: MotionValue<number>
+  containerW: MotionValue<number>
+  containerH: MotionValue<number>
 }
 
 /* ── Animation stagger ─────────────────────────────────────────────── */
