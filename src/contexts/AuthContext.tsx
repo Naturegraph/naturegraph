@@ -377,7 +377,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   //   Configurer les OAuth providers dans le dashboard Supabase (Auth > Providers).
   //   Apple Sign In requiert un compte Apple Developer ($99/an).
   async function signInWithSocial(
-    provider: 'google' | 'apple' | 'facebook', // eslint-disable-line @typescript-eslint/no-unused-vars
+    _provider: 'google' | 'apple' | 'facebook',
   ): Promise<SocialResult> {
     // TODO [BACKEND] — Remplacer par supabase.auth.signInWithOAuth (voir commentaire ci-dessus)
     return { success: false, error: 'Connexion sociale bientôt disponible' }

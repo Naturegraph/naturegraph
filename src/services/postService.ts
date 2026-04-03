@@ -183,9 +183,9 @@ export async function getPostById(_postId: string): Promise<PostFeedItem | null>
  */
 export async function createPost(userId: string, payload: CreatePostPayload): Promise<Post> {
   if (isSupabaseConfigured && supabase) {
-    // @ts-expect-error — TODO [BACKEND]: incompatibilité Database type ↔ supabase-js v2.99, à corriger lors du branchement backend avec types Supabase CLI générés
     const { data, error } = await supabase
       .from('posts')
+      // @ts-expect-error — TODO [BACKEND]: incompatibilité Database type ↔ supabase-js v2.99, à corriger lors du branchement backend avec types Supabase CLI générés
       .insert({
         user_id: userId,
         ...payload,
@@ -220,7 +220,11 @@ export async function toggleReaction(
       .maybeSingle()
 
     if (existing) {
-      await supabase.from('reactions').delete().eq('id', existing.id)
+      // Cast: maybeSingle() returns `never` when Database types are incomplete — safe at runtime
+      await supabase
+        .from('reactions')
+        .delete()
+        .eq('id', (existing as { id: string }).id)
       return { added: false }
     } else {
       // @ts-expect-error — TODO [BACKEND]: incompatibilité Database type ↔ supabase-js v2.99
