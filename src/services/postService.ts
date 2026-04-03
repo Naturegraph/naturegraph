@@ -14,7 +14,7 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import type { Post, PostFeedItem, ReactionType } from '@/types/database'
 import { simulateNetworkDelay, calculatePagination } from '@/constants/config'
-import { mockPosts } from '@/data/mockPosts'
+import { mockPosts } from '@/data/mock/mockPosts'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

@@ -16,7 +16,7 @@
  */
 
 import { useState } from 'react'
-import type { MockPost } from '@/data/mockPosts'
+import type { MockPost } from '@/data/mock/mockPosts'
 import { PhotoLightbox } from './PhotoLightbox'
 import type { LightboxData } from './PhotoLightbox'
 

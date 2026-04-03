@@ -12,8 +12,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, Users } from 'lucide-react'
-import { getDailyRotation, getTerritoryUsers, INTEREST_LABELS } from '@/data/mockUsers'
-import type { MockUser } from '@/data/mockUsers'
+import { getDailyRotation, getTerritoryUsers, INTEREST_LABELS } from '@/data/mock/mockUsers'
+import type { MockUser } from '@/data/mock/mockUsers'
 import { getBadgeEmoji } from '@/utils/badgeHelpers'
 
 // ─── Composant principal ──────────────────────────────────────────────────────

@@ -11,7 +11,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FeedPost } from '@/components/home/FeedPost'
-import type { MockPost } from '@/data/mockPosts'
+import type { MockPost } from '@/data/mock/mockPosts'
 import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
 
 // ─── Types ────────────────────────────────────────────────────────────────────

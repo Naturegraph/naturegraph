@@ -13,7 +13,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { User } from 'lucide-react'
-import { mockUsers } from '@/data/mockUsers'
+import { mockUsers } from '@/data/mock/mockUsers'
 import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
 
 // ─── Types ────────────────────────────────────────────────────────────────────

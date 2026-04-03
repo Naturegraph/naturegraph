@@ -20,7 +20,7 @@
  */
 
 import { useCallback } from 'react'
-import './landing.css'
+import '@/styles/pages/landing.css'
 
 import { Hero } from './Hero'
 import { FeaturesCards } from './FeaturesCards'

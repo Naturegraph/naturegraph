@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { X, Send } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { mockUsers } from '@/data/mockUsers'
+import { mockUsers } from '@/data/mock/mockUsers'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

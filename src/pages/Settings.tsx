@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Camera, Globe, LogOut, Trash2, Bell, Check } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { INTEREST_LABELS } from '@/data/mockUsers'
+import { INTEREST_LABELS } from '@/data/mock/mockUsers'
 import type { Interest } from '@/types/database'
 
 // ─── Constants ───────────────────────────────────────────────────────────────

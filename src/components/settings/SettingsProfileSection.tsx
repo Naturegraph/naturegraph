@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { Camera, Instagram, Globe, AtSign } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
 import type { Interest } from '@/types/database'
-import { INTEREST_LABELS } from '@/data/mockUsers'
+import { INTEREST_LABELS } from '@/data/mock/mockUsers'
 
 /** Liste ordonnee des centres d'interet disponibles */
 const ALL_INTERESTS: Interest[] = [
