@@ -1,26 +1,34 @@
 /**
- * Profile — Page profil utilisateur (own + visiteur)
+ * Profile — Page profil utilisateur
  *
- * Routes :
- *   /profile          → profil de l'utilisateur connecté
+ * Accessible via :
+ *   /profile           → propre profil (connecté)
  *   /profile/:username → profil visiteur (autre utilisateur)
  *
- * Utilise ProfileHeader et ProfileTabs comme sous-composants.
- * Les données proviennent du contexte auth (own) ou des mockUsers (visiteur).
+ * Layout : même structure que Home (HomeNavbar + MobileBottomNav).
+ * La bannière et le header vont de bord à bord sur mobile.
+ * Le contenu (onglets) est contraint à max-w-2xl sur desktop.
+ *
+ * Vocabulaire Figma : Migrateurs = followers, Migrations = following, Migrer = follow.
  *
  * TODO [BACKEND] — Remplacer les mocks par :
  *   profileService.getProfileByUsername(username)
  *   postService.getPostsByUser(userId)
  */
 
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useState } from 'react'
+import { useParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { mockUsers } from '@/data/mockUsers'
 import { mockPosts } from '@/data/mockPosts'
+import { HomeNavbar } from '@/components/home/HomeNavbar'
+import { MobileBottomNav } from '@/components/home/MobileBottomNav'
 import { ProfileHeader } from '@/components/profile/ProfileHeader'
+import type { ProfileDisplayData } from '@/components/profile/ProfileHeader'
 import { ProfileTabs } from '@/components/profile/ProfileTabs'
+import { EditProfilePanel } from '@/components/profile/EditProfilePanel'
+import { ShareProfileSheet } from '@/components/profile/ShareProfileSheet'
 import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
 
 // ─── Composant ────────────────────────────────────────────────────────────────
@@ -28,89 +36,120 @@ import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
 export default function Profile() {
   const { t } = useTranslation()
   const { username } = useParams<{ username: string }>()
-  const navigate = useNavigate()
   const { profile: authProfile } = useAuth()
 
-  // Déterminer le mode : own profile vs visiteur
-  const isOwnProfile = !username || authProfile?.username === username
+  // Panneaux superposés
+  const [showEditPanel, setShowEditPanel] = useState(false)
+  const [showShareSheet, setShowShareSheet] = useState(false)
 
-  // Construire les données du profil affiché
-  const profileData = isOwnProfile ? buildOwnProfile(authProfile) : buildVisitorProfile(username)
+  // Données du profil (own vs visiteur)
+  const isOwnProfile = !username || authProfile?.username === username
+  const [profileData, setProfileData] = useState<ProfileDisplayData | null>(
+    isOwnProfile ? buildOwnProfile(authProfile) : buildVisitorProfile(username),
+  )
 
   // Profil introuvable (visiteur avec username invalide)
   if (!profileData) {
     return (
-      <div className="min-h-screen bg-cream-lighter flex flex-col items-center justify-center gap-4 px-4">
-        <img src={hermineEmptyState} alt="" className="w-32 opacity-60" width={128} height={128} />
-        <h1 className="text-xl font-bold text-foreground">{t('profile.userNotFound')}</h1>
-        <p className="text-sm text-muted-foreground text-center">{t('profile.userNotFoundDesc')}</p>
-        <Link to="/home" className="text-sm text-primary font-medium hover:underline">
-          {t('profile.backToFeed')}
-        </Link>
+      <div className="min-h-screen bg-cream-lighter flex flex-col">
+        <HomeNavbar />
+        <main
+          id="main-content"
+          className="flex-1 flex flex-col items-center justify-center gap-4 px-4"
+        >
+          <img
+            src={hermineEmptyState}
+            alt=""
+            className="w-32 opacity-60"
+            width={128}
+            height={128}
+          />
+          <h1 className="text-xl font-bold text-foreground">{t('profile.userNotFound')}</h1>
+          <p className="text-sm text-muted-foreground text-center">
+            {t('profile.userNotFoundDesc')}
+          </p>
+          <Link to="/home" className="text-sm text-primary font-medium hover:underline">
+            {t('profile.backToFeed')}
+          </Link>
+        </main>
+        <MobileBottomNav />
       </div>
     )
   }
 
-  // Filtrer les posts de cet utilisateur par nom d'auteur
+  // Posts de cet utilisateur (filtre par nom d'auteur sur les mocks)
   const userPosts = mockPosts.filter((p) => p.author.name === profileData.username)
 
-  return (
-    <div className="min-h-screen bg-cream-lighter flex flex-col">
-      {/* Header sticky avec bouton retour */}
-      <header className="sticky top-0 z-40 bg-cream-lighter border-b border-border">
-        <div className="max-w-3xl mx-auto flex items-center gap-3 px-4 md:px-6 h-14">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="flex items-center justify-center size-8 rounded-full hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            aria-label={t('common.back')}
-          >
-            <ArrowLeft className="size-5 text-foreground" aria-hidden="true" />
-          </button>
-          <h2 className="font-bold text-foreground truncate">{profileData.username}</h2>
-        </div>
-      </header>
+  // Photos d'inspiration : depuis mockUsers si disponible
+  const mockUser = mockUsers.find((u) => u.username === profileData.username)
+  const inspirationPhotos = mockUser?.inspiration_photos ?? []
 
-      {/* Contenu principal */}
-      <main
-        id="main-content"
-        className="max-w-3xl mx-auto w-full px-4 md:px-6 py-6 flex flex-col gap-6"
-      >
-        <ProfileHeader profile={profileData} isOwnProfile={isOwnProfile} />
-        <ProfileTabs userPosts={userPosts} username={profileData.username} />
+  /** Appelé par EditProfilePanel lors de la sauvegarde */
+  function handleSave(data: Partial<ProfileDisplayData>) {
+    setProfileData((prev) => (prev ? { ...prev, ...data } : prev))
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen bg-cream-lighter">
+      {/* ── Navbar ── */}
+      <HomeNavbar />
+
+      {/* ── Contenu principal ── */}
+      <main id="main-content" className="flex-1 w-full pb-20 md:pb-6">
+        {/* ProfileHeader : pleine largeur sur mobile pour la bannière */}
+        <div className="w-full">
+          <ProfileHeader
+            profile={profileData}
+            isOwnProfile={isOwnProfile}
+            onEditProfile={() => setShowEditPanel(true)}
+            onShare={() => setShowShareSheet(true)}
+            onOptions={() => {
+              /* TODO: menu options */
+            }}
+          />
+        </div>
+
+        {/* Onglets : contraints à max-w-2xl sur desktop */}
+        <div className="w-full max-w-2xl mx-auto mt-2">
+          <ProfileTabs
+            profile={profileData}
+            userPosts={userPosts}
+            inspirationPhotos={inspirationPhotos}
+          />
+        </div>
       </main>
+
+      {/* ── Navigation mobile ── */}
+      <MobileBottomNav />
+
+      {/* ── Panneaux superposés ── */}
+      {showEditPanel && (
+        <EditProfilePanel
+          profile={profileData}
+          onClose={() => setShowEditPanel(false)}
+          onSave={handleSave}
+        />
+      )}
+
+      {showShareSheet && (
+        <ShareProfileSheet
+          username={profileData.username}
+          onClose={() => setShowShareSheet(false)}
+        />
+      )}
     </div>
   )
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Type unifié pour ProfileHeader */
-interface ProfileDisplayData {
-  username: string
-  bio: string | null
-  avatar_url: string | null
-  banner_url: string | null
-  city: string | null
-  region: string | null
-  interests: string[]
-  instagram: string | null
-  twitter: string | null
-  website: string | null
-  followers_count: number
-  following_count: number
-  created_at: string
-  badges: string[]
-  stats: { observations: number; species: number; streak: number }
-}
-
-/** Construit les données profil à partir du contexte auth */
+/** Construit les données profil depuis le contexte auth (propre profil) */
 function buildOwnProfile(
   authProfile: ReturnType<typeof useAuth>['profile'],
 ): ProfileDisplayData | null {
   if (!authProfile) return null
 
-  // Récupérer le mockUser correspondant pour les stats enrichies
+  // Enrichit avec les données mock correspondantes si disponible
   const mockUser = mockUsers.find((u) => u.username === authProfile.username) ?? mockUsers[0]
 
   return {
@@ -120,19 +159,19 @@ function buildOwnProfile(
     banner_url: authProfile.banner_url,
     city: authProfile.city,
     region: authProfile.region,
-    interests: authProfile.interests ?? [],
+    interests: mockUser.interests,
     instagram: authProfile.instagram,
-    twitter: authProfile.twitter,
     website: authProfile.website,
-    followers_count: authProfile.followers_count,
-    following_count: authProfile.following_count,
+    followers_count: authProfile.followers_count || mockUser.followers_count,
+    following_count: authProfile.following_count || mockUser.following_count,
     created_at: authProfile.created_at,
     badges: mockUser.badges,
     stats: mockUser.stats,
+    weekProgress: mockUser.weekProgress,
   }
 }
 
-/** Construit les données profil à partir des mockUsers */
+/** Construit les données profil depuis les mockUsers (profil visiteur) */
 function buildVisitorProfile(username: string | undefined): ProfileDisplayData | null {
   if (!username) return null
   const user = mockUsers.find((u) => u.username === username)
@@ -140,19 +179,19 @@ function buildVisitorProfile(username: string | undefined): ProfileDisplayData |
 
   return {
     username: user.username,
-    bio: "Passionné(e) de nature et d'observation de la biodiversité locale.",
+    bio: user.bio,
     avatar_url: user.avatar,
     banner_url: user.banner,
-    city: null,
+    city: user.city,
     region: user.region,
-    interests: [],
-    instagram: null,
-    twitter: null,
-    website: null,
-    followers_count: Math.floor(Math.random() * 200) + 20,
-    following_count: Math.floor(Math.random() * 100) + 10,
-    created_at: '2025-03-15T00:00:00Z',
+    interests: user.interests,
+    instagram: user.instagram,
+    website: user.website,
+    followers_count: user.followers_count,
+    following_count: user.following_count,
+    created_at: user.created_at,
     badges: user.badges,
     stats: user.stats,
+    weekProgress: user.weekProgress,
   }
 }

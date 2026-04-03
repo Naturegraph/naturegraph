@@ -676,40 +676,74 @@
   },
 
   "profile": {
-    "journal": "Nature Journal",
-    "inspirations": "Inspirations",
-    "community": "Community",
-    "stats": "Statistics",
-    "settings": "Settings",
-    "editProfile": "Edit profile",
-    "follow": "Follow",
-    "following": "Following",
-    "unfollow": "Unfollow",
-    "message": "Message",
-    "publications": "Posts",
-    "notebooks": "Notebooks",
-    "identifications": "Identifications",
-    "joinedDate": "Member since {{date}}",
-    "postsCount": "{{count}} post",
-    "postsCount_other": "{{count}} posts",
-    "followers": "followers",
-    "followingCount": "following",
-    "noPostsYet": "No posts yet",
-    "noPostsDesc": "Shared observations will appear here.",
-    "comingSoon": "Coming soon",
-    "notebooksDesc": "Observation notebooks will be available soon.",
-    "identificationsDesc": "Collaborative identifications are coming soon.",
     "userNotFound": "User not found",
     "userNotFoundDesc": "This profile does not exist or has been removed.",
     "backToFeed": "Back to feed",
+    "migrateurs": "Followers",
+    "migrations": "Following",
+    "migrer": "Follow",
+    "migrating": "You follow",
+    "editProfile": "Edit profile",
+    "share": "Share",
+    "options": "Options",
     "tabs": {
       "label": "Profile sections",
-      "publications": "Posts",
-      "notebooks": "Notebooks",
-      "identifications": "Identifications",
-      "noPosts": "{{name}} hasn't shared any observation yet.",
-      "notebooksEmpty": "Observation notebooks will be available soon.",
-      "identificationsEmpty": "Collaborative identifications are coming soon."
+      "about": "About",
+      "journal": "Nature Journal",
+      "inspirations": "Inspirations",
+      "community": "Community",
+      "stats": "Statistics"
+    },
+    "about": {
+      "title": "About",
+      "memberSince": "Member since {{date}}",
+      "dna": "Observer DNA"
+    },
+    "journal": {
+      "recent": "Recent",
+      "popular": "Popular",
+      "noObs": "No observations shared yet."
+    },
+    "inspirations": {
+      "empty": "No inspirations saved yet."
+    },
+    "community": {
+      "migrateursList": "Followers",
+      "migrationsList": "Following",
+      "noMigrateurs": "Nobody follows this profile yet.",
+      "noMigrations": "This profile doesn't follow anyone yet."
+    },
+    "stats": {
+      "comingSoon": "Coming soon",
+      "comingSoonDesc": "Detailed statistics are coming soon."
+    },
+    "edit": {
+      "title": "Edit profile",
+      "tabInfos": "Information",
+      "tabPrefs": "Preferences",
+      "tabPhoto": "Profile photo",
+      "username": "Username",
+      "presentation": "Bio",
+      "weekGoal": "My weekly observation goal",
+      "weekGoalHelper": "You can change this goal at any time.",
+      "socialLinks": "Social links",
+      "websitePlaceholder": "https://www.mywebsite.com",
+      "instagramPlaceholder": "https://www.instagram.com/...",
+      "facebookPlaceholder": "https://www.facebook.com/...",
+      "interestsTitle": "What are your interests?",
+      "interestsSubtitle": "Choose up to 3 interests that others can see.",
+      "photoAvatar": "Profile photo",
+      "photoBanner": "Banner",
+      "photoAvatarHint": "Recommended format: 512 × 512 px (1:1 ratio)",
+      "photoBannerHint": "Recommended format: 1200 × 400 px (3:1 ratio)",
+      "change": "Change",
+      "delete": "Delete",
+      "save": "Save changes"
+    },
+    "shareSheet": {
+      "title": "Share this profile",
+      "copyLink": "Copy link:",
+      "copied": "Link copied!"
     }
   },
 

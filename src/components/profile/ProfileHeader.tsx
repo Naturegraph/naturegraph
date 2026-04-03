@@ -1,275 +1,205 @@
 /**
- * ProfileHeader — En-tete de la page profil
+ * ProfileHeader — En-tête de la page profil
  *
- * Affiche la banniere, l'avatar avec badge emoji, le username,
- * la bio, la localisation, la date d'inscription, les stats,
- * les boutons d'action, les interets et les liens sociaux.
+ * Design Figma : bannière pleine largeur (~160px), avatar centré chevauchant
+ * le bas de la bannière, username centré, stats Migrateurs/Migrations,
+ * boutons d'action en ligne.
  *
- * Utilise en mode "own" (son propre profil) ou "visitor" (profil d'un autre).
+ * Modes :
+ *  - isOwnProfile = true  → bouton "Modifier le profil" (crayon) + partage + options
+ *  - isOwnProfile = false → bouton "Migrer" / "Tu migres avec" + partage + options
+ *
+ * Les callbacks onEditProfile, onShare, onOptions sont gérés dans Profile.tsx.
  */
 
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import {
-  MapPin,
-  Calendar,
-  Settings,
-  UserPlus,
-  UserCheck,
-  MessageCircle,
-  Instagram,
-  ExternalLink,
-  User,
-  Edit3,
-} from 'lucide-react'
-import { INTEREST_LABELS } from '@/data/mockUsers'
+import { Pencil, Share2, MoreHorizontal, User } from 'lucide-react'
 import { getBadgeEmoji } from '@/utils/badgeHelpers'
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-interface ProfileData {
+/** Données minimales nécessaires pour afficher l'en-tête du profil */
+export interface ProfileDisplayData {
   username: string
   bio: string | null
   avatar_url: string | null
   banner_url: string | null
   city: string | null
   region: string | null
-  interests: string[]
+  interests: Array<{ id: string; percent: number }>
   instagram: string | null
-  twitter: string | null
   website: string | null
   followers_count: number
   following_count: number
   created_at: string
   badges: string[]
   stats: { observations: number; species: number; streak: number }
+  weekProgress?: { current: number; goal: number }
 }
 
 interface ProfileHeaderProps {
-  /** Donnees du profil a afficher */
-  profile: ProfileData
-  /** True si c'est le profil de l'utilisateur connecte */
+  /** Données du profil à afficher */
+  profile: ProfileDisplayData
+  /** True si c'est le profil de l'utilisateur connecté */
   isOwnProfile: boolean
+  /** Callback ouverture panneau édition */
+  onEditProfile?: () => void
+  /** Callback ouverture feuille de partage */
+  onShare?: () => void
+  /** Callback ouverture menu options */
+  onOptions?: () => void
 }
 
-// ─── Composant ───────────────────────────────────────────────────────────────
+// ─── Composant ────────────────────────────────────────────────────────────────
 
-/** En-tete complet du profil : banniere, avatar, infos, stats, actions */
-export function ProfileHeader({ profile, isOwnProfile }: ProfileHeaderProps) {
+/**
+ * En-tête complète du profil : bannière, avatar avec badge, username centré,
+ * compteurs Migrateurs/Migrations, boutons d'action.
+ */
+export function ProfileHeader({
+  profile,
+  isOwnProfile,
+  onEditProfile,
+  onShare,
+  onOptions,
+}: ProfileHeaderProps) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const [isFollowing, setIsFollowing] = useState(false)
 
-  // Labels des interets pour l'affichage
-  const interestLabels = profile.interests.map((i) => INTEREST_LABELS[i] ?? i)
-
-  // Date d'inscription formatee
-  const joinDate = new Date(profile.created_at).toLocaleDateString('fr-FR', {
-    month: 'long',
-    year: 'numeric',
-  })
-
-  // Localisation composee (ville, region)
-  const location = [profile.city, profile.region].filter(Boolean).join(', ')
+  /** Emoji badge de la première catégorie d'intérêt */
+  const badgeEmoji = profile.badges.length > 0 ? getBadgeEmoji(profile.badges[0]) : null
 
   return (
-    <div className="bg-cream-lighter border-[0.5px] border-border rounded-card overflow-hidden">
-      {/* Banniere — image ou gradient par defaut */}
-      <div className="h-32 sm:h-44 relative">
-        {profile.banner_url ? (
+    <div className="w-full">
+      {/* ── Bannière ── */}
+      <div className="h-40 relative overflow-hidden bg-gradient-to-br from-primary/30 via-primary/20 to-teal-dark/40">
+        {profile.banner_url && (
           <img
             src={profile.banner_url}
             alt=""
+            aria-hidden="true"
             className="w-full h-full object-cover"
             loading="lazy"
           />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-primary/30 via-primary/20 to-teal-dark/40" />
         )}
 
-        {/* Avatar positionne a cheval sur la banniere */}
-        <div className="absolute left-6 bottom-[-32px]">
-          <div className="size-20 sm:size-24 rounded-full border-3 border-cream-lighter overflow-hidden bg-primary-light relative">
-            {profile.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt={t('home.profile.avatarAlt', { name: profile.username })}
-                className="size-full object-cover"
-              />
-            ) : (
-              <div className="size-full flex items-center justify-center">
-                <User className="size-10 text-primary" aria-hidden="true" />
-              </div>
-            )}
-            {/* Badge emoji sur l'avatar */}
-            {profile.badges.length > 0 && (
+        {/* Avatar chevauchant la bannière — centré horizontalement */}
+        <div className="absolute left-1/2 -translate-x-1/2 -bottom-10">
+          <div className="relative">
+            {/* Cercle avatar 80px avec bordure cream */}
+            <div className="size-20 rounded-full border-2 border-cream-lighter overflow-hidden bg-primary-light">
+              {profile.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={t('home.profile.avatarAlt', { name: profile.username })}
+                  className="size-full object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="size-full flex items-center justify-center">
+                  <User className="size-8 text-primary" aria-hidden="true" />
+                </div>
+              )}
+            </div>
+
+            {/* Badge emoji en bas à droite de l'avatar */}
+            {badgeEmoji && (
               <div
                 aria-hidden="true"
-                className="absolute bottom-0 right-0 bg-cream-lighter rounded-full size-7 flex items-center justify-center"
+                className="absolute -bottom-0.5 -right-0.5 bg-cream-lighter rounded-full size-6 flex items-center justify-center shadow-sm"
               >
-                <span className="text-base leading-none">{getBadgeEmoji(profile.badges[0])}</span>
+                <span className="text-sm leading-none">{badgeEmoji}</span>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Contenu sous la banniere */}
-      <div className="pt-12 pb-6 px-6 flex flex-col gap-4">
-        {/* Ligne username + compteurs */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-bold text-foreground">{profile.username}</h1>
-            <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-              <span>
-                <strong className="text-foreground">{profile.followers_count}</strong>{' '}
-                {t('profile.followers')}
-              </span>
-              <span>
-                <strong className="text-foreground">{profile.following_count}</strong>{' '}
-                {t('profile.following')}
-              </span>
-            </div>
-          </div>
+      {/* ── Contenu sous la bannière ── */}
+      <div className="pt-14 pb-4 px-4 flex flex-col items-center gap-3">
+        {/* Username */}
+        <h1 className="text-xl font-bold text-foreground text-center">{profile.username}</h1>
 
-          {/* Boutons d'action */}
-          <div className="flex items-center gap-2">
-            {isOwnProfile ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => navigate('/settings')}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-button hover:opacity-90 transition-opacity"
-                >
-                  <Edit3 className="size-4" aria-hidden="true" />
-                  {t('profile.editProfile')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate('/settings')}
-                  aria-label={t('nav.settings')}
-                  className="size-9 flex items-center justify-center rounded-button border-[0.5px] border-border hover:bg-cream transition-colors"
-                >
-                  <Settings className="size-4 text-foreground" aria-hidden="true" />
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setIsFollowing(!isFollowing)}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-button transition-colors ${
-                    isFollowing
-                      ? 'bg-cream border-[0.5px] border-border text-foreground hover:bg-cream-lighter'
-                      : 'bg-primary text-primary-foreground hover:opacity-90'
-                  }`}
-                >
-                  {isFollowing ? (
-                    <UserCheck className="size-4" aria-hidden="true" />
-                  ) : (
-                    <UserPlus className="size-4" aria-hidden="true" />
-                  )}
-                  {isFollowing ? t('profile.following') : t('profile.follow')}
-                </button>
-                <button
-                  type="button"
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-button border-[0.5px] border-border hover:bg-cream transition-colors"
-                >
-                  <MessageCircle className="size-4" aria-hidden="true" />
-                  {t('profile.message')}
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Bio */}
-        {profile.bio && <p className="text-sm text-foreground leading-relaxed">{profile.bio}</p>}
-
-        {/* Localisation + date d'inscription */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-          {location && (
-            <span className="flex items-center gap-1">
-              <MapPin className="size-3.5" aria-hidden="true" />
-              {location}
-            </span>
-          )}
-          <span className="flex items-center gap-1">
-            <Calendar className="size-3.5" aria-hidden="true" />
-            {t('profile.joinedDate', { date: joinDate })}
+        {/* Stats Migrateurs | Migrations */}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>
+            <strong className="text-foreground font-semibold">{profile.followers_count}</strong>{' '}
+            {t('profile.migrateurs')}
+          </span>
+          <span className="text-border" aria-hidden="true">
+            |
+          </span>
+          <span>
+            <strong className="text-foreground font-semibold">{profile.following_count}</strong>{' '}
+            {t('profile.migrations')}
           </span>
         </div>
 
-        {/* Stats : Observations / Especes / Jours */}
-        <div className="grid grid-cols-3 gap-2 text-center py-3 border-y-[0.5px] border-border">
-          <div className="flex flex-col gap-0.5">
-            <p className="text-lg font-bold text-foreground">{profile.stats.observations}</p>
-            <p className="text-xs text-muted-foreground">{t('home.profile.obs')}</p>
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <p className="text-lg font-bold text-foreground">{profile.stats.species}</p>
-            <p className="text-xs text-muted-foreground">{t('home.profile.species')}</p>
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <p className="text-lg font-bold text-foreground">{profile.stats.streak}</p>
-            <p className="text-xs text-muted-foreground">{t('home.profile.days')}</p>
-          </div>
+        {/* Boutons d'action */}
+        <div className="flex items-center gap-2">
+          {isOwnProfile ? (
+            /* Propre profil : modifier + partager + options */
+            <>
+              <button
+                type="button"
+                onClick={onEditProfile}
+                className="flex items-center gap-2 h-10 px-5 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              >
+                <Pencil className="size-4" aria-hidden="true" />
+                {t('profile.editProfile')}
+              </button>
+              <button
+                type="button"
+                onClick={onShare}
+                aria-label={t('profile.share')}
+                className="size-10 flex items-center justify-center rounded-full border border-border hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              >
+                <Share2 className="size-4 text-foreground" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={onOptions}
+                aria-label={t('profile.options')}
+                className="size-10 flex items-center justify-center rounded-full border border-border hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              >
+                <MoreHorizontal className="size-4 text-foreground" aria-hidden="true" />
+              </button>
+            </>
+          ) : (
+            /* Profil visiteur : migrer + partager + options */
+            <>
+              <button
+                type="button"
+                onClick={() => setIsFollowing((f) => !f)}
+                className={`flex items-center gap-2 h-10 px-5 rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                  isFollowing
+                    ? 'bg-cream border border-border text-foreground hover:bg-cream-lighter'
+                    : 'bg-primary text-primary-foreground hover:opacity-90'
+                }`}
+                aria-pressed={isFollowing}
+              >
+                {isFollowing ? <>🦅 {t('profile.migrating')}</> : <>🦅 {t('profile.migrer')}</>}
+              </button>
+              <button
+                type="button"
+                onClick={onShare}
+                aria-label={t('profile.share')}
+                className="size-10 flex items-center justify-center rounded-full border border-border hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              >
+                <Share2 className="size-4 text-foreground" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={onOptions}
+                aria-label={t('profile.options')}
+                className="size-10 flex items-center justify-center rounded-full border border-border hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              >
+                <MoreHorizontal className="size-4 text-foreground" aria-hidden="true" />
+              </button>
+            </>
+          )}
         </div>
-
-        {/* Centres d'interets */}
-        {interestLabels.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {interestLabels.map((label) => (
-              <span
-                key={label}
-                className="bg-teal-dark/10 text-teal-dark text-xs px-2.5 py-0.5 rounded-button whitespace-nowrap"
-              >
-                {label}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Liens sociaux */}
-        {(profile.instagram || profile.twitter || profile.website) && (
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            {profile.instagram && (
-              <a
-                href={`https://instagram.com/${profile.instagram}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Instagram className="size-4" aria-hidden="true" />@{profile.instagram}
-              </a>
-            )}
-            {profile.twitter && (
-              <a
-                href={`https://x.com/${profile.twitter}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <span aria-hidden="true" className="text-xs font-bold">
-                  𝕏
-                </span>
-                @{profile.twitter}
-              </a>
-            )}
-            {profile.website && (
-              <a
-                href={profile.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ExternalLink className="size-4" aria-hidden="true" />
-                {profile.website.replace(/^https?:\/\//, '')}
-              </a>
-            )}
-          </div>
-        )}
       </div>
     </div>
   )

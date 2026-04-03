@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, Users } from 'lucide-react'
-import { getDailyRotation, getTerritoryUsers } from '@/data/mockUsers'
+import { getDailyRotation, getTerritoryUsers, INTEREST_LABELS } from '@/data/mockUsers'
 import type { MockUser } from '@/data/mockUsers'
 import { getBadgeEmoji } from '@/utils/badgeHelpers'
 
@@ -124,7 +124,7 @@ export function GuestSidebar() {
                       key={i}
                       className="bg-primary-light text-foreground text-xs px-2 py-0.5 rounded-button whitespace-nowrap"
                     >
-                      {badge}
+                      {INTEREST_LABELS[badge] ?? badge}
                     </span>
                   ))}
                 </div>

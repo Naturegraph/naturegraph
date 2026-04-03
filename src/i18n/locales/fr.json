@@ -676,40 +676,74 @@
   },
 
   "profile": {
-    "journal": "Journal Nature",
-    "inspirations": "Inspirations",
-    "community": "Communauté",
-    "stats": "Statistiques",
-    "settings": "Paramètres",
-    "editProfile": "Modifier le profil",
-    "follow": "Suivre",
-    "following": "Suivi(e)",
-    "unfollow": "Ne plus suivre",
-    "message": "Message",
-    "publications": "Publications",
-    "notebooks": "Carnets",
-    "identifications": "Identifications",
-    "joinedDate": "Membre depuis {{date}}",
-    "postsCount": "{{count}} publication",
-    "postsCount_other": "{{count}} publications",
-    "followers": "abonnés",
-    "followingCount": "abonnements",
-    "noPostsYet": "Aucune publication pour le moment",
-    "noPostsDesc": "Les observations partagées apparaîtront ici.",
-    "comingSoon": "Bientôt disponible",
-    "notebooksDesc": "Les carnets d'observations seront bientôt disponibles.",
-    "identificationsDesc": "Les identifications collaboratives arrivent bientôt.",
     "userNotFound": "Utilisateur introuvable",
     "userNotFoundDesc": "Ce profil n'existe pas ou a été supprimé.",
     "backToFeed": "Retour au fil",
+    "migrateurs": "Migrateurs",
+    "migrations": "Migrations",
+    "migrer": "Migrer",
+    "migrating": "Tu migres avec",
+    "editProfile": "Modifier le profil",
+    "share": "Partager",
+    "options": "Options",
     "tabs": {
       "label": "Sections du profil",
-      "publications": "Publications",
-      "notebooks": "Carnets",
-      "identifications": "Identifications",
-      "noPosts": "{{name}} n'a pas encore partagé d'observation.",
-      "notebooksEmpty": "Les carnets d'observations seront bientôt disponibles.",
-      "identificationsEmpty": "Les identifications collaboratives arrivent bientôt."
+      "about": "À propos",
+      "journal": "Journal nature",
+      "inspirations": "Inspirations",
+      "community": "Communauté",
+      "stats": "Statistiques"
+    },
+    "about": {
+      "title": "À propos",
+      "memberSince": "Migrateur depuis {{date}}",
+      "dna": "ADN de l'observateur"
+    },
+    "journal": {
+      "recent": "Récent",
+      "popular": "Populaire",
+      "noObs": "Aucune observation partagée pour le moment."
+    },
+    "inspirations": {
+      "empty": "Aucune inspiration sauvegardée pour l'instant."
+    },
+    "community": {
+      "migrateursList": "Migrateurs",
+      "migrationsList": "Migrations",
+      "noMigrateurs": "Personne ne suit encore ce profil.",
+      "noMigrations": "Ce profil ne suit personne encore."
+    },
+    "stats": {
+      "comingSoon": "Bientôt disponible",
+      "comingSoonDesc": "Les statistiques détaillées arrivent prochainement."
+    },
+    "edit": {
+      "title": "Modifier le profil",
+      "tabInfos": "Informations",
+      "tabPrefs": "Préférences",
+      "tabPhoto": "Photo de profil",
+      "username": "Nom d'utilisateur",
+      "presentation": "Présentation",
+      "weekGoal": "Mon objectif d'observations par semaine",
+      "weekGoalHelper": "Tu peux modifier cet objectif à tout moment.",
+      "socialLinks": "Réseaux sociaux",
+      "websitePlaceholder": "https://www.monsite.fr",
+      "instagramPlaceholder": "https://www.instagram.com/...",
+      "facebookPlaceholder": "https://www.facebook.com/...",
+      "interestsTitle": "Quels sont tes centres d'intérêt ?",
+      "interestsSubtitle": "Choisis jusqu'à 3 centres d'intérêts maximum que les autres pourront voir.",
+      "photoAvatar": "Photo de profil",
+      "photoBanner": "Bannière",
+      "photoAvatarHint": "Format recommandé : 512 × 512 px (ratio 1:1)",
+      "photoBannerHint": "Format recommandé : 1200 × 400 px (ratio 3:1)",
+      "change": "Changer",
+      "delete": "Supprimer",
+      "save": "Sauvegarder les modifications"
+    },
+    "shareSheet": {
+      "title": "Partager ce profil",
+      "copyLink": "Copier le lien :",
+      "copied": "Lien copié !"
     }
   },
 

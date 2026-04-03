@@ -40,8 +40,10 @@ export function ProfileSidebar() {
   const { t } = useTranslation()
   const { profile } = useAuth()
 
-  // Intérêts → labels français pour les badges et le matching
-  const interestLabels = (profile?.interests ?? []).map((i) => INTEREST_LABELS[i] ?? i)
+  // IDs des intérêts pour le matching (badges mockUsers stockés en IDs)
+  const interestIds = profile?.interests ?? []
+  // Labels français pour l'affichage uniquement
+  const interestLabels = interestIds.map((i) => INTEREST_LABELS[i] ?? i)
 
   // TODO [BACKEND] — Remplacer par profileService.getUserStats(profile.id)
   // Retourne { observations, species, streak, weekProgress: { current, goal } }
@@ -56,7 +58,8 @@ export function ProfileSidebar() {
   // TODO [BACKEND] — Remplacer par profileService.getSuggestedUsers(userId, { interests, limit: 3 })
   // Logique back-end : utilisateurs avec le plus d'intérêts communs + dans la même région
   // Table `follows` pour exclure les déjà suivis. Requête : RPC Supabase ou edge function.
-  const suggestions = getSuggestedUsersByInterests(interestLabels, 3, profile?.id)
+  // Matching par IDs (badges mockUsers sont des IDs depuis la refonte mockUsers)
+  const suggestions = getSuggestedUsersByInterests(interestIds, 3, profile?.id)
 
   return (
     <div className="flex flex-col gap-4">
@@ -203,7 +206,7 @@ export function ProfileSidebar() {
                       key={i}
                       className="bg-primary-light text-foreground text-xs px-2 py-0.5 rounded-button whitespace-nowrap"
                     >
-                      {badge}
+                      {INTEREST_LABELS[badge] ?? badge}
                     </span>
                   ))}
                 </div>
