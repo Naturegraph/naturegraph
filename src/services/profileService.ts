@@ -81,6 +81,7 @@ export async function updateProfile(
   payload: UpdateProfilePayload,
 ): Promise<Profile> {
   if (isSupabaseConfigured && supabase) {
+    // @ts-expect-error — TODO [BACKEND]: incompatibilité Database type ↔ supabase-js v2.99, à corriger lors du branchement backend
     const { data, error } = await supabase
       .from('profiles')
       .update({ ...payload, updated_at: new Date().toISOString() })
@@ -123,6 +124,7 @@ export async function toggleFollow(
         .eq('following_id', targetId)
       return { following: false }
     } else {
+      // @ts-expect-error — TODO [BACKEND]: incompatibilité Database type ↔ supabase-js v2.99
       await supabase.from('follows').insert({ follower_id: followerId, following_id: targetId })
       return { following: true }
     }
