@@ -12,7 +12,7 @@
 import { useTranslation } from 'react-i18next'
 import { UserRound, Globe, Instagram, Dna } from 'lucide-react'
 import type { ProfileDisplayData } from '../ProfileHeader'
-import { INTEREST_CONFIG } from '@/data/mockUsers'
+import { INTEREST_CONFIG } from '@/data/mock/mockUsers'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

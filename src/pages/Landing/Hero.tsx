@@ -11,17 +11,17 @@
 import { useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { motion, useMotionValue, useSpring, useTransform } from 'motion/react'
+import { motion, useMotionValue, useSpring, useTransform, type MotionValue } from 'motion/react'
 import { Navbar } from './Navbar'
 
 /* ── Types partagés pour le tracking souris ──────────────────────── */
 
 /** Valeurs de motion partagées entre les sous-composants du Hero */
 interface MouseTracking {
-  mouseXPx: ReturnType<typeof useSpring>
-  mouseYPx: ReturnType<typeof useSpring>
-  containerW: ReturnType<typeof useMotionValue>
-  containerH: ReturnType<typeof useMotionValue>
+  mouseXPx: MotionValue<number>
+  mouseYPx: MotionValue<number>
+  containerW: MotionValue<number>
+  containerH: MotionValue<number>
 }
 
 /* ── Animation stagger ─────────────────────────────────────────────── */
@@ -138,23 +138,29 @@ function GradientOrb({
    * Calcule la répulsion : direction = orbe - souris, normalisée.
    * L'intensité décroît avec la distance (inverse quadratique adouci).
    */
-  const offsetX = useTransform([mouseXPx, containerW] as const, ([mx, cw]: number[]) => {
-    if (cw === 0) return 0
-    const orbPx = anchorX * cw
-    const dx = orbPx - mx
-    const dist = Math.abs(dx) / cw
-    const force = Math.max(0, 1 - dist * 1.8)
-    return Math.sign(dx) * force * force * strength
-  })
+  const offsetX = useTransform(
+    [mouseXPx, containerW] as MotionValue<number>[],
+    ([mx, cw]: number[]) => {
+      if (cw === 0) return 0
+      const orbPx = anchorX * cw
+      const dx = orbPx - mx
+      const dist = Math.abs(dx) / cw
+      const force = Math.max(0, 1 - dist * 1.8)
+      return Math.sign(dx) * force * force * strength
+    },
+  )
 
-  const offsetY = useTransform([mouseYPx, containerH] as const, ([my, ch]: number[]) => {
-    if (ch === 0) return 0
-    const orbPy = anchorY * ch
-    const dy = orbPy - my
-    const dist = Math.abs(dy) / ch
-    const force = Math.max(0, 1 - dist * 1.8)
-    return Math.sign(dy) * force * force * strength
-  })
+  const offsetY = useTransform(
+    [mouseYPx, containerH] as MotionValue<number>[],
+    ([my, ch]: number[]) => {
+      if (ch === 0) return 0
+      const orbPy = anchorY * ch
+      const dy = orbPy - my
+      const dist = Math.abs(dy) / ch
+      const force = Math.max(0, 1 - dist * 1.8)
+      return Math.sign(dy) * force * force * strength
+    },
+  )
 
   /* Lissage spring des offsets pour un mouvement fluide et organique */
   const smoothX = useSpring(offsetX, springConfig)
@@ -197,17 +203,19 @@ function CursorSpotlight({ mouse }: { mouse: MouseTracking }) {
   const { mouseXPx, mouseYPx, containerW, containerH } = mouse
 
   /* Convertit px en % pour le radial-gradient */
-  const spotX = useTransform([mouseXPx, containerW] as const, ([mx, cw]: number[]) =>
-    cw > 0 ? `${(mx / cw) * 100}%` : '50%',
+  const spotX = useTransform(
+    [mouseXPx, containerW] as MotionValue<number>[],
+    ([mx, cw]: number[]) => (cw > 0 ? `${(mx / cw) * 100}%` : '50%'),
   )
-  const spotY = useTransform([mouseYPx, containerH] as const, ([my, ch]: number[]) =>
-    ch > 0 ? `${(my / ch) * 100}%` : '50%',
+  const spotY = useTransform(
+    [mouseYPx, containerH] as MotionValue<number>[],
+    ([my, ch]: number[]) => (ch > 0 ? `${(my / ch) * 100}%` : '50%'),
   )
 
   /* Gradient radial qui suit la souris — utilise les tokens DS */
   const spotlightBg = useTransform(
-    [spotX, spotY],
-    ([x, y]) =>
+    [spotX, spotY] as MotionValue<string>[],
+    ([x, y]: string[]) =>
       `radial-gradient(600px circle at ${x} ${y}, var(--hero-spot-mint-15), var(--hero-spot-action-04) 40%, transparent 65%)`,
   )
 

@@ -216,7 +216,7 @@ export function PostOptionsMenu({
   const ownPostItems = (
     <>
       <MenuItem
-        itemRef={firstItemRef}
+        itemRef={firstItemRef as React.RefObject<HTMLButtonElement>}
         icon={<Pencil className="size-5" />}
         label={t('home.post.options.edit')}
         description={t('home.post.options.editDesc')}
@@ -245,7 +245,7 @@ export function PostOptionsMenu({
   const otherPostItems = (
     <>
       <MenuItem
-        itemRef={firstItemRef}
+        itemRef={firstItemRef as React.RefObject<HTMLButtonElement>}
         icon={<UserX className="size-5" />}
         label={t('home.post.options.unfollow', { username: authorUsername })}
         description={t('home.post.options.unfollowDesc')}

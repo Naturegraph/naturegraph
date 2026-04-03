@@ -14,7 +14,7 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import type { Post, PostFeedItem, ReactionType } from '@/types/database'
 import { simulateNetworkDelay, calculatePagination } from '@/constants/config'
-import { mockPosts } from '@/data/mockPosts'
+import { mockPosts } from '@/data/mock/mockPosts'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -65,8 +65,7 @@ export interface CreatePostPayload {
  * Récupère le feed principal avec pagination.
  */
 export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { page = 1, limit = 20, tab = 'recent' } = params
+  const { page = 1, limit = 20, tab: _tab = 'recent' } = params
 
   if (isSupabaseConfigured && supabase) {
     // TODO : implémenter la requête Supabase avec join author + media
@@ -168,8 +167,7 @@ export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
 /**
  * Récupère un post par son ID avec toutes ses relations.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function getPostById(postId: string): Promise<PostFeedItem | null> {
+export async function getPostById(_postId: string): Promise<PostFeedItem | null> {
   if (isSupabaseConfigured && supabase) {
     // TODO : implémenter
     throw new Error('getPostById Supabase : non implémenté')
@@ -187,6 +185,7 @@ export async function createPost(userId: string, payload: CreatePostPayload): Pr
   if (isSupabaseConfigured && supabase) {
     const { data, error } = await supabase
       .from('posts')
+      // @ts-expect-error — TODO [BACKEND]: incompatibilité Database type ↔ supabase-js v2.99, à corriger lors du branchement backend avec types Supabase CLI générés
       .insert({
         user_id: userId,
         ...payload,
@@ -221,9 +220,14 @@ export async function toggleReaction(
       .maybeSingle()
 
     if (existing) {
-      await supabase.from('reactions').delete().eq('id', existing.id)
+      // Cast: maybeSingle() returns `never` when Database types are incomplete — safe at runtime
+      await supabase
+        .from('reactions')
+        .delete()
+        .eq('id', (existing as { id: string }).id)
       return { added: false }
     } else {
+      // @ts-expect-error — TODO [BACKEND]: incompatibilité Database type ↔ supabase-js v2.99
       await supabase.from('reactions').insert({ post_id: postId, user_id: userId, type })
       return { added: true }
     }

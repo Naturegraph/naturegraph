@@ -16,7 +16,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, User, Users } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { getSuggestedUsersByInterests, INTEREST_LABELS } from '@/data/mockUsers'
+import { getSuggestedUsersByInterests, INTEREST_LABELS } from '@/data/mock/mockUsers'
 import { getBadgeEmoji } from '@/utils/badgeHelpers'
 
 // ─── Mock stats ───────────────────────────────────────────────────────────────

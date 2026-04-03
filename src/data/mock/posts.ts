@@ -1200,6 +1200,6 @@ export async function fetchPostsByType(type: PostType): Promise<Post[]> {
  */
 export async function fetchPaginatedPosts(page: number, pageSize: number): Promise<Post[]> {
   await simulateNetworkDelay()
-  const { startIndex, endIndex } = calculatePagination(page, pageSize)
-  return mockPosts.slice(startIndex, endIndex)
+  const { data } = calculatePagination(mockPosts, page, pageSize)
+  return data
 }

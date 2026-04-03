@@ -3,6 +3,9 @@
  * Réexporte les types database pour usage simplifié
  */
 
+// Imports pour usage local dans ce fichier (SearchFilters)
+import type { PostType, TaxonomicGroup, HabitatType, PostStatus } from './database'
+
 // Re-export all database types for convenience
 export type {
   Gender,

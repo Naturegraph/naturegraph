@@ -227,7 +227,7 @@ export function FeedFilterPanel({
         <div className="flex flex-wrap gap-2">
           {RADIUS_OPTIONS.map((opt) => {
             const isActive = local.radius === opt.value
-            const label = opt.labelKey ? t(opt.labelKey) : opt.label
+            const label = 'labelKey' in opt ? t(opt.labelKey) : opt.label
             return (
               <button
                 key={opt.value}
