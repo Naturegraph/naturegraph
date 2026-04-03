@@ -373,7 +373,30 @@
       "guestLimitTitle": "Join the Naturegraph community",
       "guestLimitDesc": "Create a free account to see all observations, react and share your own discoveries.",
       "guestLimitCreate": "Create my account",
-      "guestLimitLogin": "Sign in"
+      "guestLimitLogin": "Sign in",
+      "emptyTitle": "No observations found",
+      "emptyDesc": "Try changing your filters to see more results.",
+      "emptyDescLocation": "Be the first to share an observation in {{location}}!",
+      "emptyReset": "Reset filters",
+      "emptyContribute": "Share an observation"
+    },
+    "filters": {
+      "title": "Filters",
+      "sortResults": "Sort results",
+      "byCategory": "By species category",
+      "helpOnly": "Show help requests only",
+      "byShareType": "By share type",
+      "natureEncounter": "Nature encounter",
+      "instantNature": "Nature instant",
+      "radiusTitle": "Results around you, within a radius of",
+      "radiusAll": "All",
+      "period": "Period",
+      "periodAll": "All",
+      "periodToday": "Today",
+      "periodWeek": "This week",
+      "periodMonth": "This month",
+      "save": "Save filters",
+      "reset": "Reset"
     },
     "post": {
       "seeMore": "See more",
@@ -392,10 +415,53 @@
         "admire": "Admire",
         "fire": "Amazing",
         "wow": "Wow",
-        "curious": "Curious"
+        "curious": "Curious",
+        "disappointed": "Disappointing"
       },
       "commentCount": "{{count}} comment",
-      "commentCount_other": "{{count}} comments"
+      "commentCount_other": "{{count}} comments",
+      "options": {
+        "unfollow": "Unfollow @{{username}}",
+        "unfollowDesc": "You will no longer see their posts",
+        "addFavorite": "Add to favourites",
+        "addFavoriteDesc": "Save for later",
+        "copyLink": "Copy link",
+        "copyLinkDesc": "Share this observation easily",
+        "copyLinkDone": "Link copied!",
+        "muteUser": "Mute @{{username}}",
+        "muteUserDesc": "Stop seeing their posts",
+        "hidePost": "Hide this post",
+        "hidePostDesc": "See less content like this",
+        "report": "Report post",
+        "reportDesc": "Inappropriate content or spam",
+        "edit": "Edit my observation",
+        "editDesc": "You can correct the information",
+        "delete": "Delete my observation",
+        "deleteDesc": "Are you sure you want to delete?",
+        "report": "Report post",
+        "reportDesc": "Inappropriate content or spam"
+      },
+      "reportModal": {
+        "title": "Report",
+        "description": "Select the reason for your report, then click *Submit*. Our team will review the request and take appropriate action.",
+        "placeholder": "Reason for report...",
+        "reason1": "Inappropriate or offensive content",
+        "reason2": "Harassment or intimidation",
+        "reason3": "False or misleading information",
+        "reason4": "Spam or unsolicited advertising",
+        "reason5": "Other",
+        "cancel": "Cancel",
+        "submit": "Submit",
+        "successTitle": "Report sent",
+        "successDesc": "Thank you, our team will review this post."
+      },
+      "deleteModal": {
+        "title": "Delete observation?",
+        "description": "You are about to permanently delete this observation.",
+        "warning": "This action is irreversible.",
+        "cancel": "Cancel",
+        "confirm": "Confirm"
+      }
     },
     "stats": {
       "impact": "Impact",
@@ -405,6 +471,187 @@
       "changeTrendPeriod": "Change trend period",
       "thisMonth": "This month",
       "observationCount": "{{count}} observations"
+    },
+    "search": {
+      "title": "Search",
+      "filterSpecies": "Species",
+      "filterAccounts": "Accounts",
+      "recentLabel": "Recent searches",
+      "clearAll": "Clear all",
+      "placeholder": "Species, user...",
+      "empty": "Search for a species or user…",
+      "noResults": "No results for \u00ab\u00a0{{query}}\u00a0\u00bb"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "typeReaction": "New reaction",
+      "typeFollow": "New migrator",
+      "seeProfile": "View profile",
+      "viewAll": "View all notifications"
+    },
+    "profileMenu": {
+      "principal": "Main",
+      "myProfile": "My profile",
+      "settings": "Settings",
+      "theme": "Theme",
+      "appearance": "Appearance",
+      "themeLight": "Light",
+      "themeDark": "Dark",
+      "accessibility": "Accessibility",
+      "textSize": "Text size",
+      "textSizeSmall": "Small",
+      "textSizeMedium": "Medium",
+      "textSizeLarge": "Large",
+      "highContrast": "High contrast",
+      "logout": "Sign out",
+      "version": "App version 0.0.1"
+    },
+    "contributeDropdown": {
+      "instantNature": "Nature instant",
+      "instantNatureDesc": "Capture a spontaneous moment: landscape, atmosphere, phenomenon.",
+      "natureEncounter": "Nature encounter",
+      "natureEncounterDesc": "Document the observation of a species with location and identification.",
+      "share": "Share"
+    }
+  },
+
+  "contribute": {
+    "pageTitle": "New observation",
+    "instantTitle": "Nature Instant",
+    "encounterTitle": "Nature Encounter",
+    "backToFeed": "Back to feed",
+    "publish": "Publish",
+    "step": "Step {{current}}/{{total}}",
+    "steps": {
+      "step1": "Photos",
+      "step2": "Observed species",
+      "step3": "Context & details"
+    },
+    "panel": {
+      "immortaliseEncounter": "Immortalise your encounter!",
+      "maxPhotos": "You can add up to {{count}} photos.",
+      "skipPhotos": "You can also continue without adding a photo",
+      "photoFormat": "Photo display format",
+      "formatLandscape": "Landscape (16:9)",
+      "formatPortrait": "Portrait (3:4)",
+      "formatSquare": "Square (1:1)",
+      "whatObserved": "What did you observe?",
+      "searchSpecies": "Species name...",
+      "notebook": "Observation notebook",
+      "emptyHint": "Type a few letters to see suggestions!",
+      "noResults": "No results",
+      "addObservation": "Add a new observation",
+      "helpIdentification": "Enable identification help",
+      "mystereTitle": "Mystery to solve!",
+      "mystereSubtitle": "Need help identifying this species",
+      "unknownSpecies": "Undetermined species",
+      "unknownSubtitle": "A mystery to solve",
+      "dontKnow": "I don't know the species",
+      "individualCount": "No. of individuals",
+      "publishBtn": "Share!",
+      "moreDetails": "More details",
+      "obsTitle": "Title (optional)",
+      "obsTitlePlaceholder": "Morning encounter in the forest...",
+      "publicLocation": "Make location public"
+    },
+    "media": {
+      "label": "Photos",
+      "addPhotos": "Add photos",
+      "dragDrop": "Drag your photos here or",
+      "browse": "browse",
+      "maxFiles": "{{count}} photos max",
+      "remove": "Remove photo {{index}}"
+    },
+    "description": {
+      "label": "Description",
+      "placeholder": "Describe what you observed...",
+      "instantPlaceholder": "Describe this nature moment...",
+      "chars": "{{count}}/{{max}}"
+    },
+    "phenomenon": {
+      "label": "Phenomenon or atmosphere",
+      "placeholder": "Morning mist, bloom, migration..."
+    },
+    "date": {
+      "label": "Observation date",
+      "timeLabel": "Time of day",
+      "morning": "Morning",
+      "afternoon": "Afternoon",
+      "dusk": "Dusk",
+      "evening": "Evening",
+      "night": "Night"
+    },
+    "weather": {
+      "label": "Weather",
+      "sunny": "Sunny",
+      "cloudy": "Cloudy",
+      "rainy": "Rainy",
+      "windy": "Windy",
+      "snowy": "Snowy"
+    },
+    "habitat": {
+      "label": "Habitat",
+      "forest": "Forest",
+      "park_garden": "Park / Garden",
+      "prairie_heath": "Prairie / Heath",
+      "urban": "Urban",
+      "river": "River",
+      "lake_wetland": "Lake / Wetland",
+      "mountain": "Mountain",
+      "sea_coast": "Sea / Coast"
+    },
+    "location": {
+      "label": "Location",
+      "placeholder": "City, forest, place name...",
+      "hide": "Hide precise location",
+      "hideDesc": "Only the region will be publicly visible"
+    },
+    "species": {
+      "label": "Observed species",
+      "statusLabel": "Is the species identified?",
+      "identified": "Identified",
+      "identifiedDesc": "I know the species name",
+      "pending": "Pending",
+      "pendingDesc": "I'd like the community to help identify",
+      "unknown": "Unknown",
+      "unknownDesc": "I'm not looking to identify",
+      "searchPlaceholder": "Tit, fox...",
+      "noResults": "No species found",
+      "taxrefCredit": "TAXREF data — INPN, CC-BY license",
+      "group": "Taxonomic group",
+      "groups": {
+        "birds": "Birds",
+        "mammals": "Mammals",
+        "insects": "Insects",
+        "amphibians": "Amphibians",
+        "reptiles": "Reptiles",
+        "arachnids": "Arachnids",
+        "mollusks": "Mollusks",
+        "fish": "Fish",
+        "plants": "Plants",
+        "other": "Other"
+      }
+    },
+    "visibility": {
+      "label": "Visibility",
+      "public": "Public",
+      "publicDesc": "Visible to everyone",
+      "followers": "Followers",
+      "followersDesc": "Your followers only",
+      "private": "Private",
+      "privateDesc": "Only you"
+    },
+    "tags": {
+      "label": "Tags",
+      "placeholder": "Add a tag + Enter",
+      "remove": "Remove tag {{tag}}"
+    },
+    "multipleObs": "Multiple individuals observed",
+    "multipleObsDesc": "Check if you observed multiple individuals of the same species",
+    "errors": {
+      "mediaRequired": "Add at least one photo",
+      "descriptionRequired": "Description is required",
+      "descriptionTooLong": "Maximum {{max}} characters"
     }
   },
 
@@ -429,11 +676,75 @@
   },
 
   "profile": {
-    "journal": "Nature Journal",
-    "inspirations": "Inspirations",
-    "community": "Community",
-    "stats": "Statistics",
-    "settings": "Settings"
+    "userNotFound": "User not found",
+    "userNotFoundDesc": "This profile does not exist or has been removed.",
+    "backToFeed": "Back to feed",
+    "migrateurs": "Followers",
+    "migrations": "Following",
+    "migrer": "Follow",
+    "migrating": "You follow",
+    "editProfile": "Edit profile",
+    "share": "Share",
+    "options": "Options",
+    "tabs": {
+      "label": "Profile sections",
+      "about": "About",
+      "journal": "Nature Journal",
+      "inspirations": "Inspirations",
+      "community": "Community",
+      "stats": "Statistics"
+    },
+    "about": {
+      "title": "About",
+      "memberSince": "Member since {{date}}",
+      "dna": "Observer DNA"
+    },
+    "journal": {
+      "recent": "Recent",
+      "popular": "Popular",
+      "noObs": "No observations shared yet."
+    },
+    "inspirations": {
+      "empty": "No inspirations saved yet."
+    },
+    "community": {
+      "migrateursList": "Followers",
+      "migrationsList": "Following",
+      "noMigrateurs": "Nobody follows this profile yet.",
+      "noMigrations": "This profile doesn't follow anyone yet."
+    },
+    "stats": {
+      "comingSoon": "Coming soon",
+      "comingSoonDesc": "Detailed statistics are coming soon."
+    },
+    "edit": {
+      "title": "Edit profile",
+      "tabInfos": "Information",
+      "tabPrefs": "Preferences",
+      "tabPhoto": "Profile photo",
+      "username": "Username",
+      "presentation": "Bio",
+      "weekGoal": "My weekly observation goal",
+      "weekGoalHelper": "You can change this goal at any time.",
+      "socialLinks": "Social links",
+      "websitePlaceholder": "https://www.mywebsite.com",
+      "instagramPlaceholder": "https://www.instagram.com/...",
+      "facebookPlaceholder": "https://www.facebook.com/...",
+      "interestsTitle": "What are your interests?",
+      "interestsSubtitle": "Choose up to 3 interests that others can see.",
+      "photoAvatar": "Profile photo",
+      "photoBanner": "Banner",
+      "photoAvatarHint": "Recommended format: 512 × 512 px (1:1 ratio)",
+      "photoBannerHint": "Recommended format: 1200 × 400 px (3:1 ratio)",
+      "change": "Change",
+      "delete": "Delete",
+      "save": "Save changes"
+    },
+    "shareSheet": {
+      "title": "Share this profile",
+      "copyLink": "Copy link:",
+      "copied": "Link copied!"
+    }
   },
 
   "settings": {
@@ -454,7 +765,57 @@
     "privacy": "Privacy",
     "languageFr": "Français",
     "languageEn": "English",
-    "deleteAccount": "Delete my account"
+    "deleteAccount": "Delete my account",
+    "profileSection": "Profile",
+    "accountSection": "Account",
+    "notificationsSection": "Notifications",
+    "dangerZone": "Danger zone",
+    "avatar": "Profile photo",
+    "changeAvatar": "Change photo",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "username": "Username",
+    "bio": "Bio",
+    "bioPlaceholder": "Tell us about yourself and your passion for nature...",
+    "bioChars": "{{count}}/{{max}}",
+    "location": "Location",
+    "city": "City",
+    "region": "Region",
+    "interests": "Interests",
+    "socialLinks": "Social links",
+    "instagram": "Instagram",
+    "twitter": "X (Twitter)",
+    "website": "Website",
+    "saveChanges": "Save changes",
+    "email": "Email address",
+    "verified": "Verified",
+    "publicProfile": "Public profile",
+    "publicProfileDesc": "Your profile is visible to all users",
+    "privateProfileDesc": "Your profile is visible only to your followers",
+    "notificationsComingSoon": "Notification management is coming soon.",
+    "logout": "Log out",
+    "logoutDesc": "You will be redirected to the home page",
+    "deleteAccountDesc": "This action is irreversible. All your data will be deleted.",
+    "deleteAccountConfirm": "Are you sure you want to delete your account?"
+  },
+
+  "comments": {
+    "title": "Comments",
+    "titleCount": "Comments ({{count}})",
+    "placeholder": "Add a comment...",
+    "send": "Send",
+    "loginPrompt": "Log in to comment",
+    "loginLink": "Create an account",
+    "empty": "No comments yet",
+    "emptyDesc": "Be the first to comment on this observation!"
+  },
+
+  "mobileNav": {
+    "home": "Home",
+    "explore": "Explore",
+    "contribute": "Contribute",
+    "search": "Search",
+    "profile": "Profile"
   },
 
   "footer": {

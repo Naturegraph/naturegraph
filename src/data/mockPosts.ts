@@ -30,6 +30,7 @@ export interface MockPost {
     fire: number
     wow: number
     curious: number
+    disappointed: number
   }
   comments: number
 }
@@ -68,11 +69,11 @@ export const mockPosts: MockPost[] = [
         alt: 'Renard roux',
       },
       {
-        url: 'https://images.unsplash.com/photo-1507666664098-cc3f0bc2e75d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080',
-        alt: 'Écureuil',
+        url: 'https://images.unsplash.com/photo-1555169062-013468b47731?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080',
+        alt: 'Écureuil roux',
       },
     ],
-    reactions: { love: 19, admire: 14, fire: 42, wow: 7, curious: 19 },
+    reactions: { love: 19, admire: 14, fire: 42, wow: 7, curious: 19, disappointed: 0 },
     comments: 8,
   },
   {
@@ -103,7 +104,7 @@ export const mockPosts: MockPost[] = [
         alt: 'Forêt matinale',
       },
     ],
-    reactions: { love: 34, admire: 28, fire: 15, wow: 12, curious: 9 },
+    reactions: { love: 34, admire: 28, fire: 15, wow: 12, curious: 9, disappointed: 0 },
     comments: 14,
   },
   {
@@ -130,7 +131,7 @@ export const mockPosts: MockPost[] = [
         alt: 'Oiseaux sur lac',
       },
     ],
-    reactions: { love: 45, admire: 38, fire: 22, wow: 31, curious: 17 },
+    reactions: { love: 45, admire: 38, fire: 22, wow: 31, curious: 17, disappointed: 0 },
     comments: 21,
   },
   {
@@ -156,7 +157,7 @@ export const mockPosts: MockPost[] = [
         alt: 'Insecte sur tige',
       },
     ],
-    reactions: { love: 28, admire: 22, fire: 11, wow: 19, curious: 35 },
+    reactions: { love: 28, admire: 22, fire: 11, wow: 19, curious: 35, disappointed: 0 },
     comments: 9,
   },
   {
@@ -187,7 +188,7 @@ export const mockPosts: MockPost[] = [
         alt: 'Vagues sur les rochers',
       },
     ],
-    reactions: { love: 67, admire: 54, fire: 38, wow: 49, curious: 12 },
+    reactions: { love: 67, admire: 54, fire: 38, wow: 49, curious: 12, disappointed: 0 },
     comments: 33,
   },
 ]

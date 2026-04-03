@@ -84,8 +84,8 @@ export function StatsSidebar() {
             </p>
             <p className="text-2xl font-bold text-foreground">12,847</p>
             <div className="flex items-center gap-1">
-              <TrendingUp className="size-4 text-[#00673f]" aria-hidden="true" />
-              <span className="text-xs text-[#00673f] tracking-[0.48px]">+12%</span>
+              <TrendingUp className="size-4 text-[var(--color-success)]" aria-hidden="true" />
+              <span className="text-xs text-[var(--color-success)] tracking-[0.48px]">+12%</span>
             </div>
           </div>
           {/* Migrateurs */}
@@ -95,8 +95,8 @@ export function StatsSidebar() {
             </p>
             <p className="text-2xl font-bold text-foreground">2,341</p>
             <div className="flex items-center gap-1">
-              <TrendingUp className="size-4 text-[#00673f]" aria-hidden="true" />
-              <span className="text-xs text-[#00673f] tracking-[0.48px]">+8%</span>
+              <TrendingUp className="size-4 text-[var(--color-success)]" aria-hidden="true" />
+              <span className="text-xs text-[var(--color-success)] tracking-[0.48px]">+8%</span>
             </div>
           </div>
         </div>
@@ -144,9 +144,10 @@ export function StatsSidebar() {
           ))}
         </div>
 
+        {/* CTA — voir toutes les tendances */}
         <button
           type="button"
-          className="w-full mt-6 h-12 border-[0.5px] border-border rounded-full font-bold hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className="mt-5 w-full h-10 rounded-button border border-border text-sm text-foreground hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
         >
           {t('home.trending.viewAll')}
         </button>

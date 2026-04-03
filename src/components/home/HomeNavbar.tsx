@@ -2,101 +2,109 @@
  * HomeNavbar — Barre de navigation de la page Home
  *
  * Comportements :
- *   - Logo    → /home (page produit, jamais la landing)
- *   - Localisation → navigator.geolocation + reverse geocoding Nominatim
- *   - Recherche → SearchPanel (utilisateurs + espèces)
- *   - Notifications → NotificationsPanel (si connecté)
- *   - Contribuer → ContributeModal (si connecté) ou /signup (invité)
- *   - Compte → profil (connecté) ou Se connecter (invité)
+ *   - Logo            → /home
+ *   - Localisation    → ouvre LocationModal (label lu depuis LocationContext)
+ *   - Recherche       → ouvre SearchPanel (md+ uniquement ; mobile = bottom nav)
+ *   - Notifications   → ouvre NotificationsPanel (si connecté)
+ *   - Contribuer      → ouvre ContributeModal (md+ uniquement ; mobile = FAB bottom nav)
+ *   - Profil          → ouvre ProfileMenu (md+ uniquement ; mobile = bottom nav avatar)
  *
- * Responsive : Desktop / Tablet / Mobile.
+ * Responsive :
+ *   - XL Desktop (≥1280px) : localisation + recherche + bell + contribuer (label) + avatar + username + streak + chevron
+ *   - Desktop/Tablet (≥768px) : localisation + recherche + bell + contribuer (icône) + avatar
+ *   - Mobile (<768px) : logo + vue grille + filtre + bell — le reste est dans MobileBottomNav
+ *
+ * Sur mobile, les callbacks feedViewMode / onToggleFeedView / onOpenFeedFilters
+ * permettent de contrôler le feed depuis la navbar (état levé dans Home.tsx).
+ *
  * Accessibilité : aria-labels, focus-visible, skip link cible #main-content.
  */
 
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Search, Bell, Plus, LocateFixed, ChevronDown, User, Loader2 } from 'lucide-react'
+import {
+  Search,
+  Bell,
+  Plus,
+  MapPin,
+  ChevronDown,
+  User,
+  LayoutList,
+  LayoutGrid,
+  Filter,
+  Flame,
+} from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLocation } from '@/contexts/LocationContext'
 import { SearchPanel } from './SearchPanel'
 import { NotificationsPanel } from './NotificationsPanel'
 import { ContributeModal } from './ContributeModal'
+import { LocationModal } from './LocationModal'
+import { ProfileMenu } from './ProfileMenu'
 import logoColor from '@/assets/logos/logo-wordmark-color.svg'
 
-// ─── Géolocalisation ──────────────────────────────────────────────────────────
-// TODO [BACKEND] — Partager le locationLabel avec GuestSidebar via un LocationContext
-//   pour éviter deux appels géoloc séparés (navbar + sidebar).
-//   Créer src/contexts/LocationContext.tsx : { coords, label, isLoading, requestLocation }
-//   La position servira aussi à filtrer le feed (observations à proximité).
+// ─── Props ───────────────────────────────────────────────────────────────────
 
-/** Reverse geocoding via Nominatim OSM (gratuit, sans clé)
- * TODO [BACKEND] — En production, envisager un proxy côté serveur pour masquer l'origine
- * et éviter le rate-limiting Nominatim (1 req/sec). Alternative : Mapbox Geocoding API.
- */
-async function reverseGeocode(lat: number, lon: number): Promise<string> {
-  const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=fr`
-  const res = await fetch(url, { headers: { 'Accept-Language': 'fr' } })
-  if (!res.ok) throw new Error('Geocoding failed')
-  const data = await res.json()
-  const city =
-    data.address?.city ??
-    data.address?.town ??
-    data.address?.village ??
-    data.address?.municipality ??
-    ''
-  const region = data.address?.state ?? ''
-  return city ? (region ? `${city}, ${region}` : city) : region || 'Ma position'
+interface HomeNavbarProps {
+  /** Vue liste/grille du feed — contrôlée depuis Home.tsx, affichée sur mobile */
+  feedViewMode?: 'list' | 'grid'
+  /** Toggle vue liste ↔ grille depuis la navbar mobile */
+  onToggleFeedView?: () => void
+  /** Ouvre le panel filtres depuis la navbar mobile */
+  onOpenFeedFilters?: () => void
+  /** Affiche le badge sur l'icône filtre si des filtres actifs */
+  feedHasActiveFilters?: boolean
+  /**
+   * Rappelé quand l'utilisateur choisit un type de contribution dans le menu desktop.
+   * Si fourni, ouvre le panneau inline (panel overlay) plutôt que de naviguer.
+   */
+  onContributeTypeSelect?: (type: string) => void
 }
 
-// ─── Composant principal ──────────────────────────────────────────────────────
+// ─── Composant ───────────────────────────────────────────────────────────────
 
-export function HomeNavbar() {
+export function HomeNavbar({
+  feedViewMode = 'list',
+  onToggleFeedView,
+  onOpenFeedFilters,
+  feedHasActiveFilters = false,
+  onContributeTypeSelect,
+}: HomeNavbarProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { isAuthenticated, profile } = useAuth()
 
-  // ── État localisation ────────────────────────────────────────────────────
-  // TODO [BACKEND] — Valeur initiale 'Ploërmel, Bretagne' = mock.
-  // Remplacer par : lecture depuis profile.city + profile.region (si connecté)
-  // ou localStorage (si invité a déjà accepté la géoloc lors d'une session précédente).
-  const [locationLabel, setLocationLabel] = useState('Ploërmel, Bretagne')
-  const [locationLoading, setLocationLoading] = useState(false)
+  // Streak consécutif (jours d'observation) — TODO [BACKEND] profile.streak_days
+  // Même valeur que ProfileSidebar en attendant la donnée réelle
+  const STREAK_DAYS = 14
 
-  async function handleLocate() {
-    if (locationLoading) return
-    if (!navigator.geolocation) return
+  // Localisation partagée via LocationContext (pas de géoloc locale ici)
+  const { locationLabel } = useLocation()
 
-    setLocationLoading(true)
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const label = await reverseGeocode(pos.coords.latitude, pos.coords.longitude)
-          setLocationLabel(label)
-        } catch {
-          setLocationLabel('Ma position')
-        } finally {
-          setLocationLoading(false)
-        }
-      },
-      () => {
-        // Refus ou erreur — on ne touche pas au label actuel
-        setLocationLoading(false)
-      },
-    )
-  }
-
-  // ── Panels / modals ──────────────────────────────────────────────────────
+  // ── États des panels / modals ─────────────────────────────────────────────
   const [showSearch, setShowSearch] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showContribute, setShowContribute] = useState(false)
+  const [showLocationModal, setShowLocationModal] = useState(false)
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
 
+  // Refs pour ancrer les dropdowns
   const notifBtnRef = useRef<HTMLButtonElement>(null)
+
+  // ── Actions ───────────────────────────────────────────────────────────────
 
   function handleContribute() {
     if (!isAuthenticated) {
       navigate('/signup')
     } else {
-      setShowContribute(true)
+      setShowContribute((v) => !v)
+    }
+  }
+
+  function handleProfileClick() {
+    if (isAuthenticated) {
+      setShowProfileMenu((v) => !v)
     }
   }
 
@@ -111,7 +119,7 @@ export function HomeNavbar() {
 
         <div className="flex items-center size-full">
           <div className="w-full xl:max-w-[1728px] mx-auto flex items-center justify-between md:px-6 px-4 h-full">
-            {/* Logo → /home (page produit) */}
+            {/* Logo → /home */}
             <Link
               to="/home"
               aria-label="Naturegraph — Retour au fil d'actualité"
@@ -122,136 +130,228 @@ export function HomeNavbar() {
 
             {/* Actions droite */}
             <div className="flex md:gap-4 gap-3 items-center">
-              {/* Localisation — desktop seulement */}
-              <div className="hidden md:flex">
+              {/* ════════════════════════════════════════════════════════
+                  MOBILE (<768px) — contrôles du feed + bell
+                  (search, contribute et profil sont dans MobileBottomNav)
+                  ════════════════════════════════════════════════════════ */}
+              <div className="flex md:hidden items-center gap-2">
+                {/* Vue liste/grille */}
                 <button
                   type="button"
-                  onClick={handleLocate}
-                  disabled={locationLoading}
-                  className="flex gap-3 h-12 items-center justify-center px-6 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-70"
-                  aria-label={t('home.navbar.changeLocation')}
+                  onClick={onToggleFeedView}
+                  className="flex items-center justify-center size-12 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  aria-label={
+                    feedViewMode === 'list' ? t('home.feed.gridView') : t('home.feed.listView')
+                  }
+                  aria-pressed={feedViewMode === 'grid'}
                 >
-                  {locationLoading ? (
-                    <Loader2
-                      className="size-5 text-foreground shrink-0 animate-spin"
-                      aria-hidden="true"
-                    />
+                  {feedViewMode === 'list' ? (
+                    <LayoutGrid className="size-5 text-foreground" aria-hidden="true" />
                   ) : (
-                    <LocateFixed className="size-5 text-foreground shrink-0" aria-hidden="true" />
+                    <LayoutList className="size-5 text-foreground" aria-hidden="true" />
                   )}
-                  <span className="text-foreground text-nowrap">{locationLabel}</span>
                 </button>
-              </div>
 
-              {/* Recherche */}
-              <button
-                type="button"
-                onClick={() => setShowSearch(true)}
-                className="flex items-center justify-center size-12 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                aria-label={t('home.navbar.search')}
-                aria-expanded={showSearch}
-              >
-                <Search className="size-5 text-foreground" aria-hidden="true" />
-              </button>
-
-              {/* Notifications — uniquement si authentifié */}
-              {isAuthenticated && (
+                {/* Filtres — badge si filtres actifs */}
                 <div className="relative">
                   <button
-                    ref={notifBtnRef}
                     type="button"
-                    onClick={() => setShowNotifications((v) => !v)}
+                    onClick={onOpenFeedFilters}
                     className="flex items-center justify-center size-12 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                    aria-label={t('home.navbar.notifications')}
-                    aria-expanded={showNotifications}
-                    aria-haspopup="dialog"
+                    aria-label={t('home.feed.filterObs')}
                   >
-                    <Bell className="size-5 text-foreground" aria-hidden="true" />
-                    {/* Badge non-lu */}
-                    <span
-                      aria-hidden="true"
-                      className="absolute top-2 right-2 size-2 rounded-full bg-primary"
-                    />
+                    <Filter className="size-5 text-foreground" aria-hidden="true" />
+                    {feedHasActiveFilters && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute top-2 right-2 size-2 rounded-full bg-primary"
+                      />
+                    )}
                   </button>
+                </div>
 
-                  {showNotifications && (
-                    <NotificationsPanel
-                      anchorRef={notifBtnRef}
-                      onClose={() => setShowNotifications(false)}
+                {/* Bell — connecté seulement */}
+                {isAuthenticated && (
+                  <div className="relative">
+                    <button
+                      ref={notifBtnRef}
+                      type="button"
+                      onClick={() => setShowNotifications((v) => !v)}
+                      className="flex items-center justify-center size-12 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                      aria-label={t('home.navbar.notifications')}
+                      aria-expanded={showNotifications}
+                      aria-haspopup="dialog"
+                    >
+                      <Bell className="size-5 text-foreground" aria-hidden="true" />
+                      <span
+                        aria-hidden="true"
+                        className="absolute top-2 right-2 size-2 rounded-full bg-primary"
+                      />
+                    </button>
+                    {showNotifications && (
+                      <NotificationsPanel
+                        anchorRef={notifBtnRef}
+                        onClose={() => setShowNotifications(false)}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ════════════════════════════════════════════════════════
+                  TABLET + DESKTOP (≥768px)
+                  ════════════════════════════════════════════════════════ */}
+              <div className="hidden md:flex items-center md:gap-4 gap-3">
+                {/* ── Localisation — icône MapPin (pin) ─────────────────── */}
+                <button
+                  type="button"
+                  onClick={() => setShowLocationModal(true)}
+                  className="flex gap-3 h-12 items-center justify-center px-6 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  aria-label={t('home.navbar.changeLocation')}
+                >
+                  <MapPin className="size-5 text-foreground shrink-0" aria-hidden="true" />
+                  <span className="text-foreground text-nowrap text-sm">{locationLabel}</span>
+                </button>
+
+                {/* ── Recherche ─────────────────────────────────────────── */}
+                <button
+                  type="button"
+                  onClick={() => setShowSearch(true)}
+                  className="flex items-center justify-center size-12 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  aria-label={t('home.navbar.search')}
+                  aria-expanded={showSearch}
+                >
+                  <Search className="size-5 text-foreground" aria-hidden="true" />
+                </button>
+
+                {/* ── Notifications — connecté seulement ───────────────── */}
+                {isAuthenticated && (
+                  <div className="relative">
+                    <button
+                      ref={notifBtnRef}
+                      type="button"
+                      onClick={() => setShowNotifications((v) => !v)}
+                      className="flex items-center justify-center size-12 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                      aria-label={t('home.navbar.notifications')}
+                      aria-expanded={showNotifications}
+                      aria-haspopup="dialog"
+                    >
+                      <Bell className="size-5 text-foreground" aria-hidden="true" />
+                      <span
+                        aria-hidden="true"
+                        className="absolute top-2 right-2 size-2 rounded-full bg-primary"
+                      />
+                    </button>
+                    {showNotifications && (
+                      <NotificationsPanel
+                        anchorRef={notifBtnRef}
+                        onClose={() => setShowNotifications(false)}
+                      />
+                    )}
+                  </div>
+                )}
+
+                {/* ── Contribuer ───────────────────────────────────────── */}
+                <div className="relative">
+                  {/* Bouton XL : label + icône */}
+                  <div className="hidden xl:flex">
+                    <button
+                      type="button"
+                      onClick={handleContribute}
+                      className="bg-primary flex gap-3 h-12 items-center justify-center px-6 rounded-button text-primary-foreground hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 motion-safe:active:scale-[0.98]"
+                      aria-expanded={showContribute}
+                      aria-haspopup={isAuthenticated ? 'dialog' : undefined}
+                    >
+                      <Plus className="size-5 shrink-0" aria-hidden="true" />
+                      <span>{t('home.navbar.contribute')}</span>
+                    </button>
+                  </div>
+
+                  {/* Bouton Tablet : icône seule */}
+                  <div className="xl:hidden flex">
+                    <button
+                      type="button"
+                      onClick={handleContribute}
+                      className="bg-primary flex items-center justify-center size-12 rounded-button text-primary-foreground hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                      aria-label={t('home.navbar.contribute')}
+                      aria-expanded={showContribute}
+                      aria-haspopup={isAuthenticated ? 'dialog' : undefined}
+                    >
+                      <Plus className="size-5" aria-hidden="true" />
+                    </button>
+                  </div>
+
+                  {showContribute && isAuthenticated && (
+                    <ContributeModal
+                      onClose={() => setShowContribute(false)}
+                      onTypeSelect={onContributeTypeSelect}
                     />
                   )}
                 </div>
-              )}
 
-              {/* Contribuer */}
-              <div className="hidden xl:flex">
-                <button
-                  type="button"
-                  onClick={handleContribute}
-                  className="bg-primary flex gap-3 h-12 items-center justify-center px-6 rounded-button text-primary-foreground hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 motion-safe:active:scale-[0.98]"
-                >
-                  <Plus className="size-5 shrink-0" aria-hidden="true" />
-                  <span>{t('home.navbar.contribute')}</span>
-                </button>
-              </div>
-              <div className="xl:hidden flex">
-                <button
-                  type="button"
-                  onClick={handleContribute}
-                  className="bg-primary flex items-center justify-center size-12 rounded-button text-primary-foreground hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                  aria-label={t('home.navbar.contribute')}
-                >
-                  <Plus className="size-5" aria-hidden="true" />
-                </button>
-              </div>
-
-              {/* Profil ou Se connecter */}
-              {isAuthenticated ? (
-                <button
-                  type="button"
-                  className="flex gap-3 h-12 items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full"
-                  aria-label={t('home.navbar.profileMenu')}
-                >
-                  <div className="size-12 rounded-full overflow-hidden border border-border shrink-0">
-                    {profile?.avatar_url ? (
-                      <img
-                        src={profile.avatar_url}
-                        alt={profile.username ?? 'Profil'}
-                        className="size-full object-cover"
-                      />
-                    ) : (
-                      <div className="size-full bg-primary-light flex items-center justify-center">
-                        <User className="size-5 text-primary" aria-hidden="true" />
+                {/* ── Profil ou Se connecter ───────────────────────────── */}
+                {isAuthenticated ? (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={handleProfileClick}
+                      className="flex gap-3 h-12 items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full"
+                      aria-label={t('home.navbar.profileMenu')}
+                      aria-expanded={showProfileMenu}
+                      aria-haspopup="dialog"
+                    >
+                      {/* Avatar */}
+                      <div className="size-12 rounded-full overflow-hidden border border-border shrink-0">
+                        {profile?.avatar_url ? (
+                          <img
+                            src={profile.avatar_url}
+                            alt={profile.username ?? 'Profil'}
+                            className="size-full object-cover"
+                          />
+                        ) : (
+                          <div className="size-full bg-primary-light flex items-center justify-center">
+                            <User className="size-5 text-primary" aria-hidden="true" />
+                          </div>
+                        )}
                       </div>
-                    )}
+
+                      {/* Username + streak — XL Desktop uniquement */}
+                      <div className="hidden xl:flex flex-col gap-0.5 items-start">
+                        <span className="text-foreground text-sm text-nowrap leading-tight font-medium">
+                          {profile?.username}
+                        </span>
+                        {/* Streak (jours consécutifs) — TODO [BACKEND] profile.streak_days */}
+                        <span className="text-xs text-nowrap leading-tight flex items-center gap-0.5 text-[var(--color-warning)]">
+                          <Flame className="size-3 shrink-0" aria-hidden="true" />
+                          {STREAK_DAYS} jours
+                        </span>
+                      </div>
+                      <ChevronDown
+                        className="hidden xl:block size-4 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                    </button>
+
+                    {showProfileMenu && <ProfileMenu onClose={() => setShowProfileMenu(false)} />}
                   </div>
-                  <div className="hidden xl:flex flex-col gap-1 items-start">
-                    <span className="text-foreground text-nowrap leading-tight">
-                      {profile?.username}
-                    </span>
-                  </div>
-                  <ChevronDown
-                    className="hidden xl:block size-5 text-foreground"
-                    aria-hidden="true"
-                  />
-                </button>
-              ) : (
-                <Link
-                  to="/login"
-                  className="flex gap-2 h-12 items-center justify-center px-6 rounded-button border border-border hover:border-foreground/40 transition-colors text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                >
-                  <User className="size-5 shrink-0" aria-hidden="true" />
-                  <span>{t('home.navbar.login')}</span>
-                </Link>
-              )}
+                ) : (
+                  <Link
+                    to="/login"
+                    className="flex gap-2 h-12 items-center justify-center px-6 rounded-button border border-border hover:border-foreground/40 transition-colors text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 text-sm"
+                  >
+                    <User className="size-5 shrink-0" aria-hidden="true" />
+                    <span>{t('home.navbar.login')}</span>
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Panels / modals montés en dehors du header pour éviter les z-index conflicts */}
+      {/* ── Panels montés en dehors du header pour éviter les z-index conflicts ── */}
       {showSearch && <SearchPanel onClose={() => setShowSearch(false)} />}
-      {showContribute && <ContributeModal onClose={() => setShowContribute(false)} />}
+      {showLocationModal && <LocationModal onClose={() => setShowLocationModal(false)} />}
     </>
   )
 }

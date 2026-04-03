@@ -1,0 +1,24 @@
+// ============================================
+// Gallery Masonry — Naturegraph
+// ============================================
+// Vue galerie du feed : layout masonry pur CSS via `columns`.
+// Préféré à une solution JS (RGESN, sobriété numérique).
+// 3 colonnes desktop, 2 colonnes mobile.
+
+.gallery-masonry {
+  columns: 2;
+  column-gap: 8px;
+
+  // Desktop : 3 colonnes
+  @media (min-width: 768px) {
+    columns: 3;
+  }
+}
+
+.gallery-item {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  margin-bottom: 8px;
+  display: inline-block;
+  width: 100%;
+}

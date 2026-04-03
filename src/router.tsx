@@ -28,6 +28,8 @@ const Profile = lazy(() => import('./pages/Profile'))
 const Contact = lazy(() => import('./pages/Contact'))
 const Privacy = lazy(() => import('./pages/Privacy'))
 const Legal = lazy(() => import('./pages/Legal'))
+const Contribute = lazy(() => import('./pages/Contribute'))
+const Settings = lazy(() => import('./pages/Settings'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 /**
@@ -113,6 +115,50 @@ export const router = createBrowserRouter([
         ),
       },
 
+      // Contributions — authentification requise, layout autonome (header propre au formulaire)
+      {
+        path: 'contribute',
+        element: (
+          <LazyPage>
+            <ProtectedRoute>
+              <Contribute />
+            </ProtectedRoute>
+          </LazyPage>
+        ),
+      },
+
+      // Profil — layout autonome (header intégré dans la page)
+      {
+        path: 'profile',
+        element: (
+          <LazyPage>
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          </LazyPage>
+        ),
+      },
+      {
+        path: 'profile/:username',
+        element: (
+          <LazyPage>
+            <Profile />
+          </LazyPage>
+        ),
+      },
+
+      // Paramètres — authentification requise, layout autonome
+      {
+        path: 'settings',
+        element: (
+          <LazyPage>
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          </LazyPage>
+        ),
+      },
+
       // App principale — authentification requise + layout avec header/footer
       {
         element: (
@@ -126,14 +172,6 @@ export const router = createBrowserRouter([
             element: (
               <LazyPage>
                 <Explore />
-              </LazyPage>
-            ),
-          },
-          {
-            path: 'profile',
-            element: (
-              <LazyPage>
-                <Profile />
               </LazyPage>
             ),
           },

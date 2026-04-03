@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, Users } from 'lucide-react'
-import { getDailyRotation, getTerritoryUsers } from '@/data/mockUsers'
+import { getDailyRotation, getTerritoryUsers, INTEREST_LABELS } from '@/data/mockUsers'
 import type { MockUser } from '@/data/mockUsers'
 import { getBadgeEmoji } from '@/utils/badgeHelpers'
 
@@ -57,24 +57,22 @@ export function GuestSidebar() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* CTA — rejoindre Naturegraph */}
-      <div className="bg-cream-lighter border-[0.5px] border-border rounded-card px-6 py-6 flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <h5 className="text-foreground">{t('home.sidebar.joinTitle')}</h5>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {t('home.sidebar.joinDescription')}
-          </p>
-        </div>
+      {/* CTA — inviter l'invité à créer un compte */}
+      <div className="bg-cream-lighter border-[0.5px] border-border rounded-card px-6 py-6">
+        <p className="font-bold text-foreground mb-2">{t('home.sidebar.joinTitle')}</p>
+        <p className="text-sm text-muted-foreground leading-relaxed mb-5">
+          {t('home.sidebar.joinDescription')}
+        </p>
         <div className="flex flex-col gap-2">
           <Link
             to="/signup"
-            className="bg-primary flex items-center justify-center h-12 px-6 rounded-button text-primary-foreground font-bold hover:opacity-90 transition-opacity motion-safe:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            className="bg-primary flex items-center justify-center h-10 rounded-button text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             {t('home.sidebar.createAccount')}
           </Link>
           <Link
             to="/login"
-            className="flex items-center justify-center h-12 px-6 rounded-button border border-border text-foreground hover:border-foreground/40 transition-colors motion-safe:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            className="flex items-center justify-center h-10 rounded-button border border-border text-foreground text-sm hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             {t('home.sidebar.login')}
           </Link>
@@ -126,7 +124,7 @@ export function GuestSidebar() {
                       key={i}
                       className="bg-primary-light text-foreground text-xs px-2 py-0.5 rounded-button whitespace-nowrap"
                     >
-                      {badge}
+                      {INTEREST_LABELS[badge] ?? badge}
                     </span>
                   ))}
                 </div>

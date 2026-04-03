@@ -13,79 +13,23 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, Bird } from 'lucide-react'
+import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, Leaf } from 'lucide-react'
 import type { MockPost } from '@/data/mockPosts'
-
-// ─── Image slider ─────────────────────────────────────────────────────────────
-
-function ImageSlider({
-  images,
-  format,
-}: {
-  images: MockPost['images']
-  format: MockPost['format']
-}) {
-  const { t } = useTranslation()
-  const [current, setCurrent] = useState(0)
-
-  const aspectClass = {
-    '16:9': 'aspect-video',
-    portrait: 'aspect-[3/4]',
-    '1:1': 'aspect-square',
-  }[format]
-
-  if (images.length === 0) return null
-
-  return (
-    <div className="relative w-full overflow-hidden rounded-xl">
-      <div className={`relative w-full ${aspectClass} bg-muted overflow-hidden rounded-xl`}>
-        <img
-          src={images[current].url}
-          alt={images[current].alt}
-          className="absolute inset-0 size-full object-cover"
-          loading="lazy"
-        />
-        {/* Compteur d'images */}
-        {images.length > 1 && (
-          <div
-            aria-label={t('home.post.imageOf', { current: current + 1, total: images.length })}
-            className="absolute bottom-3 right-3 bg-foreground/60 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm"
-          >
-            {current + 1}/{images.length}
-          </div>
-        )}
-      </div>
-
-      {/* Miniatures navigation */}
-      {images.length > 1 && (
-        <div className="flex gap-2 mt-2" role="tablist" aria-label={t('home.post.navImages')}>
-          {images.map((_img, i) => (
-            <button
-              key={i}
-              type="button"
-              role="tab"
-              aria-selected={i === current}
-              aria-label={t('home.post.viewImage', { index: i + 1 })}
-              onClick={() => setCurrent(i)}
-              className={`size-1.5 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                i === current ? 'bg-primary' : 'bg-border'
-              }`}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
+import { PostOptionsMenu } from './PostOptionsMenu'
+import { CommentsSection } from './CommentsSection'
+import { ImageSlider } from './ImageSlider'
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 
+// Configuration des réactions — doit rester alignée avec ReactionType dans database.ts
+// 'disappointed' ajouté suite à la décision Nicolas (2026-04-01)
 const REACTION_CONFIG = [
   { key: 'love' as const, emoji: '❤️', labelKey: 'home.post.reactions.love' },
   { key: 'admire' as const, emoji: '😍', labelKey: 'home.post.reactions.admire' },
   { key: 'fire' as const, emoji: '🔥', labelKey: 'home.post.reactions.fire' },
   { key: 'wow' as const, emoji: '😱', labelKey: 'home.post.reactions.wow' },
   { key: 'curious' as const, emoji: '🧐', labelKey: 'home.post.reactions.curious' },
+  { key: 'disappointed' as const, emoji: '😕', labelKey: 'home.post.reactions.disappointed' },
 ]
 
 interface FeedPostProps extends MockPost {
@@ -95,9 +39,16 @@ interface FeedPostProps extends MockPost {
    * TODO [BACKEND] — Alimenté par `isAuthenticated` depuis useAuth()
    */
   canInteract?: boolean
+  /**
+   * true = post appartenant à l'utilisateur connecté.
+   * Affiche "Modifier / Supprimer" au lieu de "Signaler / Masquer".
+   * TODO [BACKEND] — Comparer post.author_id avec currentUser.id
+   */
+  isOwnPost?: boolean
 }
 
 export function FeedPost({
+  id,
   author,
   date,
   location,
@@ -113,10 +64,13 @@ export function FeedPost({
   reactions,
   comments,
   canInteract = true,
+  isOwnPost = false,
 }: FeedPostProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [isExpanded, setIsExpanded] = useState(false)
+  const [showOptions, setShowOptions] = useState(false)
+  const [showComments, setShowComments] = useState(false)
   const shouldTruncate = content.length > 200
 
   // Redirige vers /signup si l'invité tente d'interagir
@@ -164,7 +118,7 @@ export function FeedPost({
                 {author.name}
               </p>
               <div className="flex flex-wrap gap-2 items-center">
-                <Bird className="size-4 text-muted-foreground shrink-0" aria-hidden="true" />
+                <Leaf className="size-4 text-muted-foreground shrink-0" aria-hidden="true" />
                 <span className="text-xs text-muted-foreground tracking-[0.48px]">{date}</span>
                 <span aria-hidden="true" className="text-muted-foreground text-xs">
                   •
@@ -175,13 +129,27 @@ export function FeedPost({
           </div>
 
           {/* Menu contextuel */}
-          <button
-            type="button"
-            aria-label={t('home.post.optionsMenu')}
-            className="flex items-center justify-center size-8 rounded-full hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
-          >
-            <MoreHorizontal className="size-5 text-foreground" aria-hidden="true" />
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              aria-label={t('home.post.optionsMenu')}
+              aria-expanded={showOptions}
+              aria-haspopup="menu"
+              onClick={() => setShowOptions((v) => !v)}
+              className="flex items-center justify-center size-8 rounded-full hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+            >
+              <MoreHorizontal className="size-5 text-foreground" aria-hidden="true" />
+            </button>
+
+            {showOptions && (
+              <PostOptionsMenu
+                postId={id}
+                authorUsername={author.name}
+                isOwnPost={isOwnPost}
+                onClose={() => setShowOptions(false)}
+              />
+            )}
+          </div>
         </div>
 
         {/* Contenu */}
@@ -238,27 +206,33 @@ export function FeedPost({
           </span>
         </div>
 
-        {/* Images */}
-        <ImageSlider images={images} format={format} />
+        {/* Images — clic ouvre la lightbox plein écran */}
+        <ImageSlider images={images} format={format} author={author} />
 
         {/* Compteurs de réactions */}
         <div className="flex items-center justify-between">
           <div className="flex gap-1">
-            {REACTION_CONFIG.map(({ key, emoji, labelKey }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={requireAuth}
-                aria-label={`${t(labelKey)} : ${reactions[key]}${!canInteract ? ` — ${t('home.post.reactLoginPrompt')}` : ''}`}
-                className="bg-cream flex gap-1 items-center h-6 px-2 rounded-full text-sm text-foreground tracking-[0.48px] hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
-              >
-                <span aria-hidden="true">{emoji}</span>
-                <span>{reactions[key]}</span>
-              </button>
-            ))}
+            {REACTION_CONFIG.filter(({ key }) => reactions[key] > 0).map(
+              ({ key, emoji, labelKey }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={requireAuth}
+                  aria-label={`${t(labelKey)} : ${reactions[key]}${!canInteract ? ` — ${t('home.post.reactLoginPrompt')}` : ''}`}
+                  className="bg-cream flex gap-1 items-center h-6 px-2 rounded-full text-sm text-foreground tracking-[0.48px] hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+                >
+                  <span aria-hidden="true">{emoji}</span>
+                  <span>{reactions[key]}</span>
+                </button>
+              ),
+            )}
           </div>
           <button
             type="button"
+            onClick={(e) => {
+              if (canInteract) setShowComments(true)
+              else requireAuth(e)
+            }}
             aria-label={t('home.post.commentCount', { count: comments })}
             className="bg-cream flex gap-1 items-center h-6 px-2 rounded-full text-sm text-foreground tracking-[0.48px] hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
           >
@@ -286,7 +260,10 @@ export function FeedPost({
             </button>
             <button
               type="button"
-              onClick={requireAuth}
+              onClick={(e) => {
+                if (canInteract) setShowComments(true)
+                else requireAuth(e)
+              }}
               className="flex gap-2 items-center h-8 px-2 rounded-full hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
               aria-label={t('home.post.comments')}
             >
@@ -316,6 +293,14 @@ export function FeedPost({
           </div>
         </div>
       </div>
+
+      {/* Modale de commentaires */}
+      <CommentsSection
+        postId={id}
+        commentsCount={comments}
+        isOpen={showComments}
+        onClose={() => setShowComments(false)}
+      />
     </article>
   )
 }

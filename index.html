@@ -39,6 +39,52 @@
     <!-- Thème navigateur (barre d'adresse mobile) -->
     <meta name="theme-color" content="#006666" />
 
+    <!--
+      Content Security Policy
+      ════════════════════════════════════════════════════════════════════
+      Protège contre les attaques XSS, clickjacking et injection de ressources.
+
+      Politique :
+        • default-src 'self'         → Toutes ressources viennent du même domaine
+        • script-src 'self' 'unsafe-inline' → 'unsafe-inline' requis pour le script
+                                        d'init thème dans le body (FOUC prevention).
+                                        TODO [PROD] : migrer vers un nonce CSP pour
+                                        supprimer 'unsafe-inline'.
+        • style-src 'self' 'unsafe-inline' fonts.googleapis.com → Tailwind + inline styles
+        • font-src fonts.gstatic.com  → Google Fonts
+        • img-src 'self' data: blob: https: → Photos utilisateurs (Supabase storage) +
+                                        blob URLs (prévisualisation upload)
+        • connect-src → Supabase (API + Realtime), Nominatim OSM (geocoding),
+                        localhost en développement
+        • frame-ancestors 'none'      → Prévention clickjacking (équivalent X-Frame-Options)
+        • object-src 'none'           → Désactiver plugins Flash/Java (CVE potentiels)
+        • base-uri 'self'             → Empêcher l'injection de <base href="...">
+
+      IMPORTANT : En production, ces headers doivent aussi être envoyés par le serveur
+      HTTP (Vercel/Nginx/Cloudflare) pour une protection complète — les meta CSP ne
+      s'appliquent pas aux ressources chargées avant le HTML (ex. Service Workers).
+      ════════════════════════════════════════════════════════════════════
+    -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline';
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src https://fonts.gstatic.com;
+      img-src 'self' data: blob: https:;
+      connect-src 'self'
+        https://*.supabase.co
+        wss://*.supabase.co
+        https://nominatim.openstreetmap.org
+        http://localhost:*
+        ws://localhost:*;
+      frame-ancestors 'none';
+      object-src 'none';
+      base-uri 'self';
+    " />
+
+    <!-- Anti-clickjacking (support navigateurs anciens ne lisant pas CSP frame-ancestors) -->
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

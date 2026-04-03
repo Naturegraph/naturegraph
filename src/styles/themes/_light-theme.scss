@@ -42,7 +42,8 @@
   // ── Semantic / Content ──
   --color-success: #{$semantic-green-700}; // #00673F
   --color-warning: #{$semantic-orange-800}; // #6C350D
-  --color-error: #{$semantic-red-700}; // #9E0F22
+  --color-error: #{$semantic-red-700}; // #9E0F22 — texte d'erreur (accessible, contraste élevé)
+  --color-error-action: #{$semantic-red-600}; // #E8122C — action destructive (bouton Déconnexion, Supprimer)
   --color-info: #{$semantic-blue-700}; // #004178
 
   // ── Semantic / Background ──

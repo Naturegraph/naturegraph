@@ -60,6 +60,12 @@ export function generateAndStoreOtp(email: string): string {
 /**
  * Valide un code OTP saisi par l'utilisateur.
  *
+ * Vérifie simultanément :
+ *   1. Format : exactement 6 chiffres
+ *   2. Correspondance : code identique à celui stocké en mémoire
+ *   3. Expiration : TTL de 2 minutes non dépassé
+ *   4. Usage unique : suppression après validation réussie
+ *
  * @param email - Adresse e-mail associée à l'OTP
  * @param token - Code saisi par l'utilisateur
  * @returns true si valide et supprime l'entrée (usage unique), false sinon
@@ -67,15 +73,26 @@ export function generateAndStoreOtp(email: string): string {
 export function validateOtp(email: string, token: string): boolean {
   const trimmed = token.trim()
 
-  // Mode démo : tout code à 6 chiffres est accepté (facilite les tests)
-  // TODO [BACKEND] — Supprimer ce bypass quand Supabase est connecté ;
-  //   la vraie validation passe par supabase.auth.verifyOtp() côté serveur.
-  if (/^\d{6}$/.test(trimmed)) {
-    otpStore.delete(email) // nettoyage quand même
-    return true
+  // Vérification du format (6 chiffres)
+  if (!/^\d{6}$/.test(trimmed)) return false
+
+  const entry = otpStore.get(email)
+
+  // Aucun OTP en attente pour cet email
+  if (!entry) return false
+
+  // OTP expiré → nettoyage et refus
+  if (Date.now() > entry.expiresAt) {
+    otpStore.delete(email)
+    return false
   }
 
-  return false
+  // Comparaison stricte avec le code généré
+  if (trimmed !== entry.otp) return false
+
+  // Usage unique : supprimer après validation réussie
+  otpStore.delete(email)
+  return true
 }
 
 /**

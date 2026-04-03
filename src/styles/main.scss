@@ -3,29 +3,30 @@
 // ============================================
 
 // Themes (CSS custom properties)
-@use "themes/light-theme";
-@use "themes/dark-theme";
+@use 'themes/light-theme';
+@use 'themes/dark-theme';
 
 // Base
-@use "base/reset";
-@use "base/fonts";
-@use "base/typography";
-@use "base/base";
+@use 'base/reset';
+@use 'base/fonts';
+@use 'base/typography';
+@use 'base/base';
 
 // Layout
-@use "layout/grid";
-@use "layout/containers";
-@use "layout/header";
-@use "layout/footer";
+@use 'layout/grid';
+@use 'layout/containers';
+@use 'layout/header';
+@use 'layout/footer';
 
 // Components
-@use "components/buttons";
-@use "components/cards";
-@use "components/inputs";
-@use "components/modals";
-@use "components/notifications";
+@use 'components/buttons';
+@use 'components/cards';
+@use 'components/inputs';
+@use 'components/modals';
+@use 'components/notifications';
+@use 'components/gallery';
 
 // Utilities
-@use "utilities/helpers";
-@use "utilities/visibility";
-@use "utilities/accessibility";
+@use 'utilities/helpers';
+@use 'utilities/visibility';
+@use 'utilities/accessibility';
