@@ -3,6 +3,6 @@
  */
 
 export { AuthProvider, useAuth } from './AuthContext'
-export { ThemeProvider, useTheme } from './ThemeContext'
+export { ThemeProvider, useThemeContext } from './ThemeContext'
 export { NotificationProvider, useNotification } from './NotificationContext'
 export { LocationProvider, useLocation } from './LocationContext'

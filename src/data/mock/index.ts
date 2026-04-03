@@ -13,8 +13,8 @@
 
 export * from './mockPosts'
 export * from './mockUsers'
-export * from './posts'
-export * from './users'
 export * from './species'
 export * from './observations'
 export * from './media'
+// Note: mock/posts.ts et mock/users.ts ont des exports en conflit avec mockPosts/mockUsers
+// Les importer directement si besoin : @/data/mock/posts ou @/data/mock/users
