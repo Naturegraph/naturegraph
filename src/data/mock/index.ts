@@ -11,10 +11,11 @@
  *   media      — Assets médias mockés
  */
 
+// Les deux sources de mock data utilisées par les composants UI
 export * from './mockPosts'
 export * from './mockUsers'
-export * from './species'
-export * from './observations'
-export * from './media'
-// Note: mock/posts.ts et mock/users.ts ont des exports en conflit avec mockPosts/mockUsers
-// Les importer directement si besoin : @/data/mock/posts ou @/data/mock/users
+
+// Les autres fichiers (posts, users, observations, species, media) ont des noms
+// qui entrent en conflit (mockUsers, fetchUserById…) — importer directement :
+//   @/data/mock/posts  @/data/mock/users  @/data/mock/observations
+//   @/data/mock/species  @/data/mock/media
