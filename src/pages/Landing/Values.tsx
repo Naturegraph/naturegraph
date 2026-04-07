@@ -32,12 +32,12 @@ function ValueItem({
       className="flex flex-col gap-4 w-full"
     >
       <div className="flex items-center gap-4">
-        <div className="flex items-center justify-center size-12 rounded-full bg-[var(--color-surface-cream)] shrink-0">
+        <div className="flex items-center justify-center size-12 rounded-full bg-[var(--color-bg-tertiary)] shrink-0">
           <span className="text-[var(--color-text-primary)] font-bold text-lg">{number}</span>
         </div>
         <h4 className="text-[var(--color-text-primary)]">{title}</h4>
       </div>
-      <p className="text-[var(--color-text-muted)]">{description}</p>
+      <p className="text-[var(--color-text-secondary)]">{description}</p>
     </motion.div>
   )
 }

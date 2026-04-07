@@ -10,6 +10,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Menu, X } from 'lucide-react'
+import { Button } from '@/components/ui'
 // import { Globe } from 'lucide-react' // TODO: réactiver avec le language switcher
 import logoSimplified from '@/assets/logos/logo-simplified-light.svg'
 
@@ -79,12 +80,9 @@ export function Navbar({ onNavigate }: NavbarProps) {
           <span className="uppercase">{i18n.language === 'fr' ? 'EN' : 'FR'}</span>
         </button>
         */}
-        <Link
-          to="/signup"
-          className="btn-press btn-press-primary inline-flex items-center justify-center h-12 px-6 text-base font-bold text-[var(--color-text-white)] bg-[var(--color-action-default)] rounded-full font-[var(--font-body)]"
-        >
+        <Button to="/signup" size="md">
           {t('landing.nav.signup')}
-        </Link>
+        </Button>
       </div>
 
       {/* Mobile burger */}
@@ -120,13 +118,9 @@ export function Navbar({ onNavigate }: NavbarProps) {
               <span className="uppercase">{i18n.language === 'fr' ? 'EN' : 'FR'}</span>
             </button>
             */}
-            <Link
-              to="/signup"
-              className="btn-press btn-press-primary flex-1 text-center h-12 leading-[48px] font-bold text-[var(--color-text-white)] bg-[var(--color-action-default)] rounded-full"
-              onClick={() => setMobileOpen(false)}
-            >
+            <Button to="/signup" size="md" className="flex-1" onClick={() => setMobileOpen(false)}>
               {t('landing.nav.signup')}
-            </Link>
+            </Button>
           </div>
         </div>
       )}

@@ -4,11 +4,11 @@
  * Abstrait les appels Supabase derrière une interface stable.
  * En mode démo (isSupabaseConfigured = false), retourne des données mockées.
  *
- * TODO backend :
- *  - Remplacer les retours mock par les vraies requêtes Supabase
- *  - Activer les RLS policies sur la table `posts`
- *  - Brancher le storage Supabase pour les médias
- *  - Implémenter la pagination cursor-based (keyset pagination)
+ * Architecture :
+ *  - getFeed        : SELECT posts + join profiles + join media, paginé
+ *  - getPostById    : SELECT single post avec toutes ses relations
+ *  - createPost     : INSERT post (sans médias — mediaService gère l'upload séparé)
+ *  - toggleReaction : INSERT / DELETE sur reactions, trigger met à jour likes_count
  */
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
@@ -59,31 +59,75 @@ export interface CreatePostPayload {
   tags?: string[]
 }
 
+// Sélecteur de colonnes utilisé dans les requêtes feed — centralisé pour cohérence
+const POST_FEED_SELECT = `
+  *,
+  author:profiles!user_id(id, username, first_name, last_name, avatar_url),
+  media(id, post_id, user_id, type, format, orientation, status, url, thumbnail_url,
+        original_url, display_order, alt, width, height, file_size, mime_type,
+        captured_at, camera, lens, focal_length, aperture, iso, shutter_speed,
+        gps_latitude, gps_longitude, created_at, updated_at)
+` as const
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 /**
  * Récupère le feed principal avec pagination.
+ *
+ * Onglets :
+ *  - recent   : tri par date de création DESC (défaut)
+ *  - popular  : tri par likes_count DESC
+ *  - for_you  : posts des utilisateurs suivis (nécessite auth)
+ *  - trending : popular des 48 dernières heures
  */
 export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
-  const { page = 1, limit = 20, tab: _tab = 'recent' } = params
+  const { page = 1, limit = 20, tab = 'recent' } = params
+  const offset = (page - 1) * limit
 
   if (isSupabaseConfigured && supabase) {
-    // TODO : implémenter la requête Supabase avec join author + media
-    // Exemple de requête à venir :
-    // const { data, error, count } = await supabase
-    //   .from('posts')
-    //   .select('*, author:profiles(*), media(*)', { count: 'exact' })
-    //   .eq('status', 'published')
-    //   .eq('visibility', 'public')
-    //   .order('created_at', { ascending: false })
-    //   .range((page - 1) * limit, page * limit - 1)
-    throw new Error('getFeed Supabase : non implémenté — à compléter lors du branchement backend')
+    let query = supabase
+      .from('posts')
+      .select(POST_FEED_SELECT, { count: 'exact' })
+      .eq('status', 'published')
+      .eq('visibility', 'public')
+
+    // Tri selon l'onglet actif
+    if (tab === 'popular') {
+      query = query.order('likes_count', { ascending: false })
+    } else if (tab === 'trending') {
+      // Posts populaires des 48 dernières heures
+      const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
+      query = query
+        .gte('published_at', cutoff)
+        .order('likes_count', { ascending: false })
+    } else {
+      // 'recent' et 'for_you' (for_you = recent sans personnalisation pour le MVP)
+      query = query.order('created_at', { ascending: false })
+    }
+
+    const { data, error, count } = await query.range(offset, offset + limit - 1)
+
+    if (error) throw new Error(error.message)
+
+    const total = count ?? 0
+    const totalPages = Math.ceil(total / limit)
+
+    return {
+      data: (data ?? []) as unknown as PostFeedItem[],
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrevious: page > 1,
+      },
+    }
   }
 
-  // Mode démo — retourne les mockPosts avec pagination simulée
+  // ── Mode démo : retourne les mockPosts convertis ──────────────────────────
   await simulateNetworkDelay('network')
 
-  // Convertir MockPost → PostFeedItem (approximatif — structure légèrement différente)
   const allPosts = mockPosts.map((p) => ({
     id: p.id,
     user_id: p.author.name,
@@ -166,45 +210,62 @@ export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
 
 /**
  * Récupère un post par son ID avec toutes ses relations.
+ * Utilisé pour la page de détail d'un post et les partages.
  */
-export async function getPostById(_postId: string): Promise<PostFeedItem | null> {
+export async function getPostById(postId: string): Promise<PostFeedItem | null> {
   if (isSupabaseConfigured && supabase) {
-    // TODO : implémenter
-    throw new Error('getPostById Supabase : non implémenté')
+    const { data, error } = await supabase
+      .from('posts')
+      .select(POST_FEED_SELECT)
+      .eq('id', postId)
+      .single()
+
+    if (error) {
+      // code PGRST116 = 0 rows — post non trouvé ou non accessible (RLS)
+      if (error.code === 'PGRST116') return null
+      throw new Error(error.message)
+    }
+
+    return data as unknown as PostFeedItem
   }
 
+  // Mode démo — cherche dans les mocks
   await simulateNetworkDelay('database')
   return null
 }
 
 /**
- * Crée un nouveau post.
- * TODO : gérer l'upload des médias en parallèle.
+ * Crée un nouveau post (texte uniquement).
+ * Les médias sont uploadés séparément via mediaService, puis rattachés
+ * via INSERT dans la table media avec le post_id retourné.
  */
 export async function createPost(userId: string, payload: CreatePostPayload): Promise<Post> {
   if (isSupabaseConfigured && supabase) {
     const { data, error } = await supabase
       .from('posts')
-      // @ts-expect-error — TODO [BACKEND]: incompatibilité Database type ↔ supabase-js v2.99, à corriger lors du branchement backend avec types Supabase CLI générés
       .insert({
         user_id: userId,
         ...payload,
-        status: 'published',
-        identification_status: payload.species_name ? 'identified' : 'pending',
+        status: 'published' as const,
+        published_at: new Date().toISOString(),
+        identification_status: (payload.species_name ? 'identified' : 'pending') as Post['identification_status'],
       })
       .select()
       .single()
     if (error) throw new Error(error.message)
-    return data
+    return data as unknown as Post
   }
 
-  // Mode démo — stub
+  // Mode démo — non disponible (impossible de persister sans backend)
   await simulateNetworkDelay('database')
   throw new Error('createPost : non disponible en mode démo')
 }
 
 /**
  * Ajoute ou retire une réaction à un post.
+ * Le trigger update_likes_count met à jour posts.likes_count automatiquement.
+ *
+ * Types valides : 'love' | 'admire' | 'fire' | 'wow' | 'curious' | 'disappointed'
  */
 export async function toggleReaction(
   postId: string,
@@ -212,6 +273,7 @@ export async function toggleReaction(
   type: ReactionType,
 ): Promise<{ added: boolean }> {
   if (isSupabaseConfigured && supabase) {
+    // Vérifie si une réaction existe déjà pour cet user + post (UNIQUE constraint)
     const { data: existing } = await supabase
       .from('reactions')
       .select('id')
@@ -220,20 +282,18 @@ export async function toggleReaction(
       .maybeSingle()
 
     if (existing) {
-      // Cast: maybeSingle() returns `never` when Database types are incomplete — safe at runtime
       await supabase
         .from('reactions')
         .delete()
         .eq('id', (existing as { id: string }).id)
       return { added: false }
     } else {
-      // @ts-expect-error — TODO [BACKEND]: incompatibilité Database type ↔ supabase-js v2.99
       await supabase.from('reactions').insert({ post_id: postId, user_id: userId, type })
       return { added: true }
     }
   }
 
-  // Mode démo — stub
+  // Mode démo — stub non persisté
   await simulateNetworkDelay('cache')
   return { added: true }
 }

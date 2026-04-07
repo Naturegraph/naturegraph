@@ -12,11 +12,10 @@
  * 4. Produit (phone sticky + cartes alternées / slider mobile)
  * 5. CTA intermédiaire (bandeau teal + image)
  * 6. Mission (image + texte)
- * 7. Storytelling (hermine — animal totem + 3 traits)
- * 8. Discord (communauté)
- * 9. FAQ (accordéon accessible)
- * 10. Partenaires (logos)
- * 11. Footer complet
+ * 7. Discord (communauté)
+ * 8. FAQ (accordéon accessible)
+ * 9. Partenaires (logos)
+ * 10. Footer complet
  */
 
 import { useCallback } from 'react'
@@ -28,7 +27,6 @@ import { Values } from './Values'
 import { ProductFeatures } from './ProductFeatures'
 import { CTABanner } from './CTABanner'
 import { Mission } from './Mission'
-import { Storytelling } from './Storytelling'
 import { Discord } from './Discord'
 import { FAQ } from './FAQ'
 import { Partners } from './Partners'
@@ -59,7 +57,6 @@ export default function Landing() {
       <ProductFeatures />
       <CTABanner />
       <Mission />
-      <Storytelling />
       <Discord />
       <FAQ />
       <Partners />

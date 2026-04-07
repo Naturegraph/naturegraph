@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Button } from '@/components/ui'
 import { useTranslation } from 'react-i18next'
 import { motion, useMotionValue, useSpring, useTransform, type MotionValue } from 'motion/react'
 import { Navbar } from './Navbar'
@@ -384,18 +384,17 @@ export function Hero({ onNavigate }: HeroProps) {
             variants={fadeUp}
             className="flex flex-col sm:flex-row items-center gap-4 mt-8 lg:mt-10 w-full sm:w-auto"
           >
-            <Link
-              to="/signup"
-              className="btn-press btn-press-primary inline-flex items-center justify-center h-14 px-10 text-base font-bold text-[var(--color-text-white)] bg-[var(--color-action-default)] rounded-full w-full sm:w-auto font-[var(--font-body)]"
-            >
+            <Button to="/signup" size="lg" className="w-full sm:w-auto">
               {t('landing.hero.ctaShare')}
-            </Link>
-            <button
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full sm:w-auto backdrop-blur-sm"
               onClick={() => onNavigate('discover')}
-              className="btn-press btn-press-outline inline-flex items-center justify-center h-14 px-10 text-base font-bold text-[var(--color-text-white)] rounded-full w-full sm:w-auto font-[var(--font-body)] backdrop-blur-sm bg-transparent border-none"
             >
               {t('landing.hero.ctaDiscover')}
-            </button>
+            </Button>
           </motion.div>
         </motion.div>
 

@@ -37,7 +37,7 @@ export function Storytelling() {
 
   return (
     <section className="w-full flex justify-center" data-name="Section 7 : Storytelling">
-      <div className="w-full max-w-[1728px] bg-[var(--color-surface-cream)] px-6 md:px-10 lg:px-32 py-20 lg:py-32">
+      <div className="w-full max-w-[1728px] bg-[var(--color-bg-tertiary)] px-6 md:px-10 lg:px-32 py-20 lg:py-32">
         {/* Header avec icône hermine */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -59,7 +59,7 @@ export function Storytelling() {
           <h2 className="landing-section-title text-[var(--color-text-primary)]">
             {t('landing.storytelling.title')}
           </h2>
-          <p className="text-[var(--color-text-muted)] max-w-2xl">
+          <p className="text-[var(--color-text-secondary)] max-w-2xl">
             {t('landing.storytelling.intro')}
           </p>
         </motion.div>
@@ -87,7 +87,7 @@ export function Storytelling() {
                 <h3 className="text-[var(--color-text-primary)] text-xl font-bold">
                   {trait.title}
                 </h3>
-                <p className="text-[var(--color-text-muted)]">{trait.description}</p>
+                <p className="text-[var(--color-text-secondary)]">{trait.description}</p>
               </motion.div>
             )
           })}

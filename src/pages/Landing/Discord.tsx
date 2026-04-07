@@ -8,6 +8,7 @@
 import { useTranslation } from 'react-i18next'
 import { motion } from 'motion/react'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
+import { Button } from '@/components/ui'
 import discordPreview from '@/assets/images/discord-preview.png'
 
 /** Icône Discord (SVG simple) */
@@ -64,16 +65,16 @@ export function Discord() {
                 </ul>
               </div>
 
-              <a
+              <Button
                 href={discordUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-press btn-press-primary inline-flex items-center justify-center gap-4 h-12 px-6 text-base font-bold text-[var(--color-text-white)] bg-[var(--color-action-default)] rounded-full self-start font-[var(--font-body)]"
+                newTab
+                size="md"
+                className="self-start gap-4"
                 aria-label={t('landing.discord.button')}
+                icon={<DiscordIcon />}
               >
-                <DiscordIcon />
-                <span>{t('landing.discord.button')}</span>
-              </a>
+                {t('landing.discord.button')}
+              </Button>
             </div>
 
             {/* Screenshot Discord */}

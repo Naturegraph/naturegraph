@@ -9,7 +9,6 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { Logo } from './Logo'
 import { AuthInput } from './AuthInput'
-import { AuthButton } from './AuthButton'
 import { SocialButton } from './SocialButton'
 import { AuthHeroPhoto } from './AuthHeroPhoto'
 

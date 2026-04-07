@@ -45,7 +45,7 @@ function FeatureCard({
         <h3 className="text-[var(--color-text-primary)] text-2xl font-bold leading-tight">
           {title}
         </h3>
-        <p className="text-[var(--color-text-muted)]">{description}</p>
+        <p className="text-[var(--color-text-secondary)]">{description}</p>
       </div>
     </div>
   )
@@ -112,7 +112,7 @@ function MobileFeatureSlide({
           <h3 className="text-[var(--color-text-primary)] text-xl font-bold leading-tight">
             {title}
           </h3>
-          <p className="text-[var(--color-text-muted)] text-sm">{description}</p>
+          <p className="text-[var(--color-text-secondary)] text-sm">{description}</p>
         </div>
       </div>
     </div>
@@ -309,13 +309,13 @@ export function ProductFeatures() {
 
   return (
     <section className="w-full relative flex justify-center" data-name="Section 4 : Produit">
-      <div className="w-full max-w-[1728px] bg-[var(--color-surface-cream)] rounded-t-[32px]">
+      <div className="w-full max-w-[1728px] bg-[var(--color-bg-tertiary)] rounded-t-[32px]">
         {/* Header */}
         <div className="px-6 md:px-10 lg:px-32 pt-20 lg:pt-40 flex flex-col gap-8 mb-16 lg:mb-32">
           <h2 className="landing-section-title text-[var(--color-text-primary)]">
             {t('landing.detailedFeatures.title')}
           </h2>
-          <p className="text-[var(--color-text-muted)]">{t('landing.detailedFeatures.subtitle')}</p>
+          <p className="text-[var(--color-text-secondary)]">{t('landing.detailedFeatures.subtitle')}</p>
         </div>
 
         {/* ── Desktop : phone sticky + cartes alternées ────────────────── */}

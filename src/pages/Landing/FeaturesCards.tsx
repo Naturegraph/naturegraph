@@ -36,12 +36,12 @@ function FeatureCard({
         hidden: { opacity: 0, y: 20 },
         visible: { opacity: 1, y: 0 },
       }}
-      className={`bg-[var(--color-surface-cream)] rounded-[32px] p-8 flex flex-col gap-8 w-full ${className}`}
+      className={`bg-[var(--color-bg-tertiary)] rounded-[32px] p-8 flex flex-col gap-8 w-full ${className}`}
     >
       <IconCircle>{icon}</IconCircle>
       <div className="flex flex-col gap-4">
         <h4 className="text-[var(--color-text-primary)]">{title}</h4>
-        <p className="text-[var(--color-text-muted)]">{description}</p>
+        <p className="text-[var(--color-text-secondary)]">{description}</p>
       </div>
     </motion.div>
   )
@@ -62,7 +62,7 @@ export function FeaturesCards() {
           <h2 className="landing-section-title text-[var(--color-text-primary)]">
             {t('landing.features.title')}
           </h2>
-          <p className="text-[var(--color-text-muted)] lg:max-w-md">
+          <p className="text-[var(--color-text-secondary)] lg:max-w-md">
             {t('landing.features.subtitle')}
           </p>
         </div>

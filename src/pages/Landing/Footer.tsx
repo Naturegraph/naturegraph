@@ -9,6 +9,7 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
+import { Button } from '@/components/ui'
 import { Instagram } from 'lucide-react'
 import logoSimplified from '@/assets/logos/logo-simplified-light.svg'
 import hermineIcon from '@/assets/images/hermine-icon.png'
@@ -149,12 +150,9 @@ export function Footer({ onNavigate }: FooterProps) {
                 />
               </div>
               <h4 className="text-[var(--color-text-white)]">{t('footer.cta.title')}</h4>
-              <Link
-                to="/signup"
-                className="btn-press btn-press-primary inline-flex items-center justify-center h-10 px-4 text-sm font-bold text-[var(--color-text-white)] bg-[var(--color-action-default)] rounded-full self-start font-[var(--font-body)]"
-              >
+              <Button to="/signup" size="sm" className="self-start">
                 {t('footer.cta.button')}
-              </Link>
+              </Button>
             </div>
           </div>
         </div>

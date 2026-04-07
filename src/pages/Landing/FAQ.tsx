@@ -26,7 +26,7 @@ function FaqItem({
   onToggle: () => void
 }) {
   return (
-    <div className="bg-[var(--color-surface-cream-light)] rounded-[20px] w-full">
+    <div className="bg-[var(--color-bg-tertiary)] rounded-[20px] w-full">
       <div className="flex flex-col p-6">
         {/* Question */}
         <button
@@ -85,7 +85,7 @@ function FaqItem({
               }}
               className="overflow-hidden"
             >
-              <p className="text-[var(--color-text-muted)] pt-4">{answer}</p>
+              <p className="text-[var(--color-text-secondary)] pt-4">{answer}</p>
             </motion.div>
           )}
         </AnimatePresence>

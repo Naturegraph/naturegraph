@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui'
-import { supabase } from '@/lib/supabase'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { updateProfile } from '@/services/profileService'
 import type { Interest } from '@/types/database'
 
 const TOTAL_STEPS = 3
@@ -112,33 +113,21 @@ export default function Onboarding() {
   }
 
   async function handleFinish() {
-    if (supabase) {
+    // Mode Supabase : met à jour le profil créé automatiquement par le trigger handle_new_auth_user
+    if (isSupabaseConfigured && supabase) {
       const {
         data: { user },
       } = await supabase.auth.getUser()
       if (user) {
-        // @ts-expect-error – Supabase upsert type inference issue with manually-defined Database type
-        await supabase.from('profiles').upsert(
-          {
-            id: user.id,
-            username: displayName.trim(),
-            email: user.email ?? '',
-            first_name: displayName.trim(),
-            last_name: '',
-            interests: interests as Interest[],
-            city: null,
-            region: null,
-            country: null,
-            instagram: null,
-            twitter: null,
-            website: null,
-            avatar_url: null,
-            banner_url: null,
-          },
-          { onConflict: 'id' },
-        )
+        await updateProfile(user.id, {
+          username: displayName.trim(),
+          first_name: displayName.trim(),
+          last_name: '',
+          interests: interests as Interest[],
+        })
       }
     }
+    // Mode démo : aucune persistance, on navigue directement
     navigate('/home')
   }
 

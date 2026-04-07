@@ -12,30 +12,6 @@
     color: var(--color-text-primary);
   }
 
-  h1 {
-    font-size: $font-size-3xl;
-    font-weight: $font-weight-bold;
-    line-height: $line-height-tight;
-  }
-
-  h2 {
-    font-size: $font-size-2xl;
-    font-weight: $font-weight-bold;
-    line-height: $line-height-tight;
-  }
-
-  h3 {
-    font-size: $font-size-xl;
-    font-weight: $font-weight-semibold;
-    line-height: $line-height-tight;
-  }
-
-  h4 {
-    font-size: $font-size-lg;
-    font-weight: $font-weight-semibold;
-    line-height: $line-height-normal;
-  }
-
   p {
     font-size: $font-size-md;
     line-height: $line-height-normal;
@@ -44,4 +20,45 @@
   small {
     font-size: $font-size-sm;
   }
+}
+
+// ── Heading styles — hors @layer base pour garantir la priorité sur le preflight Tailwind ──
+// Le preflight Tailwind (dans @layer base) reset les headings à font-size:inherit.
+// En CSS, les styles sans @layer ont une priorité supérieure aux styles en @layer.
+// Les utilitaires Tailwind (text-xl, text-2xl…) gardent la priorité via inline class.
+
+body h1 {
+  font-size: $font-size-3xl;    // 48px — Figma: Title/H1
+  font-weight: $font-weight-bold;
+  line-height: $line-height-tight;
+}
+
+body h2 {
+  font-size: $font-size-2xl;    // 32px — Figma: Title/H2 (overridé par .landing-section-title)
+  font-weight: $font-weight-bold;
+  line-height: $line-height-tight;
+}
+
+body h3 {
+  font-size: $font-size-xl;     // 24px — Figma: Headings/Heading
+  font-weight: $font-weight-semibold;
+  line-height: $line-height-tight;
+}
+
+body h4 {
+  font-size: $font-size-xl;     // 24px — Figma: Headings/Heading/Size: 24
+  font-weight: $font-weight-bold;
+  line-height: $line-height-tight;
+}
+
+body h5 {
+  font-size: $font-size-lg;     // 18px — Figma: Headings/Subheading/Size: 18
+  font-weight: $font-weight-bold;
+  line-height: $line-height-tight;
+}
+
+body h6 {
+  font-size: $font-size-md;     // 16px
+  font-weight: $font-weight-semibold;
+  line-height: $line-height-tight;
 }
