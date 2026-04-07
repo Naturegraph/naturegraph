@@ -3,6 +3,8 @@
 > **Auteurs (table ronde)** : Database Architect (DBA), DevOps, Backend Developer (BE)
 > **Statut** : v1.0 — socle MVP, vision long terme
 > **Stack** : PostgreSQL 15 + PostGIS 3.3 (Supabase Hosted, région `eu-west-3` / Paris)
+>
+> ⚠️ **Schéma cible vs schéma actuel** : ce document décrit le schéma **cible** v1.0 consolidé. La base `naturegraph-dev` actuelle utilise le schéma initial issu des migrations historiques (`posts.user_id`/`location_point`/`taxref_id`/`location_hidden` au lieu de `author_id`/`location`/`species_id`/`location_precision`). La convergence se fera par migrations successives — voir `supabase/migrations/`.
 
 ---
 
@@ -16,18 +18,18 @@
 
 ### Principes adoptés
 
-| # | Principe | Justification |
-|---|---|---|
-| P1 | **Single source of truth = SQL** | Le schéma SQL est canonique. `src/types/database.ts` et `src/types/supabase.ts` en découlent (générés via `supabase gen types typescript`). |
-| P2 | **RLS systématique** | Aucune table publique sans RLS activée. Le frontend utilise la `anon key`, donc toute la sécurité repose sur Postgres. |
-| P3 | **Compteurs dénormalisés via triggers** | `posts_count`, `followers_count`, `likes_count` maintenus côté DB, jamais côté client. Évite les race conditions et économise des `COUNT(*)`. |
-| P4 | **Soft delete pour le contenu utilisateur** | Suppression compte = `deleted_at` + anonymisation, pas `DELETE`. RGPD compatible (cf. `data-protection.md`). |
-| P5 | **PostGIS dès le départ** | Coordonnées en `GEOGRAPHY(POINT, 4326)`. Permet `ST_DWithin` (« observations à 5 km »). Coût marginal nul tant qu'on a un index GiST. |
-| P6 | **Pagination keyset > offset** | Pour le feed, on utilise `(published_at, id)` en cursor. Offset pagination réservé aux listes courtes (< 1000 items). |
-| P7 | **Pas de FK vers `auth.users` en cascade dure** | On référence `auth.users(id)` mais avec `ON DELETE SET NULL` ou via trigger d'anonymisation. RGPD : on doit pouvoir effacer un user sans casser l'historique. |
-| P8 | **UUID v4 partout** | Pas d'IDs séquentiels exposés (énumération). Supabase utilise déjà UUID nativement. |
-| P9 | **`created_at` / `updated_at` automatiques** | Triggers `set_updated_at()` sur toutes les tables mutables. |
-| P10 | **Validation côté serveur** | CHECK constraints + triggers `validate_*`. Le frontend valide pour l'UX, le backend valide pour la sécurité. |
+| #   | Principe                                        | Justification                                                                                                                                                 |
+| --- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1  | **Single source of truth = SQL**                | Le schéma SQL est canonique. `src/types/database.ts` et `src/types/supabase.ts` en découlent (générés via `supabase gen types typescript`).                   |
+| P2  | **RLS systématique**                            | Aucune table publique sans RLS activée. Le frontend utilise la `anon key`, donc toute la sécurité repose sur Postgres.                                        |
+| P3  | **Compteurs dénormalisés via triggers**         | `posts_count`, `followers_count`, `likes_count` maintenus côté DB, jamais côté client. Évite les race conditions et économise des `COUNT(*)`.                 |
+| P4  | **Soft delete pour le contenu utilisateur**     | Suppression compte = `deleted_at` + anonymisation, pas `DELETE`. RGPD compatible (cf. `data-protection.md`).                                                  |
+| P5  | **PostGIS dès le départ**                       | Coordonnées en `GEOGRAPHY(POINT, 4326)`. Permet `ST_DWithin` (« observations à 5 km »). Coût marginal nul tant qu'on a un index GiST.                         |
+| P6  | **Pagination keyset > offset**                  | Pour le feed, on utilise `(published_at, id)` en cursor. Offset pagination réservé aux listes courtes (< 1000 items).                                         |
+| P7  | **Pas de FK vers `auth.users` en cascade dure** | On référence `auth.users(id)` mais avec `ON DELETE SET NULL` ou via trigger d'anonymisation. RGPD : on doit pouvoir effacer un user sans casser l'historique. |
+| P8  | **UUID v4 partout**                             | Pas d'IDs séquentiels exposés (énumération). Supabase utilise déjà UUID nativement.                                                                           |
+| P9  | **`created_at` / `updated_at` automatiques**    | Triggers `set_updated_at()` sur toutes les tables mutables.                                                                                                   |
+| P10 | **Validation côté serveur**                     | CHECK constraints + triggers `validate_*`. Le frontend valide pour l'UX, le backend valide pour la sécurité.                                                  |
 
 ---
 
@@ -137,6 +139,7 @@ CREATE TABLE posts (
 ```
 
 **Discussion `location_precision`** :
+
 - **DBA** voulait stocker une bounding box.
 - **BE** a poussé pour un simple `SMALLINT` : « 99% des cas c'est exact/flou-1km/flou-10km. Une bbox c'est du sur-engineering. On floutte côté serveur via une `SECURITY DEFINER` function qui renvoie un point aléatoire dans le rayon. »
 - **Décision** : `SMALLINT`, le floutage est calculé à la volée par une view `posts_public` (cf. `security/media-security.md`).
@@ -201,6 +204,7 @@ CREATE TABLE comments (
 ```
 
 **Discussion threads** :
+
 - **BE** — Adjacency list (`parent_id`) suffit au MVP. Profondeur max 2 (réponses, pas de réponses-de-réponses) appliquée par trigger.
 - **DBA** — Si on veut un jour des arbres profonds avec requêtes « tout le sous-arbre », on basculera vers `ltree`. Pas avant.
 
@@ -386,13 +390,13 @@ CREATE TRIGGER on_auth_user_created
 
 ## 5. Décisions différées (V1+)
 
-| Décision | Quand y revenir | Pourquoi pas maintenant |
-|---|---|---|
-| Partitioning `posts` par `published_at` | > 10M posts | Inutile sous 1M, complique les FK |
-| Vues matérialisées pour `trending` | > 100k posts/jour | `ORDER BY likes_count DESC LIMIT 20` est suffisant en MVP |
-| Schéma `analytics` séparé | Quand on a un PM data | Pas de besoin tant qu'on n'a pas d'event tracking |
-| Read replicas | > 50k req/min | Supabase pro propose ça en 1 clic |
-| Audit log (table `audit_events`) | Avant V1 publique | Important pour la modération mais pas bloquant MVP |
+| Décision                                | Quand y revenir       | Pourquoi pas maintenant                                   |
+| --------------------------------------- | --------------------- | --------------------------------------------------------- |
+| Partitioning `posts` par `published_at` | > 10M posts           | Inutile sous 1M, complique les FK                         |
+| Vues matérialisées pour `trending`      | > 100k posts/jour     | `ORDER BY likes_count DESC LIMIT 20` est suffisant en MVP |
+| Schéma `analytics` séparé               | Quand on a un PM data | Pas de besoin tant qu'on n'a pas d'event tracking         |
+| Read replicas                           | > 50k req/min         | Supabase pro propose ça en 1 clic                         |
+| Audit log (table `audit_events`)        | Avant V1 publique     | Important pour la modération mais pas bloquant MVP        |
 
 ---
 
