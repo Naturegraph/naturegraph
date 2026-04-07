@@ -32,8 +32,8 @@ Plateforme web citoyenne biodiversite. React 19 + TypeScript + Vite + Tailwind +
 
 ### Architecture de donnees
 
-- Source de verite : `docs/DATA_ARCHITECTURE.md`
-- Types TS : `src/types/database.ts` — TOUJOURS maintenir en sync avec le schema SQL
+- Source de verite : `docs/backend/database-architecture.md` + `docs/backend/schema.sql`
+- Types TS : `src/types/supabase.ts` — generes via `npx supabase gen types typescript`, jamais edites a la main
 - Migrations SQL : `supabase/migrations/` — format timestamp YYYYMMDD_nom.sql (ex: 20260401_rls_fixes.sql)
 - Toute modification de schema doit mettre a jour : SQL, database.ts, DATA_ARCHITECTURE.md
 - Compteurs denormalises maintenus par triggers PostgreSQL (pas cote client)
