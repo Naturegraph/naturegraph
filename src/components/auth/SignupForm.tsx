@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
+import { Button } from '@/components/ui/Button'
 import { Logo } from './Logo'
 import { AuthInput } from './AuthInput'
 import { SocialButton } from './SocialButton'
@@ -93,17 +94,20 @@ export function SignupForm({
           />
 
           <div className="flex flex-col gap-3 items-center w-full">
-            <AuthButton type="submit" isLoading={isLoading}>
+            {/* Bouton submit principal — même composant que les CTAs landing */}
+            <Button type="submit" className="w-full" isLoading={isLoading}>
               {t('auth.signup.createAccount')}
-            </AuthButton>
-            <AuthButton
+            </Button>
+            {/* Action secondaire : accès invité sans inscription */}
+            <Button
               type="button"
-              variant="secondary"
+              variant="ghost"
+              className="w-full !rounded-full"
               onClick={onDiscoverAsGuest}
               disabled={isLoading}
             >
               {t('auth.signup.discoverWithout')}
-            </AuthButton>
+            </Button>
           </div>
         </form>
 

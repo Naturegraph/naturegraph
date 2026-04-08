@@ -7,3 +7,11 @@ export { useTheme } from './useTheme'
 export { useFeed, useInvalidateFeed, FEED_QUERY_KEY } from './useFeed'
 export { useProfile, useProfileByUsername, useUpdateProfile } from './useProfile'
 export { usePost, useToggleReaction, useCreatePost } from './usePost'
+export { useComments, useCreateComment, useDeleteComment } from './useComments'
+export {
+  useNotifications,
+  useUnreadCount,
+  useMarkAsRead,
+  useMarkAllAsRead,
+} from './useNotifications'
+export { useSettings, useUpdateSettings } from './useSettings'

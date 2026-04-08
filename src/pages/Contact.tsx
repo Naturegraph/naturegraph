@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Instagram, Mail, Send, CheckCircle2 } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
 import logo from '@/assets/logos/logo-simplified-color.svg'
 
 /** Icône Discord compacte */
@@ -102,13 +103,9 @@ export default function Contact() {
                     className="px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-action-default)] transition-shadow resize-none"
                   />
                 </div>
-                <button
-                  type="submit"
-                  className="inline-flex items-center justify-center gap-2 h-12 px-6 bg-[var(--color-action-default)] text-[var(--color-text-white)] font-bold rounded-full self-start hover:opacity-90 transition-opacity cursor-pointer"
-                >
-                  <Send size={16} />
+                <Button type="submit" size="md" className="self-start" icon={<Send size={16} />}>
                   {t('contact.form.submit')}
-                </button>
+                </Button>
               </form>
             )}
           </div>

@@ -22,101 +22,66 @@
  */
 
 import { useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
 import { X } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
+import { useNotifications, useMarkAsRead } from '@/hooks/useNotifications'
+import type { Notification, NotificationType } from '@/services/notificationService'
 
-// ─── Types & données mock ─────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-type NotifType = 'reaction' | 'follow'
+type NotifType = NotificationType
 
-interface MockNotif {
-  id: string
-  type: NotifType
-  username: string
-  /** Emoji animal affiché en badge sur l'avatar */
-  avatarBadge: string
-  avatarUrl?: string
-  message: string
-  /** Heure affichée (ex. "14:30") */
-  time: string
-  /** Groupe de date affiché en séparateur (ex. "Hier", "Il y a 3 jours") */
-  dateGroup: string
-  read: boolean
-  /** Pour les follows : lien vers le profil */
-  profileHref?: string
+/** Format heure courte HH:mm à partir d'un ISO. */
+function formatTime(iso: string): string {
+  const d = new Date(iso)
+  return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
-const MOCK_NOTIFS: MockNotif[] = [
-  {
-    id: '1',
-    type: 'reaction',
-    username: 'Marie_Nature',
-    avatarBadge: '🦊',
-    message: 'a réagi à ta photo de Faucon crécerelle',
-    time: '14:30',
-    dateGroup: 'Hier',
-    read: false,
-  },
-  {
-    id: '2',
-    type: 'reaction',
-    username: 'Oiseaux_et_Nature',
-    avatarBadge: '🦅',
-    message: 'a réagi à ta rencontre avec le Chevreuil',
-    time: '09:15',
-    dateGroup: 'Hier',
-    read: false,
-  },
-  {
-    id: '3',
-    type: 'follow',
-    username: 'Thomas.Wildlife',
-    avatarBadge: '🐺',
-    message: 'a commencé à te suivre',
-    time: '18:42',
-    dateGroup: 'Il y a 3 jours',
-    read: true,
-    profileHref: '/profile/Thomas.Wildlife',
-  },
-  {
-    id: '4',
-    type: 'follow',
-    username: 'Lucas_Ornitho',
-    avatarBadge: '🦉',
-    message: 'a commencé à te suivre',
-    time: '10:05',
-    dateGroup: 'Il y a 3 jours',
-    read: true,
-    profileHref: '/profile/Lucas_Ornitho',
-  },
-]
+/** Libellé de groupe (Aujourd'hui / Hier / date). */
+function dateGroupLabel(iso: string): string {
+  const d = new Date(iso)
+  const now = new Date()
+  const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000)
+  if (diffDays <= 0) return "Aujourd'hui"
+  if (diffDays === 1) return 'Hier'
+  if (diffDays < 7) return `Il y a ${diffDays} jours`
+  return d.toLocaleDateString('fr-FR')
+}
 
 // ─── Chip type notification ───────────────────────────────────────────────────
 
 /** Rendu du chip coloré indiquant le type de notification */
 function NotifChip({ type }: { type: NotifType }) {
-  if (type === 'reaction') {
-    return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-warning-bg)] text-[var(--color-warning)]">
-        Nouvelle réaction
-      </span>
-    )
+  const labels: Record<NotifType, string> = {
+    reaction: 'Nouvelle réaction',
+    follow: 'Nouveau migrateur',
+    comment: 'Nouveau commentaire',
+    mention: 'Mention',
+    identification: 'Identification',
+    system: 'Système',
   }
+  const cls =
+    type === 'reaction'
+      ? 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]'
+      : 'bg-teal-light/30 text-teal-dark'
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-teal-light/30 text-teal-dark">
-      Nouveau migrateur
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}
+    >
+      {labels[type] ?? type}
     </span>
   )
 }
 
 // ─── Groupement par date ──────────────────────────────────────────────────────
 
-/** Regroupe les notifications par dateGroup en préservant l'ordre d'apparition */
-function groupByDate(notifs: MockNotif[]): Array<{ label: string; items: MockNotif[] }> {
-  const map = new Map<string, MockNotif[]>()
+/** Regroupe les notifications par jour calendaire. */
+function groupByDate(notifs: Notification[]): Array<{ label: string; items: Notification[] }> {
+  const map = new Map<string, Notification[]>()
   for (const n of notifs) {
-    if (!map.has(n.dateGroup)) map.set(n.dateGroup, [])
-    map.get(n.dateGroup)!.push(n)
+    const label = dateGroupLabel(n.created_at)
+    if (!map.has(label)) map.set(label, [])
+    map.get(label)!.push(n)
   }
   return Array.from(map.entries()).map(([label, items]) => ({ label, items }))
 }
@@ -130,8 +95,11 @@ interface NotificationsPanelProps {
 
 export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null)
-  const groups = groupByDate(MOCK_NOTIFS)
-  const unreadCount = MOCK_NOTIFS.filter((n) => !n.read).length
+  const { user } = useAuth()
+  const { data: notifs = [], isLoading } = useNotifications(user?.id)
+  const markAsRead = useMarkAsRead(user?.id)
+  const groups = groupByDate(notifs)
+  const unreadCount = notifs.filter((n) => !n.read).length
 
   // Fermer sur Escape
   useEffect(() => {
@@ -178,6 +146,10 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
 
       {/* Liste groupée par date */}
       <div className="max-h-[420px] overflow-y-auto">
+        {isLoading && <p className="text-sm text-muted-foreground text-center py-6">Chargement…</p>}
+        {!isLoading && notifs.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-6">Aucune notification</p>
+        )}
         {groups.map((group, gi) => (
           <div key={group.label}>
             {/* Séparateur de groupe */}
@@ -193,59 +165,43 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
               <div key={notif.id}>
                 {i > 0 && <div className="h-px bg-border mx-5" aria-hidden="true" />}
 
-                <div className="flex items-start gap-3 px-5 py-3">
-                  {/* Avatar avec badge animal */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!notif.read) markAsRead.mutate(notif.id)
+                  }}
+                  className="w-full text-left flex items-start gap-3 px-5 py-3 hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  {/* Avatar placeholder */}
                   <div className="relative shrink-0 mt-0.5">
                     <div className="size-10 rounded-full bg-primary-light flex items-center justify-center overflow-hidden">
-                      {notif.avatarUrl ? (
-                        <img src={notif.avatarUrl} alt="" className="size-full object-cover" />
-                      ) : (
-                        <span className="text-sm font-bold text-primary" aria-hidden="true">
-                          {notif.username.slice(0, 2).toUpperCase()}
-                        </span>
-                      )}
+                      <span className="text-sm font-bold text-primary" aria-hidden="true">
+                        {(notif.title ?? '?').slice(0, 2).toUpperCase()}
+                      </span>
                     </div>
-                    {/* Badge animal en bas à droite de l'avatar */}
-                    <span
-                      className="absolute -bottom-1 -right-1 text-sm leading-none"
-                      aria-hidden="true"
-                    >
-                      {notif.avatarBadge}
-                    </span>
                   </div>
 
                   {/* Contenu */}
                   <div className="flex-1 min-w-0">
-                    {/* Chip type */}
                     <div className="mb-1">
                       <NotifChip type={notif.type} />
                     </div>
-
-                    {/* Message */}
                     <p className="text-sm text-foreground leading-snug">
-                      <span className="font-bold">{notif.username}</span> {notif.message}
+                      <span className="font-bold">{notif.title}</span>
+                      {notif.body ? ` ${notif.body}` : ''}
                     </p>
-
-                    {/* Lien "Voir son profil" pour les follows */}
-                    {notif.type === 'follow' && notif.profileHref && (
-                      <Link
-                        to={notif.profileHref}
-                        onClick={onClose}
-                        className="text-xs text-primary font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded mt-1 inline-block"
-                      >
-                        Voir son profil
-                      </Link>
-                    )}
                   </div>
 
                   {/* Heure + point non-lu */}
                   <div className="flex flex-col items-end gap-2 shrink-0 ml-1">
-                    <span className="text-xs text-muted-foreground">{notif.time}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatTime(notif.created_at)}
+                    </span>
                     {!notif.read && (
                       <div className="size-2.5 rounded-full bg-primary" aria-label="Non lu" />
                     )}
                   </div>
-                </div>
+                </button>
               </div>
             ))}
           </div>

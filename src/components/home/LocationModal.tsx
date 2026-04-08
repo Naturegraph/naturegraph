@@ -16,6 +16,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { LocateFixed, Loader2, X, Search } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
 import { useLocation, type LocationCoords } from '@/contexts/LocationContext'
 
 // ─── Nominatim helpers ────────────────────────────────────────────────────────
@@ -314,20 +315,18 @@ export function LocationModal({ onClose }: LocationModalProps) {
 
         {/* Buttons */}
         <div className="flex gap-4">
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="md"
+            className="flex-1 !rounded-full"
             onClick={onClose}
-            className="flex-1 h-12 rounded-full border border-border text-foreground font-bold text-base hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             Annuler
-          </button>
-          <button
-            type="button"
-            onClick={handleApply}
-            className="flex-1 h-12 rounded-full bg-primary text-primary-foreground font-bold text-base hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-          >
+          </Button>
+          <Button type="button" size="md" className="flex-1" onClick={handleApply}>
             Appliquer
-          </button>
+          </Button>
         </div>
       </div>
     </div>

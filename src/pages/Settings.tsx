@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Camera, Globe, LogOut, Trash2, Bell, Check } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { INTEREST_LABELS } from '@/data/mock/mockUsers'
+import { useUpdateProfile } from '@/hooks/useProfile'
 import type { Interest } from '@/types/database'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -41,6 +42,7 @@ export default function Settings() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const { profile, signOut } = useAuth()
+  const updateProfile = useUpdateProfile(profile?.id ?? '')
 
   // État local du formulaire — initialisé depuis le profil auth
   const [form, setForm] = useState({
@@ -71,7 +73,20 @@ export default function Settings() {
   }
 
   function handleSave() {
-    // TODO [BACKEND] — profileService.updateProfile(profile.id, form)
+    if (!profile?.id) return
+    updateProfile.mutate({
+      first_name: form.firstName,
+      last_name: form.lastName,
+      username: form.username,
+      bio: form.bio,
+      city: form.city,
+      region: form.region,
+      interests: form.interests,
+      instagram: form.instagram,
+      twitter: form.twitter,
+      website: form.website,
+      is_public: form.isPublic,
+    })
   }
 
   function handleLogout() {

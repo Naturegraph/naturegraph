@@ -12,7 +12,7 @@
  * refactorisé pour accepter PostFeedItem directement.
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { LayoutList, LayoutGrid, Filter, Lock } from 'lucide-react'
@@ -34,9 +34,16 @@ export type FeedTab = 'recent' | 'for-you' | 'popular' | 'trending'
 
 // Mapping groupe taxonomique → emoji catégorie
 const TAXONOMIC_EMOJI: Record<string, string> = {
-  birds: '🐦', mammals: '🦌', insects: '🦋', amphibians: '🐸',
-  reptiles: '🦎', arachnids: '🕷️', mollusks: '🐌', fish: '🐟',
-  plants: '🌿', other: '🌍',
+  birds: '🐦',
+  mammals: '🦌',
+  insects: '🦋',
+  amphibians: '🐸',
+  reptiles: '🦎',
+  arachnids: '🕷️',
+  mollusks: '🐌',
+  fish: '🐟',
+  plants: '🌿',
+  other: '🌍',
 }
 
 // ─── Adaptateur PostFeedItem → MockPost ──────────────────────────────────────
@@ -51,7 +58,8 @@ function postFeedItemToMockPost(item: PostFeedItem): MockPost {
 
   // Titre = première phrase de la description (max 80 chars) ou la description entière
   const firstSentence = item.description.split(/[.!?]/)[0].trim()
-  const title = firstSentence.length > 0 ? firstSentence.slice(0, 80) : item.description.slice(0, 80)
+  const title =
+    firstSentence.length > 0 ? firstSentence.slice(0, 80) : item.description.slice(0, 80)
 
   return {
     id: item.id,
@@ -60,9 +68,9 @@ function postFeedItemToMockPost(item: PostFeedItem): MockPost {
       avatar: item.author?.avatar_url ?? '',
     },
     date: item.created_at,
-    location: [item.location_name, item.city, item.region, item.country]
-      .filter(Boolean)
-      .join(', ') || 'France',
+    location:
+      [item.location_name, item.city, item.region, item.country].filter(Boolean).join(', ') ||
+      'France',
     title,
     content: item.description,
     weather: item.weather ?? undefined,
@@ -191,10 +199,7 @@ export function FeedSection({
     data: feedData,
     isLoading: isFeedLoading,
     isError: isFeedError,
-  } = useFeed(
-    { tab: tabToServiceTab[activeTab], page, limit: 20 },
-    isSupabaseConfigured,
-  )
+  } = useFeed({ tab: tabToServiceTab[activeTab], page, limit: 20 }, isSupabaseConfigured)
 
   const hasActiveFilters =
     filters.categories.length > 0 ||
@@ -208,10 +213,10 @@ export function FeedSection({
     onHasActiveFiltersChange(hasActiveFilters)
   }, [hasActiveFilters, onHasActiveFiltersChange])
 
-  // Remettre à la page 1 quand l'onglet change (reset pendant le render, pas dans un effet)
-  const prevTabRef = useRef(activeTab)
-  if (prevTabRef.current !== activeTab) {
-    prevTabRef.current = activeTab
+  // Remettre à la page 1 quand l'onglet change (reset pendant le render via useState).
+  const [prevTab, setPrevTab] = useState(activeTab)
+  if (prevTab !== activeTab) {
+    setPrevTab(activeTab)
     setPage(1)
   }
 
@@ -247,7 +252,11 @@ export function FeedSection({
     <section aria-label="Feed des observations">
       {/* Header tabs + contrôles — desktop seulement */}
       <div className="hidden md:flex gap-3 items-center justify-between mb-4">
-        <div role="tablist" aria-label={t('home.feed.filterFeed')} className="relative rounded-full border-[0.5px] border-border">
+        <div
+          role="tablist"
+          aria-label={t('home.feed.filterFeed')}
+          className="relative rounded-full border-[0.5px] border-border"
+        >
           <div className="flex items-center p-1">
             {TABS.map((tab) => (
               <button
@@ -272,16 +281,57 @@ export function FeedSection({
 
         <div className="relative rounded-full border-[0.5px] border-border">
           <div className="flex items-center gap-2 p-1">
-            <button type="button" onClick={() => onViewModeChange('list')} aria-pressed={viewMode === 'list'} aria-label={t('home.feed.listView')} className={['flex items-center justify-center rounded-full size-[34px] transition-colors', 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1', viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted/50'].join(' ')}>
+            <button
+              type="button"
+              onClick={() => onViewModeChange('list')}
+              aria-pressed={viewMode === 'list'}
+              aria-label={t('home.feed.listView')}
+              className={[
+                'flex items-center justify-center rounded-full size-[34px] transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+                viewMode === 'list'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-foreground hover:bg-muted/50',
+              ].join(' ')}
+            >
               <LayoutList className="size-4" aria-hidden="true" />
             </button>
-            <button type="button" onClick={() => onViewModeChange('grid')} aria-pressed={viewMode === 'grid'} aria-label={t('home.feed.gridView')} className={['flex items-center justify-center rounded-full size-[34px] transition-colors', 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1', viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted/50'].join(' ')}>
+            <button
+              type="button"
+              onClick={() => onViewModeChange('grid')}
+              aria-pressed={viewMode === 'grid'}
+              aria-label={t('home.feed.gridView')}
+              className={[
+                'flex items-center justify-center rounded-full size-[34px] transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+                viewMode === 'grid'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-foreground hover:bg-muted/50',
+              ].join(' ')}
+            >
               <LayoutGrid className="size-4" aria-hidden="true" />
             </button>
             <div aria-hidden="true" className="w-px h-5 bg-border" />
-            <button type="button" onClick={() => onShowFiltersChange(true)} aria-label={t('home.feed.filterObs')} aria-expanded={showFilters} className={['relative flex items-center justify-center rounded-full size-[34px] transition-colors', 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1', showFilters ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted/50'].join(' ')}>
+            <button
+              type="button"
+              onClick={() => onShowFiltersChange(true)}
+              aria-label={t('home.feed.filterObs')}
+              aria-expanded={showFilters}
+              className={[
+                'relative flex items-center justify-center rounded-full size-[34px] transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+                showFilters
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-foreground hover:bg-muted/50',
+              ].join(' ')}
+            >
               <Filter className="size-4" aria-hidden="true" />
-              {hasActiveFilters && <span aria-hidden="true" className="absolute top-0.5 right-0.5 size-2 bg-primary rounded-full" />}
+              {hasActiveFilters && (
+                <span
+                  aria-hidden="true"
+                  className="absolute top-0.5 right-0.5 size-2 bg-primary rounded-full"
+                />
+              )}
             </button>
           </div>
         </div>
@@ -293,34 +343,54 @@ export function FeedSection({
       {/* État erreur Supabase */}
       {isSupabaseConfigured && isFeedError && (
         <div role="alert" className="bg-background md:rounded-card rounded-none p-8 text-center">
-          <p className="text-sm text-muted-foreground">{t('home.feed.loadError', { defaultValue: 'Impossible de charger le feed. Réessaie dans un instant.' })}</p>
+          <p className="text-sm text-muted-foreground">
+            {t('home.feed.loadError', {
+              defaultValue: 'Impossible de charger le feed. Réessaie dans un instant.',
+            })}
+          </p>
         </div>
       )}
 
       {/* État vide */}
       {!isFeedLoading && !isFeedError && posts.length === 0 && (
         <div className="bg-background relative md:rounded-card rounded-none overflow-hidden">
-          <div aria-hidden="true" className="absolute md:border-border md:border-[0.5px] border-border border-b-4 inset-0 pointer-events-none md:rounded-card" />
+          <div
+            aria-hidden="true"
+            className="absolute md:border-border md:border-[0.5px] border-border border-b-4 inset-0 pointer-events-none md:rounded-card"
+          />
           <div className="flex flex-col items-center gap-5 px-6 py-12 text-center">
             <img src={hermineEmptyState} alt="" className="w-48 opacity-80" aria-hidden="true" />
             <div className="flex flex-col gap-2 max-w-sm">
               <p className="text-lg font-bold text-foreground">{t('home.feed.emptyTitle')}</p>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                {locationLabel ? t('home.feed.emptyDescLocation', { location: locationLabel }) : t('home.feed.emptyDesc')}
+                {locationLabel
+                  ? t('home.feed.emptyDescLocation', { location: locationLabel })
+                  : t('home.feed.emptyDesc')}
               </p>
             </div>
             <div className="flex flex-wrap gap-3 justify-center">
               {hasActiveFilters && (
-                <button type="button" onClick={handleResetFilters} className="flex items-center justify-center h-10 px-6 rounded-button border border-border hover:border-foreground/40 transition-colors text-foreground text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="flex items-center justify-center h-10 px-6 rounded-button border border-border hover:border-foreground/40 transition-colors text-foreground text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                >
                   {t('home.feed.emptyReset')}
                 </button>
               )}
               {isAuthenticated ? (
-                <button type="button" onClick={() => navigate('/contribute')} className="bg-primary flex items-center justify-center h-10 px-6 rounded-button text-primary-foreground hover:opacity-90 transition-opacity text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+                <button
+                  type="button"
+                  onClick={() => navigate('/contribute')}
+                  className="bg-primary flex items-center justify-center h-10 px-6 rounded-button text-primary-foreground hover:opacity-90 transition-opacity text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                >
                   {t('home.feed.emptyContribute')}
                 </button>
               ) : (
-                <Link to="/signup" className="bg-primary flex items-center justify-center h-10 px-6 rounded-button text-primary-foreground hover:opacity-90 transition-opacity text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+                <Link
+                  to="/signup"
+                  className="bg-primary flex items-center justify-center h-10 px-6 rounded-button text-primary-foreground hover:opacity-90 transition-opacity text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                >
                   {t('home.feed.guestLimitCreate')}
                 </Link>
               )}
@@ -370,20 +440,31 @@ export function FeedSection({
           {/* Mur d'inscription invité — mode démo uniquement */}
           {isGuestLimitReached && (
             <div className="mt-4 bg-background relative md:rounded-card rounded-none overflow-hidden">
-              <div aria-hidden="true" className="absolute md:border-border md:border-[0.5px] border-border border-b-4 inset-0 pointer-events-none md:rounded-card" />
+              <div
+                aria-hidden="true"
+                className="absolute md:border-border md:border-[0.5px] border-border border-b-4 inset-0 pointer-events-none md:rounded-card"
+              />
               <div className="flex flex-col items-center gap-4 px-6 py-10 text-center">
                 <div className="flex items-center justify-center size-12 rounded-full bg-primary-light">
                   <Lock className="size-5 text-primary" aria-hidden="true" />
                 </div>
                 <div className="flex flex-col gap-2">
                   <p className="font-bold text-foreground">{t('home.feed.guestLimitTitle')}</p>
-                  <p className="text-sm text-muted-foreground max-w-sm">{t('home.feed.guestLimitDesc')}</p>
+                  <p className="text-sm text-muted-foreground max-w-sm">
+                    {t('home.feed.guestLimitDesc')}
+                  </p>
                 </div>
                 <div className="flex gap-3">
-                  <Link to="/signup" className="bg-primary flex items-center justify-center h-10 px-6 rounded-button text-primary-foreground hover:opacity-90 transition-opacity text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+                  <Link
+                    to="/signup"
+                    className="bg-primary flex items-center justify-center h-10 px-6 rounded-button text-primary-foreground hover:opacity-90 transition-opacity text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  >
                     {t('home.feed.guestLimitCreate')}
                   </Link>
-                  <Link to="/login" className="flex items-center justify-center h-10 px-6 rounded-button border border-border hover:border-foreground/40 transition-colors text-foreground text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+                  <Link
+                    to="/login"
+                    className="flex items-center justify-center h-10 px-6 rounded-button border border-border hover:border-foreground/40 transition-colors text-foreground text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  >
                     {t('home.feed.guestLimitLogin')}
                   </Link>
                 </div>

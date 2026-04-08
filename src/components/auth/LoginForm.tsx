@@ -11,9 +11,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { Button } from '@/components/ui/Button'
 import { Logo } from './Logo'
 import { AuthInput } from './AuthInput'
-import { AuthButton } from './AuthButton'
 import { SocialButton } from './SocialButton'
 import { AuthHeroPhoto } from './AuthHeroPhoto'
 
@@ -202,17 +202,20 @@ export function LoginForm({
 
           {/* Boutons CTA */}
           <div className="flex flex-col gap-3 items-center w-full pt-1">
-            <AuthButton type="submit" isLoading={isLoading}>
+            {/* Bouton submit principal — même composant que les CTAs landing */}
+            <Button type="submit" className="w-full" isLoading={isLoading}>
               {t('auth.login.connect')}
-            </AuthButton>
-            <AuthButton
+            </Button>
+            {/* Action secondaire : accès invité sans connexion */}
+            <Button
               type="button"
-              variant="secondary"
+              variant="ghost"
+              className="w-full !rounded-full"
               onClick={onDiscoverAsGuest}
               disabled={isLoading}
             >
               {t('auth.login.discoverWithout')}
-            </AuthButton>
+            </Button>
           </div>
         </form>
 
