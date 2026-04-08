@@ -90,9 +90,11 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
          *     ADD COLUMN notification_frequency TEXT DEFAULT 'weekly',
          *     ADD COLUMN motivations TEXT[] DEFAULT '{}';
          */
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore – colonnes optionnelles absentes du schéma généré (notification_frequency, motivations)
-        await supabase.from('profiles').upsert(
+        // NOTE [BACKEND] — `notification_frequency` et `motivations` ne sont pas
+        // encore dans le schéma Supabase. On les stocke en mémoire (userData)
+        // et on les persistera quand la migration sera appliquée. Pour l'instant
+        // on n'écrit que ce que la table accepte.
+        const { error: upsertError } = await supabase.from('profiles').upsert(
           {
             id: user.id,
             username: username,
@@ -100,21 +102,14 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
             first_name: username,
             last_name: '',
             interests: userData.interests as Interest[],
-            // TODO [BACKEND] — Mapper vers ENUM DB (voir commentaire ci-dessus)
-            notification_frequency: userData.frequency ?? 'weekly',
-            // TODO [BACKEND] — Stocker dans profiles.motivations TEXT[]
-            motivations: userData.motivations,
-            city: null,
-            region: null,
-            country: null,
-            instagram: null,
-            twitter: null,
-            website: null,
-            avatar_url: null,
-            banner_url: null,
+            updated_at: new Date().toISOString(),
           },
           { onConflict: 'id' },
         )
+        if (upsertError) {
+          console.error('[onboarding] upsert profile failed', upsertError)
+          throw upsertError
+        }
       }
     }
 
