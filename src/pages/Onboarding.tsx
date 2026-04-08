@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import { updateProfile } from '@/services/profileService'
+import { upsertProfile } from '@/services/profileService'
 import type { Interest } from '@/types/database'
 
 const TOTAL_STEPS = 3
@@ -113,14 +113,16 @@ export default function Onboarding() {
   }
 
   async function handleFinish() {
-    // Mode Supabase : met à jour le profil créé automatiquement par le trigger handle_new_auth_user
+    // Mode Supabase : crée le profil via UPSERT (pas de trigger DB pour handle_new_auth_user)
+    // Tous les champs NOT NULL doivent être fournis : id, username, email, first_name, last_name
     if (isSupabaseConfigured && supabase) {
       const {
         data: { user },
       } = await supabase.auth.getUser()
       if (user) {
-        await updateProfile(user.id, {
+        await upsertProfile(user.id, {
           username: displayName.trim(),
+          email: user.email ?? '',
           first_name: displayName.trim(),
           last_name: '',
           interests: interests as Interest[],
