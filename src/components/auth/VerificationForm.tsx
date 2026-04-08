@@ -12,11 +12,7 @@ import { getDemoOtp } from '@/lib/demoAuth'
 import { Logo } from './Logo'
 import { AuthHeroPhoto } from './AuthHeroPhoto'
 
-// NOTE: Supabase envoie des codes à 8 chiffres par défaut (mailer_otp_length = 8).
-// Pour passer à 6 chiffres, changer dans le dashboard Supabase :
-// Authentication → Settings → OTP Token Length → 6
-// Puis repasser CODE_LENGTH à 6.
-const CODE_LENGTH = 8
+const CODE_LENGTH = 6
 const TIMER_SECONDS = 120
 
 interface VerificationFormProps {
