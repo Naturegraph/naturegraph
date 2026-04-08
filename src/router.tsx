@@ -15,7 +15,7 @@ import { lazy, Suspense } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
 import App from './App'
 import { MainLayout } from '@/components/layout'
-import { ProtectedRoute, PublicRoute } from '@/components/guards'
+import { ProtectedRoute, PublicRoute, OnboardingGuard } from '@/components/guards'
 
 // ─── Lazy-loaded pages (code splitting pour éco-conception) ────────
 
@@ -106,12 +106,14 @@ export const router = createBrowserRouter([
         ),
       },
 
-      // Home — accessible sans auth (mode invité), layout autonome sans MainLayout
+      // Home — accessible sans auth (mode invité), mais force l'onboarding pour les users authentifiés
       {
         path: 'home',
         element: (
           <LazyPage>
-            <Home />
+            <OnboardingGuard>
+              <Home />
+            </OnboardingGuard>
           </LazyPage>
         ),
       },
@@ -143,7 +145,9 @@ export const router = createBrowserRouter([
         path: 'profile/:username',
         element: (
           <LazyPage>
-            <Profile />
+            <OnboardingGuard>
+              <Profile />
+            </OnboardingGuard>
           </LazyPage>
         ),
       },

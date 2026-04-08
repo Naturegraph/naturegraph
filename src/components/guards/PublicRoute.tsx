@@ -28,10 +28,10 @@ export function PublicRoute({ children }: PublicRouteProps) {
     )
   }
 
-  // Rediriger vers /home seulement si connecté ET onboarding terminé
-  // (un user connecté sans onboarding doit rester sur AuthPage pour finir l'onboarding)
-  if (isAuthenticated && onboardingCompleted) {
-    return <Navigate to="/home" replace />
+  // Si connecté et onboarding terminé → /home
+  // Si connecté mais onboarding pas terminé → /onboarding (forcé)
+  if (isAuthenticated) {
+    return <Navigate to={onboardingCompleted ? '/home' : '/onboarding'} replace />
   }
 
   return <>{children}</>

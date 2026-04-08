@@ -80,12 +80,22 @@ const defaultState: AuthState = {
  * Flux : signup → OTP console → verification → onboarding → home
  * Toutes les interfaces sont identiques au flux Supabase réel.
  */
+/**
+ * Détecte les usernames temporaires créés par le trigger DB `handle_new_auth_user`.
+ * Format : `user_` + 8 premiers chars de l'UUID (ex: user_86dd90bd).
+ * Un user avec ce username doit OBLIGATOIREMENT passer par l'onboarding.
+ */
+function isTempUsername(username: string | null | undefined): boolean {
+  return !!username && /^user_[a-f0-9]{8}$/i.test(username)
+}
+
 function DemoAuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>(defaultState)
 
-  /** Calcul dérivé : onboarding terminé si le profil a un username */
+  /** Calcul dérivé : onboarding terminé si le profil a un VRAI username (pas un temp) */
   function deriveState(base: Omit<AuthState, 'onboardingCompleted'>): AuthState {
-    return { ...base, onboardingCompleted: !!base.profile?.username }
+    const username = base.profile?.username
+    return { ...base, onboardingCompleted: !!username && !isTempUsername(username) }
   }
 
   // ── signUp : génère et logue l'OTP, retourne requiresVerification ────────
@@ -215,9 +225,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading: isSupabaseConfigured,
   })
 
-  // Calcul dérivé : onboarding terminé si le profil a un username
+  // Calcul dérivé : onboarding terminé si le profil a un VRAI username (pas un temp `user_xxxxxxxx`)
   function deriveState(base: Omit<AuthState, 'onboardingCompleted'>): AuthState {
-    return { ...base, onboardingCompleted: !!base.profile?.username }
+    const username = base.profile?.username
+    return { ...base, onboardingCompleted: !!username && !isTempUsername(username) }
   }
 
   async function fetchProfile(userId: string): Promise<Profile | null> {

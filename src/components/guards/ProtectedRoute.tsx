@@ -17,7 +17,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, onboardingCompleted } = useAuth()
   const location = useLocation()
 
   // Pendant la vérification de session, afficher un spinner
@@ -32,6 +32,12 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   // Si non authentifié, rediriger vers login en conservant la destination
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />
+  }
+
+  // Si authentifié mais onboarding pas terminé, forcer le passage par /onboarding
+  // (sauf si on y est déjà — évite la boucle infinie)
+  if (!onboardingCompleted && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />
   }
 
   return <>{children}</>
