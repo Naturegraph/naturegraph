@@ -50,34 +50,33 @@ const variantClasses: Record<ButtonVariant, string> = {
    * Bouton outline — transparent avec inset border via btn-press-outline.
    * Usage : actions secondaires sur fonds sombres (Hero, Discord).
    */
-  outline:
-    'btn-press btn-press-outline bg-transparent text-[var(--color-text-white)] rounded-full',
+  outline: 'btn-press btn-press-outline bg-transparent text-[var(--color-text-white)] rounded-full',
 
   /**
    * Bouton secondaire — surface crème, sans effet 3D.
    * Usage : actions neutres dans l'interface app.
    */
   secondary:
-    'bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:opacity-80 rounded-lg',
+    'bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:opacity-80 rounded-full',
 
   /**
    * Bouton fantôme — fond transparent, texte secondaire.
-   * Usage : actions tertiaires, annulation.
+   * Usage : actions tertiaires, annulation, "Découvrir sans compte".
    */
   ghost:
-    'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] rounded-lg',
+    'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] rounded-full',
 
   /**
    * Bouton destructif — rouge, pour suppressions et actions irréversibles.
    */
   danger:
-    'bg-[var(--color-error-action)] text-[var(--color-text-white)] hover:opacity-90 rounded-lg',
+    'bg-[var(--color-error-action)] text-[var(--color-text-white)] hover:opacity-90 rounded-full',
 }
 
 // ── Classes par taille ───────────────────────────────────────────────────────
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'h-10 px-4 text-sm',   // 40px — ex: Footer CTA
+  sm: 'h-10 px-4 text-sm', // 40px — ex: Footer CTA
   md: 'h-12 px-6 text-base', // 48px — ex: Navbar, CTABanner, Discord
   lg: 'h-14 px-10 text-base', // 56px — ex: Hero CTA principal
 }
@@ -106,12 +105,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref,
   ) => {
-    const computedClass = [
-      baseClasses,
-      variantClasses[variant],
-      sizeClasses[size],
-      className,
-    ]
+    const computedClass = [baseClasses, variantClasses[variant], sizeClasses[size], className]
       .filter(Boolean)
       .join(' ')
 
@@ -152,12 +146,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     // Bouton natif (défaut)
     return (
-      <button
-        ref={ref}
-        disabled={disabled || isLoading}
-        className={computedClass}
-        {...props}
-      >
+      <button ref={ref} disabled={disabled || isLoading} className={computedClass} {...props}>
         {content}
       </button>
     )

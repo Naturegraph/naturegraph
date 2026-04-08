@@ -102,7 +102,7 @@ export function SignupForm({
             <Button
               type="button"
               variant="ghost"
-              className="w-full !rounded-full"
+              className="w-full"
               onClick={onDiscoverAsGuest}
               disabled={isLoading}
             >

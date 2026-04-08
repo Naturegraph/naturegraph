@@ -210,7 +210,7 @@ export function LoginForm({
             <Button
               type="button"
               variant="ghost"
-              className="w-full !rounded-full"
+              className="w-full"
               onClick={onDiscoverAsGuest}
               disabled={isLoading}
             >

@@ -21,6 +21,9 @@ import type { TimeOfDay, Visibility } from '@/types/database'
 import { MediaUploader } from './MediaUploader'
 import { LocationPicker } from './LocationPicker'
 import { TagInput } from './TagInput'
+import { useAuth } from '@/contexts/AuthContext'
+import { useCreatePost } from '@/hooks/usePost'
+import { uploadPostMedia } from '@/services/mediaService'
 
 // ─── État du formulaire ───────────────────────────────────────────────────────
 
@@ -47,6 +50,8 @@ function todayISO() {
 export function ContributeInstantForm() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const createPost = useCreatePost(user?.id ?? '')
 
   const [form, setForm] = useState<InstantFormData>({
     files: [],
@@ -88,15 +93,41 @@ export function ContributeInstantForm() {
       return
     }
 
+    if (!user?.id) {
+      setErrors({ files: t('contribute.errors.notAuthenticated', 'Connecte-toi pour publier') })
+      return
+    }
+
     setIsSubmitting(true)
-    // TODO [BACKEND] — Remplacer par l'appel réel (voir en-tête du fichier)
-    console.info('[MOCK] Instant Nature :', {
-      type: 'nature_instant',
-      ...form,
-      mediaCount: form.files.length,
-    })
-    await new Promise((r) => setTimeout(r, 600))
-    navigate('/home')
+    try {
+      // 1. Créer le post (sans médias)
+      const post = await createPost.mutateAsync({
+        type: 'nature_instant',
+        description: form.description.trim(),
+        visibility: form.visibility,
+        encounter_date: form.encounterDate,
+        time_of_day: form.timeOfDay || undefined,
+        location_name: form.locationName || undefined,
+        location_hidden: form.locationHidden,
+        tags: form.tags,
+      })
+
+      // 2. Upload des médias liés au post créé
+      for (let i = 0; i < form.files.length; i++) {
+        await uploadPostMedia({
+          file: form.files[i],
+          postId: post.id,
+          userId: user.id,
+          displayOrder: i,
+        })
+      }
+
+      navigate('/home')
+    } catch (err) {
+      setErrors({ files: err instanceof Error ? err.message : 'Erreur lors de la publication' })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const TIME_OPTIONS: TimeOfDay[] = ['morning', 'afternoon', 'dusk', 'evening', 'night']

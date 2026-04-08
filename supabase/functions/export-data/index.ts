@@ -36,13 +36,13 @@ Deno.serve(async (req: Request) => {
 
   try {
     const [profile, settings, posts, comments, reactions, follows, notebooks] = await Promise.all([
-      admin.from('profiles').select('*').eq('id', userId).single(),
-      admin.from('user_settings').select('*').eq('user_id', userId).single(),
-      admin.from('posts').select('*, media:post_media(*)').eq('user_id', userId),
-      admin.from('comments').select('*').eq('author_id', userId),
+      admin.from('profiles').select('*').eq('id', userId).maybeSingle(),
+      admin.from('user_settings').select('*').eq('user_id', userId).maybeSingle(),
+      admin.from('posts').select('*, media(*)').eq('user_id', userId),
+      admin.from('comments').select('*').eq('user_id', userId),
       admin.from('reactions').select('*').eq('user_id', userId),
-      admin.from('follows').select('*').or(`follower_id.eq.${userId},followed_id.eq.${userId}`),
-      admin.from('notebooks').select('*, entries:notebook_entries(*)').eq('owner_id', userId),
+      admin.from('follows').select('*').or(`follower_id.eq.${userId},following_id.eq.${userId}`),
+      admin.from('notebooks').select('*, entries:notebook_observations(*)').eq('user_id', userId),
     ])
 
     const payload = {

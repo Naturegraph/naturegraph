@@ -55,8 +55,8 @@
   --color-text-dark: var(--text-dark);
   --color-foreground: var(--color-text-primary);
 
-  /* Couleur primaire (violet) */
-  --color-primary: var(--color-primary);
+  /* Couleur primaire — suit --color-action-default (source de vérité unique) */
+  --color-primary: var(--color-action-default);
   --color-primary-light: var(--primary-light);
   --color-primary-foreground: var(--primary-foreground);
 

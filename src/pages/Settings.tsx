@@ -18,6 +18,7 @@ import { ArrowLeft, Camera, Globe, LogOut, Trash2, Bell, Check } from 'lucide-re
 import { useAuth } from '@/contexts/AuthContext'
 import { INTEREST_LABELS } from '@/data/mock/mockUsers'
 import { useUpdateProfile } from '@/hooks/useProfile'
+import { supabase } from '@/lib/supabase'
 import type { Interest } from '@/types/database'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -92,6 +93,30 @@ export default function Settings() {
   function handleLogout() {
     signOut()
     navigate('/')
+  }
+
+  /** Supprime le compte via Edge Function. Demande confirmation. */
+  async function handleDeleteAccount() {
+    const confirmed = window.confirm(
+      t(
+        'settings.deleteAccountConfirm',
+        'Cette action est irréversible. Toutes tes données seront supprimées. Continuer ?',
+      ),
+    )
+    if (!confirmed) return
+    try {
+      const { error } = await supabase!.functions.invoke('delete-account', {
+        body: { mode: 'hard' },
+      })
+      if (error) throw error
+      await signOut()
+      navigate('/')
+    } catch (err) {
+      window.alert(
+        t('settings.deleteAccountError', 'Erreur : ') +
+          (err instanceof Error ? err.message : String(err)),
+      )
+    }
   }
 
   return (
@@ -333,9 +358,7 @@ export default function Settings() {
           {/* Suppression du compte */}
           <button
             type="button"
-            onClick={() => {
-              // TODO [BACKEND] — modale de confirmation + profileService.deleteAccount()
-            }}
+            onClick={handleDeleteAccount}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
           >
             <Trash2 className="size-4" aria-hidden="true" />

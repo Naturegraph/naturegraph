@@ -53,16 +53,18 @@ Deno.serve(async (req: Request) => {
         .from('profiles')
         .update({
           username: `deleted_${userId.slice(0, 8)}`,
-          display_name: null,
+          first_name: null,
+          last_name: null,
           bio: null,
           avatar_url: null,
           banner_url: null,
           city: null,
           region: null,
-          location: null,
+          country: null,
           instagram: null,
+          twitter: null,
           website: null,
-          deleted_at: new Date().toISOString(),
+          is_public: false,
         })
         .eq('id', userId)
     }

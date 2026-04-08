@@ -315,13 +315,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
 
         {/* Buttons */}
         <div className="flex gap-4">
-          <Button
-            type="button"
-            variant="secondary"
-            size="md"
-            className="flex-1 !rounded-full"
-            onClick={onClose}
-          >
+          <Button type="button" variant="secondary" size="md" className="flex-1" onClick={onClose}>
             Annuler
           </Button>
           <Button type="button" size="md" className="flex-1" onClick={handleApply}>
