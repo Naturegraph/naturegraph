@@ -56,9 +56,18 @@ export async function createProposal(
   payload: CreateProposalPayload,
 ): Promise<IdentificationProposal> {
   const c = ensureClient()
+  // confidence est stocké en TEXT dans la DB — conversion number → string
   const { data, error } = await c
     .from('identification_proposals')
-    .insert({ author_id: authorId, ...payload })
+    .insert({
+      author_id: authorId,
+      post_id: payload.post_id,
+      species_name: payload.species_name,
+      scientific_name: payload.scientific_name ?? null,
+      taxref_id: payload.taxref_id ?? null,
+      confidence: payload.confidence != null ? String(payload.confidence) : null,
+      notes: payload.notes ?? null,
+    })
     .select()
     .single()
   if (error) throw new Error(error.message)

@@ -22,7 +22,8 @@ export async function initMonitoring(): Promise<void> {
     // Chemin fragmenté pour éviter l'analyse statique de Vite en dev
     // (le package n'est pas installé — chargé uniquement en prod via VITE_SENTRY_DSN)
     const sentryPkg = '@sentry' + '/react'
-    // @ts-expect-error — import dynamique optionnel, non résolu en dev
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore — import dynamique optionnel, non résolu en dev
     const Sentry = await import(sentryPkg).catch(() => null)
     if (!Sentry) {
       console.warn('[monitoring] @sentry/react absent — skip')

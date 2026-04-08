@@ -39,14 +39,13 @@ export function usePost(postId: string | undefined) {
  * Mise à jour immédiate du cache local avant la réponse serveur.
  * En cas d'erreur, rollback automatique vers l'état précédent.
  */
+type ToggleReactionVars = { postId: string; type: ReactionType; feedQueryKey: readonly unknown[] }
+type ToggleReactionContext = { previousData: unknown; feedQueryKey: readonly unknown[] }
+
 export function useToggleReaction(userId: string | undefined) {
   const queryClient = useQueryClient()
 
-  return useMutation<
-    { added: boolean },
-    Error,
-    { postId: string; type: ReactionType; feedQueryKey: readonly unknown[] }
-  >({
+  return useMutation<{ added: boolean }, Error, ToggleReactionVars, ToggleReactionContext>({
     mutationFn: ({ postId, type }) => {
       if (!userId) throw new Error('Utilisateur non connecté')
       return toggleReaction(postId, userId, type)
@@ -54,21 +53,22 @@ export function useToggleReaction(userId: string | undefined) {
 
     // Mise à jour optimiste : incrémente/décrémente likes_count immédiatement
     onMutate: async ({ postId, feedQueryKey }) => {
-      await queryClient.cancelQueries({ queryKey: feedQueryKey as Parameters<typeof queryClient.cancelQueries>[0]['queryKey'] })
+      await queryClient.cancelQueries({ queryKey: feedQueryKey as readonly unknown[] })
 
       const previousData = queryClient.getQueryData(feedQueryKey)
 
-      queryClient.setQueryData(feedQueryKey, (old: { data: PostFeedItem[]; pagination: unknown } | undefined) => {
-        if (!old) return old
-        return {
-          ...old,
-          data: old.data.map((post: PostFeedItem) =>
-            post.id === postId
-              ? { ...post, likes_count: post.likes_count + 1 }
-              : post,
-          ),
-        }
-      })
+      queryClient.setQueryData(
+        feedQueryKey,
+        (old: { data: PostFeedItem[]; pagination: unknown } | undefined) => {
+          if (!old) return old
+          return {
+            ...old,
+            data: old.data.map((post: PostFeedItem) =>
+              post.id === postId ? { ...post, likes_count: post.likes_count + 1 } : post,
+            ),
+          }
+        },
+      )
 
       // Retourner le snapshot pour rollback en cas d'erreur
       return { previousData, feedQueryKey }
@@ -83,7 +83,7 @@ export function useToggleReaction(userId: string | undefined) {
 
     onSettled: (_data, _error, { feedQueryKey }) => {
       // Toujours refetch pour synchroniser avec le serveur
-      queryClient.invalidateQueries({ queryKey: feedQueryKey as Parameters<typeof queryClient.invalidateQueries>[0]['queryKey'] })
+      queryClient.invalidateQueries({ queryKey: feedQueryKey as readonly unknown[] })
     },
   })
 }

@@ -220,10 +220,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { ...base, onboardingCompleted: !!base.profile?.username }
   }
 
-  async function fetchProfile(userId: string) {
+  async function fetchProfile(userId: string): Promise<Profile | null> {
     if (!supabase) return null
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
-    return data
+    // Cast nécessaire : Supabase retourne gender: string | null, Profile attend Gender | null
+    return data as unknown as Profile
   }
 
   async function refreshProfile() {

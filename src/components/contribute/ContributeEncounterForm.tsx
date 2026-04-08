@@ -197,6 +197,7 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
           file: form.files[i],
           postId: post.id,
           userId: user.id,
+          copyrightNotice: '',
           displayOrder: i,
         })
       }

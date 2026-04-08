@@ -118,6 +118,7 @@ export function ContributeInstantForm() {
           file: form.files[i],
           postId: post.id,
           userId: user.id,
+          copyrightNotice: '',
           displayOrder: i,
         })
       }

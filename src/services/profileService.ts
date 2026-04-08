@@ -55,7 +55,7 @@ export async function getProfileById(userId: string): Promise<Profile | null> {
   if (isSupabaseConfigured && supabase) {
     const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single()
     if (error) throw new Error(error.message)
-    return data
+    return data as unknown as Profile
   }
 
   // Mode démo — cherche dans les mocks ou retourne null
@@ -76,7 +76,7 @@ export async function getProfileByUsername(username: string): Promise<Profile | 
       .eq('username', username)
       .single()
     if (error) throw new Error(error.message)
-    return data
+    return data as unknown as Profile
   }
 
   await simulateNetworkDelay('database')
@@ -113,7 +113,7 @@ export async function upsertProfile(
       .select()
       .single()
     if (error) throw new Error(error.message)
-    return data
+    return data as unknown as Profile
   }
 
   // Mode démo — retourne un profil fictif cohérent
@@ -125,7 +125,7 @@ export async function upsertProfile(
     gender: null,
     birth_date: null,
     bio: null,
-    interests: payload.interests ?? [],
+    interests: (payload.interests ?? []) as import('@/types/database').Interest[],
     city: null,
     region: null,
     country: null,
@@ -161,14 +161,14 @@ export async function updateProfile(
       .select()
       .single()
     if (error) throw new Error(error.message)
-    return data
+    return data as unknown as Profile
   }
 
   // Mode démo — simule une mise à jour sans persistance
   await simulateNetworkDelay('database')
   const existing = await getProfileById(userId)
   if (!existing) throw new Error('Profil introuvable')
-  return { ...existing, ...payload, updated_at: new Date().toISOString() }
+  return { ...existing, ...payload, updated_at: new Date().toISOString() } as Profile
 }
 
 /**

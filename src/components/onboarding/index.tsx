@@ -90,7 +90,8 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
          *     ADD COLUMN notification_frequency TEXT DEFAULT 'weekly',
          *     ADD COLUMN motivations TEXT[] DEFAULT '{}';
          */
-        // @ts-expect-error – incompatibilité de type Supabase upsert
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore – colonnes optionnelles absentes du schéma généré (notification_frequency, motivations)
         await supabase.from('profiles').upsert(
           {
             id: user.id,
