@@ -42,7 +42,7 @@ Deno.serve(async (req: Request) => {
       admin.from('comments').select('*').eq('user_id', userId),
       admin.from('reactions').select('*').eq('user_id', userId),
       admin.from('follows').select('*').or(`follower_id.eq.${userId},following_id.eq.${userId}`),
-      admin.from('notebooks').select('*, entries:notebook_observations(*)').eq('user_id', userId),
+      admin.from('notebooks').select('*, entries:notebook_observations(*)').eq('author_id', userId),
     ])
 
     const payload = {

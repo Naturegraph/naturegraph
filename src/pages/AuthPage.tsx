@@ -75,7 +75,6 @@ export default function AuthPage({
     success(t('auth.success.codeSent'), t('auth.success.codeSentDescription'))
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function handleLoginSuccess(_email: string) {
     // Connexion par mot de passe — pas d'OTP nécessaire, aller directement à l'accueil
     success(t('auth.success.loginTitle'), t('auth.success.loginDescription'))

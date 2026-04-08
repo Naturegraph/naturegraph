@@ -18,6 +18,7 @@ import { ArrowLeft, Camera, Globe, LogOut, Trash2, Bell, Check } from 'lucide-re
 import { useAuth } from '@/contexts/AuthContext'
 import { INTEREST_LABELS } from '@/data/mock/mockUsers'
 import { useUpdateProfile } from '@/hooks/useProfile'
+import { useSettings, useUpdateSettings } from '@/hooks/useSettings'
 import { supabase } from '@/lib/supabase'
 import type { Interest } from '@/types/database'
 
@@ -44,6 +45,8 @@ export default function Settings() {
   const navigate = useNavigate()
   const { profile, signOut } = useAuth()
   const updateProfile = useUpdateProfile(profile?.id ?? '')
+  const { data: userSettings } = useSettings(profile?.id)
+  const updateSettings = useUpdateSettings(profile?.id)
 
   // État local du formulaire — initialisé depuis le profil auth
   const [form, setForm] = useState({
@@ -334,10 +337,32 @@ export default function Settings() {
 
         {/* ── Section Notifications ───────────────────────────────────────── */}
         <SettingsCard title={t('settings.notificationsSection')}>
-          <div className="flex items-center gap-3 text-muted-foreground">
-            <Bell className="size-5" aria-hidden="true" />
-            <p className="text-sm">{t('settings.notificationsComingSoon')}</p>
+          <div className="flex items-center gap-2 mb-2 text-muted-foreground">
+            <Bell className="size-4" aria-hidden="true" />
+            <span className="text-xs">
+              {t('settings.notificationsHint', 'Reçois des alertes sur tes activités')}
+            </span>
           </div>
+          <ToggleRow
+            label={t('settings.emailNotifications', 'Notifications email')}
+            value={userSettings?.email_notifications ?? true}
+            onChange={(v) => updateSettings.mutate({ email_notifications: v })}
+          />
+          <ToggleRow
+            label={t('settings.pushNotifications', 'Notifications push')}
+            value={userSettings?.push_notifications ?? true}
+            onChange={(v) => updateSettings.mutate({ push_notifications: v })}
+          />
+          <ToggleRow
+            label={t('settings.newsletter', 'Newsletter mensuelle')}
+            value={userSettings?.newsletter ?? false}
+            onChange={(v) => updateSettings.mutate({ newsletter: v })}
+          />
+          <ToggleRow
+            label={t('settings.reducedMotion', 'Réduire les animations')}
+            value={userSettings?.reduced_motion ?? false}
+            onChange={(v) => updateSettings.mutate({ reduced_motion: v })}
+          />
         </SettingsCard>
 
         {/* ── Zone de danger ──────────────────────────────────────────────── */}
@@ -374,6 +399,39 @@ export default function Settings() {
 }
 
 // ─── Sous-composants ──────────────────────────────────────────────────────────
+
+/** Toggle réutilisable label + switch (pour user_settings) */
+function ToggleRow({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: boolean
+  onChange: (v: boolean) => void
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-sm font-medium text-foreground">{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={value}
+        aria-label={label}
+        onClick={() => onChange(!value)}
+        className={`relative w-11 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+          value ? 'bg-primary' : 'bg-border'
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 size-5 rounded-full bg-white transition-transform shadow-sm ${
+            value ? 'translate-x-[22px]' : 'translate-x-0.5'
+          }`}
+        />
+      </button>
+    </div>
+  )
+}
 
 /** Carte de section des paramètres */
 function SettingsCard({ title, children }: { title: string; children: React.ReactNode }) {

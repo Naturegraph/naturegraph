@@ -30,6 +30,7 @@ interface LocationContextValue {
 
 const LocationContext = createContext<LocationContextValue | null>(null)
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useLocation(): LocationContextValue {
   const ctx = useContext(LocationContext)
   if (!ctx) throw new Error('useLocation must be used inside <LocationProvider>')

@@ -36,6 +36,7 @@ const NotFound = lazy(() => import('./pages/NotFound'))
  * Wrapper Suspense pour les pages lazy-loaded.
  * Affiche un spinner centré pendant le chargement du chunk JS.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 function LazyPage({ children }: { children: React.ReactNode }) {
   return (
     <Suspense

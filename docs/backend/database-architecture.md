@@ -4,7 +4,22 @@
 > **Statut** : v1.0 — socle MVP, vision long terme
 > **Stack** : PostgreSQL 15 + PostGIS 3.3 (Supabase Hosted, région `eu-west-3` / Paris)
 >
-> ⚠️ **Schéma cible vs schéma actuel** : ce document décrit le schéma **cible** v1.0 consolidé. La base `naturegraph-dev` actuelle utilise le schéma initial issu des migrations historiques (`posts.user_id`/`location_point`/`taxref_id`/`location_hidden` au lieu de `author_id`/`location`/`species_id`/`location_precision`). La convergence se fera par migrations successives — voir `supabase/migrations/`.
+> ⚠️ **Schéma cible vs schéma actuel** : ce document décrit le schéma **cible** v1.0 consolidé. La base `naturegraph-dev` actuelle utilise le schéma initial (legacy) issu des migrations historiques. **Le code TypeScript (`src/services/`) suit le schéma réel, pas le schéma cible.** La source de vérité runtime est `src/types/supabase.ts` (généré via `npx supabase gen types typescript`).
+>
+> **Mapping schéma cible (docs) → schéma réel (DB) :**
+>
+> | Table cible | Colonne cible        | Colonne réelle (DB actuelle) |
+> | ----------- | -------------------- | ---------------------------- |
+> | posts       | `author_id`          | `user_id`                    |
+> | posts       | `species_id`         | `taxref_id`                  |
+> | posts       | `location` (geog)    | `location_point` (geog)      |
+> | posts       | `location_precision` | `location_hidden` (bool)     |
+> | follows     | `followed_id`        | `following_id`               |
+> | comments    | `author_id`          | `user_id`                    |
+> | notebooks   | `owner_id`           | `author_id`                  |
+> | (jointure)  | `notebook_entries`   | `notebook_observations`      |
+>
+> Une convergence vers le schéma cible se fera par migrations successives — voir `supabase/migrations/`.
 
 ---
 

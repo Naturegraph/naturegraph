@@ -25,7 +25,7 @@ export async function initMonitoring(): Promise<void> {
     // @ts-expect-error — import dynamique optionnel, non résolu en dev
     const Sentry = await import(sentryPkg).catch(() => null)
     if (!Sentry) {
-      console.info('[monitoring] @sentry/react absent — skip')
+      console.warn('[monitoring] @sentry/react absent — skip')
       return
     }
     Sentry.init({

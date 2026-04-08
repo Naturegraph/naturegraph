@@ -40,7 +40,7 @@ export function generateAndStoreOtp(email: string): string {
   })
 
   // Log stylisé — visible dans DevTools (F12 → Console)
-  console.log(
+  console.warn(
     `%c[DEMO] 🔐 Code OTP pour ${email} : ${otp}`,
     [
       'color: #7c3aed',
@@ -52,7 +52,7 @@ export function generateAndStoreOtp(email: string): string {
       'border: 1px solid #a78bfa',
     ].join('; '),
   )
-  console.log('%c[DEMO] ⏱ Valide 2 minutes — usage unique', 'color: #6b7280; font-size: 12px;')
+  console.warn('%c[DEMO] ⏱ Valide 2 minutes — usage unique', 'color: #6b7280; font-size: 12px;')
 
   return otp
 }

@@ -281,6 +281,7 @@ export function ProductFeatures() {
 
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   /* ── Slider scroll detection (mobile/tablet) ── */
@@ -315,7 +316,9 @@ export function ProductFeatures() {
           <h2 className="landing-section-title text-[var(--color-text-primary)]">
             {t('landing.detailedFeatures.title')}
           </h2>
-          <p className="text-[var(--color-text-secondary)]">{t('landing.detailedFeatures.subtitle')}</p>
+          <p className="text-[var(--color-text-secondary)]">
+            {t('landing.detailedFeatures.subtitle')}
+          </p>
         </div>
 
         {/* ── Desktop : phone sticky + cartes alternées ────────────────── */}
