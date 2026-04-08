@@ -73,9 +73,9 @@ export async function uploadPostMedia(params: {
     postId,
     userId,
     copyrightNotice,
-    license = 'CC-BY-NC-SA-4.0',
+    license = 'cc-by-nc-sa',
     altText,
-    displayOrder = 0,
+    displayOrder = 1,
   } = params
 
   if (!isSupabaseConfigured || !supabase) throw new Error('Storage indisponible (mode demo)')
