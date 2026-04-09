@@ -31,9 +31,13 @@ interface ImageSliderProps {
 
 // ─── Composant ────────────────────────────────────────────────────────────────
 
-export function ImageSlider({ images, format, author }: ImageSliderProps) {
+export function ImageSlider({ images: rawImages, format, author }: ImageSliderProps) {
   const { t } = useTranslation()
   const [lightbox, setLightbox] = useState<LightboxData | null>(null)
+
+  // Filtre defensif : evite <img src=""> qui declenche un warning React
+  // et un re-download de la page entiere par le navigateur.
+  const images = rawImages.filter((img) => !!img.url)
 
   if (images.length === 0) return null
 
