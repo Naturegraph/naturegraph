@@ -27,6 +27,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useCreatePost } from '@/hooks/usePost'
 import { uploadPostMedia } from '@/services/mediaService'
 import { createProposal } from '@/services/identificationService'
+import { supabase } from '@/lib/supabase'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -171,6 +172,7 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
       return
     }
     setIsSubmitting(true)
+    let createdPostId: string | null = null
     try {
       // 1. Premier observation identifiée → champs species_* du post
       const firstKnown = form.observations.find((o) => !o.isUnknown && o.species)
@@ -190,6 +192,7 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
         scientific_name: firstKnown?.species?.scientificName ?? undefined,
         taxonomic_group: firstKnown?.species?.group ?? undefined,
       })
+      createdPostId = post.id
 
       // 2. Upload des médias
       for (let i = 0; i < form.files.length; i++) {
@@ -214,6 +217,14 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
 
       onClose()
     } catch (err) {
+      // Rollback : supprimer le post orphelin si l'upload des médias a échoué
+      if (createdPostId && supabase) {
+        await supabase
+          .from('posts')
+          .delete()
+          .eq('id', createdPostId)
+          .catch(() => {})
+      }
       setErrors({
         description: err instanceof Error ? err.message : 'Erreur lors de la publication',
       })

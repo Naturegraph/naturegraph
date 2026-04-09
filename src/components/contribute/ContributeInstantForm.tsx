@@ -24,6 +24,7 @@ import { TagInput } from './TagInput'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCreatePost } from '@/hooks/usePost'
 import { uploadPostMedia } from '@/services/mediaService'
+import { supabase } from '@/lib/supabase'
 
 // ─── État du formulaire ───────────────────────────────────────────────────────
 
@@ -99,6 +100,7 @@ export function ContributeInstantForm() {
     }
 
     setIsSubmitting(true)
+    let createdPostId: string | null = null
     try {
       // 1. Créer le post (sans médias)
       const post = await createPost.mutateAsync({
@@ -111,20 +113,30 @@ export function ContributeInstantForm() {
         location_hidden: form.locationHidden,
         tags: form.tags,
       })
+      createdPostId = post.id
 
       // 2. Upload des médias liés au post créé
+      //    (CHECK display_order > 0 → on démarre à 1)
       for (let i = 0; i < form.files.length; i++) {
         await uploadPostMedia({
           file: form.files[i],
           postId: post.id,
           userId: user.id,
           copyrightNotice: '',
-          displayOrder: i + 1, // CHECK display_order > 0
+          displayOrder: i + 1,
         })
       }
 
       navigate('/home')
     } catch (err) {
+      // Rollback : supprimer le post orphelin si l'upload des médias a échoué
+      if (createdPostId && supabase) {
+        await supabase
+          .from('posts')
+          .delete()
+          .eq('id', createdPostId)
+          .catch(() => {})
+      }
       setErrors({ files: err instanceof Error ? err.message : 'Erreur lors de la publication' })
     } finally {
       setIsSubmitting(false)
