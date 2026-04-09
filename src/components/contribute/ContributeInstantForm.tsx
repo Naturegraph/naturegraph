@@ -135,13 +135,14 @@ export function ContributeInstantForm() {
 
       navigate('/home')
     } catch (err) {
-      // Rollback : supprimer le post orphelin si l'upload des médias a échoué
+      // Rollback : supprimer le post orphelin si l'upload des médias a échoué.
+      // Le rollback est best-effort — on ignore une éventuelle erreur de suppression.
       if (createdPostId && supabase) {
-        await supabase
-          .from('posts')
-          .delete()
-          .eq('id', createdPostId)
-          .catch(() => {})
+        try {
+          await supabase.from('posts').delete().eq('id', createdPostId)
+        } catch {
+          /* swallow rollback error */
+        }
       }
       setErrors({ files: err instanceof Error ? err.message : 'Erreur lors de la publication' })
     } finally {
