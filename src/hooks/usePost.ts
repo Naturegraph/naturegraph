@@ -14,7 +14,6 @@ import {
   type CreatePostPayload,
 } from '@/services/postService'
 import type { PostFeedItem, ReactionType } from '@/types/database'
-import { FEED_QUERY_KEY } from './useFeed'
 
 export const postQueryKey = {
   byId: (postId: string) => ['post', postId] as const,
@@ -93,13 +92,11 @@ export function useToggleReaction(userId: string | undefined) {
  * Invalide le feed après succès pour que la nouvelle contribution apparaisse.
  */
 export function useCreatePost(userId: string) {
-  const queryClient = useQueryClient()
-
+  // NOTE : on n'invalide PAS le feed ici — les formulaires uploadent les
+  // médias APRÈS createPost, donc une invalidation prématurée refetcherait
+  // un post sans media et le mettrait en cache. L'invalidation doit être
+  // déclenchée par le form après l'upload media (voir Contribute*Form).
   return useMutation({
     mutationFn: (payload: CreatePostPayload) => createPost(userId, payload),
-    onSuccess: () => {
-      // Invalider toutes les pages du feed pour forcer le refetch
-      queryClient.invalidateQueries({ queryKey: FEED_QUERY_KEY({}) })
-    },
   })
 }

@@ -23,8 +23,10 @@ import { LocationPicker } from './LocationPicker'
 import { TagInput } from './TagInput'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCreatePost } from '@/hooks/usePost'
+import { FEED_QUERY_KEY } from '@/hooks/useFeed'
 import { uploadPostMedia } from '@/services/mediaService'
 import { supabase } from '@/lib/supabase'
+import { useQueryClient } from '@tanstack/react-query'
 
 // ─── État du formulaire ───────────────────────────────────────────────────────
 
@@ -53,6 +55,7 @@ export function ContributeInstantForm() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const createPost = useCreatePost(user?.id ?? '')
+  const queryClient = useQueryClient()
 
   const [form, setForm] = useState<InstantFormData>({
     files: [],
@@ -126,6 +129,9 @@ export function ContributeInstantForm() {
           displayOrder: i + 1,
         })
       }
+
+      // Invalider le feed APRÈS l'upload media pour que le post apparaisse avec sa photo
+      queryClient.invalidateQueries({ queryKey: FEED_QUERY_KEY({}) })
 
       navigate('/home')
     } catch (err) {

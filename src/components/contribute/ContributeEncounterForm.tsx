@@ -25,9 +25,11 @@ import type { PhotoAspectRatio } from './EncounterStep1'
 import type { ObservationEntry } from './EncounterStep2'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCreatePost } from '@/hooks/usePost'
+import { FEED_QUERY_KEY } from '@/hooks/useFeed'
 import { uploadPostMedia } from '@/services/mediaService'
 import { createProposal } from '@/services/identificationService'
 import { supabase } from '@/lib/supabase'
+import { useQueryClient } from '@tanstack/react-query'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,6 +66,7 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
   const { t } = useTranslation()
   const { user } = useAuth()
   const createPost = useCreatePost(user?.id ?? '')
+  const queryClient = useQueryClient()
 
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<EncounterFormData>({
@@ -214,6 +217,9 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
           notes: "Aide à l'identification demandée par l'auteur",
         })
       }
+
+      // Invalider le feed APRÈS l'upload media pour que le post apparaisse avec sa photo
+      queryClient.invalidateQueries({ queryKey: FEED_QUERY_KEY({}) })
 
       onClose()
     } catch (err) {

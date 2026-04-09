@@ -8,15 +8,24 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''
 
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey)
 
+// Singleton survivant au HMR — évite que Vite recrée plusieurs clients
+// qui se battent pour le navigator lock (AbortError: Lock broken).
+declare global {
+  var __naturegraph_supabase__: ReturnType<typeof createClient<Database>> | undefined
+}
+
 export const supabase = isSupabaseConfigured
-  ? createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  ? (globalThis.__naturegraph_supabase__ ??= createClient<Database>(supabaseUrl, supabaseAnonKey, {
       auth: {
-        // persistSession + autoRefresh : flux OTP sans mot de passe
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
-        // storageKey explicite : evite les collisions multi-projets
         storageKey: 'naturegraph-auth',
+        // Lock no-op : désactive le navigator lock de supabase-js
+        // (source de "AbortError: Lock broken" en dev avec HMR et en
+        // prod avec plusieurs onglets). La persistance reste assurée
+        // par localStorage avec la storageKey ci-dessus.
+        lock: (_name, _acquireTimeout, fn) => fn(),
       },
-    })
+    }))
   : null
