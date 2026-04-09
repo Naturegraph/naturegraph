@@ -251,11 +251,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!supabase) return
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      const user = session?.user ?? null
-      const profile = user ? await fetchProfile(user.id) : null
-      setState(deriveState({ user, session, profile, isLoading: false, isAuthenticated: !!user }))
-    })
+    // Fail-safe : si getSession() bloque (token corrompu, lock navigator),
+    // on force isLoading=false après 5s pour ne pas figer l'app sur le spinner.
+    const bootTimeout = setTimeout(() => {
+      setState((prev) => (prev.isLoading ? { ...prev, isLoading: false } : prev))
+      console.warn('[Auth] getSession() timeout (5s) — reset loading state')
+    }, 5000)
+
+    supabase.auth
+      .getSession()
+      .then(async ({ data: { session } }) => {
+        clearTimeout(bootTimeout)
+        const user = session?.user ?? null
+        const profile = user ? await fetchProfile(user.id) : null
+        setState(deriveState({ user, session, profile, isLoading: false, isAuthenticated: !!user }))
+      })
+      .catch((err) => {
+        clearTimeout(bootTimeout)
+        console.error('[Auth] getSession failed:', err)
+        setState((prev) => ({ ...prev, isLoading: false }))
+      })
 
     const {
       data: { subscription },
@@ -277,6 +292,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
 
     return () => {
+      clearTimeout(bootTimeout)
       subscription.unsubscribe()
       clearInterval(refreshInterval)
     }
