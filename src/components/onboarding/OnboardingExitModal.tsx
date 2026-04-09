@@ -13,7 +13,7 @@
 
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { OnboardingButton } from './OnboardingButton'
+import { Button } from '@/components/ui/Button'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -126,7 +126,7 @@ export function OnboardingExitModal({
       {/* role="presentation" : conteneur décoratif, pas d'interaction propre */}
       <div
         ref={containerRef}
-        className="relative bg-off-white rounded-card shadow-elevation-sm w-full max-w-md"
+        className="relative bg-[var(--color-bg-primary)] rounded-sm shadow-elevation-sm w-full max-w-md"
         role="presentation"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
@@ -134,23 +134,25 @@ export function OnboardingExitModal({
         <div className="flex flex-col gap-6 p-6 md:p-8">
           {/* En-tête */}
           <div className="flex flex-col gap-3">
-            <h3 id="exit-modal-title" className="text-foreground">
+            <h3 id="exit-modal-title" className="text-[var(--color-text-primary)]">
               {t('onboarding.exitModal.title')}
             </h3>
-            <p className="text-text-dark">{t('onboarding.exitModal.description')}</p>
+            <p className="text-[var(--color-text-secondary)]">
+              {t('onboarding.exitModal.description')}
+            </p>
           </div>
 
           {/* Actions */}
           <div className="flex flex-col gap-3">
-            <OnboardingButton variant="primary" onClick={onGoHome} className="w-full">
+            <Button variant="primary" onClick={onGoHome} className="w-full">
               {t('onboarding.exitModal.goHome')}
-            </OnboardingButton>
-            <OnboardingButton variant="secondary" onClick={onGoLogin} className="w-full">
+            </Button>
+            <Button variant="secondary" onClick={onGoLogin} className="w-full">
               {t('onboarding.exitModal.goLogin')}
-            </OnboardingButton>
-            <OnboardingButton variant="ghost" onClick={onClose} className="w-full">
+            </Button>
+            <Button variant="ghost" onClick={onClose} className="w-full">
               {t('onboarding.exitModal.continue')}
-            </OnboardingButton>
+            </Button>
           </div>
         </div>
       </div>

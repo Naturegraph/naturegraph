@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Button } from '@/components/ui'
+import { SocialLink } from '@/components/ui/SocialLink'
 import { Instagram } from 'lucide-react'
 import logoSimplified from '@/assets/logos/logo-simplified-light.svg'
 import hermineIcon from '@/assets/images/hermine-icon.png'
@@ -83,24 +84,12 @@ export function Footer({ onNavigate }: FooterProps) {
                 {t('footer.tagline')}
               </p>
               <div className="flex gap-6 items-center">
-                <a
+                <SocialLink
                   href={socialLinks.instagram}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[var(--color-text-white)] hover:opacity-80 transition-opacity"
-                  aria-label="Instagram"
-                >
-                  <Instagram size={24} />
-                </a>
-                <a
-                  href={socialLinks.discord}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[var(--color-text-white)] hover:opacity-80 transition-opacity"
-                  aria-label="Discord"
-                >
-                  <DiscordIcon />
-                </a>
+                  label="Instagram"
+                  icon={<Instagram size={24} />}
+                />
+                <SocialLink href={socialLinks.discord} label="Discord" icon={<DiscordIcon />} />
               </div>
             </div>
 

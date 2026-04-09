@@ -117,9 +117,9 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
   }
 
   return (
-    <div className="flex items-center overflow-clip relative rounded-card md:rounded-[32px] w-full h-full">
+    <div className="flex items-center overflow-clip relative rounded-sm md:rounded-xl w-full h-full">
       {/* Fond blanc — contenu centré */}
-      <div className="bg-off-white flex flex-col items-center justify-center w-full md:w-[636px] h-full">
+      <div className="bg-[var(--color-bg-primary)] flex flex-col items-center justify-center w-full md:w-[636px] h-full">
         {step === 'interests' && (
           <OnboardingInterests
             onContinue={handleInterestsContinue}

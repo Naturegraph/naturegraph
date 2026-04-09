@@ -8,17 +8,12 @@
 import { useTranslation } from 'react-i18next'
 import { motion } from 'motion/react'
 import { Binoculars, Camera, HeartHandshake } from 'lucide-react'
+import { IconCircle } from '@/components/ui/IconCircle'
 
-/** Icône dans un cercle teal */
-function IconCircle({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="bg-[var(--color-action-default)] flex items-center justify-center rounded-full size-14 shrink-0">
-      {children}
-    </div>
-  )
-}
-
-/** Carte feature individuelle */
+/**
+ * Carte feature individuelle — wrapper card-style spécifique à cette section.
+ * Utilise le IconCircle partagé en variant `solid` (fond action-default).
+ */
 function FeatureCard({
   icon,
   title,
@@ -38,7 +33,7 @@ function FeatureCard({
       }}
       className={`bg-[var(--color-bg-tertiary)] rounded-[32px] p-8 flex flex-col gap-8 w-full ${className}`}
     >
-      <IconCircle>{icon}</IconCircle>
+      <IconCircle icon={icon} color="solid" size="lg" />
       <div className="flex flex-col gap-4">
         <h4 className="text-[var(--color-text-primary)]">{title}</h4>
         <p className="text-[var(--color-text-secondary)]">{description}</p>

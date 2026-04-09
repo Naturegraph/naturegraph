@@ -68,10 +68,21 @@
   /* Bordure */
   --color-border: var(--color-border);
 
-  /* Rayons de bordure */
+  /* Rayons de bordure — alignés sur tokens Figma (Radius/XXS..XL + Full) */
+  --radius-xs: 4px; /* Figma Radius/XS */
+  --radius-sm: 8px; /* Figma Radius/S */
+  --radius-md: 12px; /* Figma Radius/M */
+  --radius-lg: 20px; /* Figma Radius/L */
+  --radius-xl: 32px; /* Figma Radius/XL */
+  --radius-full: 999px; /* Figma Radius/Full */
+  /* Legacy aliases (à supprimer après DS-04) */
   --radius-card: 8px;
-  --radius-button: 99px;
+  --radius-button: 999px;
 
-  /* Ombres */
+  /* Ombres — alignées sur Figma Shadow/S|M|L (defs dans _light-theme.scss) */
   --shadow-elevation-sm: var(--elevation-sm);
+  /* Tailwind shadow utilities — sourced from Figma tokens */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
 }

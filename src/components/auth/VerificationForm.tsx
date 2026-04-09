@@ -127,9 +127,9 @@ export function VerificationForm({
   }
 
   return (
-    <div className="flex items-center overflow-hidden relative rounded-card md:rounded-[32px] md:h-[832px] w-full md:w-auto">
+    <div className="flex items-center overflow-hidden relative rounded-sm md:rounded-[32px] md:h-[832px] w-full md:w-auto">
       {/* ── Colonne formulaire ─────────────────────────────────────────────── */}
-      <div className="bg-off-white flex flex-col overflow-hidden p-6 md:p-16 h-full w-full md:w-[512px]">
+      <div className="bg-[var(--color-bg-primary)] flex flex-col overflow-hidden p-6 md:p-16 h-full w-full md:w-[512px]">
         {/* Back + Logo */}
         <div className="flex items-center gap-4 mb-12">
           <button
@@ -145,13 +145,15 @@ export function VerificationForm({
 
         {/* Contenu centré verticalement */}
         <div className="flex-1 flex flex-col justify-center">
-          <h2 className="text-foreground mb-3">{t('auth.verify.title')}</h2>
-          <p className="text-text-dark text-sm mb-10 leading-relaxed">
+          <h2 className="text-[var(--color-text-primary)] mb-3">{t('auth.verify.title')}</h2>
+          <p className="text-[var(--color-text-secondary)] text-sm mb-10 leading-relaxed">
             {t('auth.verify.description', { email })}
           </p>
 
           {/* Label */}
-          <p className="text-sm font-semibold text-foreground mb-3">{t('auth.verify.codeLabel')}</p>
+          <p className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">
+            {t('auth.verify.codeLabel')}
+          </p>
 
           {/* Inputs OTP */}
           <div className="flex gap-2 mb-3" onPaste={handlePaste}>
@@ -168,7 +170,7 @@ export function VerificationForm({
                 onChange={(e) => handleChange(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
                 disabled={isLoading}
-                className={`w-full aspect-square max-w-[56px] text-center text-xl font-semibold rounded-xl border bg-[var(--color-action-light)] text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-colors disabled:opacity-50 ${
+                className={`w-full aspect-square max-w-[56px] text-center text-xl font-semibold rounded-xl border bg-[var(--color-action-light)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-colors disabled:opacity-50 ${
                   error ? 'border-[var(--color-error)]' : 'border-transparent'
                 }`}
                 aria-label={`Chiffre ${i + 1}`}
@@ -200,12 +202,12 @@ export function VerificationForm({
 
           {/* Renvoyer */}
           <div>
-            <p className="text-sm text-text-dark">{t('auth.verify.noCode')}</p>
+            <p className="text-sm text-[var(--color-text-secondary)]">{t('auth.verify.noCode')}</p>
             <button
               type="button"
               onClick={handleResend}
               disabled={timer > 0 || isLoading}
-              className="text-sm font-semibold text-primary hover:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+              className="text-sm font-semibold text-[var(--color-action-default)] hover:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {t('auth.verify.resend')}
             </button>
