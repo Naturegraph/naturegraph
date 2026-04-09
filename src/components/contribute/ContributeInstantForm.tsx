@@ -119,7 +119,7 @@ export function ContributeInstantForm() {
           postId: post.id,
           userId: user.id,
           copyrightNotice: '',
-          displayOrder: i,
+          displayOrder: i + 1, // CHECK display_order > 0
         })
       }
 
