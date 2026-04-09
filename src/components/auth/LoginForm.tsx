@@ -1,15 +1,15 @@
 /**
- * LoginForm — Formulaire de connexion Naturegraph
+ * LoginForm — Connexion Naturegraph via OTP
  *
- * Layout  : colonne formulaire 512px + colonne photo 512px (desktop).
- * Champs  : email/username + mot de passe avec toggle visibilité (Eye/EyeOff).
- * Options : checkbox "Se souvenir de moi" + lien "Mot de passe oublié ?".
- * CSS     : pill inputs (rounded-button), bg-off-white, border-[0.5px] border-border.
+ * Flux : email → code OTP reçu par mail → vérification → accès.
+ * Identique au signup (Supabase signInWithOtp fonctionne pour les
+ * comptes existants ET les nouveaux — pas de mot de passe).
+ *
+ * Layout : colonne formulaire 512px + colonne photo 512px (desktop).
  */
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Logo } from './Logo'
@@ -21,7 +21,7 @@ import { AuthHeroPhoto } from './AuthHeroPhoto'
 
 interface LoginFormProps {
   onSwitchToSignup: () => void
-  /** Appelé après une connexion réussie — reçoit l'identifiant saisi */
+  /** Appelé après envoi OTP — reçoit l'email pour afficher VerificationForm */
   onSuccess?: (email: string) => void
   onNavigateToLanding?: () => void
   onDiscoverAsGuest?: () => void
@@ -36,12 +36,10 @@ export function LoginForm({
   onDiscoverAsGuest,
 }: LoginFormProps) {
   const { t } = useTranslation()
-  const { signIn, signInWithSocial } = useAuth()
+  // signInWithOtp envoie un code OTP même pour un compte existant
+  const { signInWithOtp, signInWithSocial } = useAuth()
 
-  const [emailOrUsername, setEmailOrUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
+  const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -51,20 +49,20 @@ export function LoginForm({
     e.preventDefault()
     setError('')
 
-    const identifier = emailOrUsername.trim()
-    if (!identifier || !password) {
+    const value = email.trim()
+    if (!value) {
       setError(t('auth.errors.required'))
       return
     }
 
     setIsLoading(true)
-    const result = await signIn(identifier, password)
+    const result = await signInWithOtp(value)
     setIsLoading(false)
 
-    if (result.success) {
-      onSuccess?.(identifier)
+    if (!result.error) {
+      onSuccess?.(value)
     } else {
-      setError(result.error ?? t('auth.errors.generic'))
+      setError(result.error.message ?? t('auth.errors.generic'))
     }
   }
 
@@ -93,120 +91,28 @@ export function LoginForm({
           <p className="text-text-dark text-base">{t('auth.login.description')}</p>
         </div>
 
-        {/* Formulaire */}
+        {/* Formulaire — uniquement l'email, le code arrive par mail */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 items-start w-full">
-          {/* Champ email / nom d'utilisateur */}
           <AuthInput
             label={t('auth.login.emailLabel')}
             isRequired
-            type="text"
+            type="email"
             inputMode="email"
-            autoComplete="username"
-            value={emailOrUsername}
+            autoComplete="email"
+            value={email}
             onChange={(e) => {
-              setEmailOrUsername(e.target.value)
+              setEmail(e.target.value)
               setError('')
             }}
             error={error}
             disabled={isLoading}
           />
 
-          {/* Champ mot de passe + toggle visibilité */}
-          <div className="flex flex-col gap-1.5 w-full">
-            <label className="text-sm font-semibold text-[var(--color-text-primary)] leading-none">
-              {t('auth.login.passwordLabel')}
-              <span className="text-[var(--color-error)] ml-0.5" aria-hidden="true">
-                *
-              </span>
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value)
-                  setError('')
-                }}
-                disabled={isLoading}
-                required
-                className={`h-12 w-full rounded-button border-[0.5px] px-6 pr-14 text-base bg-off-white text-foreground placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset focus:border-primary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  error ? 'border-[var(--color-error)]' : 'border-border'
-                }`}
-              />
-              {/* Bouton toggle œil */}
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                disabled={isLoading}
-                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-                className="absolute right-6 top-1/2 -translate-y-1/2 text-foreground hover:opacity-70 active:opacity-50 transition-opacity disabled:opacity-50"
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-          </div>
-
-          {/* Se souvenir de moi + Mot de passe oublié */}
-          <div className="flex items-center justify-between w-full">
-            {/* Checkbox "Se souvenir de moi" */}
-            <label className="flex items-center gap-2 cursor-pointer select-none group">
-              <div className="relative flex items-center justify-center">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  disabled={isLoading}
-                  className="peer sr-only"
-                />
-                {/* Fond visuel de la checkbox */}
-                <div
-                  className={`size-5 rounded border transition-all duration-200 flex items-center justify-center
-                    peer-focus:ring-2 peer-focus:ring-primary peer-focus:ring-offset-2
-                    group-hover:border-primary
-                    ${rememberMe ? 'bg-primary border-primary' : 'bg-off-white border-foreground'}
-                    peer-disabled:opacity-50`}
-                />
-                {/* Coche SVG — visible quand checked */}
-                {rememberMe && (
-                  <svg
-                    className="absolute w-3 h-3 text-white pointer-events-none"
-                    viewBox="0 0 12 10"
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M1 5L4.5 8.5L11 1"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                )}
-              </div>
-              <span className="text-base text-text-dark group-hover:text-foreground transition-colors peer-disabled:opacity-50">
-                {t('auth.login.rememberMe')}
-              </span>
-            </label>
-
-            {/* Lien "Mot de passe oublié ?" */}
-            <button
-              type="button"
-              disabled={isLoading}
-              className="text-base text-primary underline decoration-solid font-bold hover:opacity-80 active:opacity-60 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {t('auth.login.forgotPassword')}
-            </button>
-          </div>
-
           {/* Boutons CTA */}
           <div className="flex flex-col gap-3 items-center w-full pt-1">
-            {/* Bouton submit principal — même composant que les CTAs landing */}
             <Button type="submit" className="w-full" isLoading={isLoading}>
               {t('auth.login.connect')}
             </Button>
-            {/* Action secondaire : accès invité sans connexion */}
             <Button
               type="button"
               variant="ghost"

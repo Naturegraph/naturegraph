@@ -75,10 +75,12 @@ export default function AuthPage({
     success(t('auth.success.codeSent'), t('auth.success.codeSentDescription'))
   }
 
-  function handleLoginSuccess(_email: string) {
-    // Connexion par mot de passe — pas d'OTP nécessaire, aller directement à l'accueil
-    success(t('auth.success.loginTitle'), t('auth.success.loginDescription'))
-    goto.home()
+  function handleLoginSuccess(email: string) {
+    // Connexion OTP — stocker l'email et afficher le formulaire de vérification
+    setPendingEmail(email)
+    setInitialAuthMode('login')
+    setMode('verification')
+    success(t('auth.success.codeSent'), t('auth.success.codeSentDescription'))
   }
 
   function handleVerificationSuccess() {
