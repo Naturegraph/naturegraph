@@ -10,6 +10,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'motion/react'
 import { Binoculars, Star, Squirrel, UserCircle2 } from 'lucide-react'
+import { PaginationDots, PhoneFrame } from '@/components/ui'
 import feature1 from '@/assets/images/feature-1.png'
 import feature2 from '@/assets/images/feature-2.png'
 import feature3 from '@/assets/images/feature-3.png'
@@ -55,7 +56,7 @@ function FeatureCard({
 
 function PhoneDisplay({ activeIndex }: { activeIndex: number }) {
   return (
-    <div className="relative w-[280px] h-[606px] rounded-[40px] overflow-hidden border-[6px] border-[var(--color-text-primary)] bg-[var(--color-bg-primary)] shadow-2xl">
+    <PhoneFrame size="md">
       {FEATURE_IMAGES.map((img, index) => (
         <motion.div
           key={index}
@@ -72,7 +73,7 @@ function PhoneDisplay({ activeIndex }: { activeIndex: number }) {
           />
         </motion.div>
       ))}
-    </div>
+    </PhoneFrame>
   )
 }
 
@@ -93,14 +94,14 @@ function MobileFeatureSlide({
     <div className="flex flex-col rounded-[24px] overflow-hidden w-[327px] flex-shrink-0">
       {/* Image phone */}
       <div className="relative h-[256px] bg-[var(--color-surface-cream-light)] overflow-hidden flex-shrink-0 flex items-end justify-center pt-8">
-        <div className="w-[140px] h-[303px] rounded-[20px] border-4 border-[var(--color-text-primary)] overflow-hidden">
+        <PhoneFrame size="sm">
           <img
             src={FEATURE_IMAGES[imageIndex]}
             alt={`Feature ${imageIndex + 1}`}
             className="w-full h-full object-cover"
             loading="lazy"
           />
-        </div>
+        </PhoneFrame>
       </div>
 
       {/* Contenu */}
@@ -115,35 +116,6 @@ function MobileFeatureSlide({
           <p className="text-[var(--color-text-secondary)] text-sm">{description}</p>
         </div>
       </div>
-    </div>
-  )
-}
-
-/* ── Pagination dots ──────────────────────────────────────────────── */
-
-function PaginationDots({
-  count,
-  active,
-  onDotClick,
-}: {
-  count: number
-  active: number
-  onDotClick: (index: number) => void
-}) {
-  return (
-    <div className="flex justify-center gap-3 mt-6">
-      {Array.from({ length: count }, (_, i) => (
-        <button
-          key={i}
-          onClick={() => onDotClick(i)}
-          className={`transition-all duration-300 ${
-            i === active
-              ? 'w-[50px] h-[10px] rounded-[100px] bg-[var(--color-action-default)]'
-              : 'w-[10px] h-[10px] rounded-full bg-[var(--color-border)]'
-          }`}
-          aria-label={`Aller au slide ${i + 1}`}
-        />
-      ))}
     </div>
   )
 }
@@ -399,7 +371,12 @@ export function ProductFeatures() {
                 ))}
               </div>
             </div>
-            <PaginationDots count={4} active={activeSlide} onDotClick={scrollToSlide} />
+            <PaginationDots
+              count={4}
+              active={activeSlide}
+              onDotClick={scrollToSlide}
+              getLabel={(i) => t('landing.detailedFeatures.goToSlide', { index: i + 1 })}
+            />
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@
 import { useTranslation } from 'react-i18next'
 import { motion } from 'motion/react'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
+import { ImageTextLayout } from '@/components/templates'
 import valuesNature from '@/assets/images/values-nature.png'
 
 /** Item valeur avec numéro dans un cercle */
@@ -71,24 +72,26 @@ export function Values() {
       className="bg-[var(--color-bg-primary)] w-full flex justify-center px-5 md:px-10 lg:px-32 my-10 md:my-16 lg:my-40"
       data-name="Section 3 : Valeurs"
     >
-      <div className="w-full max-w-[1728px] flex flex-col lg:flex-row items-center gap-10 lg:gap-32">
-        {/* Image placeholder */}
-        <motion.div
-          initial={{ opacity: 0, x: -30 }}
-          animate={isVisible ? { opacity: 1, x: 0 } : {}}
-          transition={{ duration: 0.8, ease: [0.215, 0.61, 0.355, 1] as const }}
-          className="w-full lg:flex-1 h-[384px] md:h-[640px] rounded-[32px] lg:rounded-[48px] overflow-hidden shrink-0"
-        >
-          <img
-            src={valuesNature}
-            alt="Nature et valeurs Naturegraph"
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        </motion.div>
-
-        {/* Contenu droite */}
-        <div className="w-full lg:flex-1 flex flex-col gap-10 lg:gap-12">
+      <ImageTextLayout
+        gap="lg"
+        className="w-full max-w-[1728px]"
+        image={
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={isVisible ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.8, ease: [0.215, 0.61, 0.355, 1] as const }}
+            className="h-[384px] md:h-[640px] rounded-[32px] lg:rounded-[48px] overflow-hidden"
+          >
+            <img
+              src={valuesNature}
+              alt="Nature et valeurs Naturegraph"
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          </motion.div>
+        }
+      >
+        <div className="flex flex-col gap-10 lg:gap-12">
           {/* Titre */}
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -115,7 +118,7 @@ export function Values() {
             ))}
           </div>
         </div>
-      </div>
+      </ImageTextLayout>
     </section>
   )
 }

@@ -82,7 +82,8 @@
       "item3Title": "Discover the latest observations",
       "item3Desc": "Discover the latest encounters shared by the community and explore the biodiversity around you.",
       "item4Title": "Showcase your profile and manage your preferences",
-      "item4Desc": "Customize your profile and manage your preferences at any time for an experience tailored to the way you explore nature."
+      "item4Desc": "Customize your profile and manage your preferences at any time for an experience tailored to the way you explore nature.",
+      "goToSlide": "Go to slide {{index}}"
     },
     "cta": {
       "title": "What if every outing became a story?",

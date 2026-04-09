@@ -18,6 +18,10 @@ export { SocialLink } from './SocialLink'
 export { StepIndicator } from './StepIndicator'
 export { SelectOption } from './SelectOption'
 export { FeatureCard } from './FeatureCard'
+export { PaginationDots } from './PaginationDots'
+export { Accordion } from './Accordion'
+export type { AccordionItem } from './Accordion'
+export { PhoneFrame } from './PhoneFrame'
 
 // Forms
 export { Input } from './Input'

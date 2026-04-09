@@ -18,6 +18,30 @@ interface NavbarProps {
   onNavigate: (sectionId: string) => void
 }
 
+/**
+ * Bouton de navigation interne — style transparent partagé entre desktop et mobile.
+ * Évite la duplication de classes longues sur 2 emplacements (header desktop + overlay mobile).
+ */
+function NavLinkButton({
+  label,
+  onClick,
+  variant,
+}: {
+  label: string
+  onClick: () => void
+  variant: 'desktop' | 'mobile'
+}) {
+  const base =
+    'bg-transparent border-none cursor-pointer font-[var(--font-body)] text-[var(--color-text-white)]/90 hover:text-[var(--color-text-white)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-text-white)]/50 rounded'
+  const variantClass =
+    variant === 'desktop' ? 'text-base font-normal' : 'block w-full text-left text-base py-2'
+  return (
+    <button onClick={onClick} className={`${base} ${variantClass}`}>
+      {label}
+    </button>
+  )
+}
+
 export function Navbar({ onNavigate }: NavbarProps) {
   const { t } = useTranslation()
   // const { i18n } = useTranslation() // TODO: réactiver avec le language switcher
@@ -58,13 +82,12 @@ export function Navbar({ onNavigate }: NavbarProps) {
       {/* Desktop nav */}
       <nav className="hidden lg:flex items-center gap-10" aria-label="Navigation principale">
         {navLinks.map((link) => (
-          <button
+          <NavLinkButton
             key={link.id}
+            label={link.label}
             onClick={() => handleNav(link.id)}
-            className="text-base font-normal text-[var(--color-text-white)]/90 hover:text-[var(--color-text-white)] transition-colors bg-transparent border-none cursor-pointer font-[var(--font-body)]"
-          >
-            {link.label}
-          </button>
+            variant="desktop"
+          />
         ))}
       </nav>
 
@@ -99,13 +122,12 @@ export function Navbar({ onNavigate }: NavbarProps) {
       {mobileOpen && (
         <div className="lg:hidden absolute top-full left-0 right-0 z-30 bg-[var(--color-highlight-primary)] px-6 pb-6 space-y-3">
           {navLinks.map((link) => (
-            <button
+            <NavLinkButton
               key={link.id}
+              label={link.label}
               onClick={() => handleNav(link.id)}
-              className="block w-full text-left text-base text-[var(--color-text-white)]/90 py-2 bg-transparent border-none cursor-pointer font-[var(--font-body)]"
-            >
-              {link.label}
-            </button>
+              variant="mobile"
+            />
           ))}
           <div className="flex items-center gap-3 pt-2">
             {/* TODO: Activer le switcher de langue quand prêt

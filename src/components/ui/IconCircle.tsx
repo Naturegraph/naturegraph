@@ -18,7 +18,7 @@
 import type { ReactNode } from 'react'
 
 export type IconCircleSize = 'sm' | 'md' | 'lg' | 'xl'
-export type IconCircleColor = 'primary' | 'highlight' | 'warm' | 'solid'
+export type IconCircleColor = 'primary' | 'highlight' | 'warm' | 'solid' | 'highlight-solid'
 
 export interface IconCircleProps {
   /** Icône à afficher (lucide-react ou SVG) */
@@ -43,6 +43,7 @@ const colorClasses: Record<IconCircleColor, string> = {
   highlight: 'bg-[var(--color-bg-menthe)] text-[var(--color-highlight-primary)]',
   warm: 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)]',
   solid: 'bg-[var(--color-action-default)] text-[var(--color-text-white)]',
+  'highlight-solid': 'bg-[var(--color-highlight-primary)] text-[var(--color-text-white)]',
 }
 
 export function IconCircle({

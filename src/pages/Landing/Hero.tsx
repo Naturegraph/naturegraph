@@ -11,7 +11,14 @@
 import { useCallback, useRef } from 'react'
 import { Button } from '@/components/ui'
 import { useTranslation } from 'react-i18next'
-import { motion, useMotionValue, useSpring, useTransform, type MotionValue } from 'motion/react'
+import {
+  motion,
+  useMotionValue,
+  useSpring,
+  useTransform,
+  useReducedMotion,
+  type MotionValue,
+} from 'motion/react'
 import { Navbar } from './Navbar'
 
 /* ── Types partagés pour le tracking souris ──────────────────────── */
@@ -315,6 +322,7 @@ interface HeroProps {
 
 export function Hero({ onNavigate }: HeroProps) {
   const { t } = useTranslation()
+  const prefersReducedMotion = useReducedMotion()
   const { containerRef, mouse, handleMouseMove, handleMouseLeave } = useMouseTracking()
 
   return (
@@ -324,22 +332,28 @@ export function Hero({ onNavigate }: HeroProps) {
     >
       <div
         ref={containerRef}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
+        onMouseMove={prefersReducedMotion ? undefined : handleMouseMove}
+        onMouseLeave={prefersReducedMotion ? undefined : handleMouseLeave}
         className="relative w-full max-w-[1728px] hero-gradient-bg rounded-none md:rounded-[32px] overflow-hidden flex flex-col min-h-[70vh] lg:min-h-[75vh]"
       >
         {/* Navbar */}
         <Navbar onNavigate={onNavigate} />
 
-        {/* Spotlight curseur — halo mint qui suit la souris */}
-        <CursorSpotlight mouse={mouse} />
-
-        {/* Orbes décoratives — repoussées par le curseur */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {orbConfigs.map((orb, i) => (
-            <GradientOrb key={i} {...orb} mouse={mouse} />
-          ))}
-        </div>
+        {/*
+          Effets décoratifs (spotlight + orbes) désactivés si l'utilisateur
+          a activé prefers-reduced-motion. Le fond `hero-gradient-bg` reste
+          visible — seuls les calculs JS coûteux et les animations sont coupés.
+        */}
+        {!prefersReducedMotion && (
+          <>
+            <CursorSpotlight mouse={mouse} />
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {orbConfigs.map((orb, i) => (
+                <GradientOrb key={i} {...orb} mouse={mouse} />
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Contenu centré */}
         <motion.div

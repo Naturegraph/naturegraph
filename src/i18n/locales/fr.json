@@ -82,7 +82,8 @@
       "item3Title": "Découvre les dernières observations",
       "item3Desc": "Découvre les dernières rencontres partagées par la communauté et explore la biodiversité autour de toi.",
       "item4Title": "Mets en avant ton profil et tes préférences",
-      "item4Desc": "Personnalise ton profil et gère tes préférences à tout moment pour une expérience adaptée à ta façon d'explorer la nature."
+      "item4Desc": "Personnalise ton profil et gère tes préférences à tout moment pour une expérience adaptée à ta façon d'explorer la nature.",
+      "goToSlide": "Aller au slide {{index}}"
     },
     "cta": {
       "title": "Et si chaque sortie devenait une histoire ?",
