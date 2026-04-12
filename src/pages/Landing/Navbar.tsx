@@ -10,11 +10,36 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Menu, X } from 'lucide-react'
+import { Button } from '@/components/ui'
 // import { Globe } from 'lucide-react' // TODO: réactiver avec le language switcher
 import logoSimplified from '@/assets/logos/logo-simplified-light.svg'
 
 interface NavbarProps {
   onNavigate: (sectionId: string) => void
+}
+
+/**
+ * Bouton de navigation interne — style transparent partagé entre desktop et mobile.
+ * Évite la duplication de classes longues sur 2 emplacements (header desktop + overlay mobile).
+ */
+function NavLinkButton({
+  label,
+  onClick,
+  variant,
+}: {
+  label: string
+  onClick: () => void
+  variant: 'desktop' | 'mobile'
+}) {
+  const base =
+    'bg-transparent border-none cursor-pointer font-[var(--font-body)] text-[var(--color-text-white)]/90 hover:text-[var(--color-text-white)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-text-white)]/50 rounded'
+  const variantClass =
+    variant === 'desktop' ? 'text-base font-normal' : 'block w-full text-left text-base py-2'
+  return (
+    <button onClick={onClick} className={`${base} ${variantClass}`}>
+      {label}
+    </button>
+  )
 }
 
 export function Navbar({ onNavigate }: NavbarProps) {
@@ -57,13 +82,12 @@ export function Navbar({ onNavigate }: NavbarProps) {
       {/* Desktop nav */}
       <nav className="hidden lg:flex items-center gap-10" aria-label="Navigation principale">
         {navLinks.map((link) => (
-          <button
+          <NavLinkButton
             key={link.id}
+            label={link.label}
             onClick={() => handleNav(link.id)}
-            className="text-base font-normal text-[var(--color-text-white)]/90 hover:text-[var(--color-text-white)] transition-colors bg-transparent border-none cursor-pointer font-[var(--font-body)]"
-          >
-            {link.label}
-          </button>
+            variant="desktop"
+          />
         ))}
       </nav>
 
@@ -79,12 +103,9 @@ export function Navbar({ onNavigate }: NavbarProps) {
           <span className="uppercase">{i18n.language === 'fr' ? 'EN' : 'FR'}</span>
         </button>
         */}
-        <Link
-          to="/signup"
-          className="btn-press btn-press-primary inline-flex items-center justify-center h-12 px-6 text-base font-bold text-[var(--color-text-white)] bg-[var(--color-action-default)] rounded-full font-[var(--font-body)]"
-        >
+        <Button to="/signup" size="md">
           {t('landing.nav.signup')}
-        </Link>
+        </Button>
       </div>
 
       {/* Mobile burger */}
@@ -101,13 +122,12 @@ export function Navbar({ onNavigate }: NavbarProps) {
       {mobileOpen && (
         <div className="lg:hidden absolute top-full left-0 right-0 z-30 bg-[var(--color-highlight-primary)] px-6 pb-6 space-y-3">
           {navLinks.map((link) => (
-            <button
+            <NavLinkButton
               key={link.id}
+              label={link.label}
               onClick={() => handleNav(link.id)}
-              className="block w-full text-left text-base text-[var(--color-text-white)]/90 py-2 bg-transparent border-none cursor-pointer font-[var(--font-body)]"
-            >
-              {link.label}
-            </button>
+              variant="mobile"
+            />
           ))}
           <div className="flex items-center gap-3 pt-2">
             {/* TODO: Activer le switcher de langue quand prêt
@@ -120,13 +140,9 @@ export function Navbar({ onNavigate }: NavbarProps) {
               <span className="uppercase">{i18n.language === 'fr' ? 'EN' : 'FR'}</span>
             </button>
             */}
-            <Link
-              to="/signup"
-              className="btn-press btn-press-primary flex-1 text-center h-12 leading-[48px] font-bold text-[var(--color-text-white)] bg-[var(--color-action-default)] rounded-full"
-              onClick={() => setMobileOpen(false)}
-            >
+            <Button to="/signup" size="md" className="flex-1" onClick={() => setMobileOpen(false)}>
               {t('landing.nav.signup')}
-            </Link>
+            </Button>
           </div>
         </div>
       )}

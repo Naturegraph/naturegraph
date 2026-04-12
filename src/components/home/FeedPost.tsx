@@ -96,7 +96,11 @@ export function FeedPost({
             {/* Avatar */}
             <div className="relative md:size-12 size-10 shrink-0">
               <div className="size-full rounded-full overflow-hidden">
-                <img src={author.avatar} alt={author.name} className="size-full object-cover" />
+                <img
+                  src={author.avatar || undefined}
+                  alt={author.name}
+                  className="size-full object-cover"
+                />
                 <div
                   aria-hidden="true"
                   className="absolute border-border border-[0.5px] inset-[-0.5px] rounded-full pointer-events-none"

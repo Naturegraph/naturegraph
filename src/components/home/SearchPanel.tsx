@@ -25,8 +25,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, X, ChevronRight } from 'lucide-react'
-import { mockUsers } from '@/data/mock/users'
-import { mockSpecies } from '@/data/mock/species'
+import { useQuery } from '@tanstack/react-query'
+import { searchProfiles, searchSpecies } from '@/services/searchService'
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -57,6 +57,16 @@ const CATEGORY_EMOJI: Record<string, string> = {
   plant: '🌿',
   fungus: '🍄',
   other: '🌍',
+}
+
+/** Debounce simple sur une valeur. */
+function useDebounced<T>(value: T, delay = 300): T {
+  const [v, setV] = useState(value)
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), delay)
+    return () => clearTimeout(t)
+  }, [value, delay])
+  return v
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -118,28 +128,27 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
 
   // ── Résultats filtrés ─────────────────────────────────────────────────────
 
-  const trimmed = query.trim().toLowerCase()
+  const trimmed = query.trim()
   const hasQuery = trimmed.length >= 2
+  const debouncedQuery = useDebounced(trimmed, 300)
+  const enabled = debouncedQuery.length >= 2
 
-  const filteredSpecies = hasQuery
-    ? mockSpecies
-        .filter(
-          (s) =>
-            s.commonNameFr.toLowerCase().includes(trimmed) ||
-            s.scientificName.toLowerCase().includes(trimmed),
-        )
-        .slice(0, 8)
-    : []
+  const speciesQuery = useQuery({
+    queryKey: ['search', 'species', debouncedQuery],
+    queryFn: () => searchSpecies(debouncedQuery, 8),
+    enabled: enabled && filter === 'species',
+    staleTime: 5 * 60 * 1000,
+  })
 
-  const filteredUsers = hasQuery
-    ? mockUsers
-        .filter(
-          (u) =>
-            u.username.toLowerCase().includes(trimmed) ||
-            u.firstName.toLowerCase().includes(trimmed),
-        )
-        .slice(0, 8)
-    : []
+  const profilesQuery = useQuery({
+    queryKey: ['search', 'profiles', debouncedQuery],
+    queryFn: () => searchProfiles(debouncedQuery, 8),
+    enabled: enabled && filter === 'accounts',
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const filteredSpecies = speciesQuery.data ?? []
+  const filteredUsers = profilesQuery.data ?? []
 
   const showRecent = !hasQuery && recent.length > 0
   const showEmpty = !hasQuery && recent.length === 0
@@ -324,37 +333,37 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
             {/* Résultats Espèces */}
             {hasQuery &&
               filter === 'species' &&
-              filteredSpecies.map((s, i) => (
-                <div key={s.id}>
-                  {i > 0 && <div className="mx-5 h-px bg-border" aria-hidden="true" />}
-                  <Link
-                    to={`/species/${s.id}`}
-                    onClick={() => handleSelect(s.commonNameFr)}
-                    className="flex items-center gap-3 px-5 py-3 hover:bg-primary-light/20 transition-colors focus-visible:outline-none focus-visible:bg-primary-light/20"
-                  >
-                    {/* Icône catégorie */}
-                    <div
-                      className="size-10 rounded-xl bg-primary-light flex items-center justify-center shrink-0 text-lg leading-none"
-                      aria-hidden="true"
+              filteredSpecies.map((s, i) => {
+                const groupKey = (s.group_label ?? 'other').toLowerCase()
+                return (
+                  <div key={s.taxref_id}>
+                    {i > 0 && <div className="mx-5 h-px bg-border" aria-hidden="true" />}
+                    <Link
+                      to={`/species/${s.taxref_id}`}
+                      onClick={() => handleSelect(s.common_name ?? s.scientific_name)}
+                      className="flex items-center gap-3 px-5 py-3 hover:bg-primary-light/20 transition-colors focus-visible:outline-none focus-visible:bg-primary-light/20"
                     >
-                      {CATEGORY_EMOJI[s.category] ?? '🌍'}
-                    </div>
-
-                    {/* Nom */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-foreground truncate">{s.commonNameFr}</p>
-                      <p className="text-xs text-muted-foreground truncate italic">
-                        {s.scientificName}
-                      </p>
-                    </div>
-
-                    {/* Chip catégorie */}
-                    <span className="text-xs bg-primary-light text-primary px-2.5 py-1 rounded-full shrink-0">
-                      {CATEGORY_LABEL[s.category] ?? 'Espèce'}
-                    </span>
-                  </Link>
-                </div>
-              ))}
+                      <div
+                        className="size-10 rounded-xl bg-primary-light flex items-center justify-center shrink-0 text-lg leading-none"
+                        aria-hidden="true"
+                      >
+                        {CATEGORY_EMOJI[groupKey] ?? '🌍'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-foreground truncate">
+                          {s.common_name ?? s.scientific_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate italic">
+                          {s.scientific_name}
+                        </p>
+                      </div>
+                      <span className="text-xs bg-primary-light text-primary px-2.5 py-1 rounded-full shrink-0">
+                        {CATEGORY_LABEL[groupKey] ?? s.group_label ?? 'Espèce'}
+                      </span>
+                    </Link>
+                  </div>
+                )
+              })}
 
             {/* Résultats Comptes */}
             {hasQuery &&
@@ -367,43 +376,25 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
                     onClick={() => handleSelect(u.username)}
                     className="flex items-center gap-3 px-5 py-3 hover:bg-primary-light/20 transition-colors focus-visible:outline-none focus-visible:bg-primary-light/20"
                   >
-                    {/* Avatar + badge */}
                     <div className="relative shrink-0">
                       <div className="size-10 rounded-full overflow-hidden bg-primary-light flex items-center justify-center">
-                        {u.avatarUrl ? (
-                          <img src={u.avatarUrl} alt="" className="size-full object-cover" />
+                        {u.avatar_url ? (
+                          <img src={u.avatar_url} alt="" className="size-full object-cover" />
                         ) : (
                           <span className="text-base leading-none" aria-hidden="true">
-                            {u.badge ?? '👤'}
+                            👤
                           </span>
                         )}
                       </div>
-                      {u.badge && (
-                        <span
-                          className="absolute -bottom-1 -right-1 text-xs leading-none"
-                          aria-hidden="true"
-                        >
-                          {u.badge}
-                        </span>
-                      )}
                     </div>
-
-                    {/* Infos */}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-foreground truncate">@{u.username}</p>
-                      {/* Chips d'intérêts (max 2) */}
-                      <div className="flex gap-1 flex-wrap mt-0.5">
-                        {u.interests.slice(0, 2).map((interest) => (
-                          <span
-                            key={interest}
-                            className="text-xs bg-primary-light text-primary px-1.5 py-0.5 rounded-full"
-                          >
-                            {interest}
-                          </span>
-                        ))}
-                      </div>
+                      {(u.first_name || u.last_name) && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          {[u.first_name, u.last_name].filter(Boolean).join(' ')}
+                        </p>
+                      )}
                     </div>
-
                     <ChevronRight
                       className="size-4 text-muted-foreground shrink-0"
                       aria-hidden="true"

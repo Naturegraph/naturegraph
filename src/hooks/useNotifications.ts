@@ -1,0 +1,97 @@
+/**
+ * useNotifications — Hooks React Query + Realtime pour les notifications
+ *
+ * Ecoute les INSERT sur `notifications` via un channel `notif:${userId}`
+ * et invalide la query pour refetch automatique.
+ */
+
+import { useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  listNotifications,
+  countUnread,
+  markAsRead,
+  markAllAsRead,
+  type Notification,
+} from '@/services/notificationService'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+
+export const notificationsQueryKey = (userId: string) => ['notifications', userId] as const
+export const unreadCountQueryKey = (userId: string) => ['notifications', userId, 'unread'] as const
+
+/** Liste des notifications du user + subscription Realtime. */
+export function useNotifications(userId: string | undefined) {
+  const qc = useQueryClient()
+
+  const query = useQuery<Notification[], Error>({
+    queryKey: notificationsQueryKey(userId ?? ''),
+    queryFn: () => listNotifications(userId!),
+    enabled: !!userId,
+    staleTime: 30 * 1000,
+  })
+
+  useEffect(() => {
+    if (!userId || !isSupabaseConfigured || !supabase) return
+    const channel = supabase
+      .channel(`notif:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          qc.invalidateQueries({ queryKey: notificationsQueryKey(userId) })
+          qc.invalidateQueries({ queryKey: unreadCountQueryKey(userId) })
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase?.removeChannel(channel)
+    }
+  }, [userId, qc])
+
+  return query
+}
+
+/** Compteur non lues. */
+export function useUnreadCount(userId: string | undefined) {
+  return useQuery<number, Error>({
+    queryKey: unreadCountQueryKey(userId ?? ''),
+    queryFn: () => countUnread(userId!),
+    enabled: !!userId,
+    staleTime: 30 * 1000,
+  })
+}
+
+/** Marque une notification lue. */
+export function useMarkAsRead(userId: string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (notificationId: string) => markAsRead(notificationId),
+    onSuccess: () => {
+      if (!userId) return
+      qc.invalidateQueries({ queryKey: notificationsQueryKey(userId) })
+      qc.invalidateQueries({ queryKey: unreadCountQueryKey(userId) })
+    },
+  })
+}
+
+/** Marque toutes lues. */
+export function useMarkAllAsRead(userId: string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => {
+      if (!userId) throw new Error('Utilisateur non connecte')
+      return markAllAsRead(userId)
+    },
+    onSuccess: () => {
+      if (!userId) return
+      qc.invalidateQueries({ queryKey: notificationsQueryKey(userId) })
+      qc.invalidateQueries({ queryKey: unreadCountQueryKey(userId) })
+    },
+  })
+}

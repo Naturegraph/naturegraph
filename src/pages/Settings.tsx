@@ -17,6 +17,9 @@ import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Camera, Globe, LogOut, Trash2, Bell, Check } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { INTEREST_LABELS } from '@/data/mock/mockUsers'
+import { useUpdateProfile } from '@/hooks/useProfile'
+import { useSettings, useUpdateSettings } from '@/hooks/useSettings'
+import { supabase } from '@/lib/supabase'
 import type { Interest } from '@/types/database'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -41,6 +44,9 @@ export default function Settings() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const { profile, signOut } = useAuth()
+  const updateProfile = useUpdateProfile(profile?.id ?? '')
+  const { data: userSettings } = useSettings(profile?.id)
+  const updateSettings = useUpdateSettings(profile?.id)
 
   // État local du formulaire — initialisé depuis le profil auth
   const [form, setForm] = useState({
@@ -71,12 +77,49 @@ export default function Settings() {
   }
 
   function handleSave() {
-    // TODO [BACKEND] — profileService.updateProfile(profile.id, form)
+    if (!profile?.id) return
+    updateProfile.mutate({
+      first_name: form.firstName,
+      last_name: form.lastName,
+      username: form.username,
+      bio: form.bio,
+      city: form.city,
+      region: form.region,
+      interests: form.interests,
+      instagram: form.instagram,
+      twitter: form.twitter,
+      website: form.website,
+      is_public: form.isPublic,
+    })
   }
 
   function handleLogout() {
     signOut()
     navigate('/')
+  }
+
+  /** Supprime le compte via Edge Function. Demande confirmation. */
+  async function handleDeleteAccount() {
+    const confirmed = window.confirm(
+      t(
+        'settings.deleteAccountConfirm',
+        'Cette action est irréversible. Toutes tes données seront supprimées. Continuer ?',
+      ),
+    )
+    if (!confirmed) return
+    try {
+      const { error } = await supabase!.functions.invoke('delete-account', {
+        body: { mode: 'hard' },
+      })
+      if (error) throw error
+      await signOut()
+      navigate('/')
+    } catch (err) {
+      window.alert(
+        t('settings.deleteAccountError', 'Erreur : ') +
+          (err instanceof Error ? err.message : String(err)),
+      )
+    }
   }
 
   return (
@@ -294,10 +337,32 @@ export default function Settings() {
 
         {/* ── Section Notifications ───────────────────────────────────────── */}
         <SettingsCard title={t('settings.notificationsSection')}>
-          <div className="flex items-center gap-3 text-muted-foreground">
-            <Bell className="size-5" aria-hidden="true" />
-            <p className="text-sm">{t('settings.notificationsComingSoon')}</p>
+          <div className="flex items-center gap-2 mb-2 text-muted-foreground">
+            <Bell className="size-4" aria-hidden="true" />
+            <span className="text-xs">
+              {t('settings.notificationsHint', 'Reçois des alertes sur tes activités')}
+            </span>
           </div>
+          <ToggleRow
+            label={t('settings.emailNotifications', 'Notifications email')}
+            value={userSettings?.email_notifications ?? true}
+            onChange={(v) => updateSettings.mutate({ email_notifications: v })}
+          />
+          <ToggleRow
+            label={t('settings.pushNotifications', 'Notifications push')}
+            value={userSettings?.push_notifications ?? true}
+            onChange={(v) => updateSettings.mutate({ push_notifications: v })}
+          />
+          <ToggleRow
+            label={t('settings.newsletter', 'Newsletter mensuelle')}
+            value={userSettings?.newsletter ?? false}
+            onChange={(v) => updateSettings.mutate({ newsletter: v })}
+          />
+          <ToggleRow
+            label={t('settings.reducedMotion', 'Réduire les animations')}
+            value={userSettings?.reduced_motion ?? false}
+            onChange={(v) => updateSettings.mutate({ reduced_motion: v })}
+          />
         </SettingsCard>
 
         {/* ── Zone de danger ──────────────────────────────────────────────── */}
@@ -318,9 +383,7 @@ export default function Settings() {
           {/* Suppression du compte */}
           <button
             type="button"
-            onClick={() => {
-              // TODO [BACKEND] — modale de confirmation + profileService.deleteAccount()
-            }}
+            onClick={handleDeleteAccount}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
           >
             <Trash2 className="size-4" aria-hidden="true" />
@@ -336,6 +399,39 @@ export default function Settings() {
 }
 
 // ─── Sous-composants ──────────────────────────────────────────────────────────
+
+/** Toggle réutilisable label + switch (pour user_settings) */
+function ToggleRow({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: boolean
+  onChange: (v: boolean) => void
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-sm font-medium text-foreground">{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={value}
+        aria-label={label}
+        onClick={() => onChange(!value)}
+        className={`relative w-11 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+          value ? 'bg-primary' : 'bg-border'
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 size-5 rounded-full bg-white transition-transform shadow-sm ${
+            value ? 'translate-x-[22px]' : 'translate-x-0.5'
+          }`}
+        />
+      </button>
+    </div>
+  )
+}
 
 /** Carte de section des paramètres */
 function SettingsCard({ title, children }: { title: string; children: React.ReactNode }) {

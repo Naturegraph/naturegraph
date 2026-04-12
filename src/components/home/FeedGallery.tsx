@@ -125,7 +125,7 @@ export function FeedGallery({ posts }: FeedGalleryProps) {
           >
             {/* Image avec aspect-ratio contrôlé */}
             <img
-              src={item.imageUrl}
+              src={item.imageUrl || undefined}
               alt={item.alt}
               loading="lazy"
               className={['w-full object-cover', ASPECT_CLASSES[item.format]].join(' ')}
@@ -147,7 +147,7 @@ export function FeedGallery({ posts }: FeedGalleryProps) {
                 </p>
                 <div className="flex items-center gap-2 mt-1.5">
                   <img
-                    src={item.author.avatar}
+                    src={item.author.avatar || undefined}
                     alt=""
                     className="size-6 rounded-full object-cover"
                   />

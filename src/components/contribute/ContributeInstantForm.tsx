@@ -21,6 +21,12 @@ import type { TimeOfDay, Visibility } from '@/types/database'
 import { MediaUploader } from './MediaUploader'
 import { LocationPicker } from './LocationPicker'
 import { TagInput } from './TagInput'
+import { useAuth } from '@/contexts/AuthContext'
+import { useCreatePost } from '@/hooks/usePost'
+import { FEED_QUERY_KEY } from '@/hooks/useFeed'
+import { uploadPostMedia } from '@/services/mediaService'
+import { supabase } from '@/lib/supabase'
+import { useQueryClient } from '@tanstack/react-query'
 
 // ─── État du formulaire ───────────────────────────────────────────────────────
 
@@ -47,6 +53,9 @@ function todayISO() {
 export function ContributeInstantForm() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const createPost = useCreatePost(user?.id ?? '')
+  const queryClient = useQueryClient()
 
   const [form, setForm] = useState<InstantFormData>({
     files: [],
@@ -88,15 +97,57 @@ export function ContributeInstantForm() {
       return
     }
 
+    if (!user?.id) {
+      setErrors({ files: t('contribute.errors.notAuthenticated', 'Connecte-toi pour publier') })
+      return
+    }
+
     setIsSubmitting(true)
-    // TODO [BACKEND] — Remplacer par l'appel réel (voir en-tête du fichier)
-    console.info('[MOCK] Instant Nature :', {
-      type: 'nature_instant',
-      ...form,
-      mediaCount: form.files.length,
-    })
-    await new Promise((r) => setTimeout(r, 600))
-    navigate('/home')
+    let createdPostId: string | null = null
+    try {
+      // 1. Créer le post (sans médias)
+      const post = await createPost.mutateAsync({
+        type: 'nature_instant',
+        description: form.description.trim(),
+        visibility: form.visibility,
+        encounter_date: form.encounterDate,
+        time_of_day: form.timeOfDay || undefined,
+        location_name: form.locationName || undefined,
+        location_hidden: form.locationHidden,
+        tags: form.tags,
+      })
+      createdPostId = post.id
+
+      // 2. Upload des médias liés au post créé
+      //    (CHECK display_order > 0 → on démarre à 1)
+      for (let i = 0; i < form.files.length; i++) {
+        await uploadPostMedia({
+          file: form.files[i],
+          postId: post.id,
+          userId: user.id,
+          copyrightNotice: '',
+          displayOrder: i + 1,
+        })
+      }
+
+      // Invalider le feed APRÈS l'upload media pour que le post apparaisse avec sa photo
+      queryClient.invalidateQueries({ queryKey: FEED_QUERY_KEY({}) })
+
+      navigate('/home')
+    } catch (err) {
+      // Rollback : supprimer le post orphelin si l'upload des médias a échoué.
+      // Le rollback est best-effort — on ignore une éventuelle erreur de suppression.
+      if (createdPostId && supabase) {
+        try {
+          await supabase.from('posts').delete().eq('id', createdPostId)
+        } catch {
+          /* swallow rollback error */
+        }
+      }
+      setErrors({ files: err instanceof Error ? err.message : 'Erreur lors de la publication' })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const TIME_OPTIONS: TimeOfDay[] = ['morning', 'afternoon', 'dusk', 'evening', 'night']

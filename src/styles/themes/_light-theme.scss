@@ -4,6 +4,7 @@
 // Synced from Figma "Colors Tokens" collection — Light mode (2026-03-19)
 
 @use '../abstracts/colors' as *;
+@use '../abstracts/shadows' as *;
 
 :root,
 [data-theme='light'] {
@@ -68,6 +69,11 @@
 
   // ── Accents ──
   --color-accent-mint: #{$color-accent-mint}; // #83C5BE
+
+  // ── Shadows (Figma Shadow/S|M|L) ──
+  --shadow-sm: #{$shadow-sm};
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
 
   // ── Legacy aliases (backward compat with Landing.tsx) ──
   --color-primary: #{$brand-main-500};

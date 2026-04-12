@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { X, Send } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { mockUsers } from '@/data/mock/mockUsers'
+import { useComments, useCreateComment } from '@/hooks/useComments'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -27,31 +27,19 @@ interface CommentsSectionProps {
   onClose: () => void
 }
 
-interface MockComment {
-  id: string
-  userId: string
-  text: string
-  timeAgo: string
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Format relatif simple (s/min/h/j) à partir d'une date ISO. */
+function formatTimeAgo(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime()
+  const sec = Math.max(1, Math.floor(diffMs / 1000))
+  if (sec < 60) return `${sec}s`
+  const min = Math.floor(sec / 60)
+  if (min < 60) return `${min}min`
+  const h = Math.floor(min / 60)
+  if (h < 24) return `${h}h`
+  return `${Math.floor(h / 24)}j`
 }
-
-// ─── Données mock ─────────────────────────────────────────────────────────────
-
-/** Commentaires fictifs pour le développement — à remplacer par l'API */
-const MOCK_COMMENTS: MockComment[] = [
-  {
-    id: '1',
-    userId: '2',
-    text: 'Superbe observation ! La lumière est magnifique 🌿',
-    timeAgo: '2h',
-  },
-  {
-    id: '2',
-    userId: '3',
-    text: "J'ai vu la même espèce la semaine dernière dans le même secteur",
-    timeAgo: '4h',
-  },
-  { id: '3', userId: '4', text: 'Quelle chance ! Bravo pour la photo 📸', timeAgo: '1j' },
-]
 
 // ─── Composant ────────────────────────────────────────────────────────────────
 
@@ -61,44 +49,29 @@ const MOCK_COMMENTS: MockComment[] = [
  */
 export function CommentsSection({ postId, commentsCount, isOpen, onClose }: CommentsSectionProps) {
   const { t } = useTranslation()
-  const { isAuthenticated, profile } = useAuth()
+  const { isAuthenticated, profile, user } = useAuth()
   const [inputText, setInputText] = useState('')
-  const [comments, setComments] = useState<MockComment[]>(MOCK_COMMENTS)
   const closeBtnRef = useRef<HTMLButtonElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  /**
-   * Envoi d'un commentaire (optimistic update)
-   * TODO [BACKEND] — commentService.createComment({ postId, text })
-   */
+  const { data: comments = [], isLoading } = useComments(isOpen ? postId : undefined)
+  const createComment = useCreateComment(postId, user?.id)
+
+  /** Envoi d'un commentaire via mutation React Query. */
   const handleSend = useCallback(() => {
     const trimmed = inputText.trim()
-    if (!trimmed) return
+    if (!trimmed || createComment.isPending) return
 
-    // Ajout optimiste du commentaire
-    const newComment: MockComment = {
-      id: `temp-${Date.now()}`,
-      userId: '1', // Utilisateur courant (mock)
-      text: trimmed,
-      timeAgo: t('home.comments.justNow', "à l'instant"),
-    }
-    setComments((prev) => [...prev, newComment])
-    setInputText('')
-
-    // Réinitialiser la hauteur du textarea
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-    }
-
-    // TODO [BACKEND] — appel API ici
-    console.warn('[TODO BACKEND] Comment on post:', postId, 'Text:', trimmed)
-  }, [inputText, postId, t])
+    createComment.mutate(trimmed, {
+      onSuccess: () => {
+        setInputText('')
+        if (textareaRef.current) textareaRef.current.style.height = 'auto'
+      },
+    })
+  }, [inputText, createComment])
 
   // Ne rien rendre si fermé (doit être après tous les hooks)
   if (!isOpen) return null
-
-  /** Trouver un mockUser par son id */
-  const findUser = (userId: string) => mockUsers.find((u) => u.id === userId)
 
   /** Auto-expand du textarea */
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -122,39 +95,38 @@ export function CommentsSection({ postId, commentsCount, isOpen, onClose }: Comm
     <div className="flex flex-col flex-1 min-h-0">
       {/* Liste des commentaires (scrollable) */}
       <div className="flex-1 overflow-y-auto px-5 py-3 space-y-4">
-        {comments.length === 0 ? (
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground text-center py-6">
+            {t('common.loading', 'Chargement…')}
+          </p>
+        ) : comments.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">
             {t('home.comments.empty', 'Aucun commentaire pour le moment')}
           </p>
         ) : (
-          comments.map((comment) => {
-            const user = findUser(comment.userId)
-            return (
-              <div key={comment.id} className="flex gap-3">
-                {/* Avatar */}
-                <img
-                  src={user?.avatar}
-                  alt={user?.username ?? ''}
-                  className="size-8 rounded-full object-cover shrink-0"
-                  loading="lazy"
-                  width={32}
-                  height={32}
-                />
-                {/* Contenu */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-sm font-semibold text-foreground truncate">
-                      {user?.username ?? t('home.comments.unknownUser', 'Utilisateur')}
-                    </span>
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {comment.timeAgo}
-                    </span>
-                  </div>
-                  <p className="text-sm text-foreground leading-relaxed mt-0.5">{comment.text}</p>
+          comments.map((comment) => (
+            <div key={comment.id} className="flex gap-3">
+              <img
+                src={comment.author?.avatar_url ?? '/avatars/default.svg'}
+                alt={comment.author?.username ?? ''}
+                className="size-8 rounded-full object-cover shrink-0"
+                loading="lazy"
+                width={32}
+                height={32}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-sm font-semibold text-foreground truncate">
+                    {comment.author?.username ?? t('home.comments.unknownUser', 'Utilisateur')}
+                  </span>
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {formatTimeAgo(comment.created_at)}
+                  </span>
                 </div>
+                <p className="text-sm text-foreground leading-relaxed mt-0.5">{comment.content}</p>
               </div>
-            )
-          })
+            </div>
+          ))
         )}
       </div>
 
@@ -166,7 +138,7 @@ export function CommentsSection({ postId, commentsCount, isOpen, onClose }: Comm
         <div className="flex items-end gap-3 px-5 py-3">
           {/* Avatar utilisateur courant */}
           <img
-            src={profile?.avatar_url ?? mockUsers[0].avatar}
+            src={profile?.avatar_url ?? '/avatars/default.svg'}
             alt={profile?.username ?? ''}
             className="size-8 rounded-full object-cover shrink-0"
             width={32}

@@ -90,8 +90,11 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
          *     ADD COLUMN notification_frequency TEXT DEFAULT 'weekly',
          *     ADD COLUMN motivations TEXT[] DEFAULT '{}';
          */
-        // @ts-expect-error – incompatibilité de type Supabase upsert
-        await supabase.from('profiles').upsert(
+        // NOTE [BACKEND] — `notification_frequency` et `motivations` ne sont pas
+        // encore dans le schéma Supabase. On les stocke en mémoire (userData)
+        // et on les persistera quand la migration sera appliquée. Pour l'instant
+        // on n'écrit que ce que la table accepte.
+        const { error: upsertError } = await supabase.from('profiles').upsert(
           {
             id: user.id,
             username: username,
@@ -99,21 +102,14 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
             first_name: username,
             last_name: '',
             interests: userData.interests as Interest[],
-            // TODO [BACKEND] — Mapper vers ENUM DB (voir commentaire ci-dessus)
-            notification_frequency: userData.frequency ?? 'weekly',
-            // TODO [BACKEND] — Stocker dans profiles.motivations TEXT[]
-            motivations: userData.motivations,
-            city: null,
-            region: null,
-            country: null,
-            instagram: null,
-            twitter: null,
-            website: null,
-            avatar_url: null,
-            banner_url: null,
+            updated_at: new Date().toISOString(),
           },
           { onConflict: 'id' },
         )
+        if (upsertError) {
+          console.error('[onboarding] upsert profile failed', upsertError)
+          throw upsertError
+        }
       }
     }
 
@@ -121,9 +117,9 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
   }
 
   return (
-    <div className="flex items-center overflow-clip relative rounded-card md:rounded-[32px] w-full h-full">
+    <div className="flex items-center overflow-clip relative rounded-sm md:rounded-xl w-full h-full">
       {/* Fond blanc — contenu centré */}
-      <div className="bg-off-white flex flex-col items-center justify-center w-full md:w-[636px] h-full">
+      <div className="bg-[var(--color-bg-primary)] flex flex-col items-center justify-center w-full md:w-[636px] h-full">
         {step === 'interests' && (
           <OnboardingInterests
             onContinue={handleInterestsContinue}

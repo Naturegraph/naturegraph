@@ -22,6 +22,7 @@ export interface UpdateProfilePayload {
   first_name?: string
   last_name?: string
   bio?: string
+  interests?: string[]
   city?: string
   region?: string
   country?: string
@@ -33,6 +34,18 @@ export interface UpdateProfilePayload {
   banner_url?: string
 }
 
+/**
+ * Payload pour la création initiale d'un profil (onboarding).
+ * Tous les champs NOT NULL de la table `profiles` doivent être fournis.
+ */
+export interface CreateProfilePayload {
+  username: string
+  email: string
+  first_name: string
+  last_name: string
+  interests?: string[]
+}
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 /**
@@ -42,7 +55,7 @@ export async function getProfileById(userId: string): Promise<Profile | null> {
   if (isSupabaseConfigured && supabase) {
     const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single()
     if (error) throw new Error(error.message)
-    return data
+    return data as unknown as Profile
   }
 
   // Mode démo — cherche dans les mocks ou retourne null
@@ -63,7 +76,7 @@ export async function getProfileByUsername(username: string): Promise<Profile | 
       .eq('username', username)
       .single()
     if (error) throw new Error(error.message)
-    return data
+    return data as unknown as Profile
   }
 
   await simulateNetworkDelay('database')
@@ -73,7 +86,67 @@ export async function getProfileByUsername(username: string): Promise<Profile | 
 }
 
 /**
- * Met à jour le profil d'un utilisateur.
+ * Crée ou met à jour le profil d'un utilisateur (UPSERT).
+ *
+ * Utilisé lors de l'onboarding initial : le profil n'existe pas encore
+ * puisqu'il n'y a pas de trigger DB auto-créateur. Fournit tous les champs
+ * NOT NULL requis par la table `profiles`.
+ */
+export async function upsertProfile(
+  userId: string,
+  payload: CreateProfilePayload,
+): Promise<Profile> {
+  if (isSupabaseConfigured && supabase) {
+    const now = new Date().toISOString()
+    const { data, error } = await supabase
+      .from('profiles')
+      .upsert(
+        {
+          id: userId,
+          ...payload,
+          interests: payload.interests ?? [],
+          created_at: now,
+          updated_at: now,
+        },
+        { onConflict: 'id' },
+      )
+      .select()
+      .single()
+    if (error) throw new Error(error.message)
+    return data as unknown as Profile
+  }
+
+  // Mode démo — retourne un profil fictif cohérent
+  await simulateNetworkDelay('database')
+  const now = new Date().toISOString()
+  return {
+    id: userId,
+    ...payload,
+    gender: null,
+    birth_date: null,
+    bio: null,
+    interests: (payload.interests ?? []) as import('@/types/database').Interest[],
+    city: null,
+    region: null,
+    country: null,
+    instagram: null,
+    twitter: null,
+    website: null,
+    is_public: true,
+    email_verified: false,
+    avatar_url: null,
+    banner_url: null,
+    posts_count: 0,
+    followers_count: 0,
+    following_count: 0,
+    created_at: now,
+    updated_at: now,
+    last_login_at: null,
+  }
+}
+
+/**
+ * Met à jour le profil d'un utilisateur existant.
  * Accessible uniquement à l'utilisateur propriétaire (RLS).
  */
 export async function updateProfile(
@@ -83,20 +156,19 @@ export async function updateProfile(
   if (isSupabaseConfigured && supabase) {
     const { data, error } = await supabase
       .from('profiles')
-      // @ts-expect-error — TODO [BACKEND]: incompatibilité Database type ↔ supabase-js v2.99, à corriger lors du branchement backend
       .update({ ...payload, updated_at: new Date().toISOString() })
       .eq('id', userId)
       .select()
       .single()
     if (error) throw new Error(error.message)
-    return data
+    return data as unknown as Profile
   }
 
   // Mode démo — simule une mise à jour sans persistance
   await simulateNetworkDelay('database')
   const existing = await getProfileById(userId)
   if (!existing) throw new Error('Profil introuvable')
-  return { ...existing, ...payload, updated_at: new Date().toISOString() }
+  return { ...existing, ...payload, updated_at: new Date().toISOString() } as Profile
 }
 
 /**
@@ -124,7 +196,6 @@ export async function toggleFollow(
         .eq('following_id', targetId)
       return { following: false }
     } else {
-      // @ts-expect-error — TODO [BACKEND]: incompatibilité Database type ↔ supabase-js v2.99
       await supabase.from('follows').insert({ follower_id: followerId, following_id: targetId })
       return { following: true }
     }

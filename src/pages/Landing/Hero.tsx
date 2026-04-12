@@ -9,9 +9,16 @@
  */
 
 import { useCallback, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Button } from '@/components/ui'
 import { useTranslation } from 'react-i18next'
-import { motion, useMotionValue, useSpring, useTransform, type MotionValue } from 'motion/react'
+import {
+  motion,
+  useMotionValue,
+  useSpring,
+  useTransform,
+  useReducedMotion,
+  type MotionValue,
+} from 'motion/react'
 import { Navbar } from './Navbar'
 
 /* ── Types partagés pour le tracking souris ──────────────────────── */
@@ -315,6 +322,7 @@ interface HeroProps {
 
 export function Hero({ onNavigate }: HeroProps) {
   const { t } = useTranslation()
+  const prefersReducedMotion = useReducedMotion()
   const { containerRef, mouse, handleMouseMove, handleMouseLeave } = useMouseTracking()
 
   return (
@@ -324,22 +332,28 @@ export function Hero({ onNavigate }: HeroProps) {
     >
       <div
         ref={containerRef}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
+        onMouseMove={prefersReducedMotion ? undefined : handleMouseMove}
+        onMouseLeave={prefersReducedMotion ? undefined : handleMouseLeave}
         className="relative w-full max-w-[1728px] hero-gradient-bg rounded-none md:rounded-[32px] overflow-hidden flex flex-col min-h-[70vh] lg:min-h-[75vh]"
       >
         {/* Navbar */}
         <Navbar onNavigate={onNavigate} />
 
-        {/* Spotlight curseur — halo mint qui suit la souris */}
-        <CursorSpotlight mouse={mouse} />
-
-        {/* Orbes décoratives — repoussées par le curseur */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {orbConfigs.map((orb, i) => (
-            <GradientOrb key={i} {...orb} mouse={mouse} />
-          ))}
-        </div>
+        {/*
+          Effets décoratifs (spotlight + orbes) désactivés si l'utilisateur
+          a activé prefers-reduced-motion. Le fond `hero-gradient-bg` reste
+          visible — seuls les calculs JS coûteux et les animations sont coupés.
+        */}
+        {!prefersReducedMotion && (
+          <>
+            <CursorSpotlight mouse={mouse} />
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {orbConfigs.map((orb, i) => (
+                <GradientOrb key={i} {...orb} mouse={mouse} />
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Contenu centré */}
         <motion.div
@@ -384,18 +398,17 @@ export function Hero({ onNavigate }: HeroProps) {
             variants={fadeUp}
             className="flex flex-col sm:flex-row items-center gap-4 mt-8 lg:mt-10 w-full sm:w-auto"
           >
-            <Link
-              to="/signup"
-              className="btn-press btn-press-primary inline-flex items-center justify-center h-14 px-10 text-base font-bold text-[var(--color-text-white)] bg-[var(--color-action-default)] rounded-full w-full sm:w-auto font-[var(--font-body)]"
-            >
+            <Button to="/signup" size="lg" className="w-full sm:w-auto">
               {t('landing.hero.ctaShare')}
-            </Link>
-            <button
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full sm:w-auto backdrop-blur-sm"
               onClick={() => onNavigate('discover')}
-              className="btn-press btn-press-outline inline-flex items-center justify-center h-14 px-10 text-base font-bold text-[var(--color-text-white)] rounded-full w-full sm:w-auto font-[var(--font-body)] backdrop-blur-sm bg-transparent border-none"
             >
               {t('landing.hero.ctaDiscover')}
-            </button>
+            </Button>
           </motion.div>
         </motion.div>
 

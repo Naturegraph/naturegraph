@@ -23,6 +23,13 @@ import { EncounterStep2 } from './EncounterStep2'
 import { EncounterStep3 } from './EncounterStep3'
 import type { PhotoAspectRatio } from './EncounterStep1'
 import type { ObservationEntry } from './EncounterStep2'
+import { useAuth } from '@/contexts/AuthContext'
+import { useCreatePost } from '@/hooks/usePost'
+import { FEED_QUERY_KEY } from '@/hooks/useFeed'
+import { uploadPostMedia } from '@/services/mediaService'
+import { createProposal } from '@/services/identificationService'
+import { supabase } from '@/lib/supabase'
+import { useQueryClient } from '@tanstack/react-query'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -57,6 +64,9 @@ interface ContributeEncounterFormProps {
 
 export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProps) {
   const { t } = useTranslation()
+  const { user } = useAuth()
+  const createPost = useCreatePost(user?.id ?? '')
+  const queryClient = useQueryClient()
 
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<EncounterFormData>({
@@ -158,11 +168,76 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
       setErrors(errs)
       return
     }
+    if (!user?.id) {
+      setErrors({
+        description: t('contribute.errors.notAuthenticated', 'Connecte-toi pour publier'),
+      })
+      return
+    }
     setIsSubmitting(true)
-    // TODO [BACKEND] — Remplacer par l'appel réel (voir en-tête)
-    console.warn('[MOCK] Rencontre Nature soumise :', { type: 'nature_encounter', ...form })
-    await new Promise((r) => setTimeout(r, 600))
-    onClose()
+    let createdPostId: string | null = null
+    try {
+      // 1. Premier observation identifiée → champs species_* du post
+      const firstKnown = form.observations.find((o) => !o.isUnknown && o.species)
+
+      const post = await createPost.mutateAsync({
+        type: 'nature_encounter',
+        description: form.description.trim(),
+        visibility: form.visibility,
+        encounter_date: form.encounterDate,
+        time_of_day: form.timeOfDay || undefined,
+        weather: form.weather || undefined,
+        habitat: form.habitat || undefined,
+        location_name: form.locationName || undefined,
+        location_hidden: form.locationHidden,
+        tags: form.tags,
+        species_name: firstKnown?.species?.commonName ?? undefined,
+        scientific_name: firstKnown?.species?.scientificName ?? undefined,
+        taxonomic_group: firstKnown?.species?.group ?? undefined,
+      })
+      createdPostId = post.id
+
+      // 2. Upload des médias
+      for (let i = 0; i < form.files.length; i++) {
+        await uploadPostMedia({
+          file: form.files[i],
+          postId: post.id,
+          userId: user.id,
+          copyrightNotice: '',
+          displayOrder: i + 1, // CHECK display_order > 0
+        })
+      }
+
+      // 3. Si demande d'aide à l'identification : crée une proposition vide
+      //    pour signaler que le post attend une identification collaborative
+      if (form.helpIdentification && !firstKnown) {
+        await createProposal(user.id, {
+          post_id: post.id,
+          species_name: '?',
+          notes: "Aide à l'identification demandée par l'auteur",
+        })
+      }
+
+      // Invalider le feed APRÈS l'upload media pour que le post apparaisse avec sa photo
+      queryClient.invalidateQueries({ queryKey: FEED_QUERY_KEY({}) })
+
+      onClose()
+    } catch (err) {
+      // Rollback : supprimer le post orphelin si l'upload des médias a échoué.
+      // Le rollback est best-effort — on ignore une éventuelle erreur de suppression.
+      if (createdPostId && supabase) {
+        try {
+          await supabase.from('posts').delete().eq('id', createdPostId)
+        } catch {
+          /* swallow rollback error */
+        }
+      }
+      setErrors({
+        description: err instanceof Error ? err.message : 'Erreur lors de la publication',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   // ── Titres par étape ─────────────────────────────────────────────────────

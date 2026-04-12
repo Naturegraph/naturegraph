@@ -35,3 +35,11 @@
 
 export * from './profileService'
 export * from './postService'
+export * from './commentService'
+export * from './notificationService'
+export * from './mediaService'
+export * from './settingsService'
+export * from './searchService'
+export * from './notebookService'
+export * from './identificationService'
+export * from './statsService'

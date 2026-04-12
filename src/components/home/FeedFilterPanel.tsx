@@ -54,6 +54,7 @@ export interface FeedFilters {
   period: PeriodFilter
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const DEFAULT_FILTERS: FeedFilters = {
   categories: [],
   helpOnly: false,

@@ -10,6 +10,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'motion/react'
 import { Binoculars, Star, Squirrel, UserCircle2 } from 'lucide-react'
+import { PaginationDots, PhoneFrame } from '@/components/ui'
 import feature1 from '@/assets/images/feature-1.png'
 import feature2 from '@/assets/images/feature-2.png'
 import feature3 from '@/assets/images/feature-3.png'
@@ -45,7 +46,7 @@ function FeatureCard({
         <h3 className="text-[var(--color-text-primary)] text-2xl font-bold leading-tight">
           {title}
         </h3>
-        <p className="text-[var(--color-text-muted)]">{description}</p>
+        <p className="text-[var(--color-text-secondary)]">{description}</p>
       </div>
     </div>
   )
@@ -55,7 +56,7 @@ function FeatureCard({
 
 function PhoneDisplay({ activeIndex }: { activeIndex: number }) {
   return (
-    <div className="relative w-[280px] h-[606px] rounded-[40px] overflow-hidden border-[6px] border-[var(--color-text-primary)] bg-[var(--color-bg-primary)] shadow-2xl">
+    <PhoneFrame size="md">
       {FEATURE_IMAGES.map((img, index) => (
         <motion.div
           key={index}
@@ -72,7 +73,7 @@ function PhoneDisplay({ activeIndex }: { activeIndex: number }) {
           />
         </motion.div>
       ))}
-    </div>
+    </PhoneFrame>
   )
 }
 
@@ -93,14 +94,14 @@ function MobileFeatureSlide({
     <div className="flex flex-col rounded-[24px] overflow-hidden w-[327px] flex-shrink-0">
       {/* Image phone */}
       <div className="relative h-[256px] bg-[var(--color-surface-cream-light)] overflow-hidden flex-shrink-0 flex items-end justify-center pt-8">
-        <div className="w-[140px] h-[303px] rounded-[20px] border-4 border-[var(--color-text-primary)] overflow-hidden">
+        <PhoneFrame size="sm">
           <img
             src={FEATURE_IMAGES[imageIndex]}
             alt={`Feature ${imageIndex + 1}`}
             className="w-full h-full object-cover"
             loading="lazy"
           />
-        </div>
+        </PhoneFrame>
       </div>
 
       {/* Contenu */}
@@ -112,38 +113,9 @@ function MobileFeatureSlide({
           <h3 className="text-[var(--color-text-primary)] text-xl font-bold leading-tight">
             {title}
           </h3>
-          <p className="text-[var(--color-text-muted)] text-sm">{description}</p>
+          <p className="text-[var(--color-text-secondary)] text-sm">{description}</p>
         </div>
       </div>
-    </div>
-  )
-}
-
-/* ── Pagination dots ──────────────────────────────────────────────── */
-
-function PaginationDots({
-  count,
-  active,
-  onDotClick,
-}: {
-  count: number
-  active: number
-  onDotClick: (index: number) => void
-}) {
-  return (
-    <div className="flex justify-center gap-3 mt-6">
-      {Array.from({ length: count }, (_, i) => (
-        <button
-          key={i}
-          onClick={() => onDotClick(i)}
-          className={`transition-all duration-300 ${
-            i === active
-              ? 'w-[50px] h-[10px] rounded-[100px] bg-[var(--color-action-default)]'
-              : 'w-[10px] h-[10px] rounded-full bg-[var(--color-border)]'
-          }`}
-          aria-label={`Aller au slide ${i + 1}`}
-        />
-      ))}
     </div>
   )
 }
@@ -281,6 +253,7 @@ export function ProductFeatures() {
 
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   /* ── Slider scroll detection (mobile/tablet) ── */
@@ -309,13 +282,15 @@ export function ProductFeatures() {
 
   return (
     <section className="w-full relative flex justify-center" data-name="Section 4 : Produit">
-      <div className="w-full max-w-[1728px] bg-[var(--color-surface-cream)] rounded-t-[32px]">
+      <div className="w-full max-w-[1728px] bg-[var(--color-bg-tertiary)] rounded-t-[32px]">
         {/* Header */}
         <div className="px-6 md:px-10 lg:px-32 pt-20 lg:pt-40 flex flex-col gap-8 mb-16 lg:mb-32">
           <h2 className="landing-section-title text-[var(--color-text-primary)]">
             {t('landing.detailedFeatures.title')}
           </h2>
-          <p className="text-[var(--color-text-muted)]">{t('landing.detailedFeatures.subtitle')}</p>
+          <p className="text-[var(--color-text-secondary)]">
+            {t('landing.detailedFeatures.subtitle')}
+          </p>
         </div>
 
         {/* ── Desktop : phone sticky + cartes alternées ────────────────── */}
@@ -396,7 +371,12 @@ export function ProductFeatures() {
                 ))}
               </div>
             </div>
-            <PaginationDots count={4} active={activeSlide} onDotClick={scrollToSlide} />
+            <PaginationDots
+              count={4}
+              active={activeSlide}
+              onDotClick={scrollToSlide}
+              getLabel={(i) => t('landing.detailedFeatures.goToSlide', { index: i + 1 })}
+            />
           </div>
         </div>
       </div>

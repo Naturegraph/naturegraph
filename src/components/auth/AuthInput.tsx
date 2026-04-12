@@ -39,7 +39,7 @@ export function AuthInput({
       {/* Label */}
       <label
         htmlFor={inputId}
-        className="text-sm font-semibold text-[var(--color-text-primary)] leading-none"
+        className="text-sm font-semibold text-[var(--color-text-[var(--color-action-default)])] leading-none"
       >
         {label}
         {isRequired && (
@@ -60,8 +60,8 @@ export function AuthInput({
         placeholder={placeholder}
         autoComplete={autoComplete}
         required={isRequired}
-        className={`h-12 w-full rounded-button border-[0.5px] px-6 text-base bg-off-white text-foreground placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset focus:border-primary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-          error ? 'border-[var(--color-error)]' : 'border-border'
+        className={`h-12 w-full rounded-full border-[0.5px] px-6 text-base bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-action-default)] focus:ring-inset focus:border-[var(--color-action-default)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+          error ? 'border-[var(--color-error)]' : 'border-[var(--color-border)]'
         }`}
       />
 

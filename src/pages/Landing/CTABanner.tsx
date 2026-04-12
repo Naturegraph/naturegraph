@@ -5,8 +5,8 @@
  * Image à droite sur desktop (placeholder).
  */
 
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui'
 import { motion } from 'motion/react'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 import ctaKingfisher from '@/assets/images/cta-kingfisher.png'
@@ -44,12 +44,9 @@ export function CTABanner() {
 
           <p className="text-[var(--color-text-white)]/85">{t('landing.cta.description')}</p>
 
-          <Link
-            to="/signup"
-            className="btn-press btn-press-primary inline-flex items-center justify-center h-12 px-6 text-base font-bold text-[var(--color-text-white)] bg-[var(--color-action-default)] rounded-full self-start font-[var(--font-body)]"
-          >
+          <Button to="/signup" size="md" className="self-start">
             {t('landing.cta.button')}
-          </Link>
+          </Button>
         </div>
 
         {/* Image — Desktop uniquement */}

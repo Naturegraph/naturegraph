@@ -80,12 +80,22 @@ const defaultState: AuthState = {
  * Flux : signup → OTP console → verification → onboarding → home
  * Toutes les interfaces sont identiques au flux Supabase réel.
  */
+/**
+ * Détecte les usernames temporaires créés par le trigger DB `handle_new_auth_user`.
+ * Format : `user_` + 8 premiers chars de l'UUID (ex: user_86dd90bd).
+ * Un user avec ce username doit OBLIGATOIREMENT passer par l'onboarding.
+ */
+function isTempUsername(username: string | null | undefined): boolean {
+  return !!username && /^user_[a-f0-9]{8}$/i.test(username)
+}
+
 function DemoAuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>(defaultState)
 
-  /** Calcul dérivé : onboarding terminé si le profil a un username */
+  /** Calcul dérivé : onboarding terminé si le profil a un VRAI username (pas un temp) */
   function deriveState(base: Omit<AuthState, 'onboardingCompleted'>): AuthState {
-    return { ...base, onboardingCompleted: !!base.profile?.username }
+    const username = base.profile?.username
+    return { ...base, onboardingCompleted: !!username && !isTempUsername(username) }
   }
 
   // ── signUp : génère et logue l'OTP, retourne requiresVerification ────────
@@ -215,15 +225,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading: isSupabaseConfigured,
   })
 
-  // Calcul dérivé : onboarding terminé si le profil a un username
+  // Calcul dérivé : onboarding terminé si le profil a un VRAI username (pas un temp `user_xxxxxxxx`)
   function deriveState(base: Omit<AuthState, 'onboardingCompleted'>): AuthState {
-    return { ...base, onboardingCompleted: !!base.profile?.username }
+    const username = base.profile?.username
+    return { ...base, onboardingCompleted: !!username && !isTempUsername(username) }
   }
 
-  async function fetchProfile(userId: string) {
+  async function fetchProfile(userId: string): Promise<Profile | null> {
     if (!supabase) return null
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
-    return data
+    // Cast nécessaire : Supabase retourne gender: string | null, Profile attend Gender | null
+    return data as unknown as Profile
   }
 
   async function refreshProfile() {
@@ -239,11 +251,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!supabase) return
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      const user = session?.user ?? null
-      const profile = user ? await fetchProfile(user.id) : null
-      setState(deriveState({ user, session, profile, isLoading: false, isAuthenticated: !!user }))
-    })
+    // Fail-safe : si getSession() bloque (token corrompu, lock navigator),
+    // on force isLoading=false après 5s pour ne pas figer l'app sur le spinner.
+    const bootTimeout = setTimeout(() => {
+      setState((prev) => (prev.isLoading ? { ...prev, isLoading: false } : prev))
+      console.warn('[Auth] getSession() timeout (5s) — reset loading state')
+    }, 5000)
+
+    supabase.auth
+      .getSession()
+      .then(async ({ data: { session } }) => {
+        clearTimeout(bootTimeout)
+        const user = session?.user ?? null
+        const profile = user ? await fetchProfile(user.id) : null
+        setState(deriveState({ user, session, profile, isLoading: false, isAuthenticated: !!user }))
+      })
+      .catch((err) => {
+        clearTimeout(bootTimeout)
+        console.error('[Auth] getSession failed:', err)
+        setState((prev) => ({ ...prev, isLoading: false }))
+      })
 
     const {
       data: { subscription },
@@ -265,6 +292,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
 
     return () => {
+      clearTimeout(bootTimeout)
       subscription.unsubscribe()
       clearInterval(refreshInterval)
     }
