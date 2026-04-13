@@ -51,6 +51,19 @@ const TAXONOMIC_EMOJI: Record<string, string> = {
 // Bridge temporaire pour éviter de refactoriser FeedPost.
 // À supprimer lors du refacto FeedPost vers PostFeedItem.
 
+/** Formate une date ISO en format lisible (ex: "10/04/2026") */
+function formatPostDate(isoDate: string): string {
+  try {
+    return new Date(isoDate).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+  } catch {
+    return isoDate
+  }
+}
+
 function postFeedItemToMockPost(item: PostFeedItem): MockPost {
   const authorName = item.author
     ? `${item.author.first_name} ${item.author.last_name}`.trim() || item.author.username
@@ -67,7 +80,7 @@ function postFeedItemToMockPost(item: PostFeedItem): MockPost {
       name: authorName,
       avatar: item.author?.avatar_url ?? '',
     },
-    date: item.created_at,
+    date: formatPostDate(item.created_at),
     location:
       [item.location_name, item.city, item.region, item.country].filter(Boolean).join(', ') ||
       'France',

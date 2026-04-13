@@ -41,7 +41,8 @@ export function ImageTextLayout({
 
   // En mode flex : image et contenu prennent chacun flex-1
   // En mode fixed : seule la zone contenu est flex-1, l'image garde sa largeur
-  const imageWrapperClass = imageWidth === 'flex' ? 'w-full lg:flex-1' : 'w-full lg:shrink-0'
+  const imageWrapperClass =
+    imageWidth === 'flex' ? 'w-full lg:flex-1' : 'w-full lg:w-auto lg:shrink-0'
 
   return (
     <div className={`flex flex-col ${reverseClass} ${alignClasses} ${gapClasses} ${className}`}>
