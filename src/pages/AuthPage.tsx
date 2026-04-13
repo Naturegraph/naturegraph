@@ -52,7 +52,7 @@ export default function AuthPage({
 }: AuthPageProps) {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { user, completeOnboarding } = useAuth()
+  const { completeOnboarding } = useAuth()
   const { success, error: notifyError } = useNotification()
 
   const [mode, setMode] = useState<AuthMode>(initialMode)
@@ -86,10 +86,9 @@ export default function AuthPage({
   function handleVerificationSuccess() {
     if (initialAuthMode === 'signup') {
       setMode('onboarding')
-    } else if (user && !user.user_metadata?.onboarding_completed) {
-      // Utilisateur existant sans onboarding → onboarding aussi
-      setMode('onboarding')
     } else {
+      // Login : vérifier si l'onboarding est terminé via le profil (username réel)
+      // onboardingCompleted vient du AuthContext — basé sur le username dans le profil DB
       success(t('auth.success.loginTitle'), t('auth.success.loginDescription'))
       goto.home()
     }

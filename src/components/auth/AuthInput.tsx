@@ -39,7 +39,7 @@ export function AuthInput({
       {/* Label */}
       <label
         htmlFor={inputId}
-        className="text-sm font-semibold text-[var(--color-text-[var(--color-action-default)])] leading-none"
+        className="text-sm font-semibold text-[var(--color-text-primary)] leading-none"
       >
         {label}
         {isRequired && (
