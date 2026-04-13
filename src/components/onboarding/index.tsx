@@ -11,8 +11,9 @@
  *  - onGoLogin   : naviguer vers le login
  */
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useNotification } from '@/contexts/NotificationContext'
 import type { Interest } from '@/types/database'
 import { OnboardingInterests } from './OnboardingInterests'
 import { OnboardingStep2 } from './OnboardingStep2'
@@ -41,8 +42,10 @@ interface UserData {
 // ─── Composant ───────────────────────────────────────────────────────────────
 
 export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }: OnboardingProps) {
+  const { error: notifyError } = useNotification()
   const [step, setStep] = useState<Step>('interests')
   const [exitModalOpen, setExitModalOpen] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [userData, setUserData] = useState<UserData>({ interests: [], motivations: [] })
 
   // ─── Handlers étape 1
@@ -68,53 +71,66 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
   }
 
   // ─── Handler étape 4 + sauvegarde Supabase
-  async function handleUsernameComplete(username: string) {
-    setUserData((prev) => ({ ...prev, username }))
+  const handleUsernameComplete = useCallback(
+    async (username: string) => {
+      if (isSaving) return
+      setIsSaving(true)
+      setUserData((prev) => ({ ...prev, username }))
 
-    if (supabase) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      try {
+        if (supabase) {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser()
 
-      if (user) {
-        /**
-         * TODO [BACKEND] — Étendre l'upsert avec les champs manquants :
-         *   - `notification_frequency` : mapper FrequencyOption → ENUM DB
-         *     ('daily' → 'realtime', 'weekly' → 'daily_digest',
-         *      'monthly' → 'weekly_digest', 'occasionally' → 'disabled')
-         *     Créer également une entrée dans `notification_settings` pour
-         *     les préférences push/email initiales selon la fréquence choisie.
-         *   - `motivations` : tableau ENUM[] dans `profiles` (ou table dédiée
-         *     `user_motivations` si évolution future vers pondération ML).
-         *   Schéma DB : ALTER TABLE profiles
-         *     ADD COLUMN notification_frequency TEXT DEFAULT 'weekly',
-         *     ADD COLUMN motivations TEXT[] DEFAULT '{}';
-         */
-        // NOTE [BACKEND] — `notification_frequency` et `motivations` ne sont pas
-        // encore dans le schéma Supabase. On les stocke en mémoire (userData)
-        // et on les persistera quand la migration sera appliquée. Pour l'instant
-        // on n'écrit que ce que la table accepte.
-        const { error: upsertError } = await supabase.from('profiles').upsert(
-          {
-            id: user.id,
-            username: username,
-            email: user.email ?? '',
-            first_name: username,
-            last_name: '',
-            interests: userData.interests as Interest[],
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'id' },
-        )
-        if (upsertError) {
-          console.error('[onboarding] upsert profile failed', upsertError)
-          throw upsertError
+          if (user) {
+            /**
+             * TODO [BACKEND] — Étendre l'upsert avec les champs manquants :
+             *   - `notification_frequency` : mapper FrequencyOption → ENUM DB
+             *     ('daily' → 'realtime', 'weekly' → 'daily_digest',
+             *      'monthly' → 'weekly_digest', 'occasionally' → 'disabled')
+             *     Créer également une entrée dans `notification_settings` pour
+             *     les préférences push/email initiales selon la fréquence choisie.
+             *   - `motivations` : tableau ENUM[] dans `profiles` (ou table dédiée
+             *     `user_motivations` si évolution future vers pondération ML).
+             *   Schéma DB : ALTER TABLE profiles
+             *     ADD COLUMN notification_frequency TEXT DEFAULT 'weekly',
+             *     ADD COLUMN motivations TEXT[] DEFAULT '{}';
+             */
+            // NOTE [BACKEND] — `notification_frequency` et `motivations` ne sont pas
+            // encore dans le schéma Supabase. On les stocke en mémoire (userData)
+            // et on les persistera quand la migration sera appliquée. Pour l'instant
+            // on n'écrit que ce que la table accepte.
+            const { error: upsertError } = await supabase.from('profiles').upsert(
+              {
+                id: user.id,
+                username: username,
+                email: user.email ?? '',
+                first_name: username,
+                last_name: '',
+                interests: userData.interests as Interest[],
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'id' },
+            )
+            if (upsertError) {
+              console.error('[onboarding] upsert profile failed', upsertError)
+              notifyError('Impossible de sauvegarder le profil. Réessaie.')
+              setIsSaving(false)
+              return
+            }
+          }
         }
-      }
-    }
 
-    await onComplete()
-  }
+        await onComplete()
+      } catch (err) {
+        console.error('[onboarding] unexpected error', err)
+        notifyError('Une erreur est survenue. Réessaie.')
+        setIsSaving(false)
+      }
+    },
+    [isSaving, userData.interests, onComplete, notifyError],
+  )
 
   return (
     <div className="flex items-center overflow-clip relative rounded-sm md:rounded-xl w-full h-full">

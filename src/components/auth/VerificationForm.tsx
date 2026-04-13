@@ -116,7 +116,11 @@ export function VerificationForm({
     setError(null)
 
     // Régénère le code OTP — fonctionne en mode démo et Supabase réel
-    await signInWithOtp(email)
+    const { error: resendError } = await signInWithOtp(email)
+    if (resendError) {
+      setError(resendError.message)
+      return
+    }
 
     // En mode démo : mettre à jour le hint OTP affiché dans l'UI
     if (!isSupabaseConfigured) {

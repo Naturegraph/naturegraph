@@ -233,7 +233,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function fetchProfile(userId: string): Promise<Profile | null> {
     if (!supabase) return null
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single()
+    if (error) {
+      console.error('[Auth] fetchProfile failed:', error.message)
+      return null
+    }
     // Cast nécessaire : Supabase retourne gender: string | null, Profile attend Gender | null
     return data as unknown as Profile
   }
