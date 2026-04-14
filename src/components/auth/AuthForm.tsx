@@ -162,7 +162,7 @@ export function AuthForm({
             </Button>
             <Button
               type="button"
-              variant="ghost"
+              variant="secondary"
               className="w-full"
               onClick={onDiscoverAsGuest}
               disabled={isLoading}

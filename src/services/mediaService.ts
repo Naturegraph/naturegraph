@@ -132,6 +132,44 @@ export async function uploadPostMedia(params: {
   }
 }
 
+// ── Community Photo (héro auth) ──────────────────────────────────────────────
+
+export interface CommunityHeroPhoto {
+  id: string
+  src: string
+  alt: string
+  photographerName: string | null
+  instagramUrl: string | null
+  tagline: string
+}
+
+/**
+ * Récupère la photo communautaire active pour les pages auth.
+ * Retourne null si aucune photo active ou si Supabase n'est pas configuré.
+ * Le composant AuthHeroPhoto gère le fallback vers l'asset local.
+ */
+export async function getCommunityHeroPhoto(): Promise<CommunityHeroPhoto | null> {
+  if (!isSupabaseConfigured || !supabase) return null
+
+  const { data, error } = await supabase
+    .from('community_photos')
+    .select('id, src, alt, photographer_name, instagram_url, tagline')
+    .eq('is_active', true)
+    .eq('consent_verified', true)
+    .maybeSingle()
+
+  if (error || !data) return null
+
+  return {
+    id: data.id,
+    src: data.src,
+    alt: data.alt,
+    photographerName: data.photographer_name ?? null,
+    instagramUrl: data.instagram_url ?? null,
+    tagline: data.tagline,
+  }
+}
+
 /** Supprime un media (storage + ligne DB). */
 export async function deletePostMedia(mediaId: string, storagePath: string): Promise<void> {
   if (!isSupabaseConfigured || !supabase) return

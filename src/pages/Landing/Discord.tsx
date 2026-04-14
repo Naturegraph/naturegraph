@@ -17,7 +17,7 @@ export function Discord() {
   const { t } = useTranslation()
   const { ref, isVisible } = useScrollReveal({ threshold: 0.2 })
 
-  const discordUrl = 'https://discord.gg/WVFQw2Zh'
+  const discordUrl = 'https://discord.gg/qKyU6kZfGd'
 
   const benefits = [
     t('landing.discord.benefit1'),

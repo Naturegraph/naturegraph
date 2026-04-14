@@ -11,10 +11,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNotification } from '@/contexts/NotificationContext'
-import { SignupForm, LoginForm, VerificationForm, AuthPatterns } from '@/components/auth'
+import { SignupForm, LoginForm, VerificationForm } from '@/components/auth'
+import { AuthOrbBackground, useAuthOrbTracking } from '@/components/auth/AuthOrbBackground'
 import OnboardingComponent from '@/components/onboarding'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -54,6 +55,8 @@ export default function AuthPage({
   const { t } = useTranslation()
   const { completeOnboarding } = useAuth()
   const { success, error: notifyError } = useNotification()
+  const prefersReducedMotion = useReducedMotion()
+  const { containerRef, mouse, handleMouseMove, handleMouseLeave } = useAuthOrbTracking()
 
   const [mode, setMode] = useState<AuthMode>(initialMode)
   const [initialAuthMode, setInitialAuthMode] = useState<'signup' | 'login'>(initialMode)
@@ -108,19 +111,16 @@ export default function AuthPage({
 
   return (
     <div
+      ref={containerRef}
       data-theme="light"
+      onMouseMove={prefersReducedMotion || mode === 'onboarding' ? undefined : handleMouseMove}
+      onMouseLeave={prefersReducedMotion || mode === 'onboarding' ? undefined : handleMouseLeave}
       className={`flex items-center justify-center min-h-screen w-full relative overflow-hidden ${
         mode === 'onboarding' ? 'bg-warm-beige' : 'bg-off-white md:bg-teal-dark'
       }`}
     >
-      {/* Motifs décoratifs desktop (hors onboarding) */}
-      {mode !== 'onboarding' && (
-        <div className="hidden lg:block absolute inset-0 pointer-events-none">
-          <div className="relative size-full max-w-[1728px] mx-auto">
-            <AuthPatterns />
-          </div>
-        </div>
-      )}
+      {/* Orbes de gradient animées — desktop uniquement, désactivées en mode onboarding */}
+      {mode !== 'onboarding' && !prefersReducedMotion && <AuthOrbBackground mouse={mouse} />}
 
       {/* Contenu avec transitions fluides */}
       <div className="relative z-10 w-full md:w-auto flex items-center justify-center md:p-6">
