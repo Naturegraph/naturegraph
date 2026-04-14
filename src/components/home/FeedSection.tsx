@@ -21,11 +21,12 @@ import type { MockPost } from './FeedPost'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLocation } from '@/contexts/LocationContext'
 import { useFeed, FEED_QUERY_KEY } from '@/hooks/useFeed'
+import { useNearbyFeed } from '@/hooks/useNearbyFeed'
 import { useToggleReaction } from '@/hooks/usePost'
 import type { PostFeedItem, ReactionType } from '@/types/database'
 import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
 
-export type FeedTab = 'recent' | 'for-you' | 'popular'
+export type FeedTab = 'recent' | 'for-you' | 'popular' | 'near-me'
 
 // Mapping groupe taxonomique → emoji catégorie
 const TAXONOMIC_EMOJI: Record<string, string> = {
@@ -156,24 +157,36 @@ export function FeedSection({
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
-  const { locationLabel } = useLocation()
+  const { locationLabel, isLocalized, getVisibilityLabel, getRadiusLabel } = useLocation()
   const [activeTab, setActiveTab] = useState<FeedTab>('recent')
   const [filters, setFilters] = useState<FeedFilters>({ ...DEFAULT_FILTERS })
   const [page, setPage] = useState(1)
 
-  // Map des onglets UI → paramètres postService
-  const tabToServiceTab: Record<FeedTab, 'recent' | 'popular' | 'for_you'> = {
+  const isNearMeTab = activeTab === 'near-me'
+
+  // Map des onglets UI → paramètres postService (hors near-me)
+  const tabToServiceTab: Record<Exclude<FeedTab, 'near-me'>, 'recent' | 'popular' | 'for_you'> = {
     recent: 'recent',
     'for-you': 'for_you',
     popular: 'popular',
   }
 
-  // useFeed — données Supabase via React Query
+  // useFeed — données Supabase via React Query (tabs standard)
   const {
     data: feedData,
     isLoading: isFeedLoading,
     isError: isFeedError,
-  } = useFeed({ tab: tabToServiceTab[activeTab], page, limit: 20 })
+  } = useFeed(
+    { tab: tabToServiceTab[activeTab as Exclude<FeedTab, 'near-me'>] ?? 'recent', page, limit: 20 },
+    !isNearMeTab, // désactivé si on est sur le tab "Près de moi"
+  )
+
+  // useNearbyFeed — données géolocalisées (tab "Près de moi")
+  const {
+    data: nearbyData,
+    isLoading: isNearbyLoading,
+    isError: isNearbyError,
+  } = useNearbyFeed(page)
 
   const hasActiveFilters =
     filters.categories.length > 0 ||
@@ -194,12 +207,15 @@ export function FeedSection({
     setPage(1)
   }
 
-  // ── Source de données Supabase → adaptateur UI ──────────────────────────
-  const posts: MockPost[] = (feedData?.data ?? []).map(postFeedItemToMockPost)
+  // ── Source de données — routing selon l'onglet actif ──────────────────
+  const activeData = isNearMeTab ? nearbyData : feedData
+  const isLoading_ = isNearMeTab ? isNearbyLoading : isFeedLoading
+  const isError_ = isNearMeTab ? isNearbyError : isFeedError
+  const posts: MockPost[] = (activeData?.data ?? []).map(postFeedItemToMockPost)
 
   // Clé de cache du feed courant — passée au hook de réaction pour l'optimistic update
   const currentFeedQueryKey = FEED_QUERY_KEY({
-    tab: tabToServiceTab[activeTab],
+    tab: tabToServiceTab[activeTab as Exclude<FeedTab, 'near-me'>] ?? 'recent',
     page,
     limit: 20,
   })
@@ -209,7 +225,8 @@ export function FeedSection({
 
   /** Callback passé à chaque FeedPost — déclenche la mutation optimiste */
   function handleReact(postId: string, type: ReactionType) {
-    const post = feedData?.data?.find((p) => p.id === postId)
+    const sourcePosts = activeData?.data ?? []
+    const post = sourcePosts.find((p) => p.id === postId)
     reactionMutation.mutate({
       postId,
       type,
@@ -218,10 +235,14 @@ export function FeedSection({
     })
   }
 
-  const TABS: { id: FeedTab; label: string }[] = [
+  const TABS: { id: FeedTab; label: string; icon?: string }[] = [
     { id: 'recent', label: t('home.feed.recent') },
     { id: 'for-you', label: t('home.feed.forYou') },
     { id: 'popular', label: t('home.feed.popular') },
+    // Tab géolocalisé — affiché uniquement si authentifié
+    ...(isAuthenticated
+      ? [{ id: 'near-me' as FeedTab, label: t('location.feed.nearMe'), icon: '📍' }]
+      : []),
   ]
 
   function handleResetFilters() {
@@ -320,10 +341,10 @@ export function FeedSection({
       </div>
 
       {/* État chargement */}
-      {isFeedLoading && <FeedSkeleton />}
+      {isLoading_ && <FeedSkeleton />}
 
       {/* État erreur */}
-      {isFeedError && (
+      {isError_ && (
         <div role="alert" className="bg-background md:rounded-card rounded-none p-8 text-center">
           <p className="text-sm text-muted-foreground">
             {t('home.feed.loadError', {
@@ -333,8 +354,35 @@ export function FeedSection({
         </div>
       )}
 
+      {/* Tab "Près de moi" — CTA si pas localisé */}
+      {isNearMeTab && !isLocalized && !isLoading_ && (
+        <div className="bg-background relative md:rounded-card rounded-none overflow-hidden">
+          <div
+            aria-hidden="true"
+            className="absolute md:border-border md:border-[0.5px] border-border border-b-4 inset-0 pointer-events-none md:rounded-card"
+          />
+          <div className="flex flex-col items-center gap-5 px-6 py-12 text-center">
+            <span className="text-5xl" aria-hidden="true">
+              📍
+            </span>
+            <div className="flex flex-col gap-2 max-w-sm">
+              <p className="text-lg font-bold text-foreground">{t('location.feed.noLocation')}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab "Près de moi" — badge localisation active */}
+      {isNearMeTab && isLocalized && (
+        <div className="flex items-center gap-2 mb-3 px-1">
+          <span className="text-xs text-[var(--color-text-secondary)]">
+            {getVisibilityLabel()} · {getRadiusLabel()}
+          </span>
+        </div>
+      )}
+
       {/* État vide */}
-      {!isFeedLoading && !isFeedError && posts.length === 0 && (
+      {!isLoading_ && !isError_ && posts.length === 0 && !(isNearMeTab && !isLocalized) && (
         <div className="bg-background relative md:rounded-card rounded-none overflow-hidden">
           <div
             aria-hidden="true"
@@ -345,13 +393,15 @@ export function FeedSection({
             <div className="flex flex-col gap-2 max-w-sm">
               <p className="text-lg font-bold text-foreground">{t('home.feed.emptyTitle')}</p>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                {locationLabel
-                  ? t('home.feed.emptyDescLocation', { location: locationLabel })
-                  : t('home.feed.emptyDesc')}
+                {isNearMeTab
+                  ? t('location.feed.emptyDescription', { km: '' })
+                  : locationLabel
+                    ? t('home.feed.emptyDescLocation', { location: locationLabel })
+                    : t('home.feed.emptyDesc')}
               </p>
             </div>
             <div className="flex flex-wrap gap-3 justify-center">
-              {hasActiveFilters && (
+              {hasActiveFilters && !isNearMeTab && (
                 <button
                   type="button"
                   onClick={handleResetFilters}
@@ -382,7 +432,7 @@ export function FeedSection({
       )}
 
       {/* Liste des posts */}
-      {!isFeedLoading && !isFeedError && posts.length > 0 && (
+      {!isLoading_ && !isError_ && posts.length > 0 && (
         <>
           {viewMode === 'grid' ? (
             <FeedGallery posts={posts} />
@@ -399,8 +449,8 @@ export function FeedSection({
             </div>
           )}
 
-          {/* Pagination */}
-          {feedData && feedData.pagination.totalPages > 1 && (
+          {/* Pagination — masquée sur le tab near-me (paginator simplifié) */}
+          {!isNearMeTab && feedData && feedData.pagination.totalPages > 1 && (
             <div className="flex justify-center gap-2 mt-4">
               <button
                 type="button"
@@ -411,12 +461,12 @@ export function FeedSection({
                 {t('common.previous', { defaultValue: 'Précédent' })}
               </button>
               <span className="h-9 px-4 flex items-center text-sm text-muted-foreground">
-                {page} / {feedData.pagination.totalPages}
+                {page} / {feedData?.pagination.totalPages}
               </span>
               <button
                 type="button"
                 onClick={() => setPage((p) => p + 1)}
-                disabled={!feedData.pagination.hasNext}
+                disabled={!feedData?.pagination.hasNext}
                 className="h-9 px-4 rounded-full border border-border text-sm disabled:opacity-40 hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {t('common.next', { defaultValue: 'Suivant' })}

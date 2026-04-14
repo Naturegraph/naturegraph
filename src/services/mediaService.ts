@@ -151,7 +151,9 @@ export interface CommunityHeroPhoto {
 export async function getCommunityHeroPhoto(): Promise<CommunityHeroPhoto | null> {
   if (!isSupabaseConfigured || !supabase) return null
 
-  const { data, error } = await supabase
+  // community_photos n'est pas encore dans supabase.ts généré (migration 20260414)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('community_photos')
     .select('id, src, alt, photographer_name, instagram_url, tagline')
     .eq('is_active', true)
@@ -160,13 +162,22 @@ export async function getCommunityHeroPhoto(): Promise<CommunityHeroPhoto | null
 
   if (error || !data) return null
 
+  const row = data as {
+    id: string
+    src: string
+    alt: string
+    photographer_name: string | null
+    instagram_url: string | null
+    tagline: string
+  }
+
   return {
-    id: data.id,
-    src: data.src,
-    alt: data.alt,
-    photographerName: data.photographer_name ?? null,
-    instagramUrl: data.instagram_url ?? null,
-    tagline: data.tagline,
+    id: row.id,
+    src: row.src,
+    alt: row.alt,
+    photographerName: row.photographer_name ?? null,
+    instagramUrl: row.instagram_url ?? null,
+    tagline: row.tagline,
   }
 }
 

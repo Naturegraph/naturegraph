@@ -296,6 +296,8 @@
       "inputLabel": "Nom d'utilisateur",
       "inputRequired": "*",
       "inputHelper": "Lettres, chiffres, points (.) et underscores (_) autorisés",
+      "locationLabel": "Ta zone géographique",
+      "locationOptional": "Optionnel",
       "buttonDisabled": "Choisis ton pseudo",
       "buttonEnabled": "C'est parti !",
       "errors": {
@@ -313,6 +315,63 @@
       "goHome": "Quitter l'onboarding",
       "goLogin": "Se connecter",
       "continue": "Continuer l'onboarding"
+    }
+  },
+
+  "location": {
+    "autocomplete": {
+      "label": "Ville",
+      "placeholder": "Rechercher une ville (ex: Grenoble, Lyon...)",
+      "ariaLabel": "Rechercher une ville",
+      "listLabel": "Suggestions de villes",
+      "clear": "Effacer la ville sélectionnée"
+    },
+    "radius": {
+      "label": "Rayon de partage",
+      "unit": "{{km}} km",
+      "ariaValueText": "{{km}} kilomètres",
+      "hint": "Le rayon minimum de 75 km garantit qu'une ville ne peut pas identifier précisément ta position."
+    },
+    "visibility": {
+      "label": "Visibilité de ta zone",
+      "ariaLabel": "Choisir la visibilité de ta localisation",
+      "private": {
+        "label": "Privé",
+        "description": "Personne ne voit ta localisation"
+      },
+      "region": {
+        "label": "Région seulement",
+        "description": "Les autres voient uniquement ta région (ex: Bretagne)"
+      },
+      "city": {
+        "label": "Ville + Région",
+        "description": "Les autres voient ta ville et ta région (ex: Rennes · Bretagne)"
+      }
+    },
+    "privacy": {
+      "notice": "Nous n'enregistrons jamais ta position exacte. Tu contrôles ce que les autres voient, et tu peux modifier ou supprimer ta localisation à tout moment."
+    },
+    "section": {
+      "addZone": "Ajouter ma zone géographique"
+    },
+    "feed": {
+      "nearMe": "Près de moi",
+      "noLocation": "Active ta localisation pour voir les observations près de chez toi",
+      "activateCta": "Activer ma zone",
+      "emptyTitle": "Aucune observation dans ta zone",
+      "emptyDescription": "Il n'y a pas encore d'observations dans un rayon de {{km}} km. Élargis ton rayon ou consulte le feed global.",
+      "expandRadius": "Élargir le rayon",
+      "globalFeed": "Feed global"
+    },
+    "settings": {
+      "title": "Localisation",
+      "description": "Définit ta zone pour personnaliser ton feed et tes suggestions.",
+      "clearButton": "Effacer ma localisation",
+      "clearConfirm": "Es-tu sûr(e) de vouloir effacer ta localisation ? Ton feed repassera en mode global.",
+      "clearSuccess": "Localisation effacée",
+      "saveSuccess": "Localisation mise à jour",
+      "rateLimited": "Tu as modifié ta localisation récemment. Réessaie dans {{minutes}} minutes.",
+      "lastUpdated": "Modifiée le {{date}}"
     }
   },
 

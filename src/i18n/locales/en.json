@@ -296,6 +296,8 @@
       "inputLabel": "Username",
       "inputRequired": "*",
       "inputHelper": "Letters, numbers, periods (.) and underscores (_) allowed",
+      "locationLabel": "Your geographic zone",
+      "locationOptional": "Optional",
       "buttonDisabled": "Choose your username",
       "buttonEnabled": "Let's go!",
       "errors": {
@@ -313,6 +315,63 @@
       "goHome": "Leave onboarding",
       "goLogin": "Sign in",
       "continue": "Continue onboarding"
+    }
+  },
+
+  "location": {
+    "autocomplete": {
+      "label": "City",
+      "placeholder": "Search a city (e.g. Lyon, Bordeaux...)",
+      "ariaLabel": "Search a city",
+      "listLabel": "City suggestions",
+      "clear": "Clear selected city"
+    },
+    "radius": {
+      "label": "Sharing radius",
+      "unit": "{{km}} km",
+      "ariaValueText": "{{km}} kilometres",
+      "hint": "The minimum radius of 75 km ensures that a city cannot precisely identify your location."
+    },
+    "visibility": {
+      "label": "Zone visibility",
+      "ariaLabel": "Choose your location visibility",
+      "private": {
+        "label": "Private",
+        "description": "No one sees your location"
+      },
+      "region": {
+        "label": "Region only",
+        "description": "Others only see your region (e.g. Brittany)"
+      },
+      "city": {
+        "label": "City + Region",
+        "description": "Others see your city and region (e.g. Rennes · Brittany)"
+      }
+    },
+    "privacy": {
+      "notice": "We never record your exact location. You control what others see, and you can change or delete your location at any time."
+    },
+    "section": {
+      "addZone": "Add my geographic zone"
+    },
+    "feed": {
+      "nearMe": "Near me",
+      "noLocation": "Enable your location to see observations near you",
+      "activateCta": "Activate my zone",
+      "emptyTitle": "No observations in your zone",
+      "emptyDescription": "No observations within {{km}} km yet. Expand your radius or browse the global feed.",
+      "expandRadius": "Expand radius",
+      "globalFeed": "Global feed"
+    },
+    "settings": {
+      "title": "Location",
+      "description": "Set your zone to personalise your feed and suggestions.",
+      "clearButton": "Clear my location",
+      "clearConfirm": "Are you sure you want to clear your location? Your feed will switch back to global mode.",
+      "clearSuccess": "Location cleared",
+      "saveSuccess": "Location updated",
+      "rateLimited": "You've recently changed your location. Try again in {{minutes}} minutes.",
+      "lastUpdated": "Last updated on {{date}}"
     }
   },
 

@@ -23,6 +23,8 @@ import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { BackButton } from '@/components/ui/BackButton'
 import { OnboardingHeader } from './OnboardingHeader'
+import { LocationPickerSection } from '@/components/location/LocationPickerSection'
+import type { LocationFormData } from '@/types/location'
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -446,7 +448,7 @@ function normalizeForBannedCheck(username: string): string {
 type UsernameError = 'tooShort' | 'tooLong' | 'invalidFormat' | 'alreadyTaken' | 'bannedWord' | null
 
 interface OnboardingStep4Props {
-  onComplete: (username: string) => void
+  onComplete: (username: string, locationData?: LocationFormData | null) => void
   onBack: () => void
   initialUsername?: string
   onExit?: () => void
@@ -479,6 +481,8 @@ export function OnboardingStep4({
   const [serverError, setServerError] = useState<UsernameError>(null)
   const [isChecking, setIsChecking] = useState(false)
   const [hasTyped, setHasTyped] = useState(false)
+  // Localisation optionnelle — null si l'utilisateur a skippé
+  const [locationData, setLocationData] = useState<LocationFormData | null>(null)
 
   // Validation format en temps réel
   useEffect(() => {
@@ -574,6 +578,21 @@ export function OnboardingStep4({
             </p>
           </div>
 
+          {/* Section localisation optionnelle */}
+          <div className="flex flex-col gap-2 w-full shrink-0">
+            <label className="text-[var(--color-text-secondary)] text-sm">
+              {t('onboarding.username.locationLabel')}
+              <span className="ml-1 text-xs text-[var(--color-text-tertiary)] italic">
+                {t('onboarding.username.locationOptional')}
+              </span>
+            </label>
+            <LocationPickerSection
+              mode="accordion"
+              onChange={setLocationData}
+              consentSource="onboarding"
+            />
+          </div>
+
           {/* Input */}
           <div className="flex flex-col gap-2 w-full shrink-0">
             {/*
@@ -604,7 +623,7 @@ export function OnboardingStep4({
                     value={username}
                     onChange={handleChange}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && isValid) onComplete(username.trim())
+                      if (e.key === 'Enter' && isValid) onComplete(username.trim(), locationData)
                     }}
                     className="flex-1 min-w-0 bg-transparent focus:outline-none text-[var(--color-text-primary)] placeholder:text-muted-foreground"
                     aria-required="true"
@@ -646,7 +665,7 @@ export function OnboardingStep4({
           <BackButton onClick={onBack} label={t('onboarding.back')} />
           <Button
             variant="primary"
-            onClick={() => isValid && onComplete(username.trim())}
+            onClick={() => isValid && onComplete(username.trim(), locationData)}
             disabled={!isValid}
             className="flex-1"
           >
