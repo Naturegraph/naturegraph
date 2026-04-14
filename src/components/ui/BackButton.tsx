@@ -8,28 +8,28 @@
  */
 
 import { ArrowLeft } from 'lucide-react'
-import type { ButtonHTMLAttributes } from 'react'
+import { Button } from '@/components/ui/Button'
 
-export interface BackButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  /** Texte affiché desktop + aria-label — défaut: "Retour" */
+export interface BackButtonProps {
+  /** Texte du bouton — défaut: "Retour" */
   label?: string
+  onClick?: () => void
+  disabled?: boolean
 }
 
-export function BackButton({
-  label = 'Retour',
-  className = '',
-  type = 'button',
-  ...props
-}: BackButtonProps) {
+/**
+ * Bouton retour avec flèche — utilise le variant secondaire du Button.
+ * Cohérent visuellement avec les autres actions secondaires de l'app.
+ */
+export function BackButton({ label = 'Retour', onClick, disabled }: BackButtonProps) {
   return (
-    <button
-      type={type}
-      aria-label={label}
-      className={`flex items-center justify-center gap-3 h-12 px-6 bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-full hover:border-[var(--color-text-primary)]/40 transition-all motion-safe:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] focus-visible:ring-offset-2 ${className}`}
-      {...props}
+    <Button
+      variant="secondary"
+      icon={<ArrowLeft size={18} aria-hidden="true" />}
+      onClick={onClick}
+      disabled={disabled}
     >
-      <ArrowLeft className="size-5 text-[var(--color-text-primary)]" aria-hidden="true" />
-      <span className="hidden md:inline text-[var(--color-text-primary)]">{label}</span>
-    </button>
+      {label}
+    </Button>
   )
 }

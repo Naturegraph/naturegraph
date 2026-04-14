@@ -572,20 +572,15 @@ export function OnboardingStep4({
               </span>
             </label>
 
-            <div className="relative w-full">
+            <div className="w-full">
               {/*
-               * has-[:focus-visible]:ring-2 expose le ring sur le conteneur quand
-               * l'input reçoit le focus clavier, sans affecter le focus souris.
+               * Border appliquée directement sur le container (pas d'overlay absolu)
+               * pour éviter tout clipping par overflow:clip des parents.
+               * has-[:focus-visible]:ring-2 expose le ring clavier accessible.
                */}
               <div
-                className={`h-12 rounded-full w-full transition-all has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-action-default)] has-[:focus-visible]:ring-offset-1 ${bgClass()}`}
+                className={`h-12 rounded-full w-full transition-all border has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-action-default)] has-[:focus-visible]:ring-offset-1 ${bgClass()} ${borderClass()}`}
               >
-                {/* Border overlay — décoratif, état porté par aria-invalid */}
-                <div
-                  aria-hidden="true"
-                  className={`absolute inset-0 pointer-events-none rounded-full border transition-colors ${borderClass()}`}
-                />
-
                 {/* Input + compteur */}
                 <div className="flex items-center px-6 size-full gap-3">
                   <input
