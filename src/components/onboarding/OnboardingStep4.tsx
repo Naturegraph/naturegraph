@@ -501,17 +501,32 @@ export function OnboardingStep4({
     const timer = setTimeout(async () => {
       try {
         if (supabase) {
-          const { data } = await supabase
+          /**
+           * Timeout 5s — évite un blocage si Supabase est en veille (free tier pausé).
+           * En cas de timeout ou d'erreur réseau, on laisse passer : la contrainte
+           * d'unicité côté DB bloquera les doublons au moment du upsert.
+           */
+          const timeout = new Promise<null>((_, reject) =>
+            setTimeout(() => reject(new Error('timeout')), 5000),
+          )
+          const query = supabase
             .from('profiles')
             .select('username')
             .eq('username', username.trim())
             .maybeSingle()
-          setServerError(data ? 'alreadyTaken' : null)
+
+          const result = (await Promise.race([query, timeout])) as {
+            data: { username: string } | null
+          }
+          setServerError(result?.data ? 'alreadyTaken' : null)
         } else {
           // Simulation hors Supabase
           const taken = ['admin', 'naturegraph', 'user', 'test']
           setServerError(taken.includes(username.toLowerCase()) ? 'alreadyTaken' : null)
         }
+      } catch {
+        // Timeout ou erreur réseau — on considère le pseudo disponible
+        setServerError(null)
       } finally {
         setIsChecking(false)
       }
