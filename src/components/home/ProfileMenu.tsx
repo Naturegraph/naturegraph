@@ -24,9 +24,9 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { User, Settings, Sun, Moon, Type, Eye, LogOut } from 'lucide-react'
+import { User, Settings, Type, Eye, LogOut } from 'lucide-react'
+import hermineIcon from '@/assets/images/hermine-icon.png'
 import { useAuth } from '@/contexts/AuthContext'
-import { useThemeContext } from '@/contexts/ThemeContext'
 
 // ─── Types accessibilité ──────────────────────────────────────────────────────
 
@@ -172,8 +172,6 @@ interface ProfileMenuProps {
 
 export function ProfileMenu({ onClose }: ProfileMenuProps) {
   const { profile, signOut } = useAuth()
-  const { theme, setTheme } = useThemeContext()
-
   // Préférences accessibilité (état local en attendant le backend)
   const [textSize, setTextSize] = useState<TextSize>('medium')
   const [highContrast, setHighContrast] = useState(false)
@@ -226,7 +224,7 @@ export function ProfileMenu({ onClose }: ProfileMenuProps) {
               className="size-full object-cover"
             />
           ) : (
-            <User className="size-5 text-primary" aria-hidden="true" />
+            <img src={hermineIcon} alt="" className="size-full object-cover" />
           )}
         </div>
         <div className="min-w-0">
@@ -254,18 +252,6 @@ export function ProfileMenu({ onClose }: ProfileMenuProps) {
         label="Paramètres"
         href="/settings"
         onClick={onClose}
-      />
-
-      <Divider />
-
-      {/* ── Section Thème ─────────────────────────────────────────────────── */}
-      <SectionLabel label="Thème" />
-
-      <MenuItem
-        icon={theme === 'light' ? <Sun className="size-4" /> : <Moon className="size-4" />}
-        label="Apparence"
-        valueLabel={theme === 'light' ? 'Clair' : 'Sombre'}
-        onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
       />
 
       <Divider />

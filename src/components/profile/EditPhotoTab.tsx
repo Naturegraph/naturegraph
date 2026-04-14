@@ -9,7 +9,8 @@
  */
 
 import { useTranslation } from 'react-i18next'
-import { Pencil, Trash2, User } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
+import hermineIcon from '@/assets/images/hermine-icon.png'
 import type { ProfileDisplayData } from './ProfileHeader'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -35,18 +36,12 @@ export function EditPhotoTab({ profile }: EditPhotoTabProps) {
         <div className="flex items-center gap-4">
           {/* Prévisualisation avatar */}
           <div className="size-20 rounded-full overflow-hidden bg-primary-light border-2 border-border shrink-0">
-            {profile.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt="Profil actuel"
-                className="size-full object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <div className="size-full flex items-center justify-center">
-                <User className="size-8 text-primary" aria-hidden="true" />
-              </div>
-            )}
+            <img
+              src={profile.avatar_url ?? hermineIcon}
+              alt="Profil actuel"
+              className="size-full object-cover"
+              loading="lazy"
+            />
           </div>
 
           {/* Actions */}
@@ -79,7 +74,7 @@ export function EditPhotoTab({ profile }: EditPhotoTabProps) {
         <p className="text-sm font-semibold text-foreground">{t('profile.edit.photoBanner')}</p>
 
         {/* Prévisualisation bannière */}
-        <div className="h-24 rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-teal-dark/30 border border-border">
+        <div className="h-24 rounded-xl overflow-hidden bg-[var(--color-action-light)] border border-border">
           {profile.banner_url && (
             <img
               src={profile.banner_url}

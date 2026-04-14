@@ -15,6 +15,7 @@ import { useState, useId } from 'react'
 import { Search, Trash2, Plus, Minus, HelpCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
+import { TAXREF_SPECIES } from '@/constants/taxrefSpecies'
 import hermineImg from '@/assets/images/hermine-empty-state.png'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -28,94 +29,6 @@ export interface ObservationEntry {
   count: number
 }
 
-// Données TAXREF mock — source : INPN, licence CC-BY
-const MOCK_SPECIES = [
-  {
-    id: '4001',
-    commonName: 'Mésange charbonnière',
-    scientificName: 'Parus major',
-    group: 'birds' as TaxonomicGroup,
-  },
-  {
-    id: '3562',
-    commonName: 'Rougegorge familier',
-    scientificName: 'Erithacus rubecula',
-    group: 'birds' as TaxonomicGroup,
-  },
-  {
-    id: '3586',
-    commonName: 'Hirondelle rustique',
-    scientificName: 'Hirundo rustica',
-    group: 'birds' as TaxonomicGroup,
-  },
-  {
-    id: '3248',
-    commonName: 'Buse variable',
-    scientificName: 'Buteo buteo',
-    group: 'birds' as TaxonomicGroup,
-  },
-  {
-    id: '3861',
-    commonName: 'Cygne tuberculé',
-    scientificName: 'Cygnus olor',
-    group: 'birds' as TaxonomicGroup,
-  },
-  {
-    id: '3664',
-    commonName: "Martin-pêcheur d'Europe",
-    scientificName: 'Alcedo atthis',
-    group: 'birds' as TaxonomicGroup,
-  },
-  {
-    id: '60612',
-    commonName: 'Renard roux',
-    scientificName: 'Vulpes vulpes',
-    group: 'mammals' as TaxonomicGroup,
-  },
-  {
-    id: '100376',
-    commonName: "Hérisson d'Europe",
-    scientificName: 'Erinaceus europaeus',
-    group: 'mammals' as TaxonomicGroup,
-  },
-  {
-    id: '4831',
-    commonName: 'Écureuil roux',
-    scientificName: 'Sciurus vulgaris',
-    group: 'mammals' as TaxonomicGroup,
-  },
-  {
-    id: '7021',
-    commonName: 'Chevreuil européen',
-    scientificName: 'Capreolus capreolus',
-    group: 'mammals' as TaxonomicGroup,
-  },
-  {
-    id: '290',
-    commonName: 'Grenouille rousse',
-    scientificName: 'Rana temporaria',
-    group: 'amphibians' as TaxonomicGroup,
-  },
-  {
-    id: '84913',
-    commonName: 'Lézard vert occidental',
-    scientificName: 'Lacerta bilineata',
-    group: 'reptiles' as TaxonomicGroup,
-  },
-  {
-    id: '236193',
-    commonName: 'Coccinelle à sept points',
-    scientificName: 'Coccinella septempunctata',
-    group: 'insects' as TaxonomicGroup,
-  },
-  {
-    id: '65474',
-    commonName: 'Pissenlit officinal',
-    scientificName: 'Taraxacum officinale',
-    group: 'plants' as TaxonomicGroup,
-  },
-]
-
 // ─── Sous-composants ──────────────────────────────────────────────────────────
 
 /** Barre de recherche avec autocomplétion pour ajouter une espèce */
@@ -127,14 +40,14 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
 
   const results =
     query.length >= 2
-      ? MOCK_SPECIES.filter(
+      ? TAXREF_SPECIES.filter(
           (s) =>
             s.commonName.toLowerCase().includes(query.toLowerCase()) ||
             s.scientificName.toLowerCase().includes(query.toLowerCase()),
         ).slice(0, 6)
       : []
 
-  function handleSelect(species: (typeof MOCK_SPECIES)[0]) {
+  function handleSelect(species: (typeof TAXREF_SPECIES)[0]) {
     onAdd(species)
     setQuery('')
     setOpen(false)

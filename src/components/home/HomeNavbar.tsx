@@ -36,6 +36,9 @@ import {
   Flame,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import hermineIcon from '@/assets/images/hermine-icon.png'
+import { useUserStreak } from '@/hooks/useStats'
+import { useUnreadCount } from '@/hooks/useNotifications'
 import { useLocation } from '@/contexts/LocationContext'
 import { SearchPanel } from './SearchPanel'
 import { NotificationsPanel } from './NotificationsPanel'
@@ -75,12 +78,14 @@ export function HomeNavbar({
   const navigate = useNavigate()
   const { isAuthenticated, profile } = useAuth()
 
-  // Streak consécutif (jours d'observation) — TODO [BACKEND] profile.streak_days
-  // Même valeur que ProfileSidebar en attendant la donnée réelle
-  const STREAK_DAYS = 14
+  // Streak consécutif (jours d'observation) — calculé depuis Supabase
+  const { data: streakDays } = useUserStreak(profile?.id)
 
   // Localisation partagée via LocationContext (pas de géoloc locale ici)
   const { locationLabel } = useLocation()
+
+  // Compteur de notifications non lues — alimente le badge
+  const { data: unreadCount } = useUnreadCount(profile?.id)
 
   // ── États des panels / modals ─────────────────────────────────────────────
   const [showSearch, setShowSearch] = useState(false)
@@ -183,10 +188,14 @@ export function HomeNavbar({
                       aria-haspopup="dialog"
                     >
                       <Bell className="size-5 text-foreground" aria-hidden="true" />
-                      <span
-                        aria-hidden="true"
-                        className="absolute top-2 right-2 size-2 rounded-full bg-primary"
-                      />
+                      {(unreadCount ?? 0) > 0 && (
+                        <span
+                          aria-label={`${unreadCount} notifications non lues`}
+                          className="absolute top-1 right-1 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none"
+                        >
+                          {(unreadCount ?? 0) > 99 ? '99+' : unreadCount}
+                        </span>
+                      )}
                     </button>
                     {showNotifications && (
                       <NotificationsPanel
@@ -237,10 +246,14 @@ export function HomeNavbar({
                       aria-haspopup="dialog"
                     >
                       <Bell className="size-5 text-foreground" aria-hidden="true" />
-                      <span
-                        aria-hidden="true"
-                        className="absolute top-2 right-2 size-2 rounded-full bg-primary"
-                      />
+                      {(unreadCount ?? 0) > 0 && (
+                        <span
+                          aria-label={`${unreadCount} notifications non lues`}
+                          className="absolute top-1 right-1 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none"
+                        >
+                          {(unreadCount ?? 0) > 99 ? '99+' : unreadCount}
+                        </span>
+                      )}
                     </button>
                     {showNotifications && (
                       <NotificationsPanel
@@ -309,9 +322,11 @@ export function HomeNavbar({
                             className="size-full object-cover"
                           />
                         ) : (
-                          <div className="size-full bg-primary-light flex items-center justify-center">
-                            <User className="size-5 text-primary" aria-hidden="true" />
-                          </div>
+                          <img
+                            src={hermineIcon}
+                            alt={profile?.username ?? 'Profil'}
+                            className="size-full object-cover"
+                          />
                         )}
                       </div>
 
@@ -320,10 +335,10 @@ export function HomeNavbar({
                         <span className="text-foreground text-sm text-nowrap leading-tight font-medium">
                           {profile?.username}
                         </span>
-                        {/* Streak (jours consécutifs) — TODO [BACKEND] profile.streak_days */}
+                        {/* Streak (jours consécutifs avec un partage) — affiché même à 0 pour inciter */}
                         <span className="text-xs text-nowrap leading-tight flex items-center gap-0.5 text-[var(--color-warning)]">
                           <Flame className="size-3 shrink-0" aria-hidden="true" />
-                          {STREAK_DAYS} jours
+                          {streakDays ?? 0} {t('home.profile.days')}
                         </span>
                       </div>
                       <ChevronDown

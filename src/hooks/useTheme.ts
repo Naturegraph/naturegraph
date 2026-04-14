@@ -1,42 +1,29 @@
-import { useState, useEffect, useCallback } from 'react'
+/**
+ * useTheme — Gestion du thème applicatif
+ *
+ * MVP : thème forcé en light. Le dark mode sera implémenté post-MVP.
+ * La structure (context, hook, provider) est conservée pour faciliter
+ * la réactivation future — il suffira de décommenter la logique dynamique.
+ */
+
+import { useCallback } from 'react'
 
 type Theme = 'light' | 'dark'
 
-const STORAGE_KEY = 'naturegraph-theme'
-
-function getInitialTheme(): Theme {
-  const stored = localStorage.getItem(STORAGE_KEY)
-  if (stored === 'light' || stored === 'dark') return stored
-
-  // Dark mode design not yet implemented — default to light
-  return 'light'
-}
-
+/**
+ * Hook thème — forcé en light pour le MVP.
+ * toggleTheme() et setTheme() sont des no-ops intentionnels.
+ */
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>(getInitialTheme)
+  const theme: Theme = 'light'
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem(STORAGE_KEY, theme)
-  }, [theme])
-
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    const handler = (e: MediaQueryListEvent) => {
-      if (!localStorage.getItem(STORAGE_KEY)) {
-        setThemeState(e.matches ? 'dark' : 'light')
-      }
-    }
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [])
-
+  // No-ops — conservés pour l'interface ThemeContextValue
   const toggleTheme = useCallback(() => {
-    setThemeState((prev) => (prev === 'light' ? 'dark' : 'light'))
+    // TODO [POST-MVP] — réactiver le switch light/dark
   }, [])
 
-  const setTheme = useCallback((t: Theme) => {
-    setThemeState(t)
+  const setTheme = useCallback((_t: Theme) => {
+    // TODO [POST-MVP] — réactiver le switch light/dark
   }, [])
 
   return { theme, toggleTheme, setTheme }
