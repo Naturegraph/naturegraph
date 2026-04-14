@@ -5,9 +5,8 @@
 export { useScrollReveal } from './useScrollReveal'
 export { useTheme } from './useTheme'
 export { useFeed, useInvalidateFeed, FEED_QUERY_KEY } from './useFeed'
-export { useProfile, useProfileByUsername, useUpdateProfile } from './useProfile'
+export { useProfile, useProfileByUsername, useUpdateProfile, useSuggestedUsers } from './useProfile'
 export { usePost, useToggleReaction, useCreatePost } from './usePost'
-export { useComments, useCreateComment, useDeleteComment } from './useComments'
 export {
   useNotifications,
   useUnreadCount,

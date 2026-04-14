@@ -13,6 +13,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { House, Menu, Plus, Search, User } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import hermineIcon from '@/assets/images/hermine-icon.png'
 
 /** Props du composant MobileBottomNav */
 interface MobileBottomNavProps {
@@ -125,10 +126,10 @@ export function MobileBottomNav({
           aria-label={t('nav.profile')}
           aria-current={isActive('/profile') ? 'page' : undefined}
         >
-          {isAuthenticated && profile?.avatar_url ? (
+          {isAuthenticated ? (
             <img
-              src={profile.avatar_url}
-              alt={profile.username ?? t('nav.profile')}
+              src={profile?.avatar_url ?? hermineIcon}
+              alt={profile?.username ?? t('nav.profile')}
               className={`${iconSize} rounded-full object-cover border ${isActive('/profile') ? 'border-primary' : 'border-border'}`}
             />
           ) : (

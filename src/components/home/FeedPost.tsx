@@ -13,10 +13,43 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, Leaf } from 'lucide-react'
-import type { MockPost } from '@/data/mock/mockPosts'
+import { Bookmark, Share2, MoreHorizontal, Leaf } from 'lucide-react'
 import { PostOptionsMenu } from './PostOptionsMenu'
-import { CommentsSection } from './CommentsSection'
+import hermineIcon from '@/assets/images/hermine-icon.png'
+import type { ReactionType } from '@/types/database'
+
+// ─── Type UI pour les posts du feed ──────────────────────────────────────────
+// Bridge entre le type DB (PostFeedItem) et le composant FeedPost.
+// TODO : refactoriser FeedPost pour accepter PostFeedItem directement.
+
+export interface MockPost {
+  id: string
+  author: { name: string; avatar: string; badge?: string }
+  date: string
+  location: string
+  title: string
+  content: string
+  weather?: string
+  clouds?: string
+  timeOfDay?: string
+  category: { icon: string; label: string }
+  species: string
+  format: '16:9' | 'portrait' | '1:1'
+  images: Array<{ url: string; alt: string }>
+  reactions: {
+    love: number
+    admire: number
+    fire: number
+    wow: number
+    curious: number
+    disappointed: number
+  }
+  /** Réaction de l'utilisateur connecté sur ce post (null si aucune) */
+  userReaction: ReactionType | null
+  /** Total des réactions (likes_count) */
+  totalReactions: number
+  comments: number
+}
 import { ImageSlider } from './ImageSlider'
 
 // ─── Composant principal ──────────────────────────────────────────────────────
@@ -33,18 +66,12 @@ const REACTION_CONFIG = [
 ]
 
 interface FeedPostProps extends MockPost {
-  /**
-   * true (défaut) = utilisateur connecté — boutons d'interaction actifs.
-   * false = mode invité — clic sur réactions/commentaires redirige vers /signup.
-   * TODO [BACKEND] — Alimenté par `isAuthenticated` depuis useAuth()
-   */
+  /** true = utilisateur connecté — boutons actifs. false = redirige /signup */
   canInteract?: boolean
-  /**
-   * true = post appartenant à l'utilisateur connecté.
-   * Affiche "Modifier / Supprimer" au lieu de "Signaler / Masquer".
-   * TODO [BACKEND] — Comparer post.author_id avec currentUser.id
-   */
+  /** true = post de l'utilisateur connecté (Modifier / Supprimer) */
   isOwnPost?: boolean
+  /** Callback pour réagir à un post (emoji picker → type) */
+  onReact?: (postId: string, type: ReactionType) => void
 }
 
 export function FeedPost({
@@ -62,15 +89,17 @@ export function FeedPost({
   format,
   images,
   reactions,
-  comments,
+  userReaction,
+  totalReactions,
   canInteract = true,
   isOwnPost = false,
+  onReact,
 }: FeedPostProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [isExpanded, setIsExpanded] = useState(false)
   const [showOptions, setShowOptions] = useState(false)
-  const [showComments, setShowComments] = useState(false)
+  const [showReactionPicker, setShowReactionPicker] = useState(false)
   const shouldTruncate = content.length > 200
 
   // Redirige vers /signup si l'invité tente d'interagir
@@ -79,6 +108,16 @@ export function FeedPost({
       e.preventDefault()
       navigate('/signup')
     }
+  }
+
+  /** Gère le clic sur une réaction dans le picker ou dans les badges */
+  function handleReact(type: ReactionType) {
+    if (!canInteract) {
+      navigate('/signup')
+      return
+    }
+    onReact?.(id, type)
+    setShowReactionPicker(false)
   }
 
   return (
@@ -97,7 +136,7 @@ export function FeedPost({
             <div className="relative md:size-12 size-10 shrink-0">
               <div className="size-full rounded-full overflow-hidden">
                 <img
-                  src={author.avatar || undefined}
+                  src={author.avatar || hermineIcon}
                   alt={author.name}
                   className="size-full object-cover"
                 />
@@ -213,69 +252,111 @@ export function FeedPost({
         {/* Images — clic ouvre la lightbox plein écran */}
         <ImageSlider images={images} format={format} author={author} />
 
-        {/* Compteurs de réactions */}
+        {/* Compteurs de réactions — cliquables pour toggle */}
         <div className="flex items-center justify-between">
           <div className="flex gap-1">
-            {REACTION_CONFIG.filter(({ key }) => reactions[key] > 0).map(
-              ({ key, emoji, labelKey }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={requireAuth}
-                  aria-label={`${t(labelKey)} : ${reactions[key]}${!canInteract ? ` — ${t('home.post.reactLoginPrompt')}` : ''}`}
-                  className="bg-cream flex gap-1 items-center h-6 px-2 rounded-full text-sm text-foreground tracking-[0.48px] hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
-                >
-                  <span aria-hidden="true">{emoji}</span>
-                  <span>{reactions[key]}</span>
-                </button>
-              ),
+            {totalReactions > 0 ? (
+              REACTION_CONFIG.filter(({ key }) => reactions[key] > 0).map(
+                ({ key, emoji, labelKey }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => handleReact(key)}
+                    aria-label={`${t(labelKey)} : ${reactions[key]}${userReaction === key ? ` — ${t('home.post.yourReaction')}` : ''}`}
+                    className={[
+                      'flex gap-1 items-center h-6 px-2 rounded-full text-sm tracking-[0.48px] transition-all duration-200',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+                      userReaction === key
+                        ? 'bg-primary/15 text-primary font-semibold ring-1 ring-primary/30 reaction-active'
+                        : 'bg-cream text-foreground hover:bg-muted/50',
+                    ].join(' ')}
+                  >
+                    <span aria-hidden="true" className={userReaction === key ? 'reaction-pop' : ''}>
+                      {emoji}
+                    </span>
+                    <span>{reactions[key]}</span>
+                  </button>
+                ),
+              )
+            ) : (
+              <span className="text-xs text-muted-foreground tracking-[0.48px]">
+                {t('home.post.noReactions')}
+              </span>
             )}
           </div>
-          <button
-            type="button"
-            onClick={(e) => {
-              if (canInteract) setShowComments(true)
-              else requireAuth(e)
-            }}
-            aria-label={t('home.post.commentCount', { count: comments })}
-            className="bg-cream flex gap-1 items-center h-6 px-2 rounded-full text-sm text-foreground tracking-[0.48px] hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
-          >
-            <MessageCircle className="size-3.5" aria-hidden="true" />
-            <span>{comments}</span>
-          </button>
         </div>
 
         {/* Séparateur */}
         <hr className="border-border border-[0.5px]" />
 
-        {/* Actions */}
+        {/* Actions — réagir, sauvegarder, partager */}
         <div className="flex items-center justify-between h-8">
-          <div className="flex gap-1">
-            <button
-              type="button"
-              onClick={requireAuth}
-              className="flex gap-2 items-center h-8 px-2 rounded-full hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
-              aria-label={t('home.post.react')}
-            >
-              <Heart className="size-4 text-foreground" aria-hidden="true" />
-              <span className="hidden md:inline text-foreground text-base">
-                {t('home.post.react')}
-              </span>
-            </button>
+          <div className="relative flex gap-1">
+            {/* Bouton React — affiche le picker d'emojis au clic */}
             <button
               type="button"
               onClick={(e) => {
-                if (canInteract) setShowComments(true)
-                else requireAuth(e)
+                if (!canInteract) {
+                  requireAuth(e)
+                  return
+                }
+                setShowReactionPicker((o) => !o)
               }}
-              className="flex gap-2 items-center h-8 px-2 rounded-full hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
-              aria-label={t('home.post.comments')}
+              aria-expanded={showReactionPicker}
+              aria-label={t('home.post.react')}
+              className={[
+                'flex gap-2 items-center h-8 px-2 rounded-full transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+                userReaction ? 'text-primary font-semibold' : 'text-foreground hover:bg-muted/50',
+              ].join(' ')}
             >
-              <MessageCircle className="size-4 text-foreground" aria-hidden="true" />
-              <span className="hidden md:inline text-foreground text-base">
-                {t('home.post.comments')}
-              </span>
+              {/* Affiche l'emoji actif ou le label par défaut */}
+              {userReaction ? (
+                <span className="text-base" aria-hidden="true">
+                  {REACTION_CONFIG.find((r) => r.key === userReaction)?.emoji ?? '❤️'}
+                </span>
+              ) : (
+                <span className="text-base" aria-hidden="true">
+                  ❤️
+                </span>
+              )}
+              <span className="hidden md:inline text-base">{t('home.post.react')}</span>
             </button>
+
+            {/* Picker d'emojis — popup au-dessus du bouton */}
+            {showReactionPicker && (
+              <>
+                {/* Backdrop invisible pour fermer le picker */}
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowReactionPicker(false)}
+                  aria-hidden="true"
+                />
+                <div
+                  role="group"
+                  aria-label={t('home.post.chooseReaction')}
+                  className="absolute bottom-full left-0 mb-2 z-50 flex gap-1 bg-background border border-border rounded-full px-2 py-1.5 shadow-lg reaction-picker-enter"
+                >
+                  {REACTION_CONFIG.map(({ key, emoji, labelKey }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handleReact(key)}
+                      aria-label={t(labelKey)}
+                      aria-pressed={userReaction === key}
+                      className={[
+                        'size-9 flex items-center justify-center rounded-full text-xl transition-transform duration-150',
+                        'hover:scale-125 hover:bg-muted/50',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                        userReaction === key ? 'bg-primary/15 scale-110' : '',
+                      ].join(' ')}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
           <div className="flex gap-1">
             <button
@@ -297,14 +378,6 @@ export function FeedPost({
           </div>
         </div>
       </div>
-
-      {/* Modale de commentaires */}
-      <CommentsSection
-        postId={id}
-        commentsCount={comments}
-        isOpen={showComments}
-        onClose={() => setShowComments(false)}
-      />
     </article>
   )
 }

@@ -4,35 +4,23 @@
  * Affiche :
  * - Bannière + avatar + username
  * - Centres d'intérêts (badges depuis profile.interests)
- * - Statistiques simples (observations, espèces, streak)
- * - Objectif personnel (progression hebdomadaire)
- * - Suggestions de migrateurs basées sur les intérêts communs
+ * - Statistiques réelles (observations, espèces, streak) via Supabase
+ * - Objectif personnel (progression hebdomadaire réelle)
+ * - Section "Migrateurs à suivre" (suggestions personnalisées >= 3 disponibles)
  *
  * Accessibilité :
  * - progressbar avec aria-valuenow / aria-valuemin / aria-valuemax
  */
 
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ChevronRight, User, Users } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Users, UserPlus } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { getSuggestedUsersByInterests, INTEREST_LABELS } from '@/data/mock/mockUsers'
-import { getBadgeEmoji } from '@/utils/badgeHelpers'
-
-// ─── Mock stats ───────────────────────────────────────────────────────────────
-// TODO [BACKEND] — Stats utilisateur :
-//   observations  → profile.posts_count (déjà dispo sur la table `profiles`, mis à jour par trigger)
-//   species       → COUNT DISTINCT de species_identified sur la table `posts` pour cet user
-//   streak        → calculé côté back-end (trigger ou edge function) → stocker dans `profiles.streak`
-//   Ref: profileService.getProfileById() → étendre le retour avec ces champs agrégés
-
-// TODO [BACKEND] — Objectif personnel (progression hebdomadaire) :
-//   current → COUNT de posts de l'utilisateur sur les 7 derniers jours
-//   goal    → champ `profiles.weekly_goal` (à ajouter au schéma, valeur par défaut 5)
-//   Brancher via useQuery avec clé ['weekProgress', userId], staleTime: 1 heure
-
-const WEEK_PROGRESS_CURRENT = 20 // TODO [BACKEND] — remplacer par données réelles
-const WEEK_PROGRESS_GOAL = 24 // TODO [BACKEND] — remplacer par profile.weekly_goal
+import { useLocation } from '@/contexts/LocationContext'
+import hermineIcon from '@/assets/images/hermine-icon.png'
+import { INTEREST_LABELS } from '@/constants/interests'
+import { useUserStats, useUserStreak, useWeekProgress } from '@/hooks/useStats'
+import { useSuggestedUsers } from '@/hooks/useProfile'
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 
@@ -40,46 +28,49 @@ export function ProfileSidebar() {
   const { t } = useTranslation()
   const { profile } = useAuth()
 
-  // IDs des intérêts pour le matching (badges mockUsers stockés en IDs)
+  const { locationLabel } = useLocation()
+
+  // IDs des intérêts pour l'affichage
   const interestIds = profile?.interests ?? []
-  // Labels français pour l'affichage uniquement
   const interestLabels = interestIds.map((i) => INTEREST_LABELS[i] ?? i)
 
-  // TODO [BACKEND] — Remplacer par profileService.getUserStats(profile.id)
-  // Retourne { observations, species, streak, weekProgress: { current, goal } }
-  const stats = {
-    observations: profile?.posts_count ?? 0,
-    species: 48, // TODO [BACKEND] — COUNT DISTINCT species_identified depuis `posts`
-    streak: 14, // TODO [BACKEND] — depuis profiles.streak (calculé par trigger)
-  }
+  // Extraire la région du locationLabel ("Ville, Région" → "Région")
+  const region = locationLabel.includes(',')
+    ? (locationLabel.split(',').pop()?.trim() ?? null)
+    : null
 
-  const progressPercent = Math.round((WEEK_PROGRESS_CURRENT / WEEK_PROGRESS_GOAL) * 100)
+  // ── Données Supabase ──────────────────────────────────────────────────────
+  const { data: userStats } = useUserStats(profile?.id)
+  const { data: streak } = useUserStreak(profile?.id)
+  const { data: weekProgress } = useWeekProgress(profile?.id)
+  const { data: suggestedUsers, isLoading: suggestionsLoading } = useSuggestedUsers(
+    profile?.id,
+    interestIds,
+    region,
+  )
 
-  // TODO [BACKEND] — Remplacer par profileService.getSuggestedUsers(userId, { interests, limit: 3 })
-  // Logique back-end : utilisateurs avec le plus d'intérêts communs + dans la même région
-  // Table `follows` pour exclure les déjà suivis. Requête : RPC Supabase ou edge function.
-  // Matching par IDs (badges mockUsers sont des IDs depuis la refonte mockUsers)
-  const suggestions = getSuggestedUsersByInterests(interestIds, 3, profile?.id)
+  const observations = userStats?.postsCount ?? profile?.posts_count ?? 0
+  const species = userStats?.uniqueSpeciesCount ?? 0
+  const streakDays = streak ?? 0
+
+  const weekCurrent = weekProgress?.current ?? 0
+  const weekGoal = weekProgress?.goal ?? 5
+  const progressPercent =
+    weekGoal > 0 ? Math.min(100, Math.round((weekCurrent / weekGoal) * 100)) : 0
 
   return (
     <div className="flex flex-col gap-4">
       {/* Carte profil */}
       <div className="bg-cream-lighter border-[0.5px] border-border rounded-card overflow-hidden">
         {/* Bannière */}
-        <div className="h-20 bg-gradient-to-br from-primary/30 to-teal-dark/40 relative">
+        <div className="h-20 bg-[var(--color-action-light)] relative">
           <div className="absolute left-6 bottom-[-24px]">
             <div className="size-14 rounded-full border-2 border-cream-lighter overflow-hidden bg-primary-light">
-              {profile?.avatar_url ? (
-                <img
-                  src={profile.avatar_url}
-                  alt={t('home.profile.avatarAlt', { name: profile.username })}
-                  className="size-full object-cover"
-                />
-              ) : (
-                <div className="size-full flex items-center justify-center">
-                  <User className="size-7 text-primary" aria-hidden="true" />
-                </div>
-              )}
+              <img
+                src={profile?.avatar_url ?? hermineIcon}
+                alt={t('home.profile.avatarAlt', { name: profile?.username })}
+                className="size-full object-cover"
+              />
             </div>
           </div>
         </div>
@@ -112,19 +103,19 @@ export function ProfileSidebar() {
           {/* Stats : observations / espèces / streak */}
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="flex flex-col gap-0.5">
-              <p className="font-bold text-foreground">{stats.observations}</p>
+              <p className="font-bold text-foreground">{observations}</p>
               <p className="text-xs text-muted-foreground tracking-[0.48px]">
                 {t('home.profile.obs')}
               </p>
             </div>
             <div className="flex flex-col gap-0.5">
-              <p className="font-bold text-foreground">{stats.species}</p>
+              <p className="font-bold text-foreground">{species}</p>
               <p className="text-xs text-muted-foreground tracking-[0.48px]">
                 {t('home.profile.species')}
               </p>
             </div>
             <div className="flex flex-col gap-0.5">
-              <p className="font-bold text-foreground">{stats.streak}</p>
+              <p className="font-bold text-foreground">{streakDays}</p>
               <p className="text-xs text-muted-foreground tracking-[0.48px]">
                 {t('home.profile.days')}
               </p>
@@ -138,17 +129,17 @@ export function ProfileSidebar() {
                 {t('home.profile.thisWeek')}
               </p>
               <p className="text-xs font-bold text-foreground">
-                {WEEK_PROGRESS_CURRENT}/{WEEK_PROGRESS_GOAL}
+                {weekCurrent}/{weekGoal}
               </p>
             </div>
             <div
               role="progressbar"
-              aria-valuenow={WEEK_PROGRESS_CURRENT}
+              aria-valuenow={weekCurrent}
               aria-valuemin={0}
-              aria-valuemax={WEEK_PROGRESS_GOAL}
+              aria-valuemax={weekGoal}
               aria-label={t('home.profile.progressLabel', {
-                current: WEEK_PROGRESS_CURRENT,
-                goal: WEEK_PROGRESS_GOAL,
+                current: weekCurrent,
+                goal: weekGoal,
               })}
               className="h-2 rounded-full bg-border overflow-hidden"
             >
@@ -161,64 +152,83 @@ export function ProfileSidebar() {
         </div>
       </div>
 
-      {/* Migrateurs à suivre — basés sur les intérêts */}
+      {/* Migrateurs à suivre — suggestions personnalisées ou état vide */}
       <div className="bg-cream-lighter border-[0.5px] border-border rounded-card px-6 py-6">
-        <div className="flex items-center gap-3 mb-1">
+        <div className="flex items-center gap-3 mb-4">
           <div className="bg-teal-dark size-8 rounded-full flex items-center justify-center shrink-0">
             <Users className="size-4 text-white" aria-hidden="true" />
           </div>
-          <p className="font-bold">{t('home.sidebar.migratorsTitle')}</p>
+          <div>
+            <p className="font-bold">{t('home.sidebar.migratorsTitle')}</p>
+            {/* Sous-titre contextuel : région si localisé, sinon global */}
+            {suggestedUsers && suggestedUsers.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {region
+                  ? t('home.sidebar.migratorsTerritory', { region })
+                  : t('home.sidebar.migratorsDaily')}
+              </p>
+            )}
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground mb-5 pl-11">
-          {t('home.sidebar.migratorsInterests')}
-        </p>
 
-        <div className="flex flex-col gap-4">
-          {suggestions.map((user) => (
-            <Link
-              key={user.id}
-              to={`/profile/${user.username}`}
-              className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm"
-            >
-              {/* Avatar */}
-              <div className="size-10 shrink-0 relative">
-                <div className="size-full rounded-full overflow-hidden">
-                  <img src={user.avatar} alt={user.username} className="size-full object-cover" />
+        {/* Skeleton de chargement */}
+        {suggestionsLoading && (
+          <div className="flex flex-col gap-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 animate-pulse">
+                <div className="size-10 rounded-full bg-muted shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3 bg-muted rounded w-2/3" />
+                  <div className="h-2 bg-muted rounded w-1/3" />
                 </div>
-                {user.badges.length > 0 && (
-                  <div
-                    aria-hidden="true"
-                    className="absolute bg-cream-lighter bottom-[-2px] right-[-2px] flex items-center justify-center rounded-full size-[18px]"
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Suggestions (>= 3 disponibles) */}
+        {!suggestionsLoading && suggestedUsers && suggestedUsers.length >= 3 && (
+          <div className="flex flex-col gap-3">
+            {suggestedUsers.map((user) => (
+              <div key={user.id} className="flex items-center gap-3">
+                <Link
+                  to={`/profile/${user.username}`}
+                  className="size-10 rounded-full overflow-hidden bg-primary-light shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <img
+                    src={user.avatar_url ?? hermineIcon}
+                    alt={user.username}
+                    className="size-full object-cover"
+                  />
+                </Link>
+                <div className="flex-1 min-w-0">
+                  <Link
+                    to={`/profile/${user.username}`}
+                    className="font-bold text-sm text-foreground truncate block hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
                   >
-                    <span className="text-[12px] leading-none">
-                      {getBadgeEmoji(user.badges[0])}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Nom + badges */}
-              <div className="flex-1 text-left min-w-0">
-                <p className="text-sm font-bold text-foreground truncate mb-1">{user.username}</p>
-                <div className="flex gap-1 flex-wrap">
-                  {user.badges.slice(0, 2).map((badge, i) => (
-                    <span
-                      key={i}
-                      className="bg-primary-light text-foreground text-xs px-2 py-0.5 rounded-button whitespace-nowrap"
-                    >
-                      {INTEREST_LABELS[badge] ?? badge}
-                    </span>
-                  ))}
+                    {user.username}
+                  </Link>
+                  <p className="text-xs text-muted-foreground tracking-[0.48px]">
+                    {t('home.sidebar.migratorsObsCount', { count: user.posts_count })}
+                  </p>
                 </div>
+                <button
+                  type="button"
+                  className="flex items-center gap-1 h-7 px-3 rounded-button bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+                  aria-label={`${t('home.sidebar.migratorsFollow')} ${user.username}`}
+                >
+                  <UserPlus className="size-3" aria-hidden="true" />
+                  {t('home.sidebar.migratorsFollow')}
+                </button>
               </div>
+            ))}
+          </div>
+        )}
 
-              {/* Chevron */}
-              <div className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center shrink-0">
-                <ChevronRight className="size-4 text-foreground" aria-hidden="true" />
-              </div>
-            </Link>
-          ))}
-        </div>
+        {/* État vide — moins de 3 suggestions */}
+        {!suggestionsLoading && (!suggestedUsers || suggestedUsers.length < 3) && (
+          <p className="text-xs text-muted-foreground pl-11">{t('home.sidebar.migratorsEmpty')}</p>
+        )}
       </div>
     </div>
   )

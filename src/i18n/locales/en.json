@@ -323,8 +323,7 @@
     "feedEmpty": "No observations yet",
     "trending": {
       "title": "Trending",
-      "thisWeek": "This week",
-      "viewAll": "View all trends"
+      "thisWeek": "This week"
     },
     "location": {
       "title": "Location",
@@ -352,7 +351,10 @@
       "migratorsTitle": "Migrators to follow",
       "migratorsDaily": "Popular today",
       "migratorsTerritory": "Popular in {{region}}",
-      "migratorsInterests": "Based on your interests"
+      "migratorsInterests": "Based on your interests",
+      "migratorsEmpty": "Soon, discover active naturalists near you.",
+      "migratorsFollow": "Follow",
+      "migratorsObsCount": "{{count}} obs"
     },
     "profile": {
       "obs": "Obs",
@@ -366,7 +368,6 @@
       "recent": "Recent",
       "forYou": "For you",
       "popular": "Popular",
-      "trends": "Trending",
       "filterFeed": "Filter feed",
       "listView": "List view",
       "gridView": "Grid view",
@@ -411,6 +412,9 @@
       "navImages": "Image navigation",
       "viewImage": "View image {{index}}",
       "reactLoginPrompt": "Sign in to react",
+      "noReactions": "Be the first to react",
+      "yourReaction": "Your reaction",
+      "chooseReaction": "Choose a reaction",
       "reactions": {
         "love": "Love",
         "admire": "Admire",
@@ -469,8 +473,9 @@
       "changePeriod": "Change period",
       "observations": "Observations",
       "migrators": "Migrators",
-      "changeTrendPeriod": "Change trend period",
+      "thisWeek": "This week",
       "thisMonth": "This month",
+      "thisQuarter": "This quarter",
       "observationCount": "{{count}} observations"
     },
     "search": {
@@ -797,18 +802,11 @@
     "logout": "Log out",
     "logoutDesc": "You will be redirected to the home page",
     "deleteAccountDesc": "This action is irreversible. All your data will be deleted.",
-    "deleteAccountConfirm": "Are you sure you want to delete your account?"
-  },
-
-  "comments": {
-    "title": "Comments",
-    "titleCount": "Comments ({{count}})",
-    "placeholder": "Add a comment...",
-    "send": "Send",
-    "loginPrompt": "Log in to comment",
-    "loginLink": "Create an account",
-    "empty": "No comments yet",
-    "emptyDesc": "Be the first to comment on this observation!"
+    "deleteAccountConfirm": "Are you sure you want to delete your account?",
+    "weeklyGoal": "Weekly goal",
+    "weeklyGoalDesc": "Number of observations per week",
+    "weeklyGoalDecrease": "Decrease goal",
+    "weeklyGoalIncrease": "Increase goal"
   },
 
   "mobileNav": {

@@ -14,6 +14,7 @@ export interface UserSettings {
   language: 'fr' | 'en'
   reduced_motion: boolean
   show_sensitive_data: boolean
+  weekly_goal: number
   updated_at: string
 }
 

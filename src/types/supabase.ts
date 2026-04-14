@@ -724,6 +724,7 @@ export type Database = {
           theme: string
           updated_at: string
           user_id: string
+          weekly_goal: number
         }
         Insert: {
           email_notifications?: boolean
@@ -735,6 +736,7 @@ export type Database = {
           theme?: string
           updated_at?: string
           user_id: string
+          weekly_goal?: number
         }
         Update: {
           email_notifications?: boolean
@@ -746,6 +748,7 @@ export type Database = {
           theme?: string
           updated_at?: string
           user_id?: string
+          weekly_goal?: number
         }
         Relationships: [
           {

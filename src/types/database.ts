@@ -61,12 +61,14 @@ export type MediaStatus = 'uploading' | 'processing' | 'ready' | 'error'
 export type NotebookVisibility = 'private' | 'public' | 'collaborative'
 
 export type NotificationType =
+  | 'reaction'
   | 'comment'
   | 'identification'
   | 'vote'
   | 'follow'
   | 'notebook_invite'
   | 'notebook_contribution'
+  | 'system'
 
 export type IdentificationConfidence = 'certain' | 'probable' | 'possible'
 

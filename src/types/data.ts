@@ -44,11 +44,6 @@ export type {
   ProposalWithAuthor,
 } from './database'
 
-// Re-export mock data types (backward compat)
-export type { Species, SpeciesCategory } from '../data/mock/species'
-export type { UserProfile, SocialMedia, Location } from '../data/mock/users'
-export type { NatureEncounter, NatureInstant } from '../data/mock/posts'
-
 /**
  * API response wrappers
  */

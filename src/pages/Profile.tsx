@@ -5,9 +5,7 @@
  *   /profile           → propre profil (connecté)
  *   /profile/:username → profil visiteur (autre utilisateur)
  *
- * Source de données :
- *  - Supabase configuré  → useProfile / useProfileByUsername (React Query)
- *  - Mode démo           → mockUsers (comportement inchangé)
+ * Source de données : Supabase via useProfile / useProfileByUsername (React Query)
  *
  * Note : ProfileDisplayData inclut des champs UI enrichis (badges, stats, weekProgress)
  * non encore stockés en DB. Ils sont construits avec des valeurs par défaut
@@ -19,9 +17,6 @@ import { useParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { useProfile, useProfileByUsername } from '@/hooks/useProfile'
-import { isSupabaseConfigured } from '@/lib/supabase'
-import { mockUsers } from '@/data/mock/mockUsers'
-import { mockPosts } from '@/data/mock/mockPosts'
 import { HomeNavbar } from '@/components/home/HomeNavbar'
 import { MobileBottomNav } from '@/components/home/MobileBottomNav'
 import { ProfileHeader } from '@/components/profile/ProfileHeader'
@@ -99,59 +94,41 @@ export default function Profile() {
   const [showEditPanel, setShowEditPanel] = useState(false)
   const [showShareSheet, setShowShareSheet] = useState(false)
 
-  // ── Requêtes Supabase (actives uniquement si configuré) ───────────────────
+  // ── Requêtes Supabase ───────────────────────────────────────────────────
 
   // Propre profil : on a déjà authProfile depuis le contexte, on l'enrichit
-  const { data: supabaseOwnProfile } = useProfile(
-    isOwnProfile && isSupabaseConfigured ? authProfile?.id : undefined,
-  )
+  const { data: supabaseOwnProfile } = useProfile(isOwnProfile ? authProfile?.id : undefined)
 
   // Profil visiteur : cherche par username
   const {
     data: supabaseVisitorProfile,
     isLoading: isVisitorLoading,
     isError: isVisitorError,
-  } = useProfileByUsername(
-    !isOwnProfile && isSupabaseConfigured ? username : undefined,
-  )
+  } = useProfileByUsername(!isOwnProfile ? username : undefined)
 
-  // ── Sélection des données selon le mode ───────────────────────────────────
+  // ── Sélection des données ─────────────────────────────────────────────────
 
   let profileData: ProfileDisplayData | null = null
   let isLoading = false
 
-  if (isSupabaseConfigured) {
-    if (isOwnProfile) {
-      // Propre profil : préfère la version fraîche de useProfile, fallback sur authProfile
-      const source = supabaseOwnProfile ?? authProfile
-      profileData = source ? profileToDisplayData(source as Profile) : null
-    } else {
-      isLoading = isVisitorLoading
-      profileData = supabaseVisitorProfile ? profileToDisplayData(supabaseVisitorProfile) : null
-    }
+  if (isOwnProfile) {
+    // Propre profil : préfère la version fraîche de useProfile, fallback sur authProfile
+    const source = supabaseOwnProfile ?? authProfile
+    profileData = source ? profileToDisplayData(source as Profile) : null
   } else {
-    // Mode démo — comportement mock original
-    profileData = isOwnProfile
-      ? buildOwnProfile(authProfile)
-      : buildVisitorProfile(username)
+    isLoading = isVisitorLoading
+    profileData = supabaseVisitorProfile ? profileToDisplayData(supabaseVisitorProfile) : null
   }
 
-  // Posts de cet utilisateur
-  // TODO [S3] : remplacer par postService.getPostsByUser(profile.id) via useQuery
-  const userPosts = mockPosts.filter((p) => p.author.name === profileData?.username)
+  // TODO [BACKEND] — Brancher postService.getPostsByUser(profile.id) via useQuery
+  const userPosts: import('@/components/home/FeedPost').MockPost[] = []
 
-  // Photos d'inspiration depuis mockUsers si disponible (champ non encore en DB)
-  const mockUser = mockUsers.find((u) => u.username === profileData?.username)
-  const inspirationPhotos = mockUser?.inspiration_photos ?? []
+  // TODO [BACKEND] — Ajouter champ inspiration_photos dans la table profiles
+  const inspirationPhotos: string[] = []
 
   /** Appelé par EditProfilePanel lors de la sauvegarde */
   function handleSave(data: Partial<ProfileDisplayData>) {
-    // En mode Supabase, React Query invalidera automatiquement via useUpdateProfile
-    // Pour le mode démo, on garde la mise à jour locale
-    if (!isSupabaseConfigured) {
-      // pas de setState ici car profileData vient des mocks — le composant re-render via authProfile
-    }
-    // Inutilisé en mode Supabase : useUpdateProfile dans EditProfilePanel gère la mutation
+    // useUpdateProfile dans EditProfilePanel gère la mutation via React Query
     void data
   }
 
@@ -159,14 +136,25 @@ export default function Profile() {
 
   if (isLoading) return <ProfileSkeleton />
 
-  if (isVisitorError || (!isLoading && !profileData && isSupabaseConfigured && !isOwnProfile)) {
+  if (isVisitorError || (!isLoading && !profileData && !isOwnProfile)) {
     return (
       <div className="min-h-screen bg-cream-lighter flex flex-col">
         <HomeNavbar />
-        <main id="main-content" className="flex-1 flex flex-col items-center justify-center gap-4 px-4">
-          <img src={hermineEmptyState} alt="" className="w-32 opacity-60" width={128} height={128} />
+        <main
+          id="main-content"
+          className="flex-1 flex flex-col items-center justify-center gap-4 px-4"
+        >
+          <img
+            src={hermineEmptyState}
+            alt=""
+            className="w-32 opacity-60"
+            width={128}
+            height={128}
+          />
           <h1 className="text-xl font-bold text-foreground">{t('profile.userNotFound')}</h1>
-          <p className="text-sm text-muted-foreground text-center">{t('profile.userNotFoundDesc')}</p>
+          <p className="text-sm text-muted-foreground text-center">
+            {t('profile.userNotFoundDesc')}
+          </p>
           <Link to="/home" className="text-sm text-primary font-medium hover:underline">
             {t('profile.backToFeed')}
           </Link>
@@ -180,10 +168,21 @@ export default function Profile() {
     return (
       <div className="min-h-screen bg-cream-lighter flex flex-col">
         <HomeNavbar />
-        <main id="main-content" className="flex-1 flex flex-col items-center justify-center gap-4 px-4">
-          <img src={hermineEmptyState} alt="" className="w-32 opacity-60" width={128} height={128} />
+        <main
+          id="main-content"
+          className="flex-1 flex flex-col items-center justify-center gap-4 px-4"
+        >
+          <img
+            src={hermineEmptyState}
+            alt=""
+            className="w-32 opacity-60"
+            width={128}
+            height={128}
+          />
           <h1 className="text-xl font-bold text-foreground">{t('profile.userNotFound')}</h1>
-          <p className="text-sm text-muted-foreground text-center">{t('profile.userNotFoundDesc')}</p>
+          <p className="text-sm text-muted-foreground text-center">
+            {t('profile.userNotFoundDesc')}
+          </p>
           <Link to="/home" className="text-sm text-primary font-medium hover:underline">
             {t('profile.backToFeed')}
           </Link>
@@ -204,7 +203,9 @@ export default function Profile() {
             isOwnProfile={isOwnProfile}
             onEditProfile={() => setShowEditPanel(true)}
             onShare={() => setShowShareSheet(true)}
-            onOptions={() => {/* TODO: menu options */}}
+            onOptions={() => {
+              /* TODO: menu options */
+            }}
           />
         </div>
 
@@ -235,53 +236,4 @@ export default function Profile() {
       )}
     </div>
   )
-}
-
-// ─── Helpers mode démo ────────────────────────────────────────────────────────
-
-function buildOwnProfile(
-  authProfile: ReturnType<typeof useAuth>['profile'],
-): ProfileDisplayData | null {
-  if (!authProfile) return null
-  const mockUser = mockUsers.find((u) => u.username === authProfile.username) ?? mockUsers[0]
-  return {
-    username: authProfile.username,
-    bio: authProfile.bio,
-    avatar_url: authProfile.avatar_url,
-    banner_url: authProfile.banner_url,
-    city: authProfile.city,
-    region: authProfile.region,
-    interests: mockUser.interests,
-    instagram: authProfile.instagram,
-    website: authProfile.website,
-    followers_count: authProfile.followers_count || mockUser.followers_count,
-    following_count: authProfile.following_count || mockUser.following_count,
-    created_at: authProfile.created_at,
-    badges: mockUser.badges,
-    stats: mockUser.stats,
-    weekProgress: mockUser.weekProgress,
-  }
-}
-
-function buildVisitorProfile(username: string | undefined): ProfileDisplayData | null {
-  if (!username) return null
-  const user = mockUsers.find((u) => u.username === username)
-  if (!user) return null
-  return {
-    username: user.username,
-    bio: user.bio,
-    avatar_url: user.avatar,
-    banner_url: user.banner,
-    city: user.city,
-    region: user.region,
-    interests: user.interests,
-    instagram: user.instagram,
-    website: user.website,
-    followers_count: user.followers_count,
-    following_count: user.following_count,
-    created_at: user.created_at,
-    badges: user.badges,
-    stats: user.stats,
-    weekProgress: user.weekProgress,
-  }
 }
