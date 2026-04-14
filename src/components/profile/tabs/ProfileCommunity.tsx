@@ -12,8 +12,7 @@
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { User } from 'lucide-react'
-import { mockUsers } from '@/data/mock/mockUsers'
+import hermineIcon from '@/assets/images/hermine-icon.png'
 import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -45,7 +44,7 @@ function UserCard({ username, avatar, banner }: UserCardProps) {
   return (
     <div className="border border-border rounded-xl overflow-hidden bg-cream-lighter">
       {/* Bannière cropped (~80px) */}
-      <div className="h-16 relative overflow-hidden bg-gradient-to-br from-primary/20 to-teal-dark/30">
+      <div className="h-16 relative overflow-hidden bg-[var(--color-action-light)]">
         {banner && (
           <img
             src={banner}
@@ -61,13 +60,12 @@ function UserCard({ username, avatar, banner }: UserCardProps) {
       <div className="p-3 flex items-center gap-2">
         {/* Avatar */}
         <div className="size-10 rounded-full border-2 border-cream-lighter overflow-hidden bg-primary-light shrink-0 -mt-7">
-          {avatar ? (
-            <img src={avatar} alt={username} className="size-full object-cover" loading="lazy" />
-          ) : (
-            <div className="size-full flex items-center justify-center">
-              <User className="size-5 text-primary" aria-hidden="true" />
-            </div>
-          )}
+          <img
+            src={avatar ?? hermineIcon}
+            alt={username}
+            className="size-full object-cover"
+            loading="lazy"
+          />
         </div>
 
         {/* Username + bouton */}
@@ -100,8 +98,9 @@ export function ProfileCommunity({ followersCount, followingCount }: ProfileComm
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<CommunityTab>('migrateurs')
 
-  // Pour le mock, on affiche les mêmes utilisateurs dans les deux listes
-  const displayedUsers = mockUsers.slice(0, 4)
+  // TODO [BACKEND] — Brancher followService.getFollowers/getFollowing(userId, { page, limit: 20 })
+  // En attendant, l'état vide est affiché par défaut.
+  const displayedUsers: { id: string; username: string; avatar: string; banner: string }[] = []
 
   const isEmpty = displayedUsers.length === 0
 

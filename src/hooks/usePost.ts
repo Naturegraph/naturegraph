@@ -35,23 +35,33 @@ export function usePost(postId: string | undefined) {
 /**
  * Mutation optimiste pour les réactions.
  *
- * Mise à jour immédiate du cache local avant la réponse serveur.
- * En cas d'erreur, rollback automatique vers l'état précédent.
+ * Gère 3 cas :
+ *  1. Aucune réaction → ajout (likes_count +1, user_reaction = type)
+ *  2. Même type → suppression (likes_count -1, user_reaction = null)
+ *  3. Type différent → remplacement (likes_count inchangé, user_reaction = type)
+ *
+ * Rollback automatique en cas d'erreur serveur.
  */
-type ToggleReactionVars = { postId: string; type: ReactionType; feedQueryKey: readonly unknown[] }
+type ToggleReactionVars = {
+  postId: string
+  type: ReactionType
+  currentReaction: ReactionType | null
+  feedQueryKey: readonly unknown[]
+}
+type ToggleReactionResult = { added: boolean; activeType: ReactionType | null }
 type ToggleReactionContext = { previousData: unknown; feedQueryKey: readonly unknown[] }
 
 export function useToggleReaction(userId: string | undefined) {
   const queryClient = useQueryClient()
 
-  return useMutation<{ added: boolean }, Error, ToggleReactionVars, ToggleReactionContext>({
+  return useMutation<ToggleReactionResult, Error, ToggleReactionVars, ToggleReactionContext>({
     mutationFn: ({ postId, type }) => {
       if (!userId) throw new Error('Utilisateur non connecté')
       return toggleReaction(postId, userId, type)
     },
 
-    // Mise à jour optimiste : incrémente/décrémente likes_count immédiatement
-    onMutate: async ({ postId, feedQueryKey }) => {
+    // Mise à jour optimiste selon le cas (ajout / suppression / changement)
+    onMutate: async ({ postId, type, currentReaction, feedQueryKey }) => {
       await queryClient.cancelQueries({ queryKey: feedQueryKey as readonly unknown[] })
 
       const previousData = queryClient.getQueryData(feedQueryKey)
@@ -62,26 +72,38 @@ export function useToggleReaction(userId: string | undefined) {
           if (!old) return old
           return {
             ...old,
-            data: old.data.map((post: PostFeedItem) =>
-              post.id === postId ? { ...post, likes_count: post.likes_count + 1 } : post,
-            ),
+            data: old.data.map((post: PostFeedItem) => {
+              if (post.id !== postId) return post
+
+              if (currentReaction === null) {
+                // Cas 1 : ajout d'une nouvelle réaction
+                return { ...post, likes_count: post.likes_count + 1, user_reaction: type }
+              } else if (currentReaction === type) {
+                // Cas 2 : toggle off (même type)
+                return {
+                  ...post,
+                  likes_count: Math.max(0, post.likes_count - 1),
+                  user_reaction: null,
+                }
+              } else {
+                // Cas 3 : changement de type (count inchangé, triggers font delete+insert)
+                return { ...post, user_reaction: type }
+              }
+            }),
           }
         },
       )
 
-      // Retourner le snapshot pour rollback en cas d'erreur
       return { previousData, feedQueryKey }
     },
 
     onError: (_err, _vars, context) => {
-      // Rollback si la mutation échoue
       if (context?.previousData !== undefined) {
         queryClient.setQueryData(context.feedQueryKey, context.previousData)
       }
     },
 
     onSettled: (_data, _error, { feedQueryKey }) => {
-      // Toujours refetch pour synchroniser avec le serveur
       queryClient.invalidateQueries({ queryKey: feedQueryKey as readonly unknown[] })
     },
   })

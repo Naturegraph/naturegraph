@@ -14,7 +14,8 @@
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pencil, Share2, MoreHorizontal, User } from 'lucide-react'
+import { Pencil, Share2, MoreHorizontal } from 'lucide-react'
+import hermineIcon from '@/assets/images/hermine-icon.png'
 import { getBadgeEmoji } from '@/utils/badgeHelpers'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -73,7 +74,7 @@ export function ProfileHeader({
   return (
     <div className="w-full">
       {/* ── Bannière ── */}
-      <div className="h-40 relative overflow-hidden bg-gradient-to-br from-primary/30 via-primary/20 to-teal-dark/40">
+      <div className="h-40 relative overflow-hidden bg-[var(--color-action-light)]">
         {profile.banner_url && (
           <img
             src={profile.banner_url}
@@ -89,18 +90,12 @@ export function ProfileHeader({
           <div className="relative">
             {/* Cercle avatar 80px avec bordure cream */}
             <div className="size-20 rounded-full border-2 border-cream-lighter overflow-hidden bg-primary-light">
-              {profile.avatar_url ? (
-                <img
-                  src={profile.avatar_url}
-                  alt={t('home.profile.avatarAlt', { name: profile.username })}
-                  className="size-full object-cover"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="size-full flex items-center justify-center">
-                  <User className="size-8 text-primary" aria-hidden="true" />
-                </div>
-              )}
+              <img
+                src={profile.avatar_url ?? hermineIcon}
+                alt={t('home.profile.avatarAlt', { name: profile.username })}
+                className="size-full object-cover"
+                loading="lazy"
+              />
             </div>
 
             {/* Badge emoji en bas à droite de l'avatar */}

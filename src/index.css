@@ -86,3 +86,52 @@
   --shadow-md: var(--shadow-md);
   --shadow-lg: var(--shadow-lg);
 }
+
+/* ─── Animations réactions ────────────────────────────────────────────────── */
+
+/* Pop sur l'emoji quand la réaction est active */
+@keyframes reaction-pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.4);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.reaction-pop {
+  animation: reaction-pop 0.3s ease-out;
+}
+
+/* Entrée du picker d'emojis */
+@keyframes reaction-picker-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.reaction-picker-enter {
+  animation: reaction-picker-enter 0.2s ease-out;
+}
+
+/* Highlight sur le badge actif */
+.reaction-active {
+  animation: reaction-pop 0.3s ease-out;
+}
+
+/* Respecter prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .reaction-pop,
+  .reaction-picker-enter,
+  .reaction-active {
+    animation: none;
+  }
+}

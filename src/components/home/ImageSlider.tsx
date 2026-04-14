@@ -17,7 +17,7 @@
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { MockPost } from '@/data/mock/mockPosts'
+import type { MockPost } from './FeedPost'
 import { PhotoLightbox } from './PhotoLightbox'
 import type { LightboxData } from './PhotoLightbox'
 

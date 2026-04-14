@@ -4,11 +4,13 @@
  * Encapsule getFeed() derrière useQuery pour bénéficier du cache,
  * des états de chargement/erreur, et du refetch automatique.
  *
- * Utilisé par FeedSection pour remplacer le filtrage mockPosts côté client.
+ * Enrichit chaque post avec user_reaction (la réaction de l'utilisateur connecté)
+ * via un appel parallèle à getUserReactions.
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getFeed, type FeedParams, type FeedResult } from '@/services/postService'
+import { getFeed, getUserReactions, type FeedParams, type FeedResult } from '@/services/postService'
+import { useAuth } from '@/contexts/AuthContext'
 
 /** Clé de cache React Query — permet l'invalidation ciblée post-contribution */
 export const FEED_QUERY_KEY = (params: FeedParams) =>
@@ -19,13 +21,28 @@ export const FEED_QUERY_KEY = (params: FeedParams) =>
  * @param enabled - Permet de désactiver la query (ex: guest mode sans fetch)
  */
 export function useFeed(params: FeedParams = {}, enabled = true) {
+  const { user } = useAuth()
+  const userId = user?.id
+
   return useQuery<FeedResult, Error>({
     queryKey: FEED_QUERY_KEY(params),
-    queryFn: () => getFeed(params),
+    queryFn: async () => {
+      const feedResult = await getFeed(params)
+
+      // Enrichir avec les réactions de l'utilisateur connecté
+      if (userId && feedResult.data.length > 0) {
+        const postIds = feedResult.data.map((p) => p.id)
+        const reactions = await getUserReactions(userId, postIds)
+        feedResult.data = feedResult.data.map((post) => ({
+          ...post,
+          user_reaction: reactions[post.id] ?? null,
+        }))
+      }
+
+      return feedResult
+    },
     enabled,
-    // Le feed reste frais 2 minutes — équilibre fraîcheur et requêtes réseau
     staleTime: 2 * 60 * 1000,
-    // Garde les données précédentes visibles pendant le chargement de la nouvelle page
     placeholderData: (previousData) => previousData,
   })
 }

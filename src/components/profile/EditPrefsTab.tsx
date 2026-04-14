@@ -9,7 +9,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ProfileDisplayData } from './ProfileHeader'
-import { INTEREST_CONFIG } from '@/data/mock/mockUsers'
+import { INTEREST_CONFIG } from '@/constants/interests'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

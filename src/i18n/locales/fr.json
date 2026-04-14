@@ -323,8 +323,7 @@
     "feedEmpty": "Aucune observation pour le moment",
     "trending": {
       "title": "Tendances",
-      "thisWeek": "Cette semaine",
-      "viewAll": "Voir toutes les tendances"
+      "thisWeek": "Cette semaine"
     },
     "location": {
       "title": "Localisation",
@@ -352,7 +351,10 @@
       "migratorsTitle": "Migrateurs à suivre",
       "migratorsDaily": "Populaires aujourd'hui",
       "migratorsTerritory": "Populaires en {{region}}",
-      "migratorsInterests": "Basé sur tes intérêts"
+      "migratorsInterests": "Basé sur tes intérêts",
+      "migratorsEmpty": "Bientôt, découvre les naturalistes actifs près de chez toi.",
+      "migratorsFollow": "Migrer",
+      "migratorsObsCount": "{{count}} obs"
     },
     "profile": {
       "obs": "Obs",
@@ -366,7 +368,6 @@
       "recent": "Récent",
       "forYou": "Pour vous",
       "popular": "Populaire",
-      "trends": "Tendances",
       "filterFeed": "Filtrer le feed",
       "listView": "Vue liste",
       "gridView": "Vue grille",
@@ -411,6 +412,9 @@
       "navImages": "Navigation images",
       "viewImage": "Voir l'image {{index}}",
       "reactLoginPrompt": "Connecte-toi pour réagir",
+      "noReactions": "Sois le premier à réagir",
+      "yourReaction": "Ta réaction",
+      "chooseReaction": "Choisir une réaction",
       "reactions": {
         "love": "Aimer",
         "admire": "Admirer",
@@ -469,8 +473,9 @@
       "changePeriod": "Changer la période",
       "observations": "Observations",
       "migrators": "Migrateurs",
-      "changeTrendPeriod": "Changer la période des tendances",
+      "thisWeek": "Cette semaine",
       "thisMonth": "Ce mois-ci",
+      "thisQuarter": "Ce trimestre",
       "observationCount": "{{count}} observations"
     },
     "search": {
@@ -797,18 +802,11 @@
     "logout": "Se déconnecter",
     "logoutDesc": "Tu seras redirigé vers la page d'accueil",
     "deleteAccountDesc": "Cette action est irréversible. Toutes tes données seront supprimées.",
-    "deleteAccountConfirm": "Es-tu sûr de vouloir supprimer ton compte ?"
-  },
-
-  "comments": {
-    "title": "Commentaires",
-    "titleCount": "Commentaires ({{count}})",
-    "placeholder": "Ajouter un commentaire...",
-    "send": "Envoyer",
-    "loginPrompt": "Connecte-toi pour commenter",
-    "loginLink": "Créer un compte",
-    "empty": "Aucun commentaire pour le moment",
-    "emptyDesc": "Sois le premier à commenter cette observation !"
+    "deleteAccountConfirm": "Es-tu sûr de vouloir supprimer ton compte ?",
+    "weeklyGoal": "Objectif hebdomadaire",
+    "weeklyGoalDesc": "Nombre de partages visés par semaine",
+    "weeklyGoalDecrease": "Diminuer l'objectif",
+    "weeklyGoalIncrease": "Augmenter l'objectif"
   },
 
   "mobileNav": {

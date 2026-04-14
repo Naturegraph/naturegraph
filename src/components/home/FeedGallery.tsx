@@ -16,7 +16,8 @@
  */
 
 import { useState } from 'react'
-import type { MockPost } from '@/data/mock/mockPosts'
+import type { MockPost } from './FeedPost'
+import hermineIcon from '@/assets/images/hermine-icon.png'
 import { PhotoLightbox } from './PhotoLightbox'
 import type { LightboxData } from './PhotoLightbox'
 
@@ -72,7 +73,7 @@ function buildGalleryItems(posts: MockPost[]): GalleryItem[] {
         postId: post.id,
         postTitle: post.title,
         author: post.author,
-        showOverlay: i === 0 && items.length % 3 === 2,
+        showOverlay: false,
         imageIndexInPost: i,
       })
     }
@@ -147,7 +148,7 @@ export function FeedGallery({ posts }: FeedGalleryProps) {
                 </p>
                 <div className="flex items-center gap-2 mt-1.5">
                   <img
-                    src={item.author.avatar || undefined}
+                    src={item.author.avatar || hermineIcon}
                     alt=""
                     className="size-6 rounded-full object-cover"
                   />

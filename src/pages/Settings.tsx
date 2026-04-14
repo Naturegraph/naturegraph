@@ -14,9 +14,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Camera, Globe, LogOut, Trash2, Bell, Check } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { ArrowLeft, Globe, LogOut, Trash2, Bell, Check } from 'lucide-react'
+import hermineIcon from '@/assets/images/hermine-icon.png'
 import { useAuth } from '@/contexts/AuthContext'
-import { INTEREST_LABELS } from '@/data/mock/mockUsers'
+import { INTEREST_LABELS } from '@/constants/interests'
 import { useUpdateProfile } from '@/hooks/useProfile'
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings'
 import { supabase } from '@/lib/supabase'
@@ -45,6 +47,7 @@ export default function Settings() {
   const navigate = useNavigate()
   const { profile, signOut } = useAuth()
   const updateProfile = useUpdateProfile(profile?.id ?? '')
+  const queryClient = useQueryClient()
   const { data: userSettings } = useSettings(profile?.id)
   const updateSettings = useUpdateSettings(profile?.id)
 
@@ -148,13 +151,11 @@ export default function Settings() {
           {/* Avatar */}
           <div className="flex items-center gap-4">
             <div className="size-16 rounded-full bg-primary-light overflow-hidden">
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="" className="size-full object-cover" />
-              ) : (
-                <div className="size-full flex items-center justify-center">
-                  <Camera className="size-6 text-primary" aria-hidden="true" />
-                </div>
-              )}
+              <img
+                src={profile?.avatar_url ?? hermineIcon}
+                alt=""
+                className="size-full object-cover"
+              />
             </div>
             <button type="button" className="text-sm text-primary font-medium hover:underline">
               {t('settings.changeAvatar')}
@@ -331,6 +332,61 @@ export default function Settings() {
                   {lang === 'fr' ? 'FR' : 'EN'}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Objectif hebdomadaire */}
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground">
+                {t('settings.weeklyGoal', 'Objectif hebdomadaire')}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t('settings.weeklyGoalDesc', 'Nombre de partages visés par semaine')}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const current = userSettings?.weekly_goal ?? 5
+                  if (current > 1)
+                    updateSettings.mutate(
+                      { weekly_goal: current - 1 },
+                      {
+                        onSuccess: () =>
+                          queryClient.invalidateQueries({ queryKey: ['weekProgress'] }),
+                      },
+                    )
+                }}
+                disabled={(userSettings?.weekly_goal ?? 5) <= 1}
+                className="size-8 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-cream transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                aria-label={t('settings.weeklyGoalDecrease', "Diminuer l'objectif")}
+              >
+                −
+              </button>
+              <span className="text-sm font-bold text-foreground w-6 text-center">
+                {userSettings?.weekly_goal ?? 5}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const current = userSettings?.weekly_goal ?? 5
+                  if (current < 20)
+                    updateSettings.mutate(
+                      { weekly_goal: current + 1 },
+                      {
+                        onSuccess: () =>
+                          queryClient.invalidateQueries({ queryKey: ['weekProgress'] }),
+                      },
+                    )
+                }}
+                disabled={(userSettings?.weekly_goal ?? 5) >= 20}
+                className="size-8 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-cream transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                aria-label={t('settings.weeklyGoalIncrease', "Augmenter l'objectif")}
+              >
+                +
+              </button>
             </div>
           </div>
         </SettingsCard>

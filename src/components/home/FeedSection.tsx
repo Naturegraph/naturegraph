@@ -1,11 +1,8 @@
 /**
  * FeedSection — Section centrale du feed
  *
- * Tabs (Récent / Pour toi / Populaire / Tendances) + vue liste/grille + filtre.
- *
- * Source de données :
- *  - Supabase configuré  → useFeed() (React Query → postService.getFeed())
- *  - Mode démo           → mockPosts avec filtrage côté client (inchangé)
+ * Tabs (Récent / Pour toi / Populaire) + vue liste/grille + filtre.
+ * Source de données : Supabase via useFeed() (React Query → postService.getFeed())
  *
  * L'adaptateur postFeedItemToMockPost() fait le bridge entre PostFeedItem
  * (type DB) et MockPost (type UI). À supprimer quand FeedPost sera
@@ -15,22 +12,20 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
-import { LayoutList, LayoutGrid, Filter, Lock } from 'lucide-react'
+import { LayoutList, LayoutGrid, Filter } from 'lucide-react'
 import { FeedPost } from './FeedPost'
 import { FeedGallery } from './FeedGallery'
 import { FeedFilterPanel, DEFAULT_FILTERS } from './FeedFilterPanel'
 import type { FeedFilters } from './FeedFilterPanel'
-import { mockPosts, type MockPost } from '@/data/mock/mockPosts'
+import type { MockPost } from './FeedPost'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLocation } from '@/contexts/LocationContext'
 import { useFeed, FEED_QUERY_KEY } from '@/hooks/useFeed'
-import { isSupabaseConfigured } from '@/lib/supabase'
-import type { PostFeedItem } from '@/types/database'
+import { useToggleReaction } from '@/hooks/usePost'
+import type { PostFeedItem, ReactionType } from '@/types/database'
 import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
 
-const GUEST_MAX_POSTS = 20
-
-export type FeedTab = 'recent' | 'for-you' | 'popular' | 'trending'
+export type FeedTab = 'recent' | 'for-you' | 'popular'
 
 // Mapping groupe taxonomique → emoji catégorie
 const TAXONOMIC_EMOJI: Record<string, string> = {
@@ -95,7 +90,8 @@ function postFeedItemToMockPost(item: PostFeedItem): MockPost {
     species: item.species_name ?? 'Espèce non identifiée',
     format: '16:9',
     images: (item.media ?? []).map((m) => ({ url: m.url, alt: m.alt ?? '' })),
-    // Likes totaux attribués à 'love' — répartition détaillée en Sprint 4
+    // Tous les likes attribués à 'love' pour l'instant — la répartition détaillée
+    // par type nécessite un agrégat SQL séparé (post-MVP)
     reactions: {
       love: item.likes_count,
       admire: 0,
@@ -104,44 +100,10 @@ function postFeedItemToMockPost(item: PostFeedItem): MockPost {
       curious: 0,
       disappointed: 0,
     },
+    userReaction: item.user_reaction ?? null,
+    totalReactions: item.likes_count,
     comments: item.comments_count,
   }
-}
-
-// ─── Filtrage mock (mode démo uniquement) ────────────────────────────────────
-
-function getFilteredMockPosts(tab: FeedTab, filters: FeedFilters): MockPost[] {
-  let result = [...mockPosts]
-
-  switch (tab) {
-    case 'for-you':
-      result = mockPosts.filter(
-        (p) => p.category.label === 'Oiseaux' || p.category.label === 'Mammifères',
-      )
-      break
-    case 'popular':
-      result = [...mockPosts].sort((a, b) => {
-        const sumA = Object.values(a.reactions).reduce((s, v) => s + v, 0)
-        const sumB = Object.values(b.reactions).reduce((s, v) => s + v, 0)
-        return sumB - sumA
-      })
-      break
-    case 'trending':
-      result = [...mockPosts].sort((a, b) => {
-        const scoreA = Object.values(a.reactions).reduce((s, v) => s + v, 0) + a.comments
-        const scoreB = Object.values(b.reactions).reduce((s, v) => s + v, 0) + b.comments
-        return scoreB - scoreA
-      })
-      break
-    default: // 'recent'
-      break
-  }
-
-  if (filters.categories.length > 0) {
-    result = result.filter((p) => filters.categories.includes(p.category.label))
-  }
-
-  return result
 }
 
 // ─── Skeleton de chargement ──────────────────────────────────────────────────
@@ -193,26 +155,25 @@ export function FeedSection({
 }: FeedSectionProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const { locationLabel } = useLocation()
   const [activeTab, setActiveTab] = useState<FeedTab>('recent')
   const [filters, setFilters] = useState<FeedFilters>({ ...DEFAULT_FILTERS })
   const [page, setPage] = useState(1)
 
   // Map des onglets UI → paramètres postService
-  const tabToServiceTab: Record<FeedTab, 'recent' | 'popular' | 'for_you' | 'trending'> = {
+  const tabToServiceTab: Record<FeedTab, 'recent' | 'popular' | 'for_you'> = {
     recent: 'recent',
     'for-you': 'for_you',
     popular: 'popular',
-    trending: 'trending',
   }
 
-  // useFeed — actif uniquement en mode Supabase
+  // useFeed — données Supabase via React Query
   const {
     data: feedData,
     isLoading: isFeedLoading,
     isError: isFeedError,
-  } = useFeed({ tab: tabToServiceTab[activeTab], page, limit: 20 }, isSupabaseConfigured)
+  } = useFeed({ tab: tabToServiceTab[activeTab], page, limit: 20 })
 
   const hasActiveFilters =
     filters.categories.length > 0 ||
@@ -233,26 +194,34 @@ export function FeedSection({
     setPage(1)
   }
 
-  // ── Source de données selon le mode ──────────────────────────────────────
-  let posts: MockPost[]
+  // ── Source de données Supabase → adaptateur UI ──────────────────────────
+  const posts: MockPost[] = (feedData?.data ?? []).map(postFeedItemToMockPost)
 
-  if (isSupabaseConfigured) {
-    // Mode Supabase : convertir PostFeedItem → MockPost via adaptateur
-    posts = (feedData?.data ?? []).map(postFeedItemToMockPost)
-  } else {
-    // Mode démo : filtrage côté client sur mockPosts
-    const allMock = getFilteredMockPosts(activeTab, filters)
-    posts = isAuthenticated ? allMock : allMock.slice(0, GUEST_MAX_POSTS)
+  // Clé de cache du feed courant — passée au hook de réaction pour l'optimistic update
+  const currentFeedQueryKey = FEED_QUERY_KEY({
+    tab: tabToServiceTab[activeTab],
+    page,
+    limit: 20,
+  })
+
+  // ── Mutation réaction ──────────────────────────────────────────────────
+  const reactionMutation = useToggleReaction(user?.id)
+
+  /** Callback passé à chaque FeedPost — déclenche la mutation optimiste */
+  function handleReact(postId: string, type: ReactionType) {
+    const post = feedData?.data?.find((p) => p.id === postId)
+    reactionMutation.mutate({
+      postId,
+      type,
+      currentReaction: post?.user_reaction ?? null,
+      feedQueryKey: currentFeedQueryKey,
+    })
   }
-
-  const isGuestLimitReached =
-    !isAuthenticated && !isSupabaseConfigured && posts.length >= GUEST_MAX_POSTS
 
   const TABS: { id: FeedTab; label: string }[] = [
     { id: 'recent', label: t('home.feed.recent') },
     { id: 'for-you', label: t('home.feed.forYou') },
     { id: 'popular', label: t('home.feed.popular') },
-    { id: 'trending', label: t('home.feed.trends') },
   ]
 
   function handleResetFilters() {
@@ -350,11 +319,11 @@ export function FeedSection({
         </div>
       </div>
 
-      {/* État chargement Supabase */}
-      {isSupabaseConfigured && isFeedLoading && <FeedSkeleton />}
+      {/* État chargement */}
+      {isFeedLoading && <FeedSkeleton />}
 
-      {/* État erreur Supabase */}
-      {isSupabaseConfigured && isFeedError && (
+      {/* État erreur */}
+      {isFeedError && (
         <div role="alert" className="bg-background md:rounded-card rounded-none p-8 text-center">
           <p className="text-sm text-muted-foreground">
             {t('home.feed.loadError', {
@@ -420,13 +389,18 @@ export function FeedSection({
           ) : (
             <div className="flex flex-col md:gap-4 gap-0">
               {posts.map((post) => (
-                <FeedPost key={post.id} {...post} canInteract={isAuthenticated} />
+                <FeedPost
+                  key={post.id}
+                  {...post}
+                  canInteract={isAuthenticated}
+                  onReact={handleReact}
+                />
               ))}
             </div>
           )}
 
-          {/* Pagination Supabase */}
-          {isSupabaseConfigured && feedData && feedData.pagination.totalPages > 1 && (
+          {/* Pagination */}
+          {feedData && feedData.pagination.totalPages > 1 && (
             <div className="flex justify-center gap-2 mt-4">
               <button
                 type="button"
@@ -447,41 +421,6 @@ export function FeedSection({
               >
                 {t('common.next', { defaultValue: 'Suivant' })}
               </button>
-            </div>
-          )}
-
-          {/* Mur d'inscription invité — mode démo uniquement */}
-          {isGuestLimitReached && (
-            <div className="mt-4 bg-background relative md:rounded-card rounded-none overflow-hidden">
-              <div
-                aria-hidden="true"
-                className="absolute md:border-border md:border-[0.5px] border-border border-b-4 inset-0 pointer-events-none md:rounded-card"
-              />
-              <div className="flex flex-col items-center gap-4 px-6 py-10 text-center">
-                <div className="flex items-center justify-center size-12 rounded-full bg-primary-light">
-                  <Lock className="size-5 text-primary" aria-hidden="true" />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <p className="font-bold text-foreground">{t('home.feed.guestLimitTitle')}</p>
-                  <p className="text-sm text-muted-foreground max-w-sm">
-                    {t('home.feed.guestLimitDesc')}
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <Link
-                    to="/signup"
-                    className="bg-primary flex items-center justify-center h-10 px-6 rounded-button text-primary-foreground hover:opacity-90 transition-opacity text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                  >
-                    {t('home.feed.guestLimitCreate')}
-                  </Link>
-                  <Link
-                    to="/login"
-                    className="flex items-center justify-center h-10 px-6 rounded-button border border-border hover:border-foreground/40 transition-colors text-foreground text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                  >
-                    {t('home.feed.guestLimitLogin')}
-                  </Link>
-                </div>
-              </div>
             </div>
           )}
         </>

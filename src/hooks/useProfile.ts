@@ -12,7 +12,9 @@ import {
   getProfileById,
   getProfileByUsername,
   updateProfile,
+  getSuggestedUsers,
   type UpdateProfilePayload,
+  type SuggestedUser,
 } from '@/services/profileService'
 import type { Profile } from '@/types/database'
 
@@ -49,6 +51,30 @@ export function useProfileByUsername(username: string | undefined) {
 }
 
 /**
+ * Récupère des profils suggérés pour la section "Migrateurs à suivre".
+ * Activé uniquement quand l'utilisateur est connecté.
+ * Cache 1 heure — les suggestions n'ont pas besoin d'être ultra-fraîches.
+ */
+export function useSuggestedUsers(
+  currentUserId: string | undefined,
+  userInterests: string[] = [],
+  region: string | null = null,
+) {
+  return useQuery<SuggestedUser[], Error>({
+    queryKey: ['suggestedUsers', currentUserId, region],
+    queryFn: () =>
+      getSuggestedUsers({
+        currentUserId: currentUserId!,
+        userInterests,
+        region,
+        limit: 3,
+      }),
+    enabled: !!currentUserId,
+    staleTime: 60 * 60 * 1000, // 1 heure
+  })
+}
+
+/**
  * Mutation pour mettre à jour le profil courant.
  * Invalide automatiquement le cache par ID et par username après succès.
  */
@@ -60,10 +86,7 @@ export function useUpdateProfile(userId: string) {
     onSuccess: (updatedProfile) => {
       // Mettre à jour le cache sans refetch réseau
       queryClient.setQueryData(profileQueryKey.byId(userId), updatedProfile)
-      queryClient.setQueryData(
-        profileQueryKey.byUsername(updatedProfile.username),
-        updatedProfile,
-      )
+      queryClient.setQueryData(profileQueryKey.byUsername(updatedProfile.username), updatedProfile)
     },
   })
 }

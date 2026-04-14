@@ -25,6 +25,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, X, ChevronRight } from 'lucide-react'
+import hermineIcon from '@/assets/images/hermine-icon.png'
 import { useQuery } from '@tanstack/react-query'
 import { searchProfiles, searchSpecies } from '@/services/searchService'
 
@@ -378,13 +379,11 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
                   >
                     <div className="relative shrink-0">
                       <div className="size-10 rounded-full overflow-hidden bg-primary-light flex items-center justify-center">
-                        {u.avatar_url ? (
-                          <img src={u.avatar_url} alt="" className="size-full object-cover" />
-                        ) : (
-                          <span className="text-base leading-none" aria-hidden="true">
-                            👤
-                          </span>
-                        )}
+                        <img
+                          src={u.avatar_url ?? hermineIcon}
+                          alt=""
+                          className="size-full object-cover"
+                        />
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
