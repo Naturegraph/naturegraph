@@ -546,8 +546,8 @@ export function OnboardingStep4({
   }
 
   return (
-    <div className="flex flex-col overflow-clip w-full h-full">
-      <div className="flex flex-col items-start p-6 md:p-8 gap-8 h-full min-h-[730px] max-h-screen">
+    <div className="flex flex-col w-full h-full">
+      <div className="flex flex-col items-start p-6 md:p-8 gap-8 h-full min-h-[730px] max-h-screen overflow-clip">
         <OnboardingHeader current={4} total={4} onExit={onExit} />
 
         {/* Contenu scrollable */}
