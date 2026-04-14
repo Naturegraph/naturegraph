@@ -106,7 +106,7 @@ export function OnboardingInterests({ onContinue, onSkip, onExit }: OnboardingIn
                   aria-pressed={isSelected}
                   disabled={isDisabled}
                   className={[
-                    'relative flex flex-col gap-2 items-center justify-center p-4 rounded-xl h-24',
+                    'relative flex flex-col gap-2 items-center justify-center p-4 rounded-lg h-24',
                     'w-[calc(50%-4px)] md:w-[calc(33.333%-5.333px)]',
                     'transition-all duration-200',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] focus-visible:ring-offset-2',
