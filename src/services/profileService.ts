@@ -191,7 +191,7 @@ export async function getSuggestedUsers({
 
   // 3. Scorer chaque candidat (affinité intérêts + proximité région)
   const scored = candidates.map((c) => {
-    let score = c.posts_count // base : activité
+    let score = c.posts_count ?? 0 // base : activité
     // Bonus intérêts partagés (chaque intérêt commun = +10)
     if (userInterests.length > 0 && c.interests) {
       const shared = (c.interests as string[]).filter((i) => userInterests.includes(i)).length
