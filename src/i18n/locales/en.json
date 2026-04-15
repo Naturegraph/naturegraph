@@ -372,6 +372,18 @@
       "saveSuccess": "Location updated",
       "rateLimited": "You've recently changed your location. Try again in {{minutes}} minutes.",
       "lastUpdated": "Last updated on {{date}}"
+    },
+    "browser": {
+      "useMyPosition": "Use my location",
+      "resolving": "Locating…",
+      "denied": "Location denied. Use the manual search below."
+    },
+    "permissionModal": {
+      "title": "Naturegraph near you",
+      "description": "Discover species observed within 75 km of you. More relevance, less noise.",
+      "privacyNote": "Only your city is used. Never your exact location. You can update or delete your data at any time.",
+      "activateCta": "Enable location",
+      "skipCta": "Later"
     }
   },
 

@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "prepare": "husky"
+    "prepare": "husky",
+    "seed:cities": "npx tsx scripts/seed-fr-cities.ts"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

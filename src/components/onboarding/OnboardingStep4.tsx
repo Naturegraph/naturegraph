@@ -17,14 +17,16 @@
  * - aria-label sur les boutons retour et sortie
  */
 
-import { useState, useEffect, type ChangeEvent } from 'react'
+import { useState, useEffect, useRef, type ChangeEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { MapPin, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { BackButton } from '@/components/ui/BackButton'
 import { OnboardingHeader } from './OnboardingHeader'
 import { LocationPickerSection } from '@/components/location/LocationPickerSection'
-import type { LocationFormData } from '@/types/location'
+import { requestBrowserLocation } from '@/lib/location/geocoding'
+import type { LocationFormData, CityResult } from '@/types/location'
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -484,6 +486,13 @@ export function OnboardingStep4({
   // Localisation optionnelle — null si l'utilisateur a skippé
   const [locationData, setLocationData] = useState<LocationFormData | null>(null)
 
+  // ─── État du bouton géolocalisation ────────────────────────────────────────
+  // Ville résolue depuis la géolocalisation navigateur (pré-remplit le picker)
+  const [geoCity, setGeoCity] = useState<CityResult | null>(null)
+  const [geoStatus, setGeoStatus] = useState<'idle' | 'loading' | 'denied' | 'resolved'>('idle')
+  // Évite les doubles appels en StrictMode React
+  const geoCalledRef = useRef(false)
+
   // Validation format en temps réel
   useEffect(() => {
     if (!hasTyped || username.length === 0) {
@@ -542,6 +551,39 @@ export function OnboardingStep4({
     }
   }, [username, formatError, hasTyped])
 
+  /**
+   * Déclenche la géolocalisation navigateur et pré-remplit le picker de ville.
+   * Appelé uniquement par le bouton "Utiliser ma position".
+   */
+  async function handleUseBrowserLocation() {
+    if (geoCalledRef.current) return
+    geoCalledRef.current = true
+    setGeoStatus('loading')
+
+    const city = await requestBrowserLocation(() => {
+      // Callback géolocation refusée — affiche le message dédié
+      setGeoStatus('denied')
+      geoCalledRef.current = false
+    })
+
+    if (city) {
+      setGeoCity(city)
+      setGeoStatus('resolved')
+      // Pré-remplit locationData avec les valeurs par défaut + ville résolue
+      const prefilledData: LocationFormData = {
+        city,
+        radiusKm: 75,
+        visibility: 'region',
+        consentSource: 'browser',
+      }
+      setLocationData(prefilledData)
+    } else if (geoStatus !== 'denied') {
+      // Timeout ou API reverse-geocode échouée — on repasse en idle
+      setGeoStatus('idle')
+      geoCalledRef.current = false
+    }
+  }
+
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
     const val = e.target.value
     if (!hasTyped) setHasTyped(true)
@@ -554,13 +596,15 @@ export function OnboardingStep4({
   const borderClass = () => {
     if (!hasTyped || username.length === 0) return 'border-[var(--color-border)]'
     if (isChecking) return 'border-[var(--color-action-default)]'
-    if (error) return 'border-destructive-foreground'
+    // Erreur → bordure rouge via token design system (contraste WCAG AA)
+    if (error) return 'border-[var(--color-error)]'
     return 'border-[var(--color-action-default)]'
   }
 
   const bgClass = () => {
     if (username.length === 0) return 'bg-[var(--color-bg-primary)]'
-    if (error && hasTyped) return 'bg-destructive/10'
+    // Fond erreur léger via token — error-bg défini dans les deux thèmes
+    if (error && hasTyped) return 'bg-[var(--color-error-bg)]'
     return 'bg-[var(--color-action-light)]'
   }
 
@@ -586,10 +630,55 @@ export function OnboardingStep4({
                 {t('onboarding.username.locationOptional')}
               </span>
             </label>
+
+            {/*
+             * Bouton "Utiliser ma position" — affiché tant que la ville n'est pas résolue.
+             * Disparaît une fois la géolocalisation réussie (geoStatus === 'resolved').
+             * Le bouton déclenche requestBrowserLocation() → reverseGeocode() → pré-remplit.
+             */}
+            {geoStatus !== 'resolved' && (
+              <button
+                type="button"
+                onClick={handleUseBrowserLocation}
+                disabled={geoStatus === 'loading'}
+                aria-busy={geoStatus === 'loading'}
+                className={[
+                  'flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-all',
+                  'focus-visible:outline-none focus-visible:ring-2',
+                  'focus-visible:ring-[var(--color-action-default)] focus-visible:ring-offset-1',
+                  geoStatus === 'loading'
+                    ? 'opacity-60 cursor-not-allowed border-[var(--color-border)] text-[var(--color-text-secondary)]'
+                    : 'border-[var(--color-action-default)] text-[var(--color-action-default)] hover:bg-[var(--color-action-light)]',
+                ].join(' ')}
+              >
+                {geoStatus === 'loading' ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin shrink-0" aria-hidden="true" />
+                    {t('location.browser.resolving')}
+                  </>
+                ) : (
+                  <>
+                    <MapPin size={14} className="shrink-0" aria-hidden="true" />
+                    {t('location.browser.useMyPosition')}
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* Message refus navigateur — non bloquant, affiché sous le bouton */}
+            {geoStatus === 'denied' && (
+              <p role="alert" className="text-xs text-[var(--color-text-secondary)] italic">
+                {t('location.browser.denied')}
+              </p>
+            )}
+
             <LocationPickerSection
               mode="accordion"
               onChange={setLocationData}
               consentSource="onboarding"
+              initialCity={geoCity}
+              initialRadius={75}
+              initialVisibility="region"
             />
           </div>
 

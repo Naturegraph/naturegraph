@@ -9,7 +9,7 @@
  * refactorisé pour accepter PostFeedItem directement.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { LayoutList, LayoutGrid, Filter } from 'lucide-react'
@@ -22,8 +22,12 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useLocation } from '@/contexts/LocationContext'
 import { useFeed, FEED_QUERY_KEY } from '@/hooks/useFeed'
 import { useNearbyFeed } from '@/hooks/useNearbyFeed'
+import { useLocationCTA } from '@/hooks/useLocationCTA'
 import { useToggleReaction } from '@/hooks/usePost'
+import { LocationPermissionModal } from '@/components/location/LocationPermissionModal'
+import { requestBrowserLocation } from '@/lib/location/geocoding'
 import type { PostFeedItem, ReactionType } from '@/types/database'
+import type { LocationFormData } from '@/types/location'
 import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
 
 export type FeedTab = 'recent' | 'for-you' | 'popular' | 'near-me'
@@ -157,10 +161,35 @@ export function FeedSection({
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
-  const { locationLabel, isLocalized, getVisibilityLabel, getRadiusLabel } = useLocation()
+  const { locationLabel, isLocalized, getVisibilityLabel, getRadiusLabel, updateLocation } =
+    useLocation()
   const [activeTab, setActiveTab] = useState<FeedTab>('recent')
   const [filters, setFilters] = useState<FeedFilters>({ ...DEFAULT_FILTERS })
   const [page, setPage] = useState(1)
+
+  // ─── CTA localisation ─────────────────────────────────────────
+  // Modale affichée 1x/session pour les utilisateurs non-localisés
+  const { showModal, dismissModal, openModal } = useLocationCTA()
+
+  /**
+   * Handler "Activer" de la modale — tente la géoloc navigateur.
+   * Ferme la modale et sauvegarde la localisation si succès.
+   */
+  const handleActivateLocation = useCallback(async () => {
+    dismissModal()
+    const city = await requestBrowserLocation()
+    if (city) {
+      const locationData: LocationFormData = {
+        city,
+        radiusKm: 75,
+        visibility: 'region',
+        consentSource: 'browser',
+      }
+      await updateLocation(locationData).catch(() => {
+        // Erreur non-bloquante — l'utilisateur peut réessayer depuis les Settings
+      })
+    }
+  }, [dismissModal, updateLocation])
 
   const isNearMeTab = activeTab === 'near-me'
 
@@ -365,8 +394,23 @@ export function FeedSection({
             <span className="text-5xl" aria-hidden="true">
               📍
             </span>
-            <div className="flex flex-col gap-2 max-w-sm">
+            <div className="flex flex-col gap-3 max-w-sm">
               <p className="text-lg font-bold text-foreground">{t('location.feed.noLocation')}</p>
+              <button
+                type="button"
+                onClick={openModal}
+                className={[
+                  'h-10 px-6 rounded-full text-sm font-semibold transition-opacity',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                  'focus-visible:ring-[var(--color-action-default)]',
+                ].join(' ')}
+                style={{
+                  backgroundColor: 'var(--color-action-default)',
+                  color: 'var(--color-bg-primary)',
+                }}
+              >
+                {t('location.feed.activateCta')}
+              </button>
             </div>
           </div>
         </div>
@@ -486,6 +530,13 @@ export function FeedSection({
           onTabChange={setActiveTab}
         />
       )}
+
+      {/* Modale permission géolocalisation — affichée 1x/session si non localisé */}
+      <LocationPermissionModal
+        isOpen={showModal}
+        onActivate={handleActivateLocation}
+        onSkip={dismissModal}
+      />
     </section>
   )
 }
