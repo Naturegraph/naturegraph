@@ -17,6 +17,8 @@ import { Bookmark, Share2, MoreHorizontal, Leaf } from 'lucide-react'
 import { PostOptionsMenu } from './PostOptionsMenu'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 import type { ReactionType } from '@/types/database'
+import { useSpecies } from '@/contexts/SpeciesContext'
+import { TAXONOMIC_GROUP_CONFIG } from '@/constants/taxrefSpecies'
 
 // ─── Type UI pour les posts du feed ──────────────────────────────────────────
 // Bridge entre le type DB (PostFeedItem) et le composant FeedPost.
@@ -33,7 +35,14 @@ export interface MockPost {
   clouds?: string
   timeOfDay?: string
   category: { icon: string; label: string }
+  /** Nom commun ou "Espèce non identifiée" — affiché dans le chip */
   species: string
+  /** Nom scientifique TAXREF (optionnel — enrichit le SpeciesHit pour le filtre) */
+  scientific_name?: string | null
+  /** cd_nom TAXREF — identifiant unique espèce (optionnel) */
+  taxref_id?: string | null
+  /** Groupe taxonomique de l'espèce (optionnel — emoji dans le chip) */
+  taxonomic_group?: string | null
   format: '16:9' | 'portrait' | '1:1'
   images: Array<{ url: string; alt: string }>
   reactions: {
@@ -86,6 +95,9 @@ export function FeedPost({
   timeOfDay,
   category,
   species,
+  scientific_name,
+  taxref_id,
+  taxonomic_group,
   format,
   images,
   reactions,
@@ -97,6 +109,7 @@ export function FeedPost({
 }: FeedPostProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { setActiveSpecies } = useSpecies()
   const [isExpanded, setIsExpanded] = useState(false)
   const [showOptions, setShowOptions] = useState(false)
   const [showReactionPicker, setShowReactionPicker] = useState(false)
@@ -244,9 +257,40 @@ export function FeedPost({
           <span className="bg-primary-light text-foreground text-base px-3 py-1 rounded-full leading-tight">
             {category.icon} {category.label}
           </span>
-          <span className="bg-primary-light text-foreground text-base px-3 py-1 rounded-full leading-tight">
-            {species}
-          </span>
+
+          {/*
+           * Chip espèce — cliquable pour activer le Species Context Layer (PRD §3.4).
+           * Construit un SpeciesHit minimal à partir des données disponibles dans le post.
+           * Si l'espèce n'est pas identifiée (pas de taxref_id), le chip reste passif.
+           */}
+          {taxref_id ? (
+            <button
+              type="button"
+              onClick={() =>
+                setActiveSpecies({
+                  taxref_id,
+                  scientific_name: scientific_name ?? species,
+                  common_name: species !== scientific_name ? species : null,
+                  group_label: taxonomic_group ?? null,
+                })
+              }
+              aria-label={t('home.post.filterBySpecies', { species })}
+              className={[
+                'bg-primary-light text-foreground text-base px-3 py-1 rounded-full leading-tight',
+                'hover:bg-primary/15 transition-colors cursor-pointer',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+              ].join(' ')}
+            >
+              {taxonomic_group && TAXONOMIC_GROUP_CONFIG[taxonomic_group]
+                ? `${TAXONOMIC_GROUP_CONFIG[taxonomic_group].emoji} `
+                : ''}
+              {species}
+            </button>
+          ) : (
+            <span className="bg-primary-light text-foreground text-base px-3 py-1 rounded-full leading-tight">
+              {species}
+            </span>
+          )}
         </div>
 
         {/* Images — clic ouvre la lightbox plein écran */}

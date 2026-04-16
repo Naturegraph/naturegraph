@@ -407,6 +407,8 @@
     "navbar": {
       "backToHome": "Naturegraph — Retour à l'accueil",
       "changeLocation": "Changer de localisation",
+      "activateLocation": "Activer ma zone",
+      "setLocation": "Localisation",
       "search": "Rechercher",
       "notifications": "Notifications",
       "contribute": "Contribuer",
@@ -450,7 +452,17 @@
       "emptyDesc": "Essayez de modifier vos filtres pour voir plus de résultats.",
       "emptyDescLocation": "Sois le premier à partager une observation à {{location}} !",
       "emptyReset": "Réinitialiser les filtres",
-      "emptyContribute": "Partager une observation"
+      "emptyContribute": "Partager une observation",
+      "forYouModal": {
+        "title": "Votre expérience Naturegraph commence ici",
+        "description": "Créez votre compte pour débloquer un feed personnalisé et découvrir la nature qui vous passionne, partout autour de vous.",
+        "point1": "Du contenu adapté à vos intérêts",
+        "point2": "Les observations de votre communauté",
+        "point3": "Une découverte locale et vivante",
+        "createAccount": "Créer mon compte",
+        "continueDiscovery": "Continuer sans personnalisation",
+        "tabDisabledHint": "Connectez-vous pour accéder à votre feed personnalisé"
+      }
     },
     "filters": {
       "title": "Filtres",
@@ -485,6 +497,7 @@
       "noReactions": "Sois le premier à réagir",
       "yourReaction": "Ta réaction",
       "chooseReaction": "Choisir une réaction",
+      "filterBySpecies": "Filtrer le feed par {{species}}",
       "reactions": {
         "love": "Aimer",
         "admire": "Admirer",
@@ -694,6 +707,11 @@
       "searchPlaceholder": "Mésange, renard...",
       "noResults": "Aucune espèce trouvée",
       "taxrefCredit": "Données TAXREF — INPN, licence CC-BY",
+      "skip": "Passer l'identification",
+      "skipFromEmpty": "Je ne sais pas, passer",
+      "serviceUnavailable": "Recherche indisponible — réessaie dans un instant",
+      "suggestionsLabel": "Suggestions d'espèces",
+      "changeSpecies": "Changer d'espèce",
       "group": "Groupe taxonomique",
       "groups": {
         "birds": "Oiseaux",

@@ -4,10 +4,9 @@
  * Source : INPN (Inventaire National du Patrimoine Naturel), licence CC-BY.
  * Les cd_nom correspondent aux identifiants TAXREF officiels.
  *
- * TODO [BACKEND] — Remplacer par l'API TAXREF réelle :
- *   GET https://taxref.mnhn.fr/api/taxa/search?term=...&size=10
- *   ou via table taxref_cache Supabase (src/types/database.ts → TaxrefEntry).
- *   Attribution CC-BY INPN obligatoire à conserver dans l'UI (voir CLAUDE.md).
+ * Utilisé comme fallback quand Supabase / taxref_cache est indisponible.
+ * En production, la recherche passe par searchService → taxref_cache.
+ * Attribution CC-BY INPN obligatoire à conserver dans l'UI (voir CLAUDE.md).
  */
 
 import type { TaxonomicGroup } from '@/types/database'
@@ -17,6 +16,21 @@ export interface TaxrefSpecies {
   commonName: string
   scientificName: string
   group: TaxonomicGroup
+}
+
+// ─── Configuration des groupes taxonomiques ───────────────────────────────────
+
+/**
+ * Emoji et libellé par groupe taxonomique.
+ * Utilisé dans SpeciesSearch, FeedPost chip, SearchPanel.
+ */
+export const TAXONOMIC_GROUP_CONFIG: Record<string, { emoji: string; label: string }> = {
+  birds: { emoji: '🦅', label: 'Oiseaux' },
+  mammals: { emoji: '🦊', label: 'Mammifères' },
+  insects: { emoji: '🦋', label: 'Insectes' },
+  amphibians: { emoji: '🐸', label: 'Amphibiens' },
+  reptiles: { emoji: '🦎', label: 'Reptiles' },
+  other: { emoji: '🌿', label: 'Autre' },
 }
 
 /** Échantillon d'espèces TAXREF pour l'autocomplétion en développement */

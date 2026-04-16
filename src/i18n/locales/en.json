@@ -407,6 +407,8 @@
     "navbar": {
       "backToHome": "Naturegraph — Back to home",
       "changeLocation": "Change location",
+      "activateLocation": "Activate my area",
+      "setLocation": "Location",
       "search": "Search",
       "notifications": "Notifications",
       "contribute": "Contribute",
@@ -450,7 +452,17 @@
       "emptyDesc": "Try changing your filters to see more results.",
       "emptyDescLocation": "Be the first to share an observation in {{location}}!",
       "emptyReset": "Reset filters",
-      "emptyContribute": "Share an observation"
+      "emptyContribute": "Share an observation",
+      "forYouModal": {
+        "title": "Your Naturegraph experience starts here",
+        "description": "Create your account to unlock a personalised feed and discover the nature you're passionate about, everywhere around you.",
+        "point1": "Content tailored to your interests",
+        "point2": "Observations from your community",
+        "point3": "A local and living discovery",
+        "createAccount": "Create my account",
+        "continueDiscovery": "Continue without personalisation",
+        "tabDisabledHint": "Sign in to access your personalised feed"
+      }
     },
     "filters": {
       "title": "Filters",
@@ -485,6 +497,7 @@
       "noReactions": "Be the first to react",
       "yourReaction": "Your reaction",
       "chooseReaction": "Choose a reaction",
+      "filterBySpecies": "Filter feed by {{species}}",
       "reactions": {
         "love": "Love",
         "admire": "Admire",
@@ -694,6 +707,11 @@
       "searchPlaceholder": "Tit, fox...",
       "noResults": "No species found",
       "taxrefCredit": "TAXREF data — INPN, CC-BY license",
+      "skip": "Skip identification",
+      "skipFromEmpty": "I don't know, skip",
+      "serviceUnavailable": "Search unavailable — please try again",
+      "suggestionsLabel": "Species suggestions",
+      "changeSpecies": "Change species",
       "group": "Taxonomic group",
       "groups": {
         "birds": "Birds",
