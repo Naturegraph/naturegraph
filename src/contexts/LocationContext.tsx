@@ -113,8 +113,8 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   // ─── État local (rétrocompatibilité) ─────────────────────────
   // Fallback quand l'utilisateur n'est pas connecté ou en mode démo
 
-  const [localLabel, setLocalLabel] = useState('Ploërmel, Bretagne')
-  const [locationDistance, setDistLocal] = useState(250)
+  const [localLabel, setLocalLabel] = useState('')
+  const [locationDistance, setDistLocal] = useState<number>(DEFAULT_RADIUS)
   const [locationCoords, setCoords] = useState<LocationCoords | null>(null)
 
   // ─── Lecture depuis Supabase ──────────────────────────────────
@@ -216,7 +216,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const setLocationDistance = useCallback((d: number) => {
-    setDistLocal(Math.max(75, Math.min(500, d)))
+    setDistLocal(Math.max(75, Math.min(250, d)))
   }, [])
 
   // ─── Valeur du contexte ──────────────────────────────────────

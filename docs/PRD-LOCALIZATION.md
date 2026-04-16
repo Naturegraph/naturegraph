@@ -1,8 +1,8 @@
 # PRD — Localisation & Géolocalisation (Privacy-First)
 
 > **Document de référence pour les agents Claude Code et l'équipe produit.**
-> Dernière mise à jour : 2026-04-14
-> Statut : Draft v1 — à valider avant implémentation
+> Dernière mise à jour : 2026-04-15
+> Statut : v1.1 — Delayed activation strategy validée
 > Propriétaires : Nicolas (Fondateur/Lead Product Designer), agents IA
 
 ---
@@ -46,7 +46,7 @@ Ce PRD couvre uniquement la **localisation utilisateur**. La localisation des ob
 ## 2. Principes de confidentialité
 
 1. **Privacy by design** — la position précise ne quitte jamais le client sans floutage.
-2. **Opt-in explicite** — la saisie de ville reste optionnelle à l'onboarding (étape skippable).
+2. **Opt-in post-découverte** — la localisation est proposée uniquement après que l'utilisateur a découvert le produit. Elle n'est jamais une condition d'accès ni demandée à l'inscription.
 3. **Rayon minimum 75 km** — garantit qu'une ville ≠ un individu dans les zones rurales.
 4. **Granularité publique : ville + région uniquement** — jamais de rue, quartier, code postal affiché.
 5. **Effacement immédiat** — suppression de la localisation = purge SQL en cascade (pas de soft-delete sur ce champ).
@@ -144,15 +144,31 @@ create policy "profiles_own_location_update"
 
 ## 4. Flux utilisateur
 
-### 4.1 Onboarding (étape optionnelle existante)
+### 4.1 Stratégie d'activation différée (Delayed Activation)
 
-L'étape `OnboardingStep4` (nom + localisation) permet déjà une saisie ville. À compléter :
+> **Règle produit fondamentale :**  
+> La localisation dans Naturegraph est une fonctionnalité **opt-in post-découverte**, jamais une condition d'accès au produit.
 
-1. Champ d'autocomplete branché sur **API Adresse (api-adresse.data.gouv.fr)** — service public gratuit, RGPD-compliant, pas de clé API.
-2. Résultat sélectionné → on résout la ville canonique via `fr_cities` (matching INSEE).
-3. Slider "Rayon de partage" : 75 / 100 / 150 / 250 / 500 km (défaut : 75 km).
-4. Toggle visibilité : **Région seulement** (défaut) / Ville + région / Privé.
-5. Message pédagogique : _« Nous n'enregistrons jamais votre position exacte. Vous contrôlez ce que les autres voient. »_
+**Pourquoi l'onboarding est exclu :**
+
+- Trop tôt dans le parcours — l'utilisateur n'a pas encore perçu la valeur du feed territorial
+- Friction inutile au moment critique de l'activation
+- Risque d'abandon à l'inscription
+
+**Canaux d'activation en séquence (post-onboarding) :**
+
+| Moment                           | Déclencheur                                   | Canal                                           |
+| -------------------------------- | --------------------------------------------- | ----------------------------------------------- |
+| J+0 (premier feed)               | Onglet "Pour vous" non localisé — empty state | 3 CTAs d'activation (intérêts / follows / zone) |
+| J+0 (3 secondes après connexion) | `useLocationCTA` — 1x/session                 | `LocationPermissionModal` (modale douce)        |
+| Any                              | Pill "Localisation" dans le header            | `LocationModal` — picker ville + rayon          |
+| Any                              | Paramètres → Localisation & Confidentialité   | `LocationPickerSection` + clear                 |
+
+**Principes :**
+
+- Jamais imposée — toujours skippable
+- Jamais de permission navigateur demandée sans action explicite de l'utilisateur
+- La valeur doit être claire **avant** la demande
 
 ### 4.2 Modification depuis le profil
 
@@ -171,7 +187,7 @@ L'étape `OnboardingStep4` (nom + localisation) permet déjà une saisie ville. 
 
 ### 5.1 Feed (`PRD_HOMEPAGE.md`)
 
-- Filtre feed "Près de moi" — requête PostGIS :
+- Signal "localisation" dans le tab "Pour vous" (via `nearby_posts` RPC) — requête PostGIS :
 
   ```sql
   select p.* from posts p
@@ -289,7 +305,7 @@ supabase/
 
 ## 8. Conformité RGPD / CNIL
 
-- **Base légale** : intérêt légitime (feed pertinent) + consentement explicite (opt-in onboarding).
+- **Base légale** : intérêt légitime (feed pertinent) + consentement explicite (opt-in in-app, post-découverte).
 - **Finalité** : affichage social, suggestions de contenu, filtres territoriaux. Aucun autre usage.
 - **Minimisation** : on ne stocke que ce qui est affiché + centroïde (pour calcul distances).
 - **Durée de conservation** : tant que le compte est actif. Suppression compte → purge immédiate.
@@ -364,8 +380,8 @@ location.errors.outsideFrance
 
 ## 13. Métriques de succès
 
-- **Taux de complétion onboarding localisation** ≥ 60 %.
-- **Taux d'usage filtre "Près de moi"** ≥ 30 % des utilisateurs actifs.
+- **Taux d'activation localisation post-J7** ≥ 40 % des utilisateurs actifs (activation différée attendue).
+- **Taux d'usage signal localisation dans "Pour vous"** ≥ 30 % des utilisateurs actifs.
 - **Requêtes API Adresse** < 5 / utilisateur / session (cache efficace).
 - **Latence PostGIS ST_DWithin** < 150 ms p95.
 - **Zéro incident RGPD** sur les 12 premiers mois.

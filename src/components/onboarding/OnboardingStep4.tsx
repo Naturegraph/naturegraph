@@ -1,32 +1,31 @@
 /**
  * OnboardingStep4 — Étape 4 : Choix du nom d'utilisateur
  *
- * Input avec validation temps réel + vérification disponibilité Supabase.
- * Compteur de caractères (max 25). Barre de progression 4/4.
+ * Unique étape finale de l'onboarding : saisie + validation du pseudo.
+ * La localisation est intentionnellement absente de l'onboarding — elle
+ * sera proposée progressivement in-app après découverte du produit.
+ *
+ * Validation :
+ *   - Longueur 3-25 caractères
+ *   - Caractères autorisés : lettres, chiffres, point, underscore
+ *   - Pas de point/underscore en début/fin ou consécutifs
+ *   - Liste de mots bannis (côté client + contrainte DB)
+ *   - Unicité vérifiée via Supabase (debounce 800ms)
  *
  * Accessibilité :
- * - <label htmlFor> associé à l'input (pas de aria-label redondant)
- * - aria-required sur l'input
- * - aria-invalid + aria-describedby vers le message d'erreur
- * - role="alert" sur le message d'erreur (annonce immédiate SR)
- * - aria-hidden sur le * décoratif et l'indicateur visuel de bordure
- * - role="progressbar" sur la barre de progression
- * - focus-visible ring sur toutes les interactions clavier
- * - has-[:focus-visible] sur le conteneur input pour ring accessible
- * - prefers-reduced-motion respecté
- * - aria-label sur les boutons retour et sortie
+ *   - <label htmlFor> associé à l'input
+ *   - aria-required, aria-invalid, aria-describedby
+ *   - role="alert" sur les messages d'erreur
+ *   - focus-visible ring sur toutes les interactions clavier
+ *   - has-[:focus-visible] sur le conteneur input pour ring accessible
  */
 
-import { useState, useEffect, useRef, type ChangeEvent } from 'react'
+import { useState, useEffect, type ChangeEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { MapPin, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { BackButton } from '@/components/ui/BackButton'
 import { OnboardingHeader } from './OnboardingHeader'
-import { LocationPickerSection } from '@/components/location/LocationPickerSection'
-import { requestBrowserLocation } from '@/lib/location/geocoding'
-import type { LocationFormData, CityResult } from '@/types/location'
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -450,7 +449,8 @@ function normalizeForBannedCheck(username: string): string {
 type UsernameError = 'tooShort' | 'tooLong' | 'invalidFormat' | 'alreadyTaken' | 'bannedWord' | null
 
 interface OnboardingStep4Props {
-  onComplete: (username: string, locationData?: LocationFormData | null) => void
+  /** Appelé à la validation avec le pseudo choisi */
+  onComplete: (username: string) => void
   onBack: () => void
   initialUsername?: string
   onExit?: () => void
@@ -483,15 +483,6 @@ export function OnboardingStep4({
   const [serverError, setServerError] = useState<UsernameError>(null)
   const [isChecking, setIsChecking] = useState(false)
   const [hasTyped, setHasTyped] = useState(false)
-  // Localisation optionnelle — null si l'utilisateur a skippé
-  const [locationData, setLocationData] = useState<LocationFormData | null>(null)
-
-  // ─── État du bouton géolocalisation ────────────────────────────────────────
-  // Ville résolue depuis la géolocalisation navigateur (pré-remplit le picker)
-  const [geoCity, setGeoCity] = useState<CityResult | null>(null)
-  const [geoStatus, setGeoStatus] = useState<'idle' | 'loading' | 'denied' | 'resolved'>('idle')
-  // Évite les doubles appels en StrictMode React
-  const geoCalledRef = useRef(false)
 
   // Validation format en temps réel
   useEffect(() => {
@@ -551,39 +542,6 @@ export function OnboardingStep4({
     }
   }, [username, formatError, hasTyped])
 
-  /**
-   * Déclenche la géolocalisation navigateur et pré-remplit le picker de ville.
-   * Appelé uniquement par le bouton "Utiliser ma position".
-   */
-  async function handleUseBrowserLocation() {
-    if (geoCalledRef.current) return
-    geoCalledRef.current = true
-    setGeoStatus('loading')
-
-    const city = await requestBrowserLocation(() => {
-      // Callback géolocation refusée — affiche le message dédié
-      setGeoStatus('denied')
-      geoCalledRef.current = false
-    })
-
-    if (city) {
-      setGeoCity(city)
-      setGeoStatus('resolved')
-      // Pré-remplit locationData avec les valeurs par défaut + ville résolue
-      const prefilledData: LocationFormData = {
-        city,
-        radiusKm: 75,
-        visibility: 'region',
-        consentSource: 'browser',
-      }
-      setLocationData(prefilledData)
-    } else if (geoStatus !== 'denied') {
-      // Timeout ou API reverse-geocode échouée — on repasse en idle
-      setGeoStatus('idle')
-      geoCalledRef.current = false
-    }
-  }
-
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
     const val = e.target.value
     if (!hasTyped) setHasTyped(true)
@@ -622,67 +580,7 @@ export function OnboardingStep4({
             </p>
           </div>
 
-          {/* Section localisation optionnelle */}
-          <div className="flex flex-col gap-2 w-full shrink-0">
-            <label className="text-[var(--color-text-secondary)] text-sm">
-              {t('onboarding.username.locationLabel')}
-              <span className="ml-1 text-xs text-[var(--color-text-tertiary)] italic">
-                {t('onboarding.username.locationOptional')}
-              </span>
-            </label>
-
-            {/*
-             * Bouton "Utiliser ma position" — affiché tant que la ville n'est pas résolue.
-             * Disparaît une fois la géolocalisation réussie (geoStatus === 'resolved').
-             * Le bouton déclenche requestBrowserLocation() → reverseGeocode() → pré-remplit.
-             */}
-            {geoStatus !== 'resolved' && (
-              <button
-                type="button"
-                onClick={handleUseBrowserLocation}
-                disabled={geoStatus === 'loading'}
-                aria-busy={geoStatus === 'loading'}
-                className={[
-                  'flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-all',
-                  'focus-visible:outline-none focus-visible:ring-2',
-                  'focus-visible:ring-[var(--color-action-default)] focus-visible:ring-offset-1',
-                  geoStatus === 'loading'
-                    ? 'opacity-60 cursor-not-allowed border-[var(--color-border)] text-[var(--color-text-secondary)]'
-                    : 'border-[var(--color-action-default)] text-[var(--color-action-default)] hover:bg-[var(--color-action-light)]',
-                ].join(' ')}
-              >
-                {geoStatus === 'loading' ? (
-                  <>
-                    <Loader2 size={14} className="animate-spin shrink-0" aria-hidden="true" />
-                    {t('location.browser.resolving')}
-                  </>
-                ) : (
-                  <>
-                    <MapPin size={14} className="shrink-0" aria-hidden="true" />
-                    {t('location.browser.useMyPosition')}
-                  </>
-                )}
-              </button>
-            )}
-
-            {/* Message refus navigateur — non bloquant, affiché sous le bouton */}
-            {geoStatus === 'denied' && (
-              <p role="alert" className="text-xs text-[var(--color-text-secondary)] italic">
-                {t('location.browser.denied')}
-              </p>
-            )}
-
-            <LocationPickerSection
-              mode="accordion"
-              onChange={setLocationData}
-              consentSource="onboarding"
-              initialCity={geoCity}
-              initialRadius={75}
-              initialVisibility="region"
-            />
-          </div>
-
-          {/* Input */}
+          {/* Input pseudo */}
           <div className="flex flex-col gap-2 w-full shrink-0">
             {/*
              * <label htmlFor> associe sémantiquement le libellé à l'input.
@@ -712,7 +610,7 @@ export function OnboardingStep4({
                     value={username}
                     onChange={handleChange}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && isValid) onComplete(username.trim(), locationData)
+                      if (e.key === 'Enter' && isValid) onComplete(username.trim())
                     }}
                     className="flex-1 min-w-0 bg-transparent focus:outline-none text-[var(--color-text-primary)] placeholder:text-muted-foreground"
                     aria-required="true"
@@ -754,7 +652,7 @@ export function OnboardingStep4({
           <BackButton onClick={onBack} label={t('onboarding.back')} />
           <Button
             variant="primary"
-            onClick={() => isValid && onComplete(username.trim(), locationData)}
+            onClick={() => isValid && onComplete(username.trim())}
             disabled={!isValid}
             className="flex-1"
           >

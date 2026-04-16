@@ -15,7 +15,6 @@ import { useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useNotification } from '@/contexts/NotificationContext'
 import type { Interest } from '@/types/database'
-import type { LocationFormData } from '@/types/location'
 import { OnboardingInterests } from './OnboardingInterests'
 import { OnboardingStep2 } from './OnboardingStep2'
 import { OnboardingStep3 } from './OnboardingStep3'
@@ -71,9 +70,10 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
     setStep('username')
   }
 
-  // ─── Handler étape 4 + sauvegarde Supabase
+  // ─── Handler étape 4 + sauvegarde Supabase ────────────────────────────────
+  // La localisation est intentionnellement absente : opt-in post-découverte in-app.
   const handleUsernameComplete = useCallback(
-    async (username: string, locationData?: LocationFormData | null) => {
+    async (username: string) => {
       if (isSaving) return
       setIsSaving(true)
       setUserData((prev) => ({ ...prev, username }))
@@ -107,26 +107,6 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
               notifyError('Impossible de sauvegarder le profil. Réessaie.')
               setIsSaving(false)
               return
-            }
-
-            // Sauvegarde de la localisation si fournie (optionnel, non-bloquant)
-            if (locationData) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const { error: locationError } = await (supabase as any).rpc('update_user_location', {
-                p_user_id: user.id,
-                p_city_name: locationData.city.name,
-                p_region_name: locationData.city.regionName,
-                p_country_code: 'FR',
-                p_centroid_lat: locationData.city.centroidLat,
-                p_centroid_lng: locationData.city.centroidLng,
-                p_radius_km: locationData.radiusKm,
-                p_visibility: locationData.visibility,
-                p_consent_source: 'onboarding',
-              })
-              // Erreur de localisation = non-bloquante (l'utilisateur peut la définir plus tard)
-              if (locationError) {
-                console.warn('[onboarding] location save failed (non-blocking):', locationError)
-              }
             }
           }
         }

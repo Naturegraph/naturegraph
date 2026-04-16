@@ -28,7 +28,7 @@ export type LocationConsentSource = 'browser' | 'manual' | 'onboarding' | 'setti
  * Valeurs de rayon disponibles (km).
  * Min 75 km : garantit qu'une ville ≠ un individu en zone rurale.
  */
-export type LocationRadius = 75 | 100 | 150 | 250 | 500
+export type LocationRadius = 75 | 100 | 150 | 250
 
 // ─── Données ville ───────────────────────────────────────────
 
@@ -154,7 +154,6 @@ export const RADIUS_OPTIONS: { value: LocationRadius; label: string }[] = [
   { value: 100, label: '100 km' },
   { value: 150, label: '150 km' },
   { value: 250, label: '250 km' },
-  { value: 500, label: '500 km' },
 ]
 
 /** Rayon par défaut (minimum privacy-safe) */
