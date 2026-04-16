@@ -132,6 +132,55 @@ export async function uploadPostMedia(params: {
   }
 }
 
+// ── Community Photo (héro auth) ──────────────────────────────────────────────
+
+export interface CommunityHeroPhoto {
+  id: string
+  src: string
+  alt: string
+  photographerName: string | null
+  instagramUrl: string | null
+  tagline: string
+}
+
+/**
+ * Récupère la photo communautaire active pour les pages auth.
+ * Retourne null si aucune photo active ou si Supabase n'est pas configuré.
+ * Le composant AuthHeroPhoto gère le fallback vers l'asset local.
+ */
+export async function getCommunityHeroPhoto(): Promise<CommunityHeroPhoto | null> {
+  if (!isSupabaseConfigured || !supabase) return null
+
+  // community_photos n'est pas encore dans supabase.ts généré (migration 20260414)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from('community_photos')
+    .select('id, src, alt, photographer_name, instagram_url, tagline')
+    .eq('is_active', true)
+    .eq('consent_verified', true)
+    .maybeSingle()
+
+  if (error || !data) return null
+
+  const row = data as {
+    id: string
+    src: string
+    alt: string
+    photographer_name: string | null
+    instagram_url: string | null
+    tagline: string
+  }
+
+  return {
+    id: row.id,
+    src: row.src,
+    alt: row.alt,
+    photographerName: row.photographer_name ?? null,
+    instagramUrl: row.instagram_url ?? null,
+    tagline: row.tagline,
+  }
+}
+
 /** Supprime un media (storage + ligne DB). */
 export async function deletePostMedia(mediaId: string, storagePath: string): Promise<void> {
   if (!isSupabaseConfigured || !supabase) return

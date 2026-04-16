@@ -53,11 +53,12 @@ const variantClasses: Record<ButtonVariant, string> = {
   outline: 'btn-press btn-press-outline bg-transparent text-[var(--color-text-white)] rounded-full',
 
   /**
-   * Bouton secondaire — surface crème, sans effet 3D.
-   * Usage : actions neutres dans l'interface app.
+   * Bouton secondaire — outline teal sur fond clair, effet 3D btn-press.
+   * Miroir du variant outline, adapté aux fonds blancs/crème.
+   * Usage : actions secondaires dans l'interface app (auth, forms).
    */
   secondary:
-    'bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:opacity-80 rounded-full',
+    'btn-press btn-press-secondary bg-transparent text-[var(--color-text-primary)] rounded-full',
 
   /**
    * Bouton fantôme — fond transparent, texte secondaire.

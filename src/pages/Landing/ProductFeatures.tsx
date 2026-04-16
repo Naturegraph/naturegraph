@@ -281,7 +281,11 @@ export function ProductFeatures() {
   }
 
   return (
-    <section className="w-full relative flex justify-center" data-name="Section 4 : Produit">
+    <section
+      id="features"
+      className="w-full relative flex justify-center"
+      data-name="Section 4 : Produit"
+    >
       <div className="w-full max-w-[1728px] bg-[var(--color-bg-tertiary)] rounded-t-[32px]">
         {/* Header */}
         <div className="px-6 md:px-10 lg:px-32 pt-20 lg:pt-40 flex flex-col gap-8 mb-16 lg:mb-32">

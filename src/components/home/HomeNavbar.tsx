@@ -28,6 +28,7 @@ import {
   Bell,
   Plus,
   MapPin,
+  Locate,
   ChevronDown,
   User,
   LayoutList,
@@ -211,27 +212,55 @@ export function HomeNavbar({
                   TABLET + DESKTOP (≥768px)
                   ════════════════════════════════════════════════════════ */}
               <div className="hidden md:flex items-center md:gap-4 gap-3">
-                {/* ── Localisation — icône MapPin (pin) ─────────────────── */}
-                <button
-                  type="button"
-                  onClick={() => setShowLocationModal(true)}
-                  className="flex gap-3 h-12 items-center justify-center px-6 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                  aria-label={t('home.navbar.changeLocation')}
-                >
-                  <MapPin className="size-5 text-foreground shrink-0" aria-hidden="true" />
-                  <span className="text-foreground text-nowrap text-sm">{locationLabel}</span>
-                </button>
+                {/* ── Localisation — dropdown ancré au bouton ───────────────────────── */}
+                <div className="relative">
+                  {locationLabel ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowLocationModal((v) => !v)}
+                      aria-expanded={showLocationModal}
+                      aria-haspopup="dialog"
+                      className="flex gap-3 h-12 items-center justify-center px-6 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                      aria-label={t('home.navbar.changeLocation')}
+                    >
+                      <MapPin className="size-5 text-foreground shrink-0" aria-hidden="true" />
+                      <span className="text-foreground text-nowrap text-sm">{locationLabel}</span>
+                    </button>
+                  ) : (
+                    /* Pill "Localisation" — état neutre, invite à se localiser sans urgence */
+                    <button
+                      type="button"
+                      onClick={() => setShowLocationModal((v) => !v)}
+                      aria-expanded={showLocationModal}
+                      aria-haspopup="dialog"
+                      className="flex gap-3 h-12 items-center justify-center px-6 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                      aria-label={t('home.navbar.setLocation')}
+                    >
+                      <Locate className="size-5 text-foreground shrink-0" aria-hidden="true" />
+                      <span className="text-foreground text-nowrap text-sm">
+                        {t('home.navbar.setLocation')}
+                      </span>
+                    </button>
+                  )}
+                  {showLocationModal && (
+                    <LocationModal onClose={() => setShowLocationModal(false)} />
+                  )}
+                </div>
 
-                {/* ── Recherche ─────────────────────────────────────────── */}
-                <button
-                  type="button"
-                  onClick={() => setShowSearch(true)}
-                  className="flex items-center justify-center size-12 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                  aria-label={t('home.navbar.search')}
-                  aria-expanded={showSearch}
-                >
-                  <Search className="size-5 text-foreground" aria-hidden="true" />
-                </button>
+                {/* ── Recherche — dropdown ancrée au bouton ─────────────── */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowSearch((v) => !v)}
+                    className="flex items-center justify-center size-12 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    aria-label={t('home.navbar.search')}
+                    aria-expanded={showSearch}
+                    aria-haspopup="dialog"
+                  >
+                    <Search className="size-5 text-foreground" aria-hidden="true" />
+                  </button>
+                  {showSearch && <SearchPanel onClose={() => setShowSearch(false)} />}
+                </div>
 
                 {/* ── Notifications — connecté seulement ───────────────── */}
                 {isAuthenticated && (
@@ -364,9 +393,8 @@ export function HomeNavbar({
         </div>
       </header>
 
-      {/* ── Panels montés en dehors du header pour éviter les z-index conflicts ── */}
-      {showSearch && <SearchPanel onClose={() => setShowSearch(false)} />}
-      {showLocationModal && <LocationModal onClose={() => setShowLocationModal(false)} />}
+      {/* Les panels SearchPanel et LocationModal sont montés dans leurs div.relative
+          respectifs dans le header — voir ci-dessus (pattern NotificationsPanel). */}
     </>
   )
 }

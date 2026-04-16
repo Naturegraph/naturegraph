@@ -95,9 +95,30 @@ export interface Profile {
   birth_date: string | null
   bio: string | null
   interests: Interest[]
+  // Localisation héritée (colonnes texte legacy — conservées pour compatibilité)
   city: string | null
   region: string | null
   country: string | null
+  // ─── Localisation privacy-first (ajoutée dans 20260420_add_user_location.sql) ──
+  /** Nom de ville canonique (ex: "Grenoble") */
+  city_name: string | null
+  /** Région administrative (ex: "Auvergne-Rhône-Alpes") */
+  region_name: string | null
+  /** Code pays ISO 3166-1 alpha-2 */
+  country_code: string
+  /** Rayon de partage déclaré [75–500 km] */
+  location_radius_km: number
+  /**
+   * Visibilité de la localisation :
+   * 'private' = rien affiché | 'region' = région | 'city' = ville + région
+   */
+  location_visibility: 'private' | 'region' | 'city'
+  /** Source du consentement RGPD */
+  location_consent_source: 'browser' | 'manual' | 'onboarding' | 'settings' | null
+  /** Timestamp du dernier update (pour throttle 1h) */
+  location_updated_at: string | null
+  // Note : location_point (geography PostGIS) est absent intentionnellement.
+  // Il n'est jamais renvoyé au client — usage serveur uniquement (ST_DWithin).
   instagram: string | null
   twitter: string | null
   website: string | null
@@ -111,6 +132,33 @@ export interface Profile {
   created_at: string
   updated_at: string
   last_login_at: string | null
+}
+
+/**
+ * Profil tel qu'exposé via la vue profiles_public.
+ * Remplace location_point par location_label (déjà formaté selon visibility).
+ * C'est ce type qu'on utilise pour afficher les infos d'un autre utilisateur.
+ */
+export interface PublicProfile extends Omit<
+  Profile,
+  | 'email'
+  | 'city'
+  | 'region'
+  | 'country'
+  | 'city_name'
+  | 'region_name'
+  | 'country_code'
+  | 'location_radius_km'
+  | 'location_consent_source'
+  | 'location_updated_at'
+  | 'last_login_at'
+> {
+  /** Label formaté par la vue SQL selon visibility. Null si private. */
+  location_label: string | null
+  /** Code pays ISO (null si visibility=private) */
+  country_code: string | null
+  /** Rayon en km (null si visibility=private) */
+  location_radius_km: number | null
 }
 
 export interface Post {
@@ -284,18 +332,87 @@ export interface TaxrefEntry {
 type AutoTimestamps = 'created_at' | 'updated_at'
 type AutoId = 'id'
 type AutoCounters = 'posts_count' | 'followers_count' | 'following_count'
+type AutoLocationFields = 'location_updated_at'
 
 export interface Database {
   public: {
-    Views: { [_ in never]: never }
-    Functions: { [_ in never]: never }
+    Views: {
+      profiles_public: {
+        Row: PublicProfile
+      }
+    }
+    Functions: {
+      search_cities: {
+        Args: { query: string; max_results?: number }
+        Returns: Array<{
+          insee_code: string
+          name: string
+          region_name: string
+          department_name: string
+          department_code: string
+          population: number | null
+          centroid_lat: number
+          centroid_lng: number
+        }>
+      }
+      reverse_geocode_city: {
+        Args: { lat: number; lng: number; max_distance_km?: number }
+        Returns: Array<{
+          insee_code: string
+          name: string
+          region_name: string
+          department_name: string
+          department_code: string
+          distance_km: number
+        }>
+      }
+      nearby_posts: {
+        Args: { requesting_user_id: string; result_limit?: number; result_offset?: number }
+        Returns: Array<{ post_id: string; distance_km: number }>
+      }
+      update_user_location: {
+        Args: {
+          p_user_id: string
+          p_city_name: string
+          p_region_name: string
+          p_country_code: string
+          p_centroid_lat: number
+          p_centroid_lng: number
+          p_radius_km: number
+          p_visibility: string
+          p_consent_source: string
+        }
+        Returns: { success?: boolean; error?: string; retry_after?: number }
+      }
+      clear_user_location: {
+        Args: { p_user_id: string }
+        Returns: void
+      }
+    }
     Enums: { [_ in never]: never }
     CompositeTypes: { [_ in never]: never }
     Tables: {
       profiles: {
         Row: Profile
-        Insert: Omit<Profile, AutoTimestamps | 'last_login_at' | AutoCounters | 'email_verified'> &
-          Partial<Pick<Profile, 'is_public' | 'gender' | 'birth_date' | 'bio' | 'interests'>>
+        Insert: Omit<
+          Profile,
+          AutoTimestamps | 'last_login_at' | AutoCounters | 'email_verified' | AutoLocationFields
+        > &
+          Partial<
+            Pick<
+              Profile,
+              | 'is_public'
+              | 'gender'
+              | 'birth_date'
+              | 'bio'
+              | 'interests'
+              | 'city_name'
+              | 'region_name'
+              | 'country_code'
+              | 'location_radius_km'
+              | 'location_visibility'
+            >
+          >
         Update: Partial<Omit<Profile, AutoId | 'email' | AutoTimestamps | AutoCounters>>
         Relationships: []
       }

@@ -46,7 +46,6 @@
       "closeMenu": "Close menu"
     },
     "hero": {
-      "badge": "Explore, share & connect with nature",
       "titleLine1": "Together, let's bring",
       "titleLine2": "your encounters to life!",
       "subtitle": "Every outing becomes a memory, every observation a story to share.",
@@ -297,6 +296,8 @@
       "inputLabel": "Username",
       "inputRequired": "*",
       "inputHelper": "Letters, numbers, periods (.) and underscores (_) allowed",
+      "locationLabel": "Your geographic zone",
+      "locationOptional": "Optional",
       "buttonDisabled": "Choose your username",
       "buttonEnabled": "Let's go!",
       "errors": {
@@ -314,6 +315,75 @@
       "goHome": "Leave onboarding",
       "goLogin": "Sign in",
       "continue": "Continue onboarding"
+    }
+  },
+
+  "location": {
+    "autocomplete": {
+      "label": "City",
+      "placeholder": "Search a city (e.g. Lyon, Bordeaux...)",
+      "ariaLabel": "Search a city",
+      "listLabel": "City suggestions",
+      "clear": "Clear selected city"
+    },
+    "radius": {
+      "label": "Sharing radius",
+      "unit": "{{km}} km",
+      "ariaValueText": "{{km}} kilometres",
+      "hint": "The minimum radius of 75 km ensures that a city cannot precisely identify your location."
+    },
+    "visibility": {
+      "label": "Zone visibility",
+      "ariaLabel": "Choose your location visibility",
+      "private": {
+        "label": "Private",
+        "description": "No one sees your location"
+      },
+      "region": {
+        "label": "Region only",
+        "description": "Others only see your region (e.g. Brittany)"
+      },
+      "city": {
+        "label": "City + Region",
+        "description": "Others see your city and region (e.g. Rennes · Brittany)"
+      }
+    },
+    "privacy": {
+      "notice": "We never record your exact location. You control what others see, and you can change or delete your location at any time."
+    },
+    "section": {
+      "addZone": "Add my geographic zone"
+    },
+    "feed": {
+      "nearMe": "Near me",
+      "noLocation": "Enable your location to see observations near you",
+      "activateCta": "Activate my zone",
+      "emptyTitle": "No observations in your zone",
+      "emptyDescription": "No observations within {{km}} km yet. Expand your radius or browse the global feed.",
+      "expandRadius": "Expand radius",
+      "globalFeed": "Global feed"
+    },
+    "settings": {
+      "title": "Location",
+      "description": "Set your zone to personalise your feed and suggestions.",
+      "clearButton": "Clear my location",
+      "clearConfirm": "Are you sure you want to clear your location? Your feed will switch back to global mode.",
+      "clearSuccess": "Location cleared",
+      "saveSuccess": "Location updated",
+      "rateLimited": "You've recently changed your location. Try again in {{minutes}} minutes.",
+      "lastUpdated": "Last updated on {{date}}"
+    },
+    "browser": {
+      "useMyPosition": "Use my location",
+      "resolving": "Locating…",
+      "denied": "Location denied. Use the manual search below."
+    },
+    "permissionModal": {
+      "title": "Naturegraph near you",
+      "description": "Discover species observed within 75 km of you. More relevance, less noise.",
+      "privacyNote": "Only your city is used. Never your exact location. You can update or delete your data at any time.",
+      "activateCta": "Enable location",
+      "skipCta": "Later"
     }
   },
 
@@ -337,6 +407,8 @@
     "navbar": {
       "backToHome": "Naturegraph — Back to home",
       "changeLocation": "Change location",
+      "activateLocation": "Activate my area",
+      "setLocation": "Location",
       "search": "Search",
       "notifications": "Notifications",
       "contribute": "Contribute",
@@ -380,7 +452,17 @@
       "emptyDesc": "Try changing your filters to see more results.",
       "emptyDescLocation": "Be the first to share an observation in {{location}}!",
       "emptyReset": "Reset filters",
-      "emptyContribute": "Share an observation"
+      "emptyContribute": "Share an observation",
+      "forYouModal": {
+        "title": "Your Naturegraph experience starts here",
+        "description": "Create your account to unlock a personalised feed and discover the nature you're passionate about, everywhere around you.",
+        "point1": "Content tailored to your interests",
+        "point2": "Observations from your community",
+        "point3": "A local and living discovery",
+        "createAccount": "Create my account",
+        "continueDiscovery": "Continue without personalisation",
+        "tabDisabledHint": "Sign in to access your personalised feed"
+      }
     },
     "filters": {
       "title": "Filters",
@@ -415,6 +497,7 @@
       "noReactions": "Be the first to react",
       "yourReaction": "Your reaction",
       "chooseReaction": "Choose a reaction",
+      "filterBySpecies": "Filter feed by {{species}}",
       "reactions": {
         "love": "Love",
         "admire": "Admire",
@@ -624,6 +707,11 @@
       "searchPlaceholder": "Tit, fox...",
       "noResults": "No species found",
       "taxrefCredit": "TAXREF data — INPN, CC-BY license",
+      "skip": "Skip identification",
+      "skipFromEmpty": "I don't know, skip",
+      "serviceUnavailable": "Search unavailable — please try again",
+      "suggestionsLabel": "Species suggestions",
+      "changeSpecies": "Change species",
       "group": "Taxonomic group",
       "groups": {
         "birds": "Birds",

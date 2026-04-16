@@ -1,7 +1,12 @@
 /**
  * FeedSection — Section centrale du feed
  *
- * Tabs (Récent / Pour toi / Populaire) + vue liste/grille + filtre.
+ * Tabs : Récent · Populaire · Pour vous
+ *   - Récent    : chronologique, accessible à tous
+ *   - Populaire : tri par score d'engagement (30j), accessible à tous
+ *   - Pour vous : personnalisé (intérêts + follows + localisation), connecté requis
+ *     → non connecté : tab visible disabled + modale discovery douce au clic
+ *
  * Source de données : Supabase via useFeed() (React Query → postService.getFeed())
  *
  * L'adaptateur postFeedItemToMockPost() fait le bridge entre PostFeedItem
@@ -9,23 +14,33 @@
  * refactorisé pour accepter PostFeedItem directement.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
-import { LayoutList, LayoutGrid, Filter } from 'lucide-react'
+import { LayoutList, LayoutGrid, Filter, X } from 'lucide-react'
 import { FeedPost } from './FeedPost'
 import { FeedGallery } from './FeedGallery'
 import { FeedFilterPanel, DEFAULT_FILTERS } from './FeedFilterPanel'
+import { ForYouDiscoveryModal } from './ForYouDiscoveryModal'
 import type { FeedFilters } from './FeedFilterPanel'
 import type { MockPost } from './FeedPost'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLocation } from '@/contexts/LocationContext'
+import { useSpecies } from '@/contexts/SpeciesContext'
 import { useFeed, FEED_QUERY_KEY } from '@/hooks/useFeed'
+import { useLocationCTA } from '@/hooks/useLocationCTA'
 import { useToggleReaction } from '@/hooks/usePost'
+import { LocationPermissionModal } from '@/components/location/LocationPermissionModal'
+import { requestBrowserLocation } from '@/lib/location/geocoding'
 import type { PostFeedItem, ReactionType } from '@/types/database'
+import type { LocationFormData } from '@/types/location'
 import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
 
-export type FeedTab = 'recent' | 'for-you' | 'popular'
+/**
+ * Tabs du feed — ordre : Récent · Populaire · Pour vous
+ * "for-you" nécessite d'être connecté (tab disabled + modale discovery sinon)
+ */
+export type FeedTab = 'recent' | 'popular' | 'for-you'
 
 // Mapping groupe taxonomique → emoji catégorie
 const TAXONOMIC_EMOJI: Record<string, string> = {
@@ -88,6 +103,9 @@ function postFeedItemToMockPost(item: PostFeedItem): MockPost {
       label: item.taxonomic_group ?? 'Autre',
     },
     species: item.species_name ?? 'Espèce non identifiée',
+    scientific_name: item.scientific_name ?? null,
+    taxref_id: item.taxref_id ?? null,
+    taxonomic_group: item.taxonomic_group ?? null,
     format: '16:9',
     images: (item.media ?? []).map((m) => ({ url: m.url, alt: m.alt ?? '' })),
     // Tous les likes attribués à 'love' pour l'instant — la répartition détaillée
@@ -156,16 +174,69 @@ export function FeedSection({
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
-  const { locationLabel } = useLocation()
+  const { updateLocation } = useLocation()
+  // Species Context Layer — filtre global activé depuis la recherche (PRD §3.4 / §6.1)
+  const { activeSpecies, clearActiveSpecies } = useSpecies()
   const [activeTab, setActiveTab] = useState<FeedTab>('recent')
   const [filters, setFilters] = useState<FeedFilters>({ ...DEFAULT_FILTERS })
   const [page, setPage] = useState(1)
 
+  // ─── Modale discovery "Pour vous" (non connecté) ──────────────
+  // Affichée au clic sur "Pour vous" quand l'utilisateur n'est pas connecté.
+  // Propose l'inscription sans forcer — CTA secondaire "Continuer à découvrir".
+  const [showForYouModal, setShowForYouModal] = useState(false)
+
+  /**
+   * Clic sur un tab :
+   *   - "Pour vous" non connecté → ouvre la modale discovery, reste sur Récent
+   *   - sinon → change l'onglet normalement
+   */
+  const handleTabClick = useCallback(
+    (tabId: FeedTab) => {
+      if (tabId === 'for-you' && !isAuthenticated) {
+        setShowForYouModal(true)
+        return
+      }
+      setActiveTab(tabId)
+    },
+    [isAuthenticated],
+  )
+
+  /** Ferme la modale discovery et ramène sur Récent */
+  const handleForYouModalClose = useCallback(() => {
+    setShowForYouModal(false)
+    setActiveTab('recent')
+  }, [])
+
+  // ─── CTA localisation (pour les utilisateurs connectés non-localisés) ─────
+  // Modale affichée 1x/session — triggered depuis le tab "Pour vous"
+  const { showModal, dismissModal } = useLocationCTA()
+
+  /**
+   * Handler "Activer" de la modale localisation — tente la géoloc navigateur.
+   * Ferme la modale et sauvegarde la localisation si succès.
+   */
+  const handleActivateLocation = useCallback(async () => {
+    dismissModal()
+    const city = await requestBrowserLocation()
+    if (city) {
+      const locationData: LocationFormData = {
+        city,
+        radiusKm: 75,
+        visibility: 'region',
+        consentSource: 'browser',
+      }
+      await updateLocation(locationData).catch(() => {
+        // Erreur non-bloquante — l'utilisateur peut réessayer depuis les Settings
+      })
+    }
+  }, [dismissModal, updateLocation])
+
   // Map des onglets UI → paramètres postService
   const tabToServiceTab: Record<FeedTab, 'recent' | 'popular' | 'for_you'> = {
     recent: 'recent',
-    'for-you': 'for_you',
     popular: 'popular',
+    'for-you': 'for_you',
   }
 
   // useFeed — données Supabase via React Query
@@ -194,7 +265,8 @@ export function FeedSection({
     setPage(1)
   }
 
-  // ── Source de données Supabase → adaptateur UI ──────────────────────────
+  const isLoading_ = isFeedLoading
+  const isError_ = isFeedError
   const posts: MockPost[] = (feedData?.data ?? []).map(postFeedItemToMockPost)
 
   // Clé de cache du feed courant — passée au hook de réaction pour l'optimistic update
@@ -209,7 +281,8 @@ export function FeedSection({
 
   /** Callback passé à chaque FeedPost — déclenche la mutation optimiste */
   function handleReact(postId: string, type: ReactionType) {
-    const post = feedData?.data?.find((p) => p.id === postId)
+    const sourcePosts = feedData?.data ?? []
+    const post = sourcePosts.find((p: PostFeedItem) => p.id === postId)
     reactionMutation.mutate({
       postId,
       type,
@@ -218,10 +291,14 @@ export function FeedSection({
     })
   }
 
-  const TABS: { id: FeedTab; label: string }[] = [
-    { id: 'recent', label: t('home.feed.recent') },
-    { id: 'for-you', label: t('home.feed.forYou') },
-    { id: 'popular', label: t('home.feed.popular') },
+  /**
+   * Ordre PRD validé : Récent · Populaire · Pour vous
+   * "Pour vous" est toujours visible — disabled si non connecté (conversion).
+   */
+  const TABS: { id: FeedTab; label: string; requiresAuth: boolean }[] = [
+    { id: 'recent', label: t('home.feed.recent'), requiresAuth: false },
+    { id: 'popular', label: t('home.feed.popular'), requiresAuth: false },
+    { id: 'for-you', label: t('home.feed.forYou'), requiresAuth: true },
   ]
 
   function handleResetFilters() {
@@ -232,6 +309,36 @@ export function FeedSection({
 
   return (
     <section aria-label="Feed des observations">
+      {/*
+       * Bannière Species Context Layer — visible quand une espèce est active (PRD §6.1).
+       * Informe l'utilisateur que le feed est filtré + permet de revenir au feed global.
+       */}
+      {activeSpecies && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mb-4 flex items-center gap-3 rounded-xl bg-primary-light border border-primary/20 px-4 py-3"
+        >
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground truncate">
+              {activeSpecies.common_name ?? activeSpecies.scientific_name}
+            </p>
+            <p className="text-xs text-muted-foreground italic truncate">
+              {activeSpecies.scientific_name}
+            </p>
+          </div>
+          <span className="text-xs text-primary font-medium shrink-0">Feed filtré</span>
+          <button
+            type="button"
+            onClick={clearActiveSpecies}
+            aria-label="Revenir au feed global"
+            className="size-7 flex items-center justify-center rounded-full hover:bg-primary/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
+          >
+            <X className="size-4 text-foreground" aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
       {/* Header tabs + contrôles — desktop seulement */}
       <div className="hidden md:flex gap-3 items-center justify-between mb-4">
         <div
@@ -240,24 +347,32 @@ export function FeedSection({
           className="relative rounded-full border-[0.5px] border-border"
         >
           <div className="flex items-center p-1">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                role="tab"
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                aria-selected={activeTab === tab.id}
-                className={[
-                  'flex h-8 items-center justify-center px-4 rounded-full transition-colors text-base',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
-                  activeTab === tab.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-transparent text-foreground hover:bg-muted/50',
-                ].join(' ')}
-              >
-                {tab.label}
-              </button>
-            ))}
+            {TABS.map((tab) => {
+              const isDisabled = tab.requiresAuth && !isAuthenticated
+              const isActive = activeTab === tab.id && !isDisabled
+              return (
+                <button
+                  key={tab.id}
+                  role="tab"
+                  type="button"
+                  onClick={() => handleTabClick(tab.id)}
+                  aria-selected={isActive}
+                  aria-disabled={isDisabled}
+                  title={isDisabled ? t('home.feed.forYouModal.tabDisabledHint') : undefined}
+                  className={[
+                    'flex h-8 items-center justify-center gap-1.5 px-4 rounded-full transition-colors text-base',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+                    isActive
+                      ? 'bg-primary text-primary-foreground font-semibold'
+                      : isDisabled
+                        ? 'bg-transparent text-muted-foreground cursor-pointer opacity-60'
+                        : 'bg-transparent text-foreground hover:bg-muted/50',
+                  ].join(' ')}
+                >
+                  {tab.label}
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -320,10 +435,10 @@ export function FeedSection({
       </div>
 
       {/* État chargement */}
-      {isFeedLoading && <FeedSkeleton />}
+      {isLoading_ && <FeedSkeleton />}
 
       {/* État erreur */}
-      {isFeedError && (
+      {isError_ && (
         <div role="alert" className="bg-background md:rounded-card rounded-none p-8 text-center">
           <p className="text-sm text-muted-foreground">
             {t('home.feed.loadError', {
@@ -334,7 +449,7 @@ export function FeedSection({
       )}
 
       {/* État vide */}
-      {!isFeedLoading && !isFeedError && posts.length === 0 && (
+      {!isLoading_ && !isError_ && posts.length === 0 && (
         <div className="bg-background relative md:rounded-card rounded-none overflow-hidden">
           <div
             aria-hidden="true"
@@ -345,9 +460,7 @@ export function FeedSection({
             <div className="flex flex-col gap-2 max-w-sm">
               <p className="text-lg font-bold text-foreground">{t('home.feed.emptyTitle')}</p>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                {locationLabel
-                  ? t('home.feed.emptyDescLocation', { location: locationLabel })
-                  : t('home.feed.emptyDesc')}
+                {t('home.feed.emptyDesc')}
               </p>
             </div>
             <div className="flex flex-wrap gap-3 justify-center">
@@ -382,7 +495,7 @@ export function FeedSection({
       )}
 
       {/* Liste des posts */}
-      {!isFeedLoading && !isFeedError && posts.length > 0 && (
+      {!isLoading_ && !isError_ && posts.length > 0 && (
         <>
           {viewMode === 'grid' ? (
             <FeedGallery posts={posts} />
@@ -411,12 +524,12 @@ export function FeedSection({
                 {t('common.previous', { defaultValue: 'Précédent' })}
               </button>
               <span className="h-9 px-4 flex items-center text-sm text-muted-foreground">
-                {page} / {feedData.pagination.totalPages}
+                {page} / {feedData?.pagination.totalPages}
               </span>
               <button
                 type="button"
                 onClick={() => setPage((p) => p + 1)}
-                disabled={!feedData.pagination.hasNext}
+                disabled={!feedData?.pagination.hasNext}
                 className="h-9 px-4 rounded-full border border-border text-sm disabled:opacity-40 hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {t('common.next', { defaultValue: 'Suivant' })}
@@ -436,6 +549,16 @@ export function FeedSection({
           onTabChange={setActiveTab}
         />
       )}
+
+      {/* Modale discovery "Pour vous" — visiteurs non connectés */}
+      <ForYouDiscoveryModal isOpen={showForYouModal} onContinue={handleForYouModalClose} />
+
+      {/* Modale permission géolocalisation — utilisateurs connectés non-localisés (1x/session) */}
+      <LocationPermissionModal
+        isOpen={showModal}
+        onActivate={handleActivateLocation}
+        onSkip={dismissModal}
+      />
     </section>
   )
 }

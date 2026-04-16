@@ -45,6 +45,38 @@
   --btn-shadow-color: color-mix(in srgb, var(--color-action-default) 70%, black);
 }
 
+/**
+ * Variante secondary — outline teal sur fond clair.
+ * Miroir de btn-press-outline mais pour fond blanc/crème.
+ * Usage : actions secondaires dans l'interface app (auth, forms).
+ */
+.btn-press-secondary {
+  --btn-shadow-color: rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 3px 0 0 var(--btn-shadow-color),
+    inset 0 0 0 1.5px rgba(0, 0, 0, 0.12);
+}
+
+.btn-press-secondary:hover {
+  box-shadow:
+    0 6px 0 0 var(--btn-shadow-color),
+    inset 0 0 0 1.5px rgba(0, 0, 0, 0.28);
+}
+
+.btn-press-secondary:active {
+  box-shadow:
+    0 1px 0 0 var(--btn-shadow-color),
+    inset 0 0 0 1.5px rgba(0, 0, 0, 0.18);
+}
+
+.btn-press-secondary:focus-visible {
+  outline: 2px solid var(--color-action-default);
+  outline-offset: 3px;
+  box-shadow:
+    0 6px 0 0 var(--btn-shadow-color),
+    inset 0 0 0 1.5px rgba(0, 0, 0, 0.28);
+}
+
 /** Variante outline — shadow blanche translucide + border inset */
 .btn-press-outline {
   --btn-shadow-color: color-mix(in srgb, var(--color-text-white) 20%, transparent);

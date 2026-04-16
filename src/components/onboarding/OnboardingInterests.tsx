@@ -94,6 +94,8 @@ export function OnboardingInterests({ onContinue, onSkip, onExit }: OnboardingIn
           <div className="flex flex-wrap gap-2 items-start w-full shrink-0">
             {INTERESTS.map(({ id, emoji }) => {
               const isSelected = selectedInterests.includes(id)
+              /** Numéro d'ordre de sélection (1, 2, 3) — null si non sélectionné */
+              const selectionOrder = isSelected ? selectedInterests.indexOf(id) + 1 : null
               /** Carte désactivée : max atteint et non sélectionnée */
               const isDisabled = isAtMax && !isSelected
               return (
@@ -104,7 +106,7 @@ export function OnboardingInterests({ onContinue, onSkip, onExit }: OnboardingIn
                   aria-pressed={isSelected}
                   disabled={isDisabled}
                   className={[
-                    'flex flex-col gap-2 items-center justify-center p-4 rounded-xl h-24',
+                    'relative flex flex-col gap-2 items-center justify-center p-4 rounded-lg h-24',
                     'w-[calc(50%-4px)] md:w-[calc(33.333%-5.333px)]',
                     'transition-all duration-200',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] focus-visible:ring-offset-2',
@@ -115,6 +117,16 @@ export function OnboardingInterests({ onContinue, onSkip, onExit }: OnboardingIn
                         : 'bg-transparent border border-[var(--color-border)] motion-safe:hover:shadow-md motion-safe:active:scale-95',
                   ].join(' ')}
                 >
+                  {/* Badge numéroté — affiché dans le coin supérieur droit quand sélectionné */}
+                  {selectionOrder !== null && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[var(--color-action-default)] text-[var(--color-text-white)] text-xs font-bold flex items-center justify-center leading-none"
+                    >
+                      {selectionOrder}
+                    </span>
+                  )}
+
                   {/* Emoji décoratif — masqué aux lecteurs d'écran */}
                   <span className="text-2xl" aria-hidden="true">
                     {emoji}

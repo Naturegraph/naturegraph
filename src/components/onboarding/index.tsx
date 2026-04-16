@@ -70,7 +70,8 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
     setStep('username')
   }
 
-  // ─── Handler étape 4 + sauvegarde Supabase
+  // ─── Handler étape 4 + sauvegarde Supabase ────────────────────────────────
+  // La localisation est intentionnellement absente : opt-in post-découverte in-app.
   const handleUsernameComplete = useCallback(
     async (username: string) => {
       if (isSaving) return
@@ -87,20 +88,8 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
             /**
              * TODO [BACKEND] — Étendre l'upsert avec les champs manquants :
              *   - `notification_frequency` : mapper FrequencyOption → ENUM DB
-             *     ('daily' → 'realtime', 'weekly' → 'daily_digest',
-             *      'monthly' → 'weekly_digest', 'occasionally' → 'disabled')
-             *     Créer également une entrée dans `notification_settings` pour
-             *     les préférences push/email initiales selon la fréquence choisie.
-             *   - `motivations` : tableau ENUM[] dans `profiles` (ou table dédiée
-             *     `user_motivations` si évolution future vers pondération ML).
-             *   Schéma DB : ALTER TABLE profiles
-             *     ADD COLUMN notification_frequency TEXT DEFAULT 'weekly',
-             *     ADD COLUMN motivations TEXT[] DEFAULT '{}';
+             *   - `motivations` : tableau ENUM[] dans `profiles`
              */
-            // NOTE [BACKEND] — `notification_frequency` et `motivations` ne sont pas
-            // encore dans le schéma Supabase. On les stocke en mémoire (userData)
-            // et on les persistera quand la migration sera appliquée. Pour l'instant
-            // on n'écrit que ce que la table accepte.
             const { error: upsertError } = await supabase.from('profiles').upsert(
               {
                 id: user.id,

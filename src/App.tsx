@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { NotificationProvider } from '@/contexts/NotificationContext'
 import { LocationProvider } from '@/contexts/LocationContext'
+import { SpeciesProvider } from '@/contexts/SpeciesContext'
 
 export default function App() {
   return (
@@ -12,13 +13,16 @@ export default function App() {
       <ThemeProvider>
         <AuthProvider>
           <LocationProvider>
-            <NotificationProvider>
-              {/* Skip link global — pointe vers l'id="main-content" de chaque page */}
-              <a href="#main-content" className="skip-link">
-                Aller au contenu principal
-              </a>
-              <Outlet />
-            </NotificationProvider>
+            {/* SpeciesProvider — Species Context Layer (PRD Recherche §3.4) */}
+            <SpeciesProvider>
+              <NotificationProvider>
+                {/* Skip link global — pointe vers l'id="main-content" de chaque page */}
+                <a href="#main-content" className="skip-link">
+                  Aller au contenu principal
+                </a>
+                <Outlet />
+              </NotificationProvider>
+            </SpeciesProvider>
           </LocationProvider>
         </AuthProvider>
       </ThemeProvider>

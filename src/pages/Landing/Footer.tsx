@@ -38,14 +38,14 @@ export function Footer({ onNavigate }: FooterProps) {
   const { t } = useTranslation()
 
   const socialLinks = {
-    instagram: 'https://www.instagram.com/naturegraph.fr/?hl=fr',
-    discord: 'https://discord.gg/WVFQw2Zh',
+    instagram: 'https://www.instagram.com/naturegraph.fr/',
+    discord: 'https://discord.gg/qKyU6kZfGd',
   }
 
   /** Liens produit (scroll vers sections) */
   const productLinks = [
     { label: t('footer.product.values'), id: 'values' },
-    { label: t('footer.product.features'), id: 'discover' },
+    { label: t('footer.product.features'), id: 'features' },
     { label: t('footer.product.mission'), id: 'mission' },
     { label: t('footer.product.community'), id: 'community' },
   ]
@@ -68,7 +68,7 @@ export function Footer({ onNavigate }: FooterProps) {
               <img
                 src={logoSimplified}
                 alt={t('common.appName')}
-                className="w-[204px] h-auto self-start"
+                className="w-[204px] h-auto self-start -ml-5"
                 width={204}
                 height={40}
               />

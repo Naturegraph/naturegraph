@@ -33,10 +33,23 @@ function NavLinkButton({
 }) {
   const base =
     'bg-transparent border-none cursor-pointer font-[var(--font-body)] text-[var(--color-text-white)]/90 hover:text-[var(--color-text-white)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-text-white)]/50 rounded'
-  const variantClass =
-    variant === 'desktop' ? 'text-base font-normal' : 'block w-full text-left text-base py-2'
+
+  if (variant === 'desktop') {
+    // Desktop : underline mint animé qui glisse depuis la gauche au hover
+    return (
+      <button onClick={onClick} className={`${base} relative text-base font-normal pb-1 group`}>
+        {label}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute left-0 right-0 -bottom-0.5 h-[2px] rounded-full bg-[var(--color-accent-mint)] origin-left scale-x-0 group-hover:scale-x-100 group-focus-visible:scale-x-100 transition-transform duration-300 ease-out motion-reduce:transition-none"
+        />
+      </button>
+    )
+  }
+
+  // Mobile : style simple dans l'overlay
   return (
-    <button onClick={onClick} className={`${base} ${variantClass}`}>
+    <button onClick={onClick} className={`${base} block w-full text-left text-base py-2`}>
       {label}
     </button>
   )

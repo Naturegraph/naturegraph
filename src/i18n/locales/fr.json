@@ -46,7 +46,6 @@
       "closeMenu": "Fermer le menu"
     },
     "hero": {
-      "badge": "Explore, partage & connecte-toi à la nature",
       "titleLine1": "Ensemble, donnons",
       "titleLine2": "vie à tes rencontres !",
       "subtitle": "Chaque sortie devient un souvenir, chaque observation une histoire à partager.",
@@ -297,6 +296,8 @@
       "inputLabel": "Nom d'utilisateur",
       "inputRequired": "*",
       "inputHelper": "Lettres, chiffres, points (.) et underscores (_) autorisés",
+      "locationLabel": "Ta zone géographique",
+      "locationOptional": "Optionnel",
       "buttonDisabled": "Choisis ton pseudo",
       "buttonEnabled": "C'est parti !",
       "errors": {
@@ -314,6 +315,75 @@
       "goHome": "Quitter l'onboarding",
       "goLogin": "Se connecter",
       "continue": "Continuer l'onboarding"
+    }
+  },
+
+  "location": {
+    "autocomplete": {
+      "label": "Ville",
+      "placeholder": "Rechercher une ville (ex: Grenoble, Lyon...)",
+      "ariaLabel": "Rechercher une ville",
+      "listLabel": "Suggestions de villes",
+      "clear": "Effacer la ville sélectionnée"
+    },
+    "radius": {
+      "label": "Rayon de partage",
+      "unit": "{{km}} km",
+      "ariaValueText": "{{km}} kilomètres",
+      "hint": "Le rayon minimum de 75 km garantit qu'une ville ne peut pas identifier précisément ta position."
+    },
+    "visibility": {
+      "label": "Visibilité de ta zone",
+      "ariaLabel": "Choisir la visibilité de ta localisation",
+      "private": {
+        "label": "Privé",
+        "description": "Personne ne voit ta localisation"
+      },
+      "region": {
+        "label": "Région seulement",
+        "description": "Les autres voient uniquement ta région (ex: Bretagne)"
+      },
+      "city": {
+        "label": "Ville + Région",
+        "description": "Les autres voient ta ville et ta région (ex: Rennes · Bretagne)"
+      }
+    },
+    "privacy": {
+      "notice": "Nous n'enregistrons jamais ta position exacte. Tu contrôles ce que les autres voient, et tu peux modifier ou supprimer ta localisation à tout moment."
+    },
+    "section": {
+      "addZone": "Ajouter ma zone géographique"
+    },
+    "feed": {
+      "nearMe": "Près de moi",
+      "noLocation": "Active ta localisation pour voir les observations près de chez toi",
+      "activateCta": "Activer ma zone",
+      "emptyTitle": "Aucune observation dans ta zone",
+      "emptyDescription": "Il n'y a pas encore d'observations dans un rayon de {{km}} km. Élargis ton rayon ou consulte le feed global.",
+      "expandRadius": "Élargir le rayon",
+      "globalFeed": "Feed global"
+    },
+    "settings": {
+      "title": "Localisation",
+      "description": "Définit ta zone pour personnaliser ton feed et tes suggestions.",
+      "clearButton": "Effacer ma localisation",
+      "clearConfirm": "Es-tu sûr(e) de vouloir effacer ta localisation ? Ton feed repassera en mode global.",
+      "clearSuccess": "Localisation effacée",
+      "saveSuccess": "Localisation mise à jour",
+      "rateLimited": "Tu as modifié ta localisation récemment. Réessaie dans {{minutes}} minutes.",
+      "lastUpdated": "Modifiée le {{date}}"
+    },
+    "browser": {
+      "useMyPosition": "Utiliser ma position",
+      "resolving": "Localisation en cours…",
+      "denied": "Localisation refusée. Utilise la recherche manuelle ci-dessous."
+    },
+    "permissionModal": {
+      "title": "Naturegraph près de chez vous",
+      "description": "Découvrez les espèces observées dans un rayon de 75 km autour de vous. Plus de pertinence, moins de bruit.",
+      "privacyNote": "Seule votre ville est utilisée. Jamais votre position exacte. Vous pouvez modifier ou supprimer vos données à tout moment.",
+      "activateCta": "Activer la localisation",
+      "skipCta": "Plus tard"
     }
   },
 
@@ -337,6 +407,8 @@
     "navbar": {
       "backToHome": "Naturegraph — Retour à l'accueil",
       "changeLocation": "Changer de localisation",
+      "activateLocation": "Activer ma zone",
+      "setLocation": "Localisation",
       "search": "Rechercher",
       "notifications": "Notifications",
       "contribute": "Contribuer",
@@ -380,7 +452,17 @@
       "emptyDesc": "Essayez de modifier vos filtres pour voir plus de résultats.",
       "emptyDescLocation": "Sois le premier à partager une observation à {{location}} !",
       "emptyReset": "Réinitialiser les filtres",
-      "emptyContribute": "Partager une observation"
+      "emptyContribute": "Partager une observation",
+      "forYouModal": {
+        "title": "Votre expérience Naturegraph commence ici",
+        "description": "Créez votre compte pour débloquer un feed personnalisé et découvrir la nature qui vous passionne, partout autour de vous.",
+        "point1": "Du contenu adapté à vos intérêts",
+        "point2": "Les observations de votre communauté",
+        "point3": "Une découverte locale et vivante",
+        "createAccount": "Créer mon compte",
+        "continueDiscovery": "Continuer sans personnalisation",
+        "tabDisabledHint": "Connectez-vous pour accéder à votre feed personnalisé"
+      }
     },
     "filters": {
       "title": "Filtres",
@@ -415,6 +497,7 @@
       "noReactions": "Sois le premier à réagir",
       "yourReaction": "Ta réaction",
       "chooseReaction": "Choisir une réaction",
+      "filterBySpecies": "Filtrer le feed par {{species}}",
       "reactions": {
         "love": "Aimer",
         "admire": "Admirer",
@@ -624,6 +707,11 @@
       "searchPlaceholder": "Mésange, renard...",
       "noResults": "Aucune espèce trouvée",
       "taxrefCredit": "Données TAXREF — INPN, licence CC-BY",
+      "skip": "Passer l'identification",
+      "skipFromEmpty": "Je ne sais pas, passer",
+      "serviceUnavailable": "Recherche indisponible — réessaie dans un instant",
+      "suggestionsLabel": "Suggestions d'espèces",
+      "changeSpecies": "Changer d'espèce",
       "group": "Groupe taxonomique",
       "groups": {
         "birds": "Oiseaux",
