@@ -362,17 +362,6 @@ export function Hero({ onNavigate }: HeroProps) {
           animate="visible"
           className="relative z-10 flex flex-col items-center text-center px-6 md:px-16 flex-1 justify-center pb-16 lg:pb-20"
         >
-          {/* Badge discret */}
-          <motion.div
-            variants={fadeUp}
-            className="mb-6 lg:mb-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--color-text-white)]/10 backdrop-blur-sm border border-[var(--color-text-white)]/15"
-          >
-            <span className="w-2 h-2 rounded-full bg-[var(--color-accent-mint)] animate-pulse" />
-            <span className="text-sm text-[var(--color-text-white)]/80 font-[var(--font-body)]">
-              {t('landing.hero.badge')}
-            </span>
-          </motion.div>
-
           {/* Titre H1 */}
           <motion.h1
             variants={fadeUp}

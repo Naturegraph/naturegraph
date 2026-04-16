@@ -1,49 +1,26 @@
 /**
  * AuthHeroPhoto — Colonne photo héro partagée entre les formulaires d'authentification
  *
- * Point de configuration unique : modifier HERO_PHOTO_CONFIG pour mettre à jour
- * la photo sur tous les écrans auth (SignupForm, LoginForm, VerificationForm).
+ * Source de vérité : table `community_photos` dans Supabase.
+ * Règles :
+ *   - Un seul enregistrement `is_active = true` + `consent_verified = true` à la fois
+ *   - Si aucune photo active en base → fallback sur l'asset local (kingfisher)
+ *   - Si l'image ne charge pas (erreur réseau) → même fallback
  *
- * Gère :
- *   - Activation/désactivation (flag `active`)
- *   - Fallback si l'image ne charge pas (erreur réseau / asset manquant)
- *   - Crédit photo + lien Instagram cliquable (si instagramUrl fourni)
- *   - Masquage du crédit si photographerName est null
+ * Pour changer la photo d'un membre :
+ *   1. Upload l'image dans Supabase Storage (bucket 'community-photos')
+ *   2. Insérer une ligne dans `community_photos` avec is_active=true, consent_verified=true
+ *   3. Mettre is_active=false sur l'ancienne ligne
+ *   → Le composant se met à jour sans toucher au code
  *
- * TODO [BACKEND] — Photo communautaire dynamique :
- *   - Remplacer la config statique par un appel à `mediaService.getCommunityHeroPhoto()`
- *     qui retourne { src, alt, photographerName, instagramUrl, active }
- *   - La photo du mois peut être gérée via une table `community_photos` dans Supabase
- *     avec rotation programmée choisie par l'équipe (un seul enregistrement `is_active = true`)
- *   - Ajouter un flag `consentGiven` : ne pas afficher sans le consentement explicite
- *     du photographe (stocker dans `community_photos.consent_verified`)
+ * Pour ajouter un crédit photographe :
+ *   → Renseigner photographer_name et instagram_url dans la ligne Supabase
  */
 
 import { useState } from 'react'
-import heroPhotoDefault from '@/assets/images/mission-observer.png'
-
-// ─── Config centralisée ──────────────────────────────────────────────────────
-// Un seul endroit pour changer la photo sur tous les écrans auth.
-// TODO [BACKEND] — Remplacer par une lecture depuis `community_photos` (Supabase).
-
-const HERO_PHOTO_CONFIG = {
-  /** Activer la photo héro (false = colonne masquée, formulaire pleine largeur) */
-  active: true,
-  /** Asset importé — remplacer l'import en haut du fichier pour changer la photo */
-  src: heroPhotoDefault,
-  /** Texte alternatif accessible */
-  alt: 'Photographie nature — communauté Naturegraph',
-  /**
-   * Nom du photographe affiché dans le crédit (null = pas de crédit).
-   * TODO [BACKEND] — Lire depuis `community_photos.photographer_name`
-   */
-  photographerName: '@emie_photographie_nature' as string | null,
-  /**
-   * URL Instagram du photographe (null = nom affiché sans lien).
-   * TODO [BACKEND] — Lire depuis `community_photos.instagram_url`
-   */
-  instagramUrl: 'https://www.instagram.com/emie_photographie_nature' as string | null,
-}
+import { useQuery } from '@tanstack/react-query'
+import { getCommunityHeroPhoto } from '@/services'
+import heroPhotoFallback from '@/assets/images/cta-kingfisher.png'
 
 // ─── Icône Instagram ──────────────────────────────────────────────────────────
 
@@ -66,24 +43,36 @@ function InstagramIcon() {
 // ─── Composant ───────────────────────────────────────────────────────────────
 
 export function AuthHeroPhoto() {
-  const [hasError, setHasError] = useState(false)
-  const { active, src, alt, photographerName, instagramUrl } = HERO_PHOTO_CONFIG
+  const [imgError, setImgError] = useState(false)
 
-  // Masquer si désactivé dans la config
-  if (!active) return null
+  // Fetch depuis Supabase — staleTime long car la photo change rarement
+  const { data: communityPhoto } = useQuery({
+    queryKey: ['communityHeroPhoto'],
+    queryFn: getCommunityHeroPhoto,
+    staleTime: 1000 * 60 * 60, // 1h
+    retry: false,
+  })
+
+  // Fallback : asset local si pas de photo en base ou src vide
+  const src = !imgError && communityPhoto?.src ? communityPhoto.src : heroPhotoFallback
+
+  const alt = communityPhoto?.alt ?? 'Martin-pêcheur — Naturegraph'
+  const tagline = communityPhoto?.tagline ?? 'Partageons nos émotions'
+  const photographerName = communityPhoto?.photographerName ?? null
+  const instagramUrl = communityPhoto?.instagramUrl ?? null
 
   return (
     <div className="hidden lg:flex relative h-full shrink-0 w-[512px]">
       <img
-        src={hasError ? heroPhotoDefault : src}
+        src={src}
         alt={alt}
-        onError={() => setHasError(true)}
+        onError={() => setImgError(true)}
         className="absolute inset-0 w-full h-full object-cover rounded-r-[32px]"
       />
 
-      {/* Crédit photo — affiché uniquement si photographerName est renseigné */}
-      {photographerName && (
-        <div className="absolute bg-[rgba(12,12,20,0.32)] bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg whitespace-nowrap">
+      {/* Crédit photographe (si renseigné) ou tagline de marque */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg bg-[rgba(12,12,20,0.32)] whitespace-nowrap">
+        {photographerName ? (
           <div className="flex flex-col items-center gap-1">
             <div className="flex gap-2 items-center">
               <InstagramIcon />
@@ -102,8 +91,10 @@ export function AuthHeroPhoto() {
               <span className="font-bold text-text-light text-sm">{photographerName}</span>
             )}
           </div>
-        </div>
-      )}
+        ) : (
+          <p className="text-text-light text-sm font-semibold tracking-wide italic">{tagline}</p>
+        )}
+      </div>
     </div>
   )
 }

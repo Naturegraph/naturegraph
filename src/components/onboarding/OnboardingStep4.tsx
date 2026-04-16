@@ -1,20 +1,23 @@
 /**
  * OnboardingStep4 — Étape 4 : Choix du nom d'utilisateur
  *
- * Input avec validation temps réel + vérification disponibilité Supabase.
- * Compteur de caractères (max 25). Barre de progression 4/4.
+ * Unique étape finale de l'onboarding : saisie + validation du pseudo.
+ * La localisation est intentionnellement absente de l'onboarding — elle
+ * sera proposée progressivement in-app après découverte du produit.
+ *
+ * Validation :
+ *   - Longueur 3-25 caractères
+ *   - Caractères autorisés : lettres, chiffres, point, underscore
+ *   - Pas de point/underscore en début/fin ou consécutifs
+ *   - Liste de mots bannis (côté client + contrainte DB)
+ *   - Unicité vérifiée via Supabase (debounce 800ms)
  *
  * Accessibilité :
- * - <label htmlFor> associé à l'input (pas de aria-label redondant)
- * - aria-required sur l'input
- * - aria-invalid + aria-describedby vers le message d'erreur
- * - role="alert" sur le message d'erreur (annonce immédiate SR)
- * - aria-hidden sur le * décoratif et l'indicateur visuel de bordure
- * - role="progressbar" sur la barre de progression
- * - focus-visible ring sur toutes les interactions clavier
- * - has-[:focus-visible] sur le conteneur input pour ring accessible
- * - prefers-reduced-motion respecté
- * - aria-label sur les boutons retour et sortie
+ *   - <label htmlFor> associé à l'input
+ *   - aria-required, aria-invalid, aria-describedby
+ *   - role="alert" sur les messages d'erreur
+ *   - focus-visible ring sur toutes les interactions clavier
+ *   - has-[:focus-visible] sur le conteneur input pour ring accessible
  */
 
 import { useState, useEffect, type ChangeEvent } from 'react'
@@ -446,6 +449,7 @@ function normalizeForBannedCheck(username: string): string {
 type UsernameError = 'tooShort' | 'tooLong' | 'invalidFormat' | 'alreadyTaken' | 'bannedWord' | null
 
 interface OnboardingStep4Props {
+  /** Appelé à la validation avec le pseudo choisi */
   onComplete: (username: string) => void
   onBack: () => void
   initialUsername?: string
@@ -501,17 +505,32 @@ export function OnboardingStep4({
     const timer = setTimeout(async () => {
       try {
         if (supabase) {
-          const { data } = await supabase
+          /**
+           * Timeout 5s — évite un blocage si Supabase est en veille (free tier pausé).
+           * En cas de timeout ou d'erreur réseau, on laisse passer : la contrainte
+           * d'unicité côté DB bloquera les doublons au moment du upsert.
+           */
+          const timeout = new Promise<null>((_, reject) =>
+            setTimeout(() => reject(new Error('timeout')), 5000),
+          )
+          const query = supabase
             .from('profiles')
             .select('username')
             .eq('username', username.trim())
             .maybeSingle()
-          setServerError(data ? 'alreadyTaken' : null)
+
+          const result = (await Promise.race([query, timeout])) as {
+            data: { username: string } | null
+          }
+          setServerError(result?.data ? 'alreadyTaken' : null)
         } else {
           // Simulation hors Supabase
           const taken = ['admin', 'naturegraph', 'user', 'test']
           setServerError(taken.includes(username.toLowerCase()) ? 'alreadyTaken' : null)
         }
+      } catch {
+        // Timeout ou erreur réseau — on considère le pseudo disponible
+        setServerError(null)
       } finally {
         setIsChecking(false)
       }
@@ -535,18 +554,20 @@ export function OnboardingStep4({
   const borderClass = () => {
     if (!hasTyped || username.length === 0) return 'border-[var(--color-border)]'
     if (isChecking) return 'border-[var(--color-action-default)]'
-    if (error) return 'border-destructive-foreground'
+    // Erreur → bordure rouge via token design system (contraste WCAG AA)
+    if (error) return 'border-[var(--color-error)]'
     return 'border-[var(--color-action-default)]'
   }
 
   const bgClass = () => {
     if (username.length === 0) return 'bg-[var(--color-bg-primary)]'
-    if (error && hasTyped) return 'bg-destructive/10'
+    // Fond erreur léger via token — error-bg défini dans les deux thèmes
+    if (error && hasTyped) return 'bg-[var(--color-error-bg)]'
     return 'bg-[var(--color-action-light)]'
   }
 
   return (
-    <div className="flex flex-col overflow-clip w-full h-full">
+    <div className="flex flex-col w-full h-full">
       <div className="flex flex-col items-start p-6 md:p-8 gap-8 h-full min-h-[730px] max-h-screen">
         <OnboardingHeader current={4} total={4} onExit={onExit} />
 
@@ -559,7 +580,7 @@ export function OnboardingStep4({
             </p>
           </div>
 
-          {/* Input */}
+          {/* Input pseudo */}
           <div className="flex flex-col gap-2 w-full shrink-0">
             {/*
              * <label htmlFor> associe sémantiquement le libellé à l'input.
@@ -572,20 +593,15 @@ export function OnboardingStep4({
               </span>
             </label>
 
-            <div className="relative w-full">
+            <div className="w-full">
               {/*
-               * has-[:focus-visible]:ring-2 expose le ring sur le conteneur quand
-               * l'input reçoit le focus clavier, sans affecter le focus souris.
+               * Border appliquée directement sur le container (pas d'overlay absolu)
+               * pour éviter tout clipping par overflow:clip des parents.
+               * has-[:focus-visible]:ring-2 expose le ring clavier accessible.
                */}
               <div
-                className={`h-12 rounded-full w-full transition-all has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-action-default)] has-[:focus-visible]:ring-offset-1 ${bgClass()}`}
+                className={`h-12 rounded-full w-full transition-all border has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-action-default)] has-[:focus-visible]:ring-offset-1 ${bgClass()} ${borderClass()}`}
               >
-                {/* Border overlay — décoratif, état porté par aria-invalid */}
-                <div
-                  aria-hidden="true"
-                  className={`absolute inset-0 pointer-events-none rounded-full border transition-colors ${borderClass()}`}
-                />
-
                 {/* Input + compteur */}
                 <div className="flex items-center px-6 size-full gap-3">
                   <input

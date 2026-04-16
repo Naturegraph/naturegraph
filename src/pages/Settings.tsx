@@ -11,18 +11,22 @@
  *   Brancher les sauvegardes vers l'API Supabase.
  */
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Globe, LogOut, Trash2, Bell, Check } from 'lucide-react'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLocation } from '@/contexts/LocationContext'
 import { INTEREST_LABELS } from '@/constants/interests'
 import { useUpdateProfile } from '@/hooks/useProfile'
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings'
+import { LocationPickerSection } from '@/components/location/LocationPickerSection'
+import { useNotification } from '@/contexts/NotificationContext'
 import { supabase } from '@/lib/supabase'
 import type { Interest } from '@/types/database'
+import type { LocationFormData } from '@/types/location'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -46,10 +50,32 @@ export default function Settings() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const { profile, signOut } = useAuth()
+  const { userLocation, updateLocation, clearLocation } = useLocation()
+  const { success: notifySuccess } = useNotification()
   const updateProfile = useUpdateProfile(profile?.id ?? '')
   const queryClient = useQueryClient()
   const { data: userSettings } = useSettings(profile?.id)
   const updateSettings = useUpdateSettings(profile?.id)
+
+  // ─── Localisation ─────────────────────────────────────────────
+  const [pendingLocationData, setPendingLocationData] = useState<LocationFormData | null>(null)
+
+  const handleSaveLocation = useCallback(async () => {
+    if (!pendingLocationData) return
+    const result = await updateLocation(pendingLocationData)
+    if (!result.error) {
+      notifySuccess(t('location.settings.saveSuccess'))
+    }
+  }, [pendingLocationData, updateLocation, notifySuccess, t])
+
+  const handleClearLocation = useCallback(async () => {
+    const confirmed = window.confirm(t('location.settings.clearConfirm'))
+    if (!confirmed) return
+    const result = await clearLocation()
+    if (!result?.error) {
+      notifySuccess(t('location.settings.clearSuccess'))
+    }
+  }, [clearLocation, notifySuccess, t])
 
   // État local du formulaire — initialisé depuis le profil auth
   const [form, setForm] = useState({
@@ -269,6 +295,73 @@ export default function Settings() {
           >
             {t('settings.saveChanges')}
           </button>
+        </SettingsCard>
+
+        {/* ── Section Localisation ────────────────────────────────────────── */}
+        <SettingsCard title={t('location.settings.title')}>
+          <p className="text-sm text-muted-foreground -mt-2">
+            {t('location.settings.description')}
+          </p>
+
+          {/*
+           * LocationPickerSection en mode always-open pour les Settings.
+           * Pré-remplit avec les données actuelles de l'utilisateur si disponibles.
+           */}
+          <LocationPickerSection
+            mode="always-open"
+            onChange={setPendingLocationData}
+            consentSource="settings"
+            initialCity={
+              userLocation?.cityName
+                ? {
+                    inseeCode: '',
+                    name: userLocation.cityName,
+                    regionName: userLocation.regionName ?? '',
+                    departmentName: '',
+                    departmentCode: '',
+                    population: null,
+                    centroidLat: 0,
+                    centroidLng: 0,
+                  }
+                : undefined
+            }
+            initialRadius={userLocation?.locationRadiusKm ?? 75}
+            initialVisibility={userLocation?.locationVisibility ?? 'region'}
+          />
+
+          {/* Bouton sauvegarder localisation */}
+          <button
+            type="button"
+            onClick={handleSaveLocation}
+            disabled={!pendingLocationData}
+            className="w-full h-11 rounded-button font-semibold text-sm transition-opacity disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            style={{
+              backgroundColor: 'var(--color-action-default)',
+              color: 'var(--color-bg-primary)',
+            }}
+          >
+            {t('common.save')}
+          </button>
+
+          {/* Bouton effacer (RGPD) — visible uniquement si localisé */}
+          {userLocation && (
+            <button
+              type="button"
+              onClick={handleClearLocation}
+              className="w-full h-10 rounded-button text-sm border border-[var(--color-error)] text-[var(--color-error)] hover:bg-[var(--color-error-bg)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)]"
+            >
+              {t('location.settings.clearButton')}
+            </button>
+          )}
+
+          {/* Date de dernière mise à jour */}
+          {userLocation?.locationUpdatedAt && (
+            <p className="text-xs text-muted-foreground text-center">
+              {t('location.settings.lastUpdated', {
+                date: new Date(userLocation.locationUpdatedAt).toLocaleDateString('fr-FR'),
+              })}
+            </p>
+          )}
         </SettingsCard>
 
         {/* ── Section Compte ──────────────────────────────────────────────── */}

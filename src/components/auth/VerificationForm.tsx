@@ -139,7 +139,7 @@ export function VerificationForm({
           <button
             type="button"
             onClick={onBack}
-            className="w-10 h-10 flex items-center justify-center rounded-xl border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-action-light)] transition-colors"
+            className="w-10 h-10 flex items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-action-light)] transition-colors"
             aria-label={t('common.back')}
           >
             <ArrowLeft size={18} />
@@ -174,7 +174,7 @@ export function VerificationForm({
                 onChange={(e) => handleChange(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
                 disabled={isLoading}
-                className={`w-full aspect-square max-w-[56px] text-center text-xl font-semibold rounded-xl border bg-[var(--color-action-light)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-colors disabled:opacity-50 ${
+                className={`w-full aspect-square max-w-[56px] text-center text-xl font-semibold rounded-lg border bg-[var(--color-action-light)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-colors disabled:opacity-50 ${
                   error ? 'border-[var(--color-error)]' : 'border-transparent'
                 }`}
                 aria-label={`Chiffre ${i + 1}`}
@@ -196,7 +196,7 @@ export function VerificationForm({
 
           {/* Hint OTP — mode démo uniquement (Supabase non configuré) */}
           {!isSupabaseConfigured && demoOtp && (
-            <div className="mb-6 flex items-center gap-2 px-4 py-3 rounded-xl bg-[#f3e8ff] border border-[#a78bfa]">
+            <div className="mb-6 flex items-center gap-2 px-4 py-3 rounded-lg bg-[#f3e8ff] border border-[#a78bfa]">
               <span className="text-[#7c3aed] text-lg">🔐</span>
               <p className="text-sm font-semibold text-[#7c3aed]">
                 {t('auth.verify.demoCode', { code: demoOtp })}

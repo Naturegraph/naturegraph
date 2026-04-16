@@ -4,7 +4,7 @@
  * Fonctionnalités :
  *   - Recherche textuelle de ville via Nominatim OSM (debounce 300 ms)
  *   - Géolocalisation GPS + reverse geocoding
- *   - Slider de rayon 0–500 km avec tooltip flottant
+ *   - Slider de rayon 75–250 km avec tooltip flottant
  *   - Les modifications ne sont appliquées qu'au clic sur "Appliquer"
  *
  * Responsive :
@@ -38,6 +38,30 @@ function toLabel(p: NominatimResult): string {
   return p.display_name.split(',')[0].trim()
 }
 
+/**
+ * Pays ciblés pour le MVP : France métropolitaine, Belgique, Suisse, Canada
+ * + territoires et collectivités d'outremer francophones (codes ISO 3166-1 alpha-2).
+ * Liste complète pour Nominatim countrycodes parameter.
+ */
+const ALLOWED_COUNTRY_CODES = [
+  'fr', // France métropolitaine
+  'be', // Belgique
+  'ch', // Suisse
+  'ca', // Canada
+  'gp', // Guadeloupe
+  'mq', // Martinique
+  'gf', // Guyane française
+  're', // La Réunion
+  'yt', // Mayotte
+  'pm', // Saint-Pierre-et-Miquelon
+  'nc', // Nouvelle-Calédonie
+  'pf', // Polynésie française
+  'wf', // Wallis-et-Futuna
+  'tf', // Terres australes et antarctiques françaises
+  'mf', // Saint-Martin
+  'bl', // Saint-Barthélemy
+].join(',')
+
 /** Recherche de lieux via Nominatim search (min 2 caractères) */
 async function searchPlaces(query: string): Promise<NominatimResult[]> {
   if (query.trim().length < 2) return []
@@ -47,6 +71,8 @@ async function searchPlaces(query: string): Promise<NominatimResult[]> {
   url.searchParams.set('limit', '5')
   url.searchParams.set('accept-language', 'fr')
   url.searchParams.set('addressdetails', '1')
+  // Restreindre aux pays francophones ciblés (MVP)
+  url.searchParams.set('countrycodes', ALLOWED_COUNTRY_CODES)
   try {
     const res = await fetch(url.toString(), { headers: { 'Accept-Language': 'fr' } })
     if (!res.ok) return []
@@ -81,17 +107,37 @@ interface LocationModalProps {
 export function LocationModal({ onClose }: LocationModalProps) {
   const { locationLabel, locationDistance, setLocation, setLocationDistance } = useLocation()
 
+  // Rayon minimum/maximum — au-delà de 250 km, autant afficher tout le contenu
+  const MIN_DISTANCE = 75
+  const MAX_DISTANCE = 250
+
   // État local (brouillon — appliqué seulement sur "Appliquer")
   const [query, setQuery] = useState(locationLabel)
-  const [distance, setDistLocal] = useState(locationDistance)
+  // S'assurer que la valeur initiale respecte le minimum de 75 km
+  const [distance, setDistLocal] = useState(Math.max(MIN_DISTANCE, locationDistance))
   const [suggestions, setSuggestions] = useState<NominatimResult[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [isGps, setIsGps] = useState(false)
   const [tempCoords, setTempCoords] = useState<LocationCoords | null>(null)
+  /**
+   * État de confirmation GPS :
+   * - 'idle'    → bouton cible visible normalement
+   * - 'confirm' → mini-bannière de confirmation avant d'appeler l'API native
+   * - 'denied'  → l'utilisateur a refusé (message d'erreur affiché)
+   *
+   * Ce step intermédiaire permet d'informer l'utilisateur AVANT que le navigateur
+   * affiche sa propre popup de permission, améliorant le taux d'acceptation.
+   */
+  const [gpsState, setGpsState] = useState<'idle' | 'confirm' | 'denied'>('idle')
 
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  /**
+   * Ref partagée entre les deux blocs de rendu (mobile / desktop).
+   * Utilisée pour le click-outside sur desktop (le backdrop gère mobile).
+   */
+  const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -103,6 +149,18 @@ export function LocationModal({ onClose }: LocationModalProps) {
     }
     document.addEventListener('keydown', fn)
     return () => document.removeEventListener('keydown', fn)
+  }, [onClose])
+
+  // Click-outside — desktop dropdown (le backdrop s'en charge sur mobile)
+  useEffect(() => {
+    const fn = (e: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose()
+    }
+    const t = setTimeout(() => document.addEventListener('mousedown', fn), 50)
+    return () => {
+      clearTimeout(t)
+      document.removeEventListener('mousedown', fn)
+    }
   }, [onClose])
 
   function handleQueryChange(val: string) {
@@ -124,8 +182,16 @@ export function LocationModal({ onClose }: LocationModalProps) {
     }
   }
 
-  const handleGps = useCallback(async () => {
+  /** Étape 1 : montrer la bannière de confirmation avant la popup navigateur */
+  const handleGpsClick = useCallback(() => {
     if (!navigator.geolocation || isGps) return
+    setGpsState('confirm')
+  }, [isGps])
+
+  /** Étape 2 : l'utilisateur confirme → déclencher la géolocalisation native */
+  const handleGpsConfirm = useCallback(async () => {
+    if (!navigator.geolocation || isGps) return
+    setGpsState('idle')
     setIsGps(true)
     navigator.geolocation.getCurrentPosition(
       async ({ coords }) => {
@@ -134,10 +200,17 @@ export function LocationModal({ onClose }: LocationModalProps) {
         setTempCoords({ lat: coords.latitude, lon: coords.longitude })
         setIsGps(false)
       },
-      () => setIsGps(false),
+      (err) => {
+        setIsGps(false)
+        // Code 1 = PERMISSION_DENIED — informer l'utilisateur
+        if (err.code === 1) setGpsState('denied')
+      },
       { timeout: 10000 },
     )
   }, [isGps])
+
+  /** Annuler la confirmation GPS */
+  const handleGpsCancel = useCallback(() => setGpsState('idle'), [])
 
   function selectSuggestion(place: NominatimResult) {
     setQuery(toLabel(place))
@@ -152,177 +225,238 @@ export function LocationModal({ onClose }: LocationModalProps) {
     onClose()
   }
 
-  // Position tooltip : centre du thumb en fonction du % de la valeur
-  const fillPct = (distance / 500) * 100
+  // Position tooltip : centre du thumb en fonction du % de la valeur dans la plage [75, 500]
+  const fillPct = ((distance - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE)) * 100
   const tooltipLeft = `calc(${fillPct}% + ${9 * (1 - fillPct / 50)}px)`
 
+  // ── Contenu partagé mobile / desktop ─────────────────────────────────────
+
+  const modalContent = (
+    <div className="flex flex-col gap-6 p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="font-title font-bold text-lg text-foreground">Localisation</h2>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Fermer"
+          className="size-8 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <X className="size-5 text-foreground" aria-hidden="true" />
+        </button>
+      </div>
+
+      {/* Search bar */}
+      <div className="relative">
+        <div
+          className={[
+            'flex items-center gap-3 h-11 px-4 rounded-full border transition-colors',
+            showSuggestions
+              ? 'bg-primary-light border-primary'
+              : 'bg-primary-light/50 border-transparent focus-within:border-primary focus-within:bg-primary-light',
+          ].join(' ')}
+        >
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => handleQueryChange(e.target.value)}
+            onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+            placeholder="Ville, région, lieu..."
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+            role="combobox"
+            aria-label="Rechercher une localisation"
+            aria-haspopup="listbox"
+            aria-controls="location-suggestions"
+            aria-autocomplete="list"
+            aria-expanded={showSuggestions}
+          />
+          <button
+            type="button"
+            onClick={handleGpsClick}
+            disabled={isGps || gpsState === 'confirm'}
+            aria-label="Utiliser ma position GPS"
+            className="shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-0.5"
+          >
+            {isGps || isSearching ? (
+              <Loader2 className="size-5 text-primary animate-spin" aria-hidden="true" />
+            ) : (
+              <LocateFixed
+                className={[
+                  'size-5',
+                  gpsState === 'confirm' ? 'text-primary/50' : 'text-primary',
+                ].join(' ')}
+                aria-hidden="true"
+              />
+            )}
+          </button>
+        </div>
+
+        {/* Confirmation avant demande de permission GPS */}
+        {gpsState === 'confirm' && (
+          <div
+            role="alert"
+            className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-primary-light/60 border border-primary/20 px-4 py-3"
+          >
+            <p className="text-xs text-foreground flex-1">
+              Autoriser l'accès à votre position pour trouver votre ville automatiquement ?
+            </p>
+            <div className="flex gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleGpsCancel}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded px-2 py-1"
+              >
+                Non
+              </button>
+              <button
+                type="button"
+                onClick={handleGpsConfirm}
+                className="text-xs font-medium text-primary hover:text-primary/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded px-2 py-1"
+              >
+                Oui
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Permission GPS refusée */}
+        {gpsState === 'denied' && (
+          <p role="alert" className="mt-2 text-xs text-muted-foreground px-1">
+            Accès à la position refusé. Vérifiez les permissions de votre navigateur.
+          </p>
+        )}
+
+        {/* Suggestions Nominatim */}
+        {showSuggestions && (
+          <ul
+            id="location-suggestions"
+            role="listbox"
+            aria-label="Suggestions de localisation"
+            className="absolute top-[calc(100%+4px)] left-0 right-0 bg-cream-lighter border border-border rounded-xl shadow-lg z-10 overflow-hidden"
+          >
+            {suggestions.map((p) => (
+              <li key={p.place_id} role="option" aria-selected={false}>
+                <button
+                  type="button"
+                  onClick={() => selectSuggestion(p)}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-primary-light/40 transition-colors"
+                >
+                  <Search className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+                  <span className="text-sm text-foreground">{toLabel(p)}</span>
+                  {p.address?.country && (
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {p.address.country}
+                    </span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="h-px bg-border" aria-hidden="true" />
+
+      {/* Slider distance */}
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-medium text-foreground">Distance en km</p>
+        <div className="relative pt-8">
+          {/* Tooltip flottant */}
+          <div
+            className="absolute top-0 flex flex-col items-center pointer-events-none"
+            style={{ left: tooltipLeft, transform: 'translateX(-50%)' }}
+            aria-hidden="true"
+          >
+            <div className="bg-foreground text-cream-lighter text-xs font-medium px-2 py-1 rounded-lg whitespace-nowrap">
+              {distance} km
+            </div>
+            <div
+              className="w-0 h-0"
+              style={{
+                borderLeft: '5px solid transparent',
+                borderRight: '5px solid transparent',
+                borderTop: '5px solid var(--color-foreground)',
+              }}
+            />
+          </div>
+
+          <input
+            type="range"
+            min={MIN_DISTANCE}
+            max={MAX_DISTANCE}
+            step={25}
+            value={distance}
+            onChange={(e) =>
+              setDistLocal(Math.max(MIN_DISTANCE, Math.min(MAX_DISTANCE, Number(e.target.value))))
+            }
+            className="location-slider w-full"
+            style={{
+              background: `linear-gradient(to right, var(--color-primary) ${fillPct}%, var(--color-primary-light) ${fillPct}%)`,
+            }}
+            aria-label="Distance en km"
+            aria-valuenow={distance}
+            aria-valuemin={MIN_DISTANCE}
+            aria-valuemax={MAX_DISTANCE}
+          />
+          <div className="flex justify-between text-xs text-muted-foreground mt-2">
+            <span>75 km</span>
+            <span>250 km</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="h-px bg-border" aria-hidden="true" />
+
+      {/* Actions */}
+      <div className="flex gap-3">
+        <Button type="button" variant="secondary" size="md" className="flex-1" onClick={onClose}>
+          Annuler
+        </Button>
+        <Button type="button" size="md" className="flex-1" onClick={handleApply}>
+          Appliquer
+        </Button>
+      </div>
+    </div>
+  )
+
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Changer de localisation"
-      className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
-    >
-      {/* Backdrop */}
+    <>
+      {/* ── Backdrop — mobile uniquement (desktop : click-outside via panelRef) ── */}
       <div
-        className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
+        className="md:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-50"
         aria-hidden="true"
         onClick={onClose}
       />
 
-      {/* Card — bottom sheet mobile / modale centrée desktop */}
-      <div className="relative z-10 w-full md:max-w-[480px] md:mx-4 bg-cream-lighter border border-border rounded-t-2xl md:rounded-xl shadow-xl flex flex-col gap-6 p-6">
-        {/* Handle bar mobile */}
-        <div
-          className="md:hidden absolute top-3 left-1/2 -translate-x-1/2 w-10 h-1 bg-border rounded-full"
-          aria-hidden="true"
-        />
-
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h2 className="font-title font-bold text-lg text-foreground">Localisation</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Fermer"
-            className="size-8 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <X className="size-5 text-foreground" aria-hidden="true" />
-          </button>
+      {/*
+       * ── Panel unique — position responsif via Tailwind ────────────────────
+       *   Mobile  : fixed bottom sheet (inset-x-0 bottom-0, rounded-t-2xl)
+       *   Desktop : absolute dropdown depuis le parent div.relative du header
+       *
+       * Un seul div = un seul role="dialog", un seul panelRef, un seul inputRef.
+       */}
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Changer de localisation"
+        className={[
+          // Mobile : bottom sheet fixe
+          'fixed inset-x-0 bottom-0 z-50 rounded-t-2xl',
+          // Desktop : dropdown absolue ancrée au bouton localisation
+          'md:absolute md:inset-auto md:bottom-auto',
+          'md:top-[calc(100%+8px)] md:left-0 md:w-[400px] md:rounded-xl',
+          // Style commun
+          'bg-cream-lighter border border-border shadow-xl',
+        ].join(' ')}
+      >
+        {/* Handle bar — mobile uniquement */}
+        <div className="md:hidden flex justify-center pt-3 pb-1" aria-hidden="true">
+          <div className="w-10 h-1 bg-border rounded-full" />
         </div>
-
-        {/* Search bar */}
-        <div className="relative">
-          <div
-            className={[
-              'flex items-center gap-3 h-12 px-4 rounded-full border transition-colors',
-              showSuggestions
-                ? 'bg-primary-light border-primary'
-                : 'bg-primary-light/50 border-transparent focus-within:border-primary focus-within:bg-primary-light',
-            ].join(' ')}
-          >
-            <input
-              ref={inputRef}
-              type="text"
-              value={query}
-              onChange={(e) => handleQueryChange(e.target.value)}
-              onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-              placeholder="Ville, région, lieu..."
-              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-              role="combobox"
-              aria-label="Rechercher une localisation"
-              aria-haspopup="listbox"
-              aria-controls="location-suggestions"
-              aria-autocomplete="list"
-              aria-expanded={showSuggestions}
-            />
-            <button
-              type="button"
-              onClick={handleGps}
-              disabled={isGps}
-              aria-label="Utiliser ma position GPS"
-              className="shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-0.5"
-            >
-              {isGps || isSearching ? (
-                <Loader2 className="size-5 text-primary animate-spin" aria-hidden="true" />
-              ) : (
-                <LocateFixed className="size-5 text-primary" aria-hidden="true" />
-              )}
-            </button>
-          </div>
-
-          {/* Suggestions */}
-          {showSuggestions && (
-            <ul
-              id="location-suggestions"
-              role="listbox"
-              aria-label="Suggestions de localisation"
-              className="absolute top-[calc(100%+4px)] left-0 right-0 bg-cream-lighter border border-border rounded-xl shadow-lg z-10 overflow-hidden"
-            >
-              {suggestions.map((p) => (
-                <li key={p.place_id} role="option" aria-selected={false}>
-                  <button
-                    type="button"
-                    onClick={() => selectSuggestion(p)}
-                    className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-primary-light/40 transition-colors"
-                  >
-                    <Search
-                      className="size-3.5 text-muted-foreground shrink-0"
-                      aria-hidden="true"
-                    />
-                    <span className="text-sm text-foreground">{toLabel(p)}</span>
-                    {p.address?.country && (
-                      <span className="text-xs text-muted-foreground ml-auto">
-                        {p.address.country}
-                      </span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="h-px bg-border" aria-hidden="true" />
-
-        {/* Distance slider */}
-        <div className="flex flex-col gap-4">
-          <p className="text-base text-muted-foreground">Distance en km</p>
-          <div className="relative pt-8">
-            {/* Tooltip au-dessus du thumb */}
-            <div
-              className="absolute top-0 flex flex-col items-center pointer-events-none"
-              style={{ left: tooltipLeft, transform: 'translateX(-50%)' }}
-              aria-hidden="true"
-            >
-              <div className="bg-foreground text-cream-lighter text-xs font-medium px-2 py-1 rounded-lg whitespace-nowrap">
-                {distance}km
-              </div>
-              <div
-                className="w-0 h-0"
-                style={{
-                  borderLeft: '5px solid transparent',
-                  borderRight: '5px solid transparent',
-                  borderTop: `5px solid var(--color-foreground)`,
-                }}
-              />
-            </div>
-
-            <input
-              type="range"
-              min={0}
-              max={500}
-              step={10}
-              value={distance}
-              onChange={(e) => setDistLocal(Number(e.target.value))}
-              className="location-slider w-full"
-              style={{
-                background: `linear-gradient(to right, var(--color-primary) ${fillPct}%, var(--color-primary-light) ${fillPct}%)`,
-              }}
-              aria-label="Distance en km"
-              aria-valuenow={distance}
-              aria-valuemin={0}
-              aria-valuemax={500}
-            />
-            <div className="flex justify-between text-sm text-muted-foreground mt-2">
-              <span>0</span>
-              <span>500</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="h-px bg-border" aria-hidden="true" />
-
-        {/* Buttons */}
-        <div className="flex gap-4">
-          <Button type="button" variant="secondary" size="md" className="flex-1" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button type="button" size="md" className="flex-1" onClick={handleApply}>
-            Appliquer
-          </Button>
-        </div>
+        {modalContent}
       </div>
-    </div>
+    </>
   )
 }
