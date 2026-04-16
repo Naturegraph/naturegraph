@@ -1,3 +1,21 @@
+/**
+ * supabase.ts — Types TypeScript générés depuis le schéma Supabase
+ * =================================================================
+ * ⚠️  NE PAS ÉDITER MANUELLEMENT
+ *
+ * Généré via : npx supabase gen types typescript --project-id <id>
+ * Ou via MCP tool : mcp__supabase__generate_typescript_types
+ *
+ * Dernière mise à jour : 2026-04-16
+ * Tables couvertes : blocks, comments, community_photos, follows, fr_cities,
+ *   identification_proposals, media, notebook_observations, notebooks,
+ *   notifications, posts, profiles, reactions, reports, spatial_ref_sys,
+ *   species_master, taxref_cache, user_settings
+ * Vues : geography_columns, geometry_columns, profiles_public, species_full
+ * Fonctions : nearby_posts, search_cities, update_user_location,
+ *   clear_user_location, reverse_geocode_city, immutable_unaccent, + PostGIS
+ */
+
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
@@ -8,6 +26,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string | null
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string | null
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'blocks_blocked_id_fkey'
+            columns: ['blocked_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'blocks_blocked_id_fkey'
+            columns: ['blocked_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'blocks_blocker_id_fkey'
+            columns: ['blocker_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'blocks_blocker_id_fkey'
+            columns: ['blocker_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       comments: {
         Row: {
           content: string
@@ -48,7 +113,50 @@ export type Database = {
             referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
+          {
+            foreignKeyName: 'comments_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
         ]
+      }
+      community_photos: {
+        Row: {
+          alt: string
+          consent_verified: boolean
+          created_at: string
+          id: string
+          instagram_url: string | null
+          is_active: boolean
+          photographer_name: string | null
+          src: string
+          tagline: string
+        }
+        Insert: {
+          alt: string
+          consent_verified?: boolean
+          created_at?: string
+          id?: string
+          instagram_url?: string | null
+          is_active?: boolean
+          photographer_name?: string | null
+          src: string
+          tagline?: string
+        }
+        Update: {
+          alt?: string
+          consent_verified?: boolean
+          created_at?: string
+          id?: string
+          instagram_url?: string | null
+          is_active?: boolean
+          photographer_name?: string | null
+          src?: string
+          tagline?: string
+        }
+        Relationships: []
       }
       follows: {
         Row: {
@@ -75,13 +183,63 @@ export type Database = {
             referencedColumns: ['id']
           },
           {
+            foreignKeyName: 'follows_follower_id_fkey'
+            columns: ['follower_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
+          {
             foreignKeyName: 'follows_following_id_fkey'
             columns: ['following_id']
             isOneToOne: false
             referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
+          {
+            foreignKeyName: 'follows_following_id_fkey'
+            columns: ['following_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
         ]
+      }
+      fr_cities: {
+        Row: {
+          centroid: unknown
+          department_code: string
+          department_name: string
+          insee_code: string
+          name: string
+          name_normalized: string
+          population: number | null
+          region_code: string
+          region_name: string
+        }
+        Insert: {
+          centroid: unknown
+          department_code: string
+          department_name: string
+          insee_code: string
+          name: string
+          name_normalized: string
+          population?: number | null
+          region_code: string
+          region_name: string
+        }
+        Update: {
+          centroid?: unknown
+          department_code?: string
+          department_name?: string
+          insee_code?: string
+          name?: string
+          name_normalized?: string
+          population?: number | null
+          region_code?: string
+          region_name?: string
+        }
+        Relationships: []
       }
       identification_proposals: {
         Row: {
@@ -129,6 +287,13 @@ export type Database = {
             columns: ['author_id']
             isOneToOne: false
             referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'identification_proposals_author_id_fkey'
+            columns: ['author_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
             referencedColumns: ['id']
           },
           {
@@ -252,6 +417,13 @@ export type Database = {
             referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
+          {
+            foreignKeyName: 'media_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
         ]
       }
       notebook_observations: {
@@ -326,6 +498,13 @@ export type Database = {
             referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
+          {
+            foreignKeyName: 'notebooks_author_id_fkey'
+            columns: ['author_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
         ]
       }
       notifications: {
@@ -370,6 +549,13 @@ export type Database = {
             referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
+          {
+            foreignKeyName: 'notifications_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
         ]
       }
       posts: {
@@ -395,6 +581,7 @@ export type Database = {
           region: string | null
           scientific_name: string | null
           shares_count: number | null
+          species_id: string | null
           species_identified: boolean | null
           species_name: string | null
           status: string | null
@@ -435,6 +622,7 @@ export type Database = {
           region?: string | null
           scientific_name?: string | null
           shares_count?: number | null
+          species_id?: string | null
           species_identified?: boolean | null
           species_name?: string | null
           status?: string | null
@@ -475,6 +663,7 @@ export type Database = {
           region?: string | null
           scientific_name?: string | null
           shares_count?: number | null
+          species_id?: string | null
           species_identified?: boolean | null
           species_name?: string | null
           status?: string | null
@@ -495,10 +684,31 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: 'posts_species_id_fkey'
+            columns: ['species_id']
+            isOneToOne: false
+            referencedRelation: 'species_full'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'posts_species_id_fkey'
+            columns: ['species_id']
+            isOneToOne: false
+            referencedRelation: 'species_master'
+            referencedColumns: ['id']
+          },
+          {
             foreignKeyName: 'posts_user_id_fkey'
             columns: ['user_id']
             isOneToOne: false
             referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'posts_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
             referencedColumns: ['id']
           },
         ]
@@ -510,7 +720,9 @@ export type Database = {
           bio: string | null
           birth_date: string | null
           city: string | null
+          city_name: string | null
           country: string | null
+          country_code: string | null
           created_at: string | null
           email: string
           email_verified: boolean | null
@@ -524,8 +736,14 @@ export type Database = {
           is_public: boolean | null
           last_login_at: string | null
           last_name: string
+          location_consent_source: string | null
+          location_point: unknown
+          location_radius_km: number | null
+          location_updated_at: string | null
+          location_visibility: string | null
           posts_count: number | null
           region: string | null
+          region_name: string | null
           twitter: string | null
           updated_at: string | null
           username: string
@@ -537,7 +755,9 @@ export type Database = {
           bio?: string | null
           birth_date?: string | null
           city?: string | null
+          city_name?: string | null
           country?: string | null
+          country_code?: string | null
           created_at?: string | null
           email: string
           email_verified?: boolean | null
@@ -551,8 +771,14 @@ export type Database = {
           is_public?: boolean | null
           last_login_at?: string | null
           last_name: string
+          location_consent_source?: string | null
+          location_point?: unknown
+          location_radius_km?: number | null
+          location_updated_at?: string | null
+          location_visibility?: string | null
           posts_count?: number | null
           region?: string | null
+          region_name?: string | null
           twitter?: string | null
           updated_at?: string | null
           username: string
@@ -564,7 +790,9 @@ export type Database = {
           bio?: string | null
           birth_date?: string | null
           city?: string | null
+          city_name?: string | null
           country?: string | null
+          country_code?: string | null
           created_at?: string | null
           email?: string
           email_verified?: boolean | null
@@ -578,8 +806,14 @@ export type Database = {
           is_public?: boolean | null
           last_login_at?: string | null
           last_name?: string
+          location_consent_source?: string | null
+          location_point?: unknown
+          location_radius_km?: number | null
+          location_updated_at?: string | null
+          location_visibility?: string | null
           posts_count?: number | null
           region?: string | null
+          region_name?: string | null
           twitter?: string | null
           updated_at?: string | null
           username?: string
@@ -624,6 +858,85 @@ export type Database = {
             referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
+          {
+            foreignKeyName: 'reactions_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          created_at: string | null
+          details: string | null
+          id: string
+          post_id: string | null
+          profile_id: string | null
+          reason: string
+          reporter_id: string
+          resolved_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          details?: string | null
+          id?: string
+          post_id?: string | null
+          profile_id?: string | null
+          reason: string
+          reporter_id: string
+          resolved_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string | null
+          details?: string | null
+          id?: string
+          post_id?: string | null
+          profile_id?: string | null
+          reason?: string
+          reporter_id?: string
+          resolved_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'reports_post_id_fkey'
+            columns: ['post_id']
+            isOneToOne: false
+            referencedRelation: 'posts'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'reports_profile_id_fkey'
+            columns: ['profile_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'reports_profile_id_fkey'
+            columns: ['profile_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'reports_reporter_id_fkey'
+            columns: ['reporter_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'reports_reporter_id_fkey'
+            columns: ['reporter_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
         ]
       }
       spatial_ref_sys: {
@@ -650,6 +963,65 @@ export type Database = {
         }
         Relationships: []
       }
+      species_master: {
+        Row: {
+          common_name_en: string | null
+          common_name_fr: string
+          created_at: string | null
+          gbif_id: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          popularity: number | null
+          scientific_name: string
+          source: string | null
+          synonyms: string[] | null
+          taxonomic_group: string
+          taxref_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          common_name_en?: string | null
+          common_name_fr: string
+          created_at?: string | null
+          gbif_id?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          popularity?: number | null
+          scientific_name: string
+          source?: string | null
+          synonyms?: string[] | null
+          taxonomic_group: string
+          taxref_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          common_name_en?: string | null
+          common_name_fr?: string
+          created_at?: string | null
+          gbif_id?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          popularity?: number | null
+          scientific_name?: string
+          source?: string | null
+          synonyms?: string[] | null
+          taxonomic_group?: string
+          taxref_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'species_master_taxref_id_fkey'
+            columns: ['taxref_id']
+            isOneToOne: false
+            referencedRelation: 'taxref_cache'
+            referencedColumns: ['cd_nom']
+          },
+        ]
+      }
       taxref_cache: {
         Row: {
           author: string | null
@@ -665,10 +1037,14 @@ export type Database = {
           genus: string | null
           group: string | null
           kingdom: string | null
+          normalized_common_name: string | null
+          normalized_scientific_name: string | null
           order: string | null
           phylum: string | null
           rank: string | null
           scientific_name: string
+          search_vector: unknown
+          synonyms: string[] | null
           taxref_version: string | null
         }
         Insert: {
@@ -685,10 +1061,14 @@ export type Database = {
           genus?: string | null
           group?: string | null
           kingdom?: string | null
+          normalized_common_name?: string | null
+          normalized_scientific_name?: string | null
           order?: string | null
           phylum?: string | null
           rank?: string | null
           scientific_name: string
+          search_vector?: unknown
+          synonyms?: string[] | null
           taxref_version?: string | null
         }
         Update: {
@@ -705,10 +1085,14 @@ export type Database = {
           genus?: string | null
           group?: string | null
           kingdom?: string | null
+          normalized_common_name?: string | null
+          normalized_scientific_name?: string | null
           order?: string | null
           phylum?: string | null
           rank?: string | null
           scientific_name?: string
+          search_vector?: unknown
+          synonyms?: string[] | null
           taxref_version?: string | null
         }
         Relationships: []
@@ -758,6 +1142,13 @@ export type Database = {
             referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
+          {
+            foreignKeyName: 'user_settings_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: true
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
         ]
       }
     }
@@ -803,6 +1194,96 @@ export type Database = {
           type?: string | null
         }
         Relationships: []
+      }
+      profiles_public: {
+        Row: {
+          avatar_url: string | null
+          banner_url: string | null
+          bio: string | null
+          country_code: string | null
+          created_at: string | null
+          first_name: string | null
+          followers_count: number | null
+          following_count: number | null
+          id: string | null
+          interests: string[] | null
+          is_public: boolean | null
+          last_name: string | null
+          location_label: string | null
+          location_radius_km: number | null
+          location_visibility: string | null
+          posts_count: number | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          banner_url?: string | null
+          bio?: string | null
+          country_code?: never
+          created_at?: string | null
+          first_name?: string | null
+          followers_count?: number | null
+          following_count?: number | null
+          id?: string | null
+          interests?: string[] | null
+          is_public?: boolean | null
+          last_name?: string | null
+          location_label?: never
+          location_radius_km?: never
+          location_visibility?: string | null
+          posts_count?: number | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          banner_url?: string | null
+          bio?: string | null
+          country_code?: never
+          created_at?: string | null
+          first_name?: string | null
+          followers_count?: number | null
+          following_count?: number | null
+          id?: string | null
+          interests?: string[] | null
+          is_public?: boolean | null
+          last_name?: string | null
+          location_label?: never
+          location_radius_km?: never
+          location_visibility?: string | null
+          posts_count?: number | null
+          username?: string | null
+        }
+        Relationships: []
+      }
+      species_full: {
+        Row: {
+          common_name_en: string | null
+          common_name_fr: string | null
+          conservation_status: string | null
+          id: string | null
+          image_url: string | null
+          popularity: number | null
+          scientific_name: string | null
+          source: string | null
+          synonyms: string[] | null
+          taxonomic_group: string | null
+          taxref_author: string | null
+          taxref_common_name_en: string | null
+          taxref_family: string | null
+          taxref_genus: string | null
+          taxref_id: string | null
+          taxref_order: string | null
+          taxref_version: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'species_master_taxref_id_fkey'
+            columns: ['taxref_id']
+            isOneToOne: false
+            referencedRelation: 'taxref_cache'
+            referencedColumns: ['cd_nom']
+          },
+        ]
       }
     }
     Functions: {
@@ -935,6 +1416,7 @@ export type Database = {
           }
       can_see_notebook: { Args: { p_notebook_id: string }; Returns: boolean }
       can_see_post: { Args: { p_post_id: string }; Returns: boolean }
+      clear_user_location: { Args: { p_user_id: string }; Returns: undefined }
       disablelongtransactions: { Args: never; Returns: string }
       dropgeometrycolumn:
         | {
@@ -1067,7 +1549,20 @@ export type Database = {
       }
       geomfromewkt: { Args: { '': string }; Returns: unknown }
       gettransactionid: { Args: never; Returns: unknown }
+      immutable_unaccent: { Args: { '': string }; Returns: string }
       longtransactionsenabled: { Args: never; Returns: boolean }
+      nearby_posts: {
+        Args: {
+          requesting_user_id: string
+          result_limit?: number
+          result_offset?: number
+        }
+        Returns: {
+          distance_km: number
+          is_nearby: boolean
+          post_id: string
+        }[]
+      }
       populate_geometry_columns:
         | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
         | { Args: { use_typmod?: boolean }; Returns: string }
@@ -1108,6 +1603,32 @@ export type Database = {
       }
       postgis_version: { Args: never; Returns: string }
       postgis_wagyu_version: { Args: never; Returns: string }
+      reverse_geocode_city: {
+        Args: { lat: number; lng: number; max_distance_km?: number }
+        Returns: {
+          department_code: string
+          department_name: string
+          distance_km: number
+          insee_code: string
+          name: string
+          region_name: string
+        }[]
+      }
+      search_cities: {
+        Args: { max_results?: number; query: string }
+        Returns: {
+          centroid_lat: number
+          centroid_lng: number
+          department_code: string
+          department_name: string
+          insee_code: string
+          name: string
+          population: number
+          region_name: string
+        }[]
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { '': string }; Returns: string[] }
       st_3dclosestpoint: {
         Args: { geom1: unknown; geom2: unknown }
         Returns: unknown
@@ -1689,7 +2210,22 @@ export type Database = {
         Args: { geom: unknown; move: number; wrap: number }
         Returns: unknown
       }
+      unaccent: { Args: { '': string }; Returns: string }
       unlockrows: { Args: { '': string }; Returns: number }
+      update_user_location: {
+        Args: {
+          p_centroid_lat: number
+          p_centroid_lng: number
+          p_city_name: string
+          p_consent_source: string
+          p_country_code: string
+          p_radius_km: number
+          p_region_name: string
+          p_user_id: string
+          p_visibility: string
+        }
+        Returns: Json
+      }
       updategeometrysrid: {
         Args: {
           catalogn_name: string
