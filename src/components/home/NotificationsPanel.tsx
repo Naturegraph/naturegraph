@@ -1,35 +1,54 @@
 /**
- * NotificationsPanel — Dropdown des notifications
+ * NotificationsPanel — Dropdown des notifications (persistantes, cloche header)
  *
- * Affiche les notifications groupées par date :
- *   - "Nouvelle réaction" (chip orange) → quelqu'un a réagi à une observation
- *   - "Nouveau migrateur" (chip vert)   → quelqu'un a commencé à te suivre
+ * À ne pas confondre avec le ToastContext (notifications UI éphémères).
+ *
+ * Types gérés (MVP Phase 1) :
+ *   - reaction       : quelqu'un a réagi à un de mes posts
+ *   - follow         : quelqu'un commence à me suivre
+ *   - post           : un profil suivi a publié un nouveau post
+ *   - species_digest : résumé hebdo activité espèces suivies
+ *   - comment / mention / identification / system (phase 2)
  *
  * Responsive :
- *   - Desktop : dropdown absolue ancré au bouton cloche (top-[calc(100%+8px)] right-0)
+ *   - Desktop : dropdown ancré au bouton cloche (top-[calc(100%+8px)] right-0)
  *   - Mobile  : bottom sheet (fixed inset-x-0 bottom-0)
  *
  * Accessibilité :
- *   - role="dialog" + aria-modal + aria-label
+ *   - role="dialog" + aria-modal + aria-label i18n
  *   - Escape pour fermer, clic backdrop (mobile) ferme
- *   - Points bleus non-lus décrits via aria-label sur le bouton parent
+ *   - Focus visible sur tous les items cliquables
  *
- * TODO [BACKEND] — Remplacer MOCK_NOTIFS par :
- *   - notificationService.getNotifications() → SELECT FROM notifications ORDER BY created_at DESC
- *   - Temps réel : Supabase Realtime channel 'notifications:user_id=eq.{userId}'
- *   - Marquer comme lu : PATCH /notifications/:id { read: true }
- *   - Compteur non-lu remonté vers HomeNavbar via un context ou prop callback
+ * Données :
+ *   - Vue SQL notifications_with_actor → actor_id/username/avatar_url joints
+ *   - Realtime via Supabase channel (voir useNotifications)
+ *   - Deep-link onClick selon reference_type (post | profile | species)
  */
 
 import { useEffect, useRef } from 'react'
-import { X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import {
+  X,
+  Heart,
+  UserPlus,
+  FileText,
+  Leaf,
+  MessageCircle,
+  AtSign,
+  Award,
+  Bell,
+} from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNotifications, useMarkAsRead } from '@/hooks/useNotifications'
 import type { Notification, NotificationType } from '@/services/notificationService'
+import {
+  groupNotifications,
+  formatGroupedActors,
+  type GroupedNotification,
+} from '@/utils/groupNotifications'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type NotifType = NotificationType
+// ─── Helpers date ─────────────────────────────────────────────────────────────
 
 /** Format heure courte HH:mm à partir d'un ISO. */
 function formatTime(iso: string): string {
@@ -37,56 +56,183 @@ function formatTime(iso: string): string {
   return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
-/** Libellé de groupe (Aujourd'hui / Hier / date). */
-function dateGroupLabel(iso: string): string {
+/** Clé de groupe (today / yesterday / N_days_ago / date absolue). */
+type GroupKey =
+  | { kind: 'today' }
+  | { kind: 'yesterday' }
+  | { kind: 'days_ago'; count: number }
+  | { kind: 'absolute'; label: string }
+
+function dateGroupKey(iso: string): GroupKey {
   const d = new Date(iso)
   const now = new Date()
   const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000)
-  if (diffDays <= 0) return "Aujourd'hui"
-  if (diffDays === 1) return 'Hier'
-  if (diffDays < 7) return `Il y a ${diffDays} jours`
-  return d.toLocaleDateString('fr-FR')
+  if (diffDays <= 0) return { kind: 'today' }
+  if (diffDays === 1) return { kind: 'yesterday' }
+  if (diffDays < 7) return { kind: 'days_ago', count: diffDays }
+  return { kind: 'absolute', label: d.toLocaleDateString('fr-FR') }
 }
 
-// ─── Chip type notification ───────────────────────────────────────────────────
+// ─── Icône par type ───────────────────────────────────────────────────────────
 
-/** Rendu du chip coloré indiquant le type de notification */
-function NotifChip({ type }: { type: NotifType }) {
-  const labels: Record<NotifType, string> = {
-    reaction: 'Nouvelle réaction',
-    follow: 'Nouveau migrateur',
-    comment: 'Nouveau commentaire',
-    mention: 'Mention',
-    identification: 'Identification',
-    system: 'Système',
+/** Icône Lucide associée à chaque type de notification. */
+function NotifIcon({ type }: { type: NotificationType }) {
+  const map: Record<NotificationType, { Icon: typeof Heart; bg: string; color: string }> = {
+    reaction: {
+      Icon: Heart,
+      bg: 'bg-[var(--color-warning-bg)]',
+      color: 'text-[var(--color-warning)]',
+    },
+    follow: { Icon: UserPlus, bg: 'bg-teal-light/30', color: 'text-teal-dark' },
+    post: { Icon: FileText, bg: 'bg-primary-light', color: 'text-primary' },
+    species_digest: { Icon: Leaf, bg: 'bg-teal-light/30', color: 'text-teal-dark' },
+    comment: { Icon: MessageCircle, bg: 'bg-primary-light', color: 'text-primary' },
+    mention: { Icon: AtSign, bg: 'bg-primary-light', color: 'text-primary' },
+    identification: { Icon: Award, bg: 'bg-teal-light/30', color: 'text-teal-dark' },
+    system: { Icon: Bell, bg: 'bg-muted', color: 'text-muted-foreground' },
   }
-  const cls =
-    type === 'reaction'
-      ? 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]'
-      : 'bg-teal-light/30 text-teal-dark'
+  const { Icon, bg, color } = map[type] ?? map.system
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}
+      aria-hidden="true"
+      className={`absolute -bottom-1 -right-1 size-5 rounded-full ${bg} ${color} flex items-center justify-center ring-2 ring-cream-lighter`}
     >
-      {labels[type] ?? type}
+      <Icon className="size-3" />
     </span>
   )
 }
 
-// ─── Groupement par date ──────────────────────────────────────────────────────
+// ─── Chip type notification (label texte) ─────────────────────────────────────
 
-/** Regroupe les notifications par jour calendaire. */
-function groupByDate(notifs: Notification[]): Array<{ label: string; items: Notification[] }> {
-  const map = new Map<string, Notification[]>()
-  for (const n of notifs) {
-    const label = dateGroupLabel(n.created_at)
-    if (!map.has(label)) map.set(label, [])
-    map.get(label)!.push(n)
+function NotifChip({ type }: { type: NotificationType }) {
+  const { t } = useTranslation()
+  const labelKey: Record<NotificationType, string> = {
+    reaction: 'home.notifications.typeReaction',
+    follow: 'home.notifications.typeFollow',
+    post: 'home.notifications.typePost',
+    species_digest: 'home.notifications.typeSpeciesDigest',
+    comment: 'home.notifications.typeComment',
+    mention: 'home.notifications.typeMention',
+    identification: 'home.notifications.typeIdentification',
+    system: 'home.notifications.typeSystem',
   }
-  return Array.from(map.entries()).map(([label, items]) => ({ label, items }))
+  const chipCls: Record<NotificationType, string> = {
+    reaction: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
+    follow: 'bg-teal-light/30 text-teal-dark',
+    post: 'bg-primary-light text-primary',
+    species_digest: 'bg-teal-light/30 text-teal-dark',
+    comment: 'bg-primary-light text-primary',
+    mention: 'bg-primary-light text-primary',
+    identification: 'bg-teal-light/30 text-teal-dark',
+    system: 'bg-muted text-muted-foreground',
+  }
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${chipCls[type] ?? chipCls.system}`}
+    >
+      {t(labelKey[type] ?? labelKey.system)}
+    </span>
+  )
 }
 
-// ─── Composant ────────────────────────────────────────────────────────────────
+// ─── Message par type ─────────────────────────────────────────────────────────
+
+/** Phrase secondaire affichée sous le username + chip. */
+function getMessage(type: NotificationType, t: (k: string) => string): string {
+  switch (type) {
+    case 'reaction':
+      return t('home.notifications.messageReaction')
+    case 'follow':
+      return t('home.notifications.messageFollow')
+    case 'post':
+      return t('home.notifications.messagePost')
+    case 'species_digest':
+      return t('home.notifications.messageSpeciesDigest')
+    default:
+      return ''
+  }
+}
+
+// ─── Deep-link ────────────────────────────────────────────────────────────────
+
+/** Retourne la route vers laquelle naviguer selon reference_type/id. */
+function resolveDeepLink(n: Notification): string | null {
+  if (!n.reference_id || !n.reference_type) return null
+  switch (n.reference_type) {
+    case 'post':
+      return `/post/${n.reference_id}`
+    case 'profile':
+      return n.actor_username ? `/profile/${n.actor_username}` : `/profile/${n.reference_id}`
+    case 'species':
+      return `/species/${n.reference_id}`
+    default:
+      return null
+  }
+}
+
+// ─── Groupement par date ──────────────────────────────────────────────────────
+
+interface Group {
+  key: string
+  labelKey: GroupKey
+  items: GroupedNotification[]
+}
+
+function groupByDate(notifs: GroupedNotification[]): Group[] {
+  const map = new Map<string, Group>()
+  for (const n of notifs) {
+    const k = dateGroupKey(n.created_at)
+    const serialized =
+      k.kind === 'days_ago'
+        ? `days_ago:${k.count}`
+        : k.kind === 'absolute'
+          ? `abs:${k.label}`
+          : k.kind
+    if (!map.has(serialized)) {
+      map.set(serialized, { key: serialized, labelKey: k, items: [] })
+    }
+    map.get(serialized)!.items.push(n)
+  }
+  return Array.from(map.values())
+}
+
+function formatGroupLabel(
+  k: GroupKey,
+  t: (k: string, opts?: Record<string, unknown>) => string,
+): string {
+  if (k.kind === 'today') return t('home.notifications.groupToday')
+  if (k.kind === 'yesterday') return t('home.notifications.groupYesterday')
+  if (k.kind === 'days_ago') return t('home.notifications.groupDaysAgo', { count: k.count })
+  return k.label
+}
+
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+
+/** Avatar de l'acteur avec fallback sur initiales. */
+function Avatar({ url, fallback }: { url: string | null; fallback: string }) {
+  if (url) {
+    return (
+      <img
+        src={url}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        width={40}
+        height={40}
+        className="size-10 rounded-full object-cover bg-primary-light"
+      />
+    )
+  }
+  return (
+    <div className="size-10 rounded-full bg-primary-light flex items-center justify-center overflow-hidden">
+      <span className="text-sm font-bold text-primary" aria-hidden="true">
+        {fallback.slice(0, 2).toUpperCase()}
+      </span>
+    </div>
+  )
+}
+
+// ─── Composant principal ──────────────────────────────────────────────────────
 
 interface NotificationsPanelProps {
   anchorRef: React.RefObject<HTMLButtonElement | null>
@@ -95,9 +241,13 @@ interface NotificationsPanelProps {
 
 export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null)
+  const { t } = useTranslation()
+  const navigate = useNavigate()
   const { user } = useAuth()
-  const { data: notifs = [], isLoading } = useNotifications(user?.id)
+  const { data: rawNotifs = [], isLoading } = useNotifications(user?.id)
   const markAsRead = useMarkAsRead(user?.id)
+  // Regroupe les notifs identiques < 24h (ex : "Alice & Bob ont réagi à ton post")
+  const notifs = groupNotifications(rawNotifs)
   const groups = groupByDate(notifs)
   const unreadCount = notifs.filter((n) => !n.read).length
 
@@ -122,14 +272,27 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
     }
   }, [onClose])
 
+  /** Clic sur une notif : mark-as-read + deep-link + close. */
+  const handleClick = (n: Notification) => {
+    if (!n.read) markAsRead.mutate(n.id)
+    const url = resolveDeepLink(n)
+    if (url) {
+      onClose()
+      navigate(url)
+    }
+  }
+
   const panelContent = (
     <>
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <div className="flex items-center gap-2">
-          <p className="font-title font-bold text-foreground">Notifications</p>
+          <p className="font-title font-bold text-foreground">{t('home.notifications.title')}</p>
           {unreadCount > 0 && (
-            <span className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">
+            <span
+              className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full"
+              aria-label={t('home.notifications.unreadBadge', { count: unreadCount })}
+            >
               {unreadCount}
             </span>
           )}
@@ -137,7 +300,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
         <button
           type="button"
           onClick={onClose}
-          aria-label="Fermer les notifications"
+          aria-label={t('home.notifications.close')}
           className="size-8 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <X className="size-5 text-foreground" aria-hidden="true" />
@@ -146,39 +309,56 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
 
       {/* Liste groupée par date */}
       <div className="max-h-[420px] overflow-y-auto">
-        {isLoading && <p className="text-sm text-muted-foreground text-center py-6">Chargement…</p>}
+        {isLoading && (
+          <ul
+            className="divide-y divide-border"
+            aria-busy="true"
+            aria-label={t('home.notifications.loading')}
+          >
+            {Array.from({ length: 4 }).map((_, i) => (
+              <li key={i} className="flex items-start gap-3 px-5 py-3">
+                <div className="size-10 rounded-full bg-muted animate-pulse shrink-0" />
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="h-3 w-24 bg-muted rounded-full animate-pulse" />
+                  <div className="h-3 w-3/4 bg-muted rounded-full animate-pulse" />
+                </div>
+                <div className="h-3 w-10 bg-muted rounded-full animate-pulse shrink-0" />
+              </li>
+            ))}
+          </ul>
+        )}
         {!isLoading && notifs.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-6">Aucune notification</p>
+          <div className="px-5 py-10 text-center">
+            <p className="text-sm font-medium text-foreground">{t('home.notifications.empty')}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t('home.notifications.emptyHint')}
+            </p>
+          </div>
         )}
         {groups.map((group, gi) => (
-          <div key={group.label}>
-            {/* Séparateur de groupe */}
+          <div key={group.key}>
             {gi > 0 && <div className="h-px bg-border mx-5" aria-hidden="true" />}
 
-            {/* Label de groupe */}
             <p className="px-5 pt-4 pb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              {group.label}
+              {formatGroupLabel(group.labelKey, t)}
             </p>
 
-            {/* Items du groupe */}
             {group.items.map((notif, i) => (
               <div key={notif.id}>
                 {i > 0 && <div className="h-px bg-border mx-5" aria-hidden="true" />}
 
                 <button
                   type="button"
-                  onClick={() => {
-                    if (!notif.read) markAsRead.mutate(notif.id)
-                  }}
+                  onClick={() => handleClick(notif)}
                   className="w-full text-left flex items-start gap-3 px-5 py-3 hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
-                  {/* Avatar placeholder */}
+                  {/* Avatar + icône type en surcouche */}
                   <div className="relative shrink-0 mt-0.5">
-                    <div className="size-10 rounded-full bg-primary-light flex items-center justify-center overflow-hidden">
-                      <span className="text-sm font-bold text-primary" aria-hidden="true">
-                        {(notif.title ?? '?').slice(0, 2).toUpperCase()}
-                      </span>
-                    </div>
+                    <Avatar
+                      url={notif.actor_avatar_url}
+                      fallback={notif.actor_username ?? notif.title ?? '?'}
+                    />
+                    <NotifIcon type={notif.type} />
                   </div>
 
                   {/* Contenu */}
@@ -187,8 +367,17 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
                       <NotifChip type={notif.type} />
                     </div>
                     <p className="text-sm text-foreground leading-snug">
-                      <span className="font-bold">{notif.title}</span>
-                      {notif.body ? ` ${notif.body}` : ''}
+                      <span className="font-bold">
+                        {formatGroupedActors(notif, (n) =>
+                          n === 1
+                            ? t('home.notifications.othersOne')
+                            : t('home.notifications.othersMany', { count: n }),
+                        ) ??
+                          notif.actor_username ??
+                          notif.title ??
+                          ''}
+                      </span>{' '}
+                      <span className="text-muted-foreground">{getMessage(notif.type, t)}</span>
                     </p>
                   </div>
 
@@ -212,9 +401,13 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
       <div className="px-5 py-3 border-t border-border">
         <button
           type="button"
+          onClick={() => {
+            onClose()
+            navigate('/notifications')
+          }}
           className="w-full text-sm text-primary font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
         >
-          Voir toutes les notifications
+          {t('home.notifications.viewAll')}
         </button>
       </div>
     </>
@@ -234,7 +427,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Notifications"
+        aria-label={t('home.notifications.title')}
         className="hidden md:block absolute top-[calc(100%+8px)] right-0 w-[400px] bg-cream-lighter border border-border rounded-xl shadow-xl z-50 overflow-hidden"
       >
         {panelContent}
@@ -244,10 +437,9 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Notifications"
+        aria-label={t('home.notifications.title')}
         className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-cream-lighter border-t border-border rounded-t-2xl shadow-xl overflow-hidden"
       >
-        {/* Handle bar */}
         <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
           <div className="w-10 h-1 bg-border rounded-full" />
         </div>
