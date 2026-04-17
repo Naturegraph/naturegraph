@@ -1,19 +1,11 @@
 /**
- * supabase.ts — Types TypeScript générés depuis le schéma Supabase
- * =================================================================
- * ⚠️  NE PAS ÉDITER MANUELLEMENT
+ * supabase.ts — Types TypeScript générés automatiquement
+ * ========================================================
+ * ⚠️  NE PAS ÉDITER MANUELLEMENT — généré via :
+ *     npx supabase gen types typescript --project-id <id> > src/types/supabase.ts
  *
- * Généré via : npx supabase gen types typescript --project-id <id>
- * Ou via MCP tool : mcp__supabase__generate_typescript_types
- *
- * Dernière mise à jour : 2026-04-16
- * Tables couvertes : blocks, comments, community_photos, follows, fr_cities,
- *   identification_proposals, media, notebook_observations, notebooks,
- *   notifications, posts, profiles, reactions, reports, spatial_ref_sys,
- *   species_master, taxref_cache, user_settings
- * Vues : geography_columns, geometry_columns, profiles_public, species_full
- * Fonctions : nearby_posts, search_cities, update_user_location,
- *   clear_user_location, reverse_geocode_city, immutable_unaccent, + PostGIS
+ * Couvre : 18 tables + 4 vues + toutes les fonctions PostGIS/RPC
+ * Dernière mise à jour : 2026-04-17 (matching supabase dev schema)
  */
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
@@ -501,6 +493,42 @@ export type Database = {
           {
             foreignKeyName: 'notebooks_author_id_fkey'
             columns: ['author_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          enabled: boolean
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          enabled?: boolean
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          enabled?: boolean
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'notification_preferences_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'notification_preferences_user_id_fkey'
+            columns: ['user_id']
             isOneToOne: false
             referencedRelation: 'profiles_public'
             referencedColumns: ['id']
@@ -1195,6 +1223,38 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications_with_actor: {
+        Row: {
+          actor_avatar_url: string | null
+          actor_id: string | null
+          actor_username: string | null
+          body: string | null
+          created_at: string | null
+          id: string | null
+          read: boolean | null
+          reference_id: string | null
+          reference_type: string | null
+          title: string | null
+          type: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'notifications_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'notifications_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       profiles_public: {
         Row: {
           avatar_url: string | null
@@ -1550,6 +1610,10 @@ export type Database = {
       geomfromewkt: { Args: { '': string }; Returns: unknown }
       gettransactionid: { Args: never; Returns: unknown }
       immutable_unaccent: { Args: { '': string }; Returns: string }
+      is_notif_enabled: {
+        Args: { p_type: string; p_user_id: string }
+        Returns: boolean
+      }
       longtransactionsenabled: { Args: never; Returns: boolean }
       nearby_posts: {
         Args: {
