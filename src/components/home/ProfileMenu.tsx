@@ -417,7 +417,9 @@ export function ProfileMenu({ onClose }: ProfileMenuProps) {
           danger
         />
         {/* Version dynamique — "App version X.X.X" (Figma spec, sans icône) */}
-        <p className="px-1 py-1 text-xs text-muted-foreground/60">App version {__APP_VERSION__}</p>
+        <p className="px-1 py-1 text-xs text-muted-foreground/60 text-center">
+          App version {__APP_VERSION__}
+        </p>
       </div>
     </>
   )

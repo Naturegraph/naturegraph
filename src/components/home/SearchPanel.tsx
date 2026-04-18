@@ -300,7 +300,7 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
     <>
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-4 pb-3">
-        <h2 className="font-title font-bold text-lg text-foreground">Recherche</h2>
+        <h2 className="font-title font-bold text-base text-foreground">Recherche</h2>
         <button
           type="button"
           onClick={onClose}
@@ -575,10 +575,10 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
         aria-label="Recherche"
         className={[
           // Mobile : bottom sheet fixe
-          'fixed inset-x-0 bottom-0 z-50 rounded-t-2xl',
+          'fixed inset-x-0 bottom-0 z-50 rounded-t-xl',
           // Desktop : dropdown absolue ancrée au bouton
           'md:absolute md:inset-auto md:bottom-auto',
-          'md:top-[calc(100%+8px)] md:right-0 md:w-[480px] md:rounded-xl',
+          'md:top-[calc(100%+8px)] md:right-0 md:w-[480px] md:rounded-lg',
           // Style commun
           'bg-cream-lighter border border-border shadow-xl overflow-hidden',
         ].join(' ')}
