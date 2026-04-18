@@ -18,7 +18,7 @@ export function SocialButton({ provider, onClick, disabled }: SocialButtonProps)
       onClick={onClick}
       disabled={disabled}
       aria-label={`Continuer avec ${labels[provider]}`}
-      className="btn-press btn-press-secondary flex-1 flex items-center justify-center h-14 rounded-lg bg-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      className="btn-press btn-press-secondary flex-1 flex items-center justify-center h-14 rounded-full bg-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {provider === 'google' && <GoogleIcon />}
       {provider === 'apple' && <AppleIcon />}

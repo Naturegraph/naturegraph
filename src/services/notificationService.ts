@@ -13,6 +13,8 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 export type NotificationType =
   | 'reaction'
   | 'follow'
+  | 'post' // nouveau post d'un profil suivi (fan-out via trigger)
+  | 'species_digest' // digest hebdo espèces (edge function cron)
   | 'comment'
   | 'mention'
   | 'identification'
@@ -28,14 +30,18 @@ export interface Notification {
   reference_type: string | null
   read: boolean
   created_at: string
+  /** Acteur (celui qui a déclenché la notif) — issu de la vue notifications_with_actor */
+  actor_id: string | null
+  actor_username: string | null
+  actor_avatar_url: string | null
 }
 
-/** Liste les N dernieres notifications du user courant. */
+/** Liste les N dernieres notifications du user courant (vue enrichie avec actor). */
 export async function listNotifications(userId: string, limit = 30): Promise<Notification[]> {
   if (!isSupabaseConfigured || !supabase) return []
 
   const { data, error } = await supabase
-    .from('notifications')
+    .from('notifications_with_actor')
     .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
@@ -43,6 +49,38 @@ export async function listNotifications(userId: string, limit = 30): Promise<Not
 
   if (error) throw new Error(error.message)
   return (data ?? []) as unknown as Notification[]
+}
+
+/**
+ * Liste paginée par curseur (created_at DESC).
+ * `before` = ISO du plus ancien de la page précédente (ou undefined pour la première).
+ * Retourne `items` + `nextCursor` (null si fin de liste).
+ */
+export async function listNotificationsPage(
+  userId: string,
+  opts: { before?: string; limit?: number; types?: NotificationType[] } = {},
+): Promise<{ items: Notification[]; nextCursor: string | null }> {
+  const limit = opts.limit ?? 20
+  if (!isSupabaseConfigured || !supabase) return { items: [], nextCursor: null }
+
+  let q = supabase
+    .from('notifications_with_actor')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit + 1)
+
+  if (opts.before) q = q.lt('created_at', opts.before)
+  if (opts.types && opts.types.length > 0) q = q.in('type', opts.types)
+
+  const { data, error } = await q
+  if (error) throw new Error(error.message)
+
+  const rows = (data ?? []) as unknown as Notification[]
+  const hasMore = rows.length > limit
+  const items = hasMore ? rows.slice(0, limit) : rows
+  const nextCursor = hasMore ? items[items.length - 1].created_at : null
+  return { items, nextCursor }
 }
 
 /** Compte les notifications non lues. */

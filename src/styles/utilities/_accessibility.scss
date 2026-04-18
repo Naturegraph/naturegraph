@@ -1,9 +1,17 @@
 // ============================================
 // Accessibility — Naturegraph
 // ============================================
+// Trois systèmes :
+//   1. Skip link global (focus trap bypass)
+//   2. Reduced motion (prefers-reduced-motion media query)
+//   3. Taille de texte (data-text-size sur <html>)
+//   4. Contraste renforcé (data-high-contrast sur <html>)
+//
+// Les attributs data-* sont posés par AccessibilityContext.tsx
+// ============================================
 
 @layer base {
-  // Skip to content link
+  // ── 1. Skip link ───────────────────────────────────────────────────────────
   .skip-link {
     position: absolute;
     top: -100%;
@@ -19,7 +27,7 @@
     }
   }
 
-  // Reduced motion
+  // ── 2. Reduced motion ──────────────────────────────────────────────────────
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -28,6 +36,56 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
+    }
+  }
+
+  // ── 3. Taille du texte ─────────────────────────────────────────────────────
+  // Principe : on redéfinit --font-size-base sur <html>.
+  // Les composants qui utilisent `text-base` (1rem) bénéficient du scale.
+  // Les tailles Tailwind (text-sm, text-lg, etc.) restent proportionnelles.
+  :root {
+    --font-size-base: 16px; // medium — valeur par défaut
+  }
+
+  html[data-text-size='small'] {
+    --font-size-base: 14px;
+    font-size: var(--font-size-base);
+  }
+
+  html[data-text-size='medium'] {
+    --font-size-base: 16px;
+    font-size: var(--font-size-base);
+  }
+
+  html[data-text-size='large'] {
+    --font-size-base: 18px;
+    font-size: var(--font-size-base);
+  }
+
+  // ── 4. Contraste renforcé ──────────────────────────────────────────────────
+  // On surcharge les tokens de couleur pour augmenter le contraste :
+  // - texte primaire → noir pur
+  // - fond primaire  → blanc pur
+  // - bordures       → plus sombres
+  // - muted text     → plus sombre (au moins 4.5:1 sur blanc)
+  html[data-high-contrast='true'] {
+    --color-text-primary: #000000;
+    --color-text-secondary: #2a2a2a;
+    --color-text-muted: #4a4a4a;
+    --color-bg-primary: #ffffff;
+    --color-bg-secondary: #f0f0f0;
+    --color-border: #888888;
+    --color-action-default: #4a00b8; // violet plus sombre (ratio > 4.5:1 sur blanc)
+
+    // Renforcer les bordures et contours
+    * {
+      border-color: inherit;
+    }
+
+    // Masquer les effets translucides qui réduisent le contraste perçu
+    .bg-primary-light,
+    .bg-teal-light {
+      background-color: #e8d5ff !important;
     }
   }
 }
