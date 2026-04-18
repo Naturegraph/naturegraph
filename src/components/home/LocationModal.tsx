@@ -235,7 +235,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
     <div className="flex flex-col gap-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="font-title font-bold text-base text-foreground">Localisation</h2>
+        <p className="font-title font-bold text-base text-foreground">Localisation</p>
         <button
           type="button"
           onClick={onClose}

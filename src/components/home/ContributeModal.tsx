@@ -156,7 +156,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
               key={type.id}
               role="menuitem"
               aria-disabled="true"
-              className="flex items-center gap-5 p-4 rounded-xl opacity-60 cursor-not-allowed select-none"
+              className="flex items-center gap-5 p-4 rounded-lg opacity-60 cursor-not-allowed select-none"
               style={{ backgroundColor: type.cardBg }}
             >
               {/* Cercle icône */}
@@ -192,7 +192,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
             type="button"
             role="menuitem"
             onClick={() => handleSelect(type)}
-            className="w-full flex items-center gap-5 p-4 rounded-xl text-left transition-opacity hover:opacity-90 active:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+            className="w-full flex items-center gap-5 p-4 rounded-lg text-left transition-opacity hover:opacity-90 active:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
             style={{ backgroundColor: type.cardBg }}
           >
             {/* Cercle icône */}

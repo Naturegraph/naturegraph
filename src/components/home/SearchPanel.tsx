@@ -300,7 +300,7 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
     <>
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-4 pb-3">
-        <h2 className="font-title font-bold text-base text-foreground">Recherche</h2>
+        <p className="font-title font-bold text-base text-foreground">Recherche</p>
         <button
           type="button"
           onClick={onClose}
