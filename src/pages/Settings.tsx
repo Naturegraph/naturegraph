@@ -23,7 +23,7 @@ import { INTEREST_LABELS } from '@/constants/interests'
 import { useUpdateProfile } from '@/hooks/useProfile'
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings'
 import { LocationPickerSection } from '@/components/location/LocationPickerSection'
-import { useNotification } from '@/contexts/NotificationContext'
+import { useToast } from '@/contexts/ToastContext'
 import { supabase } from '@/lib/supabase'
 import type { Interest } from '@/types/database'
 import type { LocationFormData } from '@/types/location'
@@ -51,7 +51,7 @@ export default function Settings() {
   const navigate = useNavigate()
   const { profile, signOut } = useAuth()
   const { userLocation, updateLocation, clearLocation } = useLocation()
-  const { success: notifySuccess } = useNotification()
+  const { success: notifySuccess } = useToast()
   const updateProfile = useUpdateProfile(profile?.id ?? '')
   const queryClient = useQueryClient()
   const { data: userSettings } = useSettings(profile?.id)
