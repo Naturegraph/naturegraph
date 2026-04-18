@@ -82,7 +82,7 @@ export function StatsSidebar() {
               <ChevronDown className="size-4" aria-hidden="true" />
             </button>
             {impactDropdownOpen && (
-              <div className="absolute right-0 top-full mt-1 z-10 bg-cream-lighter border border-border rounded-xl shadow-lg overflow-hidden min-w-[120px]">
+              <div className="absolute right-0 top-full mt-1 z-10 bg-cream-lighter border border-border rounded-lg shadow-lg overflow-hidden min-w-[120px]">
                 {IMPACT_PERIODS.map((p) => (
                   <button
                     key={p.value}
@@ -106,7 +106,7 @@ export function StatsSidebar() {
         {/* Cartes stats */}
         <div className="flex gap-3">
           {/* Observations */}
-          <div className="flex-1 bg-card rounded-xl p-4 flex flex-col gap-2">
+          <div className="flex-1 bg-card rounded-lg p-4 flex flex-col gap-2">
             <p className="text-xs text-muted-foreground tracking-[0.48px]">
               {t('home.stats.observations')}
             </p>
@@ -122,7 +122,7 @@ export function StatsSidebar() {
             )}
           </div>
           {/* Migrateurs */}
-          <div className="flex-1 bg-card rounded-xl p-4 flex flex-col gap-2">
+          <div className="flex-1 bg-card rounded-lg p-4 flex flex-col gap-2">
             <p className="text-xs text-muted-foreground tracking-[0.48px]">
               {t('home.stats.migrators')}
             </p>

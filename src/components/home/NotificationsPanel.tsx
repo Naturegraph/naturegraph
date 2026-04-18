@@ -287,7 +287,9 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <div className="flex items-center gap-2">
-          <p className="font-title font-bold text-foreground">{t('home.notifications.title')}</p>
+          <p className="font-title font-bold text-base text-foreground">
+            {t('home.notifications.title')}
+          </p>
           {unreadCount > 0 && (
             <span
               className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full"
@@ -428,7 +430,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
         role="dialog"
         aria-modal="true"
         aria-label={t('home.notifications.title')}
-        className="hidden md:block absolute top-[calc(100%+8px)] right-0 w-[400px] bg-cream-lighter border border-border rounded-xl shadow-xl z-50 overflow-hidden"
+        className="hidden md:block absolute top-[calc(100%+8px)] right-0 w-[400px] bg-cream-lighter border border-border rounded-lg shadow-xl z-50 overflow-hidden"
       >
         {panelContent}
       </div>
@@ -438,7 +440,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
         role="dialog"
         aria-modal="true"
         aria-label={t('home.notifications.title')}
-        className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-cream-lighter border-t border-border rounded-t-2xl shadow-xl overflow-hidden"
+        className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-cream-lighter border-t border-border rounded-t-xl shadow-xl overflow-hidden"
       >
         <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
           <div className="w-10 h-1 bg-border rounded-full" />
