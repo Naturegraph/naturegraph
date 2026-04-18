@@ -120,7 +120,7 @@ function MenuItem({
 }) {
   // Classe de base commune — items Figma : h-12 (48px), px-3, gap-2, rounded-lg
   const base = [
-    'w-full flex items-center gap-2 px-3 h-12 rounded-lg text-left transition-colors',
+    'w-full flex items-center gap-2 px-3 h-12 rounded-md text-left transition-colors',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
     disabled
       ? 'opacity-50 cursor-not-allowed'
@@ -192,7 +192,7 @@ function TextSizeRow({ value, onChange }: { value: TextSize; onChange: (v: TextS
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
         aria-controls="text-size-options"
-        className="w-full flex items-center gap-2 px-3 h-12 rounded-lg text-left hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+        className="w-full flex items-center gap-2 px-3 h-12 rounded-md text-left hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
       >
         <IconWrap>
           <Type className="size-5" />
@@ -231,7 +231,7 @@ function TextSizeRow({ value, onChange }: { value: TextSize; onChange: (v: TextS
                 setExpanded(false)
               }}
               className={[
-                'flex-1 flex items-center justify-center h-9 rounded-lg border font-bold transition-colors',
+                'flex-1 flex items-center justify-center h-9 rounded-md border font-bold transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
                 value === key
                   ? 'bg-primary text-primary-foreground border-primary'
@@ -268,7 +268,7 @@ function ContrastToggleRow({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="w-full flex items-center gap-2 px-3 h-12 rounded-lg text-left hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+      className="w-full flex items-center gap-2 px-3 h-12 rounded-md text-left hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
     >
       <IconWrap>
         <Eye className="size-5" />
