@@ -437,7 +437,7 @@ export function ProfileMenu({ onClose }: ProfileMenuProps) {
         role="dialog"
         aria-modal="true"
         aria-label="Menu profil"
-        className="hidden md:block absolute top-[calc(100%+8px)] right-0 w-[288px] bg-[var(--color-bg-primary)] border border-border rounded-xl shadow-xl z-50 overflow-hidden"
+        className="hidden md:block absolute top-[calc(100%+8px)] right-0 w-[288px] bg-[var(--color-bg-primary)] border border-border rounded-lg shadow-xl z-50 overflow-hidden"
       >
         {menuContent}
       </div>
