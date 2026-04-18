@@ -374,7 +374,10 @@ export function HomeNavbar({
                         </span>
                       </div>
                       <ChevronDown
-                        className="hidden xl:block size-4 text-muted-foreground"
+                        className={[
+                          'hidden xl:block size-4 text-muted-foreground transition-transform duration-200',
+                          showProfileMenu ? 'rotate-180' : '',
+                        ].join(' ')}
                         aria-hidden="true"
                       />
                     </button>
