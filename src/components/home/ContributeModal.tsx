@@ -1,61 +1,96 @@
 /**
- * ContributeModal — Sélection du type de contribution
+ * ContributeModal — Sélection du type de contribution (v2 — pixel-perfect Figma 6385:97403)
  *
- * Options visibles :
- *   - Rencontre nature  : observation documentée d'une espèce     — icône teal (ligne mise en avant)
+ * Options :
+ *   - Rencontre nature  : observation documentée d'une espèce — icône oiseau teal (disponible)
+ *   - Instant nature    : capture spontanée paysage/ambiance — icône montagne orange (bientôt)
  *
- * Options prévues (masquées — version future) :
- *   - Instant nature    : capture spontanée (paysage, ambiance)   — icône orange
- *     → code conservé dans CONTRIBUTION_TYPES avec hidden: true
- *     → route /contribute?type=nature_instant disponible en dev
+ * Design :
+ *   - Conteneur : bg cream, border gris-clair 0.5px, rounded-lg, shadow-lg, padding 4px
+ *   - Cartes    : fond coloré (teal-50 / warm-bg-tertiary), gap-5, padding 16px, rounded-xl
+ *   - Icône     : cercle 56px (teal `#006666` | amber `#cc7a00`), icône blanche 28px
+ *   - Titre     : Quicksand Bold 18px
+ *   - Desc.     : Mulish Regular 14px, text-muted-foreground
+ *   - Bientôt   : badge pill primary/10, item opacity-60, cursor-not-allowed
  *
  * Responsive :
- *   - Desktop : dropdown absolue sous le bouton "Contribuer" (pas de backdrop)
- *               → positionnée par le parent `position: relative` dans HomeNavbar
+ *   - Desktop : dropdown absolue sous le bouton "Contribuer" (parent relative HomeNavbar)
  *   - Mobile  : bottom sheet avec backdrop et handle bar
  *
  * Accessibilité :
- *   - role="menu" + role="menuitem" sur les options
+ *   - role="menu" + role="menuitem" + aria-disabled
  *   - Escape pour fermer, clic backdrop (mobile) ferme
  *   - Focus sur le premier item à l'ouverture
  *
- * TODO [BACKEND] — Au clic sur une option :
- *   - navigate(`/contribute?type=${id}`) vers le formulaire de création
- *   - POST /posts { type, ... } via postService.createPost()
- *   - Après succès : invalider le cache TanStack Query ['feed']
+ * TODO [FEATURE] Instant nature — activer quand le formulaire est prêt :
+ *   1. Retirer `disabled: true` dans CONTRIBUTION_TYPES
+ *   2. Créer le formulaire /contribute?type=nature_instant
+ *   3. POST /posts { type: 'nature_instant', ... } via postService
+ *   4. Invalider le cache TanStack Query ['feed']
+ *
+ * TODO [TOKEN] `#cc7a00` (cercle Instant nature) — ajouter `--color-amber-primary`
+ *   dans _light-theme.scss quand le design system sera mis à jour.
  */
 
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Bird, MountainSnow } from 'lucide-react'
 
 // ─── Types de contribution ────────────────────────────────────────────────────
 
-const CONTRIBUTION_TYPES = [
-  {
-    id: 'nature_instant',
-    /** Icône dans un cercle orange */
-    emoji: '🏔️',
-    bgColor: 'bg-[#FF6B35]',
-    title: 'Instant nature',
-    description: 'Capture un moment spontané : paysage, ambiance, phénomène.',
-    highlighted: false,
-    /** Masqué en front — disponible en dev, prévu pour une version future */
-    hidden: true,
-  },
+interface ContributionType {
+  id: string
+  title: string
+  description: string
+  /** Couleur CSS du fond de la carte (token ou hex commenté) */
+  cardBg: string
+  /** Couleur CSS du fond du cercle-icône */
+  iconBg: string
+  /** Composant Lucide pour l'icône */
+  Icon: React.ElementType
+  /** Si true, carte grisée + badge "Bientôt" — non cliquable */
+  disabled: boolean
+}
+
+const CONTRIBUTION_TYPES: ContributionType[] = [
   {
     id: 'nature_encounter',
-    /** Icône dans un cercle teal */
-    emoji: '🦅',
-    bgColor: 'bg-teal',
     title: 'Rencontre nature',
-    description: "Documente l'observation d'une espèce avec lieu et identification.",
-    /** La ligne "Rencontre nature" est mise en avant (fond teal clair) */
-    highlighted: true,
-    hidden: false,
+    description: 'Contribue en ajoutant une observation animale, avec ou sans photo.',
+    /** Teal-50 du design system ($brand-highlight-50 = #e5f7f7) */
+    cardBg: '#e5f7f7',
+    /** Teal-500 via CSS var (--color-highlight-primary = #006666) */
+    iconBg: 'var(--color-highlight-primary)',
+    Icon: Bird,
+    disabled: false,
+  },
+  {
+    id: 'nature_instant',
+    title: 'Instant nature',
+    description: "Partage un paysage ou un phénomène naturel qui t'a marqué.",
+    /** Warm-bg-tertiary via CSS var (--color-bg-tertiary = #fff4e0) */
+    cardBg: 'var(--color-bg-tertiary)',
+    /**
+     * Amber #cc7a00 — Figma spec, pas encore de CSS var.
+     * TODO [TOKEN] : ajouter --color-amber-primary dans _light-theme.scss
+     */
+    iconBg: '#cc7a00',
+    Icon: MountainSnow,
+    disabled: true,
   },
 ]
 
-// ─── Composant ────────────────────────────────────────────────────────────────
+// ─── Badge "Bientôt" ─────────────────────────────────────────────────────────
+
+function SoonBadge() {
+  return (
+    <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+      Bientôt
+    </span>
+  )
+}
+
+// ─── Composant ───────────────────────────────────────────────────────────────
 
 interface ContributeModalProps {
   onClose: () => void
@@ -71,7 +106,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
   const firstItemRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Focus sur le premier item à l'ouverture
+  // Focus sur le premier item actif à l'ouverture
   useEffect(() => {
     firstItemRef.current?.focus()
   }, [])
@@ -90,6 +125,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
     const fn = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) onClose()
     }
+    // Délai 50ms pour éviter que le clic d'ouverture ferme immédiatement
     const t = setTimeout(() => document.addEventListener('mousedown', fn), 50)
     return () => {
       clearTimeout(t)
@@ -97,58 +133,89 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
     }
   }, [onClose])
 
-  function handleSelect(id: string) {
+  function handleSelect(type: ContributionType) {
+    if (type.disabled) return
     onClose()
     if (onTypeSelect) {
-      // Ouvre le panneau inline sur la même page (design panel overlay)
-      onTypeSelect(id)
+      onTypeSelect(type.id)
     } else {
-      navigate(`/contribute?type=${id}`)
+      navigate(`/contribute?type=${type.id}`)
     }
   }
 
-  /** Rendu des options partagé entre dropdown et bottom sheet */
-  const visibleTypes = CONTRIBUTION_TYPES.filter((t) => !t.hidden)
+  /** Rendu des cartes — partagé entre dropdown et bottom sheet */
+  const cards = (
+    <div role="menu" aria-label="Type de contribution" className="flex flex-col gap-1">
+      {CONTRIBUTION_TYPES.map((type, i) => {
+        const { Icon } = type
 
-  const options = (
-    <div role="menu" aria-label="Type de contribution">
-      {visibleTypes.map((type, i) => (
-        <div key={type.id}>
-          {i > 0 && <div className="h-px bg-border mx-4" aria-hidden="true" />}
+        // Carte désactivée (bientôt disponible) — rendu en <div> non cliquable
+        if (type.disabled) {
+          return (
+            <div
+              key={type.id}
+              role="menuitem"
+              aria-disabled="true"
+              className="flex items-center gap-5 p-4 rounded-xl opacity-60 cursor-not-allowed select-none"
+              style={{ backgroundColor: type.cardBg }}
+            >
+              {/* Cercle icône */}
+              <div
+                className="size-14 rounded-full flex items-center justify-center shrink-0"
+                style={{ backgroundColor: type.iconBg }}
+                aria-hidden="true"
+              >
+                <Icon className="size-7 text-white" strokeWidth={1.75} />
+              </div>
 
+              {/* Texte */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-title font-bold text-[17px] leading-snug text-foreground">
+                    {type.title}
+                  </p>
+                  <SoonBadge />
+                </div>
+                <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">
+                  {type.description}
+                </p>
+              </div>
+            </div>
+          )
+        }
+
+        // Carte active — bouton cliquable
+        return (
           <button
+            key={type.id}
             ref={i === 0 ? firstItemRef : undefined}
             type="button"
             role="menuitem"
-            onClick={() => handleSelect(type.id)}
-            className={[
-              'w-full flex items-center gap-4 px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
-              type.highlighted
-                ? 'bg-teal-light/20 hover:bg-teal-light/40'
-                : 'hover:bg-primary-light/30',
-            ].join(' ')}
+            onClick={() => handleSelect(type)}
+            className="w-full flex items-center gap-5 p-4 rounded-xl text-left transition-opacity hover:opacity-90 active:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+            style={{ backgroundColor: type.cardBg }}
           >
-            {/* Icône dans un cercle coloré */}
+            {/* Cercle icône */}
             <div
-              className={[
-                'size-11 rounded-full flex items-center justify-center shrink-0 text-xl leading-none',
-                type.bgColor,
-              ].join(' ')}
+              className="size-14 rounded-full flex items-center justify-center shrink-0"
+              style={{ backgroundColor: type.iconBg }}
               aria-hidden="true"
             >
-              {type.emoji}
+              <Icon className="size-7 text-white" strokeWidth={1.75} />
             </div>
 
             {/* Texte */}
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-sm text-foreground">{type.title}</p>
-              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+              <p className="font-title font-bold text-[17px] leading-snug text-foreground">
+                {type.title}
+              </p>
+              <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">
                 {type.description}
               </p>
             </div>
           </button>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 
@@ -166,29 +233,26 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
         ref={dropdownRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Partager une observation"
-        className="hidden md:block absolute top-[calc(100%+8px)] right-0 w-[300px] bg-cream-lighter border border-border rounded-xl shadow-xl z-50 overflow-hidden"
+        aria-label="Partager une contribution"
+        className="hidden md:block absolute top-[calc(100%+8px)] right-0 w-[400px] bg-[var(--color-bg-primary)] border border-border/70 rounded-lg shadow-xl z-50 overflow-hidden p-1"
       >
-        {options}
+        {cards}
       </div>
 
       {/* ── Mobile : bottom sheet ────────────────────────────────────────────── */}
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Partager une observation"
-        className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-cream-lighter border-t border-border rounded-t-2xl shadow-xl overflow-hidden"
+        aria-label="Partager une contribution"
+        className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-[var(--color-bg-primary)] border-t border-border rounded-t-xl shadow-xl overflow-hidden"
       >
         {/* Handle bar */}
         <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
           <div className="w-10 h-1 bg-border rounded-full" />
         </div>
-        {/* Titre discret */}
-        <p className="px-5 pt-3 pb-1 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-          Partager
-        </p>
-        {options}
-        <div className="h-4" aria-hidden="true" />
+        {/* Titre */}
+        <p className="px-5 pt-3 pb-2 text-base font-title font-bold text-foreground">Partager</p>
+        <div className="px-2 pb-4">{cards}</div>
       </div>
     </>
   )
