@@ -22,6 +22,9 @@ import { useLocation } from '@/contexts/LocationContext'
 import { INTEREST_LABELS } from '@/constants/interests'
 import { useUpdateProfile } from '@/hooks/useProfile'
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings'
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences'
+import type { NotificationType } from '@/services/notificationService'
+import { trackNotifEvent } from '@/utils/notificationAnalytics'
 import { LocationPickerSection } from '@/components/location/LocationPickerSection'
 import { useToast } from '@/contexts/ToastContext'
 import { supabase } from '@/lib/supabase'
@@ -56,6 +59,19 @@ export default function Settings() {
   const queryClient = useQueryClient()
   const { data: userSettings } = useSettings(profile?.id)
   const updateSettings = useUpdateSettings(profile?.id)
+  const notifPrefs = useNotificationPreferences(profile?.id)
+
+  // Types exposés dans l'UI (ordre d'affichage)
+  const NOTIF_TYPES: NotificationType[] = [
+    'reaction',
+    'follow',
+    'comment',
+    'mention',
+    'post',
+    'species_digest',
+    'identification',
+    'system',
+  ]
 
   // ─── Localisation ─────────────────────────────────────────────
   const [pendingLocationData, setPendingLocationData] = useState<LocationFormData | null>(null)
@@ -512,6 +528,35 @@ export default function Settings() {
             value={userSettings?.reduced_motion ?? false}
             onChange={(v) => updateSettings.mutate({ reduced_motion: v })}
           />
+
+          {/* ── Préférences par type de notification ─────────────────── */}
+          <div className="mt-4 pt-4 border-t border-border">
+            <p className="text-sm font-bold text-foreground mb-1">
+              {t('settings.notifByType.title', 'Par type de notification')}
+            </p>
+            <p className="text-xs text-muted-foreground mb-3">
+              {t(
+                'settings.notifByType.hint',
+                'Coupe les types qui ne t’intéressent pas. Le digest espèces est opt-in (RGPD).',
+              )}
+            </p>
+            {NOTIF_TYPES.map((type) => (
+              <ToggleRow
+                key={type}
+                label={t(
+                  `home.notifications.type${type
+                    .split('_')
+                    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+                    .join('')}`,
+                )}
+                value={notifPrefs.isEnabled(type)}
+                onChange={(v) => {
+                  trackNotifEvent('preference_toggled', { notif_type: type, enabled: v })
+                  notifPrefs.set({ type, enabled: v })
+                }}
+              />
+            ))}
+          </div>
         </SettingsCard>
 
         {/* ── Zone de danger ──────────────────────────────────────────────── */}

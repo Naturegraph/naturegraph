@@ -595,7 +595,21 @@
       "messageSpeciesDigest": "New activity on a species you follow",
       "othersOne": "+ 1 other",
       "othersMany": "+ {{count}} others",
-      "close": "Close notifications"
+      "close": "Close notifications",
+      "page": {
+        "title": "Notifications",
+        "back": "Back",
+        "markAllRead": "Mark all as read",
+        "loadMore": "Load more",
+        "loading": "Loading…",
+        "noMore": "You're all caught up",
+        "tabAll": "All",
+        "tabSocial": "Social",
+        "tabSpecies": "Species",
+        "tabSystem": "System",
+        "empty": "No notifications in this category",
+        "emptyHint": "Come back later or try another filter."
+      }
     },
     "profileMenu": {
       "principal": "Main",
@@ -882,6 +896,10 @@
     "profileSection": "Profile",
     "accountSection": "Account",
     "notificationsSection": "Notifications",
+    "notifByType": {
+      "title": "By notification type",
+      "hint": "Mute the types you don't care about. Species digest is opt-in (GDPR)."
+    },
     "dangerZone": "Danger zone",
     "avatar": "Profile photo",
     "changeAvatar": "Change photo",

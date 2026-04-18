@@ -595,7 +595,21 @@
       "messageSpeciesDigest": "Nouvelle activité sur une espèce que tu suis",
       "othersOne": "+ 1 autre",
       "othersMany": "+ {{count}} autres",
-      "close": "Fermer les notifications"
+      "close": "Fermer les notifications",
+      "page": {
+        "title": "Notifications",
+        "back": "Retour",
+        "markAllRead": "Tout marquer comme lu",
+        "loadMore": "Charger plus",
+        "loading": "Chargement…",
+        "noMore": "Tu es à jour",
+        "tabAll": "Tous",
+        "tabSocial": "Social",
+        "tabSpecies": "Espèces",
+        "tabSystem": "Système",
+        "empty": "Aucune notification dans cette catégorie",
+        "emptyHint": "Reviens plus tard ou explore un autre filtre."
+      }
     },
     "profileMenu": {
       "principal": "Principal",
@@ -882,6 +896,10 @@
     "profileSection": "Profil",
     "accountSection": "Compte",
     "notificationsSection": "Notifications",
+    "notifByType": {
+      "title": "Par type de notification",
+      "hint": "Coupe les types qui ne t'intéressent pas. Le digest espèces est opt-in (RGPD)."
+    },
     "dangerZone": "Zone de danger",
     "avatar": "Photo de profil",
     "changeAvatar": "Changer la photo",

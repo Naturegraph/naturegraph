@@ -47,6 +47,7 @@ import {
   formatGroupedActors,
   type GroupedNotification,
 } from '@/utils/groupNotifications'
+import { trackNotifEvent } from '@/utils/notificationAnalytics'
 
 // ─── Helpers date ─────────────────────────────────────────────────────────────
 
@@ -251,6 +252,12 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
   const groups = groupByDate(notifs)
   const unreadCount = notifs.filter((n) => !n.read).length
 
+  // Analytics : ouverture/fermeture du panel (mount/unmount)
+  useEffect(() => {
+    trackNotifEvent('panel_opened')
+    return () => trackNotifEvent('panel_closed')
+  }, [])
+
   // Fermer sur Escape
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
@@ -274,6 +281,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
 
   /** Clic sur une notif : mark-as-read + deep-link + close. */
   const handleClick = (n: Notification) => {
+    trackNotifEvent('notif_clicked', { notif_type: n.type })
     if (!n.read) markAsRead.mutate(n.id)
     const url = resolveDeepLink(n)
     if (url) {
