@@ -1,40 +1,87 @@
 /**
  * ProfileSidebar — Colonne gauche en mode connecté
  *
- * Affiche :
- * - Bannière + avatar + username
- * - Centres d'intérêts (badges depuis profile.interests)
- * - Statistiques réelles (observations, espèces, streak) via Supabase
- * - Objectif personnel (progression hebdomadaire réelle)
- * - Section "Migrateurs à suivre" (suggestions personnalisées >= 3 disponibles)
+ * Layout pixel-perfect Figma (node 6385-92647) :
+ *   - Avatar sur bannière + badge emoji du centre d'intérêt principal (absolute)
+ *   - Nom d'utilisateur seul (pas d'email)
+ *   - 2 centres d'intérêt secondaires (ordre des préférences)
+ *   - Stats cards blanches avec icône Lucide + valeur + label
+ *   - Objectif semaine avec progress bar en gradient de chaleur
+ *     (bleu froid → violet → orange → rouge selon la proximité de l'objectif)
+ *
+ * Données :
+ *   - Toutes dynamiques depuis AuthContext + hooks Supabase (useUserStats,
+ *     useUserStreak, useWeekProgress)
+ *   - Update automatique via React Query invalidation
  *
  * Accessibilité :
- * - progressbar avec aria-valuenow / aria-valuemin / aria-valuemax
+ *   - progressbar avec aria-valuenow / aria-valuemin / aria-valuemax
+ *   - Cards stats : icônes aria-hidden (décoratives), label lisible
  */
 
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { Users, UserPlus } from 'lucide-react'
+import { UsersRound, ChevronRight, Bird, ClipboardList, Flame } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLocation } from '@/contexts/LocationContext'
 import hermineIcon from '@/assets/images/hermine-icon.png'
-import { INTEREST_LABELS } from '@/constants/interests'
+import { INTEREST_CONFIG } from '@/constants/interests'
 import { useUserStats, useUserStreak, useWeekProgress } from '@/hooks/useStats'
 import { useSuggestedUsers } from '@/hooks/useProfile'
+
+// ─── Sous-composants ──────────────────────────────────────────────────────────
+
+/**
+ * Stat card — fond blanc, icône colorée, valeur en gros, label discret.
+ * Utilisée pour observations / espèces / streak.
+ */
+function StatCard({
+  icon: Icon,
+  value,
+  label,
+  tone,
+}: {
+  icon: typeof Bird
+  value: number
+  label: string
+  tone: 'primary' | 'teal' | 'warning'
+}) {
+  // Figma : primary + teal = action-light (#E7E9F7) ; streak = warning-bg (#FEE1C8)
+  const toneCls: Record<typeof tone, string> = {
+    primary: 'bg-[var(--color-action-light)] text-primary',
+    teal: 'bg-[var(--color-action-light)] text-teal-dark',
+    warning: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
+  }
+  return (
+    <div className="bg-white rounded-lg p-2 flex flex-col items-center justify-center gap-2 text-center">
+      <span
+        aria-hidden="true"
+        className={`size-7 rounded-full flex items-center justify-center ${toneCls[tone]}`}
+      >
+        <Icon className="size-4" />
+      </span>
+      <div className="flex flex-col items-center gap-1">
+        <p className="font-heading font-bold text-lg leading-none text-foreground">{value}</p>
+        <p className="text-[10px] text-foreground tracking-[0.04em] leading-none">{label}</p>
+      </div>
+    </div>
+  )
+}
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 
 export function ProfileSidebar() {
   const { t } = useTranslation()
   const { profile } = useAuth()
-
   const { locationLabel } = useLocation()
 
-  // IDs des intérêts pour l'affichage
+  // ── Centres d'intérêt ──────────────────────────────────────────────────────
+  // Ordre = ordre de sélection côté profil (préférence utilisateur)
   const interestIds = profile?.interests ?? []
-  const interestLabels = interestIds.map((i) => INTEREST_LABELS[i] ?? i)
+  const primaryInterest = interestIds[0]
+  const secondaryInterests = interestIds.slice(1, 3) // 2 centres secondaires max
 
-  // Extraire la région du locationLabel ("Ville, Région" → "Région")
+  // ── Extraction région depuis locationLabel ("Ville, Région" → "Région") ───
   const region = locationLabel.includes(',')
     ? (locationLabel.split(',').pop()?.trim() ?? null)
     : null
@@ -58,78 +105,98 @@ export function ProfileSidebar() {
   const progressPercent =
     weekGoal > 0 ? Math.min(100, Math.round((weekCurrent / weekGoal) * 100)) : 0
 
+  /**
+   * Gradient de chaleur — Figma : jaune → orange.
+   * Clip-path révèle le fill à `progressPercent%` ; la teinte au bord droit
+   * du fill reflète l'intensité de progression vers l'objectif.
+   *   0%   : jaune  (#FFDF20)
+   *   100% : orange (#FF8904)
+   */
+  const heatGradient = 'linear-gradient(90deg, #FFDF20 0%, #FF8904 100%)'
+
   return (
     <div className="flex flex-col gap-4">
-      {/* Carte profil */}
+      {/* ─── Carte profil ─────────────────────────────────────────────────── */}
       <div className="bg-cream-lighter border-[0.5px] border-border rounded-card overflow-hidden">
-        {/* Bannière */}
+        {/* Bannière + avatar avec badge d'intérêt principal */}
         <div className="h-20 bg-[var(--color-action-light)] relative">
-          <div className="absolute left-6 bottom-[-24px]">
-            <div className="size-14 rounded-full border-2 border-cream-lighter overflow-hidden bg-primary-light">
-              <img
-                src={profile?.avatar_url ?? hermineIcon}
-                alt={t('home.profile.avatarAlt', { name: profile?.username })}
-                className="size-full object-cover"
-              />
+          <div className="absolute left-6 bottom-[-32px]">
+            <div className="relative">
+              <div className="size-16 rounded-full border-4 border-cream-lighter overflow-hidden bg-primary-light">
+                <img
+                  src={profile?.avatar_url ?? hermineIcon}
+                  alt={t('home.profile.avatarAlt', { name: profile?.username })}
+                  className="size-full object-cover"
+                />
+              </div>
+              {/* Badge centre d'intérêt #1 — toujours visible, jamais clippé */}
+              {primaryInterest && INTEREST_CONFIG[primaryInterest] && (
+                <span
+                  aria-label={INTEREST_CONFIG[primaryInterest].label}
+                  title={INTEREST_CONFIG[primaryInterest].label}
+                  className="absolute -bottom-0.5 -right-0.5 size-6 rounded-full bg-cream-lighter flex items-center justify-center text-sm shadow-sm"
+                >
+                  <span aria-hidden="true">{INTEREST_CONFIG[primaryInterest].emoji}</span>
+                </span>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="pt-10 pb-6 px-6 flex flex-col gap-4">
-          {/* Nom + email */}
-          <div>
-            <p className="font-bold text-foreground truncate">
-              {profile?.username ?? 'Utilisateur'}
-            </p>
-            {profile?.email && (
-              <p className="text-xs text-muted-foreground truncate">{profile.email}</p>
-            )}
-          </div>
+        <div className="pt-12 pb-6 px-6 flex flex-col gap-4">
+          {/* Nom (sans email) — H5 Quicksand 18px bold */}
+          <p className="font-heading font-bold text-lg leading-tight text-foreground truncate">
+            {profile?.username ?? 'Utilisateur'}
+          </p>
 
-          {/* Centres d'intérêts */}
-          {interestLabels.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {interestLabels.map((label) => (
-                <span
-                  key={label}
-                  className="bg-teal-dark/10 text-teal-dark text-xs px-2.5 py-0.5 rounded-button whitespace-nowrap"
-                >
-                  {label}
-                </span>
-              ))}
+          {/* Centres d'intérêt secondaires (2 max) — bg action-light */}
+          {secondaryInterests.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {secondaryInterests.map((id) => {
+                const cfg = INTEREST_CONFIG[id]
+                if (!cfg) return null
+                return (
+                  <span
+                    key={id}
+                    className="inline-flex items-center bg-[var(--color-action-light)] text-foreground text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap tracking-[0.04em]"
+                  >
+                    {cfg.label}
+                  </span>
+                )
+              })}
             </div>
           )}
 
-          {/* Stats : observations / espèces / streak */}
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="flex flex-col gap-0.5">
-              <p className="font-bold text-foreground">{observations}</p>
-              <p className="text-xs text-muted-foreground tracking-[0.48px]">
-                {t('home.profile.obs')}
-              </p>
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <p className="font-bold text-foreground">{species}</p>
-              <p className="text-xs text-muted-foreground tracking-[0.48px]">
-                {t('home.profile.species')}
-              </p>
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <p className="font-bold text-foreground">{streakDays}</p>
-              <p className="text-xs text-muted-foreground tracking-[0.48px]">
-                {t('home.profile.days')}
-              </p>
-            </div>
+          {/* Stats cards — fond cream-lighter, icône pastille + valeur + label */}
+          <div className="grid grid-cols-3 gap-2">
+            <StatCard
+              icon={Bird}
+              value={observations}
+              label={t('home.profile.obs')}
+              tone="primary"
+            />
+            <StatCard
+              icon={ClipboardList}
+              value={species}
+              label={t('home.profile.species')}
+              tone="teal"
+            />
+            <StatCard
+              icon={Flame}
+              value={streakDays}
+              label={t('home.profile.days')}
+              tone="warning"
+            />
           </div>
 
-          {/* Objectif personnel — progression hebdomadaire */}
-          <div className="flex flex-col gap-2">
+          {/* Objectif semaine — carte cream-lighter contenant barre gradient */}
+          <div className="bg-cream-lighter rounded-lg p-4 flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground tracking-[0.48px]">
+              <p className="text-xs text-foreground tracking-[0.04em]">
                 {t('home.profile.thisWeek')}
               </p>
-              <p className="text-xs font-bold text-foreground">
-                {weekCurrent}/{weekGoal}
+              <p className="text-xs text-foreground tracking-[0.04em]">
+                {weekCurrent}/{weekGoal} {t('home.profile.obs').toLowerCase()}
               </p>
             </div>
             <div
@@ -141,93 +208,138 @@ export function ProfileSidebar() {
                 current: weekCurrent,
                 goal: weekGoal,
               })}
-              className="h-2 rounded-full bg-border overflow-hidden"
+              className="h-2 rounded-full bg-cream-lighter border-[0.5px] border-border overflow-hidden relative"
             >
+              {/*
+                Gradient figé sur 100% de largeur, révélé via clip-path à
+                `progressPercent%`. Le bord droit visible du fill indique la
+                "chaleur" (jaune = début, orange = objectif atteint).
+              */}
               <div
-                className="h-full rounded-full bg-primary transition-all duration-500"
-                style={{ width: `${progressPercent}%` }}
+                className="absolute inset-0 rounded-full transition-[clip-path] duration-500 motion-reduce:transition-none"
+                style={{
+                  backgroundImage: heatGradient,
+                  clipPath: `inset(0 ${100 - progressPercent}% 0 0)`,
+                }}
               />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Migrateurs à suivre — suggestions personnalisées ou état vide */}
-      <div className="bg-cream-lighter border-[0.5px] border-border rounded-card px-6 py-6">
-        <div className="flex items-center gap-3 mb-4">
+      {/* ─── Migrateurs à suivre — suggestions personnalisées ───────────────
+          Specs Figma node 6385-92712 :
+           - Container : border 0.5px, rounded-card, padding 24px 0 (vertical)
+             avec padding horizontal 24px appliqué au contenu uniquement.
+           - Header : pastille teal-dark 32px + icon UsersRound 20px, titre
+             Muli 400 16px (pas bold).
+           - Items : gap vertical 16px, avatar 40px avec border 4px cream-lighter,
+             badge intérêt principal 20px absolute en bas-droite de l'avatar,
+             2 tags intérêts secondaires bg action-light, chevron droit dans
+             cercle 32px border 0.5px.
+           - 2 états : 3 migrateurs OU vide (pas d'état "moins de 3"). */}
+      <div className="bg-cream-lighter border-[0.5px] border-border rounded-card py-6 flex flex-col gap-5">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-6">
           <div className="bg-teal-dark size-8 rounded-full flex items-center justify-center shrink-0">
-            <Users className="size-4 text-white" aria-hidden="true" />
+            <UsersRound className="size-5 text-white" aria-hidden="true" />
           </div>
-          <div>
-            <p className="font-bold">{t('home.sidebar.migratorsTitle')}</p>
-            {/* Sous-titre contextuel : région si localisé, sinon global */}
-            {suggestedUsers && suggestedUsers.length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                {region
-                  ? t('home.sidebar.migratorsTerritory', { region })
-                  : t('home.sidebar.migratorsDaily')}
-              </p>
-            )}
-          </div>
+          <p className="text-base text-foreground">{t('home.sidebar.migratorsTitle')}</p>
         </div>
 
-        {/* Skeleton de chargement */}
+        {/* Loader — skeleton 3 items, même layout que l'état rempli */}
         {suggestionsLoading && (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4 px-6">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 animate-pulse">
                 <div className="size-10 rounded-full bg-muted shrink-0" />
                 <div className="flex-1 space-y-1.5">
                   <div className="h-3 bg-muted rounded w-2/3" />
-                  <div className="h-2 bg-muted rounded w-1/3" />
+                  <div className="h-3 bg-muted rounded w-1/2" />
                 </div>
+                <div className="size-8 rounded-full bg-muted shrink-0" />
               </div>
             ))}
           </div>
         )}
 
-        {/* Suggestions (>= 3 disponibles) */}
+        {/* État rempli — exactement 3 migrateurs */}
         {!suggestionsLoading && suggestedUsers && suggestedUsers.length >= 3 && (
-          <div className="flex flex-col gap-3">
-            {suggestedUsers.map((user) => (
-              <div key={user.id} className="flex items-center gap-3">
-                <Link
-                  to={`/profile/${user.username}`}
-                  className="size-10 rounded-full overflow-hidden bg-primary-light shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                >
-                  <img
-                    src={user.avatar_url ?? hermineIcon}
-                    alt={user.username}
-                    className="size-full object-cover"
-                  />
-                </Link>
-                <div className="flex-1 min-w-0">
+          <ul className="flex flex-col gap-4 px-6">
+            {suggestedUsers.slice(0, 3).map((user) => {
+              // Intérêt principal (#1) → badge sur l'avatar
+              const primaryId = user.interests?.[0]
+              const primaryCfg = primaryId ? INTEREST_CONFIG[primaryId] : null
+              // 2 centres d'intérêt secondaires (ordre préférence du migrateur)
+              const secondaries = (user.interests ?? []).slice(1, 3)
+
+              return (
+                <li key={user.id}>
                   <Link
                     to={`/profile/${user.username}`}
-                    className="font-bold text-sm text-foreground truncate block hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                    aria-label={`${t('home.sidebar.migratorsOpenProfile', { username: user.username, defaultValue: 'Voir le profil de {{username}}' })}`}
+                    className="flex items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 group"
                   >
-                    {user.username}
+                    {/* Avatar + badge intérêt principal */}
+                    <div className="relative shrink-0">
+                      <div className="size-10 rounded-full overflow-hidden bg-primary-light border-[3px] border-cream-lighter">
+                        <img
+                          src={user.avatar_url ?? hermineIcon}
+                          alt=""
+                          className="size-full object-cover"
+                        />
+                      </div>
+                      {primaryCfg && (
+                        <span
+                          aria-label={primaryCfg.label}
+                          title={primaryCfg.label}
+                          className="absolute -right-1 -bottom-1 size-5 rounded-full bg-cream flex items-center justify-center text-[11px] leading-none shadow-sm"
+                        >
+                          <span aria-hidden="true">{primaryCfg.emoji}</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Colonne centrale : username + tags secondaires */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-1">
+                      <p className="text-sm font-bold text-foreground truncate group-hover:underline">
+                        {user.username}
+                      </p>
+                      {secondaries.length > 0 && (
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {secondaries.map((id) => {
+                            const cfg = INTEREST_CONFIG[id]
+                            if (!cfg) return null
+                            return (
+                              <span
+                                key={id}
+                                className="inline-flex items-center bg-[var(--color-action-light)] text-foreground text-[11px] px-2 py-0.5 rounded-full whitespace-nowrap tracking-[0.04em] leading-tight"
+                              >
+                                {cfg.label}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Chevron — indicateur navigation vers profil */}
+                    <span
+                      aria-hidden="true"
+                      className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center shrink-0 text-foreground group-hover:bg-white transition-colors"
+                    >
+                      <ChevronRight className="size-4" />
+                    </span>
                   </Link>
-                  <p className="text-xs text-muted-foreground tracking-[0.48px]">
-                    {t('home.sidebar.migratorsObsCount', { count: user.posts_count })}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="flex items-center gap-1 h-7 px-3 rounded-button bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
-                  aria-label={`${t('home.sidebar.migratorsFollow')} ${user.username}`}
-                >
-                  <UserPlus className="size-3" aria-hidden="true" />
-                  {t('home.sidebar.migratorsFollow')}
-                </button>
-              </div>
-            ))}
-          </div>
+                </li>
+              )
+            })}
+          </ul>
         )}
 
-        {/* État vide — moins de 3 suggestions */}
+        {/* État vide — < 3 migrateurs disponibles dans le secteur */}
         {!suggestionsLoading && (!suggestedUsers || suggestedUsers.length < 3) && (
-          <p className="text-xs text-muted-foreground pl-11">{t('home.sidebar.migratorsEmpty')}</p>
+          <p className="text-xs text-muted-foreground px-6">{t('home.sidebar.migratorsEmpty')}</p>
         )}
       </div>
     </div>
