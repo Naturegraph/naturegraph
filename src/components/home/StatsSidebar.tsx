@@ -9,10 +9,12 @@
  */
 
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { TrendingUp, TrendingDown, ChevronDown, Globe, Leaf } from 'lucide-react'
+import { TrendingUp, TrendingDown, ChevronDown, ChevronRight, Globe } from 'lucide-react'
 import { useImpactStats, useTrendingSpecies } from '@/hooks/useStats'
 import { useLocation } from '@/contexts/LocationContext'
+import { INTEREST_CONFIG } from '@/constants/interests'
 import type { StatsPeriod } from '@/services/statsService'
 
 // ─── Constantes ─────────────────────────────────────────────────────────────
@@ -37,11 +39,13 @@ export function StatsSidebar() {
   const { t } = useTranslation()
   const { locationLabel } = useLocation()
 
-  // Périodes sélectionnées par l'utilisateur
+  // Périodes sélectionnées par l'utilisateur (Impact + Tendances indépendants)
   const [impactPeriod, setImpactPeriod] = useState<StatsPeriod>('month')
+  const [trendingPeriod, setTrendingPeriod] = useState<StatsPeriod>('week')
 
-  // Dropdown Impact ouvert
+  // État d'ouverture des dropdowns
   const [impactDropdownOpen, setImpactDropdownOpen] = useState(false)
+  const [trendingDropdownOpen, setTrendingDropdownOpen] = useState(false)
 
   // Extraire la région du locationLabel pour le filtre territorial
   // Format attendu : "Ville, Région" → on prend la partie après la virgule
@@ -52,8 +56,8 @@ export function StatsSidebar() {
   // ── Données Supabase ──────────────────────────────────────────────────────
   const { data: impact, isLoading: impactLoading } = useImpactStats(impactPeriod)
 
-  // Tendances : toujours sur la semaine en cours (widget simplifié MVP)
-  const { data: trending, isLoading: trendingLoading } = useTrendingSpecies('week', region)
+  // Tendances : période sélectionnable (semaine / mois / trimestre)
+  const { data: trending, isLoading: trendingLoading } = useTrendingSpecies(trendingPeriod, region)
 
   // ── Rendu ─────────────────────────────────────────────────────────────────
 
@@ -64,9 +68,9 @@ export function StatsSidebar() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="bg-teal-dark size-8 rounded-full flex items-center justify-center shrink-0">
-              <Globe className="size-4 text-white" aria-hidden="true" />
+              <Globe className="size-5 text-white" aria-hidden="true" />
             </div>
-            <p className="font-bold">{t('home.stats.impact')}</p>
+            <p className="text-base text-foreground">{t('home.stats.impact')}</p>
           </div>
 
           {/* Sélecteur de période */}
@@ -140,63 +144,141 @@ export function StatsSidebar() {
         </div>
       </div>
 
-      {/* ── Carte Tendances (MVP — widget passif, top 3 espèces) ── */}
-      {/* Masquée si 0 résultats après chargement (PRD §10.4) */}
-      {(trendingLoading || (trending && trending.length > 0)) && (
-        <div className="bg-cream-lighter border-[0.5px] border-border rounded-card px-6 py-6">
-          <div className="flex items-center gap-3 mb-6">
+      {/* ── Carte Tendances — Top 3 espèces avec navigation vers filtre ──
+          Specs Figma node 6385-92997 :
+           - Container : border 0.5px, rounded 12px, padding 24px 0
+           - Header : pastille teal-dark 32px + TrendingUp 20px + titre Muli
+             16px (pas bold) + période "Cette semaine" + ChevronDown 16px
+           - Item : gap 12px, image 48×48 rounded-lg, nom Muli bold 14px,
+             count Muli 400 12px, chevron cercle 32px border 0.5px
+           - 2 états : rempli (3 items) / vide (message discret) */}
+      <div className="bg-cream-lighter border-[0.5px] border-border rounded-card py-6 flex flex-col gap-6">
+        {/* Header — titre + période */}
+        <div className="flex items-center justify-between gap-6 px-6">
+          <div className="flex items-center gap-3">
             <div className="bg-teal-dark size-8 rounded-full flex items-center justify-center shrink-0">
-              <TrendingUp className="size-4 text-white" aria-hidden="true" />
+              <TrendingUp className="size-5 text-white" aria-hidden="true" />
             </div>
-            <p className="font-bold">{t('home.trending.title')}</p>
+            <p className="text-base text-foreground">{t('home.trending.title')}</p>
           </div>
 
-          {/* Liste des espèces tendances */}
-          {trendingLoading ? (
-            <div className="flex flex-col gap-5">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 animate-pulse">
-                  <div className="size-12 rounded-xl bg-muted shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-3 bg-muted rounded w-2/3" />
-                    <div className="h-2 bg-muted rounded w-1/3" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-5">
-              {(trending ?? []).map((species) => (
-                <div key={species.name} className="flex items-center gap-3">
-                  {/* Photo espèce ou placeholder */}
-                  <div className="size-12 rounded-xl overflow-hidden shrink-0 bg-muted">
-                    {species.imageUrl ? (
-                      <img
-                        src={species.imageUrl}
-                        alt={species.name}
-                        className="size-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="size-full flex items-center justify-center">
-                        <Leaf className="size-5 text-muted-foreground" aria-hidden="true" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-foreground truncate mb-1">
-                      {species.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground tracking-[0.48px]">
-                      {t('home.stats.observationCount', { count: species.observations })}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {/* Sélecteur de période — même logique que le dropdown Impact */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setTrendingDropdownOpen((o) => !o)}
+              className="flex items-center gap-2 text-xs tracking-[0.04em] text-foreground hover:opacity-70 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded"
+              aria-label={t('home.stats.changePeriod')}
+              aria-expanded={trendingDropdownOpen}
+            >
+              <span>{t(IMPACT_PERIODS.find((p) => p.value === trendingPeriod)!.labelKey)}</span>
+              <ChevronDown className="size-4" aria-hidden="true" />
+            </button>
+            {trendingDropdownOpen && (
+              <div className="absolute right-0 top-full mt-1 z-10 bg-cream-lighter border border-border rounded-lg shadow-lg overflow-hidden min-w-[120px]">
+                {IMPACT_PERIODS.map((p) => (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => {
+                      setTrendingPeriod(p.value)
+                      setTrendingDropdownOpen(false)
+                    }}
+                    className={`w-full text-left px-3 py-2 text-xs transition-colors hover:bg-muted/50 ${
+                      trendingPeriod === p.value ? 'font-bold text-primary' : 'text-foreground'
+                    }`}
+                  >
+                    {t(p.labelKey)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      )}
+
+        {/* Loader — skeleton 3 items aligné sur le layout final */}
+        {trendingLoading && (
+          <div className="flex flex-col gap-3 px-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 animate-pulse">
+                <div className="size-12 rounded-md bg-muted shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 bg-muted rounded w-2/3" />
+                  <div className="h-2 bg-muted rounded w-1/3" />
+                </div>
+                <div className="size-8 rounded-full bg-muted shrink-0" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* État rempli — 3 espèces cliquables (filtre sur /explore) */}
+        {!trendingLoading && trending && trending.length > 0 && (
+          <ul className="flex flex-col gap-3 px-6">
+            {trending.slice(0, 3).map((species) => {
+              // Fallback : si aucune photo, on affiche l'emoji du groupe
+              // taxonomique (plus lisible et contextualisé qu'une icône
+              // générique Leaf).
+              const fallbackEmoji = species.category
+                ? (INTEREST_CONFIG[species.category]?.emoji ?? '🌍')
+                : '🌍'
+              return (
+                <li key={species.name}>
+                  <Link
+                    to={`/explore?species=${encodeURIComponent(species.name)}`}
+                    aria-label={t('home.trending.openSpecies', { species: species.name })}
+                    className="flex items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 group"
+                  >
+                    {/* Image espèce — 48×48 rounded-md (fallback emoji catégorie) */}
+                    <div className="size-12 rounded-md overflow-hidden shrink-0 bg-[var(--color-action-light)]">
+                      {species.imageUrl ? (
+                        <img
+                          src={species.imageUrl}
+                          alt=""
+                          className="size-full object-cover"
+                          loading="lazy"
+                          width={48}
+                          height={48}
+                        />
+                      ) : (
+                        <div
+                          className="size-full flex items-center justify-center text-xl"
+                          aria-label={species.category ?? undefined}
+                        >
+                          <span aria-hidden="true">{fallbackEmoji}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Nom commun + nombre d'observations */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-2">
+                      <p className="font-bold text-sm text-foreground truncate leading-none group-hover:underline">
+                        {species.name}
+                      </p>
+                      <p className="text-xs text-foreground tracking-[0.04em] leading-none">
+                        {t('home.stats.observationCount', { count: species.observations })}
+                      </p>
+                    </div>
+
+                    {/* Chevron droite — cercle 32px border 0.5px */}
+                    <span
+                      aria-hidden="true"
+                      className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center shrink-0 text-foreground group-hover:bg-white transition-colors"
+                    >
+                      <ChevronRight className="size-4" />
+                    </span>
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+
+        {/* État vide — aucune espèce tendance disponible */}
+        {!trendingLoading && (!trending || trending.length === 0) && (
+          <p className="text-xs text-muted-foreground px-6">{t('home.trending.empty')}</p>
+        )}
+      </div>
     </div>
   )
 }

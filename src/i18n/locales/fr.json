@@ -393,7 +393,9 @@
     "feedEmpty": "Aucune observation pour le moment",
     "trending": {
       "title": "Tendances",
-      "thisWeek": "Cette semaine"
+      "thisWeek": "Cette semaine",
+      "empty": "Pas encore assez d'observations pour dégager une tendance.",
+      "openSpecies": "Voir les observations de {{species}}"
     },
     "location": {
       "title": "Localisation",

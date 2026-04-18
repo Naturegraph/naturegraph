@@ -48,8 +48,10 @@ export interface TrendingSpecies {
   name: string
   /** Nombre d'observations sur la période */
   observations: number
-  /** URL de la première photo associée (null si aucune) */
+  /** URL de la dernière photo associée (null si aucune) */
   imageUrl: string | null
+  /** Groupe taxonomique (sert de fallback emoji si imageUrl est null) */
+  category: string | null
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -163,10 +165,12 @@ export async function getImpactStats(period: StatsPeriod = 'month'): Promise<Imp
 
 /**
  * Top 3 espèces les plus observées sur la période.
- * Si `region` est fourni → filtre par région (utilisateur géolocalisé).
- * Sinon → global sur toute la plateforme.
  *
- * Récupère aussi la première photo associée à chaque espèce (via media).
+ * Stratégie de fallback (PRD — Tendances) :
+ *   1. Si `region` est fourni et qu'on y trouve ≥ 3 espèces → retour local.
+ *   2. Sinon → fallback global plateforme.
+ *
+ * Récupère aussi la dernière photo associée à chaque espèce (via media).
  */
 export async function getTrendingSpecies(
   period: StatsPeriod = 'week',
@@ -175,60 +179,73 @@ export async function getTrendingSpecies(
   const c = ensureClient()
   const { current } = getPeriodBounds(period)
 
-  // Récupère les posts publiés avec une espèce identifiée sur la période
-  let query = c
-    .from('posts')
-    .select('species_name, id')
-    .eq('status', 'published')
-    .not('species_name', 'is', null)
-    .gte('created_at', current)
+  /** Requête + agrégation pour une zone donnée (ou globale si region = null). */
+  async function queryZone(zoneRegion: string | null): Promise<TrendingSpecies[]> {
+    let q = c
+      .from('posts')
+      .select('species_name, id, created_at, taxonomic_group')
+      .eq('status', 'published')
+      .not('species_name', 'is', null)
+      .gte('created_at', current)
+      .order('created_at', { ascending: false })
 
-  // Filtre par région si géolocalisé
+    if (zoneRegion) q = q.eq('region', zoneRegion)
+
+    const { data: rows, error } = await q
+    if (error) throw new Error(error.message)
+    if (!rows || rows.length === 0) return []
+
+    // Agrégat espèce → count + id du post le plus récent + groupe taxonomique
+    // (fallback emoji quand aucune photo n'est disponible)
+    const countMap = new Map<string, { count: number; postId: string; category: string | null }>()
+    for (const row of rows) {
+      const name = row.species_name as string
+      const existing = countMap.get(name)
+      if (existing) {
+        existing.count++
+      } else {
+        countMap.set(name, {
+          count: 1,
+          postId: row.id as string,
+          category: (row.taxonomic_group as string | null) ?? null,
+        })
+      }
+    }
+
+    // Tri par count décroissant, top 3
+    const sorted = [...countMap.entries()].sort((a, b) => b[1].count - a[1].count).slice(0, 3)
+
+    // Dernière photo du post le plus récent (image réelle uniquement)
+    const postIds = sorted.map(([, v]) => v.postId)
+    const { data: mediaRows } = await c
+      .from('media')
+      .select('post_id, url')
+      .in('post_id', postIds)
+      .eq('status', 'ready')
+      .order('position', { ascending: true })
+
+    const imageMap = new Map<string, string>()
+    for (const m of mediaRows ?? []) {
+      if (!imageMap.has(m.post_id)) imageMap.set(m.post_id, m.url)
+    }
+
+    return sorted.map(([name, { count, postId, category }]) => ({
+      name,
+      observations: count,
+      imageUrl: imageMap.get(postId) ?? null,
+      category,
+    }))
+  }
+
+  // 1. Tentative locale si région fournie
   if (region) {
-    query = query.eq('region', region)
+    const local = await queryZone(region)
+    if (local.length >= 3) return local
+    // Fallback : la zone n'a pas assez de données, on bascule en global
   }
 
-  const { data: rows, error } = await query
-  if (error) throw new Error(error.message)
-  if (!rows || rows.length === 0) return []
-
-  // Comptage côté client (Supabase JS ne supporte pas GROUP BY nativement)
-  const countMap = new Map<string, { count: number; postId: string }>()
-  for (const row of rows) {
-    const name = row.species_name as string
-    const existing = countMap.get(name)
-    if (existing) {
-      existing.count++
-    } else {
-      countMap.set(name, { count: 1, postId: row.id as string })
-    }
-  }
-
-  // Tri par count décroissant, top 3
-  const sorted = [...countMap.entries()].sort((a, b) => b[1].count - a[1].count).slice(0, 3)
-
-  // Récupère une image pour chaque espèce (premier media du premier post)
-  const postIds = sorted.map(([, v]) => v.postId)
-  const { data: mediaRows } = await c
-    .from('media')
-    .select('post_id, url')
-    .in('post_id', postIds)
-    .eq('status', 'ready')
-    .order('position', { ascending: true })
-
-  // Map postId → première image
-  const imageMap = new Map<string, string>()
-  for (const m of mediaRows ?? []) {
-    if (!imageMap.has(m.post_id)) {
-      imageMap.set(m.post_id, m.url)
-    }
-  }
-
-  return sorted.map(([name, { count, postId }]) => ({
-    name,
-    observations: count,
-    imageUrl: imageMap.get(postId) ?? null,
-  }))
+  // 2. Global plateforme
+  return queryZone(null)
 }
 
 // ─── Stats utilisateur ──────────────────────────────────────────────────────
