@@ -364,7 +364,7 @@ export function HomeNavbar({
 
                       {/* Username + streak — XL Desktop uniquement */}
                       <div className="hidden xl:flex flex-col gap-0.5 items-start">
-                        <span className="text-foreground text-sm text-nowrap leading-tight font-medium">
+                        <span className="text-foreground text-sm text-nowrap leading-tight font-bold">
                           {profile?.username}
                         </span>
                         {/* Streak — affiché même à 0 pour inciter à l'engagement quotidien */}
@@ -374,7 +374,10 @@ export function HomeNavbar({
                         </span>
                       </div>
                       <ChevronDown
-                        className="hidden xl:block size-4 text-muted-foreground"
+                        className={[
+                          'hidden xl:block size-4 text-muted-foreground transition-transform duration-200',
+                          showProfileMenu ? 'rotate-180' : '',
+                        ].join(' ')}
                         aria-hidden="true"
                       />
                     </button>

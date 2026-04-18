@@ -235,7 +235,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
     <div className="flex flex-col gap-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="font-title font-bold text-lg text-foreground">Localisation</h2>
+        <p className="font-title font-bold text-base text-foreground">Localisation</p>
         <button
           type="button"
           onClick={onClose}
@@ -443,10 +443,10 @@ export function LocationModal({ onClose }: LocationModalProps) {
         aria-label="Changer de localisation"
         className={[
           // Mobile : bottom sheet fixe
-          'fixed inset-x-0 bottom-0 z-50 rounded-t-2xl',
+          'fixed inset-x-0 bottom-0 z-50 rounded-t-xl',
           // Desktop : dropdown absolue ancrée au bouton localisation
           'md:absolute md:inset-auto md:bottom-auto',
-          'md:top-[calc(100%+8px)] md:left-0 md:w-[400px] md:rounded-xl',
+          'md:top-[calc(100%+8px)] md:left-0 md:w-[400px] md:rounded-lg',
           // Style commun
           'bg-cream-lighter border border-border shadow-xl',
         ].join(' ')}

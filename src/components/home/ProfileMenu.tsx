@@ -1,12 +1,27 @@
 /**
- * ProfileMenu — Menu déroulant du profil utilisateur
- * ====================================================
+ * ProfileMenu — Menu déroulant du profil utilisateur (v2 — pixel-perfect Figma)
+ * ================================================================================
+ * Redesign selon Figma node 6385:97828.
+ *
  * Sections :
- *   - Entête       : avatar + username + @handle
- *   - Principal    : Mon profil (mis en avant teal) | Paramètres (feature-gated)
- *   - Accessibilité : Taille du texte (Petit/Moyen/Grand) | Contraste renforcé | Thème (feature-gated)
- *   - Déconnexion  : ouvre LogoutModal avec message saisonnier
- *   - Version      : dynamique depuis package.json via __APP_VERSION__
+ *   - Entête       : avatar 56px + border + username + @handle
+ *   - Principal    : Mon profil (bientôt) | Paramètres (bientôt)
+ *   - Thème        : Apparence (bientôt)
+ *   - Accessibilité: Taille (row → valeur courante + expand) | Contraste renforcé (toggle 40×20px)
+ *   - Déconnexion  : ouvre LogoutModal saisonnière
+ *   - Version      : "App version X.X.X" (caption, aligné gauche)
+ *
+ * Changements vs v1 (Figma spec) :
+ *   - Avatar : 56px outer avec border border-border + padding 4px
+ *   - Labels de section : sans uppercase, tracking-[0.04em], poids normal
+ *   - Items : h-12 (48px), gap-2 (8px), icône dans conteneur 33.6px rounded-full
+ *   - Item actif → bg-primary/10 rounded-lg (lavande #E7E9F7)
+ *   - Taille : row "Taille → Petite/Moyenne/Grande >" expandable inline
+ *   - Toggle contraste : 40×20px, thumb 16px (Figma spec)
+ *   - Thème section déplacée avant Accessibilité
+ *   - Divider uniquement avant Déconnexion
+ *   - Version : texte caption simple sans icône cadenas
+ *   - Mon profil : feature-gated (bientôt disponible)
  *
  * Responsive :
  *   - Desktop : dropdown absolue ancrée au bouton profil (parent relative)
@@ -15,37 +30,41 @@
  * Accessibilité :
  *   - role="dialog" + aria-modal + aria-label
  *   - Escape pour fermer, clic backdrop ferme
- *   - aria-pressed sur les options radio, aria-checked sur les toggles
- *
- * Feature gating :
- *   - Items marqués "coming soon" : badge visible, non cliquables, aria-disabled
- *   - Aucune navigation vers un écran vide
+ *   - aria-disabled sur les items inactifs, aria-checked sur les radios/switch
  *
  * TODO [BACKEND] — synchroniser textSize / highContrast avec profiles.preferences
  */
 
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { User, Settings, Type, Eye, LogOut, Palette, Lock } from 'lucide-react'
+import { User, Settings, LogOut, Palette, Eye, ChevronRight, Type } from 'lucide-react'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAccessibility, type TextSize } from '@/contexts/AccessibilityContext'
 import { LogoutModal } from './LogoutModal'
 
-// ─── Sous-composants ─────────────────────────────────────────────────────────
+// ─── Types & constantes ───────────────────────────────────────────────────────
 
-/** Séparateur de section avec label */
-function SectionLabel({ label }: { label: string }) {
-  return (
-    <p className="px-4 pt-3 pb-1 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-      {label}
-    </p>
-  )
+/** Mapping TextSize → libellé affiché dans la row "Taille" */
+const TEXT_SIZE_LABELS: Record<TextSize, string> = {
+  small: 'Petite',
+  medium: 'Moyenne',
+  large: 'Grande',
 }
 
-/** Trait séparateur */
+// ─── Sous-composants ─────────────────────────────────────────────────────────
+
+/** Trait séparateur full-bleed entre blocs */
 function Divider() {
-  return <div className="h-px bg-border mx-4 my-1" aria-hidden="true" />
+  return <div className="h-px bg-border" aria-hidden="true" />
+}
+
+/**
+ * Label de section — caption style Figma.
+ * Pas d'uppercase : correspond au design Figma (Principal, Thème, Accessibilité).
+ */
+function SectionLabel({ label }: { label: string }) {
+  return <p className="px-1 text-xs text-muted-foreground tracking-[0.04em]">{label}</p>
 }
 
 /** Badge "Bientôt" pour les features non disponibles */
@@ -57,7 +76,29 @@ function SoonBadge() {
   )
 }
 
-/** Ligne de menu — navigation ou action */
+/**
+ * Conteneur d'icône — 33.6px rounded-full (Figma spec).
+ * Centralise l'icône et applique la couleur selon le contexte.
+ */
+function IconWrap({ children, danger = false }: { children: React.ReactNode; danger?: boolean }) {
+  return (
+    <span
+      className={[
+        'shrink-0 flex items-center justify-center size-[33.6px] rounded-full',
+        danger ? 'text-[var(--color-error-action)]' : 'text-muted-foreground',
+      ].join(' ')}
+      aria-hidden="true"
+    >
+      {children}
+    </span>
+  )
+}
+
+/**
+ * Ligne de menu — navigation ou action.
+ * disabled → rendu en <div aria-disabled> + SoonBadge automatique.
+ * highlighted → fond lavande bg-primary/10 (item principal mis en avant).
+ */
 function MenuItem({
   icon,
   label,
@@ -66,6 +107,7 @@ function MenuItem({
   highlighted = false,
   danger = false,
   disabled = false,
+  rightContent,
 }: {
   icon?: React.ReactNode
   label: string
@@ -74,45 +116,39 @@ function MenuItem({
   highlighted?: boolean
   danger?: boolean
   disabled?: boolean
+  rightContent?: React.ReactNode
 }) {
-  const baseClass = [
-    'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors',
+  // Classe de base commune — items Figma : h-12 (48px), px-3, gap-2, rounded-lg
+  const base = [
+    'w-full flex items-center gap-2 px-3 h-12 rounded-md text-left transition-colors',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
-    highlighted && !disabled ? 'bg-teal-light/20 hover:bg-teal-light/30' : '',
-    !highlighted && !disabled ? 'hover:bg-muted/30' : '',
-    danger ? 'text-[var(--color-error-action)]' : 'text-foreground',
-    disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+    disabled
+      ? 'opacity-50 cursor-not-allowed'
+      : highlighted
+        ? 'bg-primary/10 hover:bg-primary/15 cursor-pointer'
+        : 'hover:bg-muted/30 cursor-pointer',
   ]
     .filter(Boolean)
     .join(' ')
 
   const content = (
     <>
-      {icon && (
-        <span
-          className={[
-            'shrink-0',
-            danger ? 'text-[var(--color-error-action)]' : 'text-muted-foreground',
-          ].join(' ')}
-          aria-hidden="true"
-        >
-          {icon}
-        </span>
-      )}
+      {icon && <IconWrap danger={danger}>{icon}</IconWrap>}
       <span
         className={[
           'flex-1 text-sm font-medium',
-          danger ? 'text-[var(--color-error-action)]' : '',
+          danger && !disabled ? 'text-[var(--color-error-action)]' : 'text-foreground',
         ].join(' ')}
       >
         {label}
       </span>
+      {rightContent}
     </>
   )
 
   if (disabled) {
     return (
-      <div className={baseClass} aria-disabled="true">
+      <div className={base} aria-disabled="true">
         {content}
         <SoonBadge />
       </div>
@@ -121,82 +157,108 @@ function MenuItem({
 
   if (href) {
     return (
-      <Link to={href} className={baseClass} onClick={onClick}>
+      <Link to={href} className={base} onClick={onClick}>
         {content}
       </Link>
     )
   }
 
   return (
-    <button type="button" onClick={onClick} className={baseClass}>
+    <button type="button" onClick={onClick} className={base}>
       {content}
     </button>
   )
 }
 
-/** Sélecteur 3 options taille du texte (Petit / Moyen / Grand) */
-function TextSizeSelector({
-  value,
-  onChange,
-}: {
-  value: TextSize
-  onChange: (v: TextSize) => void
-}) {
+/**
+ * Row "Taille du texte" — affiche la valeur courante + chevron.
+ * Expandable : déplie les 3 boutons radio inline (Petit / Moyen / Grand).
+ * Le chevron pivote 90° à l'ouverture.
+ */
+function TextSizeRow({ value, onChange }: { value: TextSize; onChange: (v: TextSize) => void }) {
+  const [expanded, setExpanded] = useState(false)
+
   const options: { key: TextSize; label: string; short: string }[] = [
-    { key: 'small', label: 'Petit', short: 'A' },
-    { key: 'medium', label: 'Moyen', short: 'A' },
-    { key: 'large', label: 'Grand', short: 'A' },
+    { key: 'small', label: 'Petite', short: 'A' },
+    { key: 'medium', label: 'Moyenne', short: 'A' },
+    { key: 'large', label: 'Grande', short: 'A' },
   ]
 
   return (
-    <div className="px-4 py-2 flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <span className="shrink-0 text-muted-foreground" aria-hidden="true">
-          <Type className="size-4" />
-        </span>
-        <span className="flex-1 text-sm font-medium text-foreground">Taille du texte</span>
-      </div>
-
-      {/* Boutons radio inline */}
-      <div role="group" aria-label="Taille du texte" className="flex gap-2 ml-6">
-        {options.map(({ key, label, short }) => (
-          <button
-            key={key}
-            type="button"
-            role="radio"
-            aria-checked={value === key}
-            onClick={() => onChange(key)}
-            title={label}
+    <div>
+      {/* Row principale — montre la valeur courante */}
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        aria-controls="text-size-options"
+        className="w-full flex items-center gap-2 px-3 h-12 rounded-md text-left hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+      >
+        <IconWrap>
+          <Type className="size-5" />
+        </IconWrap>
+        <span className="flex-1 text-sm font-medium text-foreground">Taille</span>
+        {/* Valeur courante + chevron rotatif */}
+        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+          {TEXT_SIZE_LABELS[value]}
+          <ChevronRight
             className={[
-              'flex-1 flex items-center justify-center h-9 rounded-lg border text-sm font-bold transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
-              value === key
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-transparent text-foreground border-border hover:border-foreground/40',
-              key === 'small' ? 'text-xs' : '',
-              key === 'large' ? 'text-base' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-          >
-            {short}
-            <span className="sr-only"> — {label}</span>
-          </button>
-        ))}
-      </div>
+              'size-4 transition-transform duration-200',
+              expanded ? 'rotate-90' : '',
+            ].join(' ')}
+            aria-hidden="true"
+          />
+        </span>
+      </button>
+
+      {/* Boutons radio inline — visibles quand expanded */}
+      {expanded && (
+        <div
+          id="text-size-options"
+          role="group"
+          aria-label="Taille du texte"
+          className="flex gap-2 px-3 pb-2"
+        >
+          {options.map(({ key, label, short }) => (
+            <button
+              key={key}
+              type="button"
+              role="radio"
+              aria-checked={value === key}
+              title={label}
+              onClick={() => {
+                onChange(key)
+                setExpanded(false)
+              }}
+              className={[
+                'flex-1 flex items-center justify-center h-9 rounded-md border font-bold transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+                value === key
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-transparent text-foreground border-border hover:border-foreground/40',
+                key === 'small' ? 'text-xs' : key === 'large' ? 'text-base' : 'text-sm',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              {short}
+              <span className="sr-only"> — {label}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
-/** Toggle on/off (contraste renforcé) */
-function ToggleItem({
-  icon,
-  label,
+/**
+ * Row "Contraste renforcé" — toggle switch.
+ * Dimensions Figma : container 40×20px, thumb 16px.
+ */
+function ContrastToggleRow({
   checked,
   onChange,
 }: {
-  icon?: React.ReactNode
-  label: string
   checked: boolean
   onChange: (v: boolean) => void
 }) {
@@ -206,28 +268,26 @@ function ToggleItem({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+      className="w-full flex items-center gap-2 px-3 h-12 rounded-md text-left hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
     >
-      {icon && (
-        <span className="shrink-0 text-muted-foreground" aria-hidden="true">
-          {icon}
-        </span>
-      )}
-      <span className="flex-1 text-sm font-medium text-foreground">{label}</span>
+      <IconWrap>
+        <Eye className="size-5" />
+      </IconWrap>
+      <span className="flex-1 text-sm font-medium text-foreground">Contraste renforcé</span>
 
-      {/* Toggle visuel */}
+      {/* Toggle visuel — 40×20px, thumb 16px (Figma spec) */}
       <div
         aria-hidden="true"
         className={[
-          'relative shrink-0 rounded-full transition-colors',
+          'relative shrink-0 rounded-full transition-colors duration-200',
           checked ? 'bg-primary' : 'bg-border',
         ].join(' ')}
-        style={{ width: '40px', height: '22px' }}
+        style={{ width: '40px', height: '20px' }}
       >
         <div
           className={[
-            'absolute top-0.5 size-[18px] rounded-full bg-white shadow transition-transform',
-            checked ? 'translate-x-[18px]' : 'translate-x-0.5',
+            'absolute top-[2px] size-4 rounded-full bg-white shadow transition-transform duration-200',
+            checked ? 'translate-x-[21px]' : 'translate-x-[2px]',
           ].join(' ')}
         />
       </div>
@@ -284,18 +344,21 @@ export function ProfileMenu({ onClose }: ProfileMenuProps) {
   // ── Contenu partagé dropdown + bottom sheet ───────────────────────────────
   const menuContent = (
     <>
-      {/* ── Entête profil ──────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 py-4 border-b border-border">
-        <div className="size-11 rounded-full overflow-hidden bg-primary-light shrink-0 flex items-center justify-center">
-          {profile?.avatar_url ? (
-            <img
-              src={profile.avatar_url}
-              alt={profile.username ?? 'Profil'}
-              className="size-full object-cover"
-            />
-          ) : (
-            <img src={hermineIcon} alt="" className="size-full object-cover" />
-          )}
+      {/* ── Entête profil ─────────────────────────────────────────────────── */}
+      {/* Avatar : 56px outer (border + 4px padding) selon Figma spec */}
+      <div className="flex items-center gap-3 px-6 py-5">
+        <div className="size-14 rounded-full border border-border bg-[var(--color-bg-primary)] p-1 shrink-0">
+          <div className="size-full rounded-full overflow-hidden">
+            {profile?.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt={profile.username ?? 'Profil'}
+                className="size-full object-cover"
+              />
+            ) : (
+              <img src={hermineIcon} alt="" className="size-full object-cover" />
+            )}
+          </div>
         </div>
         <div className="min-w-0">
           <p className="font-bold text-sm text-foreground truncate">
@@ -307,62 +370,57 @@ export function ProfileMenu({ onClose }: ProfileMenuProps) {
         </div>
       </div>
 
-      {/* ── Section Principal ───────────────────────────────────────────────── */}
-      <SectionLabel label="Principal" />
-
-      <MenuItem
-        icon={<User className="size-4" />}
-        label="Mon profil"
-        href={`/profile/${profile?.username ?? ''}`}
-        highlighted
-        onClick={onClose}
-      />
-
-      {/* Paramètres — feature gated (page globale en cours de construction) */}
-      <MenuItem icon={<Settings className="size-4" />} label="Paramètres" disabled />
-
       <Divider />
 
-      {/* ── Section Accessibilité ───────────────────────────────────────────── */}
-      <SectionLabel label="Accessibilité" />
+      {/* ── Blocs de sections — gap-4 entre chaque section (Figma : 16px) ─── */}
+      <div className="px-3 py-4 flex flex-col gap-4">
+        {/* ── Section Principal ─────────────────────────────────────────── */}
+        <div className="flex flex-col gap-2">
+          <SectionLabel label="Principal" />
+          <div>
+            {/* Mon profil — feature gated (page profil en construction) */}
+            <MenuItem icon={<User className="size-5" />} label="Mon profil" disabled />
+            {/* Paramètres — feature gated (page globale en cours de construction) */}
+            <MenuItem icon={<Settings className="size-5" />} label="Paramètres" disabled />
+          </div>
+        </div>
 
-      {/* Taille du texte — FONCTIONNEL */}
-      <TextSizeSelector value={textSize} onChange={setTextSize} />
+        {/* ── Section Thème (Figma : avant Accessibilité) ───────────────── */}
+        <div className="flex flex-col gap-2">
+          <SectionLabel label="Thème" />
+          <div>
+            {/* Apparence — feature gated (dark mode non implémenté) */}
+            <MenuItem icon={<Palette className="size-5" />} label="Apparence" disabled />
+          </div>
+        </div>
 
-      {/* Contraste renforcé — FONCTIONNEL */}
-      <ToggleItem
-        icon={<Eye className="size-4" />}
-        label="Contraste renforcé"
-        checked={highContrast}
-        onChange={setHighContrast}
-      />
-
-      {/* Thème — feature gated (dark mode non implémenté) */}
-      <div
-        className="w-full flex items-center gap-3 px-4 py-3 opacity-50 cursor-not-allowed"
-        aria-disabled="true"
-      >
-        <span className="shrink-0 text-muted-foreground" aria-hidden="true">
-          <Palette className="size-4" />
-        </span>
-        <span className="flex-1 text-sm font-medium text-foreground">Thème</span>
-        <SoonBadge />
+        {/* ── Section Accessibilité ─────────────────────────────────────── */}
+        <div className="flex flex-col gap-2">
+          <SectionLabel label="Accessibilité" />
+          <div>
+            {/* Taille du texte — FONCTIONNEL : row expandable */}
+            <TextSizeRow value={textSize} onChange={setTextSize} />
+            {/* Contraste renforcé — FONCTIONNEL : toggle */}
+            <ContrastToggleRow checked={highContrast} onChange={setHighContrast} />
+          </div>
+        </div>
       </div>
 
       <Divider />
 
-      {/* ── Déconnexion ─────────────────────────────────────────────────────── */}
-      <MenuItem
-        icon={<LogOut className="size-4" />}
-        label="Déconnexion"
-        onClick={() => setShowLogoutModal(true)}
-        danger
-      />
-
-      {/* ── Version dynamique ─────────────────────────────────────────────── */}
-      <p className="text-center text-xs text-muted-foreground/50 py-3 flex items-center justify-center gap-1">
-        <Lock className="size-3" aria-hidden="true" />v{__APP_VERSION__}
-      </p>
+      {/* ── Déconnexion + version ─────────────────────────────────────────── */}
+      <div className="px-3 py-3 flex flex-col gap-1">
+        <MenuItem
+          icon={<LogOut className="size-5" />}
+          label="Déconnexion"
+          onClick={() => setShowLogoutModal(true)}
+          danger
+        />
+        {/* Version dynamique — "App version X.X.X" (Figma spec, sans icône) */}
+        <p className="px-1 py-1 text-xs text-muted-foreground/60 text-center">
+          App version {__APP_VERSION__}
+        </p>
+      </div>
     </>
   )
 
@@ -381,7 +439,7 @@ export function ProfileMenu({ onClose }: ProfileMenuProps) {
         role="dialog"
         aria-modal="true"
         aria-label="Menu profil"
-        className="hidden md:block absolute top-[calc(100%+8px)] right-0 w-[288px] bg-[var(--color-bg-primary)] border border-border rounded-xl shadow-xl z-50 overflow-hidden"
+        className="hidden md:block absolute top-[calc(100%+8px)] right-0 w-[288px] bg-[var(--color-bg-primary)] border border-border rounded-lg shadow-xl z-50 overflow-hidden"
       >
         {menuContent}
       </div>
