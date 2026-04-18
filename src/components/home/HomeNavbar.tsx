@@ -244,7 +244,8 @@ export function HomeNavbar({
                       <Locate className="size-5 text-foreground shrink-0" aria-hidden="true" />
                     )}
                     <span className="text-foreground text-nowrap text-sm">
-                      {locationLabel ?? t('home.navbar.setLocation')}
+                      {/* ?? ne couvre pas '' (string vide) — || est nécessaire ici */}
+                      {locationLabel || t('home.navbar.setLocation')}
                     </span>
                   </button>
 

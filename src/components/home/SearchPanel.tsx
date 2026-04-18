@@ -353,7 +353,7 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
               'px-4 py-1.5 rounded-full text-sm font-medium border transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
               filter === f.id
-                ? 'bg-foreground text-cream-lighter border-foreground'
+                ? 'bg-primary text-primary-foreground border-primary'
                 : 'border-border text-foreground hover:bg-primary-light',
             ].join(' ')}
           >
