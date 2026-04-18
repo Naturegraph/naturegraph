@@ -14,10 +14,10 @@
  *   - Desktop/Tablet (≥768px) : localisation + recherche + bell + contribuer (icône) + avatar
  *   - Mobile (<768px) : logo + vue grille + filtre + bell — le reste est dans MobileBottomNav
  *
- * Sur mobile, les callbacks feedViewMode / onToggleFeedView / onOpenFeedFilters
- * permettent de contrôler le feed depuis la navbar (état levé dans Home.tsx).
- *
- * Accessibilité : aria-labels, focus-visible, skip link cible #main-content.
+ * Style boutons :
+ *   - Icônes seules et pills secondaires → btn-press btn-press-secondary rounded-full
+ *   - Contribuer (CTA primaire)          → btn-press btn-press-primary  rounded-full
+ *   Les effets hover/active/focus-visible sont gérés par _buttons.scss (pas d'inline custom).
  */
 
 import { useRef, useState } from 'react'
@@ -65,6 +65,20 @@ interface HomeNavbarProps {
    */
   onContributeTypeSelect?: (type: string) => void
 }
+
+// ─── Classes réutilisables ────────────────────────────────────────────────────
+
+/** Bouton icône seule (48×48) — style secondaire avec effet 3D press */
+const btnIcon =
+  'btn-press btn-press-secondary flex items-center justify-center size-12 rounded-full'
+
+/** Bouton pill avec label (h-48) — style secondaire avec effet 3D press */
+const btnPill =
+  'btn-press btn-press-secondary flex gap-3 h-12 items-center justify-center px-6 rounded-full'
+
+/** Bouton CTA primaire (h-48) — style primaire avec effet 3D press */
+const btnPrimary =
+  'btn-press btn-press-primary bg-primary flex items-center justify-center gap-3 h-12 rounded-full text-primary-foreground'
 
 // ─── Composant ───────────────────────────────────────────────────────────────
 
@@ -145,7 +159,7 @@ export function HomeNavbar({
                 <button
                   type="button"
                   onClick={onToggleFeedView}
-                  className="flex items-center justify-center size-12 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  className={btnIcon}
                   aria-label={
                     feedViewMode === 'list' ? t('home.feed.gridView') : t('home.feed.listView')
                   }
@@ -158,22 +172,22 @@ export function HomeNavbar({
                   )}
                 </button>
 
-                {/* Filtres — badge si filtres actifs */}
+                {/* Filtres — badge rouge si filtres actifs */}
                 <div className="relative">
                   <button
                     type="button"
                     onClick={onOpenFeedFilters}
-                    className="flex items-center justify-center size-12 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    className={btnIcon}
                     aria-label={t('home.feed.filterObs')}
                   >
                     <Filter className="size-5 text-foreground" aria-hidden="true" />
-                    {feedHasActiveFilters && (
-                      <span
-                        aria-hidden="true"
-                        className="absolute top-2 right-2 size-2 rounded-full bg-primary"
-                      />
-                    )}
                   </button>
+                  {feedHasActiveFilters && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute top-2 right-2 size-2 rounded-full bg-primary pointer-events-none"
+                    />
+                  )}
                 </div>
 
                 {/* Bell — connecté seulement */}
@@ -183,21 +197,21 @@ export function HomeNavbar({
                       ref={notifBtnRef}
                       type="button"
                       onClick={() => setShowNotifications((v) => !v)}
-                      className="flex items-center justify-center size-12 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                      className={btnIcon}
                       aria-label={t('home.navbar.notifications')}
                       aria-expanded={showNotifications}
                       aria-haspopup="dialog"
                     >
                       <Bell className="size-5 text-foreground" aria-hidden="true" />
-                      {(unreadCount ?? 0) > 0 && (
-                        <span
-                          aria-label={`${unreadCount} notifications non lues`}
-                          className="absolute top-1 right-1 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none"
-                        >
-                          {(unreadCount ?? 0) > 99 ? '99+' : unreadCount}
-                        </span>
-                      )}
                     </button>
+                    {(unreadCount ?? 0) > 0 && (
+                      <span
+                        aria-label={`${unreadCount} notifications non lues`}
+                        className="absolute top-1 right-1 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none pointer-events-none"
+                      >
+                        {(unreadCount ?? 0) > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
                     {showNotifications && (
                       <NotificationsPanel
                         anchorRef={notifBtnRef}
@@ -212,47 +226,40 @@ export function HomeNavbar({
                   TABLET + DESKTOP (≥768px)
                   ════════════════════════════════════════════════════════ */}
               <div className="hidden md:flex items-center md:gap-4 gap-3">
-                {/* ── Localisation — dropdown ancré au bouton ───────────────────────── */}
+                {/* ── Localisation — pill avec label de ville ou invite ── */}
                 <div className="relative">
-                  {locationLabel ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowLocationModal((v) => !v)}
-                      aria-expanded={showLocationModal}
-                      aria-haspopup="dialog"
-                      className="flex gap-3 h-12 items-center justify-center px-6 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                      aria-label={t('home.navbar.changeLocation')}
-                    >
+                  <button
+                    type="button"
+                    onClick={() => setShowLocationModal((v) => !v)}
+                    aria-expanded={showLocationModal}
+                    aria-haspopup="dialog"
+                    aria-label={
+                      locationLabel ? t('home.navbar.changeLocation') : t('home.navbar.setLocation')
+                    }
+                    className={btnPill}
+                  >
+                    {locationLabel ? (
                       <MapPin className="size-5 text-foreground shrink-0" aria-hidden="true" />
-                      <span className="text-foreground text-nowrap text-sm">{locationLabel}</span>
-                    </button>
-                  ) : (
-                    /* Pill "Localisation" — état neutre, invite à se localiser sans urgence */
-                    <button
-                      type="button"
-                      onClick={() => setShowLocationModal((v) => !v)}
-                      aria-expanded={showLocationModal}
-                      aria-haspopup="dialog"
-                      className="flex gap-3 h-12 items-center justify-center px-6 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                      aria-label={t('home.navbar.setLocation')}
-                    >
+                    ) : (
                       <Locate className="size-5 text-foreground shrink-0" aria-hidden="true" />
-                      <span className="text-foreground text-nowrap text-sm">
-                        {t('home.navbar.setLocation')}
-                      </span>
-                    </button>
-                  )}
+                    )}
+                    <span className="text-foreground text-nowrap text-sm">
+                      {/* ?? ne couvre pas '' (string vide) — || est nécessaire ici */}
+                      {locationLabel || t('home.navbar.setLocation')}
+                    </span>
+                  </button>
+
                   {showLocationModal && (
                     <LocationModal onClose={() => setShowLocationModal(false)} />
                   )}
                 </div>
 
-                {/* ── Recherche — dropdown ancrée au bouton ─────────────── */}
+                {/* ── Recherche ─────────────────────────────────────────── */}
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setShowSearch((v) => !v)}
-                    className="flex items-center justify-center size-12 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    className={btnIcon}
                     aria-label={t('home.navbar.search')}
                     aria-expanded={showSearch}
                     aria-haspopup="dialog"
@@ -269,21 +276,21 @@ export function HomeNavbar({
                       ref={notifBtnRef}
                       type="button"
                       onClick={() => setShowNotifications((v) => !v)}
-                      className="flex items-center justify-center size-12 rounded-full border border-border hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                      className={btnIcon}
                       aria-label={t('home.navbar.notifications')}
                       aria-expanded={showNotifications}
                       aria-haspopup="dialog"
                     >
                       <Bell className="size-5 text-foreground" aria-hidden="true" />
-                      {(unreadCount ?? 0) > 0 && (
-                        <span
-                          aria-label={`${unreadCount} notifications non lues`}
-                          className="absolute top-1 right-1 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none"
-                        >
-                          {(unreadCount ?? 0) > 99 ? '99+' : unreadCount}
-                        </span>
-                      )}
                     </button>
+                    {(unreadCount ?? 0) > 0 && (
+                      <span
+                        aria-label={`${unreadCount} notifications non lues`}
+                        className="absolute top-1 right-1 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none pointer-events-none"
+                      >
+                        {(unreadCount ?? 0) > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
                     {showNotifications && (
                       <NotificationsPanel
                         anchorRef={notifBtnRef}
@@ -295,33 +302,29 @@ export function HomeNavbar({
 
                 {/* ── Contribuer ───────────────────────────────────────── */}
                 <div className="relative">
-                  {/* Bouton XL : label + icône */}
-                  <div className="hidden xl:flex">
-                    <button
-                      type="button"
-                      onClick={handleContribute}
-                      className="bg-primary flex gap-3 h-12 items-center justify-center px-6 rounded-button text-primary-foreground hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 motion-safe:active:scale-[0.98]"
-                      aria-expanded={showContribute}
-                      aria-haspopup={isAuthenticated ? 'dialog' : undefined}
-                    >
-                      <Plus className="size-5 shrink-0" aria-hidden="true" />
-                      <span>{t('home.navbar.contribute')}</span>
-                    </button>
-                  </div>
+                  {/* XL Desktop : label + icône */}
+                  <button
+                    type="button"
+                    onClick={handleContribute}
+                    className={[btnPrimary, 'hidden xl:flex px-6'].join(' ')}
+                    aria-expanded={showContribute}
+                    aria-haspopup={isAuthenticated ? 'dialog' : undefined}
+                  >
+                    <Plus className="size-5 shrink-0" aria-hidden="true" />
+                    <span>{t('home.navbar.contribute')}</span>
+                  </button>
 
-                  {/* Bouton Tablet : icône seule */}
-                  <div className="xl:hidden flex">
-                    <button
-                      type="button"
-                      onClick={handleContribute}
-                      className="bg-primary flex items-center justify-center size-12 rounded-button text-primary-foreground hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                      aria-label={t('home.navbar.contribute')}
-                      aria-expanded={showContribute}
-                      aria-haspopup={isAuthenticated ? 'dialog' : undefined}
-                    >
-                      <Plus className="size-5" aria-hidden="true" />
-                    </button>
-                  </div>
+                  {/* Tablet : icône seule */}
+                  <button
+                    type="button"
+                    onClick={handleContribute}
+                    className={[btnPrimary, 'xl:hidden size-12'].join(' ')}
+                    aria-label={t('home.navbar.contribute')}
+                    aria-expanded={showContribute}
+                    aria-haspopup={isAuthenticated ? 'dialog' : undefined}
+                  >
+                    <Plus className="size-5" aria-hidden="true" />
+                  </button>
 
                   {showContribute && isAuthenticated && (
                     <ContributeModal
@@ -364,7 +367,7 @@ export function HomeNavbar({
                         <span className="text-foreground text-sm text-nowrap leading-tight font-medium">
                           {profile?.username}
                         </span>
-                        {/* Streak (jours consécutifs avec un partage) — affiché même à 0 pour inciter */}
+                        {/* Streak — affiché même à 0 pour inciter à l'engagement quotidien */}
                         <span className="text-xs text-nowrap leading-tight flex items-center gap-0.5 text-[var(--color-warning)]">
                           <Flame className="size-3 shrink-0" aria-hidden="true" />
                           {streakDays ?? 0} {t('home.profile.days')}
@@ -379,10 +382,8 @@ export function HomeNavbar({
                     {showProfileMenu && <ProfileMenu onClose={() => setShowProfileMenu(false)} />}
                   </div>
                 ) : (
-                  <Link
-                    to="/login"
-                    className="flex gap-2 h-12 items-center justify-center px-6 rounded-button border border-border hover:border-foreground/40 transition-colors text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 text-sm"
-                  >
+                  /* Lien "Se connecter" — style secondaire pill */
+                  <Link to="/login" className={[btnPill, 'text-foreground text-sm'].join(' ')}>
                     <User className="size-5 shrink-0" aria-hidden="true" />
                     <span>{t('home.navbar.login')}</span>
                   </Link>
@@ -392,9 +393,6 @@ export function HomeNavbar({
           </div>
         </div>
       </header>
-
-      {/* Les panels SearchPanel et LocationModal sont montés dans leurs div.relative
-          respectifs dans le header — voir ci-dessus (pattern NotificationsPanel). */}
     </>
   )
 }

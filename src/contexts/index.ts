@@ -4,5 +4,5 @@
 
 export { AuthProvider, useAuth } from './AuthContext'
 export { ThemeProvider, useThemeContext } from './ThemeContext'
-export { NotificationProvider, useNotification } from './NotificationContext'
+export { ToastProvider, useToast } from './ToastContext'
 export { LocationProvider, useLocation } from './LocationContext'

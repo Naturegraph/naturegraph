@@ -13,7 +13,7 @@
 
 import { useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useNotification } from '@/contexts/NotificationContext'
+import { useToast } from '@/contexts/ToastContext'
 import type { Interest } from '@/types/database'
 import { OnboardingInterests } from './OnboardingInterests'
 import { OnboardingStep2 } from './OnboardingStep2'
@@ -42,7 +42,7 @@ interface UserData {
 // ─── Composant ───────────────────────────────────────────────────────────────
 
 export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }: OnboardingProps) {
-  const { error: notifyError } = useNotification()
+  const { error: notifyError } = useToast()
   const [step, setStep] = useState<Step>('interests')
   const [exitModalOpen, setExitModalOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)

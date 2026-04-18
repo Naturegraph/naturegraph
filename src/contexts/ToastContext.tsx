@@ -1,8 +1,12 @@
 /* eslint-disable react-refresh/only-export-components */
 /**
- * NotificationContext — Système de toasts globaux
- * Fournit success() et error() pour afficher des notifications temporaires.
- * Les toasts disparaissent automatiquement après 4 secondes.
+ * ToastContext — Système de toasts globaux (notifications transitoires UI)
+ *
+ * ⚠️ À ne pas confondre avec le système de **notifications persistantes** (cloche, panel)
+ *    qui vit dans `src/services/notificationService.ts` + `src/hooks/useNotifications.ts`.
+ *
+ * Fournit `toast.success()` et `toast.error()` pour afficher des messages éphémères
+ * (4 secondes, coin supérieur droit) lors d'actions ponctuelles (sauvegarde, erreur, etc.).
  */
 
 import { createContext, useContext, useState, useCallback } from 'react'
@@ -10,16 +14,16 @@ import { X } from 'lucide-react'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-type NotificationType = 'success' | 'error'
+type ToastType = 'success' | 'error'
 
 interface Toast {
   id: string
-  type: NotificationType
+  type: ToastType
   title: string
   description?: string
 }
 
-interface NotificationContextValue {
+interface ToastContextValue {
   /** Afficher un toast de succès */
   success: (title: string, description?: string) => void
   /** Afficher un toast d'erreur */
@@ -28,11 +32,11 @@ interface NotificationContextValue {
 
 // ─── Context ────────────────────────────────────────────────────────────────
 
-const NotificationContext = createContext<NotificationContextValue | null>(null)
+const ToastContext = createContext<ToastContextValue | null>(null)
 
 // ─── Provider ───────────────────────────────────────────────────────────────
 
-export function NotificationProvider({ children }: { children: React.ReactNode }) {
+export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
 
   /** Supprimer un toast par id */
@@ -42,7 +46,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   /** Ajouter un toast avec auto-dismiss */
   const add = useCallback(
-    (type: NotificationType, title: string, description?: string) => {
+    (type: ToastType, title: string, description?: string) => {
       const id = Math.random().toString(36).slice(2)
       setToasts((prev) => [...prev, { id, type, title, description }])
       setTimeout(() => remove(id), 4000)
@@ -60,7 +64,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   )
 
   return (
-    <NotificationContext.Provider value={{ success, error }}>
+    <ToastContext.Provider value={{ success, error }}>
       {children}
 
       {/* Toast container — coin supérieur droit */}
@@ -105,14 +109,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           ))}
         </div>
       )}
-    </NotificationContext.Provider>
+    </ToastContext.Provider>
   )
 }
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
-export function useNotification() {
-  const ctx = useContext(NotificationContext)
-  if (!ctx) throw new Error('useNotification must be used within NotificationProvider')
+export function useToast() {
+  const ctx = useContext(ToastContext)
+  if (!ctx) throw new Error('useToast must be used within ToastProvider')
   return ctx
 }

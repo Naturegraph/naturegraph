@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useNotification } from '@/contexts/NotificationContext'
+import { useToast } from '@/contexts/ToastContext'
 import { SignupForm, LoginForm, VerificationForm } from '@/components/auth'
 import { AuthOrbBackground, useAuthOrbTracking } from '@/components/auth/AuthOrbBackground'
 import OnboardingComponent from '@/components/onboarding'
@@ -54,7 +54,7 @@ export default function AuthPage({
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { completeOnboarding } = useAuth()
-  const { success, error: notifyError } = useNotification()
+  const { success, error: notifyError } = useToast()
   const prefersReducedMotion = useReducedMotion()
   const { containerRef, mouse, handleMouseMove, handleMouseLeave } = useAuthOrbTracking()
 
