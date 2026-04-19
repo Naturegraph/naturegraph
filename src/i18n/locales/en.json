@@ -482,7 +482,8 @@
       "periodWeek": "This week",
       "periodMonth": "This month",
       "save": "Save filters",
-      "reset": "Reset"
+      "reset": "Reset",
+      "comingSoon": "Soon"
     },
     "post": {
       "seeMore": "See more",

@@ -233,7 +233,7 @@ export function FeedFilterPanel({
       </div>
 
       {/* ───── 1. Par catégorie d'espèces ───── */}
-      <fieldset className="flex flex-col gap-4">
+      <fieldset className="flex flex-col gap-5">
         <legend className={sectionLabelClass}>{t('home.filters.byCategory')}</legend>
         <div className="flex flex-wrap gap-2">
           {SPECIES_CATEGORIES.map((cat) => (
@@ -266,7 +266,7 @@ export function FeedFilterPanel({
       {/* ───── 3. Par type de partages ─────
           Rencontre nature (actif) + Instant nature (badge "Bientôt", disabled).
           Couleurs et icônes Figma : teal-dark (#006666) + Bird / orange (#CC7A00) + MountainSnow. */}
-      <fieldset className="flex flex-col gap-4">
+      <fieldset className="flex flex-col gap-5">
         <legend className={sectionLabelClass}>{t('home.filters.byShareType')}</legend>
 
         {/* Rencontre nature — actif.
@@ -313,7 +313,7 @@ export function FeedFilterPanel({
               {t('home.filters.instantNature')}
             </span>
             <span className="ml-auto inline-flex items-center h-6 px-2 rounded-full bg-primary-light text-primary text-[11px] font-bold leading-none uppercase tracking-wide">
-              {t('home.stats.comingSoon')}
+              {t('home.filters.comingSoon')}
             </span>
           </span>
         </div>
@@ -322,7 +322,7 @@ export function FeedFilterPanel({
       <hr className={dividerClass} />
 
       {/* ───── 4. Rayon géographique ───── */}
-      <fieldset className="flex flex-col gap-4">
+      <fieldset className="flex flex-col gap-5">
         <legend className={sectionLabelClass}>{t('home.filters.radiusTitle')}</legend>
         <div className="flex flex-wrap gap-2">
           {RADIUS_OPTIONS.map((opt) => {
@@ -343,7 +343,7 @@ export function FeedFilterPanel({
       <hr className={dividerClass} />
 
       {/* ───── 5. Période ───── */}
-      <fieldset className="flex flex-col gap-4">
+      <fieldset className="flex flex-col gap-5">
         <legend className={sectionLabelClass}>{t('home.filters.period')}</legend>
         <div className="flex flex-wrap gap-2">
           {PERIOD_OPTIONS.map((opt) => (
