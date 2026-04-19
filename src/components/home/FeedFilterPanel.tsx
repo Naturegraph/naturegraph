@@ -233,7 +233,7 @@ export function FeedFilterPanel({
       </div>
 
       {/* ───── 1. Par catégorie d'espèces ───── */}
-      <fieldset className="flex flex-col gap-5">
+      <fieldset className="flex flex-col gap-6">
         <legend className={sectionLabelClass}>{t('home.filters.byCategory')}</legend>
         <div className="flex flex-wrap gap-2">
           {SPECIES_CATEGORIES.map((cat) => (
@@ -266,63 +266,67 @@ export function FeedFilterPanel({
       {/* ───── 3. Par type de partages ─────
           Rencontre nature (actif) + Instant nature (badge "Bientôt", disabled).
           Couleurs et icônes Figma : teal-dark (#006666) + Bird / orange (#CC7A00) + MountainSnow. */}
-      <fieldset className="flex flex-col gap-5">
+      <fieldset className="flex flex-col gap-6">
         <legend className={sectionLabelClass}>{t('home.filters.byShareType')}</legend>
 
-        {/* Rencontre nature — actif.
-            Utilisation d'un <div> plutôt qu'un <label> car FilterCheckbox rend
-            un <button role="checkbox"> custom (pas un <input> natif). */}
-        <div className="flex items-center gap-4 select-none">
-          <FilterCheckbox
-            checked={local.shareTypes.encounter}
-            onChange={(next) =>
-              setLocal((prev) => ({
-                ...prev,
-                shareTypes: { ...prev.shareTypes, encounter: next },
-              }))
-            }
-            ariaLabel={t('home.filters.natureEncounter')}
-          />
-          <span className="flex items-center gap-2.5">
-            <span
-              aria-hidden="true"
-              className="flex items-center justify-center size-6 rounded-[4px] bg-teal-dark"
-            >
-              <Bird className="size-[18px] text-primary-foreground" strokeWidth={1.8} />
+        {/* Wrapper interne — les 2 rows restent collées l'une à l'autre (gap-3)
+            tout en conservant la respiration du legend grâce au gap-6 du fieldset. */}
+        <div className="flex flex-col gap-3">
+          {/* Rencontre nature — actif.
+              Utilisation d'un <div> plutôt qu'un <label> car FilterCheckbox rend
+              un <button role="checkbox"> custom (pas un <input> natif). */}
+          <div className="flex items-center gap-4 select-none">
+            <FilterCheckbox
+              checked={local.shareTypes.encounter}
+              onChange={(next) =>
+                setLocal((prev) => ({
+                  ...prev,
+                  shareTypes: { ...prev.shareTypes, encounter: next },
+                }))
+              }
+              ariaLabel={t('home.filters.natureEncounter')}
+            />
+            <span className="flex items-center gap-2.5">
+              <span
+                aria-hidden="true"
+                className="flex items-center justify-center size-6 rounded-[4px] bg-teal-dark"
+              >
+                <Bird className="size-[18px] text-primary-foreground" strokeWidth={1.8} />
+              </span>
+              <span className="font-body text-base text-foreground">
+                {t('home.filters.natureEncounter')}
+              </span>
             </span>
-            <span className="font-body text-base text-foreground">
-              {t('home.filters.natureEncounter')}
-            </span>
-          </span>
-        </div>
+          </div>
 
-        {/* Instant nature — désactivé avec badge "Bientôt" */}
-        <div
-          className="flex items-center gap-4 select-none opacity-60 cursor-not-allowed"
-          aria-disabled="true"
-        >
-          <FilterCheckbox checked={false} onChange={() => {}} ariaLabel="" />
-          <span className="flex items-center gap-2.5 flex-1 min-w-0">
-            <span
-              aria-hidden="true"
-              className="flex items-center justify-center size-6 rounded-[4px] bg-[#CC7A00]"
-            >
-              <MountainSnow className="size-[18px] text-primary-foreground" strokeWidth={1.8} />
+          {/* Instant nature — désactivé avec badge "Bientôt" */}
+          <div
+            className="flex items-center gap-4 select-none opacity-60 cursor-not-allowed"
+            aria-disabled="true"
+          >
+            <FilterCheckbox checked={false} onChange={() => {}} ariaLabel="" />
+            <span className="flex items-center gap-2.5 flex-1 min-w-0">
+              <span
+                aria-hidden="true"
+                className="flex items-center justify-center size-6 rounded-[4px] bg-[#CC7A00]"
+              >
+                <MountainSnow className="size-[18px] text-primary-foreground" strokeWidth={1.8} />
+              </span>
+              <span className="font-body text-base text-foreground">
+                {t('home.filters.instantNature')}
+              </span>
+              <span className="ml-auto inline-flex items-center h-6 px-2 rounded-full bg-primary-light text-primary text-[11px] font-bold leading-none uppercase tracking-wide">
+                {t('home.filters.comingSoon')}
+              </span>
             </span>
-            <span className="font-body text-base text-foreground">
-              {t('home.filters.instantNature')}
-            </span>
-            <span className="ml-auto inline-flex items-center h-6 px-2 rounded-full bg-primary-light text-primary text-[11px] font-bold leading-none uppercase tracking-wide">
-              {t('home.filters.comingSoon')}
-            </span>
-          </span>
+          </div>
         </div>
       </fieldset>
 
       <hr className={dividerClass} />
 
       {/* ───── 4. Rayon géographique ───── */}
-      <fieldset className="flex flex-col gap-5">
+      <fieldset className="flex flex-col gap-6">
         <legend className={sectionLabelClass}>{t('home.filters.radiusTitle')}</legend>
         <div className="flex flex-wrap gap-2">
           {RADIUS_OPTIONS.map((opt) => {
@@ -343,7 +347,7 @@ export function FeedFilterPanel({
       <hr className={dividerClass} />
 
       {/* ───── 5. Période ───── */}
-      <fieldset className="flex flex-col gap-5">
+      <fieldset className="flex flex-col gap-6">
         <legend className={sectionLabelClass}>{t('home.filters.period')}</legend>
         <div className="flex flex-wrap gap-2">
           {PERIOD_OPTIONS.map((opt) => (
