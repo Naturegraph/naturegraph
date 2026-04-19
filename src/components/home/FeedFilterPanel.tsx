@@ -232,7 +232,7 @@ export function FeedFilterPanel({
       </div>
 
       {/* ───── 1. Par catégorie d'espèces ───── */}
-      <fieldset className="flex flex-col gap-3">
+      <fieldset className="flex flex-col gap-4">
         <legend className={sectionLabelClass}>{t('home.filters.byCategory')}</legend>
         <div className="flex flex-wrap gap-2">
           {SPECIES_CATEGORIES.map((cat) => (
@@ -263,7 +263,7 @@ export function FeedFilterPanel({
 
       {/* ───── 3. Par type de partages ─────
           Instant nature masqué pour MVP (version future). */}
-      <fieldset className="flex flex-col gap-3">
+      <fieldset className="flex flex-col gap-4">
         <legend className={sectionLabelClass}>{t('home.filters.byShareType')}</legend>
 
         <label className="flex items-center gap-4 cursor-pointer select-none">
@@ -295,7 +295,7 @@ export function FeedFilterPanel({
       <hr className={dividerClass} />
 
       {/* ───── 4. Rayon géographique ───── */}
-      <fieldset className="flex flex-col gap-3">
+      <fieldset className="flex flex-col gap-4">
         <legend className={sectionLabelClass}>{t('home.filters.radiusTitle')}</legend>
         <div className="flex flex-wrap gap-2">
           {RADIUS_OPTIONS.map((opt) => {
@@ -316,7 +316,7 @@ export function FeedFilterPanel({
       <hr className={dividerClass} />
 
       {/* ───── 5. Période ───── */}
-      <fieldset className="flex flex-col gap-3">
+      <fieldset className="flex flex-col gap-4">
         <legend className={sectionLabelClass}>{t('home.filters.period')}</legend>
         <div className="flex flex-wrap gap-2">
           {PERIOD_OPTIONS.map((opt) => (
