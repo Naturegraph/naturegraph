@@ -269,8 +269,7 @@ export function FeedFilterPanel({
       <div className="flex flex-col gap-3">
         <p className={sectionLabelClass}>{t('home.filters.byShareType')}</p>
 
-        {/* Wrapper interne — les 2 rows restent collées l'une à l'autre (gap-3)
-            tout en conservant la respiration du legend grâce au gap-6 du fieldset. */}
+        {/* Wrapper interne — les 2 rows restent collées l'une à l'autre (gap-3). */}
         <div className="flex flex-col gap-3">
           {/* Rencontre nature — actif.
               Utilisation d'un <div> plutôt qu'un <label> car FilterCheckbox rend

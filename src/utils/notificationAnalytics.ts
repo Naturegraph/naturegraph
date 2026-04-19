@@ -35,6 +35,8 @@ export interface NotifAnalyticsProps {
   tab?: string
   /** Valeur du toggle pour preference_toggled. */
   enabled?: boolean
+  /** Index signature — compatibilité Record<string, unknown> pour window.ngTrack. */
+  [key: string]: unknown
 }
 
 type Tracker = (event: string, props?: Record<string, unknown>) => void
