@@ -23,6 +23,7 @@ import { EncounterStep2 } from './EncounterStep2'
 import { EncounterStep3 } from './EncounterStep3'
 import type { PhotoAspectRatio } from './EncounterStep1'
 import type { ObservationEntry } from './EncounterStep2'
+import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCreatePost } from '@/hooks/usePost'
 import { FEED_QUERY_KEY } from '@/hooks/useFeed'
@@ -37,6 +38,8 @@ interface EncounterFormData {
   // Étape 1
   files: File[]
   aspectRatio: PhotoAspectRatio
+  /** Métadonnées EXIF extraites à l'étape 1 (date, GPS, time-of-day). */
+  photoMetadata: PhotoMetadata
   // Étape 2
   observations: ObservationEntry[]
   helpIdentification: boolean
@@ -72,6 +75,7 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
   const [form, setForm] = useState<EncounterFormData>({
     files: [],
     aspectRatio: 'landscape',
+    photoMetadata: {},
     observations: [],
     helpIdentification: false,
     title: '',
@@ -332,6 +336,16 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
                 onFilesChange={(f) => set('files', f)}
                 aspectRatio={form.aspectRatio}
                 onAspectRatioChange={(r) => set('aspectRatio', r)}
+                onMetadataExtracted={(meta) => {
+                  // Pré-remplit l'étape 3 avec les métadonnées EXIF, sans
+                  // écraser une valeur déjà saisie manuellement par l'user.
+                  setForm((prev) => ({
+                    ...prev,
+                    photoMetadata: meta,
+                    encounterDate: meta.date ?? prev.encounterDate,
+                    timeOfDay: prev.timeOfDay || meta.timeOfDay || '',
+                  }))
+                }}
                 error={errors.files}
               />
             )}
