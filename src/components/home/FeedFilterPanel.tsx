@@ -1,34 +1,52 @@
 /**
- * FeedFilterPanel — Panneau de filtres du feed
+ * FeedFilterPanel — Panneau de filtres du feed (pixel-perfect Figma node 6385-103213)
  *
- * Desktop : sidebar fixe à droite du feed, overlay semi-transparent
- * Mobile : bottom sheet plein écran avec scroll
+ * Desktop : sidebar fixe à droite (w-[448px]), shadow large
+ * Mobile  : bottom sheet plein écran scrollable
  *
  * Filtres disponibles :
- *   - Catégorie d'espèces (chips toggle)
- *   - Demandes d'aide uniquement (checkbox)
- *   - Type de partage (checkboxes : Rencontre / Instant)
- *   - Rayon géographique (chips : Tout, 100, 200, 500 km)
- *   - Période (chips : Tout, Aujourd'hui, Cette semaine, Ce mois)
- *   - Mobile uniquement : tri (select dropdown)
+ *   - Catégorie d'espèces (chips toggle, multi-select)
+ *   - Demandes d'aide uniquement (checkbox) — mappé sur identification_status = 'pending'
+ *   - Type de partage (checkbox) — nature_encounter (Instant masqué pour MVP)
+ *   - Rayon géographique (chips radio: Tout, 100, 200, 500 km)
+ *     Nécessite locationCoords (LocationContext) — filtré client-side via Haversine
+ *   - Période (chips radio: Tout, Aujourd'hui, Cette semaine, Ce mois)
+ *   - Mobile uniquement : tri (select Récent/Populaire/Pour vous)
  *
  * Actions : Sauvegarder (applique), Réinitialiser (reset tous les filtres)
  *
- * TODO [BACKEND] — Ces filtres seront transmis à postService.getFeed()
- * via des paramètres de requête Supabase (.in(), .gte(), ST_DWithin).
+ * Design tokens (Figma) :
+ *   - Width panneau : 448px
+ *   - Chip default  : border 1px #C4C4CC, rounded-full, h-8
+ *   - Chip selected : bg-primary-light #E7E9F7, border-primary #5F5DD8
+ *   - Checkbox      : 20px, bg-primary quand coché, rounded-[4px]
+ *   - Titre section : Muli 16px 400 color text-muted-foreground
+ *   - Titre panneau : Quicksand 32px 700
+ *   - Bouton save   : bg-primary, rounded-full, h-12, Muli 700 16px white
+ *   - Reset         : text-primary Muli 700 16px souligné
  */
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, ChevronDown } from 'lucide-react'
+import { X, ChevronDown, Check } from 'lucide-react'
 import type { FeedTab } from './FeedSection'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types et constantes ─────────────────────────────────────────────────────
 
-/** Catégories d'espèces disponibles pour le filtrage */
-const SPECIES_CATEGORIES = ['Oiseaux', 'Mammifères', 'Insectes', 'Amphibiens', 'Reptiles'] as const
+/**
+ * Catégories d'espèces visibles dans l'UI (labels FR) + mapping vers le champ DB
+ * `taxonomic_group` (enum backend). Seules les 5 plus courantes sont exposées au
+ * MVP — extensibles plus tard (fish, plants, arachnids, etc.).
+ */
+const SPECIES_CATEGORIES: { label: string; value: string }[] = [
+  { label: 'Oiseaux', value: 'birds' },
+  { label: 'Mammifères', value: 'mammals' },
+  { label: 'Insectes', value: 'insects' },
+  { label: 'Amphibiens', value: 'amphibians' },
+  { label: 'Reptiles', value: 'reptiles' },
+]
 
-/** Options de rayon géographique en km (0 = tout) */
+/** Options de rayon géographique en km (0 = pas de filtre) */
 const RADIUS_OPTIONS = [
   { value: 0, labelKey: 'home.filters.radiusAll' },
   { value: 100, label: '100 km' },
@@ -36,7 +54,7 @@ const RADIUS_OPTIONS = [
   { value: 500, label: '500 km' },
 ] as const
 
-/** Options de période */
+/** Options de période — mappées sur posts.published_at côté backend */
 const PERIOD_OPTIONS = [
   { value: 'all', labelKey: 'home.filters.periodAll' },
   { value: 'today', labelKey: 'home.filters.periodToday' },
@@ -47,9 +65,13 @@ const PERIOD_OPTIONS = [
 export type PeriodFilter = (typeof PERIOD_OPTIONS)[number]['value']
 
 export interface FeedFilters {
+  /** Valeurs du champ posts.taxonomic_group (birds, mammals, etc.) */
   categories: string[]
+  /** Si true → filtre sur identification_status = 'pending' (proxy demande d'aide) */
   helpOnly: boolean
+  /** Type de partage (Instant masqué — seul encounter actif au MVP) */
   shareTypes: { encounter: boolean; instant: boolean }
+  /** Rayon en km (0 = pas de filtre) */
   radius: number
   period: PeriodFilter
 }
@@ -67,12 +89,86 @@ interface FeedFilterPanelProps {
   filters: FeedFilters
   onApply: (filters: FeedFilters) => void
   onClose: () => void
-  /** Onglet actif du feed — affiché dans le select mobile */
   activeTab: FeedTab
   onTabChange: (tab: FeedTab) => void
 }
 
-// ─── Composant ────────────────────────────────────────────────────────────────
+// ─── Sous-composants pixel-perfect ───────────────────────────────────────────
+
+/**
+ * Chip toggle (catégorie / rayon / période).
+ * Styles Figma : border 1px #C4C4CC, rounded-full, h-8.
+ * Actif : bg primary-light (#E7E9F7), border primary (#5F5DD8).
+ */
+function FilterChip({
+  active,
+  onClick,
+  children,
+  ariaPressed,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+  ariaPressed?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={ariaPressed ?? active}
+      className={[
+        'inline-flex items-center justify-center h-8 px-3 rounded-full',
+        'font-body text-sm leading-[1.5] transition-colors',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+        active
+          ? 'bg-primary-light border border-primary text-foreground'
+          : 'bg-transparent border border-border text-foreground hover:border-foreground/40',
+      ].join(' ')}
+    >
+      {children}
+    </button>
+  )
+}
+
+/**
+ * Checkbox custom (conforme Figma — aucun comportement natif visible).
+ * 20px carré, bg #5F5DD8 avec Check blanc quand coché, bordure 1.5px #C4C4CC sinon.
+ */
+function FilterCheckbox({
+  checked,
+  onChange,
+  id,
+  ariaLabel,
+}: {
+  checked: boolean
+  onChange: (next: boolean) => void
+  id?: string
+  ariaLabel?: string
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      id={id}
+      aria-checked={checked}
+      aria-label={ariaLabel}
+      onClick={() => onChange(!checked)}
+      className={[
+        'flex items-center justify-center size-5 rounded-[4px] shrink-0 transition-colors',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+        checked
+          ? 'bg-primary border border-primary'
+          : 'bg-background border-[1.5px] border-border hover:border-foreground/40',
+      ].join(' ')}
+    >
+      {checked && (
+        <Check className="size-3.5 text-primary-foreground" strokeWidth={3} aria-hidden="true" />
+      )}
+    </button>
+  )
+}
+
+// ─── Composant principal ─────────────────────────────────────────────────────
 
 export function FeedFilterPanel({
   filters,
@@ -83,31 +179,32 @@ export function FeedFilterPanel({
 }: FeedFilterPanelProps) {
   const { t } = useTranslation()
 
-  // État local pour édition avant sauvegarde
+  // État local — édition avant validation via "Sauvegarder"
   const [local, setLocal] = useState<FeedFilters>({ ...filters })
 
-  /** Toggle une catégorie dans la sélection */
-  function toggleCategory(cat: string) {
+  /** Toggle d'une catégorie dans la sélection multiple */
+  function toggleCategory(value: string) {
     setLocal((prev) => ({
       ...prev,
-      categories: prev.categories.includes(cat)
-        ? prev.categories.filter((c) => c !== cat)
-        : [...prev.categories, cat],
+      categories: prev.categories.includes(value)
+        ? prev.categories.filter((c) => c !== value)
+        : [...prev.categories, value],
     }))
   }
 
-  /** Réinitialise tous les filtres à leur valeur par défaut */
   function handleReset() {
     setLocal({ ...DEFAULT_FILTERS })
   }
 
-  /** Applique les filtres et ferme le panneau */
   function handleSave() {
     onApply(local)
     onClose()
   }
 
-  // ── Contenu partagé desktop/mobile ────────────────────────────────────────
+  // ── Contenu partagé desktop / mobile ──────────────────────────────────────
+
+  const sectionLabelClass = 'font-body text-base font-normal text-muted-foreground'
+  const dividerClass = 'border-t-[0.5px] border-border'
 
   const panelContent = (
     <div className="flex flex-col gap-6">
@@ -134,221 +231,189 @@ export function FeedFilterPanel({
         </div>
       </div>
 
-      {/* Par catégorie d'espèces */}
+      {/* ───── 1. Par catégorie d'espèces ───── */}
       <fieldset className="flex flex-col gap-3">
-        <legend className="text-base font-semibold text-foreground">
-          {t('home.filters.byCategory')}
-        </legend>
+        <legend className={sectionLabelClass}>{t('home.filters.byCategory')}</legend>
         <div className="flex flex-wrap gap-2">
-          {SPECIES_CATEGORIES.map((cat) => {
-            const isActive = local.categories.includes(cat)
-            return (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => toggleCategory(cat)}
-                aria-pressed={isActive}
-                className={[
-                  'h-8 px-3 rounded-full text-sm border transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
-                  isActive
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-background text-foreground border-border hover:border-foreground/40',
-                ].join(' ')}
-              >
-                {cat}
-              </button>
-            )
-          })}
+          {SPECIES_CATEGORIES.map((cat) => (
+            <FilterChip
+              key={cat.value}
+              active={local.categories.includes(cat.value)}
+              onClick={() => toggleCategory(cat.value)}
+            >
+              {cat.label}
+            </FilterChip>
+          ))}
         </div>
       </fieldset>
 
-      {/* Séparateur */}
-      <hr className="border-border border-[0.5px]" />
+      <hr className={dividerClass} />
 
-      {/* Demandes d'aide uniquement */}
-      <label className="flex items-center gap-3 cursor-pointer">
-        <input
-          type="checkbox"
+      {/* ───── 2. Demandes d'aide uniquement ───── */}
+      <label className="flex items-center gap-3 cursor-pointer select-none">
+        <FilterCheckbox
           checked={local.helpOnly}
-          onChange={(e) => setLocal((prev) => ({ ...prev, helpOnly: e.target.checked }))}
-          className="size-5 rounded border-border accent-primary cursor-pointer"
+          onChange={(next) => setLocal((prev) => ({ ...prev, helpOnly: next }))}
+          ariaLabel={t('home.filters.helpOnly')}
         />
-        <span className="text-base text-foreground">{t('home.filters.helpOnly')}</span>
+        <span className="font-body text-base text-foreground">{t('home.filters.helpOnly')}</span>
       </label>
 
-      {/* Séparateur */}
-      <hr className="border-border border-[0.5px]" />
+      <hr className={dividerClass} />
 
-      {/* Par type de partages */}
-      {/* NOTE : Instant nature masqué — version future. Filtre sur Rencontre nature uniquement. */}
+      {/* ───── 3. Par type de partages ─────
+          Instant nature masqué pour MVP (version future). */}
       <fieldset className="flex flex-col gap-3">
-        <legend className="text-base font-semibold text-foreground">
-          {t('home.filters.byShareType')}
-        </legend>
+        <legend className={sectionLabelClass}>{t('home.filters.byShareType')}</legend>
 
-        {/* Rencontre nature */}
-        <label
-          htmlFor="filter-encounter-type"
-          aria-label={t('home.filters.natureEncounter')}
-          className="flex items-center gap-3 cursor-pointer"
-        >
-          <input
-            id="filter-encounter-type"
-            type="checkbox"
+        <label className="flex items-center gap-4 cursor-pointer select-none">
+          <FilterCheckbox
             checked={local.shareTypes.encounter}
-            onChange={(e) =>
+            onChange={(next) =>
               setLocal((prev) => ({
                 ...prev,
-                shareTypes: { ...prev.shareTypes, encounter: e.target.checked },
+                shareTypes: { ...prev.shareTypes, encounter: next },
               }))
             }
-            className="size-5 rounded border-border accent-primary cursor-pointer"
+            ariaLabel={t('home.filters.natureEncounter')}
           />
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-2.5">
+            {/* Badge 24px teal-dark (#006666) — oiseau blanc */}
             <span
               aria-hidden="true"
-              className="flex items-center justify-center size-7 rounded-full bg-primary-light"
+              className="flex items-center justify-center size-6 rounded-[4px] bg-teal-dark text-[14px] leading-none"
             >
-              🦅
+              🐦
             </span>
-            <span className="text-base text-foreground">{t('home.filters.natureEncounter')}</span>
+            <span className="font-body text-base text-foreground">
+              {t('home.filters.natureEncounter')}
+            </span>
           </span>
         </label>
       </fieldset>
 
-      {/* Séparateur */}
-      <hr className="border-border border-[0.5px]" />
+      <hr className={dividerClass} />
 
-      {/* Rayon géographique */}
+      {/* ───── 4. Rayon géographique ───── */}
       <fieldset className="flex flex-col gap-3">
-        <legend className="text-base font-semibold text-foreground">
-          {t('home.filters.radiusTitle')}
-        </legend>
+        <legend className={sectionLabelClass}>{t('home.filters.radiusTitle')}</legend>
         <div className="flex flex-wrap gap-2">
           {RADIUS_OPTIONS.map((opt) => {
-            const isActive = local.radius === opt.value
             const label = 'labelKey' in opt ? t(opt.labelKey) : opt.label
             return (
-              <button
+              <FilterChip
                 key={opt.value}
-                type="button"
+                active={local.radius === opt.value}
                 onClick={() => setLocal((prev) => ({ ...prev, radius: opt.value }))}
-                aria-pressed={isActive}
-                className={[
-                  'h-8 px-3 rounded-full text-sm border transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
-                  isActive
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-background text-foreground border-border hover:border-foreground/40',
-                ].join(' ')}
               >
                 {label}
-              </button>
+              </FilterChip>
             )
           })}
         </div>
       </fieldset>
 
-      {/* Séparateur */}
-      <hr className="border-border border-[0.5px]" />
+      <hr className={dividerClass} />
 
-      {/* Période */}
+      {/* ───── 5. Période ───── */}
       <fieldset className="flex flex-col gap-3">
-        <legend className="text-base font-semibold text-foreground">
-          {t('home.filters.period')}
-        </legend>
+        <legend className={sectionLabelClass}>{t('home.filters.period')}</legend>
         <div className="flex flex-wrap gap-2">
-          {PERIOD_OPTIONS.map((opt) => {
-            const isActive = local.period === opt.value
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setLocal((prev) => ({ ...prev, period: opt.value as PeriodFilter }))}
-                aria-pressed={isActive}
-                className={[
-                  'h-8 px-3 rounded-full text-sm border transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
-                  isActive
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-background text-foreground border-border hover:border-foreground/40',
-                ].join(' ')}
-              >
-                {t(opt.labelKey)}
-              </button>
-            )
-          })}
+          {PERIOD_OPTIONS.map((opt) => (
+            <FilterChip
+              key={opt.value}
+              active={local.period === opt.value}
+              onClick={() => setLocal((prev) => ({ ...prev, period: opt.value as PeriodFilter }))}
+            >
+              {t(opt.labelKey)}
+            </FilterChip>
+          ))}
         </div>
       </fieldset>
     </div>
   )
 
+  // ── Footer (Save + Reset) — partagé ──────────────────────────────────────
+
+  const panelFooter = (
+    <div className="flex flex-col items-center gap-3 pt-2">
+      <button
+        type="button"
+        onClick={handleSave}
+        className={[
+          'w-full h-12 px-6 rounded-full bg-primary text-primary-foreground',
+          'font-body font-bold text-base leading-[1.5] transition-opacity',
+          'hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+        ].join(' ')}
+      >
+        {t('home.filters.save')}
+      </button>
+      <button
+        type="button"
+        onClick={handleReset}
+        className={[
+          'font-body font-bold text-base leading-[1.5] text-primary underline underline-offset-4',
+          'hover:opacity-80 transition-opacity',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded',
+        ].join(' ')}
+      >
+        {t('home.filters.reset')}
+      </button>
+    </div>
+  )
+
   return (
     <>
-      {/* ── Desktop : sidebar droite ─────────────────────────────────────── */}
+      {/* ═══════ Desktop : sidebar droite 448px ═══════ */}
       <div className="hidden md:block">
-        {/* Backdrop transparent cliquable */}
+        {/* Backdrop transparent cliquable — ferme le panneau au clic */}
         <div className="fixed inset-0 z-40" onClick={onClose} aria-hidden="true" />
 
-        {/* Panneau */}
         <aside
           role="dialog"
           aria-modal="true"
           aria-label={t('home.filters.title')}
-          className="fixed top-0 right-0 z-50 w-[380px] h-full bg-background border-l border-border shadow-lg overflow-y-auto"
+          className="fixed top-0 right-0 z-50 w-[448px] h-full bg-background overflow-y-auto shadow-[0_6px_16px_-4px_rgba(0,0,0,0.1)] flex flex-col"
         >
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 pt-6 pb-4 sticky top-0 bg-background z-10">
-            <h2 className="text-2xl font-bold text-foreground">{t('home.filters.title')}</h2>
+          {/* Header — titre + croix close */}
+          <div className="flex items-center justify-between px-6 pt-6 pb-0 sticky top-0 bg-background z-10">
+            <h2 className="font-heading text-[32px] font-bold leading-[1.2] text-foreground">
+              {t('home.filters.title')}
+            </h2>
             <button
               type="button"
               onClick={onClose}
               aria-label={t('common.close')}
               className="flex items-center justify-center size-8 rounded-full hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
-              <X className="size-5 text-foreground" aria-hidden="true" />
+              <X className="size-6 text-foreground" aria-hidden="true" />
             </button>
           </div>
 
           {/* Contenu scrollable */}
-          <div className="px-6 pb-6">{panelContent}</div>
+          <div className="px-6 pt-6 pb-6 flex-1">{panelContent}</div>
 
-          {/* Actions fixes en bas */}
-          <div className="sticky bottom-0 bg-background border-t border-border px-6 py-4 flex flex-col gap-3">
-            <button
-              type="button"
-              onClick={handleSave}
-              className="w-full h-11 bg-primary text-primary-foreground rounded-button font-semibold text-base hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            >
-              {t('home.filters.save')}
-            </button>
-            <button
-              type="button"
-              onClick={handleReset}
-              className="w-full text-center text-base text-foreground underline hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              {t('home.filters.reset')}
-            </button>
+          {/* Footer actions — collé en bas */}
+          <div className="px-6 pt-4 pb-6 bg-background border-t-[0.5px] border-border">
+            {panelFooter}
           </div>
         </aside>
       </div>
 
-      {/* ── Mobile : bottom sheet plein écran ────────────────────────────── */}
+      {/* ═══════ Mobile : bottom sheet plein écran ═══════ */}
       <div className="md:hidden">
-        {/* Backdrop */}
         <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} aria-hidden="true" />
 
-        {/* Panneau */}
         <div
           role="dialog"
           aria-modal="true"
           aria-label={t('home.filters.title')}
           className="fixed inset-x-0 bottom-0 z-50 bg-background rounded-t-2xl max-h-[90vh] flex flex-col"
         >
-          {/* Header */}
           <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
-            <h2 className="text-xl font-bold text-foreground">{t('home.filters.title')}</h2>
+            <h2 className="font-heading text-2xl font-bold text-foreground">
+              {t('home.filters.title')}
+            </h2>
             <button
               type="button"
               onClick={onClose}
@@ -359,25 +424,10 @@ export function FeedFilterPanel({
             </button>
           </div>
 
-          {/* Contenu scrollable */}
           <div className="overflow-y-auto flex-1 px-5 pb-4">{panelContent}</div>
 
-          {/* Actions fixes en bas */}
-          <div className="shrink-0 border-t border-border px-5 py-4 flex flex-col gap-3 pb-safe">
-            <button
-              type="button"
-              onClick={handleSave}
-              className="w-full h-11 bg-primary text-primary-foreground rounded-button font-semibold text-base hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            >
-              {t('home.filters.save')}
-            </button>
-            <button
-              type="button"
-              onClick={handleReset}
-              className="w-full text-center text-base text-foreground underline hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              {t('home.filters.reset')}
-            </button>
+          <div className="shrink-0 border-t-[0.5px] border-border px-5 py-4 pb-safe">
+            {panelFooter}
           </div>
         </div>
       </div>

@@ -13,11 +13,34 @@ import type { Post, PostFeedItem, ReactionType } from '@/types/database'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+/**
+ * Filtres appliqués au feed — schéma aligné avec FeedFilterPanel.
+ * Chaque filtre est optionnel et appliqué uniquement s'il a une valeur non par défaut.
+ */
+export interface FeedFilterParams {
+  /** Valeurs de posts.taxonomic_group (ex: ['birds', 'mammals']) */
+  categories?: string[]
+  /** Ne garder que les posts avec identification_status = 'pending' (demandes d'aide) */
+  helpOnly?: boolean
+  /** Filtre par type de partage (type = 'nature_encounter' | 'nature_instant') */
+  shareTypes?: { encounter: boolean; instant: boolean }
+  /** Période relative à maintenant, filtre sur published_at */
+  period?: 'all' | 'today' | 'week' | 'month'
+  /**
+   * Rayon en km (0 = pas de filtre).
+   * Le filtrage radius est appliqué côté hook (useFeed) via Haversine client-side,
+   * car PostgREST n'expose pas ST_DWithin directement. La valeur est ignorée ici
+   * mais conservée pour que la clé de cache React Query change quand elle varie.
+   */
+  radiusKm?: number
+}
+
 export interface FeedParams {
   page?: number
   limit?: number
   /** 'recent' | 'popular' | 'for_you' | 'trending' */
   tab?: 'recent' | 'popular' | 'for_you' | 'trending'
+  filters?: FeedFilterParams
 }
 
 export interface FeedResult {
@@ -76,7 +99,7 @@ const POST_FEED_SELECT = `
  *  - trending : popular des 48 dernières heures
  */
 export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
-  const { page = 1, limit = 20, tab = 'recent' } = params
+  const { page = 1, limit = 20, tab = 'recent', filters } = params
   const offset = (page - 1) * limit
 
   if (!supabase) throw new Error('Supabase non configuré')
@@ -86,6 +109,50 @@ export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
     .select(POST_FEED_SELECT, { count: 'exact' })
     .eq('status', 'published')
     .eq('visibility', 'public')
+
+  // ─── Filtres utilisateur (FeedFilterPanel) ─────────────────────────────
+  if (filters?.categories && filters.categories.length > 0) {
+    // Catégories d'espèces → colonne indexée posts.taxonomic_group
+    query = query.in('taxonomic_group', filters.categories)
+  }
+
+  if (filters?.helpOnly) {
+    // Proxy "demandes d'aide" : posts encore en attente d'identification.
+    // À remplacer par une colonne dédiée help_request lors d'une future migration.
+    query = query.eq('identification_status', 'pending')
+  }
+
+  if (filters?.shareTypes) {
+    // On construit la liste des types sélectionnés. Si les deux sont décochés →
+    // on force un filtre vide (aucun résultat) plutôt que d'ignorer silencieusement.
+    const activeTypes: string[] = []
+    if (filters.shareTypes.encounter) activeTypes.push('nature_encounter')
+    if (filters.shareTypes.instant) activeTypes.push('nature_instant')
+    if (activeTypes.length === 0) {
+      // Aucun type actif → retourner 0 résultat sans requête inutile.
+      return {
+        data: [],
+        pagination: { total: 0, page, limit, totalPages: 0, hasNext: false, hasPrevious: false },
+      }
+    }
+    // On filtre seulement si subset (évite .in() qui inclut tout si les 2 types sont actifs).
+    if (activeTypes.length === 1) {
+      query = query.eq('type', activeTypes[0])
+    }
+  }
+
+  if (filters?.period && filters.period !== 'all') {
+    // Mapping période → cutoff ISO sur published_at
+    const now = Date.now()
+    const msPerDay = 86_400_000
+    const cutoffMs: Record<'today' | 'week' | 'month', number> = {
+      today: now - msPerDay,
+      week: now - 7 * msPerDay,
+      month: now - 30 * msPerDay,
+    }
+    const cutoff = new Date(cutoffMs[filters.period]).toISOString()
+    query = query.gte('published_at', cutoff)
+  }
 
   // Tri selon l'onglet actif
   if (tab === 'popular') {
@@ -99,7 +166,10 @@ export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
     query = query.order('created_at', { ascending: false })
   }
 
-  const { data, error, count } = await query.range(offset, offset + limit - 1)
+  // Si un filtre de rayon est actif, on élargit la fenêtre pour compenser le
+  // filtrage client-side Haversine (effectué dans useFeed).
+  const fetchLimit = filters?.radiusKm && filters.radiusKm > 0 ? limit * 5 : limit
+  const { data, error, count } = await query.range(offset, offset + fetchLimit - 1)
 
   if (error) throw new Error(error.message)
 

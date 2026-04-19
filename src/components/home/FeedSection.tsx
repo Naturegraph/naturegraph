@@ -174,7 +174,7 @@ export function FeedSection({
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
-  const { updateLocation } = useLocation()
+  const { updateLocation, locationCoords } = useLocation()
   // Species Context Layer — filtre global activé depuis la recherche (PRD §3.4 / §6.1)
   const { activeSpecies, clearActiveSpecies } = useSpecies()
   const [activeTab, setActiveTab] = useState<FeedTab>('recent')
@@ -239,12 +239,27 @@ export function FeedSection({
     'for-you': 'for_you',
   }
 
-  // useFeed — données Supabase via React Query
+  // Construction du payload filtres → params backend
+  // On omet shareTypes si les deux sont cochés (par défaut = tous types) pour
+  // éviter des requêtes inutiles et une clé de cache qui change inutilement.
+  const feedFilters = {
+    categories: filters.categories,
+    helpOnly: filters.helpOnly,
+    shareTypes:
+      filters.shareTypes.encounter && filters.shareTypes.instant ? undefined : filters.shareTypes,
+    period: filters.period,
+    radiusKm: filters.radius,
+  }
+
+  // useFeed — données Supabase via React Query, avec filtres appliqués
   const {
     data: feedData,
     isLoading: isFeedLoading,
     isError: isFeedError,
-  } = useFeed({ tab: tabToServiceTab[activeTab], page, limit: 20 })
+  } = useFeed(
+    { tab: tabToServiceTab[activeTab], page, limit: 20, filters: feedFilters },
+    locationCoords,
+  )
 
   const hasActiveFilters =
     filters.categories.length > 0 ||
@@ -258,10 +273,16 @@ export function FeedSection({
     onHasActiveFiltersChange(hasActiveFilters)
   }, [hasActiveFilters, onHasActiveFiltersChange])
 
-  // Remettre à la page 1 quand l'onglet change (reset pendant le render via useState).
+  // Remettre à la page 1 quand l'onglet ou les filtres changent (reset synchrone via useState).
   const [prevTab, setPrevTab] = useState(activeTab)
   if (prevTab !== activeTab) {
     setPrevTab(activeTab)
+    setPage(1)
+  }
+  const filtersKey = JSON.stringify(filters)
+  const [prevFiltersKey, setPrevFiltersKey] = useState(filtersKey)
+  if (prevFiltersKey !== filtersKey) {
+    setPrevFiltersKey(filtersKey)
     setPage(1)
   }
 
@@ -270,10 +291,12 @@ export function FeedSection({
   const posts: MockPost[] = (feedData?.data ?? []).map(postFeedItemToMockPost)
 
   // Clé de cache du feed courant — passée au hook de réaction pour l'optimistic update
+  // Doit inclure les filtres pour matcher exactement l'entrée cache de useFeed.
   const currentFeedQueryKey = FEED_QUERY_KEY({
     tab: tabToServiceTab[activeTab],
     page,
     limit: 20,
+    filters: feedFilters,
   })
 
   // ── Mutation réaction ──────────────────────────────────────────────────
