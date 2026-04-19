@@ -261,13 +261,20 @@ export function FeedSection({
     locationCoords,
   )
 
-  const hasActiveFilters =
-    filters.categories.length > 0 ||
-    filters.helpOnly ||
-    !filters.shareTypes.encounter ||
-    !filters.shareTypes.instant ||
-    filters.radius !== 0 ||
-    filters.period !== 'all'
+  // Comptage des filtres actifs — affiché en badge numérique sur l'icône entonnoir.
+  // Règle : chaque groupe de filtre "modifié" par rapport au défaut compte pour 1.
+  //  - Catégories : 1 si au moins une est sélectionnée
+  //  - Demandes d'aide : 1 si cochée
+  //  - Types de partage : 1 si l'un des deux est décoché (subset)
+  //  - Rayon : 1 si différent de 0
+  //  - Période : 1 si différente de 'all'
+  const activeFiltersCount =
+    (filters.categories.length > 0 ? 1 : 0) +
+    (filters.helpOnly ? 1 : 0) +
+    (!filters.shareTypes.encounter || !filters.shareTypes.instant ? 1 : 0) +
+    (filters.radius !== 0 ? 1 : 0) +
+    (filters.period !== 'all' ? 1 : 0)
+  const hasActiveFilters = activeFiltersCount > 0
 
   useEffect(() => {
     onHasActiveFiltersChange(hasActiveFilters)
@@ -448,9 +455,14 @@ export function FeedSection({
               <Filter className="size-4" aria-hidden="true" />
               {hasActiveFilters && (
                 <span
-                  aria-hidden="true"
-                  className="absolute top-0.5 right-0.5 size-2 bg-primary rounded-full"
-                />
+                  aria-label={t('home.feed.activeFiltersCount', {
+                    count: activeFiltersCount,
+                    defaultValue: '{{count}} filtre(s) actif(s)',
+                  })}
+                  className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary-light text-primary text-[11px] font-bold leading-none border border-background"
+                >
+                  {activeFiltersCount}
+                </span>
               )}
             </button>
           </div>
