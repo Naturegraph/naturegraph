@@ -233,8 +233,8 @@ export function FeedFilterPanel({
       </div>
 
       {/* ───── 1. Par catégorie d'espèces ───── */}
-      <fieldset className="flex flex-col gap-3">
-        <legend className={sectionLabelClass}>{t('home.filters.byCategory')}</legend>
+      <div className="flex flex-col gap-3">
+        <p className={sectionLabelClass}>{t('home.filters.byCategory')}</p>
         <div className="flex flex-wrap gap-2">
           {SPECIES_CATEGORIES.map((cat) => (
             <FilterChip
@@ -246,7 +246,7 @@ export function FeedFilterPanel({
             </FilterChip>
           ))}
         </div>
-      </fieldset>
+      </div>
 
       <hr className={dividerClass} />
 
@@ -266,8 +266,8 @@ export function FeedFilterPanel({
       {/* ───── 3. Par type de partages ─────
           Rencontre nature (actif) + Instant nature (badge "Bientôt", disabled).
           Couleurs et icônes Figma : teal-dark (#006666) + Bird / orange (#CC7A00) + MountainSnow. */}
-      <fieldset className="flex flex-col gap-3">
-        <legend className={sectionLabelClass}>{t('home.filters.byShareType')}</legend>
+      <div className="flex flex-col gap-3">
+        <p className={sectionLabelClass}>{t('home.filters.byShareType')}</p>
 
         {/* Wrapper interne — les 2 rows restent collées l'une à l'autre (gap-3)
             tout en conservant la respiration du legend grâce au gap-6 du fieldset. */}
@@ -321,13 +321,13 @@ export function FeedFilterPanel({
             </span>
           </div>
         </div>
-      </fieldset>
+      </div>
 
       <hr className={dividerClass} />
 
       {/* ───── 4. Rayon géographique ───── */}
-      <fieldset className="flex flex-col gap-3">
-        <legend className={sectionLabelClass}>{t('home.filters.radiusTitle')}</legend>
+      <div className="flex flex-col gap-3">
+        <p className={sectionLabelClass}>{t('home.filters.radiusTitle')}</p>
         <div className="flex flex-wrap gap-2">
           {RADIUS_OPTIONS.map((opt) => {
             const label = 'labelKey' in opt ? t(opt.labelKey) : opt.label
@@ -342,13 +342,13 @@ export function FeedFilterPanel({
             )
           })}
         </div>
-      </fieldset>
+      </div>
 
       <hr className={dividerClass} />
 
       {/* ───── 5. Période ───── */}
-      <fieldset className="flex flex-col gap-3">
-        <legend className={sectionLabelClass}>{t('home.filters.period')}</legend>
+      <div className="flex flex-col gap-3">
+        <p className={sectionLabelClass}>{t('home.filters.period')}</p>
         <div className="flex flex-wrap gap-2">
           {PERIOD_OPTIONS.map((opt) => (
             <FilterChip
@@ -360,7 +360,7 @@ export function FeedFilterPanel({
             </FilterChip>
           ))}
         </div>
-      </fieldset>
+      </div>
     </div>
   )
 
