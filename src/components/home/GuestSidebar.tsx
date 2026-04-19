@@ -10,9 +10,9 @@
  *   Rotation quotidienne gérée par edge function Supabase (cron daily).
  */
 
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Users } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 
@@ -27,19 +27,16 @@ export function GuestSidebar() {
         <p className="text-sm text-muted-foreground leading-relaxed mb-5">
           {t('home.sidebar.joinDescription')}
         </p>
+        {/* Boutons alignés sur le design system (Button) avec effet btn-press 3D :
+            - primary (violet solid) pour le CTA principal "Créer mon compte"
+            - secondary (outline teal) pour l'action secondaire "Se connecter" */}
         <div className="flex flex-col gap-2">
-          <Link
-            to="/signup"
-            className="bg-primary flex items-center justify-center h-10 rounded-button text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-          >
+          <Button variant="primary" size="sm" to="/signup" className="w-full">
             {t('home.sidebar.createAccount')}
-          </Link>
-          <Link
-            to="/login"
-            className="flex items-center justify-center h-10 rounded-button border border-border text-foreground text-sm hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-          >
+          </Button>
+          <Button variant="secondary" size="sm" to="/login" className="w-full">
             {t('home.sidebar.login')}
-          </Link>
+          </Button>
         </div>
       </div>
 

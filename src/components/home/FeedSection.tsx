@@ -16,8 +16,9 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { LayoutList, LayoutGrid, Filter, X } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
 import { FeedPost } from './FeedPost'
 import { FeedGallery } from './FeedGallery'
 import { FeedFilterPanel, DEFAULT_FILTERS } from './FeedFilterPanel'
@@ -499,30 +500,22 @@ export function FeedSection({
               </p>
             </div>
             <div className="flex flex-wrap gap-3 justify-center">
+              {/* Boutons alignés sur le design system : variant secondary (outline teal)
+                  pour l'action secondaire et primary (violet solid) pour le CTA principal.
+                  Effet btn-press 3D géré par le composant Button. */}
               {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={handleResetFilters}
-                  className="flex items-center justify-center h-10 px-6 rounded-button border border-border hover:border-foreground/40 transition-colors text-foreground text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                >
+                <Button variant="secondary" size="sm" onClick={handleResetFilters}>
                   {t('home.feed.emptyReset')}
-                </button>
+                </Button>
               )}
               {isAuthenticated ? (
-                <button
-                  type="button"
-                  onClick={() => navigate('/contribute')}
-                  className="bg-primary flex items-center justify-center h-10 px-6 rounded-button text-primary-foreground hover:opacity-90 transition-opacity text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                >
+                <Button variant="primary" size="sm" onClick={() => navigate('/contribute')}>
                   {t('home.feed.emptyContribute')}
-                </button>
+                </Button>
               ) : (
-                <Link
-                  to="/signup"
-                  className="bg-primary flex items-center justify-center h-10 px-6 rounded-button text-primary-foreground hover:opacity-90 transition-opacity text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                >
+                <Button variant="primary" size="sm" to="/signup">
                   {t('home.feed.guestLimitCreate')}
-                </Link>
+                </Button>
               )}
             </div>
           </div>

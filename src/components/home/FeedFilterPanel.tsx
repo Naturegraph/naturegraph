@@ -28,8 +28,9 @@
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, ChevronDown, Check } from 'lucide-react'
+import { X, ChevronDown, Check, Bird, MountainSnow } from 'lucide-react'
 import type { FeedTab } from './FeedSection'
+import { Button } from '@/components/ui/Button'
 
 // ─── Types et constantes ─────────────────────────────────────────────────────
 
@@ -249,24 +250,29 @@ export function FeedFilterPanel({
 
       <hr className={dividerClass} />
 
-      {/* ───── 2. Demandes d'aide uniquement ───── */}
-      <label className="flex items-center gap-3 cursor-pointer select-none">
+      {/* ───── 2. Demandes d'aide uniquement ─────
+          <div> plutôt que <label> car FilterCheckbox rend un <button> custom. */}
+      <div className="flex items-center gap-3 select-none">
         <FilterCheckbox
           checked={local.helpOnly}
           onChange={(next) => setLocal((prev) => ({ ...prev, helpOnly: next }))}
           ariaLabel={t('home.filters.helpOnly')}
         />
         <span className="font-body text-base text-foreground">{t('home.filters.helpOnly')}</span>
-      </label>
+      </div>
 
       <hr className={dividerClass} />
 
       {/* ───── 3. Par type de partages ─────
-          Instant nature masqué pour MVP (version future). */}
+          Rencontre nature (actif) + Instant nature (badge "Bientôt", disabled).
+          Couleurs et icônes Figma : teal-dark (#006666) + Bird / orange (#CC7A00) + MountainSnow. */}
       <fieldset className="flex flex-col gap-4">
         <legend className={sectionLabelClass}>{t('home.filters.byShareType')}</legend>
 
-        <label className="flex items-center gap-4 cursor-pointer select-none">
+        {/* Rencontre nature — actif.
+            Utilisation d'un <div> plutôt qu'un <label> car FilterCheckbox rend
+            un <button role="checkbox"> custom (pas un <input> natif). */}
+        <div className="flex items-center gap-4 select-none">
           <FilterCheckbox
             checked={local.shareTypes.encounter}
             onChange={(next) =>
@@ -278,18 +284,39 @@ export function FeedFilterPanel({
             ariaLabel={t('home.filters.natureEncounter')}
           />
           <span className="flex items-center gap-2.5">
-            {/* Badge 24px teal-dark (#006666) — oiseau blanc */}
             <span
               aria-hidden="true"
-              className="flex items-center justify-center size-6 rounded-[4px] bg-teal-dark text-[14px] leading-none"
+              className="flex items-center justify-center size-6 rounded-[4px] bg-teal-dark"
             >
-              🐦
+              <Bird className="size-[18px] text-primary-foreground" strokeWidth={1.8} />
             </span>
             <span className="font-body text-base text-foreground">
               {t('home.filters.natureEncounter')}
             </span>
           </span>
-        </label>
+        </div>
+
+        {/* Instant nature — désactivé avec badge "Bientôt" */}
+        <div
+          className="flex items-center gap-4 select-none opacity-60 cursor-not-allowed"
+          aria-disabled="true"
+        >
+          <FilterCheckbox checked={false} onChange={() => {}} ariaLabel="" />
+          <span className="flex items-center gap-2.5 flex-1 min-w-0">
+            <span
+              aria-hidden="true"
+              className="flex items-center justify-center size-6 rounded-[4px] bg-[#CC7A00]"
+            >
+              <MountainSnow className="size-[18px] text-primary-foreground" strokeWidth={1.8} />
+            </span>
+            <span className="font-body text-base text-foreground">
+              {t('home.filters.instantNature')}
+            </span>
+            <span className="ml-auto inline-flex items-center h-6 px-2 rounded-full bg-primary-light text-primary text-[11px] font-bold leading-none uppercase tracking-wide">
+              {t('home.stats.comingSoon')}
+            </span>
+          </span>
+        </div>
       </fieldset>
 
       <hr className={dividerClass} />
@@ -335,19 +362,14 @@ export function FeedFilterPanel({
 
   // ── Footer (Save + Reset) — partagé ──────────────────────────────────────
 
+  // Footer actions — utilise le composant Button du design system pour
+  // cohérence (variant primary avec effet btn-press 3D). Le reset reste un
+  // lien souligné (pattern "action destructive douce" du Figma).
   const panelFooter = (
     <div className="flex flex-col items-center gap-3 pt-2">
-      <button
-        type="button"
-        onClick={handleSave}
-        className={[
-          'w-full h-12 px-6 rounded-full bg-primary text-primary-foreground',
-          'font-body font-bold text-base leading-[1.5] transition-opacity',
-          'hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
-        ].join(' ')}
-      >
+      <Button variant="primary" size="md" onClick={handleSave} className="w-full">
         {t('home.filters.save')}
-      </button>
+      </Button>
       <button
         type="button"
         onClick={handleReset}
