@@ -33,6 +33,16 @@ export interface AuthSubmitResult {
   error?: string
 }
 
+/**
+ * Contexte optionnel "Se souvenir de moi" (écran login uniquement).
+ * Quand fourni, une checkbox est affichée sous le champ email et sa
+ * valeur est passée au handler onSubmit via le second argument.
+ */
+export interface RememberMeConfig {
+  /** Label i18n affiché à côté de la checkbox */
+  label: string
+}
+
 export interface AuthFormProps {
   /** Titre principal (h2) */
   title: string
@@ -56,14 +66,19 @@ export interface AuthFormProps {
   switchLabel: string
   /** Label du séparateur central (ex: "ou continuer avec") */
   orContinueLabel: string
-  /** Handler de submit — reçoit la valeur trimée, renvoie un résultat normalisé */
-  onSubmit: (value: string) => Promise<AuthSubmitResult>
+  /**
+   * Handler de submit — reçoit la valeur trimée et, si rememberMe est configuré,
+   * l'état de la checkbox "Se souvenir de moi".
+   */
+  onSubmit: (value: string, rememberMe: boolean) => Promise<AuthSubmitResult>
   /** Handler du lien de bascule (login ↔ signup) */
   onSwitch: () => void
   /** Handler du bouton invité */
   onDiscoverAsGuest?: () => void
   /** Handler du logo (retour landing) */
   onNavigateToLanding?: () => void
+  /** Si fourni, affiche une checkbox "Se souvenir de moi" sous le champ email */
+  rememberMe?: RememberMeConfig
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -84,6 +99,7 @@ export function AuthForm({
   onSwitch,
   onDiscoverAsGuest,
   onNavigateToLanding,
+  rememberMe,
 }: AuthFormProps) {
   const { t } = useTranslation()
   const { signInWithSocial } = useAuth()
@@ -91,6 +107,8 @@ export function AuthForm({
   const [value, setValue] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  // Non cochée par défaut — session éphémère = comportement le plus sûr
+  const [remember, setRemember] = useState(false)
 
   // ── Submit ─────────────────────────────────────────────────────────────────
 
@@ -105,7 +123,7 @@ export function AuthForm({
     }
 
     setIsLoading(true)
-    const result = await onSubmit(trimmed)
+    const result = await onSubmit(trimmed, remember)
     setIsLoading(false)
 
     if (!result.success) {
@@ -155,6 +173,20 @@ export function AuthForm({
             error={error}
             disabled={isLoading}
           />
+
+          {/* Checkbox "Se souvenir de moi" — affichée uniquement sur login */}
+          {rememberMe && (
+            <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+                disabled={isLoading}
+                className="size-4 rounded border-[var(--color-border)] text-[var(--color-action-default)] focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] focus-visible:ring-offset-2 cursor-pointer disabled:cursor-not-allowed"
+              />
+              <span>{rememberMe.label}</span>
+            </label>
+          )}
 
           <div className="flex flex-col gap-3 items-center w-full pt-1">
             <Button type="submit" className="w-full" isLoading={isLoading}>

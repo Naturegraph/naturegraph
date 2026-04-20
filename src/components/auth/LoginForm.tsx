@@ -29,8 +29,8 @@ export function LoginForm({
   const { t } = useTranslation()
   const { signInWithOtp } = useAuth()
 
-  async function handleLogin(value: string): Promise<AuthSubmitResult> {
-    const result = await signInWithOtp(value)
+  async function handleLogin(value: string, remember: boolean): Promise<AuthSubmitResult> {
+    const result = await signInWithOtp(value, remember)
     if (result.error) {
       return { success: false, error: result.error.message }
     }
@@ -53,6 +53,7 @@ export function LoginForm({
       onSwitch={onSwitchToSignup}
       onDiscoverAsGuest={onDiscoverAsGuest}
       onNavigateToLanding={onNavigateToLanding}
+      rememberMe={{ label: t('auth.login.rememberMe') }}
     />
   )
 }

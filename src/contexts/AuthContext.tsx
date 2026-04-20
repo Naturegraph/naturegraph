@@ -15,6 +15,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { setRememberMe, clearAuthStorage } from '@/lib/authStorage'
 import { generateAndStoreOtp, validateOtp } from '@/lib/demoAuth'
 import type { Profile } from '@/types/database'
 
@@ -46,8 +47,14 @@ interface AuthContextValue extends AuthState {
   signUp: (emailOrPhone: string) => Promise<SignUpResult>
   /** Connexion par mot de passe */
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
-  /** OTP direct via Supabase */
-  signInWithOtp: (email: string) => Promise<{ error: Error | null }>
+  /**
+   * OTP direct via Supabase.
+   * @param email — adresse à laquelle envoyer le code
+   * @param remember — si true, session persistée en localStorage (30j).
+   *                   Sinon sessionStorage (effacée à la fermeture navigateur).
+   *                   Défaut : false (sécurité par défaut).
+   */
+  signInWithOtp: (email: string, remember?: boolean) => Promise<{ error: Error | null }>
   /** OAuth social (stub — affiche un message en attendant l'implémentation) */
   signInWithSocial: (provider: 'google' | 'apple' | 'facebook') => Promise<SocialResult>
   /** Vérification du code OTP */
@@ -110,7 +117,8 @@ function DemoAuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   // ── signInWithOtp : génère un nouvel OTP (flux login) ───────────────────
-  async function signInWithOtp(email: string) {
+  // Le paramètre remember est ignoré en mode démo (pas de vraie session).
+  async function signInWithOtp(email: string, _remember?: boolean) {
     generateAndStoreOtp(email)
     return { error: null }
   }
@@ -390,7 +398,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   // ─── OTP direct ──────────────────────────────────────────────────────────
-  async function signInWithOtp(email: string) {
+  // Le paramètre `remember` est posé AVANT l'envoi du code : quand l'utilisateur
+  // validera l'OTP (verifyOtp), Supabase appellera storage.setItem() qui lira
+  // ce flag et routera la session vers localStorage (persistante) ou
+  // sessionStorage (éphémère, effacée à la fermeture navigateur).
+  async function signInWithOtp(email: string, remember = false) {
     if (!supabase) return { error: new Error('Supabase not configured') }
 
     const now = Date.now()
@@ -398,6 +410,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const remaining = Math.ceil((OTP_RATE_LIMIT_MS - (now - lastOtpSentAtRef.current)) / 1000)
       return { error: new Error(`Attends ${remaining} secondes avant de renvoyer un code.`) }
     }
+
+    // Pose le choix "Se souvenir de moi" AVANT que la session soit créée
+    setRememberMe(remember)
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -440,6 +455,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function signOut() {
     if (!supabase) return
     const { error } = await supabase.auth.signOut()
+    // Purge systématique côté client (les deux storages + flag remember)
+    // même si la révocation serveur a réussi, pour garantir qu'aucune trace
+    // ne subsiste (cas multi-onglets, onglet "privé", etc.)
+    clearAuthStorage()
     // En cas d'échec réseau, forcer la déconnexion côté client quand même
     if (error) {
       console.error('[Auth] signOut error (forced local logout):', error.message)
