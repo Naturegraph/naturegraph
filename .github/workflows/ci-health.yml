@@ -1,0 +1,129 @@
+# CI Health Check — exécution automatique toutes les 4 heures
+#
+# Non-destructif : ne commit, push, pull, ou merge JAMAIS.
+# Ouvre automatiquement une issue GitHub si un check critique échoue.
+#
+# Secrets attendus (à configurer dans Settings > Secrets and variables > Actions) :
+#   SUPABASE_URL       — URL projet Supabase (ex: https://xxx.supabase.co)
+#   SUPABASE_ANON_KEY  — clé anon publique (safe à exposer, mais préférable en secret)
+#
+# Variables repository (facultatives, sinon les defaults du script sont utilisés) :
+#   STAGING_URL        — URL du staging (défaut: https://staging.naturegraph.fr)
+#   PROD_URL           — URL de la prod   (défaut: https://naturegraph.fr)
+
+name: CI Health
+
+on:
+  # Cron UTC — toutes les 4 heures (00:00, 04:00, 08:00, 12:00, 16:00, 20:00)
+  schedule:
+    - cron: '0 */4 * * *'
+  # Permet aussi un déclenchement manuel depuis l'onglet Actions
+  workflow_dispatch:
+
+# Permissions minimales : lecture du repo + écriture d'issues pour notifier les anomalies
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    # Timeout global — un check figé ne doit pas bloquer le runner
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Fetch tout l'historique pour que rev-list ahead/behind fonctionne
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run health check
+        id: health
+        # continue-on-error pour que l'étape "open issue" s'exécute même en cas d'échec
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          STAGING_URL: ${{ vars.STAGING_URL }}
+          PROD_URL: ${{ vars.PROD_URL }}
+          NO_COLOR: '1'
+        run: |
+          node scripts/ci-health.mjs | tee health-summary.txt
+          echo "exit=$?" >> $GITHUB_OUTPUT
+
+      - name: Upload JSON report
+        # Toujours uploader, même si le health-check a failed
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-health-report-${{ github.run_id }}
+          path: logs/
+          retention-days: 30
+
+      - name: Open issue on failure
+        # Seulement si health-check a exit code >= 2 (erreur critique)
+        if: steps.health.outputs.exit == '2' || steps.health.outputs.exit == '3'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs')
+            const summary = fs.readFileSync('health-summary.txt', 'utf8')
+            const title = `[ci-health] Anomalie detectee ${new Date().toISOString().slice(0, 16)}`
+            const body = [
+              '## CI Health Check — echec',
+              '',
+              'Le check automatique a detecte une erreur critique.',
+              '',
+              '### Resume',
+              '```',
+              summary,
+              '```',
+              '',
+              `Run complet : ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              '',
+              'Le rapport JSON detaille est dans les artifacts de ce run.',
+            ].join('\n')
+
+            // Chercher une issue "ci-health" ouverte existante pour ne pas spammer
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'ci-health',
+              per_page: 5,
+            })
+
+            if (existing.data.length > 0) {
+              // Ajouter un commentaire sur l'issue existante
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.data[0].number,
+                body,
+              })
+              console.log(`Comment added to existing issue #${existing.data[0].number}`)
+            } else {
+              // Creer une nouvelle issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['ci-health', 'bug'],
+              })
+              console.log('New ci-health issue created')
+            }
+
+      - name: Propagate exit code
+        # L'étape précédente avait continue-on-error pour permettre l'ouverture d'issue.
+        # Ici on force le job à être rouge si le health-check a failed.
+        if: steps.health.outputs.exit != '0' && steps.health.outputs.exit != '1'
+        run: |
+          echo "Health check failed with exit code ${{ steps.health.outputs.exit }}"
+          exit 1
