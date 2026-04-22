@@ -21,7 +21,21 @@
     "of": "sur",
     "yes": "Oui",
     "no": "Non",
-    "add": "Ajouter"
+    "add": "Ajouter",
+    "reset": "Réinitialiser"
+  },
+
+  "taxonomy": {
+    "birds": "Oiseaux",
+    "mammals": "Mammifères",
+    "insects": "Insectes",
+    "amphibians": "Amphibiens",
+    "reptiles": "Reptiles",
+    "arachnids": "Arachnides",
+    "mollusks": "Mollusques",
+    "fish": "Poissons",
+    "plants": "Plantes",
+    "other": "Autre"
   },
 
   "nav": {
@@ -666,6 +680,9 @@
       "notebook": "Carnet d'observations",
       "emptyHint": "Tape quelques lettres pour voir les suggestions !",
       "noResults": "Aucun résultat",
+      "noResultsBadge": "Aucun résultat",
+      "filterSpecies": "Filtrer",
+      "filterByGroup": "Filtrer par groupe",
       "addObservation": "Ajouter une nouvelle observation",
       "helpIdentification": "Activer l'aide à l'identification",
       "mystereTitle": "Mystère à résoudre !",
@@ -674,9 +691,11 @@
       "unknownSubtitle": "Un mystère à élucider",
       "dontKnow": "Je ne connais pas l'espèce",
       "individualCount": "Nb d'individus",
-      "publishBtn": "Partager !",
+      "publishBtn": "Partage ta rencontre !",
       "moreDetails": "Plus de détails",
-      "obsTitle": "Titre (optionnel)",
+      "detailsHint": "Décris les conditions, le comportement ou tout ce qui te semble important !",
+      "advancedOptions": "Options avancées",
+      "obsTitle": "Titre de ta rencontre",
       "obsTitlePlaceholder": "Rencontre matinale en forêt...",
       "publicLocation": "Rendre la localisation publique"
     },
@@ -686,7 +705,11 @@
       "dragDrop": "Glisse tes photos ici ou",
       "browse": "parcourir",
       "maxFiles": "{{count}} photos max",
-      "remove": "Supprimer la photo {{index}}"
+      "remove": "Supprimer la photo {{index}}",
+      "dragHint": "Glisse pour cadrer",
+      "sourceTitle": "Ajouter une photo",
+      "sourceCamera": "Appareil photo",
+      "sourceGallery": "Galerie de photos"
     },
     "description": {
       "label": "Description",
@@ -699,38 +722,39 @@
       "placeholder": "Brume matinale, floraison, migration..."
     },
     "date": {
-      "label": "Date d'observation",
+      "label": "Date de l'observation",
       "timeLabel": "Moment de la journée",
-      "morning": "Matin",
+      "morning": "Matinée",
       "afternoon": "Après-midi",
       "dusk": "Crépuscule",
       "evening": "Soirée",
       "night": "Nuit"
     },
     "weather": {
-      "label": "Météo",
+      "label": "Conditions de prise de vue",
       "sunny": "Ensoleillé",
       "cloudy": "Nuageux",
       "rainy": "Pluvieux",
-      "windy": "Venteux",
+      "windy": "Venté",
       "snowy": "Neigeux"
     },
     "habitat": {
-      "label": "Habitat",
+      "label": "Type d'habitat lors de l'observation ?",
       "forest": "Forêt",
-      "park_garden": "Parc / Jardin",
-      "prairie_heath": "Prairie / Lande",
-      "urban": "Urbain",
-      "river": "Rivière",
-      "lake_wetland": "Lac / Zone humide",
+      "park_garden": "Parc et jardin",
+      "prairie_heath": "Prairie et lande",
+      "urban": "Milieu urbain",
+      "river": "Rivière, lac et zone humide",
+      "lake_wetland": "Rivière, lac et zone humide",
       "mountain": "Montagne",
-      "sea_coast": "Mer / Côte"
+      "sea_coast": "Mer et littoral"
     },
     "location": {
-      "label": "Lieu",
+      "label": "Localisation",
       "placeholder": "Ville, forêt, lieu-dit...",
       "hide": "Masquer la localisation précise",
-      "hideDesc": "Seule la région sera visible publiquement"
+      "hideDesc": "Si désactivé, seule la région est visible. Active pour partager le lieu précis.",
+      "makePublic": "Activer pour rendre la localisation publique"
     },
     "species": {
       "label": "Espèce observée",

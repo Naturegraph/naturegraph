@@ -17,7 +17,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, X } from 'lucide-react'
-import type { TimeOfDay, WeatherCondition, HabitatType, Visibility } from '@/types/database'
+import type { TimeOfDay, WeatherCondition, HabitatType } from '@/types/database'
 import { EncounterStep1 } from './EncounterStep1'
 import { EncounterStep2 } from './EncounterStep2'
 import { EncounterStep3 } from './EncounterStep3'
@@ -34,6 +34,12 @@ import { useQueryClient } from '@tanstack/react-query'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+/**
+ * État du formulaire Rencontre — Figma v3 (complet) :
+ *   Étape 3 collecte Titre (optionnel), Description*, Date, Localisation +
+ *   Options avancées repliables : habitat / météo / moment de la journée.
+ *   Visibilité pilotée par le switch de localisation ; défaut 'public'.
+ */
 interface EncounterFormData {
   // Étape 1
   files: File[]
@@ -46,14 +52,13 @@ interface EncounterFormData {
   // Étape 3
   title: string
   description: string
-  tags: string[]
   encounterDate: string
   timeOfDay: TimeOfDay | ''
   weather: WeatherCondition | ''
   habitat: HabitatType | ''
   locationName: string
+  /** true = lat/lng masquées publiquement (seule la région est visible). */
   locationHidden: boolean
-  visibility: Visibility
 }
 
 const TOTAL_STEPS = 3
@@ -80,14 +85,14 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
     helpIdentification: false,
     title: '',
     description: '',
-    tags: [],
     encounterDate: new Date().toISOString().slice(0, 10),
     timeOfDay: '',
     weather: '',
     habitat: '',
     locationName: '',
-    locationHidden: false,
-    visibility: 'public',
+    // Par défaut la localisation précise est masquée (sobriété privacy) ;
+    // l'utilisateur peut activer le switch « rendre public » à l'étape 3.
+    locationHidden: true,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -184,17 +189,22 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
       // 1. Premier observation identifiée → champs species_* du post
       const firstKnown = form.observations.find((o) => !o.isUnknown && o.species)
 
+      // time-of-day : valeur saisie > fallback EXIF (ex : photo du matin)
+      const timeOfDay = form.timeOfDay || form.photoMetadata.timeOfDay || undefined
+
       const post = await createPost.mutateAsync({
         type: 'nature_encounter',
+        title: form.title.trim() || undefined,
         description: form.description.trim(),
-        visibility: form.visibility,
+        // Visibilité par défaut 'public' — plus de sélecteur dans l'UI Figma v3.
+        // La granularité GPS est pilotée séparément via `location_hidden`.
+        visibility: 'public',
         encounter_date: form.encounterDate,
-        time_of_day: form.timeOfDay || undefined,
+        time_of_day: timeOfDay,
         weather: form.weather || undefined,
         habitat: form.habitat || undefined,
         location_name: form.locationName || undefined,
         location_hidden: form.locationHidden,
-        tags: form.tags,
         species_name: firstKnown?.species?.commonName ?? undefined,
         scientific_name: firstKnown?.species?.scientificName ?? undefined,
         taxonomic_group: firstKnown?.species?.group ?? undefined,
@@ -268,34 +278,40 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
         aria-label={t('contribute.encounterTitle')}
         className="fixed inset-y-0 right-0 z-50 w-full md:w-[380px] bg-cream-lighter flex flex-col shadow-2xl"
       >
-        {/* ── Header sticky ──────────────────────────────────────────────── */}
-        <div className="shrink-0">
-          <div className="flex items-center justify-between px-5 py-4">
-            {/* Badge type */}
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal text-white text-xs font-bold">
-              <span aria-hidden="true">🦅</span>
-              {t('contribute.encounterTitle')}
+        {/* ── Header sticky ──────────────────────────────────────────────────
+            Figma : gap 12px entre la row top et la progress bar, padding 24/16px,
+            badge teal pill ~134x32, titre étape Muli 16 foreground, bouton close
+            rond 32px fond #F0F0F5, progress 3 segments h-1.5 rounded-full. */}
+        <div className="shrink-0 pt-6 px-4 pb-3 flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            {/* Badge type — pill teal avec label */}
+            <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-teal-dark text-white text-sm leading-none">
+              <span className="font-body">{t('contribute.encounterTitle')}</span>
             </span>
 
-            {/* Étape */}
-            <span className="text-sm text-muted-foreground" aria-live="polite">
-              {t('contribute.step', { current: step, total: TOTAL_STEPS })}
-            </span>
+            {/* Étape X/N + bouton close */}
+            <div className="flex items-center gap-4">
+              <span
+                className="font-body text-base text-foreground whitespace-nowrap"
+                aria-live="polite"
+              >
+                {t('contribute.step', { current: step, total: TOTAL_STEPS })}
+              </span>
 
-            {/* Fermer */}
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label={t('common.close')}
-              className="size-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <X className="size-4" aria-hidden="true" />
-            </button>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label={t('common.close')}
+                className="size-8 shrink-0 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <X className="size-5" strokeWidth={2} aria-hidden="true" />
+              </button>
+            </div>
           </div>
 
-          {/* Barre de progression — 3 segments */}
+          {/* Barre de progression — 3 segments h-1.5 rounded-full, gap-1 (4px) */}
           <div
-            className="flex gap-1 px-5 pb-3"
+            className="flex gap-1"
             role="progressbar"
             aria-valuenow={step}
             aria-valuemin={1}
@@ -306,15 +322,13 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
               <div
                 key={i}
                 className={[
-                  'h-1 flex-1 rounded-full transition-colors duration-300',
-                  step >= i ? 'bg-teal' : 'bg-muted',
+                  'h-1.5 flex-1 rounded-full transition-colors duration-300',
+                  step >= i ? 'bg-teal-dark' : 'bg-border',
                 ].join(' ')}
                 aria-hidden="true"
               />
             ))}
           </div>
-
-          <div className="h-px bg-border" aria-hidden="true" />
         </div>
 
         {/* ── Contenu scrollable ─────────────────────────────────────────── */}
@@ -367,8 +381,6 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
                 onTitleChange={(v) => set('title', v)}
                 description={form.description}
                 onDescriptionChange={(v) => set('description', v)}
-                tags={form.tags}
-                onTagsChange={(tgs) => set('tags', tgs)}
                 errors={errors}
                 encounterDate={form.encounterDate}
                 onDateChange={(v) => set('encounterDate', v)}
@@ -382,8 +394,6 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
                 onLocationChange={(v) => set('locationName', v)}
                 locationHidden={form.locationHidden}
                 onLocationHiddenChange={(v) => set('locationHidden', v)}
-                visibility={form.visibility}
-                onVisibilityChange={(v) => set('visibility', v)}
               />
             )}
           </form>

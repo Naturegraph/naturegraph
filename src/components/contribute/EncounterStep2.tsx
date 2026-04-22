@@ -12,7 +12,7 @@
  */
 
 import { useState, useId } from 'react'
-import { Search, Trash2, Plus, Minus, HelpCircle } from 'lucide-react'
+import { Search, Trash2, Plus, Minus, HelpCircle, Filter } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
 import { TAXREF_SPECIES } from '@/constants/taxrefSpecies'
@@ -31,20 +31,56 @@ export interface ObservationEntry {
 
 // ─── Sous-composants ──────────────────────────────────────────────────────────
 
-/** Barre de recherche avec autocomplétion pour ajouter une espèce */
+/**
+ * Groupes taxonomiques filtrables dans la recherche (Figma : panel filtres).
+ * Ordre et libellés alignés avec `TaxonomicGroup` (types/database.ts).
+ */
+const TAXONOMIC_FILTERS: { value: TaxonomicGroup; emoji: string; labelKey: string }[] = [
+  { value: 'birds', emoji: '🐦', labelKey: 'taxonomy.birds' },
+  { value: 'mammals', emoji: '🦊', labelKey: 'taxonomy.mammals' },
+  { value: 'insects', emoji: '🐝', labelKey: 'taxonomy.insects' },
+  { value: 'amphibians', emoji: '🐸', labelKey: 'taxonomy.amphibians' },
+  { value: 'reptiles', emoji: '🦎', labelKey: 'taxonomy.reptiles' },
+  { value: 'arachnids', emoji: '🕷️', labelKey: 'taxonomy.arachnids' },
+  { value: 'mollusks', emoji: '🐌', labelKey: 'taxonomy.mollusks' },
+  { value: 'fish', emoji: '🐟', labelKey: 'taxonomy.fish' },
+  { value: 'plants', emoji: '🌿', labelKey: 'taxonomy.plants' },
+  { value: 'other', emoji: '✨', labelKey: 'taxonomy.other' },
+]
+
+/** Barre de recherche avec autocomplétion + bouton filtre circulaire (Figma 6385-50262) */
 function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['species']) => void }) {
   const { t } = useTranslation()
   const listId = useId()
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
+  // Filtres par groupe taxonomique — Set vide = tous les groupes acceptés.
+  const [groupFilters, setGroupFilters] = useState<Set<TaxonomicGroup>>(new Set())
+  const [filterOpen, setFilterOpen] = useState(false)
+
+  function toggleGroup(g: TaxonomicGroup) {
+    setGroupFilters((prev) => {
+      const next = new Set(prev)
+      if (next.has(g)) next.delete(g)
+      else next.add(g)
+      return next
+    })
+  }
+
+  const filteredBase =
+    groupFilters.size === 0
+      ? TAXREF_SPECIES
+      : TAXREF_SPECIES.filter((s) => groupFilters.has(s.group))
 
   const results =
     query.length >= 2
-      ? TAXREF_SPECIES.filter(
-          (s) =>
-            s.commonName.toLowerCase().includes(query.toLowerCase()) ||
-            s.scientificName.toLowerCase().includes(query.toLowerCase()),
-        ).slice(0, 6)
+      ? filteredBase
+          .filter(
+            (s) =>
+              s.commonName.toLowerCase().includes(query.toLowerCase()) ||
+              s.scientificName.toLowerCase().includes(query.toLowerCase()),
+          )
+          .slice(0, 6)
       : []
 
   function handleSelect(species: (typeof TAXREF_SPECIES)[0]) {
@@ -54,56 +90,131 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
   }
 
   return (
-    <div className="relative">
-      <div className="flex items-center gap-2 h-11 px-3 rounded-xl border border-border bg-cream-lighter focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors">
-        <Search className="size-4 text-muted-foreground shrink-0" aria-hidden="true" />
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value)
-            setOpen(true)
-          }}
-          onFocus={() => setOpen(true)}
-          onBlur={() => setTimeout(() => setOpen(false), 150)}
-          placeholder={t('contribute.panel.searchSpecies')}
-          role="combobox"
-          aria-expanded={open && results.length > 0}
-          aria-autocomplete="list"
-          aria-controls={listId}
-          autoComplete="off"
-          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-        />
+    <div className="flex flex-col gap-3">
+      {/* Row : champ pill (flex-1) + bouton filtre circulaire — Figma 6385-50262 */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1">
+          <div className="flex items-center gap-2 h-12 px-5 rounded-full border border-border bg-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors">
+            <Search className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value)
+                setOpen(true)
+              }}
+              onFocus={() => setOpen(true)}
+              onBlur={() => setTimeout(() => setOpen(false), 150)}
+              placeholder={t('contribute.panel.searchSpecies')}
+              role="combobox"
+              aria-expanded={open && results.length > 0}
+              aria-autocomplete="list"
+              aria-controls={listId}
+              autoComplete="off"
+              className="flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+            />
+          </div>
+
+          {/* Résultats autocomplete */}
+          {open && results.length > 0 && (
+            <ul
+              id={listId}
+              role="listbox"
+              className="absolute z-20 w-full mt-1 rounded-2xl border border-border bg-background shadow-lg overflow-hidden"
+            >
+              {results.map((s) => (
+                <li key={s.id} role="option" aria-selected={false}>
+                  <button
+                    type="button"
+                    onMouseDown={() => handleSelect(s)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-primary-light/30 transition-colors text-left"
+                  >
+                    <span>
+                      <span className="text-sm font-medium text-foreground block">
+                        {s.commonName}
+                      </span>
+                      <span className="text-xs text-muted-foreground italic">
+                        {s.scientificName}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Bouton filtre — circulaire 48px, border 1px, bg background */}
+        <button
+          type="button"
+          onClick={() => setFilterOpen((v) => !v)}
+          aria-label={t('contribute.panel.filterSpecies', { defaultValue: 'Filtrer' })}
+          aria-expanded={filterOpen}
+          className={[
+            'relative size-12 shrink-0 rounded-full border flex items-center justify-center',
+            'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+            filterOpen || groupFilters.size > 0
+              ? 'border-primary bg-primary-light/40'
+              : 'border-border bg-background hover:border-foreground/30',
+          ].join(' ')}
+        >
+          <Filter className="size-5 text-foreground" aria-hidden="true" />
+          {groupFilters.size > 0 && (
+            <span
+              aria-hidden="true"
+              className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center"
+            >
+              {groupFilters.size}
+            </span>
+          )}
+        </button>
       </div>
 
-      {/* Résultats */}
-      {open && results.length > 0 && (
-        <ul
-          id={listId}
-          role="listbox"
-          className="absolute z-20 w-full mt-1 rounded-xl border border-border bg-cream-lighter shadow-lg overflow-hidden"
-        >
-          {results.map((s) => (
-            <li key={s.id} role="option" aria-selected={false}>
+      {/* Panel filtres — pills groupe taxonomique (Figma 6385-52598) */}
+      {filterOpen && (
+        <div className="rounded-2xl border-[0.5px] border-border bg-background p-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h4 className="font-title font-bold text-base text-foreground">
+              {t('contribute.panel.filterByGroup', { defaultValue: 'Filtrer par groupe' })}
+            </h4>
+            {groupFilters.size > 0 && (
               <button
                 type="button"
-                onMouseDown={() => handleSelect(s)}
-                className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-primary-light/30 transition-colors text-left"
+                onClick={() => setGroupFilters(new Set())}
+                className="text-xs text-primary font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
               >
-                <span>
-                  <span className="text-sm font-medium text-foreground block">{s.commonName}</span>
-                  <span className="text-xs text-muted-foreground italic">{s.scientificName}</span>
-                </span>
+                {t('common.reset', { defaultValue: 'Réinitialiser' })}
               </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* Aucun résultat */}
-      {open && query.length >= 2 && results.length === 0 && (
-        <div className="absolute z-20 w-full mt-1 rounded-xl border border-border bg-cream-lighter shadow-sm px-4 py-3">
-          <p className="text-sm text-muted-foreground">{t('contribute.panel.noResults')}</p>
+            )}
+          </div>
+          <div
+            className="flex flex-wrap gap-2"
+            role="group"
+            aria-label={t('contribute.panel.filterByGroup', { defaultValue: 'Filtrer par groupe' })}
+          >
+            {TAXONOMIC_FILTERS.map((f) => {
+              const active = groupFilters.has(f.value)
+              return (
+                <button
+                  key={f.value}
+                  type="button"
+                  role="checkbox"
+                  aria-checked={active}
+                  onClick={() => toggleGroup(f.value)}
+                  className={[
+                    'inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-body transition-colors',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                    active
+                      ? 'border-[0.5px] border-primary bg-primary-light text-foreground'
+                      : 'border-[0.5px] border-border bg-background text-foreground hover:border-foreground/30',
+                  ].join(' ')}
+                >
+                  <span aria-hidden="true">{f.emoji}</span>
+                  <span>{t(f.labelKey)}</span>
+                </button>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>
@@ -225,18 +336,19 @@ export function EncounterStep2({
       {/* Barre de recherche */}
       <SpeciesSearchBar onAdd={handleAddSpecies} />
 
-      {/* État vide — hermine + hint */}
+      {/* État vide — carte blanche bordurée (Figma Frame 4621) :
+          hermine + pill menthe "Aucun résultat" + hint en Quicksand Bold. */}
       {!hasObservations && (
-        <div className="flex flex-col items-center gap-3 py-6 text-center">
-          <img
-            src={hermineImg}
-            alt=""
-            width={80}
-            height={80}
-            className="opacity-70"
-            loading="lazy"
-          />
-          <p className="text-sm text-muted-foreground px-4">{t('contribute.panel.emptyHint')}</p>
+        <div className="rounded-xl border-[0.5px] border-border bg-background flex flex-col items-center overflow-hidden">
+          <img src={hermineImg} alt="" width={230} height={128} className="mt-6" loading="lazy" />
+          <div className="flex flex-col items-center gap-3 p-6 w-full">
+            <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-[#99FFCC] text-foreground text-sm font-body leading-none">
+              {t('contribute.panel.noResultsBadge', { defaultValue: 'Aucun résultat' })}
+            </span>
+            <p className="font-title font-bold text-lg text-foreground text-center">
+              {t('contribute.panel.emptyHint')}
+            </p>
+          </div>
         </div>
       )}
 

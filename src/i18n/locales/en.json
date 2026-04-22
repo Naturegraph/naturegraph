@@ -21,7 +21,21 @@
     "of": "of",
     "yes": "Yes",
     "no": "No",
-    "add": "Add"
+    "add": "Add",
+    "reset": "Reset"
+  },
+
+  "taxonomy": {
+    "birds": "Birds",
+    "mammals": "Mammals",
+    "insects": "Insects",
+    "amphibians": "Amphibians",
+    "reptiles": "Reptiles",
+    "arachnids": "Arachnids",
+    "mollusks": "Mollusks",
+    "fish": "Fish",
+    "plants": "Plants",
+    "other": "Other"
   },
 
   "nav": {
@@ -666,6 +680,9 @@
       "notebook": "Observation notebook",
       "emptyHint": "Type a few letters to see suggestions!",
       "noResults": "No results",
+      "noResultsBadge": "No results",
+      "filterSpecies": "Filter",
+      "filterByGroup": "Filter by group",
       "addObservation": "Add a new observation",
       "helpIdentification": "Enable identification help",
       "mystereTitle": "Mystery to solve!",
@@ -674,9 +691,11 @@
       "unknownSubtitle": "A mystery to solve",
       "dontKnow": "I don't know the species",
       "individualCount": "No. of individuals",
-      "publishBtn": "Share!",
+      "publishBtn": "Share your encounter!",
       "moreDetails": "More details",
-      "obsTitle": "Title (optional)",
+      "detailsHint": "Describe the conditions, behaviour or anything else that feels important!",
+      "advancedOptions": "Advanced options",
+      "obsTitle": "Title of your encounter",
       "obsTitlePlaceholder": "Morning encounter in the forest...",
       "publicLocation": "Make location public"
     },
@@ -686,7 +705,11 @@
       "dragDrop": "Drag your photos here or",
       "browse": "browse",
       "maxFiles": "{{count}} photos max",
-      "remove": "Remove photo {{index}}"
+      "remove": "Remove photo {{index}}",
+      "dragHint": "Drag to frame",
+      "sourceTitle": "Add a photo",
+      "sourceCamera": "Camera",
+      "sourceGallery": "Photo library"
     },
     "description": {
       "label": "Description",
@@ -730,7 +753,8 @@
       "label": "Location",
       "placeholder": "City, forest, place name...",
       "hide": "Hide precise location",
-      "hideDesc": "Only the region will be publicly visible"
+      "hideDesc": "If disabled, only the region is visible. Enable to share the exact spot.",
+      "makePublic": "Enable to make the location public"
     },
     "species": {
       "label": "Observed species",
