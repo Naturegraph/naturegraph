@@ -9,10 +9,17 @@
  * capture d'écran, WebP sans métadonnées), les champs restent undefined
  * et l'utilisateur remplit manuellement à l'étape 3.
  *
- * Lib : exifr (~5 KB gzip) — lecture uniquement, zéro dépendance native.
+ * Lib : exifr build `lite` (~15 KB gzip) — lecture TIFF+GPS uniquement.
+ *   · On n'a pas besoin de XMP/IPTC/ICC (full build) pour nos cas d'usage :
+ *     DateTimeOriginal + GPS sont dans le segment TIFF que lite décode.
+ *   · Gain ~10 KB gzip vs full — respecte le budget éco-conception (< 300 KB).
  */
 
-import exifr from 'exifr'
+// Import ciblé du build `lite` — pas d'entrée exports dans exifr/package.json,
+// d'où le chemin direct vers dist/*.esm.mjs. Stable (API identique à la racine).
+// Pas de .d.ts pour ce sous-chemin → @ts-expect-error ciblé sur l'import.
+// @ts-expect-error — exifr ne publie pas de types pour les builds dérivés
+import exifr from 'exifr/dist/lite.esm.mjs'
 import type { TimeOfDay } from '@/types/database'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
