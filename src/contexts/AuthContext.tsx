@@ -12,62 +12,26 @@
  *  - refreshProfile()
  */
 
-import { createContext, useContext, useEffect, useRef, useState } from 'react'
-import type { User, Session } from '@supabase/supabase-js'
+import { useEffect, useRef, useState } from 'react'
+import type { User } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { setRememberMe, clearAuthStorage } from '@/lib/authStorage'
 import { generateAndStoreOtp, validateOtp } from '@/lib/demoAuth'
 import type { Profile } from '@/types/database'
+import {
+  AuthContext,
+  type AuthState,
+  type SignUpResult,
+  type SocialResult,
+} from './authContextObject'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Re-export `useAuth` depuis l'objet contexte séparé pour préserver le chemin
+// d'import historique `@/contexts/AuthContext` utilisé dans 25+ fichiers.
+// Le hook et le Context vivent dans `authContextObject.ts` pour respecter
+// `react-refresh/only-export-components` (stabilité HMR Vite).
+export { useAuth } from './authContextObject'
 
-interface AuthState {
-  user: User | null
-  session: Session | null
-  profile: Profile | null
-  isLoading: boolean
-  isAuthenticated: boolean
-  /** True si l'utilisateur a un username — indique que l'onboarding est terminé */
-  onboardingCompleted: boolean
-}
-
-interface SignUpResult {
-  success: boolean
-  requiresVerification: boolean
-  error?: string
-}
-
-interface SocialResult {
-  success: boolean
-  error?: string
-}
-
-interface AuthContextValue extends AuthState {
-  /** Inscription / connexion via magic link OTP (email ou téléphone) */
-  signUp: (emailOrPhone: string) => Promise<SignUpResult>
-  /** Connexion par mot de passe */
-  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
-  /**
-   * OTP direct via Supabase.
-   * @param email — adresse à laquelle envoyer le code
-   * @param remember — si true, session persistée en localStorage (30j).
-   *                   Sinon sessionStorage (effacée à la fermeture navigateur).
-   *                   Défaut : false (sécurité par défaut).
-   */
-  signInWithOtp: (email: string, remember?: boolean) => Promise<{ error: Error | null }>
-  /** OAuth social (stub — affiche un message en attendant l'implémentation) */
-  signInWithSocial: (provider: 'google' | 'apple' | 'facebook') => Promise<SocialResult>
-  /** Vérification du code OTP */
-  verifyOtp: (email: string, token: string) => Promise<{ error: Error | null }>
-  /** Rafraîchit le profil après la fin de l'onboarding */
-  completeOnboarding: () => Promise<void>
-  signOut: () => Promise<void>
-  refreshProfile: () => Promise<void>
-}
-
-// ─── Context ─────────────────────────────────────────────────────────────────
-
-const AuthContext = createContext<AuthContextValue | null>(null)
+// ─── État par défaut ─────────────────────────────────────────────────────────
 
 const defaultState: AuthState = {
   user: null,
@@ -497,10 +461,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
-
-export function useAuth() {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
-  return ctx
-}
+// Le hook `useAuth` est défini dans `authContextObject.ts` et re-exporté en
+// haut de ce module, ce qui garde l'import `@/contexts/AuthContext` stable.
