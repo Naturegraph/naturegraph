@@ -105,7 +105,11 @@ export function FeedGallery({ posts }: FeedGalleryProps) {
     if (!post) return
 
     setLightbox({
-      images: post.images.map((img) => ({ url: img.url, alt: img.alt })),
+      images: post.images.map((img) => ({
+        url: img.url,
+        alt: img.alt,
+        cropData: img.cropData ?? null,
+      })),
       currentIndex: item.imageIndexInPost,
       authorName: post.author.name,
       authorAvatar: post.author.avatar,

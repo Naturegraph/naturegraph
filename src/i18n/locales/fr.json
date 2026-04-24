@@ -510,6 +510,8 @@
       "share": "Partager",
       "imageOf": "Image {{current}} sur {{total}}",
       "navImages": "Navigation images",
+      "enlarge": "Agrandir",
+      "goToImage": "Aller à la photo",
       "viewImage": "Voir l'image {{index}}",
       "reactLoginPrompt": "Connecte-toi pour réagir",
       "noReactions": "Sois le premier à réagir",
@@ -709,7 +711,26 @@
       "dragHint": "Glisse pour cadrer",
       "sourceTitle": "Ajouter une photo",
       "sourceCamera": "Appareil photo",
-      "sourceGallery": "Galerie de photos"
+      "sourceGallery": "Galerie de photos",
+      "formatBadge": {
+        "landscape": "Paysage",
+        "portrait": "Portrait",
+        "square": "Carré"
+      },
+      "mismatchBadge": "Adapter",
+      "mismatchHint": "Format natif différent du format choisi — la photo sera affichée sans recadrage (fond neutre).",
+      "editLabel": "Modifier la photo",
+      "edit": {
+        "title": "Modifier la photo",
+        "zoomIn": "Zoomer",
+        "zoomOut": "Dézoomer",
+        "rotateLeft": "Tourner à gauche",
+        "rotateRight": "Tourner à droite",
+        "reset": "Réinitialiser",
+        "altLabel": "Description pour l'accessibilité",
+        "altPlaceholder": "Ex. Mésange charbonnière sur une branche de chêne",
+        "altHint": "Décris ce que l'on voit — lu par les lecteurs d'écran."
+      }
     },
     "description": {
       "label": "Description",
