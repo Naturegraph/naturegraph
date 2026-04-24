@@ -108,7 +108,17 @@ function postFeedItemToMockPost(item: PostFeedItem): MockPost {
     taxref_id: item.taxref_id ?? null,
     taxonomic_group: item.taxonomic_group ?? null,
     format: '16:9',
-    images: (item.media ?? []).map((m) => ({ url: m.url, alt: m.alt ?? '' })),
+    images: (item.media ?? []).map((m) => ({
+      url: m.url,
+      alt: m.alt ?? '',
+      // Recadrage non destructif persisté (PRD photo-management v2 · crop_data).
+      // `crop_data` pas encore typé dans supabase.ts (migration draft) → cast.
+      cropData:
+        ((m as unknown as { crop_data?: unknown }).crop_data as
+          | { scale: number; offsetX: number; offsetY: number; rotation?: 0 | 90 | 180 | 270 }
+          | null
+          | undefined) ?? null,
+    })),
     // Tous les likes attribués à 'love' pour l'instant — la répartition détaillée
     // par type nécessite un agrégat SQL séparé (post-MVP)
     reactions: {

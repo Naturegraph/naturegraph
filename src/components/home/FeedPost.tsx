@@ -44,7 +44,17 @@ export interface MockPost {
   /** Groupe taxonomique de l'espèce (optionnel — emoji dans le chip) */
   taxonomic_group?: string | null
   format: '16:9' | 'portrait' | '1:1'
-  images: Array<{ url: string; alt: string }>
+  images: Array<{
+    url: string
+    alt: string
+    /** Recadrage non destructif persisté (PRD photo-management v2 · crop_data). */
+    cropData?: {
+      scale: number
+      offsetX: number
+      offsetY: number
+      rotation?: 0 | 90 | 180 | 270
+    } | null
+  }>
   reactions: {
     love: number
     admire: number

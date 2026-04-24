@@ -22,6 +22,7 @@ import { EncounterStep1 } from './EncounterStep1'
 import { EncounterStep2 } from './EncounterStep2'
 import { EncounterStep3 } from './EncounterStep3'
 import type { PhotoAspectRatio } from './EncounterStep1'
+import { photoFileKey, type PhotoEditsMap } from './photoEdits'
 import type { ObservationEntry } from './EncounterStep2'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import { useAuth } from '@/contexts/AuthContext'
@@ -46,6 +47,8 @@ interface EncounterFormData {
   aspectRatio: PhotoAspectRatio
   /** Métadonnées EXIF extraites à l'étape 1 (date, GPS, time-of-day). */
   photoMetadata: PhotoMetadata
+  /** Recadrages + alt text par fichier (PRD photo-management v2 · T3). */
+  photoEdits: PhotoEditsMap
   // Étape 2
   observations: ObservationEntry[]
   helpIdentification: boolean
@@ -81,6 +84,7 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
     files: [],
     aspectRatio: 'landscape',
     photoMetadata: {},
+    photoEdits: {},
     observations: [],
     helpIdentification: false,
     title: '',
@@ -211,14 +215,49 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
       })
       createdPostId = post.id
 
-      // 2. Upload des médias
+      // 2. Upload des médias — détection de format + strip EXIF avant upload.
+      //
+      // Privacy : le strip EXIF retire TOUTES les métadonnées (GPS inclus).
+      // C'est critique car la photo originale d'une espèce sensible peut
+      // exposer sa localisation précise même quand l'utilisateur a activé
+      // `location_hidden`. Les métadonnées EXIF utiles pour le post (date,
+      // GPS, time-of-day) ont déjà été extraites côté client à l'étape 1 et
+      // sont persistées dans `posts`, pas dans le fichier.
       for (let i = 0; i < form.files.length; i++) {
+        const rawFile = form.files[i]
+        // Import dynamique pour ne pas alourdir le bundle du form ; les modules
+        // sont déjà chargés par EncounterStep1 dans le flux normal.
+        const [{ detectPhotoFormat }, { stripExif }] = await Promise.all([
+          import('@/utils/detectPhotoFormat'),
+          import('@/utils/stripExif'),
+        ])
+        // Dimensions natives (width/height) extraites avant re-encode pour
+        // alimenter media.ratio (column GENERATED). file_size / ratio pilotent
+        // le layout feed côté client (PRD photo-management v3).
+        let dims: { width: number; height: number } | null = null
+        try {
+          dims = await detectPhotoFormat(rawFile)
+        } catch {
+          // fallback silencieux — upload reste valide sans dimensions
+        }
+        // Strip EXIF — retombe sur le fichier original si format non strippable.
+        const file = await stripExif(rawFile)
+        // Alt text éventuel (PRD v2 T3). photoEdits garde la signature
+        // mais seul `alt` est encore persisté côté media.
+        const edit = form.photoEdits[photoFileKey(rawFile)]
         await uploadPostMedia({
-          file: form.files[i],
+          file,
           postId: post.id,
           userId: user.id,
           copyrightNotice: '',
-          displayOrder: i + 1, // CHECK display_order > 0
+          // display_order ∈ [0, 3] (CHECK media_display_order_range v3).
+          displayOrder: i,
+          // Première photo devient cover explicite. Le trigger DB
+          // `auto_promote_cover` couvre aussi ce cas mais on force pour clarté.
+          isCover: i === 0,
+          width: dims?.width,
+          height: dims?.height,
+          altText: edit?.alt || undefined,
         })
       }
 
@@ -350,6 +389,8 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
                 onFilesChange={(f) => set('files', f)}
                 aspectRatio={form.aspectRatio}
                 onAspectRatioChange={(r) => set('aspectRatio', r)}
+                photoEdits={form.photoEdits}
+                onPhotoEditsChange={(edits) => set('photoEdits', edits)}
                 onMetadataExtracted={(meta) => {
                   // Pré-remplit l'étape 3 avec les métadonnées EXIF, sans
                   // écraser une valeur déjà saisie manuellement par l'user.

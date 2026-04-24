@@ -66,7 +66,14 @@ export async function uploadPostMedia(params: {
   copyrightNotice: string
   license?: string
   altText?: string
+  /** Position dans la série, 0-3 (PRD v3 — max 4 photos par post). */
   displayOrder?: number
+  /** Marque cette photo comme cover du post (trigger DB garantit unicité). */
+  isCover?: boolean
+  /** Largeur native en pixels, après downscale éventuel côté client. */
+  width?: number
+  /** Hauteur native en pixels, après downscale éventuel côté client. */
+  height?: number
 }): Promise<PostMediaUploadResult> {
   const {
     file,
@@ -75,7 +82,10 @@ export async function uploadPostMedia(params: {
     copyrightNotice,
     license = 'cc-by-nc-sa',
     altText,
-    displayOrder = 1,
+    displayOrder = 0,
+    isCover = false,
+    width,
+    height,
   } = params
 
   if (!isSupabaseConfigured || !supabase) throw new Error('Storage indisponible (mode demo)')
@@ -95,23 +105,32 @@ export async function uploadPostMedia(params: {
   // 2. URL publique
   const { data: pub } = supabase.storage.from('post-media').getPublicUrl(path)
 
-  // 3. Ligne media (rollback du blob si l'insert echoue)
+  // 3. Ligne media (rollback du blob si l'insert echoue).
+  // `width` / `height` alimentent le calcul `ratio` (column GENERATED ALWAYS).
+  // `is_cover` est géré par le trigger DB `ensure_single_cover` qui garantit
+  // qu'une seule photo par post reste cover — cf. migration v3.
+  const insertPayload = {
+    post_id: postId,
+    user_id: userId,
+    type: 'photo',
+    status: 'ready',
+    url: pub.publicUrl,
+    original_url: pub.publicUrl,
+    mime_type: file.type,
+    file_size: file.size,
+    alt: altText ?? null,
+    display_order: displayOrder,
+    copyright_notice: copyrightNotice,
+    license,
+    width: width ?? null,
+    height: height ?? null,
+    is_cover: isCover,
+  }
+
   const { data, error: insErr } = await supabase
     .from('media')
-    .insert({
-      post_id: postId,
-      user_id: userId,
-      type: 'photo',
-      status: 'ready',
-      url: pub.publicUrl,
-      original_url: pub.publicUrl,
-      mime_type: file.type,
-      file_size: file.size,
-      alt: altText ?? null,
-      display_order: displayOrder,
-      copyright_notice: copyrightNotice,
-      license,
-    })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- is_cover pas encore typé (migration v3 à appliquer + regen supabase.ts)
+    .insert(insertPayload as any)
     .select('id, url, width, height')
     .single()
 

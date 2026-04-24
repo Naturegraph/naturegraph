@@ -510,6 +510,8 @@
       "share": "Share",
       "imageOf": "Image {{current}} of {{total}}",
       "navImages": "Image navigation",
+      "enlarge": "Enlarge",
+      "goToImage": "Go to photo",
       "viewImage": "View image {{index}}",
       "reactLoginPrompt": "Sign in to react",
       "noReactions": "Be the first to react",
@@ -709,7 +711,26 @@
       "dragHint": "Drag to frame",
       "sourceTitle": "Add a photo",
       "sourceCamera": "Camera",
-      "sourceGallery": "Photo library"
+      "sourceGallery": "Photo library",
+      "formatBadge": {
+        "landscape": "Landscape",
+        "portrait": "Portrait",
+        "square": "Square"
+      },
+      "mismatchBadge": "Adjust",
+      "mismatchHint": "Native format differs from the selected format — the photo will be displayed without cropping (neutral background).",
+      "editLabel": "Edit photo",
+      "edit": {
+        "title": "Edit photo",
+        "zoomIn": "Zoom in",
+        "zoomOut": "Zoom out",
+        "rotateLeft": "Rotate left",
+        "rotateRight": "Rotate right",
+        "reset": "Reset",
+        "altLabel": "Accessibility description",
+        "altPlaceholder": "e.g. Great tit perched on an oak branch",
+        "altHint": "Describe what's shown — read by screen readers."
+      }
     },
     "description": {
       "label": "Description",

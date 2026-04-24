@@ -7,7 +7,14 @@
  *   - Une fois au moins une photo ajoutée : grille 2x2 des 4 slots (grand +
  *     3 petits), les slots vides gardent leur état dashed "Ajouter".
  *   - Pills format : Paysage (16:9) / Portrait (3:4) / Carré (1:1)
- *     — applique au ratio d'aperçu, crop automatique via `object-cover`.
+ *     — applique au ratio d'aperçu.
+ *
+ * Règles photo (PRD photo-management v2 § P1/P2) :
+ *   - `object-contain` + `bg-muted` : aucun pixel source n'est coupé
+ *     (non-destruction). Le letterbox est assumé quand le format natif
+ *     diffère du format choisi — un badge "Adapter" le signale.
+ *   - Format natif détecté côté client via `detectPhotoFormat` (T1).
+ *   - Édition fine (recadrage, rotation) livrée en T3 via modal dédiée.
  *
  * Intelligence :
  *   - EXIF extrait automatiquement (date, GPS, time-of-day).
@@ -20,8 +27,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Camera, ImagePlus, Images, Plus, X } from 'lucide-react'
+import { AlertTriangle, Camera, ImagePlus, Images, Pencil, Plus, X } from 'lucide-react'
 import { extractBatchMetadata, type PhotoMetadata } from '@/utils/extractPhotoMetadata'
+import { detectPhotoFormat, type PhotoDimensions } from '@/utils/detectPhotoFormat'
+import { PhotoEditModal, type PhotoEditResult } from './PhotoEditModal'
+import { photoFileKey, type PhotoEditsMap } from './photoEdits'
 
 // ─── Types publics ────────────────────────────────────────────────────────────
 
@@ -178,122 +188,121 @@ function EmptySlot({
   )
 }
 
-/** Offset d'ajustement du crop (px dans le repère du conteneur). */
-export interface CropOffset {
-  x: number
-  y: number
-}
-
-/** Slot rempli — photo + bouton remove + drag pour repositionner (hero) */
+/**
+ * Slot rempli — photo + bouton remove + badge format (PRD photo-management v2 §P1/P2).
+ * `object-contain` + `bg-muted` : aucun pixel source n'est coupé (non-destruction).
+ * Le drag-pan a été retiré : l'édition fine arrive via modal dédiée (T3 Sprint 2).
+ */
 interface FilledSlotProps {
   url: string
   onRemove: () => void
+  onEdit: () => void
   variant: 'large' | 'small'
   /** Classe Tailwind d'aspect du conteneur (épouse le format choisi). */
   aspectClass: string
-  /** Décalage (px) appliqué à la photo pour ajuster son cadrage. */
-  offset: CropOffset
-  /** Callback lorsque l'utilisateur drague (uniquement grand slot). */
-  onOffsetChange?: (offset: CropOffset) => void
   removeLabel: string
-  dragHint?: string
+  editLabel: string
+  /** Format natif détecté côté client (null tant que la détection n'a pas fini). */
+  detected: PhotoDimensions | null
+  /** Format choisi par l'utilisateur (pour comparer et afficher un warning). */
+  targetFormat: PhotoAspectRatio
+  /** Libellés localisés des badges. */
+  formatLabels: Record<PhotoAspectRatio, string>
+  mismatchLabel: string
+  mismatchHint: string
+  /** Transform CSS appliqué à l'image (preview du recadrage). */
+  transform?: string
+  /** Indique qu'un recadrage personnalisé est actif. */
+  edited: boolean
 }
 
 function FilledSlot({
   url,
   onRemove,
+  onEdit,
   variant,
   aspectClass,
-  offset,
-  onOffsetChange,
   removeLabel,
-  dragHint,
+  editLabel,
+  detected,
+  targetFormat,
+  formatLabels,
+  mismatchLabel,
+  mismatchHint,
+  transform,
+  edited,
 }: FilledSlotProps) {
   const isLarge = variant === 'large'
-  const isDraggable = isLarge && !!onOffsetChange
-  const containerRef = useRef<HTMLDivElement>(null)
-  const dragStateRef = useRef<{
-    startX: number
-    startY: number
-    baseX: number
-    baseY: number
-  } | null>(null)
-
-  // ── Drag pan : pointerEvents (souris + tactile unifiés) ───────────────
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDraggable) return
-    e.currentTarget.setPointerCapture(e.pointerId)
-    dragStateRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      baseX: offset.x,
-      baseY: offset.y,
-    }
-  }
-
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    const s = dragStateRef.current
-    if (!s || !isDraggable || !containerRef.current) return
-    const rect = containerRef.current.getBoundingClientRect()
-    // Clamp offset pour que l'image ne sorte jamais du conteneur
-    // (limite = moitié du débordement — ici on autorise large pan à ±40% de la taille)
-    const maxX = rect.width * 0.4
-    const maxY = rect.height * 0.4
-    const nextX = Math.max(-maxX, Math.min(maxX, s.baseX + e.clientX - s.startX))
-    const nextY = Math.max(-maxY, Math.min(maxY, s.baseY + e.clientY - s.startY))
-    onOffsetChange?.({ x: nextX, y: nextY })
-  }
-
-  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-      e.currentTarget.releasePointerCapture(e.pointerId)
-    }
-    dragStateRef.current = null
-  }
+  const mismatch = detected !== null && detected.format !== targetFormat
 
   return (
     <div
-      ref={containerRef}
       className={[
         'relative rounded-[4px] overflow-hidden bg-muted select-none',
-        // Le conteneur épouse le format choisi — plus besoin d'overlay crop.
+        // Le conteneur épouse le format choisi — object-contain préserve la photo.
         aspectClass,
         'transition-[aspect-ratio] duration-200',
-        isDraggable ? 'cursor-move touch-none' : '',
       ].join(' ')}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
     >
       <img
         src={url}
         alt=""
-        className="size-full object-cover pointer-events-none will-change-transform"
-        style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
+        className="size-full object-contain pointer-events-none will-change-transform"
+        style={transform ? { transform, transformOrigin: 'center center' } : undefined}
         loading="lazy"
         decoding="async"
         draggable={false}
       />
 
-      {/* Hint visuel "glisse pour cadrer" — uniquement sur le grand slot */}
-      {isDraggable && dragHint && offset.x === 0 && offset.y === 0 && (
+      {/* Badge format natif (vert=match, amber=mismatch) — en bas à gauche. */}
+      {detected && (
         <div
-          className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-foreground/70 text-white text-xs font-body"
-          aria-hidden="true"
+          className={[
+            'pointer-events-none absolute bottom-1.5 left-1.5 flex items-center gap-1',
+            'px-2 py-0.5 rounded-full text-[10px] font-body font-bold',
+            mismatch
+              ? 'bg-[var(--color-warning,#d97706)] text-white'
+              : 'bg-foreground/70 text-white',
+          ].join(' ')}
+          title={mismatch ? mismatchHint : undefined}
+          aria-label={
+            mismatch
+              ? `${formatLabels[detected.format]} · ${mismatchLabel}`
+              : formatLabels[detected.format]
+          }
         >
-          {dragHint}
+          {mismatch && <AlertTriangle className="size-3" aria-hidden="true" />}
+          <span>
+            {isLarge
+              ? `${formatLabels[detected.format]} · ${detected.width}×${detected.height}`
+              : formatLabels[detected.format]}
+          </span>
+          {mismatch && <span className="ml-0.5">· {mismatchLabel}</span>}
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={onRemove}
-        aria-label={removeLabel}
-        className="absolute top-1.5 right-1.5 size-6 rounded-full bg-foreground/70 text-white flex items-center justify-center hover:bg-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary z-10"
-      >
-        <X className="size-3.5" aria-hidden="true" />
-      </button>
+      <div className="absolute top-1.5 right-1.5 flex items-center gap-1 z-10">
+        <button
+          type="button"
+          onClick={onEdit}
+          aria-label={editLabel}
+          className={[
+            'size-6 rounded-full text-white flex items-center justify-center transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+            edited ? 'bg-primary hover:bg-primary/90' : 'bg-foreground/70 hover:bg-foreground',
+          ].join(' ')}
+        >
+          <Pencil className="size-3.5" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={removeLabel}
+          className="size-6 rounded-full bg-foreground/70 text-white flex items-center justify-center hover:bg-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <X className="size-3.5" aria-hidden="true" />
+        </button>
+      </div>
     </div>
   )
 }
@@ -307,6 +316,9 @@ interface EncounterStep1Props {
   onAspectRatioChange: (r: PhotoAspectRatio) => void
   /** Remontée des métadonnées EXIF (date, GPS, time-of-day) pour l'étape 3. */
   onMetadataExtracted?: (meta: PhotoMetadata) => void
+  /** Recadrages + alt text par fichier (PRD photo-management v2 · T3). */
+  photoEdits?: PhotoEditsMap
+  onPhotoEditsChange?: (edits: PhotoEditsMap) => void
   error?: string
 }
 
@@ -316,6 +328,8 @@ export function EncounterStep1({
   aspectRatio,
   onAspectRatioChange,
   onMetadataExtracted,
+  photoEdits,
+  onPhotoEditsChange,
   error,
 }: EncounterStep1Props) {
   const { t } = useTranslation()
@@ -332,38 +346,91 @@ export function EncounterStep1({
   const heroAspectClass = HERO_ASPECT_CLASS[aspectRatio]
   const thumbAspectClass = THUMB_ASPECT_CLASS[aspectRatio]
 
-  // Offset de crop par fichier (repositionnement drag) — état local.
-  // À la validation finale ces offsets seront utilisés pour générer le crop réel.
-  const [offsets, setOffsets] = useState<CropOffset[]>([])
-
-  // Synchronise le tableau d'offsets avec les fichiers (fill/trim).
+  // ── Détection du format natif (PRD photo-management § T1) ───────────────
+  // Map clé fichier (name + size + lastModified) → dimensions + format détecté.
+  // Memoïsation : on évite de relancer createImageBitmap sur les fichiers déjà traités.
+  const fileKey = useCallback((f: File) => `${f.name}:${f.size}:${f.lastModified}`, [])
+  const [dimensionsMap, setDimensionsMap] = useState<Map<string, PhotoDimensions>>(new Map())
+  // Ref miroir pour lire la map courante sans créer de dépendance d'effet
+  // (éviter de relancer l'effet à chaque insertion — cause de boucle d'annulation).
+  const dimensionsMapRef = useRef(dimensionsMap)
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- fill/trim synchronisé sur files.length
-    setOffsets((prev) => {
-      const next = [...prev]
-      while (next.length < files.length) next.push({ x: 0, y: 0 })
-      return next.slice(0, files.length)
-    })
-  }, [files.length])
+    dimensionsMapRef.current = dimensionsMap
+  }, [dimensionsMap])
 
-  // Reset des offsets si l'utilisateur change de format — le crop n'est plus
-  // pertinent et on repart d'un cadrage centré.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset intentionnel synchronisé sur aspectRatio
-    setOffsets((prev) => prev.map(() => ({ x: 0, y: 0 })))
-  }, [aspectRatio])
-
-  const updateOffset = useCallback((index: number, next: CropOffset) => {
-    setOffsets((prev) => {
-      const copy = [...prev]
-      copy[index] = next
-      return copy
-    })
-  }, [])
+    let cancelled = false
+    const pending = files.filter((f) => !dimensionsMapRef.current.has(fileKey(f)))
+    if (pending.length === 0) return
+    ;(async () => {
+      // Détection séquentielle légère (≤ 4 fichiers, pas besoin de parallélisme lourd).
+      for (const f of pending) {
+        try {
+          const dims = await detectPhotoFormat(f)
+          if (cancelled) return
+          setDimensionsMap((prev) => {
+            const next = new Map(prev)
+            next.set(fileKey(f), dims)
+            return next
+          })
+        } catch {
+          // best-effort : un fichier sans détection restera sans badge
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [files, fileKey])
 
   const addMultipleLabel = t('contribute.media.addPhotos')
   const addLabel = t('common.add', { defaultValue: 'Ajouter' })
   const removeLabel = t('contribute.media.remove', { index: 1 })
+  const editLabel = t('contribute.media.editLabel', { defaultValue: 'Modifier la photo' })
+
+  // ── Modal d'édition (T3) ─────────────────────────────────────────────────
+  // L'index du fichier en cours d'édition, ou null si fermé.
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const closeEditor = useCallback(() => setEditingIndex(null), [])
+  const saveEditor = useCallback(
+    (index: number, result: PhotoEditResult) => {
+      if (!onPhotoEditsChange) return
+      const key = photoFileKey(files[index])
+      onPhotoEditsChange({ ...(photoEdits ?? {}), [key]: result })
+      setEditingIndex(null)
+    },
+    [files, onPhotoEditsChange, photoEdits],
+  )
+
+  // Convertit un CropData en transform CSS pour preview dans le slot.
+  const transformFor = useCallback(
+    (index: number): string | undefined => {
+      if (!photoEdits) return undefined
+      const edit = photoEdits[photoFileKey(files[index])]
+      if (!edit) return undefined
+      const c = edit.cropData
+      return `translate(${c.offsetX}px, ${c.offsetY}px) scale(${c.scale}) rotate(${c.rotation ?? 0}deg)`
+    },
+    [files, photoEdits],
+  )
+  const isEdited = useCallback(
+    (index: number) => Boolean(photoEdits?.[photoFileKey(files[index])]),
+    [files, photoEdits],
+  )
+
+  // Libellés badges format (mémoïsés pour éviter recreation par render).
+  const formatLabels: Record<PhotoAspectRatio, string> = useMemo(
+    () => ({
+      landscape: t('contribute.media.formatBadge.landscape', { defaultValue: 'Paysage' }),
+      portrait: t('contribute.media.formatBadge.portrait', { defaultValue: 'Portrait' }),
+      square: t('contribute.media.formatBadge.square', { defaultValue: 'Carré' }),
+    }),
+    [t],
+  )
+  const mismatchLabel = t('contribute.media.mismatchBadge', { defaultValue: 'Adapter' })
+  const mismatchHint = t('contribute.media.mismatchHint', {
+    defaultValue: 'Format natif différent du format choisi.',
+  })
 
   /**
    * Ajoute les fichiers sélectionnés. Déclenche l'extraction EXIF sur
@@ -426,6 +493,21 @@ export function EncounterStep1({
   // Grand dropzone seulement au 1er ajout (UX allégée) ; puis layout 4-slots.
   const firstIsFilled = hasPhotos
 
+  // Escape pour fermer la feuille d'action — listener global tant qu'ouverte.
+  useEffect(() => {
+    if (!sourceSheetOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSourceSheetOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [sourceSheetOpen])
+
+  // Classe du dropzone vide initial : on garde la hauteur Figma (264px) fixe
+  // tant qu'aucune photo n'est chargée, pour éviter un saut de layout quand
+  // l'utilisateur change de format avant d'avoir uploadé quoi que ce soit.
+  const initialDropzoneClass = firstIsFilled ? heroAspectClass : 'h-[264px]'
+
   return (
     <div className="flex flex-col gap-6">
       {/* Sous-titre Figma — "Tu peux ajouter jusqu'à 4 photos maximum." */}
@@ -443,14 +525,18 @@ export function EncounterStep1({
           <FilledSlot
             url={previewUrls[0]}
             onRemove={() => removeAt(0)}
+            onEdit={() => setEditingIndex(0)}
             variant="large"
             aspectClass={heroAspectClass}
-            offset={offsets[0] ?? { x: 0, y: 0 }}
-            onOffsetChange={(next) => updateOffset(0, next)}
             removeLabel={t('contribute.media.remove', { index: 1 })}
-            dragHint={t('contribute.media.dragHint', {
-              defaultValue: 'Glisse pour cadrer',
-            })}
+            editLabel={editLabel}
+            detected={dimensionsMap.get(fileKey(files[0])) ?? null}
+            targetFormat={aspectRatio}
+            formatLabels={formatLabels}
+            mismatchLabel={mismatchLabel}
+            mismatchHint={mismatchHint}
+            transform={transformFor(0)}
+            edited={isEdited(0)}
           />
         ) : (
           <EmptySlot
@@ -461,7 +547,7 @@ export function EncounterStep1({
             variant="large"
             ariaLabel={addMultipleLabel}
             addLabel={addLabel}
-            aspectClass={heroAspectClass}
+            aspectClass={initialDropzoneClass}
           />
         )}
 
@@ -475,10 +561,18 @@ export function EncounterStep1({
                   key={slotIndex}
                   url={previewUrls[slotIndex]}
                   onRemove={() => removeAt(slotIndex)}
+                  onEdit={() => setEditingIndex(slotIndex)}
                   variant="small"
                   aspectClass={thumbAspectClass}
-                  offset={offsets[slotIndex] ?? { x: 0, y: 0 }}
                   removeLabel={t('contribute.media.remove', { index: slotIndex + 1 })}
+                  editLabel={editLabel}
+                  detected={dimensionsMap.get(fileKey(files[slotIndex])) ?? null}
+                  targetFormat={aspectRatio}
+                  formatLabels={formatLabels}
+                  mismatchLabel={mismatchLabel}
+                  mismatchHint={mismatchHint}
+                  transform={transformFor(slotIndex)}
+                  edited={isEdited(slotIndex)}
                 />
               )
             }
@@ -538,9 +632,6 @@ export function EncounterStep1({
           role="presentation"
           onClick={(e) => {
             if (e.target === e.currentTarget) setSourceSheetOpen(false)
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') setSourceSheetOpen(false)
           }}
         >
           <div
@@ -635,6 +726,18 @@ export function EncounterStep1({
       {/* Label sr-only — garde la sémantique pour AT même si le label
           visuel n'est plus affiché (spec Figma : pas de "Photos (4 max)") */}
       <span className="sr-only">{removeLabel}</span>
+
+      {/* Modal d'édition photo (PRD photo-management v2 · T3) */}
+      {editingIndex !== null && files[editingIndex] && (
+        <PhotoEditModal
+          url={previewUrls[editingIndex]}
+          targetFormat={aspectRatio}
+          initialCrop={photoEdits?.[photoFileKey(files[editingIndex])]?.cropData}
+          initialAlt={photoEdits?.[photoFileKey(files[editingIndex])]?.alt}
+          onCancel={closeEditor}
+          onSave={(result) => saveEditor(editingIndex, result)}
+        />
+      )}
     </div>
   )
 }

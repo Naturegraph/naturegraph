@@ -154,7 +154,11 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
           </button>
         )}
 
-        {/* Image — object-contain pour respecter le format original */}
+        {/* Image — object-contain pour respecter le format original.
+            Note : on n'applique volontairement PAS `crop_data` ici. La lightbox
+            expose l'original non recadré (principe P1 du PRD photo-management
+            v2 — non-destruction : le recadrage est une préférence d'affichage
+            feed, l'utilisateur peut toujours revoir la photo entière). */}
         <img
           src={hqSrc}
           alt={current.alt}

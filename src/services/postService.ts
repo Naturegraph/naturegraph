@@ -221,17 +221,23 @@ export async function getPostById(postId: string): Promise<PostFeedItem | null> 
 export async function createPost(userId: string, payload: CreatePostPayload): Promise<Post> {
   if (!supabase) throw new Error('Supabase non configuré')
 
+  // `media_format` fait partie du PRD photo-management v2 mais n'est pas encore
+  // dans supabase.ts généré (migration 20260422 draft). Cast en any temporaire
+  // le temps que la migration soit appliquée et les types regénérés.
+  const insertPayload = {
+    user_id: userId,
+    ...payload,
+    status: 'published' as const,
+    published_at: new Date().toISOString(),
+    identification_status: (payload.species_name
+      ? 'identified'
+      : 'pending') as Post['identification_status'],
+  }
+
   const { data, error } = await supabase
     .from('posts')
-    .insert({
-      user_id: userId,
-      ...payload,
-      status: 'published' as const,
-      published_at: new Date().toISOString(),
-      identification_status: (payload.species_name
-        ? 'identified'
-        : 'pending') as Post['identification_status'],
-    })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- media_format non typé (migration draft)
+    .insert(insertPayload as any)
     .select()
     .single()
   if (error) throw new Error(error.message)
