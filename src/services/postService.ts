@@ -57,6 +57,8 @@ export interface FeedResult {
 
 export interface CreatePostPayload {
   type: Post['type']
+  /** Titre court optionnel (null-safe côté DB — colonne `posts.title`). */
+  title?: string
   description: string
   visibility?: Post['visibility']
   encounter_date: string
