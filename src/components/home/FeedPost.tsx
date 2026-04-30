@@ -13,8 +13,9 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Bookmark, Share2, MoreHorizontal, Leaf } from 'lucide-react'
+import { Bookmark, Share2, MoreHorizontal, Bird } from 'lucide-react'
 import { PostOptionsMenu } from './PostOptionsMenu'
+import { ImageSlider } from './ImageSlider'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 import type { ReactionType } from '@/types/database'
 import { useSpecies } from '@/contexts/SpeciesContext'
@@ -47,13 +48,9 @@ export interface MockPost {
   images: Array<{
     url: string
     alt: string
-    /** Recadrage non destructif persisté (PRD photo-management v2 · crop_data). */
-    cropData?: {
-      scale: number
-      offsetX: number
-      offsetY: number
-      rotation?: 0 | 90 | 180 | 270
-    } | null
+    /** Dimensions natives — déterminent l'aspect ratio dans le feed. */
+    width?: number
+    height?: number
   }>
   reactions: {
     love: number
@@ -67,14 +64,14 @@ export interface MockPost {
   userReaction: ReactionType | null
   /** Total des réactions (likes_count) */
   totalReactions: number
+  /** Nombre de commentaires (préservé pour usage post-MVP — non affiché en MVP). */
   comments: number
 }
-import { ImageSlider } from './ImageSlider'
 
-// ─── Composant principal ──────────────────────────────────────────────────────
+// ─── Configuration ──────────────────────────────────────────────────────────
 
-// Configuration des réactions — doit rester alignée avec ReactionType dans database.ts
-// 'disappointed' ajouté suite à la décision Nicolas (2026-04-01)
+// Doit rester alignée avec ReactionType dans @/types/database.
+// 'disappointed' ajouté suite à la décision Nicolas (2026-04-01).
 const REACTION_CONFIG = [
   { key: 'love' as const, emoji: '❤️', labelKey: 'home.post.reactions.love' },
   { key: 'admire' as const, emoji: '😍', labelKey: 'home.post.reactions.admire' },
@@ -83,6 +80,14 @@ const REACTION_CONFIG = [
   { key: 'curious' as const, emoji: '🧐', labelKey: 'home.post.reactions.curious' },
   { key: 'disappointed' as const, emoji: '😕', labelKey: 'home.post.reactions.disappointed' },
 ]
+
+// Tailwind du chip Figma (node 6385:60456) — bg Content/Action/Light, h-32,
+// px-12 py-8, rounded-99, Mulish Bold 16px. Réutilisé pour catégorie + espèce.
+const CHIP_BASE_CLASS =
+  'bg-primary-light text-foreground text-base font-bold px-3 py-2 h-8 rounded-full leading-tight inline-flex items-center gap-2'
+const CHIP_INTERACTIVE_CLASS =
+  'hover:bg-primary/15 transition-colors cursor-pointer ' +
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1'
 
 interface FeedPostProps extends MockPost {
   /** true = utilisateur connecté — boutons actifs. false = redirige /signup */
@@ -125,6 +130,11 @@ export function FeedPost({
   const [showReactionPicker, setShowReactionPicker] = useState(false)
   const shouldTruncate = content.length > 200
 
+  // Configuration de la réaction active de l'utilisateur (null si aucune).
+  // Permet de remplacer dynamiquement l'emoji + le label "Réagir" par celui de
+  // la réaction choisie (ex: "😍 Adoré"), conformément au feedback Nicolas.
+  const activeReaction = userReaction ? REACTION_CONFIG.find((r) => r.key === userReaction) : null
+
   // Redirige vers /signup si l'invité tente d'interagir
   function requireAuth(e: React.MouseEvent) {
     if (!canInteract) {
@@ -144,7 +154,10 @@ export function FeedPost({
   }
 
   return (
-    <article className="bg-background relative md:rounded-card rounded-none">
+    // Largeur Figma : colonne post = 656px + p-6 (24px ×2) = 704px max sur desktop.
+    // Centré (mx-auto) pour s'aligner dans la zone feed quel que soit son parent.
+    // Sur mobile : pleine largeur (rounded-none, le cap ne joue pas).
+    <article className="bg-background relative md:rounded-card rounded-none md:max-w-[704px] md:mx-auto w-full">
       {/* Bordure */}
       <div
         aria-hidden="true"
@@ -155,8 +168,8 @@ export function FeedPost({
         {/* Header : auteur */}
         <div className="flex items-start justify-between">
           <div className="flex gap-5 items-center">
-            {/* Avatar */}
-            <div className="relative md:size-12 size-10 shrink-0">
+            {/* Avatar — Figma 48px, badge 24px (Background/Neutral/Secondary). */}
+            <div className="relative size-12 shrink-0">
               <div className="size-full rounded-full overflow-hidden">
                 <img
                   src={author.avatar || hermineIcon}
@@ -171,25 +184,25 @@ export function FeedPost({
               {author.badge && (
                 <div
                   aria-hidden="true"
-                  className="absolute bg-cream-lighter bottom-[-4px] right-[-4px] flex items-center justify-center rounded-full size-5"
+                  className="absolute bg-cream-lighter bottom-[-4px] right-[-4px] flex items-center justify-center rounded-full size-6"
                 >
-                  <span className="text-sm leading-none">{author.badge}</span>
+                  <span className="text-base leading-[1.5]">{author.badge}</span>
                 </div>
               )}
             </div>
 
-            {/* Infos auteur */}
+            {/* Infos auteur — Figma : nom 18px Quicksand Bold, date 14px Mulish. */}
             <div className="flex flex-col gap-1 min-w-0">
-              <p className="md:text-xl text-lg leading-tight text-foreground font-bold truncate">
+              <p className="text-lg leading-[1.2] text-foreground font-bold truncate">
                 {author.name}
               </p>
               <div className="flex flex-wrap gap-2 items-center">
-                <Leaf className="size-4 text-muted-foreground shrink-0" aria-hidden="true" />
-                <span className="text-xs text-muted-foreground tracking-[0.48px]">{date}</span>
-                <span aria-hidden="true" className="text-muted-foreground text-xs">
+                <Bird className="size-[18px] text-foreground shrink-0" aria-hidden="true" />
+                <span className="text-sm text-foreground">{date}</span>
+                <span aria-hidden="true" className="text-foreground text-xs">
                   •
                 </span>
-                <span className="text-xs text-muted-foreground tracking-[0.48px]">{location}</span>
+                <span className="text-sm text-foreground">{location}</span>
               </div>
             </div>
           </div>
@@ -220,7 +233,8 @@ export function FeedPost({
 
         {/* Contenu */}
         <div className="flex flex-col gap-2">
-          <h3 className="leading-tight text-foreground">{title}</h3>
+          {/* Figma : Headings/Subheading = Quicksand Bold 18px leading-1.2. */}
+          <h3 className="text-lg font-bold leading-[1.2] text-foreground">{title}</h3>
 
           <div className="text-sm text-foreground leading-relaxed">
             {!isExpanded && shouldTruncate ? (
@@ -262,17 +276,14 @@ export function FeedPost({
           )}
         </div>
 
-        {/* Badges catégorie + espèce */}
+        {/* Badges catégorie + espèce — chips Figma node 6385:60455. */}
         <div className="flex flex-wrap gap-2">
-          <span className="bg-primary-light text-foreground text-base px-3 py-1 rounded-full leading-tight">
+          <span className={CHIP_BASE_CLASS}>
             {category.icon} {category.label}
           </span>
 
-          {/*
-           * Chip espèce — cliquable pour activer le Species Context Layer (PRD §3.4).
-           * Construit un SpeciesHit minimal à partir des données disponibles dans le post.
-           * Si l'espèce n'est pas identifiée (pas de taxref_id), le chip reste passif.
-           */}
+          {/* Chip espèce — cliquable si identifiée (active Species Context Layer,
+              PRD §3.4). Sinon passif ("Espèce non identifiée"). */}
           {taxref_id ? (
             <button
               type="button"
@@ -285,11 +296,7 @@ export function FeedPost({
                 })
               }
               aria-label={t('home.post.filterBySpecies', { species })}
-              className={[
-                'bg-primary-light text-foreground text-base px-3 py-1 rounded-full leading-tight',
-                'hover:bg-primary/15 transition-colors cursor-pointer',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
-              ].join(' ')}
+              className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}
             >
               {taxonomic_group && TAXONOMIC_GROUP_CONFIG[taxonomic_group]
                 ? `${TAXONOMIC_GROUP_CONFIG[taxonomic_group].emoji} `
@@ -297,16 +304,15 @@ export function FeedPost({
               {species}
             </button>
           ) : (
-            <span className="bg-primary-light text-foreground text-base px-3 py-1 rounded-full leading-tight">
-              {species}
-            </span>
+            <span className={CHIP_BASE_CLASS}>{species}</span>
           )}
         </div>
 
         {/* Images — clic ouvre la lightbox plein écran */}
         <ImageSlider images={images} format={format} author={author} />
 
-        {/* Compteurs de réactions — cliquables pour toggle */}
+        {/* Compteurs réactions (Figma node 6385:60468 — flex justify-between).
+            Le slot droit accueillera le compteur commentaires en post-MVP. */}
         <div className="flex items-center justify-between">
           <div className="flex gap-1">
             {totalReactions > 0 ? (
@@ -318,7 +324,7 @@ export function FeedPost({
                     onClick={() => handleReact(key)}
                     aria-label={`${t(labelKey)} : ${reactions[key]}${userReaction === key ? ` — ${t('home.post.yourReaction')}` : ''}`}
                     className={[
-                      'flex gap-1 items-center h-6 px-2 rounded-full text-sm tracking-[0.48px] transition-all duration-200',
+                      'flex gap-1 items-center h-6 px-2 rounded-full text-sm transition-all duration-200',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
                       userReaction === key
                         ? 'bg-primary/15 text-primary font-semibold ring-1 ring-primary/30 reaction-active'
@@ -333,9 +339,7 @@ export function FeedPost({
                 ),
               )
             ) : (
-              <span className="text-xs text-muted-foreground tracking-[0.48px]">
-                {t('home.post.noReactions')}
-              </span>
+              <span className="text-xs text-muted-foreground">{t('home.post.noReactions')}</span>
             )}
           </div>
         </div>
@@ -343,7 +347,9 @@ export function FeedPost({
         {/* Séparateur */}
         <hr className="border-border border-[0.5px]" />
 
-        {/* Actions — réagir, sauvegarder, partager */}
+        {/* Actions — réagir, sauvegarder, partager. Slot "Commentaires"
+            (Figma node 6385:60494) sera ajouté post-MVP entre Réagir et le
+            groupe droit. */}
         <div className="flex items-center justify-between h-8">
           <div className="relative flex gap-1">
             {/* Bouton React — affiche le picker d'emojis au clic */}
@@ -357,24 +363,25 @@ export function FeedPost({
                 setShowReactionPicker((o) => !o)
               }}
               aria-expanded={showReactionPicker}
-              aria-label={t('home.post.react')}
+              aria-label={
+                activeReaction
+                  ? `${t(activeReaction.labelKey)} — ${t('home.post.yourReaction')}`
+                  : t('home.post.react')
+              }
               className={[
                 'flex gap-2 items-center h-8 px-2 rounded-full transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
-                userReaction ? 'text-primary font-semibold' : 'text-foreground hover:bg-muted/50',
+                activeReaction ? 'text-primary font-semibold' : 'text-foreground hover:bg-muted/50',
               ].join(' ')}
             >
-              {/* Affiche l'emoji actif ou le label par défaut */}
-              {userReaction ? (
-                <span className="text-base" aria-hidden="true">
-                  {REACTION_CONFIG.find((r) => r.key === userReaction)?.emoji ?? '❤️'}
-                </span>
-              ) : (
-                <span className="text-base" aria-hidden="true">
-                  ❤️
-                </span>
-              )}
-              <span className="hidden md:inline text-base">{t('home.post.react')}</span>
+              {/* Emoji + label : reflètent la réaction active si elle existe,
+                  sinon affichent le call-to-action par défaut "❤️ Réagir". */}
+              <span className="text-base" aria-hidden="true">
+                {activeReaction ? activeReaction.emoji : '❤️'}
+              </span>
+              <span className="hidden md:inline text-base font-bold">
+                {activeReaction ? t(activeReaction.labelKey) : t('home.post.react')}
+              </span>
             </button>
 
             {/* Picker d'emojis — popup au-dessus du bouton */}

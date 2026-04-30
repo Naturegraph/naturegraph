@@ -66,7 +66,7 @@ export async function uploadPostMedia(params: {
   copyrightNotice: string
   license?: string
   altText?: string
-  /** Position dans la série, 0-3 (PRD v3 — max 4 photos par post). */
+  /** Position dans la série, 0-3 (max 4 photos par post). */
   displayOrder?: number
   /** Marque cette photo comme cover du post (trigger DB garantit unicité). */
   isCover?: boolean
@@ -96,24 +96,20 @@ export async function uploadPostMedia(params: {
 
   const path = `${userId}/${postId}/${uuid()}.${ext(file)}`
 
-  // 1. Upload binaire
   const { error: upErr } = await supabase.storage
     .from('post-media')
     .upload(path, file, { contentType: file.type, upsert: false })
   if (upErr) throw new Error(upErr.message)
 
-  // 2. URL publique
   const { data: pub } = supabase.storage.from('post-media').getPublicUrl(path)
 
-  // 3. Ligne media (rollback du blob si l'insert echoue).
-  // `width` / `height` alimentent le calcul `ratio` (column GENERATED ALWAYS).
   // `is_cover` est géré par le trigger DB `ensure_single_cover` qui garantit
-  // qu'une seule photo par post reste cover — cf. migration v3.
+  // qu'une seule photo par post reste cover.
   const insertPayload = {
     post_id: postId,
     user_id: userId,
-    type: 'photo',
-    status: 'ready',
+    type: 'photo' as const,
+    status: 'ready' as const,
     url: pub.publicUrl,
     original_url: pub.publicUrl,
     mime_type: file.type,
@@ -129,8 +125,7 @@ export async function uploadPostMedia(params: {
 
   const { data, error: insErr } = await supabase
     .from('media')
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- is_cover pas encore typé (migration v3 à appliquer + regen supabase.ts)
-    .insert(insertPayload as any)
+    .insert(insertPayload)
     .select('id, url, width, height')
     .single()
 

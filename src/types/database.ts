@@ -22,6 +22,11 @@ export type Interest =
 
 export type PostType = 'nature_encounter' | 'nature_instant'
 export type PostStatus = 'draft' | 'published' | 'archived'
+/**
+ * Format d'affichage choisi par l'utilisateur (Figma 6385:47324).
+ * Préférence visuelle utilisée par le FeedPost — n'altère pas les photos sources.
+ */
+export type DisplayFormat = '16:9' | 'portrait' | '1:1'
 export type Visibility = 'public' | 'private' | 'followers'
 export type IdentificationStatus = 'identified' | 'pending' | 'disputed'
 
@@ -196,6 +201,9 @@ export interface Post {
   taxref_updated_at: string | null
   // Phenomenon (nature_instant)
   phenomenon: string | null
+  // Display preference (Figma 6385:47324) — choisi à l'étape 1 du formulaire.
+  // Détermine le format du conteneur photo dans le feed (16:9 / portrait / 1:1).
+  display_format: DisplayFormat
   // Counters (denormalized)
   likes_count: number
   comments_count: number

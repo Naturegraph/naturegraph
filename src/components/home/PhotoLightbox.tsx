@@ -2,11 +2,7 @@
  * PhotoLightbox — Visionneuse photo plein écran
  *
  * Affiche une photo en grand en respectant son format original :
- *   - Paysage → object-contain, largeur max
- *   - Portrait → object-contain, hauteur max
- *   - Carré   → object-contain, centré
- *
- * Fonctionnalités :
+ *   - object-contain pour ne rien rogner
  *   - Navigation prev/next (flèches + clavier)
  *   - Compteur 1/N
  *   - Miniatures de navigation
@@ -14,11 +10,7 @@
  *   - Boutons partage et fermer
  *   - Escape pour fermer
  *
- * Accessibilité :
- *   - role="dialog" + aria-modal + aria-label
- *   - Focus piégé dans la lightbox
- *   - Navigation clavier (← → Escape)
- *   - prefers-reduced-motion respecté (pas de transition)
+ * Accessibilité : role="dialog" + aria-modal, navigation clavier, focus trap.
  */
 
 import { useCallback, useEffect, useRef } from 'react'
@@ -57,8 +49,6 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
   const hasNext = currentIndex < images.length - 1
   const closeBtnRef = useRef<HTMLButtonElement>(null)
 
-  // ── Clavier : Escape, flèches ─────────────────────────────────────────────
-
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       switch (e.key) {
@@ -81,12 +71,10 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
 
-  // Focus initial sur le bouton fermer
   useEffect(() => {
     closeBtnRef.current?.focus()
   }, [])
 
-  // Bloquer le scroll du body quand la lightbox est ouverte
   useEffect(() => {
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
@@ -95,11 +83,9 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
     }
   }, [])
 
-  // ── Rendu ─────────────────────────────────────────────────────────────────
-
   if (!current) return null
 
-  /** URL haute qualité : remplace le paramètre `w=` Unsplash par une valeur plus grande */
+  /** URL haute qualité : remplace `w=` Unsplash par une valeur plus grande */
   const hqSrc = current.hqUrl ?? current.url.replace(/w=\d+/, 'w=1920')
 
   return (
@@ -111,14 +97,11 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
     >
       {/* ── Barre supérieure ────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0 relative z-10">
-        {/* Compteur */}
         <span className="text-white text-sm font-medium tabular-nums">
           {currentIndex + 1} / {images.length}
         </span>
 
-        {/* Actions */}
         <div className="flex items-center gap-2">
-          {/* Partager */}
           <button
             type="button"
             aria-label="Partager la photo"
@@ -127,7 +110,6 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
             <Share2 className="size-5" aria-hidden="true" />
           </button>
 
-          {/* Fermer */}
           <button
             ref={closeBtnRef}
             type="button"
@@ -142,7 +124,6 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
 
       {/* ── Zone image centrale ─────────────────────────────────────────── */}
       <div className="flex-1 relative flex items-center justify-center min-h-0 px-4 md:px-16">
-        {/* Bouton précédent */}
         {hasPrev && (
           <button
             type="button"
@@ -154,11 +135,6 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
           </button>
         )}
 
-        {/* Image — object-contain pour respecter le format original.
-            Note : on n'applique volontairement PAS `crop_data` ici. La lightbox
-            expose l'original non recadré (principe P1 du PRD photo-management
-            v2 — non-destruction : le recadrage est une préférence d'affichage
-            feed, l'utilisateur peut toujours revoir la photo entière). */}
         <img
           src={hqSrc}
           alt={current.alt}
@@ -166,7 +142,6 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
           draggable={false}
         />
 
-        {/* Bouton suivant */}
         {hasNext && (
           <button
             type="button"
@@ -181,7 +156,6 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
 
       {/* ── Barre inférieure ────────────────────────────────────────────── */}
       <div className="shrink-0 px-4 pb-4 pt-2 relative z-10">
-        {/* Auteur */}
         {authorName && (
           <div className="flex items-center gap-2 mb-3">
             {authorAvatar && (
@@ -197,7 +171,6 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
           </div>
         )}
 
-        {/* Miniatures */}
         {images.length > 1 && (
           <div className="flex justify-center gap-2" role="tablist" aria-label="Miniatures">
             {images.map((img, i) => (

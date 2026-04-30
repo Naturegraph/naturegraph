@@ -35,6 +35,36 @@ export interface PhotoMetadata {
   longitude?: number
   /** Moment de la journée déduit de `time` */
   timeOfDay?: TimeOfDay
+  /** Timestamp EXIF DateTimeOriginal (brut, pour détection de série). */
+  capturedAt?: Date
+}
+
+/**
+ * Détails de prise de vue (EXIF enrichi) — alimente le panneau ℹ️ lightbox
+ * et la colonne `media.exif` (JSONB). Tous champs optionnels : une photo
+ * capture d'écran n'a rien de tout ça.
+ *
+ * Les champs sont des string ou number bruts — l'UI formate (ex: "f/4.5",
+ * "1/1000 s", "ISO 400"). On ne transforme pas côté extraction pour garder
+ * la donnée fidèle au capteur.
+ */
+export interface PhotoExifDetails {
+  /** Marque du boîtier (Canon, Nikon, Sony, Fujifilm, iPhone…) */
+  cameraMake?: string
+  /** Modèle précis (EOS R5, Z6II, Alpha 7 IV…) */
+  cameraModel?: string
+  /** Focale en mm (ex: 200, 500) */
+  focalLength?: number
+  /** Sensibilité ISO (ex: 400, 1600) */
+  iso?: number
+  /** Vitesse d'obturation en secondes (ex: 0.001 pour 1/1000s) */
+  shutterSpeed?: number
+  /** Ouverture f-number (ex: 4.5, 2.8) */
+  aperture?: number
+  /** Altitude GPS en mètres */
+  altitude?: number
+  /** Cap boussole lors de la prise de vue (0-360°) */
+  heading?: number
 }
 
 // ─── Time-of-day inference ────────────────────────────────────────────────────
@@ -75,6 +105,7 @@ export async function extractPhotoMetadata(file: File): Promise<PhotoMetadata> {
     // Date/heure — DateTimeOriginal prioritaire, sinon CreateDate
     const raw = exif.DateTimeOriginal ?? exif.CreateDate
     if (raw instanceof Date && !isNaN(raw.getTime())) {
+      result.capturedAt = raw
       // Format ISO YYYY-MM-DD (local — évite le décalage UTC qui basculerait
       // une photo prise à 23h en jour suivant)
       const y = raw.getFullYear()
@@ -99,6 +130,59 @@ export async function extractPhotoMetadata(file: File): Promise<PhotoMetadata> {
     return result
   } catch {
     // Jamais bloquer l'UI pour un échec de parsing EXIF
+    return {}
+  }
+}
+
+/**
+ * Extrait les détails de prise de vue (EXIF enrichi) — persisté en
+ * `media.exif` (JSONB). Alimente le panneau ℹ️ de la lightbox.
+ *
+ * Best-effort : tout champ absent reste undefined. Ne jette jamais.
+ */
+export async function extractExifDetails(file: File): Promise<PhotoExifDetails> {
+  try {
+    const exif = await exifr.parse(file, {
+      pick: [
+        'Make',
+        'Model',
+        'FocalLength',
+        'ISO',
+        'ExposureTime',
+        'FNumber',
+        'GPSAltitude',
+        'GPSImgDirection',
+      ],
+    })
+    if (!exif) return {}
+
+    const result: PhotoExifDetails = {}
+    if (typeof exif.Make === 'string' && exif.Make.trim()) {
+      result.cameraMake = exif.Make.trim()
+    }
+    if (typeof exif.Model === 'string' && exif.Model.trim()) {
+      result.cameraModel = exif.Model.trim()
+    }
+    if (typeof exif.FocalLength === 'number' && Number.isFinite(exif.FocalLength)) {
+      result.focalLength = exif.FocalLength
+    }
+    if (typeof exif.ISO === 'number' && Number.isFinite(exif.ISO)) {
+      result.iso = exif.ISO
+    }
+    if (typeof exif.ExposureTime === 'number' && Number.isFinite(exif.ExposureTime)) {
+      result.shutterSpeed = exif.ExposureTime
+    }
+    if (typeof exif.FNumber === 'number' && Number.isFinite(exif.FNumber)) {
+      result.aperture = exif.FNumber
+    }
+    if (typeof exif.GPSAltitude === 'number' && Number.isFinite(exif.GPSAltitude)) {
+      result.altitude = exif.GPSAltitude
+    }
+    if (typeof exif.GPSImgDirection === 'number' && Number.isFinite(exif.GPSImgDirection)) {
+      result.heading = exif.GPSImgDirection
+    }
+    return result
+  } catch {
     return {}
   }
 }

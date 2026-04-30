@@ -670,7 +670,7 @@
       "step3": "Contexte & détails"
     },
     "panel": {
-      "immortaliseEncounter": "Immortalise ta rencontre !",
+      "immortaliseEncounter": "Immortalise ta rencontre !",
       "maxPhotos": "Tu peux ajouter jusqu'à {{count}} photos maximum.",
       "skipPhotos": "Tu peux aussi poursuivre sans ajouter de photo",
       "photoFormat": "Format d'affichage des photos",
@@ -720,6 +720,12 @@
       "mismatchBadge": "Adapter",
       "mismatchHint": "Format natif différent du format choisi — la photo sera affichée sans recadrage (fond neutre).",
       "editLabel": "Modifier la photo",
+      "addPhotosBig": "Ajoute tes photos",
+      "addPhotosHint": "Jusqu'à {{count}} photos par rencontre.",
+      "galleryLabel": "Galerie photos",
+      "addMore": "Ajouter",
+      "removeShort": "Supprimer",
+      "uploadingPhoto": "Photo {{current}} sur {{total}}",
       "edit": {
         "title": "Modifier la photo",
         "zoomIn": "Zoomer",

@@ -77,6 +77,9 @@ export interface CreatePostPayload {
   taxonomic_group?: Post['taxonomic_group']
   taxref_id?: string
   tags?: string[]
+  /** Format d'affichage choisi par l'utilisateur (Figma 6385:47324).
+   *  Default DB = '16:9' si non fourni. */
+  display_format?: Post['display_format']
 }
 
 // Sélecteur de colonnes utilisé dans les requêtes feed — centralisé pour cohérence
@@ -85,8 +88,7 @@ const POST_FEED_SELECT = `
   author:profiles!user_id(id, username, first_name, last_name, avatar_url),
   media(id, post_id, user_id, type, format, orientation, status, url, thumbnail_url,
         original_url, display_order, alt, width, height, file_size, mime_type,
-        captured_at, camera, lens, focal_length, aperture, iso, shutter_speed,
-        gps_latitude, gps_longitude, created_at, updated_at)
+        is_cover, license, created_at, updated_at)
 ` as const
 
 // ─── Service ──────────────────────────────────────────────────────────────────
@@ -221,9 +223,6 @@ export async function getPostById(postId: string): Promise<PostFeedItem | null> 
 export async function createPost(userId: string, payload: CreatePostPayload): Promise<Post> {
   if (!supabase) throw new Error('Supabase non configuré')
 
-  // `media_format` fait partie du PRD photo-management v2 mais n'est pas encore
-  // dans supabase.ts généré (migration 20260422 draft). Cast en any temporaire
-  // le temps que la migration soit appliquée et les types regénérés.
   const insertPayload = {
     user_id: userId,
     ...payload,
@@ -234,14 +233,9 @@ export async function createPost(userId: string, payload: CreatePostPayload): Pr
       : 'pending') as Post['identification_status'],
   }
 
-  const { data, error } = await supabase
-    .from('posts')
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- media_format non typé (migration draft)
-    .insert(insertPayload as any)
-    .select()
-    .single()
+  const { data, error } = await supabase.from('posts').insert(insertPayload).select().single()
   if (error) throw new Error(error.message)
-  return data as unknown as Post
+  return data as Post
 }
 
 /**

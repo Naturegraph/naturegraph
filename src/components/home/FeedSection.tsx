@@ -62,6 +62,22 @@ const TAXONOMIC_EMOJI: Record<string, string> = {
 // Bridge temporaire pour éviter de refactoriser FeedPost.
 // À supprimer lors du refacto FeedPost vers PostFeedItem.
 
+/**
+ * Dérive le format d'affichage du post depuis le ratio width/height de la
+ * cover. Seuils larges pour absorber les écarts EXIF :
+ *   · ratio < 0.85 → portrait (3:4 letterboxé, fond clair)
+ *   · ratio > 1.15 → 16:9 (cadre plein, object-cover)
+ *   · sinon         → 1:1 (carré)
+ * Sans dimensions connues → fallback 16:9 (l'historique du feed est en paysage).
+ */
+function derivePostFormat(w?: number | null, h?: number | null): MockPost['format'] {
+  if (!w || !h) return '16:9'
+  const r = w / h
+  if (r < 0.85) return 'portrait'
+  if (r > 1.15) return '16:9'
+  return '1:1'
+}
+
 /** Formate une date ISO en format lisible (ex: "10/04/2026") */
 function formatPostDate(isoDate: string): string {
   try {
@@ -107,28 +123,34 @@ function postFeedItemToMockPost(item: PostFeedItem): MockPost {
     scientific_name: item.scientific_name ?? null,
     taxref_id: item.taxref_id ?? null,
     taxonomic_group: item.taxonomic_group ?? null,
-    format: '16:9',
+    // Format Figma (Figma 6385:47324) — préférence utilisateur saisie à
+    // l'étape 1 du formulaire de contribution. Fallback ratio-based si la
+    // colonne est absente (legacy posts pré-migration 20260429).
+    format:
+      (item as { display_format?: MockPost['format'] }).display_format ??
+      derivePostFormat(item.media?.[0]?.width, item.media?.[0]?.height),
     images: (item.media ?? []).map((m) => ({
       url: m.url,
       alt: m.alt ?? '',
-      // Recadrage non destructif persisté (PRD photo-management v2 · crop_data).
-      // `crop_data` pas encore typé dans supabase.ts (migration draft) → cast.
-      cropData:
-        ((m as unknown as { crop_data?: unknown }).crop_data as
-          | { scale: number; offsetX: number; offsetY: number; rotation?: 0 | 90 | 180 | 270 }
-          | null
-          | undefined) ?? null,
+      width: m.width ?? undefined,
+      height: m.height ?? undefined,
     })),
-    // Tous les likes attribués à 'love' pour l'instant — la répartition détaillée
-    // par type nécessite un agrégat SQL séparé (post-MVP)
-    reactions: {
-      love: item.likes_count,
-      admire: 0,
-      fire: 0,
-      wow: 0,
-      curious: 0,
-      disappointed: 0,
-    },
+    // Répartition par type — MVP : on isole la réaction de l'utilisateur courant
+    // dans son propre bucket pour qu'elle s'affiche correctement (badge + couleur).
+    // Le reste des likes est consolidé dans 'love' jusqu'à ce qu'un agrégat SQL
+    // par type soit ajouté (post-MVP — vue matérialisée reactions_by_type).
+    reactions: (() => {
+      const total = item.likes_count
+      const userType = item.user_reaction ?? null
+      const buckets = { love: 0, admire: 0, fire: 0, wow: 0, curious: 0, disappointed: 0 }
+      if (userType && total > 0) {
+        buckets[userType] = 1
+        buckets.love = Math.max(0, total - 1)
+      } else {
+        buckets.love = total
+      }
+      return buckets
+    })(),
     userReaction: item.user_reaction ?? null,
     totalReactions: item.likes_count,
     comments: item.comments_count,

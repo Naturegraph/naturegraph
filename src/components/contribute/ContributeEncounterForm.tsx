@@ -16,14 +16,13 @@
 
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, X } from 'lucide-react'
-import type { TimeOfDay, WeatherCondition, HabitatType } from '@/types/database'
+import { ArrowLeft, X, ImageOff, RotateCcw, ImageUp } from 'lucide-react'
+import type { TimeOfDay, WeatherCondition, HabitatType, DisplayFormat } from '@/types/database'
 import { EncounterStep1 } from './EncounterStep1'
 import { EncounterStep2 } from './EncounterStep2'
 import { EncounterStep3 } from './EncounterStep3'
-import type { PhotoAspectRatio } from './EncounterStep1'
-import { photoFileKey, type PhotoEditsMap } from './photoEdits'
 import type { ObservationEntry } from './EncounterStep2'
+import { compressPhoto } from '@/utils/compressPhoto'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCreatePost } from '@/hooks/usePost'
@@ -44,11 +43,11 @@ import { useQueryClient } from '@tanstack/react-query'
 interface EncounterFormData {
   // Étape 1
   files: File[]
-  aspectRatio: PhotoAspectRatio
-  /** Métadonnées EXIF extraites à l'étape 1 (date, GPS, time-of-day). */
+  /** Format d'affichage choisi par l'utilisateur (Figma 6385:47324) — Paysage
+   *  16:9 par défaut, l'utilisateur peut basculer en Portrait 3:4 ou Carré 1:1. */
+  displayFormat: DisplayFormat
+  /** Métadonnées EXIF agrégées (date/GPS/time-of-day) pour l'étape 3. */
   photoMetadata: PhotoMetadata
-  /** Recadrages + alt text par fichier (PRD photo-management v2 · T3). */
-  photoEdits: PhotoEditsMap
   // Étape 2
   observations: ObservationEntry[]
   helpIdentification: boolean
@@ -80,11 +79,13 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
   const queryClient = useQueryClient()
 
   const [step, setStep] = useState(1)
+  // Toast d'erreur upload (Figma 6385:56334) — message + auto-hide après 5s.
+  // Pas de toast de succès : l'utilisateur voit le post apparaître dans le feed.
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const [form, setForm] = useState<EncounterFormData>({
     files: [],
-    aspectRatio: 'landscape',
+    displayFormat: '16:9',
     photoMetadata: {},
-    photoEdits: {},
     observations: [],
     helpIdentification: false,
     title: '',
@@ -100,6 +101,11 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // Progression upload par photo — alimentée par la boucle d'upload, lue par
+  // le footer du panneau pour informer l'utilisateur en temps réel.
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(
+    null,
+  )
 
   // Fermer sur Escape
   useEffect(() => {
@@ -212,52 +218,45 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
         species_name: firstKnown?.species?.commonName ?? undefined,
         scientific_name: firstKnown?.species?.scientificName ?? undefined,
         taxonomic_group: firstKnown?.species?.group ?? undefined,
+        // Format d'affichage Figma — repris par FeedSection pour le rendu post.
+        display_format: form.displayFormat,
       })
       createdPostId = post.id
 
-      // 2. Upload des médias — détection de format + strip EXIF avant upload.
-      //
-      // Privacy : le strip EXIF retire TOUTES les métadonnées (GPS inclus).
-      // C'est critique car la photo originale d'une espèce sensible peut
-      // exposer sa localisation précise même quand l'utilisateur a activé
-      // `location_hidden`. Les métadonnées EXIF utiles pour le post (date,
-      // GPS, time-of-day) ont déjà été extraites côté client à l'étape 1 et
-      // sont persistées dans `posts`, pas dans le fichier.
+      // 2. Upload des médias — pipeline simple :
+      //   · Compression client (WebP q=82, max 2560px) pour économiser
+      //     stockage + bande passante tout en préservant la qualité visuelle.
+      //   · Strip EXIF du fichier final (protection GPS espèces sensibles).
+      //   · Première photo = cover du post.
+      const [{ detectPhotoFormat }, { stripExif }] = await Promise.all([
+        import('@/utils/detectPhotoFormat'),
+        import('@/utils/stripExif'),
+      ])
+
       for (let i = 0; i < form.files.length; i++) {
+        setUploadProgress({ current: i + 1, total: form.files.length })
+
         const rawFile = form.files[i]
-        // Import dynamique pour ne pas alourdir le bundle du form ; les modules
-        // sont déjà chargés par EncounterStep1 dans le flux normal.
-        const [{ detectPhotoFormat }, { stripExif }] = await Promise.all([
-          import('@/utils/detectPhotoFormat'),
-          import('@/utils/stripExif'),
-        ])
-        // Dimensions natives (width/height) extraites avant re-encode pour
-        // alimenter media.ratio (column GENERATED). file_size / ratio pilotent
-        // le layout feed côté client (PRD photo-management v3).
+
         let dims: { width: number; height: number } | null = null
         try {
           dims = await detectPhotoFormat(rawFile)
         } catch {
-          // fallback silencieux — upload reste valide sans dimensions
+          // fallback silencieux
         }
-        // Strip EXIF — retombe sur le fichier original si format non strippable.
-        const file = await stripExif(rawFile)
-        // Alt text éventuel (PRD v2 T3). photoEdits garde la signature
-        // mais seul `alt` est encore persisté côté media.
-        const edit = form.photoEdits[photoFileKey(rawFile)]
+
+        const compressed = await compressPhoto(rawFile)
+        const fileToUpload = await stripExif(compressed)
+
         await uploadPostMedia({
-          file,
+          file: fileToUpload,
           postId: post.id,
           userId: user.id,
           copyrightNotice: '',
-          // display_order ∈ [0, 3] (CHECK media_display_order_range v3).
           displayOrder: i,
-          // Première photo devient cover explicite. Le trigger DB
-          // `auto_promote_cover` couvre aussi ce cas mais on force pour clarté.
           isCover: i === 0,
           width: dims?.width,
           height: dims?.height,
-          altText: edit?.alt || undefined,
         })
       }
 
@@ -285,11 +284,21 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
           /* swallow rollback error */
         }
       }
-      setErrors({
-        description: err instanceof Error ? err.message : 'Erreur lors de la publication',
-      })
+      // Toast d'erreur upload (Figma 6385:56334) — message court, l'utilisateur
+      // peut réessayer. Pas de toast en cas de succès : la photo apparaît dans
+      // le feed → confirmation visuelle suffisante.
+      const message =
+        err instanceof Error
+          ? err.message
+          : t('contribute.media.uploadError', {
+              defaultValue:
+                'Vérifie ta connexion ou réessaye un peu plus tard pour importer tes photos.',
+            })
+      setUploadError(message)
+      setErrors({ description: message })
     } finally {
       setIsSubmitting(false)
+      setUploadProgress(null)
     }
   }
 
@@ -315,7 +324,7 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
         role="dialog"
         aria-modal="true"
         aria-label={t('contribute.encounterTitle')}
-        className="fixed inset-y-0 right-0 z-50 w-full md:w-[380px] bg-cream-lighter flex flex-col shadow-2xl"
+        className="fixed inset-y-0 right-0 z-50 w-full md:w-[440px] bg-cream-lighter flex flex-col shadow-2xl"
       >
         {/* ── Header sticky ──────────────────────────────────────────────────
             Figma : gap 12px entre la row top et la progress bar, padding 24/16px,
@@ -341,7 +350,9 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
                 type="button"
                 onClick={onClose}
                 aria-label={t('common.close')}
-                className="size-8 shrink-0 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                /* Figma 6385:47503 — bg Content/Neutral/Primary-Inverse #F0F0F5
+                   (très clair, subtil — pas le `bg-muted` plus foncé). */
+                className="size-8 shrink-0 rounded-full bg-[#f0f0f5] hover:bg-[#e5e5ea] flex items-center justify-center text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 <X className="size-5" strokeWidth={2} aria-hidden="true" />
               </button>
@@ -387,10 +398,8 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
               <EncounterStep1
                 files={form.files}
                 onFilesChange={(f) => set('files', f)}
-                aspectRatio={form.aspectRatio}
-                onAspectRatioChange={(r) => set('aspectRatio', r)}
-                photoEdits={form.photoEdits}
-                onPhotoEditsChange={(edits) => set('photoEdits', edits)}
+                displayFormat={form.displayFormat}
+                onDisplayFormatChange={(f) => set('displayFormat', f)}
                 onMetadataExtracted={(meta) => {
                   // Pré-remplit l'étape 3 avec les métadonnées EXIF, sans
                   // écraser une valeur déjà saisie manuellement par l'user.
@@ -439,6 +448,89 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
             )}
           </form>
         </div>
+
+        {/* Toast erreur upload (Figma node 6385:56334) — affiché au-dessus du
+            footer quand l'upload échoue. Pas de toast de succès : la photo
+            apparaît dans le feed → confirmation visuelle suffisante. */}
+        {uploadError && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="shrink-0 mx-5 mb-3 rounded-card bg-background border border-border shadow-md overflow-hidden"
+          >
+            <div className="flex items-start gap-3 p-4">
+              <div className="size-10 shrink-0 rounded-full bg-[var(--color-error)]/15 text-[var(--color-error)] flex items-center justify-center">
+                <ImageOff className="size-5" aria-hidden="true" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-foreground">
+                  {t('contribute.media.uploadErrorTitle', {
+                    defaultValue: 'Erreur lors du chargement',
+                  })}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">{uploadError}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setUploadError(null)}
+                aria-label={t('common.dismiss', { defaultValue: 'Fermer' })}
+                className="size-8 shrink-0 rounded-full hover:bg-muted/50 flex items-center justify-center text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <RotateCcw className="size-4" aria-hidden="true" />
+              </button>
+            </div>
+            {/* Barre rouge bas (status visuel) */}
+            <div className="h-1 bg-[var(--color-error)]" />
+          </div>
+        )}
+
+        {/* Toast progression upload (Figma node 6385:48726) — informe l'user
+            sur connexion lente. Affiché uniquement durant le submit, masqué
+            dès que la promesse upload résout. */}
+        {uploadProgress && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="shrink-0 mx-5 mb-3 rounded-card bg-background border border-border shadow-md overflow-hidden"
+          >
+            <div className="flex items-start gap-3 p-4">
+              <div className="size-10 shrink-0 rounded-full bg-primary-light/40 text-primary flex items-center justify-center">
+                <ImageUp className="size-5" aria-hidden="true" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="text-sm font-bold text-foreground">
+                    {t('contribute.media.uploadingTitle', {
+                      defaultValue: 'Importation en cours !',
+                    })}
+                  </p>
+                  <span className="text-xs text-muted-foreground tabular-nums shrink-0">
+                    {uploadProgress.current}/{uploadProgress.total}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t('contribute.media.uploadingHint', {
+                    defaultValue: 'Nous importons tes photos. Cela peut prendre quelques secondes…',
+                  })}
+                </p>
+              </div>
+            </div>
+            {/* Barre de progression — bleu primary, % à droite */}
+            <div className="px-4 pb-3 flex items-center gap-2">
+              <div className="flex-1 h-1 rounded-full bg-border overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{
+                    width: `${Math.round((uploadProgress.current / uploadProgress.total) * 100)}%`,
+                  }}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {Math.round((uploadProgress.current / uploadProgress.total) * 100)} %
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* ── Footer sticky ──────────────────────────────────────────────── */}
         <div className="shrink-0 border-t border-border bg-cream-lighter px-5 py-4 flex flex-col gap-2">

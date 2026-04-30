@@ -720,6 +720,12 @@
       "mismatchBadge": "Adjust",
       "mismatchHint": "Native format differs from the selected format — the photo will be displayed without cropping (neutral background).",
       "editLabel": "Edit photo",
+      "addPhotosBig": "Add your photos",
+      "addPhotosHint": "Up to {{count}} photos per encounter.",
+      "galleryLabel": "Photo gallery",
+      "addMore": "Add",
+      "removeShort": "Remove",
+      "uploadingPhoto": "Photo {{current}} of {{total}}",
       "edit": {
         "title": "Edit photo",
         "zoomIn": "Zoom in",
