@@ -53,7 +53,7 @@ function StatCard({
     warning: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
   }
   return (
-    <div className="bg-white rounded-lg p-2 flex flex-col items-center justify-center gap-2 text-center">
+    <div className="bg-white rounded-md p-2 flex flex-col items-center justify-center gap-2 text-center">
       <span
         aria-hidden="true"
         className={`size-7 rounded-full flex items-center justify-center ${toneCls[tone]}`}
