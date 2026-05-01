@@ -67,8 +67,12 @@ export async function getSavedPosts(
 
   if (error) throw new Error(error.message)
 
+  // Le shape retourné par PostgREST inclut `user_reaction` côté serveur via la
+  // vue/RPC dédiée, mais quand on join via `post:posts(...)`, on récupère un
+  // Post brut (sans user_reaction). On cast via `unknown` pour absorber la
+  // différence puis on enrichit côté hook (useFeed) si besoin.
   const posts: PostFeedItem[] = (data ?? [])
-    .map((row) => (row as { post: PostFeedItem | null }).post)
+    .map((row) => (row as unknown as { post: PostFeedItem | null }).post)
     .filter((p): p is PostFeedItem => !!p)
 
   const total = count ?? 0

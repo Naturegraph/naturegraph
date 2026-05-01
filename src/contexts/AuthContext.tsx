@@ -159,6 +159,9 @@ function DemoAuthProvider({ children }: { children: React.ReactNode }) {
         posts_count: 0,
         followers_count: 0,
         following_count: 0,
+        // Champs premium (migration 20260501) — défaut free tier
+        subscription_tier: 'free',
+        subscription_expires_at: null,
         created_at: now,
         updated_at: now,
         last_login_at: now,

@@ -47,14 +47,30 @@ export interface CompressionTier {
   targetBytes: number
 }
 
+/**
+ * Tier FREE — paramètres optimisés pour réduire l'egress Supabase.
+ *
+ * Choix (mai 2026, suite quota Free Plan dépassé) :
+ *  - maxDimension 2048 : 4K-friendly, divise par ~1.5 le nombre de pixels vs
+ *    2560 → ~30 % de poids en moins à qualité égale.
+ *  - qualityStart 0.85 : seuil "haute qualité indiscernable" pour AVIF/WebP
+ *    sur des photos nature (testé visuellement). En JPEG c'est l'équivalent
+ *    de quality 80-85.
+ *  - qualityFloor 0.65 : palier minimum avant qu'on accepte un poids > target.
+ *  - targetBytes 500 KB : médiane Instagram/Twitter pour le feed. Les photos
+ *    nature compressent bien (zones uniformes : feuillage, ciel).
+ *
+ * Résultat attendu : -40 à -50 % de bande passante vs anciens réglages.
+ */
 export const TIER_FREE: CompressionTier = {
-  maxDimension: 2560,
-  qualityStart: 0.92,
-  qualityFloor: 0.74,
-  qualityStep: 0.06,
-  targetBytes: 900 * 1024, // ~900 KB
+  maxDimension: 2048,
+  qualityStart: 0.85,
+  qualityFloor: 0.65,
+  qualityStep: 0.05,
+  targetBytes: 500 * 1024, // ~500 KB (médiane Instagram feed)
 }
 
+/** Tier PREMIUM — qualité quasi-RAW, peu de compression. Inchangé. */
 export const TIER_PREMIUM: CompressionTier = {
   maxDimension: 4096,
   qualityStart: 0.95,
@@ -70,7 +86,10 @@ export const DEFAULT_MAX_DIMENSION = TIER_FREE.maxDimension
 /** @deprecated — utiliser `TIER_FREE.qualityStart` */
 export const DEFAULT_QUALITY = TIER_FREE.qualityStart
 
-const SKIP_THRESHOLD_BYTES = 500 * 1024 // 500 KB
+// Skip recompression seulement si le fichier est DÉJÀ très léger.
+// Abaissé de 500 KB → 250 KB (mai 2026) pour forcer plus de fichiers à
+// passer par notre pipeline AVIF/WebP qui économise 30-40 % vs JPEG natif.
+const SKIP_THRESHOLD_BYTES = 250 * 1024 // 250 KB
 
 // ─── Détection des codecs supportés ──────────────────────────────────────────
 
