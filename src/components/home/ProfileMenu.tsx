@@ -36,7 +36,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { User, Settings, LogOut, Palette, Eye, ChevronRight, Type } from 'lucide-react'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 import { useAuth } from '@/contexts/AuthContext'
@@ -303,6 +303,7 @@ interface ProfileMenuProps {
 
 export function ProfileMenu({ onClose }: ProfileMenuProps) {
   const { profile, signOut } = useAuth()
+  const navigate = useNavigate()
   const { textSize, setTextSize, highContrast, setHighContrast } = useAccessibility()
 
   const [showLogoutModal, setShowLogoutModal] = useState(false)
@@ -333,12 +334,17 @@ export function ProfileMenu({ onClose }: ProfileMenuProps) {
   }, [onClose])
 
   // ── Déconnexion ───────────────────────────────────────────────────────────
+  // Après signOut, redirection vers la landing page pour ne pas laisser
+  // l'utilisateur sur /home en mode invité (second-agent/33).
   async function handleLogoutConfirm() {
     setIsLoggingOut(true)
     await signOut()
     setIsLoggingOut(false)
     setShowLogoutModal(false)
     onClose()
+    // Redirection : landing publique (point d'entrée naturel, contient les
+    // CTA "Se connecter" / "Créer un compte").
+    navigate('/', { replace: true })
   }
 
   // ── Contenu partagé dropdown + bottom sheet ───────────────────────────────

@@ -138,7 +138,7 @@ export function HomeNavbar({
         />
 
         <div className="flex items-center size-full">
-          <div className="w-full xl:max-w-[1728px] mx-auto flex items-center justify-between md:px-6 px-4 h-full">
+          <div className="w-full xl:max-w-[1440px] mx-auto flex items-center justify-between md:px-6 px-4 h-full">
             {/* Logo → /home */}
             <Link
               to="/home"

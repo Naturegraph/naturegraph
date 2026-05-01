@@ -41,6 +41,13 @@ export interface FeedParams {
   /** 'recent' | 'popular' | 'for_you' | 'trending' */
   tab?: 'recent' | 'popular' | 'for_you' | 'trending'
   filters?: FeedFilterParams
+  /**
+   * Id de l'utilisateur connecté — utilisé pour personnaliser le tab `for_you`
+   * (ne montre que les posts des utilisateurs suivis). Optionnel : si absent
+   * ou si l'utilisateur ne suit personne, `for_you` retombe sur le tri
+   * chronologique (= comportement de `recent`).
+   */
+  currentUserId?: string
 }
 
 export interface FeedResult {
@@ -77,16 +84,20 @@ export interface CreatePostPayload {
   taxonomic_group?: Post['taxonomic_group']
   taxref_id?: string
   tags?: string[]
+  /** Format d'affichage choisi par l'utilisateur (Figma 6385:47324).
+   *  Default DB = '16:9' si non fourni. */
+  display_format?: Post['display_format']
 }
 
-// Sélecteur de colonnes utilisé dans les requêtes feed — centralisé pour cohérence
+// Sélecteur de colonnes utilisé dans les requêtes feed — centralisé pour cohérence.
+// `interests` est nécessaire pour afficher le badge "préférence #1" sur l'avatar
+// auteur dans FeedPost (second-agent/08).
 const POST_FEED_SELECT = `
   *,
-  author:profiles!user_id(id, username, first_name, last_name, avatar_url),
+  author:profiles!user_id(id, username, first_name, last_name, avatar_url, interests),
   media(id, post_id, user_id, type, format, orientation, status, url, thumbnail_url,
         original_url, display_order, alt, width, height, file_size, mime_type,
-        captured_at, camera, lens, focal_length, aperture, iso, shutter_speed,
-        gps_latitude, gps_longitude, created_at, updated_at)
+        is_cover, license, created_at, updated_at)
 ` as const
 
 // ─── Service ──────────────────────────────────────────────────────────────────
@@ -101,16 +112,40 @@ const POST_FEED_SELECT = `
  *  - trending : popular des 48 dernières heures
  */
 export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
-  const { page = 1, limit = 20, tab = 'recent', filters } = params
+  const { page = 1, limit = 20, tab = 'recent', filters, currentUserId } = params
   const offset = (page - 1) * limit
 
   if (!supabase) throw new Error('Supabase non configuré')
+
+  // ─── Tab "Pour vous" — filtre sur les utilisateurs suivis ────────────────
+  // Pré-fetch des following IDs si nécessaire. Si l'user ne suit personne →
+  // résultat vide explicite (UX cohérente : "rien ne s'affiche tant que tu
+  // ne suis personne"). Si pas authentifié → fallback sur 'recent'.
+  let followingIds: string[] | null = null
+  if (tab === 'for_you' && currentUserId) {
+    const { data: followsData } = await supabase
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', currentUserId)
+    followingIds = (followsData ?? []).map((r) => r.following_id as string)
+    if (followingIds.length === 0) {
+      return {
+        data: [],
+        pagination: { total: 0, page, limit, totalPages: 0, hasNext: false, hasPrevious: false },
+      }
+    }
+  }
 
   let query = supabase
     .from('posts')
     .select(POST_FEED_SELECT, { count: 'exact' })
     .eq('status', 'published')
     .eq('visibility', 'public')
+
+  // Tab "Pour vous" : restreindre aux posts des utilisateurs suivis
+  if (tab === 'for_you' && followingIds && followingIds.length > 0) {
+    query = query.in('user_id', followingIds)
+  }
 
   // ─── Filtres utilisateur (FeedFilterPanel) ─────────────────────────────
   if (filters?.categories && filters.categories.length > 0) {
@@ -164,7 +199,8 @@ export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
     const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
     query = query.gte('published_at', cutoff).order('likes_count', { ascending: false })
   } else {
-    // 'recent' et 'for_you' (for_you = recent sans personnalisation pour le MVP)
+    // 'recent' et 'for_you' : tri chronologique (le filtrage `for_you` se fait
+    // en amont via in('user_id', followingIds)).
     query = query.order('created_at', { ascending: false })
   }
 
@@ -221,21 +257,58 @@ export async function getPostById(postId: string): Promise<PostFeedItem | null> 
 export async function createPost(userId: string, payload: CreatePostPayload): Promise<Post> {
   if (!supabase) throw new Error('Supabase non configuré')
 
+  const insertPayload = {
+    user_id: userId,
+    ...payload,
+    status: 'published' as const,
+    published_at: new Date().toISOString(),
+    identification_status: (payload.species_name
+      ? 'identified'
+      : 'pending') as Post['identification_status'],
+  }
+
+  const { data, error } = await supabase.from('posts').insert(insertPayload).select().single()
+  if (error) throw new Error(error.message)
+  return data as Post
+}
+
+/**
+ * Supprime un post (DELETE). Les médias rattachés sont supprimés en cascade
+ * (FK ON DELETE CASCADE sur media.post_id), ainsi que les reactions/comments/
+ * saved_posts/hidden_posts/identification_proposals.
+ *
+ * RLS : seul le propriétaire (user_id = auth.uid()) peut supprimer.
+ *
+ * À appeler depuis DeleteConfirmModal après confirmation utilisateur.
+ * Le cache TanStack Query ['feed'] doit être invalidé après succès pour
+ * faire disparaître le post du feed (utiliser useInvalidateFeed côté hook).
+ */
+export async function deletePost(postId: string): Promise<void> {
+  if (!supabase) throw new Error('Supabase non configuré')
+  const { error } = await supabase.from('posts').delete().eq('id', postId)
+  if (error) throw new Error(error.message)
+}
+
+/**
+ * Met à jour un post existant (édition). Champs au format `Partial<CreatePostPayload>` —
+ * seuls les champs fournis sont mis à jour. RLS user-scoped : seul le
+ * propriétaire peut modifier.
+ *
+ * À appeler depuis le formulaire d'édition (/contribute?edit=postId).
+ */
+export async function updatePost(
+  postId: string,
+  payload: Partial<CreatePostPayload>,
+): Promise<Post> {
+  if (!supabase) throw new Error('Supabase non configuré')
   const { data, error } = await supabase
     .from('posts')
-    .insert({
-      user_id: userId,
-      ...payload,
-      status: 'published' as const,
-      published_at: new Date().toISOString(),
-      identification_status: (payload.species_name
-        ? 'identified'
-        : 'pending') as Post['identification_status'],
-    })
+    .update(payload)
+    .eq('id', postId)
     .select()
     .single()
   if (error) throw new Error(error.message)
-  return data as unknown as Post
+  return data as Post
 }
 
 /**

@@ -12,62 +12,26 @@
  *  - refreshProfile()
  */
 
-import { createContext, useContext, useEffect, useRef, useState } from 'react'
-import type { User, Session } from '@supabase/supabase-js'
+import { useEffect, useRef, useState } from 'react'
+import type { User } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { setRememberMe, clearAuthStorage } from '@/lib/authStorage'
 import { generateAndStoreOtp, validateOtp } from '@/lib/demoAuth'
 import type { Profile } from '@/types/database'
+import {
+  AuthContext,
+  type AuthState,
+  type SignUpResult,
+  type SocialResult,
+} from './authContextObject'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Re-export `useAuth` depuis l'objet contexte séparé pour préserver le chemin
+// d'import historique `@/contexts/AuthContext` utilisé dans 25+ fichiers.
+// Le hook et le Context vivent dans `authContextObject.ts` pour respecter
+// `react-refresh/only-export-components` (stabilité HMR Vite).
+export { useAuth } from './authContextObject'
 
-interface AuthState {
-  user: User | null
-  session: Session | null
-  profile: Profile | null
-  isLoading: boolean
-  isAuthenticated: boolean
-  /** True si l'utilisateur a un username — indique que l'onboarding est terminé */
-  onboardingCompleted: boolean
-}
-
-interface SignUpResult {
-  success: boolean
-  requiresVerification: boolean
-  error?: string
-}
-
-interface SocialResult {
-  success: boolean
-  error?: string
-}
-
-interface AuthContextValue extends AuthState {
-  /** Inscription / connexion via magic link OTP (email ou téléphone) */
-  signUp: (emailOrPhone: string) => Promise<SignUpResult>
-  /** Connexion par mot de passe */
-  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
-  /**
-   * OTP direct via Supabase.
-   * @param email — adresse à laquelle envoyer le code
-   * @param remember — si true, session persistée en localStorage (30j).
-   *                   Sinon sessionStorage (effacée à la fermeture navigateur).
-   *                   Défaut : false (sécurité par défaut).
-   */
-  signInWithOtp: (email: string, remember?: boolean) => Promise<{ error: Error | null }>
-  /** OAuth social (stub — affiche un message en attendant l'implémentation) */
-  signInWithSocial: (provider: 'google' | 'apple' | 'facebook') => Promise<SocialResult>
-  /** Vérification du code OTP */
-  verifyOtp: (email: string, token: string) => Promise<{ error: Error | null }>
-  /** Rafraîchit le profil après la fin de l'onboarding */
-  completeOnboarding: () => Promise<void>
-  signOut: () => Promise<void>
-  refreshProfile: () => Promise<void>
-}
-
-// ─── Context ─────────────────────────────────────────────────────────────────
-
-const AuthContext = createContext<AuthContextValue | null>(null)
+// ─── État par défaut ─────────────────────────────────────────────────────────
 
 const defaultState: AuthState = {
   user: null,
@@ -195,6 +159,9 @@ function DemoAuthProvider({ children }: { children: React.ReactNode }) {
         posts_count: 0,
         followers_count: 0,
         following_count: 0,
+        // Champs premium (migration 20260501) — défaut free tier
+        subscription_tier: 'free',
+        subscription_expires_at: null,
         created_at: now,
         updated_at: now,
         last_login_at: now,
@@ -341,7 +308,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       'Email rate limit exceeded': 'Trop de tentatives. Réessaie dans quelques minutes.',
       'Phone not confirmed': 'Numéro de téléphone non confirmé.',
     }
-    return safeMessages[message] ?? 'Une erreur est survenue. Réessaie plus tard.'
+    // Lookup exact d'abord
+    if (safeMessages[message]) return safeMessages[message]
+
+    // Détection souple (Supabase v2 renvoie parfois en lowercase ou avec variants)
+    const lower = message.toLowerCase()
+    if (lower.includes('rate limit') || lower.includes('over_email_send_rate_limit')) {
+      return 'Trop de tentatives. Réessaie dans quelques minutes.'
+    }
+    if (lower.includes('invalid login')) return 'Identifiants incorrects.'
+    if (lower.includes('not confirmed')) {
+      return 'Adresse e-mail non confirmée. Vérifie ta boîte mail.'
+    }
+    if (lower.includes('already registered') || lower.includes('user_already_exists')) {
+      return 'Un compte existe déjà avec cette adresse.'
+    }
+
+    return 'Une erreur est survenue. Réessaie plus tard.'
   }
 
   // ─── Magic link OTP signup/login ─────────────────────────────────────────
@@ -497,10 +480,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
-
-export function useAuth() {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
-  return ctx
-}
+// Le hook `useAuth` est défini dans `authContextObject.ts` et re-exporté en
+// haut de ce module, ce qui garde l'import `@/contexts/AuthContext` stable.

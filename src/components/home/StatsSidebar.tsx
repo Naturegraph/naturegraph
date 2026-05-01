@@ -14,7 +14,6 @@ import { useTranslation } from 'react-i18next'
 import { TrendingUp, TrendingDown, ChevronDown, ChevronRight, Globe } from 'lucide-react'
 import { useImpactStats, useTrendingSpecies } from '@/hooks/useStats'
 import { useLocation } from '@/contexts/LocationContext'
-import { INTEREST_CONFIG } from '@/constants/interests'
 import type { StatsPeriod } from '@/services/statsService'
 
 // ─── Constantes ─────────────────────────────────────────────────────────────
@@ -57,7 +56,20 @@ export function StatsSidebar() {
   const { data: impact, isLoading: impactLoading } = useImpactStats(impactPeriod)
 
   // Tendances : période sélectionnable (semaine / mois / trimestre)
-  const { data: trending, isLoading: trendingLoading } = useTrendingSpecies(trendingPeriod, region)
+  const { data: trendingRaw, isLoading: trendingLoading } = useTrendingSpecies(
+    trendingPeriod,
+    region,
+  )
+  /**
+   * Règles Tendances (second-agent/17) :
+   *   1. On n'affiche QUE les espèces qui ont une photo (sinon l'item disparaît).
+   *   2. Une espèce n'est une "tendance" qu'à partir de 7 observations — sous
+   *      ce seuil c'est une simple observation, pas une tendance.
+   * Si la liste filtrée est vide → état vide (le compteur global Observations
+   * reste indépendant).
+   */
+  const TRENDING_MIN_OBS = 7
+  const trending = trendingRaw?.filter((s) => !!s.imageUrl && s.observations >= TRENDING_MIN_OBS)
 
   // ── Rendu ─────────────────────────────────────────────────────────────────
 
@@ -86,7 +98,7 @@ export function StatsSidebar() {
               <ChevronDown className="size-4" aria-hidden="true" />
             </button>
             {impactDropdownOpen && (
-              <div className="absolute right-0 top-full mt-1 z-10 bg-cream-lighter border border-border rounded-lg shadow-lg overflow-hidden min-w-[120px]">
+              <div className="absolute right-0 top-full mt-1 z-10 bg-cream-lighter border border-border rounded-md shadow-lg overflow-hidden min-w-[120px]">
                 {IMPACT_PERIODS.map((p) => (
                   <button
                     key={p.value}
@@ -110,7 +122,7 @@ export function StatsSidebar() {
         {/* Cartes stats */}
         <div className="flex gap-3">
           {/* Observations */}
-          <div className="flex-1 bg-card rounded-lg p-4 flex flex-col gap-2">
+          <div className="flex-1 bg-card rounded-md p-4 flex flex-col gap-2">
             <p className="text-xs text-muted-foreground tracking-[0.48px]">
               {t('home.stats.observations')}
             </p>
@@ -126,7 +138,7 @@ export function StatsSidebar() {
             )}
           </div>
           {/* Migrateurs */}
-          <div className="flex-1 bg-card rounded-lg p-4 flex flex-col gap-2">
+          <div className="flex-1 bg-card rounded-md p-4 flex flex-col gap-2">
             <p className="text-xs text-muted-foreground tracking-[0.48px]">
               {t('home.stats.migrators')}
             </p>
@@ -175,7 +187,7 @@ export function StatsSidebar() {
               <ChevronDown className="size-4" aria-hidden="true" />
             </button>
             {trendingDropdownOpen && (
-              <div className="absolute right-0 top-full mt-1 z-10 bg-cream-lighter border border-border rounded-lg shadow-lg overflow-hidden min-w-[120px]">
+              <div className="absolute right-0 top-full mt-1 z-10 bg-cream-lighter border border-border rounded-md shadow-lg overflow-hidden min-w-[120px]">
                 {IMPACT_PERIODS.map((p) => (
                   <button
                     key={p.value}
@@ -216,12 +228,6 @@ export function StatsSidebar() {
         {!trendingLoading && trending && trending.length > 0 && (
           <ul className="flex flex-col gap-3 px-6">
             {trending.slice(0, 3).map((species) => {
-              // Fallback : si aucune photo, on affiche l'emoji du groupe
-              // taxonomique (plus lisible et contextualisé qu'une icône
-              // générique Leaf).
-              const fallbackEmoji = species.category
-                ? (INTEREST_CONFIG[species.category]?.emoji ?? '🌍')
-                : '🌍'
               return (
                 <li key={species.name}>
                   <Link
@@ -229,9 +235,14 @@ export function StatsSidebar() {
                     aria-label={t('home.trending.openSpecies', { species: species.name })}
                     className="flex items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 group"
                   >
-                    {/* Image espèce — 48×48 rounded-md (fallback emoji catégorie) */}
+                    {/*
+                      Image espèce — 48×48 rounded-md.
+                      Règle (second-agent/17) : on n'affiche JAMAIS d'icône de
+                      catégorie ici — soit la dernière photo partagée, soit un
+                      simple placeholder neutre. Pas de fallback emoji.
+                    */}
                     <div className="size-12 rounded-md overflow-hidden shrink-0 bg-[var(--color-action-light)]">
-                      {species.imageUrl ? (
+                      {species.imageUrl && (
                         <img
                           src={species.imageUrl}
                           alt=""
@@ -240,13 +251,6 @@ export function StatsSidebar() {
                           width={48}
                           height={48}
                         />
-                      ) : (
-                        <div
-                          className="size-full flex items-center justify-center text-xl"
-                          aria-label={species.category ?? undefined}
-                        >
-                          <span aria-hidden="true">{fallbackEmoji}</span>
-                        </div>
                       )}
                     </div>
 

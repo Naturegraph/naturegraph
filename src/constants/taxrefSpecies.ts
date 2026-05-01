@@ -10,6 +10,7 @@
  */
 
 import type { TaxonomicGroup } from '@/types/database'
+import { CATEGORY_EMOJIS } from '@/utils/badgeHelpers'
 
 export interface TaxrefSpecies {
   id: string
@@ -23,14 +24,20 @@ export interface TaxrefSpecies {
 /**
  * Emoji et libellé par groupe taxonomique.
  * Utilisé dans SpeciesSearch, FeedPost chip, SearchPanel.
+ *
+ * Emojis dérivés de CATEGORY_EMOJIS (source de vérité — second-agent/09).
  */
 export const TAXONOMIC_GROUP_CONFIG: Record<string, { emoji: string; label: string }> = {
-  birds: { emoji: '🦅', label: 'Oiseaux' },
-  mammals: { emoji: '🦊', label: 'Mammifères' },
-  insects: { emoji: '🦋', label: 'Insectes' },
-  amphibians: { emoji: '🐸', label: 'Amphibiens' },
-  reptiles: { emoji: '🦎', label: 'Reptiles' },
-  other: { emoji: '🌿', label: 'Autre' },
+  birds: { emoji: CATEGORY_EMOJIS.birds, label: 'Oiseaux' },
+  mammals: { emoji: CATEGORY_EMOJIS.mammals, label: 'Mammifères' },
+  insects: { emoji: CATEGORY_EMOJIS.insects, label: 'Insectes' },
+  amphibians: { emoji: CATEGORY_EMOJIS.amphibians, label: 'Amphibiens' },
+  reptiles: { emoji: CATEGORY_EMOJIS.reptiles, label: 'Reptiles' },
+  arachnids: { emoji: CATEGORY_EMOJIS.arachnids, label: 'Arachnides' },
+  mollusks: { emoji: CATEGORY_EMOJIS.mollusks, label: 'Mollusques' },
+  fish: { emoji: CATEGORY_EMOJIS.fish, label: 'Poissons' },
+  plants: { emoji: CATEGORY_EMOJIS.plants, label: 'Plantes' },
+  other: { emoji: '✨', label: 'Autre' },
 }
 
 /** Échantillon d'espèces TAXREF pour l'autocomplétion en développement */

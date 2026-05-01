@@ -115,8 +115,9 @@ export function LogoutModal({ onConfirm, onCancel, isLoading = false }: LogoutMo
 
         {/* Actions */}
         <div className="px-6 pb-6 flex flex-col gap-3">
-          {/* CTA secondaire — rester (action prioritaire visuellement = en haut) */}
-          <Button variant="secondary" className="w-full" onClick={onCancel} disabled={isLoading}>
+          {/* CTA primaire — rester (action prioritaire = bouton plein violet).
+              La déconnexion est destructive et passe en secondaire/outline. */}
+          <Button variant="primary" className="w-full" onClick={onCancel} disabled={isLoading}>
             Rester explorer
           </Button>
 

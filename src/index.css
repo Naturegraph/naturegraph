@@ -135,3 +135,24 @@
     animation: none;
   }
 }
+
+/**
+ * Inputs date — masquer l'icône native (Webkit/Blink) pour ne garder que
+ * notre icône custom Calendar (cohérence design system). Le clic sur l'input
+ * continue d'ouvrir le picker natif normalement.
+ *
+ * Cible : `<input type="date" class="date-input-clean">` dans EncounterStep3,
+ * EncounterStep4, ContributeInstantForm, etc.
+ */
+.date-input-clean::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  cursor: pointer;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.date-input-clean::-webkit-inner-spin-button,
+.date-input-clean::-webkit-clear-button {
+  display: none;
+}
