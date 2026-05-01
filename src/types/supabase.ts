@@ -693,6 +693,7 @@ export type Database = {
           taxref_source: string | null
           taxref_updated_at: string | null
           time_of_day: string | null
+          title: string | null
           type: string
           updated_at: string | null
           user_id: string
@@ -735,6 +736,7 @@ export type Database = {
           taxref_source?: string | null
           taxref_updated_at?: string | null
           time_of_day?: string | null
+          title?: string | null
           type: string
           updated_at?: string | null
           user_id: string
@@ -777,6 +779,7 @@ export type Database = {
           taxref_source?: string | null
           taxref_updated_at?: string | null
           time_of_day?: string | null
+          title?: string | null
           type?: string
           updated_at?: string | null
           user_id?: string
