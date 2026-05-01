@@ -26,7 +26,8 @@ import { compressPhoto } from '@/utils/compressPhoto'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCreatePost } from '@/hooks/usePost'
-import { FEED_QUERY_KEY } from '@/hooks/useFeed'
+// Note : on n'utilise plus FEED_QUERY_KEY ici, on invalide via prefix ['feed']
+// pour matcher toutes les variantes (tab/filters/page/user).
 import { uploadPostMedia } from '@/services/mediaService'
 import { createProposal } from '@/services/identificationService'
 import { supabase } from '@/lib/supabase'
@@ -220,7 +221,21 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
       return
     }
     setIsSubmitting(true)
+    setUploadError(null)
     let createdPostId: string | null = null
+    // Watchdog : si la soumission ne se termine pas en 60s, on libère le bouton
+    // et on affiche un message clair. Évite le « spinner infini » en cas de
+    // blocage Storage / quota Supabase saturé / réseau coupé.
+    const watchdog = setTimeout(() => {
+      console.warn('[ContributeEncounterForm] watchdog : submission > 60s, force release')
+      setIsSubmitting(false)
+      setUploadProgress(null)
+      setUploadError(
+        t('contribute.media.uploadError', {
+          defaultValue: 'La soumission prend trop de temps — vérifie ta connexion et réessaie.',
+        }),
+      )
+    }, 60_000)
     try {
       // 1. Premier observation identifiée → champs species_* du post
       const firstKnown = form.observations.find((o) => !o.isUnknown && o.species)
@@ -298,8 +313,12 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
         })
       }
 
-      // Invalider le feed APRÈS l'upload media pour que le post apparaisse avec sa photo
-      queryClient.invalidateQueries({ queryKey: FEED_QUERY_KEY({}) })
+      // Invalider TOUTES les variantes du feed (tab/filters/user/page) pour que
+      // le nouveau post apparaisse, peu importe le contexte de la home.
+      // Bug avant : on passait FEED_QUERY_KEY({}) qui produit une clé spécifique
+      // ['feed','recent',1,20,'{}',''] qui ne match aucune query active si
+      // l'utilisateur a des filtres ou est connecté → cache jamais rafraîchi.
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
 
       onClose()
     } catch (err) {
@@ -328,7 +347,9 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
                 'Vérifie ta connexion ou réessaye un peu plus tard pour importer tes photos.',
             })
       setUploadError(friendlyMessage)
+      console.error('[ContributeEncounterForm] submit failed:', err)
     } finally {
+      clearTimeout(watchdog)
       setIsSubmitting(false)
       setUploadProgress(null)
     }
