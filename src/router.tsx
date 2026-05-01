@@ -30,6 +30,7 @@ const Privacy = lazy(() => import('./pages/Privacy'))
 const Legal = lazy(() => import('./pages/Legal'))
 const Contribute = lazy(() => import('./pages/Contribute'))
 const Settings = lazy(() => import('./pages/Settings'))
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 /**
@@ -148,6 +149,18 @@ export const router = createBrowserRouter([
             <OnboardingGuard>
               <Profile />
             </OnboardingGuard>
+          </LazyPage>
+        ),
+      },
+
+      // Notifications — page dédiée avec filtres + pagination curseur
+      {
+        path: 'notifications',
+        element: (
+          <LazyPage>
+            <ProtectedRoute>
+              <NotificationsPage />
+            </ProtectedRoute>
           </LazyPage>
         ),
       },

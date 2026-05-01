@@ -13,11 +13,41 @@ import type { Post, PostFeedItem, ReactionType } from '@/types/database'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+/**
+ * Filtres appliqués au feed — schéma aligné avec FeedFilterPanel.
+ * Chaque filtre est optionnel et appliqué uniquement s'il a une valeur non par défaut.
+ */
+export interface FeedFilterParams {
+  /** Valeurs de posts.taxonomic_group (ex: ['birds', 'mammals']) */
+  categories?: string[]
+  /** Ne garder que les posts avec identification_status = 'pending' (demandes d'aide) */
+  helpOnly?: boolean
+  /** Filtre par type de partage (type = 'nature_encounter' | 'nature_instant') */
+  shareTypes?: { encounter: boolean; instant: boolean }
+  /** Période relative à maintenant, filtre sur published_at */
+  period?: 'all' | 'today' | 'week' | 'month'
+  /**
+   * Rayon en km (0 = pas de filtre).
+   * Le filtrage radius est appliqué côté hook (useFeed) via Haversine client-side,
+   * car PostgREST n'expose pas ST_DWithin directement. La valeur est ignorée ici
+   * mais conservée pour que la clé de cache React Query change quand elle varie.
+   */
+  radiusKm?: number
+}
+
 export interface FeedParams {
   page?: number
   limit?: number
   /** 'recent' | 'popular' | 'for_you' | 'trending' */
   tab?: 'recent' | 'popular' | 'for_you' | 'trending'
+  filters?: FeedFilterParams
+  /**
+   * Id de l'utilisateur connecté — utilisé pour personnaliser le tab `for_you`
+   * (ne montre que les posts des utilisateurs suivis). Optionnel : si absent
+   * ou si l'utilisateur ne suit personne, `for_you` retombe sur le tri
+   * chronologique (= comportement de `recent`).
+   */
+  currentUserId?: string
 }
 
 export interface FeedResult {
@@ -34,6 +64,8 @@ export interface FeedResult {
 
 export interface CreatePostPayload {
   type: Post['type']
+  /** Titre court optionnel (null-safe côté DB — colonne `posts.title`). */
+  title?: string
   description: string
   visibility?: Post['visibility']
   encounter_date: string
@@ -52,16 +84,20 @@ export interface CreatePostPayload {
   taxonomic_group?: Post['taxonomic_group']
   taxref_id?: string
   tags?: string[]
+  /** Format d'affichage choisi par l'utilisateur (Figma 6385:47324).
+   *  Default DB = '16:9' si non fourni. */
+  display_format?: Post['display_format']
 }
 
-// Sélecteur de colonnes utilisé dans les requêtes feed — centralisé pour cohérence
+// Sélecteur de colonnes utilisé dans les requêtes feed — centralisé pour cohérence.
+// `interests` est nécessaire pour afficher le badge "préférence #1" sur l'avatar
+// auteur dans FeedPost (second-agent/08).
 const POST_FEED_SELECT = `
   *,
-  author:profiles!user_id(id, username, first_name, last_name, avatar_url),
+  author:profiles!user_id(id, username, first_name, last_name, avatar_url, interests),
   media(id, post_id, user_id, type, format, orientation, status, url, thumbnail_url,
         original_url, display_order, alt, width, height, file_size, mime_type,
-        captured_at, camera, lens, focal_length, aperture, iso, shutter_speed,
-        gps_latitude, gps_longitude, created_at, updated_at)
+        is_cover, license, created_at, updated_at)
 ` as const
 
 // ─── Service ──────────────────────────────────────────────────────────────────
@@ -76,16 +112,84 @@ const POST_FEED_SELECT = `
  *  - trending : popular des 48 dernières heures
  */
 export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
-  const { page = 1, limit = 20, tab = 'recent' } = params
+  const { page = 1, limit = 20, tab = 'recent', filters, currentUserId } = params
   const offset = (page - 1) * limit
 
   if (!supabase) throw new Error('Supabase non configuré')
+
+  // ─── Tab "Pour vous" — filtre sur les utilisateurs suivis ────────────────
+  // Pré-fetch des following IDs si nécessaire. Si l'user ne suit personne →
+  // résultat vide explicite (UX cohérente : "rien ne s'affiche tant que tu
+  // ne suis personne"). Si pas authentifié → fallback sur 'recent'.
+  let followingIds: string[] | null = null
+  if (tab === 'for_you' && currentUserId) {
+    const { data: followsData } = await supabase
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', currentUserId)
+    followingIds = (followsData ?? []).map((r) => r.following_id as string)
+    if (followingIds.length === 0) {
+      return {
+        data: [],
+        pagination: { total: 0, page, limit, totalPages: 0, hasNext: false, hasPrevious: false },
+      }
+    }
+  }
 
   let query = supabase
     .from('posts')
     .select(POST_FEED_SELECT, { count: 'exact' })
     .eq('status', 'published')
     .eq('visibility', 'public')
+
+  // Tab "Pour vous" : restreindre aux posts des utilisateurs suivis
+  if (tab === 'for_you' && followingIds && followingIds.length > 0) {
+    query = query.in('user_id', followingIds)
+  }
+
+  // ─── Filtres utilisateur (FeedFilterPanel) ─────────────────────────────
+  if (filters?.categories && filters.categories.length > 0) {
+    // Catégories d'espèces → colonne indexée posts.taxonomic_group
+    query = query.in('taxonomic_group', filters.categories)
+  }
+
+  if (filters?.helpOnly) {
+    // Proxy "demandes d'aide" : posts encore en attente d'identification.
+    // À remplacer par une colonne dédiée help_request lors d'une future migration.
+    query = query.eq('identification_status', 'pending')
+  }
+
+  if (filters?.shareTypes) {
+    // On construit la liste des types sélectionnés. Si les deux sont décochés →
+    // on force un filtre vide (aucun résultat) plutôt que d'ignorer silencieusement.
+    const activeTypes: string[] = []
+    if (filters.shareTypes.encounter) activeTypes.push('nature_encounter')
+    if (filters.shareTypes.instant) activeTypes.push('nature_instant')
+    if (activeTypes.length === 0) {
+      // Aucun type actif → retourner 0 résultat sans requête inutile.
+      return {
+        data: [],
+        pagination: { total: 0, page, limit, totalPages: 0, hasNext: false, hasPrevious: false },
+      }
+    }
+    // On filtre seulement si subset (évite .in() qui inclut tout si les 2 types sont actifs).
+    if (activeTypes.length === 1) {
+      query = query.eq('type', activeTypes[0])
+    }
+  }
+
+  if (filters?.period && filters.period !== 'all') {
+    // Mapping période → cutoff ISO sur published_at
+    const now = Date.now()
+    const msPerDay = 86_400_000
+    const cutoffMs: Record<'today' | 'week' | 'month', number> = {
+      today: now - msPerDay,
+      week: now - 7 * msPerDay,
+      month: now - 30 * msPerDay,
+    }
+    const cutoff = new Date(cutoffMs[filters.period]).toISOString()
+    query = query.gte('published_at', cutoff)
+  }
 
   // Tri selon l'onglet actif
   if (tab === 'popular') {
@@ -95,11 +199,15 @@ export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
     const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
     query = query.gte('published_at', cutoff).order('likes_count', { ascending: false })
   } else {
-    // 'recent' et 'for_you' (for_you = recent sans personnalisation pour le MVP)
+    // 'recent' et 'for_you' : tri chronologique (le filtrage `for_you` se fait
+    // en amont via in('user_id', followingIds)).
     query = query.order('created_at', { ascending: false })
   }
 
-  const { data, error, count } = await query.range(offset, offset + limit - 1)
+  // Si un filtre de rayon est actif, on élargit la fenêtre pour compenser le
+  // filtrage client-side Haversine (effectué dans useFeed).
+  const fetchLimit = filters?.radiusKm && filters.radiusKm > 0 ? limit * 5 : limit
+  const { data, error, count } = await query.range(offset, offset + fetchLimit - 1)
 
   if (error) throw new Error(error.message)
 
@@ -149,21 +257,58 @@ export async function getPostById(postId: string): Promise<PostFeedItem | null> 
 export async function createPost(userId: string, payload: CreatePostPayload): Promise<Post> {
   if (!supabase) throw new Error('Supabase non configuré')
 
+  const insertPayload = {
+    user_id: userId,
+    ...payload,
+    status: 'published' as const,
+    published_at: new Date().toISOString(),
+    identification_status: (payload.species_name
+      ? 'identified'
+      : 'pending') as Post['identification_status'],
+  }
+
+  const { data, error } = await supabase.from('posts').insert(insertPayload).select().single()
+  if (error) throw new Error(error.message)
+  return data as Post
+}
+
+/**
+ * Supprime un post (DELETE). Les médias rattachés sont supprimés en cascade
+ * (FK ON DELETE CASCADE sur media.post_id), ainsi que les reactions/comments/
+ * saved_posts/hidden_posts/identification_proposals.
+ *
+ * RLS : seul le propriétaire (user_id = auth.uid()) peut supprimer.
+ *
+ * À appeler depuis DeleteConfirmModal après confirmation utilisateur.
+ * Le cache TanStack Query ['feed'] doit être invalidé après succès pour
+ * faire disparaître le post du feed (utiliser useInvalidateFeed côté hook).
+ */
+export async function deletePost(postId: string): Promise<void> {
+  if (!supabase) throw new Error('Supabase non configuré')
+  const { error } = await supabase.from('posts').delete().eq('id', postId)
+  if (error) throw new Error(error.message)
+}
+
+/**
+ * Met à jour un post existant (édition). Champs au format `Partial<CreatePostPayload>` —
+ * seuls les champs fournis sont mis à jour. RLS user-scoped : seul le
+ * propriétaire peut modifier.
+ *
+ * À appeler depuis le formulaire d'édition (/contribute?edit=postId).
+ */
+export async function updatePost(
+  postId: string,
+  payload: Partial<CreatePostPayload>,
+): Promise<Post> {
+  if (!supabase) throw new Error('Supabase non configuré')
   const { data, error } = await supabase
     .from('posts')
-    .insert({
-      user_id: userId,
-      ...payload,
-      status: 'published' as const,
-      published_at: new Date().toISOString(),
-      identification_status: (payload.species_name
-        ? 'identified'
-        : 'pending') as Post['identification_status'],
-    })
+    .update(payload)
+    .eq('id', postId)
     .select()
     .single()
   if (error) throw new Error(error.message)
-  return data as unknown as Post
+  return data as Post
 }
 
 /**

@@ -36,9 +36,14 @@ export async function uploadAvatar(file: File, userId: string): Promise<string> 
   if (file.size > MAX_AVATAR_BYTES) throw new Error('Fichier trop lourd (max 2 Mo)')
 
   const path = `${userId}/avatar.${ext(file)}`
-  const { error } = await supabase.storage
-    .from('avatars')
-    .upload(path, file, { contentType: file.type, upsert: true })
+  const { error } = await supabase.storage.from('avatars').upload(path, file, {
+    contentType: file.type,
+    upsert: true,
+    // Cache 1 an immutable — les avatars sont uploadés sur un path déterministe
+    // et l'upsert remplace le contenu, donc on peut bénéficier d'un cache long.
+    // (NB : l'URL ne change pas — si tu veux invalider, ajoute un querystring `?v=`.)
+    cacheControl: '31536000',
+  })
   if (error) throw new Error(error.message)
 
   const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path)
@@ -66,7 +71,14 @@ export async function uploadPostMedia(params: {
   copyrightNotice: string
   license?: string
   altText?: string
+  /** Position dans la série, 0-3 (max 4 photos par post). */
   displayOrder?: number
+  /** Marque cette photo comme cover du post (trigger DB garantit unicité). */
+  isCover?: boolean
+  /** Largeur native en pixels, après downscale éventuel côté client. */
+  width?: number
+  /** Hauteur native en pixels, après downscale éventuel côté client. */
+  height?: number
 }): Promise<PostMediaUploadResult> {
   const {
     file,
@@ -75,7 +87,10 @@ export async function uploadPostMedia(params: {
     copyrightNotice,
     license = 'cc-by-nc-sa',
     altText,
-    displayOrder = 1,
+    displayOrder = 0,
+    isCover = false,
+    width,
+    height,
   } = params
 
   if (!isSupabaseConfigured || !supabase) throw new Error('Storage indisponible (mode demo)')
@@ -86,32 +101,42 @@ export async function uploadPostMedia(params: {
 
   const path = `${userId}/${postId}/${uuid()}.${ext(file)}`
 
-  // 1. Upload binaire
-  const { error: upErr } = await supabase.storage
-    .from('post-media')
-    .upload(path, file, { contentType: file.type, upsert: false })
+  const { error: upErr } = await supabase.storage.from('post-media').upload(path, file, {
+    contentType: file.type,
+    upsert: false,
+    // Cache 1 an immutable — chaque photo a un path UUID unique (jamais
+    // ré-écrit), donc on peut maxer le cache navigateur en toute sécurité.
+    // Effet : -90 % d'egress sur les visites répétées du feed (Supabase free
+    // plan oblige — voir docs eco-conception).
+    cacheControl: '31536000',
+  })
   if (upErr) throw new Error(upErr.message)
 
-  // 2. URL publique
   const { data: pub } = supabase.storage.from('post-media').getPublicUrl(path)
 
-  // 3. Ligne media (rollback du blob si l'insert echoue)
+  // `is_cover` est géré par le trigger DB `ensure_single_cover` qui garantit
+  // qu'une seule photo par post reste cover.
+  const insertPayload = {
+    post_id: postId,
+    user_id: userId,
+    type: 'photo' as const,
+    status: 'ready' as const,
+    url: pub.publicUrl,
+    original_url: pub.publicUrl,
+    mime_type: file.type,
+    file_size: file.size,
+    alt: altText ?? null,
+    display_order: displayOrder,
+    copyright_notice: copyrightNotice,
+    license,
+    width: width ?? null,
+    height: height ?? null,
+    is_cover: isCover,
+  }
+
   const { data, error: insErr } = await supabase
     .from('media')
-    .insert({
-      post_id: postId,
-      user_id: userId,
-      type: 'photo',
-      status: 'ready',
-      url: pub.publicUrl,
-      original_url: pub.publicUrl,
-      mime_type: file.type,
-      file_size: file.size,
-      alt: altText ?? null,
-      display_order: displayOrder,
-      copyright_notice: copyrightNotice,
-      license,
-    })
+    .insert(insertPayload)
     .select('id, url, width, height')
     .single()
 

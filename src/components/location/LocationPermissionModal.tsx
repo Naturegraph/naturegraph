@@ -22,7 +22,9 @@
 
 import { useEffect, useRef, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { MapPin, Shield, X } from 'lucide-react'
+import { Shield, X } from 'lucide-react'
+import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
+import { Button } from '@/components/ui/Button'
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -140,103 +142,74 @@ export function LocationPermissionModal({
         tabIndex={-1}
         onKeyDown={handleKeyDown}
         className={[
-          'relative w-full max-w-sm rounded-2xl p-6 flex flex-col gap-5',
-          'bg-[var(--color-bg-primary)] border border-[var(--color-border)]',
-          'shadow-2xl',
+          'relative bg-background w-full max-w-sm rounded-card p-6 flex flex-col gap-5',
+          'border border-border shadow-2xl',
         ].join(' ')}
       >
-        {/* Bouton fermeture (coin haut-droit) */}
+        {/* Bouton fermeture — pattern X harmonisé avec FeedSection species banner */}
         <button
           ref={closeBtnRef}
           type="button"
           onClick={onSkip}
           aria-label={t('common.close')}
           className={[
-            'absolute top-4 right-4 size-8 flex items-center justify-center rounded-full',
-            'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)]',
-            'transition-colors focus-visible:outline-none focus-visible:ring-2',
-            'focus-visible:ring-[var(--color-action-default)]',
+            'absolute top-4 right-4 size-7 flex items-center justify-center rounded-full',
+            'hover:bg-primary/10 transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
           ].join(' ')}
         >
-          <X size={16} aria-hidden="true" />
+          <X className="size-4 text-foreground" aria-hidden="true" />
         </button>
 
-        {/* Icône + titre */}
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div
-            className="size-14 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: 'var(--color-action-light)' }}
-            aria-hidden="true"
-          >
-            <MapPin size={24} style={{ color: 'var(--color-action-default)' }} />
-          </div>
+        {/* Hermine + titre — illustration mascotte projet (cohérent avec empty states) */}
+        <div className="flex flex-col items-center gap-3 text-center pt-2">
+          <img src={hermineEmptyState} alt="" className="w-36 opacity-90" aria-hidden="true" />
 
           <h2
             id="location-modal-title"
-            className="font-bold text-lg leading-tight text-[var(--color-text-primary)]"
+            className="font-bold text-lg leading-tight text-foreground text-balance"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
-            {t('location.permissionModal.title')}
+            {/*
+             * Wrap contrôlé : on rend "de chez toi" insécable (nbsp avant "de")
+             * pour que le passage à la ligne se fasse plus joliment. FR-only,
+             * pas d'effet sur les autres langues.
+             */}
+            {t('location.permissionModal.title').replace(/ de chez toi$/, ' de chez toi')}
           </h2>
         </div>
 
-        {/* Description valeur utilisateur */}
-        <p className="text-sm text-[var(--color-text-secondary)] text-center leading-relaxed">
+        {/* Description — 2 lignes max, ton chaleureux */}
+        <p className="text-sm text-muted-foreground text-center leading-relaxed text-balance">
           {t('location.permissionModal.description')}
         </p>
 
-        {/* Note privacy — mise en avant */}
+        {/* Note privacy — fond crème, sans border, rounded 4px */}
         <div
-          className="flex items-start gap-2 p-3 rounded-lg"
-          style={{
-            backgroundColor: 'var(--color-bg-secondary)',
-            border: '1px solid var(--color-border)',
-          }}
+          className="flex items-start gap-2 p-3 rounded"
+          style={{ backgroundColor: 'var(--color-surface-cream-light)' }}
         >
-          <Shield
-            size={14}
-            className="shrink-0 mt-0.5"
-            style={{ color: 'var(--color-text-secondary)' }}
-            aria-hidden="true"
-          />
-          <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+          <Shield size={14} className="shrink-0 mt-0.5 text-muted-foreground" aria-hidden="true" />
+          <p className="text-xs leading-relaxed text-muted-foreground">
             {t('location.permissionModal.privacyNote')}
           </p>
         </div>
 
-        {/* CTAs */}
+        {/* CTAs — Button component du design system (variant primary = "Contribuer" navbar) */}
         <div className="flex flex-col gap-2">
-          {/* CTA principal */}
-          <button
+          <Button
             ref={activateBtnRef}
-            type="button"
+            variant="primary"
+            size="md"
             onClick={onActivate}
-            className={[
-              'w-full h-11 rounded-lg font-semibold text-sm transition-opacity',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-              'focus-visible:ring-[var(--color-action-default)]',
-            ].join(' ')}
-            style={{
-              backgroundColor: 'var(--color-action-default)',
-              color: 'var(--color-bg-primary)',
-            }}
+            className="w-full"
           >
             {t('location.permissionModal.activateCta')}
-          </button>
+          </Button>
 
-          {/* CTA secondaire */}
-          <button
-            type="button"
-            onClick={onSkip}
-            className={[
-              'w-full h-11 rounded-lg font-medium text-sm transition-colors',
-              'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)]',
-              'focus-visible:outline-none focus-visible:ring-2',
-              'focus-visible:ring-[var(--color-action-default)]',
-            ].join(' ')}
-          >
+          <Button variant="ghost" size="md" onClick={onSkip} className="w-full">
             {t('location.permissionModal.skipCta')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

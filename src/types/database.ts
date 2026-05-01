@@ -22,6 +22,11 @@ export type Interest =
 
 export type PostType = 'nature_encounter' | 'nature_instant'
 export type PostStatus = 'draft' | 'published' | 'archived'
+/**
+ * Format d'affichage choisi par l'utilisateur (Figma 6385:47324).
+ * Préférence visuelle utilisée par le FeedPost — n'altère pas les photos sources.
+ */
+export type DisplayFormat = '16:9' | 'portrait' | '1:1'
 export type Visibility = 'public' | 'private' | 'followers'
 export type IdentificationStatus = 'identified' | 'pending' | 'disputed'
 
@@ -50,8 +55,11 @@ export type TaxonomicGroup =
   | 'other'
 
 // Réactions disponibles sur un post — aligné avec FeedPost.tsx REACTION_CONFIG
-// 'disappointed' ajouté suite à la décision Nicolas (2026-04-01)
-export type ReactionType = 'love' | 'admire' | 'fire' | 'wow' | 'curious' | 'disappointed'
+// (second-agent/10) Ordre Figma 6385:103293 : love → fire → admire → wow → curious.
+// 'disappointed' supprimé — ton trop négatif, validation Nicolas 2026-04-30.
+// TODO backend : retirer la valeur 'disappointed' de l'enum reaction_type côté DB
+//                + nettoyer les éventuels rows historiques avec ce type.
+export type ReactionType = 'love' | 'admire' | 'fire' | 'wow' | 'curious'
 
 export type MediaType = 'photo' | 'video'
 export type MediaFormat = 'square' | 'portrait' | 'landscape' | 'free'
@@ -132,6 +140,14 @@ export interface Profile {
   created_at: string
   updated_at: string
   last_login_at: string | null
+  /**
+   * Tier d'abonnement (second-agent/19). 'free' par défaut pour tous.
+   * 'premium' débloque la compression HD, l'accès à `media.original_url`,
+   * et toute future feature payante.
+   */
+  subscription_tier: 'free' | 'premium'
+  /** Date d'expiration du Premium. null = pas d'abo / pas d'expiration. */
+  subscription_expires_at: string | null
 }
 
 /**
@@ -196,6 +212,9 @@ export interface Post {
   taxref_updated_at: string | null
   // Phenomenon (nature_instant)
   phenomenon: string | null
+  // Display preference (Figma 6385:47324) — choisi à l'étape 1 du formulaire.
+  // Détermine le format du conteneur photo dans le feed (16:9 / portrait / 1:1).
+  display_format: DisplayFormat
   // Counters (denormalized)
   likes_count: number
   comments_count: number
@@ -274,6 +293,56 @@ export interface IdentificationProposal {
 export interface Follow {
   follower_id: string
   following_id: string
+  created_at: string
+}
+
+/**
+ * Bookmark / favori — un user a sauvegardé un post pour le retrouver dans
+ * sa Collection. Voir second-agent/13.
+ */
+export interface SavedPost {
+  user_id: string
+  post_id: string
+  saved_at: string
+}
+
+/**
+ * Blocage utilisateur — table déjà existante (migration 20260420). Utilisée
+ * pour les actions "Masquer @user" du PostOptionsMenu (second-agent/12).
+ * Le bloqué ne peut pas voir le profil/posts du bloqueur (RLS côté DB).
+ */
+export interface Block {
+  blocker_id: string
+  blocked_id: string
+  created_at: string
+}
+
+/** Raisons de signalement — alignées sur le check constraint DB. */
+export type ReportReason =
+  | 'inappropriate_content'
+  | 'harassment'
+  | 'misinformation'
+  | 'spam'
+  | 'other'
+
+/** Statut workflow modération. */
+export type ReportStatus = 'pending' | 'reviewing' | 'resolved' | 'dismissed'
+
+/**
+ * Signalement de contenu — table déjà existante (migration 20260420).
+ * Utilisée par ReportModal (second-agent/15).
+ */
+export interface Report {
+  id: string
+  reporter_id: string
+  /** Id du post signalé (exclusif avec profile_id) */
+  post_id: string | null
+  /** Id du profil signalé (exclusif avec post_id) */
+  profile_id: string | null
+  reason: ReportReason
+  details: string | null
+  status: ReportStatus
+  resolved_at: string | null
   created_at: string
 }
 

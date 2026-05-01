@@ -14,6 +14,7 @@
 import { useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/contexts/ToastContext'
+import { setPreference } from '@/services/notificationPreferencesService'
 import type { Interest } from '@/types/database'
 import { OnboardingInterests } from './OnboardingInterests'
 import { OnboardingStep2 } from './OnboardingStep2'
@@ -108,6 +109,21 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
               setIsSaving(false)
               return
             }
+
+            /**
+             * Opt-in species_digest (RGPD) — déduit de la fréquence choisie.
+             *   - 'daily' ou 'weekly' : l'utilisateur a explicitement demandé des
+             *     notifications régulières → opt-in digest hebdo
+             *   - 'monthly' / 'occasionally' : on respecte le défaut FALSE
+             * L'opt-in peut être modifié à tout moment depuis /settings.
+             */
+            if (userData.frequency === 'daily' || userData.frequency === 'weekly') {
+              try {
+                await setPreference(user.id, 'species_digest', true)
+              } catch (e) {
+                console.warn('[onboarding] species_digest opt-in failed', e)
+              }
+            }
           }
         }
 
@@ -118,7 +134,7 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
         setIsSaving(false)
       }
     },
-    [isSaving, userData.interests, onComplete, notifyError],
+    [isSaving, userData.interests, userData.frequency, onComplete, notifyError],
   )
 
   return (

@@ -12,10 +12,11 @@
  */
 
 import { useState, useId } from 'react'
-import { Search, Trash2, Plus, Minus, HelpCircle } from 'lucide-react'
+import { Search, Trash2, Plus, Minus, HelpCircle, Filter, X, Check } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
 import { TAXREF_SPECIES } from '@/constants/taxrefSpecies'
+import { Button } from '@/components/ui/Button'
 import hermineImg from '@/assets/images/hermine-empty-state.png'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -31,20 +32,57 @@ export interface ObservationEntry {
 
 // ─── Sous-composants ──────────────────────────────────────────────────────────
 
-/** Barre de recherche avec autocomplétion pour ajouter une espèce */
+/**
+ * Groupes taxonomiques filtrables dans la recherche.
+ * Aligné strictement sur `SPECIES_CATEGORIES` du `FeedFilterPanel` :
+ * 5 catégories les plus courantes au MVP, sans emoji, pour cohérence
+ * stricte produit (cf. second-agent/26 — itération Nicolas 2026-05-01).
+ *
+ * Les autres groupes (fish, plants, arachnids, mollusks, other) restent
+ * supportés côté DB (`TaxonomicGroup`) mais ne sont pas exposés en filtre
+ * tant que la masse critique de contributions n'est pas atteinte.
+ */
+const TAXONOMIC_FILTERS: { value: TaxonomicGroup; labelKey: string }[] = [
+  { value: 'birds', labelKey: 'taxonomy.birds' },
+  { value: 'mammals', labelKey: 'taxonomy.mammals' },
+  { value: 'insects', labelKey: 'taxonomy.insects' },
+  { value: 'amphibians', labelKey: 'taxonomy.amphibians' },
+  { value: 'reptiles', labelKey: 'taxonomy.reptiles' },
+]
+
+/** Barre de recherche avec autocomplétion + bouton filtre circulaire (Figma 6385-50262) */
 function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['species']) => void }) {
   const { t } = useTranslation()
   const listId = useId()
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
+  // Filtres par groupe taxonomique — Set vide = tous les groupes acceptés.
+  const [groupFilters, setGroupFilters] = useState<Set<TaxonomicGroup>>(new Set())
+  const [filterOpen, setFilterOpen] = useState(false)
+
+  function toggleGroup(g: TaxonomicGroup) {
+    setGroupFilters((prev) => {
+      const next = new Set(prev)
+      if (next.has(g)) next.delete(g)
+      else next.add(g)
+      return next
+    })
+  }
+
+  const filteredBase =
+    groupFilters.size === 0
+      ? TAXREF_SPECIES
+      : TAXREF_SPECIES.filter((s) => groupFilters.has(s.group))
 
   const results =
     query.length >= 2
-      ? TAXREF_SPECIES.filter(
-          (s) =>
-            s.commonName.toLowerCase().includes(query.toLowerCase()) ||
-            s.scientificName.toLowerCase().includes(query.toLowerCase()),
-        ).slice(0, 6)
+      ? filteredBase
+          .filter(
+            (s) =>
+              s.commonName.toLowerCase().includes(query.toLowerCase()) ||
+              s.scientificName.toLowerCase().includes(query.toLowerCase()),
+          )
+          .slice(0, 6)
       : []
 
   function handleSelect(species: (typeof TAXREF_SPECIES)[0]) {
@@ -54,56 +92,226 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
   }
 
   return (
-    <div className="relative">
-      <div className="flex items-center gap-2 h-11 px-3 rounded-xl border border-border bg-cream-lighter focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors">
-        <Search className="size-4 text-muted-foreground shrink-0" aria-hidden="true" />
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value)
-            setOpen(true)
-          }}
-          onFocus={() => setOpen(true)}
-          onBlur={() => setTimeout(() => setOpen(false), 150)}
-          placeholder={t('contribute.panel.searchSpecies')}
-          role="combobox"
-          aria-expanded={open && results.length > 0}
-          aria-autocomplete="list"
-          aria-controls={listId}
-          autoComplete="off"
-          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-        />
+    // `relative` sur le container racine permet au panel filtres d'être
+    // positionné en absolute par-dessus le contenu suivant (cf. plus bas).
+    <div className="relative flex flex-col gap-3">
+      {/* Row : champ pill (flex-1) + bouton filtre circulaire — Figma 6385-50262 */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1">
+          <div className="flex items-center gap-2 h-12 px-5 rounded-full border border-border bg-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors">
+            <Search className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value)
+                setOpen(true)
+              }}
+              onFocus={() => setOpen(true)}
+              onBlur={() => setTimeout(() => setOpen(false), 150)}
+              placeholder={t('contribute.panel.searchSpecies')}
+              role="combobox"
+              aria-expanded={open && results.length > 0}
+              aria-autocomplete="list"
+              aria-controls={listId}
+              autoComplete="off"
+              className="flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+            />
+          </div>
+
+          {/* Résultats autocomplete */}
+          {open && results.length > 0 && (
+            <ul
+              id={listId}
+              role="listbox"
+              className="absolute z-20 w-full mt-1 rounded-2xl border border-border bg-background shadow-lg overflow-hidden"
+            >
+              {results.map((s) => (
+                <li key={s.id} role="option" aria-selected={false}>
+                  <button
+                    type="button"
+                    onMouseDown={() => handleSelect(s)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-primary-light/30 transition-colors text-left"
+                  >
+                    <span>
+                      <span className="text-sm font-medium text-foreground block">
+                        {s.commonName}
+                      </span>
+                      <span className="text-xs text-muted-foreground italic">
+                        {s.scientificName}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Bouton filtre — circulaire 48px, border 1px, bg background */}
+        <button
+          type="button"
+          onClick={() => setFilterOpen((v) => !v)}
+          aria-label={t('contribute.panel.filterSpecies', { defaultValue: 'Filtrer' })}
+          aria-expanded={filterOpen}
+          className={[
+            // Style strictement aligné sur le bouton filtre de la HomeNavbar :
+            // - Fermé (même avec filtres actifs) : transparent, juste le badge
+            //   compteur indique l'état → moins agressif visuellement.
+            // - Ouvert : bg-primary plein + icône blanche.
+            'relative size-12 shrink-0 rounded-full flex items-center justify-center',
+            'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+            filterOpen ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted/50',
+          ].join(' ')}
+        >
+          <Filter className="size-5" aria-hidden="true" />
+          {groupFilters.size > 0 && (
+            <span
+              aria-label={t('contribute.panel.activeFiltersCount', {
+                count: groupFilters.size,
+                defaultValue: '{{count}} filtre(s) actif(s)',
+              })}
+              className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary-light text-primary text-[11px] font-bold leading-none border border-background"
+            >
+              {groupFilters.size}
+            </span>
+          )}
+        </button>
       </div>
 
-      {/* Résultats */}
-      {open && results.length > 0 && (
-        <ul
-          id={listId}
-          role="listbox"
-          className="absolute z-20 w-full mt-1 rounded-xl border border-border bg-cream-lighter shadow-lg overflow-hidden"
-        >
-          {results.map((s) => (
-            <li key={s.id} role="option" aria-selected={false}>
-              <button
-                type="button"
-                onMouseDown={() => handleSelect(s)}
-                className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-primary-light/30 transition-colors text-left"
-              >
-                <span>
-                  <span className="text-sm font-medium text-foreground block">{s.commonName}</span>
-                  <span className="text-xs text-muted-foreground italic">{s.scientificName}</span>
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* Panel filtres — structuré comme FeedFilterPanel :
+          - Header avec titre + close
+          - Section "Par catégorie d'espèces" (chips toggleables)
+          - Divider
+          - Section "Précision de l'identification" (Bientôt — second-agent/26)
+          - Footer : "Sauvegarder les filtres" + "Réinitialiser"
+          Affiché en DROPDOWN absolute par-dessus le contenu suivant pour
+          éviter le saut de mise en page (second-agent/26 itération
+          2026-05-01). Shadow renforcée pour bien décoller du fond. */}
+      {filterOpen && (
+        <div className="absolute left-0 right-0 top-full mt-3 z-20 rounded-2xl border-[0.5px] border-border bg-background p-5 flex flex-col gap-5 shadow-xl">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <h4 className="font-title font-bold text-lg text-foreground">
+              {t('contribute.panel.filtersTitle', { defaultValue: 'Filtres' })}
+            </h4>
+            <button
+              type="button"
+              onClick={() => setFilterOpen(false)}
+              aria-label={t('common.close', { defaultValue: 'Fermer' })}
+              className="size-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <X className="size-4" aria-hidden="true" />
+            </button>
+          </div>
 
-      {/* Aucun résultat */}
-      {open && query.length >= 2 && results.length === 0 && (
-        <div className="absolute z-20 w-full mt-1 rounded-xl border border-border bg-cream-lighter shadow-sm px-4 py-3">
-          <p className="text-sm text-muted-foreground">{t('contribute.panel.noResults')}</p>
+          {/* Section 1 — Par catégorie d'espèces */}
+          <div className="flex flex-col gap-3">
+            <p className="font-body text-base text-muted-foreground">
+              {t('contribute.panel.filterByCategory', {
+                defaultValue: "Par catégorie d'espèces",
+              })}
+            </p>
+            <div
+              className="flex flex-wrap gap-2"
+              role="group"
+              aria-label={t('contribute.panel.filterByCategory', {
+                defaultValue: "Par catégorie d'espèces",
+              })}
+            >
+              {TAXONOMIC_FILTERS.map((f) => {
+                const active = groupFilters.has(f.value)
+                return (
+                  <button
+                    key={f.value}
+                    type="button"
+                    role="checkbox"
+                    aria-checked={active}
+                    onClick={() => toggleGroup(f.value)}
+                    className={[
+                      // Style strictement identique à FilterChip du FeedFilterPanel
+                      'inline-flex items-center justify-center h-8 px-3 rounded-full',
+                      'font-body text-sm leading-[1.5] transition-colors',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+                      active
+                        ? 'bg-primary-light border border-primary text-foreground'
+                        : 'bg-transparent border border-border text-foreground hover:border-foreground/40',
+                    ].join(' ')}
+                  >
+                    {t(f.labelKey)}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <hr className="border-t-[0.5px] border-border" />
+
+          {/* Section 2 — Précision de l'identification (Bientôt) */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <p className="font-body text-base text-muted-foreground">
+                {t('contribute.panel.filterPrecisionTitle', {
+                  defaultValue: "Précision de l'identification",
+                })}
+              </p>
+              <span className="inline-flex items-center justify-center h-5 px-2 rounded-full bg-primary-light text-primary text-[10px] font-bold uppercase tracking-wide">
+                {t('home.filters.comingSoon')}
+              </span>
+            </div>
+            <div className="flex flex-col gap-2 opacity-50 pointer-events-none">
+              <div className="flex items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="flex items-center justify-center size-5 rounded-[4px] bg-primary border border-primary shrink-0"
+                >
+                  <Check
+                    className="size-3.5 text-primary-foreground"
+                    strokeWidth={3}
+                    aria-hidden="true"
+                  />
+                </span>
+                <span className="text-sm text-foreground">
+                  {t('contribute.panel.precisionExact', { defaultValue: 'Espèce précise' })}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="flex items-center justify-center size-5 rounded-[4px] bg-background border-[1.5px] border-border shrink-0"
+                />
+                <span className="text-sm text-foreground">
+                  {t('contribute.panel.precisionFamily', { defaultValue: 'Famille seulement' })}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer — Sauvegarder + Réinitialiser
+              Style strictement aligné sur FeedFilterPanel.panelFooter :
+              Button DS variant="primary" + lien "Réinitialiser" en
+              text-primary underline underline-offset-4 (toujours actif). */}
+          <div className="flex flex-col items-center gap-3 pt-2">
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setFilterOpen(false)}
+              className="w-full"
+            >
+              {t('contribute.panel.saveFilters', { defaultValue: 'Sauvegarder les filtres' })}
+            </Button>
+            <button
+              type="button"
+              onClick={() => setGroupFilters(new Set())}
+              className={[
+                'font-body font-bold text-base leading-[1.5] text-primary underline underline-offset-4',
+                'hover:opacity-80 transition-opacity',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded',
+              ].join(' ')}
+            >
+              {t('common.reset', { defaultValue: 'Réinitialiser' })}
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -201,11 +409,13 @@ export function EncounterStep2({
   onAdd,
   onRemove,
   onCountChange,
-  helpIdentification,
-  onHelpIdentificationChange,
+  // helpIdentification + onHelpIdentificationChange : props gardées dans
+  // l'interface pour ne pas casser ContributeEncounterForm — le toggle UI a
+  // été masqué (workflow aide collaborative reporté en P2).
+  helpIdentification: _helpIdentification,
+  onHelpIdentificationChange: _onHelpIdentificationChange,
 }: EncounterStep2Props) {
   const { t } = useTranslation()
-  const toggleId = useId()
 
   /** Crée une nouvelle entrée espèce et l'ajoute au carnet */
   function handleAddSpecies(species: ObservationEntry['species']) {
@@ -218,25 +428,25 @@ export function EncounterStep2({
   }
 
   const hasObservations = observations.length > 0
-  const hasUnknown = observations.some((o) => o.isUnknown)
 
   return (
     <div className="flex flex-col gap-4">
       {/* Barre de recherche */}
       <SpeciesSearchBar onAdd={handleAddSpecies} />
 
-      {/* État vide — hermine + hint */}
+      {/* État vide — carte blanche bordurée (Figma Frame 4621) :
+          hermine + pill menthe "Aucun résultat" + hint en Quicksand Bold. */}
       {!hasObservations && (
-        <div className="flex flex-col items-center gap-3 py-6 text-center">
-          <img
-            src={hermineImg}
-            alt=""
-            width={80}
-            height={80}
-            className="opacity-70"
-            loading="lazy"
-          />
-          <p className="text-sm text-muted-foreground px-4">{t('contribute.panel.emptyHint')}</p>
+        <div className="rounded-xl border-[0.5px] border-border bg-background flex flex-col items-center overflow-hidden">
+          <img src={hermineImg} alt="" width={230} height={128} className="mt-6" loading="lazy" />
+          <div className="flex flex-col items-center gap-3 p-6 w-full">
+            <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-[#99FFCC] text-foreground text-sm font-body leading-none">
+              {t('contribute.panel.noResultsBadge', { defaultValue: 'Aucun résultat' })}
+            </span>
+            <p className="font-title font-bold text-lg text-foreground text-center">
+              {t('contribute.panel.emptyHint')}
+            </p>
+          </div>
         </div>
       )}
 
@@ -257,56 +467,41 @@ export function EncounterStep2({
         </div>
       )}
 
-      {/* Ajouter une nouvelle observation */}
+      {/* Ajouter une nouvelle observation — désactivé "Bientôt" pour MVP
+          (logique multi-observation pas encore branchée côté backend). */}
       {hasObservations && (
         <button
           type="button"
-          onClick={() => {
-            /* scrolls to search bar — handled by focus on search */
-          }}
-          className="flex items-center gap-2 text-sm text-primary font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+          disabled
+          aria-disabled="true"
+          title={t('home.filters.comingSoon')}
+          className="flex items-center gap-2 text-sm text-muted-foreground font-medium opacity-60 cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
         >
           <Plus className="size-4" aria-hidden="true" />
           {t('contribute.panel.addObservation')}
+          <span className="inline-flex items-center justify-center h-5 px-2 rounded-full bg-primary-light text-primary text-[10px] font-bold uppercase tracking-wide ml-1">
+            {t('home.filters.comingSoon')}
+          </span>
         </button>
       )}
 
-      {/* Toggle aide à l'identification — visible si mystère présent */}
-      {hasUnknown && (
-        <label
-          htmlFor={toggleId}
-          aria-label={t('contribute.panel.helpIdentification')}
-          className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-border bg-cream-lighter cursor-pointer"
-        >
-          <span className="text-sm font-medium text-foreground">
-            {t('contribute.panel.helpIdentification')}
-          </span>
-          <input
-            id={toggleId}
-            type="checkbox"
-            checked={helpIdentification}
-            onChange={(e) => onHelpIdentificationChange(e.target.checked)}
-            role="switch"
-            aria-checked={helpIdentification}
-            className="sr-only peer"
-          />
-          {/* Toggle visuel */}
-          <div
-            aria-hidden="true"
-            className={[
-              'relative w-10 h-5 rounded-full transition-colors shrink-0',
-              helpIdentification ? 'bg-primary' : 'bg-muted',
-            ].join(' ')}
-          >
-            <span
-              className={[
-                'absolute top-0.5 size-4 rounded-full bg-white shadow transition-transform',
-                helpIdentification ? 'translate-x-5' : 'translate-x-0.5',
-              ].join(' ')}
-            />
-          </div>
-        </label>
-      )}
+      {/* Toggle "Activer l'aide à l'identification" — masqué pour le moment,
+          sera retravaillé plus tard (workflow d'aide collaborative en P2).
+          Logique gardée côté state (helpIdentification + handlers) pour ne
+          pas casser ContributeEncounterForm. JSX archivé dans le bloc JSDoc
+          ci-dessous : il suffira de le ré-introduire le jour venu.
+
+          @example
+          <label htmlFor={toggleId} className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-border bg-cream-lighter cursor-pointer">
+            <span className="text-sm font-medium text-foreground">
+              {t('contribute.panel.helpIdentification')}
+            </span>
+            <input id={toggleId} type="checkbox" checked={helpIdentification} onChange={(e) => onHelpIdentificationChange(e.target.checked)} role="switch" className="sr-only peer" />
+            <div className={['relative w-10 h-5 rounded-full', helpIdentification ? 'bg-primary' : 'bg-muted'].join(' ')}>
+              <span className={['absolute top-0.5 size-4 rounded-full bg-white shadow', helpIdentification ? 'translate-x-5' : 'translate-x-0.5'].join(' ')} />
+            </div>
+          </label>
+       */}
 
       {/* Attribution TAXREF obligatoire — voir CLAUDE.md */}
       <p className="text-[10px] text-muted-foreground">{t('contribute.species.taxrefCredit')}</p>

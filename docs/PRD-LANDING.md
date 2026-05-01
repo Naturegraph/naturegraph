@@ -381,7 +381,7 @@ Cette section est le **cœur émotionnel** de la landing. Elle raconte l'histoir
 | Élément | Spécification                                |
 | ------- | -------------------------------------------- |
 | Titre   | "Ils nous soutiennent"                       |
-| Logos   | eHub · Kreapulse · Paloume · Wazoom          |
+| Logos   | eHub · Kreapulse · Paloume                   |
 | Style   | Niveaux de gris par défaut, couleur au hover |
 | Liens   | Vers le site de chaque partenaire            |
 

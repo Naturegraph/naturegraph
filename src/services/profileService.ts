@@ -151,12 +151,17 @@ export async function updateProfile(
 /**
  * Récupère des profils suggérés pour la section "Migrateurs à suivre".
  *
- * Logique de sélection (côté client — tri post-fetch) :
- *  - Exclut l'utilisateur connecté et les profils déjà suivis
- *  - Sans localisation : profils les plus actifs de la plateforme (posts_count desc)
- *  - Avec localisation : priorise la même région, puis affinité d'intérêts
- *
- * Retourne un tableau vide si < 3 suggestions disponibles (PRD : afficher seulement à partir de 3).
+ * Règles (cf. PRD — Migrateurs à suivre) :
+ *  1. Exclusion : utilisateur connecté + profils déjà suivis
+ *  2. Contrainte géographique : si `region` est fournie, la recherche est restreinte
+ *     à cette région. S'il y a moins de 3 profils disponibles dans la région →
+ *     état vide (retour []).
+ *  3. Cascade par centres d'intérêt de l'utilisateur :
+ *       - priorité 1 : centre d'intérêt #1
+ *       - priorité 2 : centre d'intérêt #2 (si pas assez de résultats)
+ *       - priorité 3 : centre d'intérêt #3 (si toujours insuffisant)
+ *       - fallback  : autres profils actifs (sans match d'intérêt)
+ *  4. Retourne exactement `limit` (3) profils, ou [] si < 3 candidats.
  */
 export async function getSuggestedUsers({
   currentUserId,
@@ -166,7 +171,7 @@ export async function getSuggestedUsers({
 }: SuggestedUsersParams): Promise<SuggestedUser[]> {
   if (!supabase) throw new Error('Supabase non configuré')
 
-  // 1. Récupérer les IDs déjà suivis pour les exclure
+  // 1. IDs à exclure : soi-même + profils déjà suivis
   const { data: followedRows } = await supabase
     .from('follows')
     .select('following_id')
@@ -174,40 +179,58 @@ export async function getSuggestedUsers({
 
   const excludeIds = [currentUserId, ...(followedRows ?? []).map((r) => r.following_id)]
 
-  // 2. Récupérer les profils candidats (actifs, publics, pas dans la liste d'exclusion)
-  //    On charge un pool plus large pour pouvoir scorer/trier côté client
-  const poolSize = limit * 5
-  const { data: candidates, error } = await supabase
+  // 2. Pool de candidats — restreint à la région si fournie
+  //    Pool élargi (x10) pour avoir de la marge lors du tri par cascade
+  let query = supabase
     .from('profiles')
     .select('id, username, avatar_url, interests, posts_count, region')
     .not('id', 'in', `(${excludeIds.join(',')})`)
     .eq('is_public', true)
     .gt('posts_count', 0)
     .order('posts_count', { ascending: false })
-    .limit(poolSize)
+    .limit(limit * 10)
 
+  if (region) query = query.eq('region', region)
+
+  const { data: candidates, error } = await query
   if (error) throw new Error(error.message)
+
+  // Seuil minimum : si on n'a pas 3 candidats (dans la région si fournie) → vide
   if (!candidates || candidates.length < 3) return []
 
-  // 3. Scorer chaque candidat (affinité intérêts + proximité région)
-  const scored = candidates.map((c) => {
-    let score = c.posts_count ?? 0 // base : activité
-    // Bonus intérêts partagés (chaque intérêt commun = +10)
-    if (userInterests.length > 0 && c.interests) {
-      const shared = (c.interests as string[]).filter((i) => userInterests.includes(i)).length
-      score += shared * 10
-    }
-    // Bonus proximité régionale (+20 si même région)
-    if (region && c.region === region) {
-      score += 20
-    }
-    return { ...c, score }
-  })
+  // 3. Cascade par intérêts — priorité #1 → #2 → #3 → fallback
+  const picked: (typeof candidates)[number][] = []
+  const usedIds = new Set<string>()
+  const priorityInterests = userInterests.slice(0, 3)
 
-  // 4. Trier par score décroissant et limiter
-  scored.sort((a, b) => b.score - a.score)
+  for (const interest of priorityInterests) {
+    if (picked.length >= limit) break
+    // Candidats ayant ce centre d'intérêt, non encore sélectionnés
+    const matches = candidates.filter(
+      (c) => !usedIds.has(c.id) && Array.isArray(c.interests) && c.interests.includes(interest),
+    )
+    for (const m of matches) {
+      if (picked.length >= limit) break
+      picked.push(m)
+      usedIds.add(m.id)
+    }
+  }
 
-  return scored.slice(0, limit).map(({ score: _score, ...user }) => user as SuggestedUser)
+  // 4. Fallback : compléter avec les profils restants (tri posts_count hérité)
+  if (picked.length < limit) {
+    for (const c of candidates) {
+      if (picked.length >= limit) break
+      if (!usedIds.has(c.id)) {
+        picked.push(c)
+        usedIds.add(c.id)
+      }
+    }
+  }
+
+  // Garantie finale : si malgré le fallback on n'atteint pas 3 → vide
+  if (picked.length < limit) return []
+
+  return picked.slice(0, limit) as SuggestedUser[]
 }
 
 /**
