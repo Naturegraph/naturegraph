@@ -246,6 +246,9 @@ interface FeedSectionProps {
   showFilters: boolean
   onShowFiltersChange: (show: boolean) => void
   onHasActiveFiltersChange: (has: boolean) => void
+  /** Callback pour ouvrir le panel "Rencontre Nature" depuis le CTA empty state.
+   *  Géré au niveau Home (qui contrôle activePanelType). */
+  onContributeClick?: () => void
 }
 
 // ─── Composant ───────────────────────────────────────────────────────────────
@@ -256,6 +259,7 @@ export function FeedSection({
   showFilters,
   onShowFiltersChange,
   onHasActiveFiltersChange,
+  onContributeClick,
 }: FeedSectionProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -621,7 +625,17 @@ export function FeedSection({
                 </Button>
               )}
               {isAuthenticated ? (
-                <Button variant="primary" size="sm" onClick={() => navigate('/contribute')}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    // Ouvre directement le panel Rencontre Nature (cas d'usage
+                    // le plus fréquent depuis l'empty state du feed). Si non
+                    // câblé par le parent, fallback sur la route /contribute.
+                    if (onContributeClick) onContributeClick()
+                    else navigate('/contribute')
+                  }}
+                >
                   {t('home.feed.emptyContribute')}
                 </Button>
               ) : (
