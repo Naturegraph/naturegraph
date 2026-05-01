@@ -66,9 +66,15 @@ export default function Home() {
         onContributeTypeSelect={handleContributeTypeSelect}
       />
 
-      {/* Layout principal */}
+      {/* Layout principal
+       *
+       * Cap XL = 1440px → inner 1392px (avec px-6).
+       * Maths d'alignement Figma : asides 320×2 + gaps 24×2 + main = 1392
+       *   → main column = 704px = Figma post column (656 inner + p-6 padding).
+       * Sur écran > 1440px : marges automatiques (mx-auto) centrent le tout.
+       */}
       <div className="flex flex-1 w-full">
-        <div className="w-full xl:max-w-[1728px] mx-auto flex md:gap-6 gap-0 md:px-6 px-0 md:py-6 py-4 pb-20 md:pb-6">
+        <div className="w-full xl:max-w-[1440px] mx-auto flex md:gap-6 gap-0 md:px-6 px-0 md:py-6 py-4 pb-20 md:pb-6">
           {/* Colonne gauche — visible uniquement XL desktop */}
           <aside className="hidden xl:block w-[320px] shrink-0">
             {isAuthenticated ? <ProfileSidebar /> : <GuestSidebar />}

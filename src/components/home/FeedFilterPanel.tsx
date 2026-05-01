@@ -31,6 +31,7 @@ import { useTranslation } from 'react-i18next'
 import { X, ChevronDown, Check, Bird, MountainSnow } from 'lucide-react'
 import type { FeedTab } from './FeedSection'
 import { Button } from '@/components/ui/Button'
+import { useLocation } from '@/contexts/LocationContext'
 
 // ─── Types et constantes ─────────────────────────────────────────────────────
 
@@ -179,6 +180,18 @@ export function FeedFilterPanel({
   onTabChange,
 }: FeedFilterPanelProps) {
   const { t } = useTranslation()
+  const { isLocalized } = useLocation()
+
+  /**
+   * Filtres dynamiques selon le contexte (second-agent/23) :
+   *   - Rayon : visible UNIQUEMENT si l'utilisateur est localisé. Sinon
+   *             aucun intérêt — on cache la section pour éviter le bruit.
+   *   - Demandes d'aide : feature non implémentée côté UX (pas de bouton
+   *             "Demander de l'aide" dans le formulaire de contribution).
+   *             On marque "Bientôt" pour transparence.
+   */
+  const showRadiusFilter = isLocalized
+  const helpOnlyComingSoon = true
 
   // État local — édition avant validation via "Sauvegarder"
   const [local, setLocal] = useState<FeedFilters>({ ...filters })
@@ -233,8 +246,8 @@ export function FeedFilterPanel({
       </div>
 
       {/* ───── 1. Par catégorie d'espèces ───── */}
-      <fieldset className="flex flex-col gap-6">
-        <legend className={sectionLabelClass}>{t('home.filters.byCategory')}</legend>
+      <div className="flex flex-col gap-3">
+        <p className={sectionLabelClass}>{t('home.filters.byCategory')}</p>
         <div className="flex flex-wrap gap-2">
           {SPECIES_CATEGORIES.map((cat) => (
             <FilterChip
@@ -246,31 +259,57 @@ export function FeedFilterPanel({
             </FilterChip>
           ))}
         </div>
-      </fieldset>
-
-      <hr className={dividerClass} />
-
-      {/* ───── 2. Demandes d'aide uniquement ─────
-          <div> plutôt que <label> car FilterCheckbox rend un <button> custom. */}
-      <div className="flex items-center gap-3 select-none">
-        <FilterCheckbox
-          checked={local.helpOnly}
-          onChange={(next) => setLocal((prev) => ({ ...prev, helpOnly: next }))}
-          ariaLabel={t('home.filters.helpOnly')}
-        />
-        <span className="font-body text-base text-foreground">{t('home.filters.helpOnly')}</span>
       </div>
 
-      <hr className={dividerClass} />
+      {/* ───── 2. Demandes d'aide uniquement ─────
+          Filtre conditionnel : aujourd'hui pas de fonctionnalité "demande d'aide"
+          côté formulaire de contribution → on affiche le filtre désactivé avec
+          badge "Bientôt" pour transparence (second-agent/23). */}
+      {helpOnlyComingSoon ? (
+        <>
+          <hr className={dividerClass} />
+          <div
+            className="flex items-center gap-3 select-none opacity-60 cursor-not-allowed"
+            aria-disabled="true"
+          >
+            <FilterCheckbox
+              checked={false}
+              onChange={() => {}}
+              ariaLabel={t('home.filters.helpOnly')}
+            />
+            <span className="font-body text-base text-foreground">
+              {t('home.filters.helpOnly')}
+            </span>
+            <span className="ml-auto text-[10px] font-bold uppercase tracking-wide text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+              Bientôt
+            </span>
+          </div>
+          <hr className={dividerClass} />
+        </>
+      ) : (
+        <>
+          <hr className={dividerClass} />
+          <div className="flex items-center gap-3 select-none">
+            <FilterCheckbox
+              checked={local.helpOnly}
+              onChange={(next) => setLocal((prev) => ({ ...prev, helpOnly: next }))}
+              ariaLabel={t('home.filters.helpOnly')}
+            />
+            <span className="font-body text-base text-foreground">
+              {t('home.filters.helpOnly')}
+            </span>
+          </div>
+          <hr className={dividerClass} />
+        </>
+      )}
 
       {/* ───── 3. Par type de partages ─────
           Rencontre nature (actif) + Instant nature (badge "Bientôt", disabled).
           Couleurs et icônes Figma : teal-dark (#006666) + Bird / orange (#CC7A00) + MountainSnow. */}
-      <fieldset className="flex flex-col gap-6">
-        <legend className={sectionLabelClass}>{t('home.filters.byShareType')}</legend>
+      <div className="flex flex-col gap-3">
+        <p className={sectionLabelClass}>{t('home.filters.byShareType')}</p>
 
-        {/* Wrapper interne — les 2 rows restent collées l'une à l'autre (gap-3)
-            tout en conservant la respiration du legend grâce au gap-6 du fieldset. */}
+        {/* Wrapper interne — les 2 rows restent collées l'une à l'autre (gap-3). */}
         <div className="flex flex-col gap-3">
           {/* Rencontre nature — actif.
               Utilisation d'un <div> plutôt qu'un <label> car FilterCheckbox rend
@@ -321,34 +360,41 @@ export function FeedFilterPanel({
             </span>
           </div>
         </div>
-      </fieldset>
+      </div>
 
-      <hr className={dividerClass} />
+      {/* ───── 4. Rayon géographique ─────
+          Affiché UNIQUEMENT si l'utilisateur est localisé (second-agent/23).
+          Sans localisation, le filtre n'a aucun effet — on cache la section
+          plutôt que d'afficher des chips inactifs. */}
+      {showRadiusFilter && (
+        <>
+          <hr className={dividerClass} />
+          <div className="flex flex-col gap-3">
+            <p className={sectionLabelClass}>{t('home.filters.radiusTitle')}</p>
+            <div className="flex flex-wrap gap-2">
+              {RADIUS_OPTIONS.map((opt) => {
+                const label = 'labelKey' in opt ? t(opt.labelKey) : opt.label
+                return (
+                  <FilterChip
+                    key={opt.value}
+                    active={local.radius === opt.value}
+                    onClick={() => setLocal((prev) => ({ ...prev, radius: opt.value }))}
+                  >
+                    {label}
+                  </FilterChip>
+                )
+              })}
+            </div>
+          </div>
+          <hr className={dividerClass} />
+        </>
+      )}
 
-      {/* ───── 4. Rayon géographique ───── */}
-      <fieldset className="flex flex-col gap-6">
-        <legend className={sectionLabelClass}>{t('home.filters.radiusTitle')}</legend>
-        <div className="flex flex-wrap gap-2">
-          {RADIUS_OPTIONS.map((opt) => {
-            const label = 'labelKey' in opt ? t(opt.labelKey) : opt.label
-            return (
-              <FilterChip
-                key={opt.value}
-                active={local.radius === opt.value}
-                onClick={() => setLocal((prev) => ({ ...prev, radius: opt.value }))}
-              >
-                {label}
-              </FilterChip>
-            )
-          })}
-        </div>
-      </fieldset>
-
-      <hr className={dividerClass} />
+      {!showRadiusFilter && <hr className={dividerClass} />}
 
       {/* ───── 5. Période ───── */}
-      <fieldset className="flex flex-col gap-6">
-        <legend className={sectionLabelClass}>{t('home.filters.period')}</legend>
+      <div className="flex flex-col gap-3">
+        <p className={sectionLabelClass}>{t('home.filters.period')}</p>
         <div className="flex flex-wrap gap-2">
           {PERIOD_OPTIONS.map((opt) => (
             <FilterChip
@@ -360,7 +406,7 @@ export function FeedFilterPanel({
             </FilterChip>
           ))}
         </div>
-      </fieldset>
+      </div>
     </div>
   )
 

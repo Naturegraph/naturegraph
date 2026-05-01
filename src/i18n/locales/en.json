@@ -20,7 +20,22 @@
     "step": "Step",
     "of": "of",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "add": "Add",
+    "reset": "Reset"
+  },
+
+  "taxonomy": {
+    "birds": "Birds",
+    "mammals": "Mammals",
+    "insects": "Insects",
+    "amphibians": "Amphibians",
+    "reptiles": "Reptiles",
+    "arachnids": "Arachnids",
+    "mollusks": "Mollusks",
+    "fish": "Fish",
+    "plants": "Plants",
+    "other": "Other"
   },
 
   "nav": {
@@ -380,9 +395,9 @@
     },
     "permissionModal": {
       "title": "Naturegraph near you",
-      "description": "Discover species observed within 75 km of you. More relevance, less noise.",
-      "privacyNote": "Only your city is used. Never your exact location. You can update or delete your data at any time.",
-      "activateCta": "Enable location",
+      "description": "Discover the biodiversity around you and the naturalists nearby. More relevance.",
+      "privacyNote": "Only your city is used — never your exact location. Editable at any time.",
+      "activateCta": "Enable my location",
       "skipCta": "Later"
     }
   },
@@ -495,6 +510,8 @@
       "share": "Share",
       "imageOf": "Image {{current}} of {{total}}",
       "navImages": "Image navigation",
+      "enlarge": "Enlarge",
+      "goToImage": "Go to photo",
       "viewImage": "View image {{index}}",
       "reactLoginPrompt": "Sign in to react",
       "noReactions": "Be the first to react",
@@ -502,12 +519,11 @@
       "chooseReaction": "Choose a reaction",
       "filterBySpecies": "Filter feed by {{species}}",
       "reactions": {
-        "love": "Love",
-        "admire": "Admire",
-        "fire": "Amazing",
-        "wow": "Wow",
-        "curious": "Curious",
-        "disappointed": "Disappointing"
+        "love": "Love it!",
+        "fire": "Wooow!!!!",
+        "admire": "So beautiful!",
+        "wow": "Noooo?!",
+        "curious": "Interesting!"
       },
       "commentCount": "{{count}} comment",
       "commentCount_other": "{{count}} comments",
@@ -665,6 +681,9 @@
       "notebook": "Observation notebook",
       "emptyHint": "Type a few letters to see suggestions!",
       "noResults": "No results",
+      "noResultsBadge": "No results",
+      "filterSpecies": "Filter",
+      "filterByGroup": "Filter by group",
       "addObservation": "Add a new observation",
       "helpIdentification": "Enable identification help",
       "mystereTitle": "Mystery to solve!",
@@ -673,9 +692,11 @@
       "unknownSubtitle": "A mystery to solve",
       "dontKnow": "I don't know the species",
       "individualCount": "No. of individuals",
-      "publishBtn": "Share!",
+      "publishBtn": "Share your encounter!",
       "moreDetails": "More details",
-      "obsTitle": "Title (optional)",
+      "detailsHint": "Describe the conditions, behaviour or anything else that feels important!",
+      "advancedOptions": "Advanced options",
+      "obsTitle": "Title of your encounter",
       "obsTitlePlaceholder": "Morning encounter in the forest...",
       "publicLocation": "Make location public"
     },
@@ -685,7 +706,36 @@
       "dragDrop": "Drag your photos here or",
       "browse": "browse",
       "maxFiles": "{{count}} photos max",
-      "remove": "Remove photo {{index}}"
+      "remove": "Remove photo {{index}}",
+      "dragHint": "Drag to frame",
+      "sourceTitle": "Add a photo",
+      "sourceCamera": "Camera",
+      "sourceGallery": "Photo library",
+      "formatBadge": {
+        "landscape": "Landscape",
+        "portrait": "Portrait",
+        "square": "Square"
+      },
+      "mismatchBadge": "Adjust",
+      "mismatchHint": "Native format differs from the selected format — the photo will be displayed without cropping (neutral background).",
+      "editLabel": "Edit photo",
+      "addPhotosBig": "Add your photos",
+      "addPhotosHint": "Up to {{count}} photos per encounter.",
+      "galleryLabel": "Photo gallery",
+      "addMore": "Add",
+      "removeShort": "Remove",
+      "uploadingPhoto": "Photo {{current}} of {{total}}",
+      "edit": {
+        "title": "Edit photo",
+        "zoomIn": "Zoom in",
+        "zoomOut": "Zoom out",
+        "rotateLeft": "Rotate left",
+        "rotateRight": "Rotate right",
+        "reset": "Reset",
+        "altLabel": "Accessibility description",
+        "altPlaceholder": "e.g. Great tit perched on an oak branch",
+        "altHint": "Describe what's shown — read by screen readers."
+      }
     },
     "description": {
       "label": "Description",
@@ -729,7 +779,8 @@
       "label": "Location",
       "placeholder": "City, forest, place name...",
       "hide": "Hide precise location",
-      "hideDesc": "Only the region will be publicly visible"
+      "hideDesc": "If disabled, only the region is visible. Enable to share the exact spot.",
+      "makePublic": "Enable to make the location public"
     },
     "species": {
       "label": "Observed species",

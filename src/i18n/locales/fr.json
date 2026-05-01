@@ -20,7 +20,22 @@
     "step": "Étape",
     "of": "sur",
     "yes": "Oui",
-    "no": "Non"
+    "no": "Non",
+    "add": "Ajouter",
+    "reset": "Réinitialiser"
+  },
+
+  "taxonomy": {
+    "birds": "Oiseaux",
+    "mammals": "Mammifères",
+    "insects": "Insectes",
+    "amphibians": "Amphibiens",
+    "reptiles": "Reptiles",
+    "arachnids": "Arachnides",
+    "mollusks": "Mollusques",
+    "fish": "Poissons",
+    "plants": "Plantes",
+    "other": "Autre"
   },
 
   "nav": {
@@ -379,10 +394,10 @@
       "denied": "Localisation refusée. Utilise la recherche manuelle ci-dessous."
     },
     "permissionModal": {
-      "title": "Naturegraph près de chez vous",
-      "description": "Découvrez les espèces observées dans un rayon de 75 km autour de vous. Plus de pertinence, moins de bruit.",
-      "privacyNote": "Seule votre ville est utilisée. Jamais votre position exacte. Vous pouvez modifier ou supprimer vos données à tout moment.",
-      "activateCta": "Activer la localisation",
+      "title": "Naturegraph près de chez toi",
+      "description": "Découvre la biodiversité qui t'entoure et les naturalistes actifs autour de toi. Plus de pertinence.",
+      "privacyNote": "Seule ta ville est utilisée — jamais ta position exacte. Modifiable à tout moment.",
+      "activateCta": "Activer ma localisation",
       "skipCta": "Plus tard"
     }
   },
@@ -495,6 +510,8 @@
       "share": "Partager",
       "imageOf": "Image {{current}} sur {{total}}",
       "navImages": "Navigation images",
+      "enlarge": "Agrandir",
+      "goToImage": "Aller à la photo",
       "viewImage": "Voir l'image {{index}}",
       "reactLoginPrompt": "Connecte-toi pour réagir",
       "noReactions": "Sois le premier à réagir",
@@ -502,12 +519,11 @@
       "chooseReaction": "Choisir une réaction",
       "filterBySpecies": "Filtrer le feed par {{species}}",
       "reactions": {
-        "love": "Aimer",
-        "admire": "Admirer",
-        "fire": "Incroyable",
-        "wow": "Wow",
-        "curious": "Curieux",
-        "disappointed": "Décevant"
+        "love": "J'adore !",
+        "fire": "Woow !!!!",
+        "admire": "Trop beau !",
+        "wow": "Nooon ?!",
+        "curious": "Intéressant !"
       },
       "commentCount": "{{count}} commentaire",
       "commentCount_other": "{{count}} commentaires",
@@ -653,7 +669,7 @@
       "step3": "Contexte & détails"
     },
     "panel": {
-      "immortaliseEncounter": "Immortalise ta rencontre !",
+      "immortaliseEncounter": "Immortalise ta rencontre !",
       "maxPhotos": "Tu peux ajouter jusqu'à {{count}} photos maximum.",
       "skipPhotos": "Tu peux aussi poursuivre sans ajouter de photo",
       "photoFormat": "Format d'affichage des photos",
@@ -665,6 +681,9 @@
       "notebook": "Carnet d'observations",
       "emptyHint": "Tape quelques lettres pour voir les suggestions !",
       "noResults": "Aucun résultat",
+      "noResultsBadge": "Aucun résultat",
+      "filterSpecies": "Filtrer",
+      "filterByGroup": "Filtrer par groupe",
       "addObservation": "Ajouter une nouvelle observation",
       "helpIdentification": "Activer l'aide à l'identification",
       "mystereTitle": "Mystère à résoudre !",
@@ -673,9 +692,11 @@
       "unknownSubtitle": "Un mystère à élucider",
       "dontKnow": "Je ne connais pas l'espèce",
       "individualCount": "Nb d'individus",
-      "publishBtn": "Partager !",
+      "publishBtn": "Partage ta rencontre !",
       "moreDetails": "Plus de détails",
-      "obsTitle": "Titre (optionnel)",
+      "detailsHint": "Décris les conditions, le comportement ou tout ce qui te semble important !",
+      "advancedOptions": "Options avancées",
+      "obsTitle": "Titre de ta rencontre",
       "obsTitlePlaceholder": "Rencontre matinale en forêt...",
       "publicLocation": "Rendre la localisation publique"
     },
@@ -685,7 +706,36 @@
       "dragDrop": "Glisse tes photos ici ou",
       "browse": "parcourir",
       "maxFiles": "{{count}} photos max",
-      "remove": "Supprimer la photo {{index}}"
+      "remove": "Supprimer la photo {{index}}",
+      "dragHint": "Glisse pour cadrer",
+      "sourceTitle": "Ajouter une photo",
+      "sourceCamera": "Appareil photo",
+      "sourceGallery": "Galerie de photos",
+      "formatBadge": {
+        "landscape": "Paysage",
+        "portrait": "Portrait",
+        "square": "Carré"
+      },
+      "mismatchBadge": "Adapter",
+      "mismatchHint": "Format natif différent du format choisi — la photo sera affichée sans recadrage (fond neutre).",
+      "editLabel": "Modifier la photo",
+      "addPhotosBig": "Ajoute tes photos",
+      "addPhotosHint": "Jusqu'à {{count}} photos par rencontre.",
+      "galleryLabel": "Galerie photos",
+      "addMore": "Ajouter",
+      "removeShort": "Supprimer",
+      "uploadingPhoto": "Photo {{current}} sur {{total}}",
+      "edit": {
+        "title": "Modifier la photo",
+        "zoomIn": "Zoomer",
+        "zoomOut": "Dézoomer",
+        "rotateLeft": "Tourner à gauche",
+        "rotateRight": "Tourner à droite",
+        "reset": "Réinitialiser",
+        "altLabel": "Description pour l'accessibilité",
+        "altPlaceholder": "Ex. Mésange charbonnière sur une branche de chêne",
+        "altHint": "Décris ce que l'on voit — lu par les lecteurs d'écran."
+      }
     },
     "description": {
       "label": "Description",
@@ -698,38 +748,39 @@
       "placeholder": "Brume matinale, floraison, migration..."
     },
     "date": {
-      "label": "Date d'observation",
+      "label": "Date de l'observation",
       "timeLabel": "Moment de la journée",
-      "morning": "Matin",
+      "morning": "Matinée",
       "afternoon": "Après-midi",
       "dusk": "Crépuscule",
       "evening": "Soirée",
       "night": "Nuit"
     },
     "weather": {
-      "label": "Météo",
+      "label": "Conditions de prise de vue",
       "sunny": "Ensoleillé",
       "cloudy": "Nuageux",
       "rainy": "Pluvieux",
-      "windy": "Venteux",
+      "windy": "Venté",
       "snowy": "Neigeux"
     },
     "habitat": {
-      "label": "Habitat",
+      "label": "Type d'habitat lors de l'observation ?",
       "forest": "Forêt",
-      "park_garden": "Parc / Jardin",
-      "prairie_heath": "Prairie / Lande",
-      "urban": "Urbain",
-      "river": "Rivière",
-      "lake_wetland": "Lac / Zone humide",
+      "park_garden": "Parc et jardin",
+      "prairie_heath": "Prairie et lande",
+      "urban": "Milieu urbain",
+      "river": "Rivière, lac et zone humide",
+      "lake_wetland": "Rivière, lac et zone humide",
       "mountain": "Montagne",
-      "sea_coast": "Mer / Côte"
+      "sea_coast": "Mer et littoral"
     },
     "location": {
-      "label": "Lieu",
+      "label": "Localisation",
       "placeholder": "Ville, forêt, lieu-dit...",
       "hide": "Masquer la localisation précise",
-      "hideDesc": "Seule la région sera visible publiquement"
+      "hideDesc": "Si désactivé, seule la région est visible. Active pour partager le lieu précis.",
+      "makePublic": "Activer pour rendre la localisation publique"
     },
     "species": {
       "label": "Espèce observée",

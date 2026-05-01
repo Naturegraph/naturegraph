@@ -1,46 +1,46 @@
 /**
- * Partners — Section des partenaires
- * ====================================
- * Logos des partenaires cliquables (liens externes).
+ * Partners — Section des partenaires de Naturegraph
+ * ====================================================
+ * Logos des partenaires officiels cliquables (liens externes).
  * Grille 2x2 mobile, ligne horizontale desktop.
+ *
+ * Liste à jour : Paloume, E-Hub Enerco, Kréa'Pulse.
  */
 
 import { useTranslation } from 'react-i18next'
-import wazoom from '@/assets/partners/partner-wazoom.png'
 import ehub from '@/assets/partners/partner-ehub.png'
 import kreapulse from '@/assets/partners/partner-kreapulse.png'
 import paloume from '@/assets/partners/partner-paloume.png'
 
-/** Données des partenaires */
-const PARTNERS = [
+interface Partner {
+  name: string
+  url: string
+  logo: string
+}
+
+/** Données des partenaires officiels Naturegraph */
+const PARTNERS: Partner[] = [
   {
     name: 'Paloume',
     url: 'https://www.paloume.fr/page/2020316-accueil',
     logo: paloume,
-    wazoom: false,
   },
   {
     name: 'E-Hub Enerco',
     url: 'https://www.hubenerco.bzh/',
     logo: ehub,
-    wazoom: false,
   },
   {
     name: "Kréa'Pulse",
     url: 'https://www.ploermelcommunaute.bzh/kreapulse/',
     logo: kreapulse,
-    wazoom: false,
-  },
-  {
-    name: 'Wazoom Studio',
-    url: 'https://wazoom-studio.com/',
-    logo: wazoom,
-    wazoom: false,
   },
 ]
 
 export function Partners() {
   const { t } = useTranslation()
+
+  if (PARTNERS.length === 0) return null
 
   return (
     <section
@@ -65,7 +65,7 @@ export function Partners() {
                 aria-label={`Visiter le site web de ${partner.name}`}
               >
                 <img
-                  src={partner.logo!}
+                  src={partner.logo}
                   alt={partner.name}
                   className="h-16 md:h-20 w-auto object-contain max-w-[220px]"
                   loading="lazy"

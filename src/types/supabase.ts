@@ -1,13 +1,3 @@
-/**
- * supabase.ts — Types TypeScript générés automatiquement
- * ========================================================
- * ⚠️  NE PAS ÉDITER MANUELLEMENT — généré via :
- *     npx supabase gen types typescript --project-id <id> > src/types/supabase.ts
- *
- * Couvre : 18 tables + 4 vues + toutes les fonctions PostGIS/RPC
- * Dernière mise à jour : 2026-04-17 (matching supabase dev schema)
- */
-
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
@@ -233,6 +223,46 @@ export type Database = {
         }
         Relationships: []
       }
+      hidden_posts: {
+        Row: {
+          hidden_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          hidden_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          hidden_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'hidden_posts_post_id_fkey'
+            columns: ['post_id']
+            isOneToOne: false
+            referencedRelation: 'posts'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'hidden_posts_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'hidden_posts_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       identification_proposals: {
         Row: {
           author_id: string
@@ -299,6 +329,7 @@ export type Database = {
       }
       media: {
         Row: {
+          allow_hd_download: boolean
           alt: string | null
           aperture: string | null
           camera: string | null
@@ -306,6 +337,7 @@ export type Database = {
           copyright_notice: string | null
           created_at: string | null
           display_order: number
+          exif: Json | null
           file_size: number | null
           focal_length: number | null
           format: string | null
@@ -314,6 +346,7 @@ export type Database = {
           gps_point: unknown
           height: number | null
           id: string
+          is_cover: boolean
           iso: number | null
           lens: string | null
           license: string | null
@@ -321,16 +354,23 @@ export type Database = {
           orientation: string | null
           original_url: string | null
           post_id: string
+          ratio: number | null
+          role: string
+          series_group_id: string | null
           shutter_speed: string | null
+          species_id: string | null
           status: string | null
           thumbnail_url: string | null
           type: string
           updated_at: string | null
           url: string
           user_id: string
+          watermark_enabled: boolean
+          watermark_url: string | null
           width: number | null
         }
         Insert: {
+          allow_hd_download?: boolean
           alt?: string | null
           aperture?: string | null
           camera?: string | null
@@ -338,6 +378,7 @@ export type Database = {
           copyright_notice?: string | null
           created_at?: string | null
           display_order: number
+          exif?: Json | null
           file_size?: number | null
           focal_length?: number | null
           format?: string | null
@@ -346,6 +387,7 @@ export type Database = {
           gps_point?: unknown
           height?: number | null
           id?: string
+          is_cover?: boolean
           iso?: number | null
           lens?: string | null
           license?: string | null
@@ -353,16 +395,23 @@ export type Database = {
           orientation?: string | null
           original_url?: string | null
           post_id: string
+          ratio?: number | null
+          role?: string
+          series_group_id?: string | null
           shutter_speed?: string | null
+          species_id?: string | null
           status?: string | null
           thumbnail_url?: string | null
           type: string
           updated_at?: string | null
           url: string
           user_id: string
+          watermark_enabled?: boolean
+          watermark_url?: string | null
           width?: number | null
         }
         Update: {
+          allow_hd_download?: boolean
           alt?: string | null
           aperture?: string | null
           camera?: string | null
@@ -370,6 +419,7 @@ export type Database = {
           copyright_notice?: string | null
           created_at?: string | null
           display_order?: number
+          exif?: Json | null
           file_size?: number | null
           focal_length?: number | null
           format?: string | null
@@ -378,6 +428,7 @@ export type Database = {
           gps_point?: unknown
           height?: number | null
           id?: string
+          is_cover?: boolean
           iso?: number | null
           lens?: string | null
           license?: string | null
@@ -385,13 +436,19 @@ export type Database = {
           orientation?: string | null
           original_url?: string | null
           post_id?: string
+          ratio?: number | null
+          role?: string
+          series_group_id?: string | null
           shutter_speed?: string | null
+          species_id?: string | null
           status?: string | null
           thumbnail_url?: string | null
           type?: string
           updated_at?: string | null
           url?: string
           user_id?: string
+          watermark_enabled?: boolean
+          watermark_url?: string | null
           width?: number | null
         }
         Relationships: [
@@ -400,6 +457,20 @@ export type Database = {
             columns: ['post_id']
             isOneToOne: false
             referencedRelation: 'posts'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'media_species_id_fkey'
+            columns: ['species_id']
+            isOneToOne: false
+            referencedRelation: 'species_full'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'media_species_id_fkey'
+            columns: ['species_id']
+            isOneToOne: false
+            referencedRelation: 'species_master'
             referencedColumns: ['id']
           },
           {
@@ -593,6 +664,7 @@ export type Database = {
           country: string | null
           created_at: string | null
           description: string
+          display_format: string
           encounter_date: string
           habitat: string | null
           id: string
@@ -634,6 +706,7 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           description: string
+          display_format?: string
           encounter_date: string
           habitat?: string | null
           id?: string
@@ -675,6 +748,7 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           description?: string
+          display_format?: string
           encounter_date?: string
           habitat?: string | null
           id?: string
@@ -772,6 +846,8 @@ export type Database = {
           posts_count: number | null
           region: string | null
           region_name: string | null
+          subscription_expires_at: string | null
+          subscription_tier: string
           twitter: string | null
           updated_at: string | null
           username: string
@@ -807,6 +883,8 @@ export type Database = {
           posts_count?: number | null
           region?: string | null
           region_name?: string | null
+          subscription_expires_at?: string | null
+          subscription_tier?: string
           twitter?: string | null
           updated_at?: string | null
           username: string
@@ -842,6 +920,8 @@ export type Database = {
           posts_count?: number | null
           region?: string | null
           region_name?: string | null
+          subscription_expires_at?: string | null
+          subscription_tier?: string
           twitter?: string | null
           updated_at?: string | null
           username?: string
@@ -967,6 +1047,46 @@ export type Database = {
           },
         ]
       }
+      saved_posts: {
+        Row: {
+          post_id: string
+          saved_at: string
+          user_id: string
+        }
+        Insert: {
+          post_id: string
+          saved_at?: string
+          user_id: string
+        }
+        Update: {
+          post_id?: string
+          saved_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'saved_posts_post_id_fkey'
+            columns: ['post_id']
+            isOneToOne: false
+            referencedRelation: 'posts'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'saved_posts_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'saved_posts_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       spatial_ref_sys: {
         Row: {
           auth_name: string | null
@@ -1044,7 +1164,7 @@ export type Database = {
           {
             foreignKeyName: 'species_master_taxref_id_fkey'
             columns: ['taxref_id']
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: 'taxref_cache'
             referencedColumns: ['cd_nom']
           },
@@ -1339,7 +1459,7 @@ export type Database = {
           {
             foreignKeyName: 'species_master_taxref_id_fkey'
             columns: ['taxref_id']
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: 'taxref_cache'
             referencedColumns: ['cd_nom']
           },
