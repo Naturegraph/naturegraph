@@ -58,6 +58,9 @@ export const FEED_QUERY_KEY = (params: FeedParams) =>
     params.page ?? 1,
     params.limit ?? 20,
     serializeFilters(params.filters),
+    // currentUserId inclus pour que le tab 'for_you' invalide quand l'user
+    // change (login/logout). Pas critique sinon.
+    params.currentUserId ?? '',
   ] as const
 
 // ─── Hook principal ───────────────────────────────────────────────────────────

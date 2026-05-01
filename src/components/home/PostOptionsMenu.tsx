@@ -27,17 +27,36 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { UserX, Bookmark, Link, VolumeX, EyeOff, Flag, Pencil, Trash2, Check } from 'lucide-react'
+import {
+  UserX,
+  UserPlus,
+  Bookmark,
+  BookmarkCheck,
+  Link,
+  VolumeX,
+  EyeOff,
+  Flag,
+  Pencil,
+  Trash2,
+  Check,
+} from 'lucide-react'
 import { ReportModal } from './ReportModal'
 import { DeleteConfirmModal } from './DeleteConfirmModal'
+import { block } from '@/services/blockService'
+import { useToggleSavedPost, useSavedPostIds } from '@/hooks/useSavedPosts'
+import { useIsFollowing, useToggleFollow } from '@/hooks/useFollow'
+import { useHidePost } from '@/hooks/useHiddenPosts'
+import { useDeletePost } from '@/hooks/usePost'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface PostOptionsMenuProps {
-  /** ID du post — pour construire l'URL de partage et les futures requêtes API */
+  /** ID du post — pour construire l'URL de partage et les requêtes API */
   postId: string
   /** Nom d'utilisateur de l'auteur (pour "Ne plus suivre @username") */
   authorUsername: string
+  /** ID de l'auteur (uuid) — utilisé par follow/block (cible des actions) */
+  authorId?: string
   /** true = post de l'utilisateur connecté */
   isOwnPost: boolean
   onClose: () => void
@@ -115,6 +134,7 @@ function MenuItem({
 export function PostOptionsMenu({
   postId,
   authorUsername,
+  authorId,
   isOwnPost,
   onClose,
   onEdit,
@@ -127,6 +147,22 @@ export function PostOptionsMenu({
   const [linkCopied, setLinkCopied] = useState(false)
   const [showReport, setShowReport] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  /**
+   * Feedback visuel d'action persistée. Chaque item :
+   *   - Affiche un check vert + label de confirmation pendant 1.2s
+   *   - Ferme le menu ensuite (sauf "favorite" qui reste actif visuellement)
+   * Les actions appellent les vrais services Supabase (saved_posts, follows,
+   * blocks). Les erreurs sont silencieuses ici — un toast global devra être
+   * ajouté dans une itération séparée.
+   */
+  const [actionedItem, setActionedItem] = useState<string | null>(null)
+  const { data: savedIds } = useSavedPostIds()
+  const isSavedFavorite = !!savedIds?.includes(postId)
+  const toggleSaved = useToggleSavedPost()
+  const { data: isCurrentlyFollowing } = useIsFollowing(authorId)
+  const toggleFollow = useToggleFollow()
+  const hidePostMutation = useHidePost()
+  const deletePostMutation = useDeletePost()
 
   // Focus sur le premier item à l'ouverture
   useEffect(() => {
@@ -199,16 +235,48 @@ export function PostOptionsMenu({
   }
 
   /**
-   * Actions "autres utilisateurs" — toutes TODO BACKEND
-   * À connecter à : followService, postService.hide(), reportService
+   * Actions persistées Supabase + feedback visuel.
+   * - 'favorite'   → toggle saved_posts (mutation)
+   * - 'follow-toggle' → INSERT/DELETE follows selon l'état actuel
+   * - 'mute-user'  → INSERT blocks (l'user disparaît du feed via RLS,
+   *                  débloquable depuis Settings → Comptes bloqués)
+   * - 'hide-post'  → INSERT hidden_posts (le post disparaît du feed,
+   *                  débloquable depuis Settings → Posts masqués)
+   * - 'report'     → ouvre ReportModal qui POST sur reports
    */
-  function handleTodo(action: string) {
+  async function handleTodo(action: string) {
     if (action === 'report') {
       setShowReport(true)
       return
     }
-    // TODO [BACKEND] — action: 'unfollow' | 'favorite' | 'mute-user' | 'hide-post' → postService
-    onClose()
+    if (action === 'favorite') {
+      toggleSaved.mutate({ postId, currentlySaved: isSavedFavorite })
+      return
+    }
+    if (action === 'follow-toggle' && authorId) {
+      toggleFollow.mutate({
+        targetUserId: authorId,
+        currentlyFollowing: !!isCurrentlyFollowing,
+      })
+      // Pas de fermeture auto — on laisse l'user voir le state changer
+      return
+    }
+    setActionedItem(action)
+    try {
+      if (action === 'mute-user' && authorId) {
+        await block(authorId)
+      } else if (action === 'hide-post') {
+        // Mutation optimiste via useHidePost — l'invalidation déclenche
+        // un refetch du feed qui filtrera ce post.
+        hidePostMutation.mutate({ postId })
+      }
+    } catch {
+      // Erreur silencieuse — TODO ajouter un système de toast global
+    }
+    setTimeout(() => {
+      setActionedItem(null)
+      onClose()
+    }, 1200)
   }
 
   // ── Contenu du menu selon le mode ─────────────────────────────────────────
@@ -246,18 +314,54 @@ export function PostOptionsMenu({
     <>
       <MenuItem
         itemRef={firstItemRef as React.RefObject<HTMLButtonElement>}
-        icon={<UserX className="size-5" />}
-        label={t('home.post.options.unfollow', { username: authorUsername })}
-        description={t('home.post.options.unfollowDesc')}
-        onClick={() => handleTodo('unfollow')}
+        icon={
+          isCurrentlyFollowing ? (
+            <UserX className="size-5" />
+          ) : (
+            <UserPlus className="size-5 text-primary" />
+          )
+        }
+        label={
+          isCurrentlyFollowing
+            ? t('home.post.options.unfollow', { username: authorUsername })
+            : t('home.post.options.follow', {
+                defaultValue: 'Suivre @{{username}}',
+                username: authorUsername,
+              })
+        }
+        description={
+          isCurrentlyFollowing
+            ? t('home.post.options.unfollowDesc')
+            : t('home.post.options.followDesc', {
+                defaultValue: 'Vous verrez ses publications dans votre feed',
+              })
+        }
+        onClick={() => handleTodo('follow-toggle')}
       />
       <div className="h-px bg-border mx-5" aria-hidden="true" />
       <MenuItem
-        icon={<Bookmark className="size-5" />}
-        label={t('home.post.options.addFavorite')}
-        description={t('home.post.options.addFavoriteDesc')}
+        icon={
+          isSavedFavorite ? (
+            <BookmarkCheck className="size-5 text-primary fill-primary" />
+          ) : (
+            <Bookmark className="size-5" />
+          )
+        }
+        label={
+          isSavedFavorite
+            ? t('home.post.options.addFavoriteDone', {
+                defaultValue: 'Ajouté aux favoris',
+              })
+            : t('home.post.options.addFavorite')
+        }
+        description={
+          isSavedFavorite
+            ? t('home.post.options.addFavoriteDoneDesc', {
+                defaultValue: 'Retrouve-le dans ta collection',
+              })
+            : t('home.post.options.addFavoriteDesc')
+        }
         onClick={() => handleTodo('favorite')}
-        highlighted
       />
       <div className="h-px bg-border mx-5" aria-hidden="true" />
       <MenuItem
@@ -270,16 +374,49 @@ export function PostOptionsMenu({
       />
       <div className="h-px bg-border mx-5" aria-hidden="true" />
       <MenuItem
-        icon={<VolumeX className="size-5" />}
-        label={t('home.post.options.muteUser', { username: authorUsername })}
-        description={t('home.post.options.muteUserDesc')}
+        icon={
+          actionedItem === 'mute-user' ? (
+            <Check className="size-5 text-green-600" />
+          ) : (
+            <VolumeX className="size-5" />
+          )
+        }
+        label={
+          actionedItem === 'mute-user'
+            ? t('home.post.options.muteUserDone', {
+                defaultValue: '@{{username}} masqué',
+                username: authorUsername,
+              })
+            : t('home.post.options.muteUser', { username: authorUsername })
+        }
+        description={
+          actionedItem === 'mute-user'
+            ? t('home.post.options.actionDone', { defaultValue: 'Action effectuée' })
+            : t('home.post.options.muteUserDesc')
+        }
         onClick={() => handleTodo('mute-user')}
       />
       <div className="h-px bg-border mx-5" aria-hidden="true" />
       <MenuItem
-        icon={<EyeOff className="size-5" />}
-        label={t('home.post.options.hidePost')}
-        description={t('home.post.options.hidePostDesc')}
+        icon={
+          actionedItem === 'hide-post' ? (
+            <Check className="size-5 text-green-600" />
+          ) : (
+            <EyeOff className="size-5" />
+          )
+        }
+        label={
+          actionedItem === 'hide-post'
+            ? t('home.post.options.hidePostDone', {
+                defaultValue: 'Publication masquée',
+              })
+            : t('home.post.options.hidePost')
+        }
+        description={
+          actionedItem === 'hide-post'
+            ? t('home.post.options.actionDone', { defaultValue: 'Action effectuée' })
+            : t('home.post.options.hidePostDesc')
+        }
         onClick={() => handleTodo('hide-post')}
       />
       <div className="h-px bg-border mx-5" aria-hidden="true" />
@@ -310,7 +447,7 @@ export function PostOptionsMenu({
           ref={menuRef}
           role="menu"
           aria-label={t('home.post.optionsMenu')}
-          className="hidden md:block absolute top-full right-0 mt-1 w-[320px] bg-background border border-border rounded-xl shadow-xl z-50 overflow-hidden"
+          className="hidden md:block absolute top-full right-0 mt-1 w-[320px] bg-background border border-border rounded-lg shadow-xl z-50 overflow-hidden"
         >
           <div className="py-1">{items}</div>
         </div>
@@ -351,7 +488,10 @@ export function PostOptionsMenu({
             onClose()
           }}
           onConfirm={() => {
-            // TODO [BACKEND] — postService.deletePost(postId) + invalider cache ['feed']
+            // Suppression réelle via Supabase (RLS user-scoped → seul le
+            // propriétaire peut delete). Le hook invalide automatiquement
+            // le cache feed pour faire disparaître le post.
+            deletePostMutation.mutate(postId)
           }}
         />
       )}

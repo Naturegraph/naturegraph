@@ -17,10 +17,12 @@
  * visibilité est pilotée par le switch de localisation + défaut 'public'.
  */
 
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Calendar, Info, MapPin, Minus, Plus } from 'lucide-react'
+import { Calendar, Info, MapPin, Minus, Plus, X } from 'lucide-react'
 import type { TimeOfDay, WeatherCondition, HabitatType } from '@/types/database'
+import { useLocationAutocomplete } from '@/hooks/useLocationAutocomplete'
+import type { CityResult } from '@/types/location'
 
 // ─── Constantes UI — labels emoji mappés aux énumérations DB ────────────────
 
@@ -39,12 +41,13 @@ const HABITAT_EMOJI: Record<HabitatType, string> = {
   sea_coast: '🌊',
 }
 
+// Emojis Figma 6385:55806 (second-agent/05) — alignés sur FeedPost.WEATHER_EMOJI.
 const WEATHER_EMOJI: Record<WeatherCondition, string> = {
   sunny: '☀️',
-  cloudy: '☁️',
+  cloudy: '⛅',
   rainy: '🌧️',
-  windy: '💨',
-  snowy: '❄️',
+  windy: '🌬️',
+  snowy: '🌨️',
 }
 
 // Options exposées (ordre Figma)
@@ -97,6 +100,10 @@ function Chip({ label, emoji, active, onClick }: ChipProps) {
 // ─── Props ──────────────────────────────────────────────────────────────────
 
 interface EncounterStep3Props {
+  /** true uniquement après un clic "Publier" raté — gate l'affichage des erreurs
+   *  inline pour ne pas montrer "obligatoire" tant que l'utilisateur n'a pas
+   *  tenté de soumettre (second-agent/30). */
+  submitAttempted?: boolean
   title: string
   onTitleChange: (v: string) => void
   description: string
@@ -112,6 +119,10 @@ interface EncounterStep3Props {
   onHabitatChange: (v: HabitatType | '') => void
   locationName: string
   onLocationChange: (v: string) => void
+  /** Reçoit lat/lng de la ville sélectionnée via l'autocomplete API Adresse —
+   *  sert au reverse-geocoding serveur pour remplir `posts.city`. Optionnel :
+   *  l'utilisateur peut taper du texte libre sans choisir de suggestion. */
+  onLocationCoordsChange?: (lat: number | null, lng: number | null) => void
   /** true = localisation précise masquée. Le switch Figma est inversé :
    *  switch ON ⇒ « rendre public » ⇒ locationHidden = false. */
   locationHidden: boolean
@@ -126,6 +137,7 @@ function todayISO() {
 }
 
 export function EncounterStep3({
+  submitAttempted = false,
   title,
   onTitleChange,
   description,
@@ -141,6 +153,7 @@ export function EncounterStep3({
   onHabitatChange,
   locationName,
   onLocationChange,
+  onLocationCoordsChange,
   locationHidden,
   onLocationHiddenChange,
 }: EncounterStep3Props) {
@@ -154,6 +167,55 @@ export function EncounterStep3({
   // Options avancées dépliées par défaut si au moins une option est pré-remplie
   // (ex : EXIF a détecté un moment de la journée). Sinon fermé.
   const [advancedOpen, setAdvancedOpen] = useState<boolean>(!!(timeOfDay || weather || habitat))
+
+  // ─── Popover "info localisation" ────────────────────────────────────────
+  // Affiche les règles de confidentialité au clic sur l'icône (i).
+  // Fermeture : croix, clic en dehors, ou touche Escape.
+  const [locationInfoOpen, setLocationInfoOpen] = useState(false)
+  const locationInfoRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!locationInfoOpen) return
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setLocationInfoOpen(false)
+    }
+    function onClickOutside(e: MouseEvent) {
+      if (locationInfoRef.current && !locationInfoRef.current.contains(e.target as Node)) {
+        setLocationInfoOpen(false)
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    document.addEventListener('mousedown', onClickOutside)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('mousedown', onClickOutside)
+    }
+  }, [locationInfoOpen])
+
+  // ─── Autocomplete localisation (API Adresse data.gouv.fr) ───────────────
+  // - Suggestions affichées sous l'input quand >= 2 caractères tapés
+  // - Sélection d'une suggestion : pose locationName + lat/lng
+  // - Frappe libre : possible (texte libre conservé tel quel)
+  const [locSuggestionsOpen, setLocSuggestionsOpen] = useState(false)
+  const locInputRef = useRef<HTMLDivElement | null>(null)
+  const { suggestions, isLoading: locLoading } = useLocationAutocomplete(locationName)
+
+  useEffect(() => {
+    if (!locSuggestionsOpen) return
+    function onClickOutside(e: MouseEvent) {
+      if (locInputRef.current && !locInputRef.current.contains(e.target as Node)) {
+        setLocSuggestionsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [locSuggestionsOpen])
+
+  function handlePickCity(city: CityResult) {
+    onLocationChange(city.name)
+    onLocationCoordsChange?.(city.centroidLat, city.centroidLng)
+    setLocSuggestionsOpen(false)
+  }
 
   // Switch Figma : ON = publique (inverse de locationHidden)
   const locationPublic = !locationHidden
@@ -187,9 +249,8 @@ export function EncounterStep3({
       <div className="flex flex-col gap-1.5">
         <label htmlFor={descId} className="text-sm text-foreground">
           {t('contribute.description.label', { defaultValue: 'Description' })}
-          <span aria-hidden="true" className="text-[var(--color-error)]">
-            *
-          </span>
+          {/* Asterisque retiré (second-agent/30 — phase test) : on laisse libre
+              pour analyser qui complète quoi avant de rendre obligatoire. */}
         </label>
         <div className="relative">
           <textarea
@@ -198,10 +259,9 @@ export function EncounterStep3({
             onChange={(e) => onDescriptionChange(e.target.value)}
             placeholder={t('contribute.description.placeholder', { defaultValue: '' })}
             rows={5}
-            required
-            aria-required="true"
-            aria-invalid={!!errors.description}
-            aria-describedby={errors.description ? `${descId}-error` : undefined}
+            // Phase test : description non obligatoire (second-agent/30).
+            aria-invalid={!!(submitAttempted && errors.description)}
+            aria-describedby={submitAttempted && errors.description ? `${descId}-error` : undefined}
             className="w-full px-4 py-3 pb-7 rounded-2xl border border-border bg-cream-lighter text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
           />
           {/* Compteur ancré en bas à droite du textarea (Figma) */}
@@ -215,7 +275,10 @@ export function EncounterStep3({
             {MAX_DESC} max
           </span>
         </div>
-        {errors.description && (
+        {/* Erreur affichée UNIQUEMENT après une tentative de soumission ratée
+            — sinon le label "*" suffit à signaler le caractère obligatoire
+            (second-agent/30). */}
+        {submitAttempted && errors.description && (
           <p id={`${descId}-error`} role="alert" className="text-xs text-[var(--color-error)]">
             {errors.description}
           </p>
@@ -234,7 +297,10 @@ export function EncounterStep3({
             value={encounterDate}
             max={todayISO()}
             onChange={(e) => onDateChange(e.target.value)}
-            className="w-full h-11 pl-4 pr-10 rounded-full border border-border bg-cream-lighter text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+            // `date-input-clean` cache l'icône native (Webkit/Edge) — l'icône
+            // visible est notre <Calendar> custom, alignée avec le design system.
+            // Le clic sur l'input ouvre toujours le picker natif.
+            className="date-input-clean w-full h-11 pl-4 pr-10 rounded-full border border-border bg-cream-lighter text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
           />
           <Calendar
             className="absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-primary pointer-events-none"
@@ -245,40 +311,131 @@ export function EncounterStep3({
 
       {/* ── 4. Localisation + switch public ────────────────────────────── */}
       <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-1.5">
+        <div className="relative flex items-center gap-1.5" ref={locationInfoRef}>
           <label htmlFor={locId} className="text-sm text-foreground">
             {t('contribute.location.label', { defaultValue: 'Localisation' })}
           </label>
-          <span
-            className="inline-flex items-center justify-center text-primary"
-            title={t('contribute.location.hideDesc', {
-              defaultValue:
-                'Si désactivé, seule la région est visible. Active pour partager le lieu précis.',
+          {/* Bouton (i) : ouvre le popover privacy au clic. */}
+          <button
+            type="button"
+            onClick={() => setLocationInfoOpen((v) => !v)}
+            aria-label={t('contribute.location.infoButton', {
+              defaultValue: 'En savoir plus sur la localisation',
             })}
+            aria-expanded={locationInfoOpen}
+            className="inline-flex items-center justify-center size-5 rounded-full text-primary hover:bg-primary-light/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <Info className="size-3.5" aria-hidden="true" />
-            <span className="sr-only">
-              {t('contribute.location.hideDesc', {
-                defaultValue:
-                  'Si désactivé, seule la région est visible. Active pour partager le lieu précis.',
-              })}
-            </span>
-          </span>
+          </button>
+
+          {locationInfoOpen && (
+            <div
+              role="dialog"
+              aria-label={t('contribute.location.label', { defaultValue: 'Localisation' })}
+              className="absolute left-0 top-full mt-2 z-30 w-[min(420px,calc(100vw-2rem))] rounded-2xl border-[0.5px] border-border bg-background p-5 shadow-xl flex flex-col gap-3"
+            >
+              <div className="flex items-center justify-between">
+                <h4 className="font-title font-bold text-base text-foreground">
+                  {t('contribute.location.label', { defaultValue: 'Localisation' })}
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => setLocationInfoOpen(false)}
+                  aria-label={t('common.close', { defaultValue: 'Fermer' })}
+                  className="size-7 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <X className="size-4" aria-hidden="true" />
+                </button>
+              </div>
+              <p className="text-sm text-foreground leading-relaxed">
+                {t('contribute.location.privacy.intro', {
+                  defaultValue:
+                    'Par défaut, la donnée de localisation est privée. Elle ne sera pas partagée avec les autres utilisateurs.',
+                })}
+              </p>
+              <p className="text-sm text-foreground leading-relaxed">
+                {t('contribute.location.privacy.usage', {
+                  defaultValue:
+                    "Nous utiliserons ta localisation pour améliorer la qualité des données scientifiques et suivre l'évolution des espèces. Ces informations pourront être partagées avec des organismes pour des études, mais uniquement de manière anonyme.",
+                })}
+              </p>
+              <p className="text-sm text-foreground font-bold leading-relaxed">
+                {t('contribute.location.privacy.publicTitle', {
+                  defaultValue: 'Puis-je rendre ma localisation publique ?',
+                })}
+              </p>
+              <p className="text-sm text-foreground leading-relaxed">
+                {t('contribute.location.privacy.publicAnswer', {
+                  defaultValue:
+                    "Oui, tu peux choisir de rendre ta localisation publique. Cependant, elle sera associée à la ville où l'observation a eu lieu pour préserver la confidentialité.",
+                })}
+              </p>
+            </div>
+          )}
         </div>
 
-        <div className="relative">
+        <div className="relative" ref={locInputRef}>
           <MapPin
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-primary pointer-events-none"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-primary pointer-events-none z-10"
             aria-hidden="true"
           />
           <input
             id={locId}
             type="text"
             value={locationName}
-            onChange={(e) => onLocationChange(e.target.value)}
+            onChange={(e) => {
+              onLocationChange(e.target.value)
+              // Si l'utilisateur retape, invalider les coords précédentes
+              // pour ne pas envoyer un GPS qui ne correspond plus au texte.
+              onLocationCoordsChange?.(null, null)
+              setLocSuggestionsOpen(true)
+            }}
+            onFocus={() => locationName.length >= 2 && setLocSuggestionsOpen(true)}
             placeholder={t('contribute.location.placeholder', { defaultValue: '' })}
+            role="combobox"
+            aria-expanded={locSuggestionsOpen && suggestions.length > 0}
+            aria-controls={`${locId}-listbox`}
+            aria-autocomplete="list"
+            autoComplete="off"
             className="w-full h-11 pl-10 pr-4 rounded-full border border-border bg-cream-lighter text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
           />
+
+          {/* Dropdown suggestions API Adresse */}
+          {locSuggestionsOpen && (suggestions.length > 0 || locLoading) && (
+            <ul
+              id={`${locId}-listbox`}
+              role="listbox"
+              className="absolute left-0 right-0 top-full mt-1 z-20 rounded-2xl border border-border bg-background shadow-lg overflow-hidden"
+            >
+              {locLoading && suggestions.length === 0 && (
+                <li className="px-4 py-2.5 text-sm text-muted-foreground italic">
+                  {t('common.loading', { defaultValue: 'Chargement…' })}
+                </li>
+              )}
+              {suggestions.map((city) => (
+                <li key={city.inseeCode} role="option" aria-selected={false}>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault() // évite le blur avant le click
+                      handlePickCity(city)
+                    }}
+                    className="w-full flex items-start gap-2 px-4 py-2.5 text-left hover:bg-primary-light/30 transition-colors focus-visible:outline-none focus-visible:bg-primary-light/40"
+                  >
+                    <MapPin className="size-4 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium text-foreground truncate">
+                        {city.name}
+                      </span>
+                      <span className="block text-xs text-muted-foreground truncate">
+                        {city.departmentCode} · {city.regionName}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* Switch Figma : label avant, toggle après — ON = publique */}

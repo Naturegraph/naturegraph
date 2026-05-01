@@ -305,7 +305,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       'Email rate limit exceeded': 'Trop de tentatives. Réessaie dans quelques minutes.',
       'Phone not confirmed': 'Numéro de téléphone non confirmé.',
     }
-    return safeMessages[message] ?? 'Une erreur est survenue. Réessaie plus tard.'
+    // Lookup exact d'abord
+    if (safeMessages[message]) return safeMessages[message]
+
+    // Détection souple (Supabase v2 renvoie parfois en lowercase ou avec variants)
+    const lower = message.toLowerCase()
+    if (lower.includes('rate limit') || lower.includes('over_email_send_rate_limit')) {
+      return 'Trop de tentatives. Réessaie dans quelques minutes.'
+    }
+    if (lower.includes('invalid login')) return 'Identifiants incorrects.'
+    if (lower.includes('not confirmed')) {
+      return 'Adresse e-mail non confirmée. Vérifie ta boîte mail.'
+    }
+    if (lower.includes('already registered') || lower.includes('user_already_exists')) {
+      return 'Un compte existe déjà avec cette adresse.'
+    }
+
+    return 'Une erreur est survenue. Réessaie plus tard.'
   }
 
   // ─── Magic link OTP signup/login ─────────────────────────────────────────

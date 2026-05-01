@@ -31,6 +31,7 @@ import { uploadPostMedia } from '@/services/mediaService'
 import { createProposal } from '@/services/identificationService'
 import { supabase } from '@/lib/supabase'
 import { useQueryClient } from '@tanstack/react-query'
+import { Button } from '@/components/ui/Button'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -59,6 +60,10 @@ interface EncounterFormData {
   weather: WeatherCondition | ''
   habitat: HabitatType | ''
   locationName: string
+  /** Coordonnées GPS de la ville sélectionnée via autocomplete API Adresse —
+   *  utilisées par le serveur pour reverse-geocoding cohérent (city, region). */
+  locationLat: number | null
+  locationLng: number | null
   /** true = lat/lng masquées publiquement (seule la région est visible). */
   locationHidden: boolean
 }
@@ -95,11 +100,16 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
     weather: '',
     habitat: '',
     locationName: '',
+    locationLat: null,
+    locationLng: null,
     // Par défaut la localisation précise est masquée (sobriété privacy) ;
     // l'utilisateur peut activer le switch « rendre public » à l'étape 3.
     locationHidden: true,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  // Gate l'affichage des erreurs inline (second-agent/30) — passe à true au
+  // premier handleSubmit ; remis à false sur navigation entre étapes.
+  const [submitAttempted, setSubmitAttempted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   // Progression upload par photo — alimentée par la boucle d'upload, lue par
   // le footer du panneau pour informer l'utilisateur en temps réel.
@@ -156,23 +166,30 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
 
   // ── Navigation entre étapes ──────────────────────────────────────────────
 
-  /** Validation step 3 avant soumission */
+  /** Validation step 3 avant soumission.
+   *  Phase test (second-agent/30) : description NON obligatoire.
+   *  Seul le dépassement de longueur reste bloquant. */
   function validateStep3() {
     const e: Record<string, string> = {}
-    if (!form.description.trim()) e.description = t('contribute.errors.descriptionRequired')
     if (form.description.length > 1500)
       e.description = t('contribute.errors.descriptionTooLong', { max: 1500 })
     return e
   }
 
-  function handleNext() {
+  function handleNext(e?: React.MouseEvent | React.SyntheticEvent) {
+    // Sécurité : si le bouton héritait par mégarde d'un type=submit (button
+    // dans <form>), preventDefault empêche la soumission native du form.
+    e?.preventDefault?.()
     setErrors({})
+    setSubmitAttempted(false)
     setStep((s) => Math.min(s + 1, TOTAL_STEPS))
   }
 
   /** Retour à l'étape précédente, ou ferme le panneau depuis l'étape 1 */
-  function handleBack() {
+  function handleBack(e?: React.MouseEvent | React.SyntheticEvent) {
+    e?.preventDefault?.()
     setErrors({})
+    setSubmitAttempted(false)
     if (step === 1) {
       onClose()
       return
@@ -182,6 +199,15 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    // Garde-fou : la soumission ne doit JAMAIS partir avant l'étape finale.
+    // Si l'utilisateur appuie sur Entrée dans un input à l'étape 1 ou 2 (ce
+    // qui déclencherait un submit natif HTML), on intercepte et on avance
+    // simplement à l'étape suivante (second-agent/34).
+    if (step < TOTAL_STEPS) {
+      handleNext()
+      return
+    }
+    setSubmitAttempted(true)
     const errs = validateStep3()
     if (Object.keys(errs).length > 0) {
       setErrors(errs)
@@ -214,6 +240,8 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
         weather: form.weather || undefined,
         habitat: form.habitat || undefined,
         location_name: form.locationName || undefined,
+        latitude: form.locationLat ?? undefined,
+        longitude: form.locationLng ?? undefined,
         location_hidden: form.locationHidden,
         species_name: firstKnown?.species?.commonName ?? undefined,
         scientific_name: firstKnown?.species?.scientificName ?? undefined,
@@ -287,15 +315,19 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
       // Toast d'erreur upload (Figma 6385:56334) — message court, l'utilisateur
       // peut réessayer. Pas de toast en cas de succès : la photo apparaît dans
       // le feed → confirmation visuelle suffisante.
-      const message =
-        err instanceof Error
-          ? err.message
+      //
+      // Important (second-agent/32) : on ne pousse PAS le message brut côté
+      // `errors.description` pour éviter d'afficher une erreur SQL Postgres
+      // technique inline dans le champ. Le toast suffit.
+      const rawMessage = err instanceof Error ? err.message : ''
+      const friendlyMessage =
+        rawMessage && !/violates|constraint|relation|null value|duplicate key/i.test(rawMessage)
+          ? rawMessage
           : t('contribute.media.uploadError', {
               defaultValue:
                 'Vérifie ta connexion ou réessaye un peu plus tard pour importer tes photos.',
             })
-      setUploadError(message)
-      setErrors({ description: message })
+      setUploadError(friendlyMessage)
     } finally {
       setIsSubmitting(false)
       setUploadProgress(null)
@@ -427,6 +459,7 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
 
             {step === 3 && (
               <EncounterStep3
+                submitAttempted={submitAttempted}
                 title={form.title}
                 onTitleChange={(v) => set('title', v)}
                 description={form.description}
@@ -442,6 +475,9 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
                 onHabitatChange={(v) => set('habitat', v)}
                 locationName={form.locationName}
                 onLocationChange={(v) => set('locationName', v)}
+                onLocationCoordsChange={(lat, lng) => {
+                  setForm((prev) => ({ ...prev, locationLat: lat, locationLng: lng }))
+                }}
                 locationHidden={form.locationHidden}
                 onLocationHiddenChange={(v) => set('locationHidden', v)}
               />
@@ -545,14 +581,25 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
               <ArrowLeft className="size-4" aria-hidden="true" />
             </button>
 
-            {/* CTA principal */}
+            {/* CTA principal — composant Button DS (effet btn-press 3D).
+                IMPORTANT (second-agent/34) :
+                - TOUS les boutons sont type="button" (jamais "submit"). La
+                  soumission ne passe PAS par le submit natif HTML — elle est
+                  déclenchée par onClick → handleSubmit, ce qui élimine le risque
+                  d'auto-soumission lors de la transition step 2 → step 3
+                  (React réutilisait le même <button> DOM en changeant le type).
+                - Une `key` distincte force React à démonter / remonter le bouton
+                  entre les étapes pour éviter toute réutilisation d'instance. */}
             {step < TOTAL_STEPS ? (
-              /* Étape 2 vide : "Je ne connais pas l'espèce" comme CTA secondaire */
               step === 2 && form.observations.length === 0 ? (
-                <button
+                <Button
+                  key="cta-dontknow"
                   type="button"
-                  onClick={() => {
-                    // Ajoute une entrée "espèce inconnue" puis avance
+                  variant="primary"
+                  size="md"
+                  className="flex-1"
+                  onClick={(e) => {
+                    e.preventDefault()
                     handleAddObservation({
                       id: `obs-unknown-${Date.now()}`,
                       species: null,
@@ -561,28 +608,38 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
                     })
                     handleNext()
                   }}
-                  className="flex-1 h-11 rounded-button bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 >
                   {t('contribute.panel.dontKnow')}
-                </button>
+                </Button>
               ) : (
-                <button
+                <Button
+                  key="cta-next"
                   type="button"
+                  variant="primary"
+                  size="md"
+                  className="flex-1"
                   onClick={handleNext}
-                  className="flex-1 h-11 rounded-button bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 >
                   {t('common.next')}
-                </button>
+                </Button>
               )
             ) : (
-              <button
-                type="submit"
-                form="encounter-panel-form"
+              <Button
+                key="cta-publish"
+                type="button"
+                variant="primary"
+                size="md"
+                className="flex-1"
                 disabled={isSubmitting}
-                className="flex-1 h-11 rounded-button bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                onClick={(e) => {
+                  // Soumission programmatique via React (pas de form natif HTML)
+                  // — handleSubmit accepte un FormEvent-like mais on lui passe
+                  // une SyntheticEvent qui supporte preventDefault.
+                  handleSubmit(e as unknown as React.FormEvent)
+                }}
               >
                 {isSubmitting ? t('common.loading') : t('contribute.panel.publishBtn')}
-              </button>
+              </Button>
             )}
           </div>
 

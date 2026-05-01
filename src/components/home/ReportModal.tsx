@@ -2,18 +2,18 @@
  * ReportModal — Modale de signalement d'une publication
  *
  * Affiche un sélecteur de raison + boutons Annuler / Soumettre.
- * Après soumission : état de succès pendant 2s puis fermeture automatique.
+ * Après soumission : POST sur la table `reports` puis état de succès 2s.
  *
  * Design : modal centré avec backdrop sur desktop, bottom sheet sur mobile.
  *
- * TODO [BACKEND] — handleSubmit → POST /reports { postId, reason }
- *   via reportService.createReport({ postId, reason })
- *   Table concernée : `reports` (postId, reporterId, reason, status, createdAt)
+ * Backend : `reports` (migration 20260420). Voir second-agent/15.
  */
 
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, ChevronDown, CheckCircle } from 'lucide-react'
+import { X, ChevronDown, ChevronUp, CheckCircle } from 'lucide-react'
+import { createReport } from '@/services/reportService'
+import type { ReportReason } from '@/types/database'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,19 +24,26 @@ interface ReportModalProps {
 
 // ─── Composant ────────────────────────────────────────────────────────────────
 
-export function ReportModal({ postId: _postId, onClose }: ReportModalProps) {
-  const { t } = useTranslation()
-  const [reason, setReason] = useState('')
-  const [submitted, setSubmitted] = useState(false)
-  const closeBtnRef = useRef<HTMLButtonElement>(null)
+/** Mapping option UI → valeur DB (enum reason) */
+const REASON_OPTIONS: Array<{ value: ReportReason; labelKey: string }> = [
+  { value: 'inappropriate_content', labelKey: 'home.post.reportModal.reason1' },
+  { value: 'harassment', labelKey: 'home.post.reportModal.reason2' },
+  { value: 'misinformation', labelKey: 'home.post.reportModal.reason3' },
+  { value: 'spam', labelKey: 'home.post.reportModal.reason4' },
+  { value: 'other', labelKey: 'home.post.reportModal.reason5' },
+]
 
-  const REASONS = [
-    t('home.post.reportModal.reason1'),
-    t('home.post.reportModal.reason2'),
-    t('home.post.reportModal.reason3'),
-    t('home.post.reportModal.reason4'),
-    t('home.post.reportModal.reason5'),
-  ]
+export function ReportModal({ postId, onClose }: ReportModalProps) {
+  const { t } = useTranslation()
+  const [reason, setReason] = useState<ReportReason | ''>('')
+  const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const closeBtnRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const selectedLabel = reason ? t(REASON_OPTIONS.find((o) => o.value === reason)!.labelKey) : ''
 
   // Focus sur le bouton fermer à l'ouverture
   useEffect(() => {
@@ -61,16 +68,44 @@ export function ReportModal({ postId: _postId, onClose }: ReportModalProps) {
     }
   }, [])
 
+  // Click extérieur ferme le dropdown des raisons
+  useEffect(() => {
+    if (!dropdownOpen) return
+    const fn = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    const id = setTimeout(() => document.addEventListener('mousedown', fn), 50)
+    return () => {
+      clearTimeout(id)
+      document.removeEventListener('mousedown', fn)
+    }
+  }, [dropdownOpen])
+
   /**
-   * Soumission du signalement
-   * TODO [BACKEND] — reportService.createReport({ postId, reason })
-   * POST /reports → 201 Created → afficher confirmation
+   * Soumission du signalement vers la table `reports` (Supabase).
+   * En cas d'erreur : message visible, le bouton reste actif pour réessayer.
    */
-  function handleSubmit() {
-    if (!reason) return
-    // TODO [BACKEND] — reportService.createReport({ postId, reason }) → POST /reports
-    setSubmitted(true)
-    setTimeout(() => onClose(), 2000)
+  async function handleSubmit() {
+    if (!reason || submitting) return
+    setSubmitting(true)
+    setErrorMsg(null)
+    try {
+      await createReport({ postId, reason })
+      setSubmitted(true)
+      setTimeout(() => onClose(), 2000)
+    } catch (err) {
+      setErrorMsg(
+        err instanceof Error
+          ? err.message
+          : t('home.post.reportModal.errorGeneric', {
+              defaultValue: 'Une erreur est survenue. Réessaie.',
+            }),
+      )
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   // ── Contenu partagé desktop/mobile ────────────────────────────────────────
@@ -98,32 +133,77 @@ export function ReportModal({ postId: _postId, onClose }: ReportModalProps) {
           .map((part, i) => (i === 1 ? <em key={i}>{part}</em> : part))}
       </p>
 
-      {/* Select raison */}
-      <div className="relative mt-4">
-        <select
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          aria-label={t('home.post.reportModal.placeholder')}
+      {/*
+        Dropdown custom (second-agent/15) — Figma mobile 6385:91998 :
+        liste s'ouvre AU-DESSUS du toggle, fond bg-primary-light/40 quand sélectionné,
+        item actif dans la liste avec bg-primary-light + text-primary.
+        Le <select> natif ne supporte pas ce styling — d'où le custom.
+      */}
+      <div className="relative mt-4" ref={dropdownRef}>
+        {/* Liste — overlay au-dessus */}
+        {dropdownOpen && (
+          <div
+            role="listbox"
+            aria-label={t('home.post.reportModal.placeholder')}
+            className="absolute bottom-full left-0 right-0 mb-2 bg-background border border-border rounded-2xl shadow-lg overflow-hidden z-10"
+          >
+            {REASON_OPTIONS.map((opt) => {
+              const isSelected = opt.value === reason
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => {
+                    setReason(opt.value)
+                    setDropdownOpen(false)
+                  }}
+                  className={[
+                    'w-full text-left px-4 py-3 text-sm transition-colors',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
+                    isSelected
+                      ? 'bg-primary-light text-primary font-semibold'
+                      : 'text-foreground hover:bg-muted/40',
+                  ].join(' ')}
+                >
+                  {t(opt.labelKey)}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Toggle button */}
+        <button
+          type="button"
+          onClick={() => setDropdownOpen((o) => !o)}
+          aria-haspopup="listbox"
+          aria-expanded={dropdownOpen}
           className={[
-            'w-full h-12 pl-4 pr-10 rounded-full border border-border bg-background text-base appearance-none',
+            'w-full h-12 flex items-center justify-between gap-2 pl-4 pr-3 rounded-full border transition-colors',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-            reason ? 'text-foreground' : 'text-muted-foreground',
+            reason
+              ? 'bg-primary-light/40 border-primary/30 text-foreground'
+              : 'bg-background border-border text-muted-foreground hover:bg-muted/30',
           ].join(' ')}
         >
-          <option value="" disabled>
-            {t('home.post.reportModal.placeholder')}
-          </option>
-          {REASONS.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
-        <ChevronDown
-          className="absolute right-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none"
-          aria-hidden="true"
-        />
+          <span className="truncate text-sm">
+            {selectedLabel || t('home.post.reportModal.placeholder')}
+          </span>
+          {dropdownOpen ? (
+            <ChevronUp className="size-4 text-muted-foreground shrink-0" aria-hidden="true" />
+          ) : (
+            <ChevronDown className="size-4 text-muted-foreground shrink-0" aria-hidden="true" />
+          )}
+        </button>
       </div>
+
+      {errorMsg && (
+        <p role="alert" className="text-xs text-red-600 mt-3">
+          {errorMsg}
+        </p>
+      )}
 
       {/* Actions */}
       <div className="flex gap-3 mt-6">
@@ -137,10 +217,12 @@ export function ReportModal({ postId: _postId, onClose }: ReportModalProps) {
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={!reason}
+          disabled={!reason || submitting}
           className="flex-1 h-11 rounded-button bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {t('home.post.reportModal.submit')}
+          {submitting
+            ? t('home.post.reportModal.submitting', { defaultValue: 'Envoi…' })
+            : t('home.post.reportModal.submit')}
         </button>
       </div>
     </>
