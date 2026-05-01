@@ -11,6 +11,8 @@ import {
   getPostById,
   toggleReaction,
   createPost,
+  deletePost,
+  updatePost,
   type CreatePostPayload,
 } from '@/services/postService'
 import type { PostFeedItem, ReactionType } from '@/types/database'
@@ -120,5 +122,35 @@ export function useCreatePost(userId: string) {
   // déclenchée par le form après l'upload media (voir Contribute*Form).
   return useMutation({
     mutationFn: (payload: CreatePostPayload) => createPost(userId, payload),
+  })
+}
+
+/**
+ * Mutation pour supprimer un post (avec invalidation cache feed).
+ * Utilisé par DeleteConfirmModal.
+ */
+export function useDeletePost() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (postId: string) => deletePost(postId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+    },
+  })
+}
+
+/**
+ * Mutation pour modifier un post existant.
+ * Utilisé par le formulaire d'édition (/contribute?edit=postId).
+ */
+export function useUpdatePost() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ postId, payload }: { postId: string; payload: Partial<CreatePostPayload> }) =>
+      updatePost(postId, payload),
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: postQueryKey.byId(vars.postId) })
+    },
   })
 }

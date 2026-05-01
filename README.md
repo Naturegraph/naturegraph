@@ -188,4 +188,4 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 ## Partenaires
 
-Naturegraph est soutenu par [Paloume](https://paloume.org), [Hub Environnement](https://hub-environnement.fr), [Wazoom](https://wazoom.fr) et [Kreapulse](https://kreapulse.fr).
+Naturegraph est soutenu par [Paloume](https://paloume.org), [Hub Environnement](https://hub-environnement.fr) et [Kreapulse](https://kreapulse.fr).

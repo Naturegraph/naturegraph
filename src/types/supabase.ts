@@ -223,6 +223,46 @@ export type Database = {
         }
         Relationships: []
       }
+      hidden_posts: {
+        Row: {
+          hidden_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          hidden_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          hidden_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'hidden_posts_post_id_fkey'
+            columns: ['post_id']
+            isOneToOne: false
+            referencedRelation: 'posts'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'hidden_posts_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'hidden_posts_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       identification_proposals: {
         Row: {
           author_id: string
@@ -806,6 +846,8 @@ export type Database = {
           posts_count: number | null
           region: string | null
           region_name: string | null
+          subscription_expires_at: string | null
+          subscription_tier: string
           twitter: string | null
           updated_at: string | null
           username: string
@@ -841,6 +883,8 @@ export type Database = {
           posts_count?: number | null
           region?: string | null
           region_name?: string | null
+          subscription_expires_at?: string | null
+          subscription_tier?: string
           twitter?: string | null
           updated_at?: string | null
           username: string
@@ -876,6 +920,8 @@ export type Database = {
           posts_count?: number | null
           region?: string | null
           region_name?: string | null
+          subscription_expires_at?: string | null
+          subscription_tier?: string
           twitter?: string | null
           updated_at?: string | null
           username?: string
@@ -995,6 +1041,46 @@ export type Database = {
           {
             foreignKeyName: 'reports_reporter_id_fkey'
             columns: ['reporter_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      saved_posts: {
+        Row: {
+          post_id: string
+          saved_at: string
+          user_id: string
+        }
+        Insert: {
+          post_id: string
+          saved_at?: string
+          user_id: string
+        }
+        Update: {
+          post_id?: string
+          saved_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'saved_posts_post_id_fkey'
+            columns: ['post_id']
+            isOneToOne: false
+            referencedRelation: 'posts'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'saved_posts_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'saved_posts_user_id_fkey'
+            columns: ['user_id']
             isOneToOne: false
             referencedRelation: 'profiles_public'
             referencedColumns: ['id']

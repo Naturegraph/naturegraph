@@ -395,9 +395,9 @@
     },
     "permissionModal": {
       "title": "Naturegraph near you",
-      "description": "Discover species observed within 75 km of you. More relevance, less noise.",
-      "privacyNote": "Only your city is used. Never your exact location. You can update or delete your data at any time.",
-      "activateCta": "Enable location",
+      "description": "Discover the biodiversity around you and the naturalists nearby. More relevance.",
+      "privacyNote": "Only your city is used — never your exact location. Editable at any time.",
+      "activateCta": "Enable my location",
       "skipCta": "Later"
     }
   },
@@ -519,12 +519,11 @@
       "chooseReaction": "Choose a reaction",
       "filterBySpecies": "Filter feed by {{species}}",
       "reactions": {
-        "love": "Love",
-        "admire": "Admire",
-        "fire": "Amazing",
-        "wow": "Wow",
-        "curious": "Curious",
-        "disappointed": "Disappointing"
+        "love": "Love it!",
+        "fire": "Wooow!!!!",
+        "admire": "So beautiful!",
+        "wow": "Noooo?!",
+        "curious": "Interesting!"
       },
       "commentCount": "{{count}} comment",
       "commentCount_other": "{{count}} comments",

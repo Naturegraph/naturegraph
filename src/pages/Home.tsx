@@ -88,6 +88,9 @@ export default function Home() {
               showFilters={feedShowFilters}
               onShowFiltersChange={setFeedShowFilters}
               onHasActiveFiltersChange={setFeedHasActiveFilters}
+              // Empty state CTA "Partager une observation" → ouvre directement
+              // le panel Rencontre Nature (même flow que la navbar).
+              onContributeClick={() => setActivePanelType('nature_encounter')}
             />
           </main>
 

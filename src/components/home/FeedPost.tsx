@@ -13,7 +13,17 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Bookmark, Share2, MoreHorizontal, Bird } from 'lucide-react'
+import {
+  Bookmark,
+  BookmarkCheck,
+  Share2,
+  MoreHorizontal,
+  Bird,
+  MountainSnow,
+  Heart,
+} from 'lucide-react'
+import { SharePopover } from './SharePopover'
+import { useSavedPostIds, useToggleSavedPost } from '@/hooks/useSavedPosts'
 import { PostOptionsMenu } from './PostOptionsMenu'
 import { ImageSlider } from './ImageSlider'
 import hermineIcon from '@/assets/images/hermine-icon.png'
@@ -27,23 +37,43 @@ import { TAXONOMIC_GROUP_CONFIG } from '@/constants/taxrefSpecies'
 
 export interface MockPost {
   id: string
+  /**
+   * ID Supabase de l'auteur du post — utilisé pour calculer `isOwnPost` au
+   * niveau parent (FeedSection) et adapter le menu PostOptionsMenu en
+   * conséquence (second-agent/12).
+   */
+  authorId: string
+  /**
+   * Type du post DB — détermine l'icône d'en-tête (Bird vert / MountainSnow
+   * orange). Aligné sur Post['type'] de @/types/database.
+   * Voir second-agent/04-feedpost-icon-color-by-type.md.
+   */
+  postType: 'nature_encounter' | 'nature_instant'
   author: { name: string; avatar: string; badge?: string }
   date: string
   location: string
   title: string
   content: string
+  /** Enum DB brut (`'sunny' | 'cloudy' | 'rainy' | 'windy' | 'snowy'`) — traduit côté composant. */
   weather?: string
   clouds?: string
+  /** Enum DB brut (`'morning' | 'afternoon' | 'dusk' | 'evening' | 'night'`) — traduit côté composant. */
   timeOfDay?: string
   category: { icon: string; label: string }
-  /** Nom commun ou "Espèce non identifiée" — affiché dans le chip */
-  species: string
+  /** Nom commun (si identifié) — sinon laisser undefined / null pour fallback i18n. */
+  species?: string | null
   /** Nom scientifique TAXREF (optionnel — enrichit le SpeciesHit pour le filtre) */
   scientific_name?: string | null
   /** cd_nom TAXREF — identifiant unique espèce (optionnel) */
   taxref_id?: string | null
   /** Groupe taxonomique de l'espèce (optionnel — emoji dans le chip) */
   taxonomic_group?: string | null
+  /**
+   * Plusieurs individus observés (DB `posts.multiple_observations`).
+   * Affiche "(plusieurs)" dans le chip espèce. Sera remplacé par un compteur
+   * précis si la DB ajoute une colonne `individuals_count` (TODO backend).
+   */
+  multipleObservations?: boolean
   format: '16:9' | 'portrait' | '1:1'
   images: Array<{
     url: string
@@ -58,7 +88,6 @@ export interface MockPost {
     fire: number
     wow: number
     curious: number
-    disappointed: number
   }
   /** Réaction de l'utilisateur connecté sur ce post (null si aucune) */
   userReaction: ReactionType | null
@@ -70,16 +99,62 @@ export interface MockPost {
 
 // ─── Configuration ──────────────────────────────────────────────────────────
 
-// Doit rester alignée avec ReactionType dans @/types/database.
-// 'disappointed' ajouté suite à la décision Nicolas (2026-04-01).
-const REACTION_CONFIG = [
+/**
+ * Source unique des emojis et labels de réactions (second-agent/10).
+ * Doit rester alignée avec ReactionType dans @/types/database.
+ *
+ * Ordre Figma 6385:103293 : love → fire → admire → wow → curious.
+ * Emoji curious = 🤨 (Figma) — était 🧐 avant.
+ *
+ * Note : 'disappointed' (😕) existe encore dans ReactionType côté DB pour
+ * compatibilité, mais n'est PLUS dans REACTION_CONFIG (pas dans le Figma).
+ * Si un post historique a une réaction 'disappointed' en DB, elle ne sera
+ * pas affichée. Quand le backend décidera de la retirer, on supprimera
+ * aussi 'disappointed' de ReactionType.
+ *
+ * Exporté pour réutilisation par d'autres composants (jamais redéfinir un
+ * mapping local) — règle d'unification "source de vérité unique".
+ */
+export const REACTION_CONFIG = [
   { key: 'love' as const, emoji: '❤️', labelKey: 'home.post.reactions.love' },
-  { key: 'admire' as const, emoji: '😍', labelKey: 'home.post.reactions.admire' },
   { key: 'fire' as const, emoji: '🔥', labelKey: 'home.post.reactions.fire' },
+  { key: 'admire' as const, emoji: '😍', labelKey: 'home.post.reactions.admire' },
   { key: 'wow' as const, emoji: '😱', labelKey: 'home.post.reactions.wow' },
-  { key: 'curious' as const, emoji: '🧐', labelKey: 'home.post.reactions.curious' },
-  { key: 'disappointed' as const, emoji: '😕', labelKey: 'home.post.reactions.disappointed' },
+  { key: 'curious' as const, emoji: '🤨', labelKey: 'home.post.reactions.curious' },
 ]
+
+/**
+ * Emojis météo — conformes Figma 6385:55806 (second-agent/05).
+ * Source unique : si modifié, mettre à jour aussi EncounterStep3.tsx.
+ *
+ * Note Figma : pas d'emoji pour le moment de la journée — uniquement le label.
+ * Donc TIME_OF_DAY_EMOJI a été retiré pour rester conforme.
+ */
+const WEATHER_EMOJI: Record<string, string> = {
+  sunny: '☀️',
+  cloudy: '⛅',
+  rainy: '🌧️',
+  windy: '🌬️',
+  snowy: '🌨️',
+}
+
+/**
+ * Icône d'en-tête + couleur par type de post (règle globale projet).
+ * Voir second-agent/04-feedpost-icon-color-by-type.md.
+ *   · nature_encounter → Bird teal/vert (token --color-highlight-primary)
+ *   · nature_instant   → MountainSnow amber/orange (#cc7a00)
+ */
+const POST_TYPE_ICON: Record<MockPost['postType'], { Icon: typeof Bird; colorClass: string }> = {
+  nature_encounter: {
+    Icon: Bird,
+    colorClass: 'text-[var(--color-highlight-primary)]',
+  },
+  nature_instant: {
+    Icon: MountainSnow,
+    // TODO [TOKEN] : ajouter --color-amber-primary dans _light-theme.scss
+    colorClass: 'text-[#cc7a00]',
+  },
+}
 
 // Tailwind du chip Figma (node 6385:60456) — bg Content/Action/Light, h-32,
 // px-12 py-8, rounded-99, Mulish Bold 16px. Réutilisé pour catégorie + espèce.
@@ -88,6 +163,11 @@ const CHIP_BASE_CLASS =
 const CHIP_INTERACTIVE_CLASS =
   'hover:bg-primary/15 transition-colors cursor-pointer ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1'
+// Variante neutre — utilisée pour "Espèce non déterminée" qui n'est PAS un filtre
+// activable. Garde la hauteur/forme pour rester aligné avec les chips voisins,
+// mais retire le langage "bouton" (fond plein, texte gras).
+const CHIP_PASSIVE_CLASS =
+  'bg-transparent border border-border text-muted-foreground text-base font-medium px-3 py-2 h-8 rounded-full leading-tight inline-flex items-center gap-2'
 
 interface FeedPostProps extends MockPost {
   /** true = utilisateur connecté — boutons actifs. false = redirige /signup */
@@ -100,6 +180,8 @@ interface FeedPostProps extends MockPost {
 
 export function FeedPost({
   id,
+  authorId,
+  postType,
   author,
   date,
   location,
@@ -108,11 +190,14 @@ export function FeedPost({
   weather,
   clouds,
   timeOfDay,
-  category,
+  // category : prop conservée dans l'interface mais l'affichage est maintenant
+  // dérivé de taxonomic_group + species (cf. règle catégorie+espèce unifiée).
+  category: _category,
   species,
   scientific_name,
   taxref_id,
   taxonomic_group,
+  multipleObservations,
   format,
   images,
   reactions,
@@ -128,7 +213,24 @@ export function FeedPost({
   const [isExpanded, setIsExpanded] = useState(false)
   const [showOptions, setShowOptions] = useState(false)
   const [showReactionPicker, setShowReactionPicker] = useState(false)
-  const shouldTruncate = content.length > 200
+  const [showShare, setShowShare] = useState(false)
+  /**
+   * État sauvegarde — second-agent/13.
+   * Source de vérité : table `saved_posts` (Supabase) via useSavedPostIds.
+   * Optimistic update via useToggleSavedPost.
+   */
+  const { data: savedIds } = useSavedPostIds()
+  const isSaved = !!savedIds?.includes(id)
+  const toggleSaved = useToggleSavedPost()
+  /**
+   * Truncation 2 lignes max (second-agent/07 — Figma 6385:97208).
+   * Seuil empirique sur largeur de carte feed (656px desktop / full-width mobile)
+   * en text-sm Mulish ≈ 110-130 chars sur 2 lignes. On choisit 120 comme cible.
+   * Le bouton "Voir plus" s'affiche inline en fin de la 2e ligne — jamais sur 3.
+   */
+  const TRUNCATE_AT = 120
+  const shouldTruncate = content.length > TRUNCATE_AT
+  const truncatedContent = shouldTruncate ? content.slice(0, TRUNCATE_AT).trimEnd() + '…' : content
 
   // Configuration de la réaction active de l'utilisateur (null si aucune).
   // Permet de remplacer dynamiquement l'emoji + le label "Réagir" par celui de
@@ -197,12 +299,26 @@ export function FeedPost({
                 {author.name}
               </p>
               <div className="flex flex-wrap gap-2 items-center">
-                <Bird className="size-[18px] text-foreground shrink-0" aria-hidden="true" />
+                {(() => {
+                  // Règle globale (second-agent/04) : icône + couleur par type.
+                  const cfg = POST_TYPE_ICON[postType] ?? POST_TYPE_ICON.nature_encounter
+                  const Icon = cfg.Icon
+                  return (
+                    <Icon className={`size-[18px] shrink-0 ${cfg.colorClass}`} aria-hidden="true" />
+                  )
+                })()}
                 <span className="text-sm text-foreground">{date}</span>
-                <span aria-hidden="true" className="text-foreground text-xs">
-                  •
-                </span>
-                <span className="text-sm text-foreground">{location}</span>
+                {/* Localisation : affichée uniquement si publique ET si la
+                    ville est connue (second-agent/29). Sinon le post n'affiche
+                    que la date — pas de bullet orphelin. */}
+                {location && (
+                  <>
+                    <span aria-hidden="true" className="text-foreground text-xs">
+                      •
+                    </span>
+                    <span className="text-sm text-foreground">{location}</span>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -224,6 +340,7 @@ export function FeedPost({
               <PostOptionsMenu
                 postId={id}
                 authorUsername={author.name}
+                authorId={authorId}
                 isOwnPost={isOwnPost}
                 onClose={() => setShowOptions(false)}
               />
@@ -236,10 +353,17 @@ export function FeedPost({
           {/* Figma : Headings/Subheading = Quicksand Bold 18px leading-1.2. */}
           <h3 className="text-lg font-bold leading-[1.2] text-foreground">{title}</h3>
 
+          {/*
+           * 2 lignes max + "Voir plus" inline en fin (second-agent/07).
+           * Approche : truncation par caractères (~120 chars ≈ 2 lignes en text-sm),
+           * le bouton apparaît immédiatement après le texte tronqué — donc en fin
+           * de la 2e ligne par construction. Aucune dépendance à line-clamp CSS
+           * qui ne supporte pas l'inline-end placement.
+           */}
           <div className="text-sm text-foreground leading-relaxed">
             {!isExpanded && shouldTruncate ? (
               <>
-                <span className="line-clamp-3">{content}</span>
+                <span>{truncatedContent}</span>
                 <button
                   type="button"
                   onClick={() => setIsExpanded(true)}
@@ -264,52 +388,141 @@ export function FeedPost({
             )}
           </div>
 
-          {/* Météo / moment */}
-          {(weather || clouds || timeOfDay) && (
-            <div className="flex gap-2 items-center flex-wrap text-sm text-foreground">
-              {weather && <span>{weather}</span>}
-              {weather && clouds && <span aria-hidden="true">•</span>}
-              {clouds && <span>{clouds}</span>}
-              {(weather || clouds) && timeOfDay && <span aria-hidden="true">•</span>}
-              {timeOfDay && <span>{timeOfDay}</span>}
-            </div>
-          )}
+          {/* Météo / moment — météo avec emoji (Figma 6385:55806), moment sans
+              emoji (Figma : juste le label). second-agent/05. */}
+          {(() => {
+            const labelWeather = weather
+              ? t(`contribute.weather.${weather}`, { defaultValue: weather })
+              : null
+            const emojiWeather = weather ? WEATHER_EMOJI[weather] : null
+
+            const labelTimeOfDay = timeOfDay
+              ? t(`contribute.date.${timeOfDay}`, { defaultValue: timeOfDay })
+              : null
+
+            const labelClouds = clouds || null
+
+            if (!labelWeather && !labelClouds && !labelTimeOfDay) return null
+
+            return (
+              <div className="flex gap-2 items-center flex-wrap text-sm text-foreground">
+                {labelWeather && (
+                  <span className="inline-flex items-center gap-1">
+                    {emojiWeather && <span aria-hidden="true">{emojiWeather}</span>}
+                    {labelWeather}
+                  </span>
+                )}
+                {labelWeather && labelClouds && (
+                  <span aria-hidden="true" className="text-xs">
+                    •
+                  </span>
+                )}
+                {labelClouds && <span>{labelClouds}</span>}
+                {(labelWeather || labelClouds) && labelTimeOfDay && (
+                  <span aria-hidden="true" className="text-xs">
+                    •
+                  </span>
+                )}
+                {labelTimeOfDay && <span>{labelTimeOfDay}</span>}
+              </div>
+            )
+          })()}
         </div>
 
-        {/* Badges catégorie + espèce — chips Figma node 6385:60455. */}
+        {/*
+         * Chips catégorie + espèce (second-agent/06 — révision 2026-05-01).
+         * Règle :
+         *   1. Catégorie connue + espèce identifiée
+         *      → UN chip combiné "{emoji} {Catégorie} · {nomCommun}{(plusieurs)}" cliquable
+         *   2. Catégorie connue + espèce non identifiée
+         *      → DEUX chips séparés : "{emoji} {Catégorie}" + "Espèce non déterminée"
+         *        (raison : l'espèce n'est pas vraiment liée à la catégorie ici,
+         *        on évite la fausse impression d'un seul concept)
+         *   3. Rien d'identifié
+         *      → UN chip simple "Espèce non déterminée" (sans emoji)
+         */}
         <div className="flex flex-wrap gap-2">
-          <span className={CHIP_BASE_CLASS}>
-            {category.icon} {category.label}
-          </span>
+          {(() => {
+            const taxonomicCfg = taxonomic_group ? TAXONOMIC_GROUP_CONFIG[taxonomic_group] : null
+            const categoryEmoji = taxonomicCfg?.emoji ?? null
+            const categoryLabel = taxonomicCfg?.label ?? null
 
-          {/* Chip espèce — cliquable si identifiée (active Species Context Layer,
-              PRD §3.4). Sinon passif ("Espèce non identifiée"). */}
-          {taxref_id ? (
-            <button
-              type="button"
-              onClick={() =>
-                setActiveSpecies({
-                  taxref_id,
-                  scientific_name: scientific_name ?? species,
-                  common_name: species !== scientific_name ? species : null,
-                  group_label: taxonomic_group ?? null,
-                })
-              }
-              aria-label={t('home.post.filterBySpecies', { species })}
-              className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}
-            >
-              {taxonomic_group && TAXONOMIC_GROUP_CONFIG[taxonomic_group]
-                ? `${TAXONOMIC_GROUP_CONFIG[taxonomic_group].emoji} `
-                : ''}
-              {species}
-            </button>
-          ) : (
-            <span className={CHIP_BASE_CLASS}>{species}</span>
-          )}
+            const hasIdentifiedSpecies = !!(species && taxref_id)
+            const unknownLabel = t('home.post.unknownSpecies', {
+              defaultValue: 'Espèce non déterminée',
+            })
+
+            const multipleSuffix = multipleObservations
+              ? ` ${t('home.post.multipleSuffix', { defaultValue: '(plusieurs)' })}`
+              : ''
+
+            // ─── Cas 1 : espèce identifiée → UN chip combiné cliquable ────────
+            if (hasIdentifiedSpecies) {
+              return (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveSpecies({
+                      taxref_id: taxref_id!,
+                      scientific_name: scientific_name ?? species!,
+                      common_name: species !== scientific_name ? (species ?? null) : null,
+                      group_label: taxonomic_group ?? null,
+                    })
+                  }
+                  aria-label={t('home.post.filterBySpecies', { species: species ?? '' })}
+                  className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}
+                >
+                  {categoryEmoji && <span aria-hidden="true">{categoryEmoji}</span>}
+                  {categoryLabel && (
+                    <>
+                      <span>{categoryLabel}</span>
+                      <span aria-hidden="true" className="opacity-60">
+                        ·
+                      </span>
+                    </>
+                  )}
+                  <span>
+                    {species}
+                    {multipleSuffix}
+                  </span>
+                </button>
+              )
+            }
+
+            // ─── Cas 2 : catégorie connue + espèce non identifiée → 2 chips ──
+            if (categoryLabel) {
+              return (
+                <>
+                  <span className={CHIP_BASE_CLASS}>
+                    {categoryEmoji && <span aria-hidden="true">{categoryEmoji}</span>}
+                    <span>{categoryLabel}</span>
+                  </span>
+                  <span className={CHIP_PASSIVE_CLASS}>
+                    {unknownLabel}
+                    {multipleSuffix}
+                  </span>
+                </>
+              )
+            }
+
+            // ─── Cas 3 : rien d'identifié → 1 chip neutre (non cliquable) ───
+            return (
+              <span className={CHIP_PASSIVE_CLASS}>
+                {unknownLabel}
+                {multipleSuffix}
+              </span>
+            )
+          })()}
         </div>
 
         {/* Images — clic ouvre la lightbox plein écran */}
-        <ImageSlider images={images} format={format} author={author} />
+        <ImageSlider
+          images={images}
+          format={format}
+          author={author}
+          postId={id}
+          postTitle={title}
+        />
 
         {/* Compteurs réactions (Figma node 6385:60468 — flex justify-between).
             Le slot droit accueillera le compteur commentaires en post-MVP. */}
@@ -324,11 +537,14 @@ export function FeedPost({
                     onClick={() => handleReact(key)}
                     aria-label={`${t(labelKey)} : ${reactions[key]}${userReaction === key ? ` — ${t('home.post.yourReaction')}` : ''}`}
                     className={[
-                      'flex gap-1 items-center h-6 px-2 rounded-full text-sm transition-all duration-200',
+                      'flex gap-1 items-center h-6 px-1 rounded-full text-sm transition-colors duration-200',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+                      // Compteurs : pas de background (Figma 6385:97233).
+                      // Couleur primary si c'est la réaction posée par l'user, foreground sinon.
+                      // Hover discret pour signaler l'interactivité.
                       userReaction === key
-                        ? 'bg-primary/15 text-primary font-semibold ring-1 ring-primary/30 reaction-active'
-                        : 'bg-cream text-foreground hover:bg-muted/50',
+                        ? 'text-primary font-semibold reaction-active hover:bg-primary-light/40'
+                        : 'text-foreground hover:bg-muted/30',
                     ].join(' ')}
                   >
                     <span aria-hidden="true" className={userReaction === key ? 'reaction-pop' : ''}>
@@ -369,17 +585,38 @@ export function FeedPost({
                   : t('home.post.react')
               }
               className={[
-                'flex gap-2 items-center h-8 px-2 rounded-full transition-colors',
+                'flex gap-2 items-center h-8 px-3 rounded-full transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
-                activeReaction ? 'text-primary font-semibold' : 'text-foreground hover:bg-muted/50',
+                // État actif (réaction posée) : fond primary-light + couleur primary +
+                // label toujours visible — second-agent/10 (Figma 6385:128317).
+                activeReaction
+                  ? 'bg-primary-light text-primary font-semibold'
+                  : 'text-foreground hover:bg-muted/50',
               ].join(' ')}
             >
-              {/* Emoji + label : reflètent la réaction active si elle existe,
-                  sinon affichent le call-to-action par défaut "❤️ Réagir". */}
-              <span className="text-base" aria-hidden="true">
-                {activeReaction ? activeReaction.emoji : '❤️'}
-              </span>
-              <span className="hidden md:inline text-base font-bold">
+              {/*
+                État par défaut : icône lucide Heart + label "Réagir" (Figma 6385:97680).
+                État actif : emoji de la réaction posée + label de la réaction.
+              */}
+              {activeReaction ? (
+                <span className="text-base" aria-hidden="true">
+                  {activeReaction.emoji}
+                </span>
+              ) : (
+                <Heart className="size-4" aria-hidden="true" />
+              )}
+              {/*
+                Label : caché en mobile pour gagner de la place QUAND il n'y a
+                pas de réaction active. Mais quand l'utilisateur a réagi, on
+                affiche systématiquement le label (même mobile) car c'est un
+                signal d'état important.
+              */}
+              <span
+                className={[
+                  'text-base font-bold',
+                  activeReaction ? 'inline' : 'hidden md:inline',
+                ].join(' ')}
+              >
                 {activeReaction ? t(activeReaction.labelKey) : t('home.post.react')}
               </span>
             </button>
@@ -420,22 +657,60 @@ export function FeedPost({
             )}
           </div>
           <div className="flex gap-1">
+            {/*
+              Bouton Sauvegarder — second-agent/13.
+              État optimiste local, TODO BACKEND : câbler à `saved_posts`.
+              Visuel actif : icône BookmarkCheck + couleur primary.
+            */}
             <button
               type="button"
-              onClick={requireAuth}
+              onClick={(e) => {
+                if (!canInteract) {
+                  requireAuth(e)
+                  return
+                }
+                // Persistance via mutation Supabase (`saved_posts`).
+                // Optimistic update géré dans le hook.
+                toggleSaved.mutate({ postId: id, currentlySaved: isSaved })
+              }}
+              aria-pressed={isSaved}
               aria-label={t('home.post.save')}
-              className="flex items-center justify-center h-8 w-8 rounded-full hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+              className={[
+                'flex items-center justify-center h-8 w-8 rounded-full transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+                isSaved ? 'text-primary' : 'text-foreground hover:bg-muted/50',
+              ].join(' ')}
             >
-              <Bookmark className="size-4 text-foreground" aria-hidden="true" />
+              {isSaved ? (
+                <BookmarkCheck className="size-4 fill-primary" aria-hidden="true" />
+              ) : (
+                <Bookmark className="size-4" aria-hidden="true" />
+              )}
             </button>
+
+            {/*
+              Bouton Partager — second-agent/14.
+              Ouvre SharePopover (popover desktop / bottom sheet mobile).
+            */}
+            {/*
+              Partage : accessible même aux invités — un lien public d'observation
+              ne nécessite pas d'authentification (URL canonique).
+              SharePopover est une modale centrée full-screen, pas besoin de
+              wrapper `relative` autour du bouton.
+            */}
             <button
               type="button"
-              onClick={requireAuth}
+              onClick={() => setShowShare((v) => !v)}
+              aria-expanded={showShare}
+              aria-haspopup="dialog"
               aria-label={t('home.post.share')}
               className="flex items-center justify-center h-8 w-8 rounded-full hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
             >
               <Share2 className="size-4 text-foreground" aria-hidden="true" />
             </button>
+            {showShare && (
+              <SharePopover postId={id} title={title} onClose={() => setShowShare(false)} />
+            )}
           </div>
         </div>
       </div>

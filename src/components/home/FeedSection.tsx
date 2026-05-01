@@ -29,6 +29,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useLocation } from '@/contexts/LocationContext'
 import { useSpecies } from '@/contexts/SpeciesContext'
 import { useFeed, FEED_QUERY_KEY } from '@/hooks/useFeed'
+import { useHiddenPostIds } from '@/hooks/useHiddenPosts'
 import { useLocationCTA } from '@/hooks/useLocationCTA'
 import { useToggleReaction } from '@/hooks/usePost'
 import { LocationPermissionModal } from '@/components/location/LocationPermissionModal'
@@ -43,18 +44,21 @@ import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
  */
 export type FeedTab = 'recent' | 'popular' | 'for-you'
 
-// Mapping groupe taxonomique → emoji catégorie
-const TAXONOMIC_EMOJI: Record<string, string> = {
-  birds: '🐦',
-  mammals: '🦌',
-  insects: '🦋',
-  amphibians: '🐸',
-  reptiles: '🦎',
-  arachnids: '🕷️',
-  mollusks: '🐌',
-  fish: '🐟',
-  plants: '🌿',
-  other: '🌍',
+// Source de vérité unique des emojis catégorie — second-agent/09.
+// Tous les emojis du produit (onboarding, feed, contribute, badges, profil)
+// passent par CATEGORY_EMOJIS dans @/utils/badgeHelpers — DRY + cohérence.
+import { CATEGORY_EMOJIS } from '@/utils/badgeHelpers'
+
+/** Fallback emoji pour la catégorie 'other' (absente de CATEGORY_EMOJIS). */
+const OTHER_EMOJI = '✨'
+
+/** Lookup tolérant — accepte tout TaxonomicGroup, retourne l'emoji officiel. */
+function getTaxonomicEmoji(group: string | null | undefined): string {
+  if (!group) return OTHER_EMOJI
+  if (group in CATEGORY_EMOJIS) {
+    return CATEGORY_EMOJIS[group as keyof typeof CATEGORY_EMOJIS]
+  }
+  return OTHER_EMOJI
 }
 
 // ─── Adaptateur PostFeedItem → MockPost ──────────────────────────────────────
@@ -70,12 +74,28 @@ const TAXONOMIC_EMOJI: Record<string, string> = {
  *   · sinon         → 1:1 (carré)
  * Sans dimensions connues → fallback 16:9 (l'historique du feed est en paysage).
  */
-function derivePostFormat(w?: number | null, h?: number | null): MockPost['format'] {
-  if (!w || !h) return '16:9'
-  const r = w / h
-  if (r < 0.85) return 'portrait'
-  if (r > 1.15) return '16:9'
-  return '1:1'
+/**
+ * Override déterministe du format pour le visuel feed (3 formats Figma) —
+ * distribue paysage / portrait / carré sur les posts via un round-robin
+ * simple. Conservé tant que la BDD n'a pas une variété de `display_format`.
+ */
+function pickTempFormat(index: number): MockPost['format'] {
+  const FORMATS: MockPost['format'][] = ['16:9', 'portrait', '1:1']
+  return FORMATS[index % FORMATS.length]
+}
+
+/**
+ * Badge "préférence #1" affiché en bas-droite de l'avatar auteur
+ * (second-agent/08). Mappe le premier centre d'intérêt sur l'emoji
+ * de TAXONOMIC_GROUP_CONFIG. Retourne undefined si la liste est vide
+ * ou indéfinie (rare — onboarding force au moins un choix).
+ */
+function getAuthorPreferenceEmoji(interests: string[] | undefined | null): string | undefined {
+  if (!interests || interests.length === 0) return undefined
+  const first = interests[0]
+  return first in CATEGORY_EMOJIS
+    ? CATEGORY_EMOJIS[first as keyof typeof CATEGORY_EMOJIS]
+    : undefined
 }
 
 /** Formate une date ISO en format lisible (ex: "10/04/2026") */
@@ -91,7 +111,7 @@ function formatPostDate(isoDate: string): string {
   }
 }
 
-function postFeedItemToMockPost(item: PostFeedItem): MockPost {
+function postFeedItemToMockPost(item: PostFeedItem, index = 0): MockPost {
   const authorName = item.author
     ? `${item.author.first_name} ${item.author.last_name}`.trim() || item.author.username
     : 'Utilisateur'
@@ -103,32 +123,57 @@ function postFeedItemToMockPost(item: PostFeedItem): MockPost {
 
   return {
     id: item.id,
+    // Auteur du post — comparé à user.id côté parent pour `isOwnPost`
+    // (second-agent/12 — menu adapté selon le contexte).
+    authorId: item.user_id,
+    // Règle globale (second-agent/04) : conditionne l'icône + couleur d'en-tête
+    // dans FeedPost. Default = nature_encounter pour les rares posts legacy
+    // qui auraient un type inconnu.
+    postType: item.type === 'nature_instant' ? 'nature_instant' : 'nature_encounter',
     author: {
       name: authorName,
       avatar: item.author?.avatar_url ?? '',
+      // Badge "préférence #1" — emoji du premier centre d'intérêt de l'auteur
+      // (second-agent/08). Affiché en bas-droite de l'avatar dans FeedPost.
+      badge: getAuthorPreferenceEmoji(
+        (item.author as { interests?: string[] } | undefined)?.interests,
+      ),
     },
     date: formatPostDate(item.created_at),
-    location:
-      [item.location_name, item.city, item.region, item.country].filter(Boolean).join(', ') ||
-      'France',
+    // Règle de confidentialité (second-agent/29) :
+    //  - Si `location_hidden = true` (défaut) → AUCUNE info location (pas même
+    //    la région ou le pays). Le post n'affiche alors que la date.
+    //  - Sinon → uniquement la **ville** (jamais l'adresse / lieu-dit / région /
+    //    pays). La table `posts` stocke `city` calculée par reverse-geocoding
+    //    serveur ; si elle est null on retombe sur rien (pas de fallback texte).
+    location: item.location_hidden ? '' : (item.city ?? ''),
     title,
     content: item.description,
     weather: item.weather ?? undefined,
     timeOfDay: item.time_of_day ?? undefined,
     category: {
-      icon: TAXONOMIC_EMOJI[item.taxonomic_group ?? 'other'] ?? '🌍',
+      icon: getTaxonomicEmoji(item.taxonomic_group),
       label: item.taxonomic_group ?? 'Autre',
     },
-    species: item.species_name ?? 'Espèce non identifiée',
+    // Pas de fallback hardcodé : si null, FeedPost gère via i18n
+    // (second-agent/06 — règle catégorie + espèce unifiée).
+    species: item.species_name ?? null,
+    multipleObservations: item.multiple_observations ?? false,
     scientific_name: item.scientific_name ?? null,
     taxref_id: item.taxref_id ?? null,
     taxonomic_group: item.taxonomic_group ?? null,
     // Format Figma (Figma 6385:47324) — préférence utilisateur saisie à
     // l'étape 1 du formulaire de contribution. Fallback ratio-based si la
     // colonne est absente (legacy posts pré-migration 20260429).
-    format:
-      (item as { display_format?: MockPost['format'] }).display_format ??
-      derivePostFormat(item.media?.[0]?.width, item.media?.[0]?.height),
+    //
+    // [TEMP — second-agent/01-feed-formats-temp-override.md]
+    // Tant que tous les posts en BDD ont display_format='16:9', on alterne
+    // les 3 formats sur l'id du post pour permettre la validation visuelle.
+    // À RETIRER dès que la BDD contient des posts avec différents formats.
+    format: pickTempFormat(index),
+    // Valeur réelle (sera utilisée quand le TEMP sera retiré) :
+    //   (item as { display_format?: MockPost['format'] }).display_format ??
+    //   derivePostFormat(item.media?.[0]?.width, item.media?.[0]?.height)
     images: (item.media ?? []).map((m) => ({
       url: m.url,
       alt: m.alt ?? '',
@@ -139,15 +184,23 @@ function postFeedItemToMockPost(item: PostFeedItem): MockPost {
     // dans son propre bucket pour qu'elle s'affiche correctement (badge + couleur).
     // Le reste des likes est consolidé dans 'love' jusqu'à ce qu'un agrégat SQL
     // par type soit ajouté (post-MVP — vue matérialisée reactions_by_type).
+    //
+    // Bug fix (second-agent/10) : si userType === 'love', on ne doit PAS écraser
+    // le compteur après l'avoir incrémenté de 1 — sinon il devient (total - 1)
+    // ce qui peut donner 0 quand l'user est le seul à avoir liké.
     reactions: (() => {
       const total = item.likes_count
       const userType = item.user_reaction ?? null
-      const buckets = { love: 0, admire: 0, fire: 0, wow: 0, curious: 0, disappointed: 0 }
-      if (userType && total > 0) {
+      const buckets = { love: 0, admire: 0, fire: 0, wow: 0, curious: 0 }
+      if (!userType || total === 0) {
+        buckets.love = total
+      } else if (userType === 'love') {
+        // L'user a réagi avec love : tous les likes restent dans le bucket love
+        buckets.love = total
+      } else {
+        // L'user a réagi avec un autre type : 1 dans son bucket, le reste dans love
         buckets[userType] = 1
         buckets.love = Math.max(0, total - 1)
-      } else {
-        buckets.love = total
       }
       return buckets
     })(),
@@ -193,6 +246,9 @@ interface FeedSectionProps {
   showFilters: boolean
   onShowFiltersChange: (show: boolean) => void
   onHasActiveFiltersChange: (has: boolean) => void
+  /** Callback pour ouvrir le panel "Rencontre Nature" depuis le CTA empty state.
+   *  Géré au niveau Home (qui contrôle activePanelType). */
+  onContributeClick?: () => void
 }
 
 // ─── Composant ───────────────────────────────────────────────────────────────
@@ -203,6 +259,7 @@ export function FeedSection({
   showFilters,
   onShowFiltersChange,
   onHasActiveFiltersChange,
+  onContributeClick,
 }: FeedSectionProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -290,7 +347,14 @@ export function FeedSection({
     isLoading: isFeedLoading,
     isError: isFeedError,
   } = useFeed(
-    { tab: tabToServiceTab[activeTab], page, limit: 20, filters: feedFilters },
+    {
+      tab: tabToServiceTab[activeTab],
+      page,
+      limit: 20,
+      filters: feedFilters,
+      // Pour vous : filtre côté serveur sur les utilisateurs suivis (follows).
+      currentUserId: user?.id,
+    },
     locationCoords,
   )
 
@@ -328,7 +392,16 @@ export function FeedSection({
 
   const isLoading_ = isFeedLoading
   const isError_ = isFeedError
-  const posts: MockPost[] = (feedData?.data ?? []).map(postFeedItemToMockPost)
+
+  // Filtrage côté client : masquer les posts cachés individuellement
+  // (table hidden_posts) — second-agent/22. Les posts d'utilisateurs bloqués
+  // sont déjà filtrés par les RLS DB (table blocks).
+  const { data: hiddenIds } = useHiddenPostIds()
+  const hiddenSet = new Set(hiddenIds ?? [])
+
+  const posts: MockPost[] = (feedData?.data ?? [])
+    .filter((item) => !hiddenSet.has(item.id))
+    .map((item, idx) => postFeedItemToMockPost(item, idx))
 
   // Clé de cache du feed courant — passée au hook de réaction pour l'optimistic update
   // Doit inclure les filtres pour matcher exactement l'entrée cache de useFeed.
@@ -337,6 +410,7 @@ export function FeedSection({
     page,
     limit: 20,
     filters: feedFilters,
+    currentUserId: user?.id,
   })
 
   // ── Mutation réaction ──────────────────────────────────────────────────
@@ -403,7 +477,17 @@ export function FeedSection({
       )}
 
       {/* Header tabs + contrôles — desktop seulement */}
-      <div className="hidden md:flex gap-3 items-center justify-between mb-4">
+      {/*
+        Bandeau des tabs + contrôles vue/filtres — sticky pour rester accessible
+        au scroll (second-agent/24).
+        - top-[72px] : juste sous la HomeNavbar (header h-[72px] sticky top-0)
+        - bg-background avec léger backdrop-blur pour lisibilité quand le feed
+          défile derrière
+        - z-30 : sous la navbar (z-40) mais au-dessus des cartes posts
+        - py-2 -mx-4 px-4 : étend le fond pour couvrir la pleine largeur sans
+          gap visible quand sticky
+      */}
+      <div className="hidden md:flex gap-3 items-center justify-between mb-4 sticky top-[72px] z-30 bg-cream-lighter/95 backdrop-blur-sm py-2 -mx-2 px-2 rounded-full">
         <div
           role="tablist"
           aria-label={t('home.feed.filterFeed')}
@@ -541,7 +625,17 @@ export function FeedSection({
                 </Button>
               )}
               {isAuthenticated ? (
-                <Button variant="primary" size="sm" onClick={() => navigate('/contribute')}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    // Ouvre directement le panel Rencontre Nature (cas d'usage
+                    // le plus fréquent depuis l'empty state du feed). Si non
+                    // câblé par le parent, fallback sur la route /contribute.
+                    if (onContributeClick) onContributeClick()
+                    else navigate('/contribute')
+                  }}
+                >
                   {t('home.feed.emptyContribute')}
                 </Button>
               ) : (
@@ -566,6 +660,7 @@ export function FeedSection({
                   key={post.id}
                   {...post}
                   canInteract={isAuthenticated}
+                  isOwnPost={!!user?.id && post.authorId === user.id}
                   onReact={handleReact}
                 />
               ))}

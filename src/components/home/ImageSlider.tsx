@@ -191,9 +191,18 @@ interface ImageSliderProps {
   images: MockPost['images']
   format: MockPost['format']
   author: MockPost['author']
+  /** ID + titre du post — propagés à la lightbox pour activer le partage */
+  postId?: string
+  postTitle?: string
 }
 
-export function ImageSlider({ images: rawImages, format, author }: ImageSliderProps) {
+export function ImageSlider({
+  images: rawImages,
+  format,
+  author,
+  postId,
+  postTitle,
+}: ImageSliderProps) {
   const { t } = useTranslation()
   const [lightbox, setLightbox] = useState<LightboxData | null>(null)
   const scrollerRef = useRef<HTMLDivElement>(null)
@@ -213,6 +222,13 @@ export function ImageSlider({ images: rawImages, format, author }: ImageSliderPr
       currentIndex: index,
       authorName: author.name,
       authorAvatar: author.avatar,
+      // Format propagé pour que la lightbox respecte l'aspect-ratio choisi
+      // à la création — second-agent/18.
+      format,
+      // Identité du post — active le bouton Partager dans la lightbox
+      // (second-agent/20).
+      postId,
+      postTitle,
     })
   }
 
@@ -226,7 +242,7 @@ export function ImageSlider({ images: rawImages, format, author }: ImageSliderPr
           type="button"
           onClick={() => openLightbox(0)}
           className={[
-            'relative block w-full overflow-hidden rounded-lg cursor-zoom-in bg-muted',
+            'relative block w-full overflow-hidden rounded-md cursor-zoom-in bg-muted',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset',
             aspect,
             COLUMN_MAX_W,
@@ -273,7 +289,7 @@ export function ImageSlider({ images: rawImages, format, author }: ImageSliderPr
                   // Desktop md+ : 606px Figma exact (peek ~50px sur 656).
                   // max-w-full : safety pour XL serrés (1280-1440) où le main
                   // peut tomber sous 606 → la slide se cale au parent.
-                  'relative shrink-0 w-[92%] md:w-[606px] md:max-w-full overflow-hidden rounded-lg bg-muted',
+                  'relative shrink-0 w-[92%] md:w-[606px] md:max-w-full overflow-hidden rounded-md bg-muted',
                   'snap-start snap-always cursor-zoom-in',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset',
                   aspect,

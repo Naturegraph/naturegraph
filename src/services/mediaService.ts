@@ -36,9 +36,14 @@ export async function uploadAvatar(file: File, userId: string): Promise<string> 
   if (file.size > MAX_AVATAR_BYTES) throw new Error('Fichier trop lourd (max 2 Mo)')
 
   const path = `${userId}/avatar.${ext(file)}`
-  const { error } = await supabase.storage
-    .from('avatars')
-    .upload(path, file, { contentType: file.type, upsert: true })
+  const { error } = await supabase.storage.from('avatars').upload(path, file, {
+    contentType: file.type,
+    upsert: true,
+    // Cache 1 an immutable — les avatars sont uploadés sur un path déterministe
+    // et l'upsert remplace le contenu, donc on peut bénéficier d'un cache long.
+    // (NB : l'URL ne change pas — si tu veux invalider, ajoute un querystring `?v=`.)
+    cacheControl: '31536000',
+  })
   if (error) throw new Error(error.message)
 
   const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path)
@@ -96,9 +101,15 @@ export async function uploadPostMedia(params: {
 
   const path = `${userId}/${postId}/${uuid()}.${ext(file)}`
 
-  const { error: upErr } = await supabase.storage
-    .from('post-media')
-    .upload(path, file, { contentType: file.type, upsert: false })
+  const { error: upErr } = await supabase.storage.from('post-media').upload(path, file, {
+    contentType: file.type,
+    upsert: false,
+    // Cache 1 an immutable — chaque photo a un path UUID unique (jamais
+    // ré-écrit), donc on peut maxer le cache navigateur en toute sécurité.
+    // Effet : -90 % d'egress sur les visites répétées du feed (Supabase free
+    // plan oblige — voir docs eco-conception).
+    cacheControl: '31536000',
+  })
   if (upErr) throw new Error(upErr.message)
 
   const { data: pub } = supabase.storage.from('post-media').getPublicUrl(path)

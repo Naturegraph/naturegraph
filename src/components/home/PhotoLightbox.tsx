@@ -13,8 +13,9 @@
  * Accessibilité : role="dialog" + aria-modal, navigation clavier, focus trap.
  */
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { X, ChevronLeft, ChevronRight, Share2 } from 'lucide-react'
+import { SharePopover } from './SharePopover'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,6 +33,25 @@ export interface LightboxData {
   authorName?: string
   /** Avatar de l'auteur */
   authorAvatar?: string
+  /**
+   * Format d'affichage du post — la lightbox respecte ce ratio sur la photo
+   * principale pour rester cohérente avec le rendu feed (second-agent/18).
+   * Si absent → fallback `'16:9'`.
+   */
+  format?: '16:9' | 'portrait' | '1:1'
+  /**
+   * ID + titre du post pour activer le bouton Partager (second-agent/20).
+   * Si absents, le bouton Partager est masqué.
+   */
+  postId?: string
+  postTitle?: string
+}
+
+/** Mapping format → classe Tailwind d'aspect-ratio (aligné avec ImageSlider) */
+const FORMAT_ASPECT: Record<NonNullable<LightboxData['format']>, string> = {
+  '16:9': 'aspect-[606/384]',
+  portrait: 'aspect-[606/768]',
+  '1:1': 'aspect-square',
 }
 
 interface PhotoLightboxProps {
@@ -43,7 +63,9 @@ interface PhotoLightboxProps {
 // ─── Composant ────────────────────────────────────────────────────────────────
 
 export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps) {
-  const { images, currentIndex, authorName, authorAvatar } = data
+  const { images, currentIndex, authorName, authorAvatar, format, postId, postTitle } = data
+  const aspectClass = FORMAT_ASPECT[format ?? '16:9']
+  const [showShare, setShowShare] = useState(false)
   const current = images[currentIndex]
   const hasPrev = currentIndex > 0
   const hasNext = currentIndex < images.length - 1
@@ -102,13 +124,22 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
         </span>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            aria-label="Partager la photo"
-            className="size-10 flex items-center justify-center rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-          >
-            <Share2 className="size-5" aria-hidden="true" />
-          </button>
+          {/*
+            Bouton Partager — ouvre le SharePopover (même composant que le feed).
+            Masqué si postId absent (lightbox en mode preview seul). second-agent/20.
+          */}
+          {postId && (
+            <button
+              type="button"
+              onClick={() => setShowShare(true)}
+              aria-label="Partager la photo"
+              aria-haspopup="dialog"
+              aria-expanded={showShare}
+              className="size-10 flex items-center justify-center rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <Share2 className="size-5" aria-hidden="true" />
+            </button>
+          )}
 
           <button
             ref={closeBtnRef}
@@ -135,12 +166,29 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
           </button>
         )}
 
-        <img
-          src={hqSrc}
-          alt={current.alt}
-          className="max-w-full max-h-full object-contain rounded-lg select-none"
-          draggable={false}
-        />
+        {/*
+          Conteneur cadre format — respecte le format choisi à la création
+          (16:9, portrait, 1:1). La photo remplit le cadre via object-cover
+          pour rester cohérent avec le rendu feed.
+          second-agent/18.
+        */}
+        <div
+          className={[
+            'relative h-auto max-h-full w-auto max-w-full',
+            'flex items-center justify-center',
+            aspectClass,
+            // Limite la hauteur pour qu'on tienne dans le viewport sur portrait
+            // (ratio 3/4 = beaucoup de hauteur)
+            format === 'portrait' ? 'max-h-[80vh]' : 'max-h-[80vh]',
+          ].join(' ')}
+        >
+          <img
+            src={hqSrc}
+            alt={current.alt}
+            className="size-full object-cover rounded-md select-none"
+            draggable={false}
+          />
+        </div>
 
         {hasNext && (
           <button
@@ -182,7 +230,7 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
                 aria-label={`Photo ${i + 1}`}
                 onClick={() => onNavigate(i)}
                 className={[
-                  'size-12 md:size-14 rounded-lg overflow-hidden shrink-0 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
+                  'size-12 md:size-14 rounded-md overflow-hidden shrink-0 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
                   i === currentIndex
                     ? 'ring-2 ring-white opacity-100'
                     : 'opacity-50 hover:opacity-80',
@@ -194,6 +242,11 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
           </div>
         )}
       </div>
+
+      {/* SharePopover — overlay au-dessus de la lightbox quand activé */}
+      {showShare && postId && (
+        <SharePopover postId={postId} title={postTitle ?? ''} onClose={() => setShowShare(false)} />
+      )}
     </div>
   )
 }

@@ -394,10 +394,10 @@
       "denied": "Localisation refusée. Utilise la recherche manuelle ci-dessous."
     },
     "permissionModal": {
-      "title": "Naturegraph près de chez vous",
-      "description": "Découvrez les espèces observées dans un rayon de 75 km autour de vous. Plus de pertinence, moins de bruit.",
-      "privacyNote": "Seule votre ville est utilisée. Jamais votre position exacte. Vous pouvez modifier ou supprimer vos données à tout moment.",
-      "activateCta": "Activer la localisation",
+      "title": "Naturegraph près de chez toi",
+      "description": "Découvre la biodiversité qui t'entoure et les naturalistes actifs autour de toi. Plus de pertinence.",
+      "privacyNote": "Seule ta ville est utilisée — jamais ta position exacte. Modifiable à tout moment.",
+      "activateCta": "Activer ma localisation",
       "skipCta": "Plus tard"
     }
   },
@@ -519,12 +519,11 @@
       "chooseReaction": "Choisir une réaction",
       "filterBySpecies": "Filtrer le feed par {{species}}",
       "reactions": {
-        "love": "Aimer",
-        "admire": "Admirer",
-        "fire": "Incroyable",
-        "wow": "Wow",
-        "curious": "Curieux",
-        "disappointed": "Décevant"
+        "love": "J'adore !",
+        "fire": "Woow !!!!",
+        "admire": "Trop beau !",
+        "wow": "Nooon ?!",
+        "curious": "Intéressant !"
       },
       "commentCount": "{{count}} commentaire",
       "commentCount_other": "{{count}} commentaires",
