@@ -87,28 +87,90 @@
  *     - Si `frequency` != 'realtime', mise en buffer + cron daily/weekly digest
  */
 
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch'
+import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/contexts/ToastContext'
+import { useSettings, useUpdateSettings } from '@/hooks/useSettings'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type DeliveryMethod = 'in_app' | 'email' | 'none'
-type Frequency = 'realtime' | 'weekly' | 'daily'
+/**
+ * Fréquence de notification (digest) — stockée dans `user_settings.notif_frequency`
+ * (colonne ajoutée par migration `20260502_settings_notif_frequency.sql`).
+ *
+ * 'realtime' = notif immédiate dès qu'un événement survient.
+ * 'daily'    = digest quotidien (cron 8h UTC).
+ * 'weekly'   = digest hebdomadaire (cron lundi 8h UTC).
+ */
+type Frequency = 'realtime' | 'daily' | 'weekly'
+
+// ─── Helpers : mapping settings DB <-> UI radios ─────────────────────────────
+//
+// Le DS UI propose des **radios exclusifs** ("Dans l'application | Par courriel
+// | Aucune"), mais la DB (table `user_settings`) stocke 2 booléens indépendants
+// `email_notifications` + `push_notifications`. On dérive l'un depuis l'autre
+// pour respecter le pattern radio sans changer le schéma existant.
+
+function deliveryFromSettings(email: boolean, push: boolean): DeliveryMethod {
+  // Si les deux sont actifs (legacy), on privilégie 'email' (plus fiable).
+  if (email) return 'email'
+  if (push) return 'in_app'
+  return 'none'
+}
+
+function deliveryToSettings(d: DeliveryMethod): {
+  email_notifications: boolean
+  push_notifications: boolean
+} {
+  return {
+    email_notifications: d === 'email',
+    push_notifications: d === 'in_app',
+  }
+}
 
 // ─── Composant ────────────────────────────────────────────────────────────────
 
 export function SettingsNotificationsView() {
   const { t } = useTranslation()
+  const { user } = useAuth()
+  const toast = useToast()
 
-  // ── État local Phase 1 (mock) ──────────────────────────────────────────────
-  // TODO [BACKEND] : remplacer par useNotificationSettings() qui lit depuis
-  // user_notification_settings. État initial vient d'un useEffect qui hydrate
-  // depuis la DB. À chaque changement → useUpdateNotificationSettings()
-  // mutation optimistic.
-  const [delivery, setDelivery] = useState<DeliveryMethod>('email')
-  const [productUpdates, setProductUpdates] = useState(true)
-  const [frequency, setFrequency] = useState<Frequency>('weekly')
+  // Lecture des settings actuels (cache 5 min via useSettings).
+  const { data: settings, isLoading } = useSettings(user?.id)
+  const updateSettings = useUpdateSettings(user?.id)
+
+  // Valeurs courantes — fallback sur les défauts si pas encore chargé/persisté.
+  // ⚠️ On lit directement depuis `settings` (pas de state local) pour rester
+  // synchronisé avec React Query — l'optimistic update se fait via `setQueryData`.
+  const delivery: DeliveryMethod = settings
+    ? deliveryFromSettings(settings.email_notifications, settings.push_notifications)
+    : 'email'
+  const productUpdates: boolean = settings?.newsletter ?? true
+  const frequency: Frequency =
+    (settings as unknown as { notif_frequency?: Frequency } | null)?.notif_frequency ?? 'weekly'
+
+  /**
+   * Wrapper mutation : update settings + toast d'erreur si échec.
+   * Le succès est silencieux (l'UI reflète déjà la valeur via React Query).
+   */
+  function handleUpdate(patch: Record<string, unknown>) {
+    updateSettings.mutate(patch as never, {
+      onError: (err) => {
+        console.error('[Notifications] update failed', err)
+        toast.error(
+          t('settings.notifications.updateError', {
+            defaultValue: 'Impossible de sauvegarder pour le moment.',
+          }),
+        )
+      },
+    })
+  }
+
+  // En attente du premier load — on rend tout de même les contrôles avec leurs
+  // valeurs par défaut pour éviter le layout shift. Les toggles sont disabled.
+  const disabled = isLoading || !user?.id
 
   return (
     <div className="flex flex-col">
@@ -125,21 +187,24 @@ export function SettingsNotificationsView() {
               defaultValue: "Dans l'application",
             })}
             checked={delivery === 'in_app'}
-            onChange={(v) => v && setDelivery('in_app')}
+            disabled={disabled}
+            onChange={(v) => v && handleUpdate(deliveryToSettings('in_app'))}
           />
           <ToggleCard
             label={t('settings.notifications.methodEmail', {
               defaultValue: 'Par courriel',
             })}
             checked={delivery === 'email'}
-            onChange={(v) => v && setDelivery('email')}
+            disabled={disabled}
+            onChange={(v) => v && handleUpdate(deliveryToSettings('email'))}
           />
           <ToggleCard
             label={t('settings.notifications.methodNone', {
               defaultValue: 'Aucune notification',
             })}
             checked={delivery === 'none'}
-            onChange={(v) => v && setDelivery('none')}
+            disabled={disabled}
+            onChange={(v) => v && handleUpdate(deliveryToSettings('none'))}
           />
         </div>
       </section>
@@ -161,7 +226,8 @@ export function SettingsNotificationsView() {
               'Obtenez des informations sur les mises à jour du produit et des fonctionnalités',
           })}
           checked={productUpdates}
-          onChange={setProductUpdates}
+          disabled={disabled}
+          onChange={(v) => handleUpdate({ newsletter: v })}
         />
       </section>
 
@@ -184,21 +250,24 @@ export function SettingsNotificationsView() {
               defaultValue: 'Temps réel',
             })}
             checked={frequency === 'realtime'}
-            onChange={(v) => v && setFrequency('realtime')}
+            disabled={disabled}
+            onChange={(v) => v && handleUpdate({ notif_frequency: 'realtime' })}
           />
           <ToggleCard
             label={t('settings.notifications.freqDaily', {
               defaultValue: 'Une fois par jour',
             })}
             checked={frequency === 'daily'}
-            onChange={(v) => v && setFrequency('daily')}
+            disabled={disabled}
+            onChange={(v) => v && handleUpdate({ notif_frequency: 'daily' })}
           />
           <ToggleCard
             label={t('settings.notifications.freqWeekly', {
               defaultValue: 'Une fois par semaine',
             })}
             checked={frequency === 'weekly'}
-            onChange={(v) => v && setFrequency('weekly')}
+            disabled={disabled}
+            onChange={(v) => v && handleUpdate({ notif_frequency: 'weekly' })}
           />
         </div>
       </section>
@@ -212,17 +281,22 @@ interface ToggleCardProps {
   label: string
   checked: boolean
   onChange: (next: boolean) => void
+  disabled?: boolean
 }
 
 /**
  * Card bordured avec label à gauche + ToggleSwitch à droite.
  * Pattern Figma : rounded-md border-[0.5px], padding 16px, h-12.
  */
-function ToggleCard({ label, checked, onChange }: ToggleCardProps) {
+function ToggleCard({ label, checked, onChange, disabled }: ToggleCardProps) {
   return (
-    <label className="flex items-center gap-4 px-4 py-3 rounded-md border-[0.5px] border-border bg-background cursor-pointer hover:border-primary/50 transition-colors">
+    <label
+      className={`flex items-center gap-4 px-4 py-3 rounded-md border-[0.5px] border-border bg-background transition-colors ${
+        disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-primary/50'
+      }`}
+    >
       <span className="flex-1 text-sm font-medium text-foreground leading-snug">{label}</span>
-      <ToggleSwitch checked={checked} onChange={onChange} ariaLabel={label} />
+      <ToggleSwitch checked={checked} onChange={onChange} ariaLabel={label} disabled={disabled} />
     </label>
   )
 }

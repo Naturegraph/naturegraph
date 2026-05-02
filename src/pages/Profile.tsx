@@ -16,7 +16,8 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
-import { useProfile, useProfileByUsername } from '@/hooks/useProfile'
+import { useProfile, useProfileByUsername, useUpdateProfile } from '@/hooks/useProfile'
+import { useToast } from '@/contexts/ToastContext'
 import { HomeNavbar } from '@/components/home/HomeNavbar'
 import { MobileBottomNav } from '@/components/home/MobileBottomNav'
 import { ProfileHeader } from '@/components/profile/ProfileHeader'
@@ -115,17 +116,20 @@ export default function Profile() {
   const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [showShareSheet, setShowShareSheet] = useState(false)
 
-  // ── Requêtes Supabase ────────────────────────────────────────────────────
-  // Appelées AVANT la branche mock pour respecter les rules of hooks (toutes
-  // les hooks doivent être appelées dans le même ordre à chaque render). En
-  // mode mock le résultat est ignoré (les hooks sont disabled via `enabled`
-  // interne quand l'id est undefined).
+  // ── Hooks Supabase + utilitaires ──────────────────────────────────────────
+  // Tous les hooks DOIVENT être appelés AVANT la branche mock — rules of hooks.
+  // En mode mock le résultat est ignoré (queries `enabled: false` quand id
+  // undefined) et les mutations ne sont jamais déclenchées.
   const { data: supabaseOwnProfile } = useProfile(isOwnProfile ? authProfile?.id : undefined)
   const {
     data: supabaseVisitorProfile,
     isLoading: isVisitorLoading,
     isError: isVisitorError,
   } = useProfileByUsername(!isOwnProfile ? username : undefined)
+
+  // Toast pour feedback succès / erreur (handleSave et autres mutations).
+  const toast = useToast()
+  const updateProfileMutation = useUpdateProfile(authProfile?.id ?? '')
 
   // ── Mode mock : court-circuit complet ─────────────────────────────────────
   // Si VITE_USE_PROFILE_MOCK=true, on rend la page avec les données fictives
@@ -225,10 +229,36 @@ export default function Profile() {
   // Backend cible : table `saved_posts (user_id, post_id, created_at)` JOIN `posts`.
   const savedPosts: import('@/components/home/FeedPost').MockPost[] = []
 
-  /** Appelé par EditProfilePanel lors de la sauvegarde */
-  function handleSave(data: Partial<ProfileDisplayData>) {
-    // useUpdateProfile dans EditProfilePanel gère la mutation via React Query
-    void data
+  /**
+   * Appelé par EditProfilePanel lors de la sauvegarde (mode owner uniquement).
+   * Mappe les champs ProfileDisplayData → UpdateProfilePayload et déclenche
+   * la mutation. Cache React Query mis à jour automatiquement par le hook.
+   */
+  async function handleSave(data: Partial<ProfileDisplayData>) {
+    if (!authProfile?.id) return
+    try {
+      await updateProfileMutation.mutateAsync({
+        username: data.username,
+        bio: data.bio ?? undefined,
+        city: data.city ?? undefined,
+        region: data.region ?? undefined,
+        instagram: data.instagram ?? undefined,
+        website: data.website ?? undefined,
+        avatar_url: data.avatar_url ?? undefined,
+        banner_url: data.banner_url ?? undefined,
+        // `interests` peut venir de EditPrefsTab (sélection des centres d'intérêt)
+        interests: data.interests?.map((i) => i.id),
+      })
+      toast.success(t('profile.edit.saveSuccess', { defaultValue: 'Profil mis à jour' }))
+    } catch (err) {
+      console.error('[Profile] update failed', err)
+      toast.error(
+        t('profile.edit.saveError', {
+          defaultValue: "Impossible d'enregistrer pour l'instant.",
+        }),
+        err instanceof Error ? err.message : undefined,
+      )
+    }
   }
 
   // ── États spéciaux ────────────────────────────────────────────────────────
