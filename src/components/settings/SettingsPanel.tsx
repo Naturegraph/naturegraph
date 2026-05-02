@@ -464,7 +464,12 @@ function SettingsItem({
 
 // ─── Sous-composant : sous-vue Bientôt / Licence ─────────────────────────────
 
-const SECTION_TITLES: Record<SettingsSection, (t: (k: string, o?: object) => string) => string> = {
+// Type minimal pour la signature de `t` qu'on passe ici — on n'utilise que la
+// forme `(key, { defaultValue }) => string`. Évite le typing complet TFunction
+// qui casserait sur l'inférence des namespaces i18next v25.
+type SimpleT = (key: string, options: { defaultValue: string }) => string
+
+const SECTION_TITLES: Record<SettingsSection, (t: SimpleT) => string> = {
   security: (t) => t('settings.items.security', { defaultValue: 'Sécurité' }),
   notifications: (t) => t('settings.items.notifications', { defaultValue: 'Notifications' }),
   help: (t) => t('settings.items.help', { defaultValue: "Besoin d'aide ?" }),

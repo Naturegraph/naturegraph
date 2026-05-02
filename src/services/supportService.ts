@@ -20,6 +20,20 @@
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 
+/**
+ * Cast d'échappement vers le client Supabase non typé.
+ *
+ * `support_tickets` est une table créée par la migration
+ * `20260502_settings_phase2_complete.sql` qui n'est pas encore reflétée dans
+ * `src/types/supabase.ts` (les types sont régénérés à l'application de la
+ * migration via `npx supabase gen types typescript`). En attendant, on passe
+ * par un client typé en `any` uniquement pour les opérations sur cette table.
+ *
+ * À RETIRER dès que les types Supabase sont regénérés avec la table.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sb = supabase as any
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /** Sujets autorisés (cf. CHECK constraint SQL). */
@@ -70,7 +84,7 @@ export async function submitHelpRequest(payload: SubmitHelpRequestPayload): Prom
     throw new Error('Le message doit contenir au moins 20 caractères')
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('support_tickets')
     .insert({
       user_id: user.id,
@@ -96,7 +110,7 @@ export async function submitHelpRequest(payload: SubmitHelpRequestPayload): Prom
 export async function listMyTickets(): Promise<SupportTicket[]> {
   if (!isSupabaseConfigured || !supabase) return []
 
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('support_tickets')
     .select('*')
     .order('created_at', { ascending: false })

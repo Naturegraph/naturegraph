@@ -9,6 +9,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getPostById,
+  getPostsByUser,
   toggleReaction,
   createPost,
   deletePost,
@@ -19,6 +20,8 @@ import type { PostFeedItem, ReactionType } from '@/types/database'
 
 export const postQueryKey = {
   byId: (postId: string) => ['post', postId] as const,
+  byUser: (userId: string, sort: 'recent' | 'popular') =>
+    ['posts', 'by-user', userId, sort] as const,
 }
 
 /**
@@ -31,6 +34,27 @@ export function usePost(postId: string | undefined) {
     queryFn: () => getPostById(postId!),
     enabled: !!postId,
     staleTime: 5 * 60 * 1000,
+  })
+}
+
+/**
+ * Récupère les posts publiés par un utilisateur donné.
+ * Utilisé sur la page Profil > onglet "Journal nature".
+ *
+ * Les posts retournés respectent la RLS (status='published' + visibility='public').
+ * Si le hook est appelé pour le profil propriétaire, il pourrait à terme
+ * accepter un flag `includeDrafts` pour aussi remonter les brouillons.
+ */
+export function useUserPosts(
+  userId: string | undefined,
+  sort: 'recent' | 'popular' = 'recent',
+  limit = 20,
+) {
+  return useQuery<PostFeedItem[], Error>({
+    queryKey: postQueryKey.byUser(userId ?? '', sort),
+    queryFn: () => getPostsByUser(userId!, sort, limit),
+    enabled: !!userId,
+    staleTime: 60 * 1000,
   })
 }
 
