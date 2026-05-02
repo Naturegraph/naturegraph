@@ -383,3 +383,40 @@ export async function toggleReaction(
     return { added: true, activeType: type }
   }
 }
+
+// ─── Posts par utilisateur (page Profil > Journal nature) ─────────────────────
+
+/**
+ * Récupère les posts publiés par un utilisateur donné.
+ *
+ * @param userId  ID de l'utilisateur dont on veut les posts
+ * @param sort    'recent' (chronologique inverse) | 'popular' (likes_count)
+ * @param limit   Nombre max de posts (défaut 20)
+ *
+ * Utilisé par la page Profil > onglet "Journal nature" (ProfileFeed).
+ * RLS profile / posts : seuls les posts `status = 'published'` et
+ * `visibility = 'public'` sont retournés (cohérent avec le feed home).
+ */
+export async function getPostsByUser(
+  userId: string,
+  sort: 'recent' | 'popular' = 'recent',
+  limit = 20,
+): Promise<PostFeedItem[]> {
+  if (!supabase) throw new Error('Supabase non configuré')
+
+  let query = supabase
+    .from('posts')
+    .select(POST_FEED_SELECT)
+    .eq('user_id', userId)
+    .eq('status', 'published')
+    .eq('visibility', 'public')
+
+  query =
+    sort === 'popular'
+      ? query.order('likes_count', { ascending: false })
+      : query.order('created_at', { ascending: false })
+
+  const { data, error } = await query.limit(limit)
+  if (error) throw new Error(error.message)
+  return (data ?? []) as unknown as PostFeedItem[]
+}
