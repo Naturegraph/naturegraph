@@ -552,10 +552,49 @@ CREATE TABLE account_deletion_requests (
 
 ### 15.3 RPCs / Edge Functions
 
-- `request_account_deletion()` — INSERT + email confirmation (template Supabase)
+- `request_account_deletion(reason TEXT?)` — INSERT + email confirmation
+  - Limit 1 demande active par user (UNIQUE (user_id) WHERE cancelled_at IS NULL)
+  - Refuse si compte créé < 24h (anti spam-account)
+  - Logge IP + user-agent dans une table `audit_log` séparée
+  - Sign out tous devices via `signout_all_devices` puis email avec lien d'annulation
 - `cancel_account_deletion()` — UPDATE cancelled_at = now()
-- `export_user_data()` — Edge Function génère .zip JSON (profile + posts + comments + reactions + follows + saved)
+  - Auth requise (user qui annule = user qui avait demandé)
+- `export_user_data()` — Edge Function génère .zip JSON
+  - Contenu : profile + posts + comments + reactions + follows + saved_posts
+  - Téléchargement via signed URL Supabase Storage (expire 24h)
+  - Recommandé AVANT suppression (lien dans la modal "Avant de supprimer,
+    télécharge tes données")
 - `change_password(old, new)` — via supabase.auth.updateUser
+- `signout_all_devices()` — Edge Function : invalide toutes les sessions Auth
+
+### 15.4 Cron Function quotidien (suppression effective J+30)
+
+```sql
+-- Edge Function `process_pending_deletions` (Supabase Cron : daily at 03:00 UTC)
+-- 1. Sélectionne les demandes scheduled_for <= now() AND cancelled_at IS NULL
+-- 2. Pour chaque user_id :
+--    a. DELETE FROM profiles WHERE id = user_id (cascade vers posts, comments, etc.)
+--    b. Boucle suppression objets Storage (avatars/{user_id}/* + banners/{user_id}/*)
+--    c. Anonymise les logs : UPDATE audit_log SET user_id = NULL WHERE user_id = user_id
+--    d. Email final "votre compte a été supprimé"
+-- 3. Conserve la ligne dans `account_deletion_requests` (audit RGPD)
+```
+
+### 15.5 Modal de confirmation (DeleteAccountModal)
+
+Component `src/components/settings/DeleteAccountModal.tsx` (Phase 1 mock).
+
+Phase 2 modifications nécessaires :
+
+- Bouton "Confirmer" → `await rpcClient.requestAccountDeletion()` au lieu de
+  `onConfirm()` direct
+- Ajouter un **lien "Télécharger mes données" (export RGPD)** au-dessus des
+  boutons (recommandation pré-suppression)
+- Afficher un **délai 30 jours** explicite dans la description : _"Tu pourras
+  annuler cette demande pendant les 30 prochains jours via le lien envoyé
+  par email"_
+- Phase 3 : ajouter une étape de re-auth (mot de passe / 2FA) avant l'envoi
+  de la demande
 
 ### 15.4 Liens depuis le profil
 
