@@ -30,9 +30,13 @@ import gmailLogo from '@/assets/images/social/gmail.png'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SharePopoverProps {
-  /** ID du post pour construire l'URL canonique */
-  postId: string
-  /** Titre du post — utilisé dans subject email & tweet */
+  /** ID du post — si fourni (et que `shareUrl` ne l'est pas), construit
+   *  l'URL canonique `/post/{postId}`. Optionnel si `shareUrl` est fourni. */
+  postId?: string
+  /** URL custom à partager. Override `postId`. Utilisé pour partager
+   *  d'autres entités (profil utilisateur, etc.). */
+  shareUrl?: string
+  /** Titre/objet — utilisé dans subject email & body de partage */
   title: string
   /** Callback de fermeture */
   onClose: () => void
@@ -84,12 +88,14 @@ function SocialIcon({ label, href, iconNode }: SocialIconProps) {
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 
-export function SharePopover({ postId, title, onClose }: SharePopoverProps) {
+export function SharePopover({ postId, shareUrl, title, onClose }: SharePopoverProps) {
   const { t } = useTranslation()
   const [linkCopied, setLinkCopied] = useState(false)
   const closeBtnRef = useRef<HTMLButtonElement>(null)
 
-  const url = `${window.location.origin}/post/${postId}`
+  // Priorité : shareUrl explicite > URL canonique post si postId fourni > origin
+  const url =
+    shareUrl ?? (postId ? `${window.location.origin}/post/${postId}` : window.location.origin)
   const encodedUrl = encodeURIComponent(url)
   const encodedTitle = encodeURIComponent(title)
 

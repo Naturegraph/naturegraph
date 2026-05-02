@@ -82,36 +82,46 @@ export function EditProfilePanel({ profile, onClose, onSave }: EditProfilePanelP
         onClick={onClose}
       />
 
-      {/* ── Panneau ── */}
+      {/* ── Panneau ──
+          Mobile : full-page (inset-0) — pas de bottom sheet, pas de handle
+          → cohérence avec les autres panneaux pleine page (cf. ContributeModal,
+          SearchPanel) sur petits écrans.
+          Desktop (md+) : panneau latéral droit 420px, pleine hauteur. */}
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={t('profile.edit.title')}
         tabIndex={-1}
-        className="fixed inset-x-0 bottom-0 z-50 bg-cream-lighter rounded-t-2xl max-h-[90dvh] flex flex-col shadow-2xl focus-visible:outline-none md:inset-x-auto md:right-0 md:top-0 md:bottom-0 md:w-[420px] md:rounded-none md:rounded-l-2xl md:max-h-none"
+        className="fixed inset-0 z-50 bg-cream-lighter flex flex-col shadow-2xl focus-visible:outline-none md:inset-x-auto md:right-0 md:top-0 md:bottom-0 md:w-[420px] md:rounded-l-2xl"
       >
-        {/* Handle mobile */}
-        <div
-          className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-border md:hidden"
-          aria-hidden="true"
-        />
-
-        {/* ── Header ── */}
-        <div className="flex items-center justify-between px-4 pt-6 pb-3 border-b border-border shrink-0 md:pt-4">
-          <h2 className="text-base font-semibold text-foreground">{t('profile.edit.title')}</h2>
+        {/* ── Header ── Figma 6385:75440 :
+            Titre "Modifier le profil" en Quicksand bold large (text-2xl).
+            Bouton close à droite, taille 32px, pas de border bottom (la
+            border vient du tablist en dessous).
+            Mobile : padding-top inclut safe-area-inset-top (notch iPhone). */}
+        <div className="flex items-center justify-between px-5 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] md:pt-6 shrink-0">
+          <h2 className="font-title font-bold text-2xl text-foreground leading-tight">
+            {t('profile.edit.title', { defaultValue: 'Modifier le profil' })}
+          </h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label={t('common.close')}
+            aria-label={t('common.close', { defaultValue: 'Fermer' })}
             className="size-8 flex items-center justify-center rounded-full hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <X className="size-4 text-foreground" aria-hidden="true" />
+            <X className="size-5 text-foreground" aria-hidden="true" />
           </button>
         </div>
 
-        {/* ── Navigation onglets ── */}
-        <div className="flex border-b border-border shrink-0" role="tablist">
+        {/* ── Navigation onglets ── Figma 6385:75440 :
+            Tabs underline alignés à gauche (start-aligned, pas equal-flex).
+            Active = primary + border-bottom 2px violet, inactive = foreground
+            standard sans muted (Nicolas DS — labels noirs).
+            `whitespace-nowrap` + `text-sm` + `gap-5` pour que les 3 labels
+            tiennent sur 1 ligne même en mobile 375px (Nicolas 2026-05-02 :
+            "essayer d'avoir l'ensemble des labels sur une ligne pas 2"). */}
+        <div className="flex border-b border-border shrink-0 px-5 gap-5" role="tablist">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -119,10 +129,10 @@ export function EditProfilePanel({ profile, onClose, onSave }: EditProfilePanelP
               type="button"
               aria-selected={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-3 text-sm font-medium transition-colors border-b-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${
+              className={`relative py-3 text-sm md:text-base font-medium whitespace-nowrap transition-colors -mb-px border-b-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${
                 activeTab === tab.id
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
+                  ? 'border-primary text-primary font-bold'
+                  : 'border-transparent text-foreground hover:text-primary'
               }`}
             >
               {tab.label}
@@ -146,6 +156,23 @@ export function EditProfilePanel({ profile, onClose, onSave }: EditProfilePanelP
             <EditPhotoTab profile={profile} onSave={onSave} onClose={onClose} />
           )}
         </div>
+
+        {/* ── Footer sticky : bouton Sauvegarder ──
+            Présent UNIQUEMENT pour les onglets Informations et Préférences.
+            L'onglet "Photo de profil" a un comportement auto-save (chaque
+            Changer/Supprimer persiste immédiatement) → pas de footer ni de
+            bouton de validation explicite (Nicolas 2026-05-02). */}
+        {activeTab !== 'photo' && (
+          <div className="shrink-0 border-t border-border px-5 py-4 bg-cream-lighter pb-[calc(1rem+env(safe-area-inset-bottom))] md:pb-4">
+            <button
+              type="submit"
+              form={`edit-${activeTab}-form`}
+              className="w-full h-12 rounded-full bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
+              {t('profile.edit.save', { defaultValue: 'Sauvegarder les modifications' })}
+            </button>
+          </div>
+        )}
       </div>
     </>
   )

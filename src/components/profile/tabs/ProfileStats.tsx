@@ -1,43 +1,33 @@
 /**
  * ProfileStats — Onglet "Statistiques" du profil
  *
- * État "Bientôt" : badge pill + illustration hermine + texte explicatif.
- * Cette section sera enrichie lors d'un sprint ultérieur avec des graphiques
- * d'observations, de diversité d'espèces, et de progression dans le temps.
+ * Placeholder "Bientôt disponible" — sera enrichi avec graphiques d'observations,
+ * diversité d'espèces, progression dans le temps lors d'un sprint ultérieur.
+ *
+ * TODO [BACKEND] Phase 3 — RPC `get_profile_stats(profile_id)` (cf. note backend §4.2).
  */
 
 import { useTranslation } from 'react-i18next'
-import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
+import { ProfileEmptyState } from '../ProfileEmptyState'
 
-// ─── Composant ────────────────────────────────────────────────────────────────
-
-/**
- * Placeholder "Bientôt disponible" pour l'onglet Statistiques.
- */
 export function ProfileStats() {
   const { t } = useTranslation()
 
   return (
-    <div className="flex flex-col items-center justify-center py-12 gap-4 px-4">
-      {/* Badge pill "Bientôt" */}
-      <span className="px-3 py-1 rounded-full bg-teal-dark/10 text-teal-dark text-xs font-semibold">
-        {t('profile.stats.comingSoon')}
+    <ProfileEmptyState
+      title={t('profile.stats.comingSoonTitle', {
+        defaultValue: 'Statistiques arrivent bientôt',
+      })}
+      subtitle={t('profile.stats.comingSoonDesc', {
+        defaultValue:
+          'On prépare les graphiques de tes observations, espèces rencontrées et migrations dans le temps.',
+      })}
+      compact
+    >
+      {/* Badge "Bientôt" cohérent avec ProfileTabs (primary-light + uppercase). */}
+      <span className="mt-2 inline-flex px-3 py-1 rounded-full bg-primary-light text-primary text-xs font-bold uppercase tracking-wide">
+        {t('profile.stats.comingSoon', { defaultValue: 'Bientôt' })}
       </span>
-
-      {/* Illustration hermine */}
-      <img
-        src={hermineEmptyState}
-        alt=""
-        className="w-32 h-32 opacity-60"
-        loading="lazy"
-        width={128}
-        height={128}
-      />
-
-      {/* Message */}
-      <p className="text-sm text-muted-foreground text-center max-w-xs">
-        {t('profile.stats.comingSoonDesc')}
-      </p>
-    </div>
+    </ProfileEmptyState>
   )
 }

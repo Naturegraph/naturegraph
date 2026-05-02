@@ -1,22 +1,32 @@
 /**
- * ProfileHeader — En-tête de la page profil
+ * ProfileHeader — En-tête de la page profil (desktop horizontal / mobile centré)
+ * ============================================================================
  *
- * Design Figma : bannière pleine largeur (~160px), avatar centré chevauchant
- * le bas de la bannière, username centré, stats Migrateurs/Migrations,
- * boutons d'action en ligne.
+ * Design Figma (visiteur) :
+ *  - Desktop (6385:74429) : banner + AVATAR à GAUCHE chevauchant la banner,
+ *    username + stats à droite alignés à gauche, boutons d'action collés à
+ *    droite (Migrer / Partager / Options). Pas de tab "À propos" sur desktop.
+ *  - Mobile (6385:70500)  : banner + avatar CENTRÉ chevauchant, username
+ *    centré, stats centrées, boutons centrés en row. Tab "À propos" présent.
  *
  * Modes :
- *  - isOwnProfile = true  → bouton "Modifier le profil" (crayon) + partage + options
+ *  - isOwnProfile = true  → boutons "Modifier" (Pencil, primary) + "Paramètres"
+ *                            (Settings, outlined). Pas de menu options ni partage
+ *                            ici — les paramètres ouvrent un panel dédié.
  *  - isOwnProfile = false → bouton "Migrer" / "Tu migres avec" + partage + options
  *
- * Les callbacks onEditProfile, onShare, onOptions sont gérés dans Profile.tsx.
+ * Figma owner : 6385:77470 (desktop) / 6385:77493 (boutons détaillés).
+ *
+ * Les callbacks onEditProfile, onShare, onOptions, onSettings sont gérés
+ * dans Profile.tsx.
  */
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pencil, Share2, MoreHorizontal } from 'lucide-react'
+import { Pencil, Share2, MoreHorizontal, TreeDeciduous, Settings } from 'lucide-react'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 import { getBadgeEmoji } from '@/utils/badgeHelpers'
+import { ProfileOptionsMenu } from './ProfileOptionsMenu'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,160 +50,199 @@ export interface ProfileDisplayData {
 }
 
 interface ProfileHeaderProps {
-  /** Données du profil à afficher */
   profile: ProfileDisplayData
-  /** True si c'est le profil de l'utilisateur connecté */
   isOwnProfile: boolean
-  /** Callback ouverture panneau édition */
+  /** Owner only — ouvre le panel de modification du profil */
   onEditProfile?: () => void
-  /** Callback ouverture feuille de partage */
+  /** Owner only — ouvre la page / panel de paramètres compte (notifs, langue, etc.) */
+  onSettings?: () => void
+  /** Visiteur uniquement — ouvre le SharePopover */
   onShare?: () => void
-  /** Callback ouverture menu options */
+  /** Visiteur uniquement — ouvre le menu options (block / report / copy link) */
   onOptions?: () => void
 }
 
 // ─── Composant ────────────────────────────────────────────────────────────────
 
-/**
- * En-tête complète du profil : bannière, avatar avec badge, username centré,
- * compteurs Migrateurs/Migrations, boutons d'action.
- */
 export function ProfileHeader({
   profile,
   isOwnProfile,
   onEditProfile,
+  onSettings,
   onShare,
   onOptions,
 }: ProfileHeaderProps) {
   const { t } = useTranslation()
   const [isFollowing, setIsFollowing] = useState(false)
+  // Menu d'options (3 points) — ProfileOptionsMenu géré ici en local pour
+  // que la position absolute soit relative au bouton (pas à Profile.tsx).
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false)
 
-  /** Emoji badge de la première catégorie d'intérêt */
   const badgeEmoji = profile.badges.length > 0 ? getBadgeEmoji(profile.badges[0]) : null
 
   return (
-    <div className="w-full">
-      {/* ── Bannière ── */}
-      <div className="h-40 relative overflow-hidden bg-[var(--color-action-light)]">
+    // Container avec padding 24px tout autour (Figma : Feed à x=24 y=24).
+    // Sur mobile, on réduit à 16px (px-4).
+    <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 pt-4 md:pt-6">
+      {/* ── Bannière ──
+          Figma 6385:74435 : Rectangle 1465 = 1392×224 rounded.
+          Hauteur fixe 224px sur desktop, plus courte sur mobile (h-44 = 176). */}
+      <div className="h-44 md:h-56 relative overflow-hidden rounded-md bg-[var(--color-action-light)]">
         {profile.banner_url && (
+          // Above-the-fold → loading="eager" + fetchpriority="high".
+          // C'est le LCP de la page profil → on le charge en priorité.
           <img
             src={profile.banner_url}
             alt=""
             aria-hidden="true"
             className="w-full h-full object-cover"
-            loading="lazy"
+            loading="eager"
+            fetchPriority="high"
           />
         )}
-
-        {/* Avatar chevauchant la bannière — centré horizontalement */}
-        <div className="absolute left-1/2 -translate-x-1/2 -bottom-10">
-          <div className="relative">
-            {/* Cercle avatar 80px avec bordure cream */}
-            <div className="size-20 rounded-full border-2 border-cream-lighter overflow-hidden bg-primary-light">
-              <img
-                src={profile.avatar_url ?? hermineIcon}
-                alt={t('home.profile.avatarAlt', { name: profile.username })}
-                className="size-full object-cover"
-                loading="lazy"
-              />
-            </div>
-
-            {/* Badge emoji en bas à droite de l'avatar */}
-            {badgeEmoji && (
-              <div
-                aria-hidden="true"
-                className="absolute -bottom-0.5 -right-0.5 bg-cream-lighter rounded-full size-6 flex items-center justify-center shadow-sm"
-              >
-                <span className="text-sm leading-none">{badgeEmoji}</span>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
-      {/* ── Contenu sous la bannière ── */}
-      <div className="pt-14 pb-4 px-4 flex flex-col items-center gap-3">
-        {/* Username */}
-        <h1 className="text-xl font-bold text-foreground text-center">{profile.username}</h1>
+      {/* ── Contenu sous la bannière ──
+          Desktop : avatar à x=48 (px-12), overlap 56px sur banner.
+          Info+actions row commence 24px (md:mt-6) sous la bannière, donc
+          PAS aligné au bas de l'avatar (Figma : info y=248 vs avatar y=168
+          → info commence 80px après le top de l'avatar).
+          Mobile : avatar centré, overlap ~48px sur banner */}
+      <div className="relative">
+        <div className="relative flex flex-col md:flex-row md:items-start md:gap-6 md:px-12">
+          {/* Avatar — chevauche la bannière (margin top négative)
+              Desktop : aligné à gauche px-12 (48px), taille 128px, overlap 56px
+              Mobile  : centré, taille 96px, overlap 48px */}
+          <div className="-mt-12 md:-mt-14 self-center md:self-start shrink-0">
+            <div className="relative">
+              <div className="size-24 md:size-32 rounded-full border-4 border-cream-lighter overflow-hidden bg-primary-light shadow-sm">
+                {/* Above-the-fold : eager + fetchpriority high pour LCP. */}
+                <img
+                  src={profile.avatar_url ?? hermineIcon}
+                  alt={t('home.profile.avatarAlt', { name: profile.username })}
+                  className="size-full object-cover"
+                  loading="eager"
+                  fetchPriority="high"
+                />
+              </div>
+              {/* Badge — Figma 6385:74513 : Container 32×32 à x=144 y=96 (relatif
+                  à Frame 8). L'avatar étant à x=48, le badge est positionné
+                  flush bottom-right de l'avatar (96+32 = 128 = avatar size). */}
+              {badgeEmoji && (
+                <div
+                  aria-hidden="true"
+                  className="absolute bottom-0 right-0 bg-cream-lighter rounded-full size-7 md:size-8 flex items-center justify-center shadow-sm border border-border"
+                >
+                  <span className="text-base leading-none">{badgeEmoji}</span>
+                </div>
+              )}
+            </div>
+          </div>
 
-        {/* Stats Migrateurs | Migrations */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>
-            <strong className="text-foreground font-semibold">{profile.followers_count}</strong>{' '}
-            {t('profile.migrateurs')}
-          </span>
-          <span className="text-border" aria-hidden="true">
-            |
-          </span>
-          <span>
-            <strong className="text-foreground font-semibold">{profile.following_count}</strong>{' '}
-            {t('profile.migrations')}
-          </span>
-        </div>
+          {/* Bloc infos (username + stats) + bloc actions
+              Desktop : flex-row entre infos (gauche) et actions (droite),
+                        alignés au TOP (Figma 6385:74452 : Frame 4738 à y=0
+                        donc collé en haut du info-block).
+              Mobile  : tout centré en colonne
+              md:mt-6 = 24px d'espace sous la bannière (Figma 6385:74440 :
+              info content commence à y=248, banner se termine à y=224 → +24px). */}
+          <div className="flex-1 flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4 mt-3 md:mt-6">
+            {/* Infos textuelles */}
+            <div className="flex flex-col items-center md:items-start gap-1.5">
+              {/* Title/H3 = 32px Quicksand Bold STRICT (Figma var Titles/Subtitle/Size = 32).
+                  Tailwind text-3xl = 30px → on utilise une valeur arbitraire pour
+                  respecter la spec exacte du DS. */}
+              <h1 className="font-title font-bold text-2xl md:text-[2rem] text-foreground leading-tight">
+                {profile.username}
+              </h1>
+              {/* Stats — séparateur vertical (Figma 6385:74448 = ligne 1×28px) */}
+              <div className="flex items-center gap-3 text-sm text-foreground">
+                <span>
+                  <strong className="font-bold">{profile.followers_count}</strong>{' '}
+                  <span className="text-muted-foreground">{t('profile.migrateurs')}</span>
+                </span>
+                <span aria-hidden="true" className="h-5 w-px bg-border" />
+                <span>
+                  <strong className="font-bold">{profile.following_count}</strong>{' '}
+                  <span className="text-muted-foreground">{t('profile.migrations')}</span>
+                </span>
+              </div>
+            </div>
 
-        {/* Boutons d'action */}
-        <div className="flex items-center gap-2">
-          {isOwnProfile ? (
-            /* Propre profil : modifier + partager + options */
-            <>
-              <button
-                type="button"
-                onClick={onEditProfile}
-                className="flex items-center gap-2 h-10 px-5 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              >
-                <Pencil className="size-4" aria-hidden="true" />
-                {t('profile.editProfile')}
-              </button>
-              <button
-                type="button"
-                onClick={onShare}
-                aria-label={t('profile.share')}
-                className="size-10 flex items-center justify-center rounded-full border border-border hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              >
-                <Share2 className="size-4 text-foreground" aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                onClick={onOptions}
-                aria-label={t('profile.options')}
-                className="size-10 flex items-center justify-center rounded-full border border-border hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              >
-                <MoreHorizontal className="size-4 text-foreground" aria-hidden="true" />
-              </button>
-            </>
-          ) : (
-            /* Profil visiteur : migrer + partager + options */
-            <>
-              <button
-                type="button"
-                onClick={() => setIsFollowing((f) => !f)}
-                className={`flex items-center gap-2 h-10 px-5 rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                  isFollowing
-                    ? 'bg-cream border border-border text-foreground hover:bg-cream-lighter'
-                    : 'bg-primary text-primary-foreground hover:opacity-90'
-                }`}
-                aria-pressed={isFollowing}
-              >
-                {isFollowing ? <>🦅 {t('profile.migrating')}</> : <>🦅 {t('profile.migrer')}</>}
-              </button>
-              <button
-                type="button"
-                onClick={onShare}
-                aria-label={t('profile.share')}
-                className="size-10 flex items-center justify-center rounded-full border border-border hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              >
-                <Share2 className="size-4 text-foreground" aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                onClick={onOptions}
-                aria-label={t('profile.options')}
-                className="size-10 flex items-center justify-center rounded-full border border-border hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              >
-                <MoreHorizontal className="size-4 text-foreground" aria-hidden="true" />
-              </button>
-            </>
-          )}
+            {/* Boutons d'action — alignés en haut sur desktop (self-start) */}
+            <div className="flex items-center gap-2 self-center md:self-start">
+              {isOwnProfile ? (
+                /* ── Owner : [Modifier] (primary) + [Paramètres] (outlined) ──
+                   Figma 6385:77493 — boutons texte+icône, pas de menu 3-pts.
+                   Les actions block/report/copy-link n'ont pas de sens sur son
+                   propre profil → on les retire complètement. */
+                <>
+                  <button
+                    type="button"
+                    onClick={onEditProfile}
+                    className="inline-flex items-center gap-2 h-10 px-5 rounded-full bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  >
+                    <Pencil className="size-4" aria-hidden="true" />
+                    {t('profile.editProfile', { defaultValue: 'Modifier' })}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onSettings}
+                    className="inline-flex items-center gap-2 h-10 px-5 rounded-full bg-background border-[0.5px] border-border text-foreground text-sm font-bold hover:border-primary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  >
+                    <Settings className="size-4" aria-hidden="true" />
+                    {t('profile.settings', { defaultValue: 'Paramètres' })}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setIsFollowing((f) => !f)}
+                    className={`flex items-center gap-2 h-10 px-5 rounded-full text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                      isFollowing
+                        ? 'bg-cream-lighter border border-border text-foreground hover:bg-cream'
+                        : 'bg-primary text-primary-foreground hover:opacity-90'
+                    }`}
+                    aria-pressed={isFollowing}
+                  >
+                    <TreeDeciduous className="size-4" aria-hidden="true" />
+                    {isFollowing ? t('profile.migrating') : t('profile.migrer')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onShare}
+                    aria-label={t('profile.share')}
+                    className="size-10 flex items-center justify-center rounded-full border border-border hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  >
+                    <Share2 className="size-4 text-foreground" aria-hidden="true" />
+                  </button>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowOptionsMenu((v) => !v)
+                        onOptions?.()
+                      }}
+                      aria-label={t('profile.options')}
+                      aria-expanded={showOptionsMenu}
+                      aria-haspopup="menu"
+                      className="size-10 flex items-center justify-center rounded-full border border-border hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    >
+                      <MoreHorizontal className="size-4 text-foreground" aria-hidden="true" />
+                    </button>
+                    {showOptionsMenu && (
+                      <ProfileOptionsMenu
+                        username={profile.username}
+                        isOwnProfile={false}
+                        onClose={() => setShowOptionsMenu(false)}
+                      />
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
