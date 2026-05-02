@@ -40,6 +40,9 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2 } from 'lucide-react'
 import hermineIcon from '@/assets/images/hermine-icon.png'
+import { useToast } from '@/contexts/ToastContext'
+import { uploadImage } from '@/services/storageService'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import type { ProfileDisplayData } from './ProfileHeader'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -99,6 +102,12 @@ function DeleteButton({ label, onClick, disabled }: ButtonProps) {
 // l'auto-save ne ferme jamais le panel après un changement de photo.
 export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
   const { t } = useTranslation()
+  const toast = useToast()
+  // `isUploading` réservé pour afficher un état chargement sur les boutons
+  // dans une itération UI ultérieure. Le state est mis à jour côté logique
+  // (handleFileChange) mais pas encore consommé visuellement — on garde
+  // pour préparer l'ajout d'un spinner sans refacto.
+  const [, setIsUploading] = useState<'avatar' | 'banner' | null>(null)
 
   // État local des previews — synchronisé avec le profil entrant. Quand
   // l'utilisateur change/supprime, on update ce state ET on call onSave
@@ -137,20 +146,26 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
   /**
    * Handler générique upload d'un fichier image.
    *
-   * Phase 1 (mock) : `URL.createObjectURL` pour preview immédiate.
-   * Phase 2 (backend) : remplacer par `storageService.uploadAvatar(file)` →
-   * URL Supabase publique (cf. second-agent/03 §8).
+   * Comportement :
+   *   1. Validation MIME + taille côté client (feedback immédiat via toast).
+   *   2. Preview locale via Blob URL (UI réactive avant upload réseau).
+   *   3. Si Supabase configuré : upload réel vers `avatars` / `banners` puis
+   *      persistance de l'URL publique via `onSave({ avatar_url | banner_url })`.
+   *   4. Si Supabase non configuré (mode démo / dev) : on garde la Blob URL.
+   *
+   * Le bucket et les RLS Storage sont définis par la migration
+   * `20260502_settings_phase2_complete.sql` + l'existant `avatars`.
    */
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>, kind: 'avatar' | 'banner') {
+  async function handleFileChange(
+    e: React.ChangeEvent<HTMLInputElement>,
+    kind: 'avatar' | 'banner',
+  ) {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validation côté client (MIME + taille). Backend renforce ces règles
-    // côté Edge Function avant l'upload final (vs JS bypass).
-    // TODO [BACKEND] — remplacer console.warn par toast via ToastContext :
-    //   useToast().error(t('profile.edit.errorImageType' | 'errorImageSize'))
+    // Validation côté client (MIME + taille).
     if (!file.type.startsWith('image/')) {
-      console.warn(
+      toast.error(
         t('profile.edit.errorImageType', {
           defaultValue: 'Fichier non supporté — image attendue.',
         }),
@@ -159,7 +174,7 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
     }
     const maxBytes = kind === 'avatar' ? 1_048_576 : 2_097_152 // 1 / 2 MB
     if (file.size > maxBytes) {
-      console.warn(
+      toast.error(
         t('profile.edit.errorImageSize', {
           defaultValue: `Fichier trop volumineux (max ${maxBytes / 1e6} MB).`,
           maxMb: maxBytes / 1e6,
@@ -168,18 +183,48 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
       return
     }
 
-    // Preview locale immédiate via Blob URL.
+    // Preview locale immédiate via Blob URL — UX réactive.
     const localUrl = URL.createObjectURL(file)
     if (kind === 'avatar') {
-      // Cleanup ancienne blob URL si existante.
       if (avatarUrl?.startsWith('blob:')) URL.revokeObjectURL(avatarUrl)
       setAvatarUrl(localUrl)
-      // Auto-save : persiste l'URL (Phase 2 : sera remplacée par l'URL Supabase).
-      onSave({ avatar_url: localUrl })
     } else {
       if (bannerUrl?.startsWith('blob:')) URL.revokeObjectURL(bannerUrl)
       setBannerUrl(localUrl)
-      onSave({ banner_url: localUrl })
+    }
+
+    // Upload réel vers Supabase Storage si configuré, sinon on garde la
+    // Blob URL (mode dev / démo).
+    if (!isSupabaseConfigured) {
+      const fakeUrl = localUrl
+      onSave(kind === 'avatar' ? { avatar_url: fakeUrl } : { banner_url: fakeUrl })
+      return
+    }
+
+    setIsUploading(kind)
+    try {
+      const bucket = kind === 'avatar' ? 'avatars' : 'banners'
+      const { publicUrl } = await uploadImage(bucket, file)
+      // Remplace la Blob URL par l'URL Supabase persistée.
+      if (kind === 'avatar') {
+        if (avatarUrl?.startsWith('blob:')) URL.revokeObjectURL(avatarUrl)
+        setAvatarUrl(publicUrl)
+        onSave({ avatar_url: publicUrl })
+      } else {
+        if (bannerUrl?.startsWith('blob:')) URL.revokeObjectURL(bannerUrl)
+        setBannerUrl(publicUrl)
+        onSave({ banner_url: publicUrl })
+      }
+    } catch (err) {
+      console.error('[EditPhotoTab] upload failed', err)
+      toast.error(
+        t('profile.edit.uploadError', {
+          defaultValue: "Impossible d'envoyer l'image pour l'instant.",
+        }),
+        err instanceof Error ? err.message : undefined,
+      )
+    } finally {
+      setIsUploading(null)
     }
 
     // Reset input pour permettre de re-sélectionner le même fichier juste après.

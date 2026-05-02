@@ -58,24 +58,28 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react'
+import { useToast } from '@/contexts/ToastContext'
+import { useSubmitHelpRequest } from '@/hooks/useSupport'
+import type { SupportSubject } from '@/services/supportService'
+import {
+  INPUT_PILL_CLASS,
+  TEXTAREA_CLASS,
+  BUTTON_PRIMARY_CLASS,
+  BUTTON_OUTLINE_CLASS,
+} from '@/styles/inputs'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type SubjectId = 'technical' | 'help' | 'suggestion' | 'report' | 'other'
+type SubjectId = SupportSubject
 
 const SUBJECTS: SubjectId[] = ['technical', 'help', 'suggestion', 'report', 'other']
-
-// Classes input partagées avec EditInfoTab / SecurityView (cohérence DS).
-const INPUT_PILL_CLASS =
-  'w-full h-10 px-4 rounded-full border-[0.5px] border-border bg-background text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:bg-primary-light focus:border-primary focus:ring-2 focus:ring-primary'
-
-const TEXTAREA_CLASS =
-  'w-full px-4 py-3 rounded-2xl border-[0.5px] border-border bg-background text-sm text-foreground placeholder:text-muted-foreground resize-none transition-colors focus:outline-none focus:bg-primary-light focus:border-primary focus:ring-2 focus:ring-primary min-h-[160px]'
 
 // ─── Composant ────────────────────────────────────────────────────────────────
 
 export function SettingsHelpView() {
   const { t } = useTranslation()
+  const toast = useToast()
+  const submitMutation = useSubmitHelpRequest()
 
   const [subject, setSubject] = useState<SubjectId | null>(null)
   const [message, setMessage] = useState('')
@@ -103,14 +107,30 @@ export function SettingsHelpView() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!subject || message.trim().length < 20) return
-    // TODO [BACKEND] : Edge Function `submit_help_request(subject, message)`
-    // → Discord webhook ou table support_tickets. Cf. docstring du fichier.
-    console.warn('[Help] submit mock —', subject, message)
-    setSubject(null)
-    setMessage('')
+    try {
+      await submitMutation.mutateAsync({ subject, message })
+      toast.success(
+        t('settings.help.successTitle', {
+          defaultValue: 'Message envoyé',
+        }),
+        t('settings.help.successDesc', {
+          defaultValue: 'Merci ! Nous reviendrons vers toi rapidement.',
+        }),
+      )
+      setSubject(null)
+      setMessage('')
+    } catch (err) {
+      console.error('[Help] submit failed', err)
+      toast.error(
+        t('settings.help.errorSubmit', {
+          defaultValue: "Impossible d'envoyer le message pour l'instant.",
+        }),
+        err instanceof Error ? err.message : undefined,
+      )
+    }
   }
 
-  const canSubmit = subject !== null && message.trim().length >= 20
+  const canSubmit = !submitMutation.isPending && subject !== null && message.trim().length >= 20
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5 px-6 pt-2 pb-6">
@@ -218,21 +238,15 @@ export function SettingsHelpView() {
         />
       </div>
 
-      {/* Actions */}
+      {/* Actions — boutons partagés via styles/inputs.ts */}
       <div className="flex gap-3 mt-2">
-        <button
-          type="button"
-          onClick={handleCancel}
-          className="flex-1 h-12 rounded-full bg-background border-[0.5px] border-border text-foreground text-sm font-bold hover:border-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        >
+        <button type="button" onClick={handleCancel} className={`flex-1 ${BUTTON_OUTLINE_CLASS}`}>
           {t('common.cancel', { defaultValue: 'Annuler' })}
         </button>
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="flex-1 h-12 rounded-full bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {t('settings.help.send', { defaultValue: 'Envoyer' })}
+        <button type="submit" disabled={!canSubmit} className={`flex-1 ${BUTTON_PRIMARY_CLASS}`}>
+          {submitMutation.isPending
+            ? t('common.loading', { defaultValue: 'Envoi…' })
+            : t('settings.help.send', { defaultValue: 'Envoyer' })}
         </button>
       </div>
     </form>

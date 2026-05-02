@@ -40,6 +40,8 @@ import {
   ArrowLeft,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/contexts/ToastContext'
+import { useDeleteAccount } from '@/hooks/useAccountDeletion'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { DeleteAccountModal } from './DeleteAccountModal'
 import { SettingsSecurityView } from './SettingsSecurityView'
@@ -77,6 +79,8 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { signOut } = useAuth()
+  const toast = useToast()
+  const deleteAccountMutation = useDeleteAccount()
 
   /** Sous-vue actuellement ouverte (null = liste principale) */
   const [section, setSection] = useState<SettingsSection | null>(null)
@@ -132,15 +136,36 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
     navigate('/home')
   }
 
-  /** Confirmation finale de suppression du compte */
+  /**
+   * Confirmation finale de suppression du compte.
+   * Appelle l'Edge Function `delete-account` (mode 'hard' par défaut) qui :
+   *   1. Supprime les fichiers Storage (avatars / banners / post-media / exports)
+   *   2. Supprime auth.users (cascade vers profiles + posts via FK)
+   *   3. Le hook `useDeleteAccount` vide le cache React Query au succès
+   */
   async function handleDeleteAccount() {
-    // TODO [BACKEND] Phase 2 — appel `request_account_deletion()` RPC.
-    // Pour l'instant : signOut + close + toast informatif (à ajouter avec
-    // ToastContext quand connecté).
-    setShowDeleteModal(false)
-    await signOut()
-    onClose()
-    navigate('/home')
+    try {
+      await deleteAccountMutation.mutateAsync('hard')
+      setShowDeleteModal(false)
+      onClose()
+      toast.success(
+        t('settings.delete.successTitle', {
+          defaultValue: 'Compte supprimé',
+        }),
+        t('settings.delete.successDesc', {
+          defaultValue: 'Toutes tes données ont été effacées.',
+        }),
+      )
+      navigate('/home')
+    } catch (err) {
+      console.error('[Settings] account deletion failed', err)
+      toast.error(
+        t('settings.delete.error', {
+          defaultValue: 'Impossible de supprimer le compte pour l’instant.',
+        }),
+        err instanceof Error ? err.message : undefined,
+      )
+    }
   }
 
   return (
