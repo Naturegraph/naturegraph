@@ -299,9 +299,16 @@ function ContrastToggleRow({
 
 interface ProfileMenuProps {
   onClose: () => void
+  /**
+   * Ouvre le SettingsPanel (rendu par le parent HomeNavbar).
+   * Le state vit dans HomeNavbar pour survivre à la fermeture du
+   * ProfileMenu — sinon le panel paramètres serait démonté en même
+   * temps que le menu profil.
+   */
+  onOpenSettings?: () => void
 }
 
-export function ProfileMenu({ onClose }: ProfileMenuProps) {
+export function ProfileMenu({ onClose, onOpenSettings }: ProfileMenuProps) {
   const { profile, signOut } = useAuth()
   const navigate = useNavigate()
   const { textSize, setTextSize, highContrast, setHighContrast } = useAccessibility()
@@ -393,8 +400,13 @@ export function ProfileMenu({ onClose }: ProfileMenuProps) {
                 navigate('/profile')
               }}
             />
-            {/* Paramètres — feature gated (page globale en cours de construction) */}
-            <MenuItem icon={<Settings className="size-5" />} label="Paramètres" disabled />
+            {/* Paramètres — délégue au parent (HomeNavbar) qui possède le
+                state du SettingsPanel et ferme le menu profil en même temps. */}
+            <MenuItem
+              icon={<Settings className="size-5" />}
+              label="Paramètres"
+              onClick={() => onOpenSettings?.()}
+            />
           </div>
         </div>
 
@@ -479,6 +491,10 @@ export function ProfileMenu({ onClose }: ProfileMenuProps) {
           isLoading={isLoggingOut}
         />
       )}
+
+      {/* SettingsPanel n'est plus rendu ici : il est délégué à HomeNavbar
+          via la prop `onOpenSettings` (le state vit dans HomeNavbar pour
+          survivre à la fermeture du ProfileMenu). */}
     </>
   )
 }
