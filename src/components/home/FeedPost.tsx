@@ -10,7 +10,7 @@
  * - "Voir plus / Voir moins" annonce le changement d'état
  */
 
-import { useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -70,10 +70,19 @@ export interface MockPost {
   taxonomic_group?: string | null
   /**
    * Plusieurs individus observés (DB `posts.multiple_observations`).
-   * Affiche "(plusieurs)" dans le chip espèce. Sera remplacé par un compteur
-   * précis si la DB ajoute une colonne `individuals_count` (TODO backend).
+   * @deprecated Retiré 2026-05-02 — utiliser `individualsCount` exclusivement.
+   *   Le champ a été nettoyé des mocks et de FeedSection. Cette prop reste
+   *   dans l'interface uniquement le temps de la migration backend (la colonne
+   *   `posts.multiple_observations` peut encore exister côté DB).
+   *   À supprimer définitivement quand `posts.individuals_count` est en prod.
    */
-  multipleObservations?: boolean
+  multipleObservations?: never
+  /**
+   * Nombre exact d'individus observés (DB `posts.individuals_count` à créer
+   * en Phase 2, cf. second-agent/02). Si > 1, affiche `({N})` dans le chip
+   * espèce. Si null/1, pas de suffixe.
+   */
+  individualsCount?: number
   format: '16:9' | 'portrait' | '1:1'
   images: Array<{
     url: string
@@ -197,7 +206,8 @@ export function FeedPost({
   scientific_name,
   taxref_id,
   taxonomic_group,
-  multipleObservations,
+  // multipleObservations supprimé du destructuring (deprecated, plus utilisé).
+  individualsCount,
   format,
   images,
   reactions,
@@ -223,14 +233,35 @@ export function FeedPost({
   const isSaved = !!savedIds?.includes(id)
   const toggleSaved = useToggleSavedPost()
   /**
-   * Truncation 2 lignes max (second-agent/07 — Figma 6385:97208).
-   * Seuil empirique sur largeur de carte feed (656px desktop / full-width mobile)
-   * en text-sm Mulish ≈ 110-130 chars sur 2 lignes. On choisit 120 comme cible.
-   * Le bouton "Voir plus" s'affiche inline en fin de la 2e ligne — jamais sur 3.
+   * Truncation 2 lignes — on mesure le DOM réel pour décider d'afficher
+   * "Voir plus" UNIQUEMENT si le texte dépasse 2 lignes (Nicolas 2026-05-01).
+   * Approche : line-clamp-2 CSS + comparaison scrollHeight vs clientHeight.
    */
-  const TRUNCATE_AT = 120
-  const shouldTruncate = content.length > TRUNCATE_AT
-  const truncatedContent = shouldTruncate ? content.slice(0, TRUNCATE_AT).trimEnd() + '…' : content
+  const contentRef = useRef<HTMLParagraphElement>(null)
+  const [isOverflowing, setIsOverflowing] = useState(false)
+
+  useLayoutEffect(() => {
+    function measure() {
+      const el = contentRef.current
+      if (!el) return
+      // En mode clampé, scrollHeight = hauteur naturelle, clientHeight = clampée.
+      // Si différence > 1px (tolérance subpixel), le texte déborde.
+      setIsOverflowing(el.scrollHeight - el.clientHeight > 1)
+    }
+    measure()
+    // Re-mesurer si la fenêtre redimensionne (responsive)
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [content, isExpanded])
+
+  // Reset isExpanded si le texte ne déborde plus (ex: viewport élargi).
+  // queueMicrotask évite l'erreur React 19 "setState synchrone dans un effect"
+  // tout en restant immédiat (pas de flash visuel).
+  useEffect(() => {
+    if (!isOverflowing && isExpanded) {
+      queueMicrotask(() => setIsExpanded(false))
+    }
+  }, [isOverflowing, isExpanded])
 
   // Configuration de la réaction active de l'utilisateur (null si aucune).
   // Permet de remplacer dynamiquement l'emoji + le label "Réagir" par celui de
@@ -354,37 +385,38 @@ export function FeedPost({
           <h3 className="text-lg font-bold leading-[1.2] text-foreground">{title}</h3>
 
           {/*
-           * 2 lignes max + "Voir plus" inline en fin (second-agent/07).
-           * Approche : truncation par caractères (~120 chars ≈ 2 lignes en text-sm),
-           * le bouton apparaît immédiatement après le texte tronqué — donc en fin
-           * de la 2e ligne par construction. Aucune dépendance à line-clamp CSS
-           * qui ne supporte pas l'inline-end placement.
+           * Description : line-clamp-2 + bouton "Voir plus" affiché UNIQUEMENT
+           * si le texte déborde réellement après mesure DOM (Nicolas 2026-05-01).
+           * Évite "Voir plus" sur des textes qui tiennent en 2 lignes naturellement.
            */}
-          <div className="text-sm text-foreground leading-relaxed">
-            {!isExpanded && shouldTruncate ? (
-              <>
-                <span>{truncatedContent}</span>
-                <button
-                  type="button"
-                  onClick={() => setIsExpanded(true)}
-                  className="text-primary underline decoration-solid inline ml-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-                >
-                  {t('home.post.seeMore')}
-                </button>
-              </>
-            ) : (
-              <>
-                <span>{content}</span>
-                {shouldTruncate && (
-                  <button
-                    type="button"
-                    onClick={() => setIsExpanded(false)}
-                    className="text-primary underline decoration-solid inline ml-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-                  >
-                    {t('home.post.seeLess')}
-                  </button>
-                )}
-              </>
+          <div className="flex flex-col gap-1">
+            <p
+              ref={contentRef}
+              className={`text-sm text-foreground leading-relaxed whitespace-pre-line ${
+                isExpanded
+                  ? ''
+                  : 'overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]'
+              }`}
+            >
+              {content}
+            </p>
+            {isOverflowing && !isExpanded && (
+              <button
+                type="button"
+                onClick={() => setIsExpanded(true)}
+                className="self-start text-sm text-primary underline decoration-solid focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+              >
+                {t('home.post.seeMore')}
+              </button>
+            )}
+            {isExpanded && (
+              <button
+                type="button"
+                onClick={() => setIsExpanded(false)}
+                className="self-start text-sm text-primary underline decoration-solid focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+              >
+                {t('home.post.seeLess')}
+              </button>
             )}
           </div>
 
@@ -430,21 +462,22 @@ export function FeedPost({
         </div>
 
         {/*
-         * Chips catégorie + espèce (second-agent/06 — révision 2026-05-01).
-         * Règle :
+         * Chips catégorie + espèce — règle Nicolas 2026-05-01 :
+         * TOUJOURS 2 chips séparés (catégorie d'abord, espèce ensuite),
+         * jamais une combinaison fusionnée. La catégorie est cliquable seule,
+         * l'espèce identifiée est aussi cliquable seule.
+         *
+         * Règles :
          *   1. Catégorie connue + espèce identifiée
-         *      → UN chip combiné "{emoji} {Catégorie} · {nomCommun}{(plusieurs)}" cliquable
+         *      → 2 chips : "{emoji} {Catégorie}" + "{nomCommun}{(plusieurs)}" (les 2 cliquables)
          *   2. Catégorie connue + espèce non identifiée
-         *      → DEUX chips séparés : "{emoji} {Catégorie}" + "Espèce non déterminée"
-         *        (raison : l'espèce n'est pas vraiment liée à la catégorie ici,
-         *        on évite la fausse impression d'un seul concept)
+         *      → 2 chips : "{emoji} {Catégorie}" + "Espèce non déterminée" (passive)
          *   3. Rien d'identifié
-         *      → UN chip simple "Espèce non déterminée" (sans emoji)
+         *      → 1 chip simple "Espèce non déterminée" (passive)
          */}
         <div className="flex flex-wrap gap-2">
           {(() => {
             const taxonomicCfg = taxonomic_group ? TAXONOMIC_GROUP_CONFIG[taxonomic_group] : null
-            const categoryEmoji = taxonomicCfg?.emoji ?? null
             const categoryLabel = taxonomicCfg?.label ?? null
 
             const hasIdentifiedSpecies = !!(species && taxref_id)
@@ -452,40 +485,47 @@ export function FeedPost({
               defaultValue: 'Espèce non déterminée',
             })
 
-            const multipleSuffix = multipleObservations
-              ? ` ${t('home.post.multipleSuffix', { defaultValue: '(plusieurs)' })}`
-              : ''
+            // Suffixe "({count})" SEULEMENT si on a un nombre exact > 1.
+            // Pas de "(plusieurs)" — toujours un chiffre exact (Nicolas
+            // 2026-05-01) ou rien.
+            // TODO Phase 2 backend : exposer `posts.individuals_count` pour
+            // que le compteur soit toujours disponible.
+            const multipleSuffix =
+              individualsCount && individualsCount > 1 ? ` (${individualsCount})` : ''
 
-            // ─── Cas 1 : espèce identifiée → UN chip combiné cliquable ────────
+            // Chip catégorie — texte uniquement, pas d'emoji (règle DS Nicolas
+            // 2026-05-02 : alléger le design, jamais d'emoji dans les chips
+            // pour garder la cohérence visuelle avec le reste du produit).
+            const categoryChip = categoryLabel ? (
+              <span className={CHIP_BASE_CLASS}>
+                <span>{categoryLabel}</span>
+              </span>
+            ) : null
+
+            // ─── Cas 1 : catégorie + espèce identifiée → 2 chips séparés ───
             if (hasIdentifiedSpecies) {
               return (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setActiveSpecies({
-                      taxref_id: taxref_id!,
-                      scientific_name: scientific_name ?? species!,
-                      common_name: species !== scientific_name ? (species ?? null) : null,
-                      group_label: taxonomic_group ?? null,
-                    })
-                  }
-                  aria-label={t('home.post.filterBySpecies', { species: species ?? '' })}
-                  className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}
-                >
-                  {categoryEmoji && <span aria-hidden="true">{categoryEmoji}</span>}
-                  {categoryLabel && (
-                    <>
-                      <span>{categoryLabel}</span>
-                      <span aria-hidden="true" className="opacity-60">
-                        ·
-                      </span>
-                    </>
-                  )}
-                  <span>
-                    {species}
-                    {multipleSuffix}
-                  </span>
-                </button>
+                <>
+                  {categoryChip}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveSpecies({
+                        taxref_id: taxref_id!,
+                        scientific_name: scientific_name ?? species!,
+                        common_name: species !== scientific_name ? (species ?? null) : null,
+                        group_label: taxonomic_group ?? null,
+                      })
+                    }
+                    aria-label={t('home.post.filterBySpecies', { species: species ?? '' })}
+                    className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}
+                  >
+                    <span>
+                      {species}
+                      {multipleSuffix}
+                    </span>
+                  </button>
+                </>
               )
             }
 
@@ -493,10 +533,7 @@ export function FeedPost({
             if (categoryLabel) {
               return (
                 <>
-                  <span className={CHIP_BASE_CLASS}>
-                    {categoryEmoji && <span aria-hidden="true">{categoryEmoji}</span>}
-                    <span>{categoryLabel}</span>
-                  </span>
+                  {categoryChip}
                   <span className={CHIP_PASSIVE_CLASS}>
                     {unknownLabel}
                     {multipleSuffix}
