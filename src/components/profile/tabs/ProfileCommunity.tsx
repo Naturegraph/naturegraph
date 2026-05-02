@@ -17,12 +17,8 @@
  *
  * Figma : 6385:76903 (desktop) / 6385:74108 (mobile).
  *
- * TODO [BACKEND] — Phase 2
- *   - followService.getFollowers(profileId, { cursor, limit: 20 })
- *   - followService.getFollowing(profileId, { cursor, limit: 20 })
- *   - useToggleFollow() pour le bouton (optimistic update sur followers_count)
- *   - Source de vérité : table `follows` + JOIN sur `profiles`
- *   - Voir second-agent/03-profil-backend-notes.md §1.2 et §5
+ * Source de vérité : table `follows` + JOIN sur `profiles` (cf. followService).
+ * Hooks utilisés : useFollowers / useFollowing / useToggleFollow.
  */
 
 import { useState } from 'react'
@@ -30,17 +26,16 @@ import { useTranslation } from 'react-i18next'
 import { TreeDeciduous } from 'lucide-react'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 import { ProfileEmptyState } from '../ProfileEmptyState'
-import {
-  PROFILE_MOCK_FOLLOWERS,
-  PROFILE_MOCK_FOLLOWING,
-  type CommunityUser,
-} from '@/data/mock/profileMock'
+import { useFollowers, useFollowing, useToggleFollow } from '@/hooks/useFollow'
+import type { CommunityProfile } from '@/services/followService'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type CommunityTab = 'migrateurs' | 'migrations'
 
 interface ProfileCommunityProps {
+  /** ID du profil affiché (pour requêter ses followers / following) */
+  profileId: string
   /** Nombre de Migrateurs (followers) */
   followersCount: number
   /** Nombre de Migrations (following) */
@@ -50,7 +45,7 @@ interface ProfileCommunityProps {
 // ─── Sous-composant : carte utilisateur ──────────────────────────────────────
 
 interface UserCardProps {
-  user: CommunityUser
+  user: CommunityProfile
 }
 
 /**
@@ -58,22 +53,41 @@ interface UserCardProps {
  *   - Banner haut (cover, ratio ≈ 5:2)
  *   - Bottom : avatar + username + count, bouton Migrer à droite
  *   - Bordure 0.5px + rounded-md, fond background
+ *
+ * Le state local `isFollowing` est initialisé depuis `user.is_followed_by_me`
+ * et synchronisé via `useToggleFollow` (optimistic + invalidation).
  */
 function UserCard({ user }: UserCardProps) {
   const { t } = useTranslation()
   const [isFollowing, setIsFollowing] = useState(user.is_followed_by_me)
+  const toggleFollow = useToggleFollow()
+
+  async function handleToggle() {
+    const previous = isFollowing
+    setIsFollowing(!previous) // optimistic UI
+    try {
+      await toggleFollow.mutateAsync({
+        targetUserId: user.id,
+        currentlyFollowing: previous,
+      })
+    } catch {
+      setIsFollowing(previous) // rollback
+    }
+  }
 
   return (
     <article className="flex flex-col rounded-md border-[0.5px] border-border bg-background overflow-hidden">
       {/* ── Banner cover ── */}
       <div className="aspect-[5/2] w-full overflow-hidden bg-cream relative">
-        <img
-          src={user.banner_url}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          className="w-full h-full object-cover"
-        />
+        {user.banner_url ? (
+          <img
+            src={user.banner_url}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            className="w-full h-full object-cover"
+          />
+        ) : null}
       </div>
 
       {/* ── Bottom row : avatar + username + count + bouton Migrer ── */}
@@ -103,14 +117,15 @@ function UserCard({ user }: UserCardProps) {
             avec le bouton Migrer du ProfileHeader). */}
         <button
           type="button"
-          onClick={() => setIsFollowing((f) => !f)}
+          onClick={handleToggle}
+          disabled={toggleFollow.isPending}
           aria-pressed={isFollowing}
           aria-label={
             isFollowing
               ? t('profile.migrating', { defaultValue: 'Vous migrez ensemble' })
               : t('profile.migrer', { defaultValue: 'Migrer avec ce profil' })
           }
-          className={`shrink-0 size-9 rounded-full border-[0.5px] flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+          className={`shrink-0 size-9 rounded-full border-[0.5px] flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 ${
             isFollowing
               ? 'bg-primary text-primary-foreground border-primary hover:bg-primary/90'
               : 'bg-background text-foreground border-border hover:text-primary hover:border-primary'
@@ -132,18 +147,23 @@ function UserCard({ user }: UserCardProps) {
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 
-export function ProfileCommunity({ followersCount, followingCount }: ProfileCommunityProps) {
+export function ProfileCommunity({
+  profileId,
+  followersCount,
+  followingCount,
+}: ProfileCommunityProps) {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<CommunityTab>('migrateurs')
 
-  // TODO [BACKEND] — Remplacer par les hooks React Query (cf. doc backend) :
-  //   const { data: followers } = useFollowers(profileId)
-  //   const { data: following } = useFollowing(profileId)
-  // En attendant : mocks pour itérer la UI au pixel-près sans Supabase.
-  const displayedUsers: CommunityUser[] =
-    activeTab === 'migrateurs' ? PROFILE_MOCK_FOLLOWERS : PROFILE_MOCK_FOLLOWING
+  // Charge les deux listes en parallèle (React Query dédoublonne et cache).
+  // L'onglet inactif reste prêt instantanément quand l'user toggle.
+  const { data: followers, isLoading: loadingFollowers } = useFollowers(profileId)
+  const { data: following, isLoading: loadingFollowing } = useFollowing(profileId)
 
-  const isEmpty = displayedUsers.length === 0
+  const displayedUsers: CommunityProfile[] =
+    activeTab === 'migrateurs' ? (followers ?? []) : (following ?? [])
+  const isLoading = activeTab === 'migrateurs' ? loadingFollowers : loadingFollowing
+  const isEmpty = !isLoading && displayedUsers.length === 0
 
   return (
     // Pas de padding latéral ici : le parent (Profile.tsx → md:px-12) gère

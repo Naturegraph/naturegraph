@@ -17,6 +17,8 @@ import { useParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { useProfile, useProfileByUsername, useUpdateProfile } from '@/hooks/useProfile'
+import { useUserPosts } from '@/hooks/usePost'
+import { useSavedPostsPage } from '@/hooks/useSavedPosts'
 import { useToast } from '@/contexts/ToastContext'
 import { HomeNavbar } from '@/components/home/HomeNavbar'
 import { MobileBottomNav } from '@/components/home/MobileBottomNav'
@@ -29,20 +31,10 @@ import { EditProfilePanel } from '@/components/profile/EditProfilePanel'
 import { SettingsPanel } from '@/components/settings/SettingsPanel'
 // SharePopover du feed réutilisé pour cohérence (Nicolas 2026-05-01).
 import { SharePopover } from '@/components/home/SharePopover'
+import { postFeedItemToMockPost } from '@/components/home/FeedSection'
+import type { MockPost } from '@/components/home/FeedPost'
 import type { Profile } from '@/types/database'
 import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
-import {
-  PROFILE_MOCK_VISITOR,
-  PROFILE_MOCK_POSTS,
-  PROFILE_MOCK_INSPIRATIONS,
-} from '@/data/mock/profileMock'
-
-/**
- * Mode mock — bypass complet des hooks Supabase profil (cf. second-agent/01).
- * Activé en local via VITE_USE_PROFILE_MOCK=true dans .env.local.
- * À désactiver pour le build prod ou quand on bascule en mode "vrai backend".
- */
-const USE_PROFILE_MOCK = import.meta.env.VITE_USE_PROFILE_MOCK === 'true'
 
 // ─── Adaptateur Profile DB → ProfileDisplayData ───────────────────────────────
 //
@@ -116,10 +108,10 @@ export default function Profile() {
   const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [showShareSheet, setShowShareSheet] = useState(false)
 
-  // ── Hooks Supabase + utilitaires ──────────────────────────────────────────
-  // Tous les hooks DOIVENT être appelés AVANT la branche mock — rules of hooks.
-  // En mode mock le résultat est ignoré (queries `enabled: false` quand id
-  // undefined) et les mutations ne sont jamais déclenchées.
+  // ── Hooks Supabase ────────────────────────────────────────────────────────
+  // Tous les hooks DOIVENT être appelés inconditionnellement (rules of hooks).
+  // Les queries sont gérées via `enabled: !!id` — pas d'appel réseau si l'ID
+  // n'est pas encore connu.
   const { data: supabaseOwnProfile } = useProfile(isOwnProfile ? authProfile?.id : undefined)
   const {
     data: supabaseVisitorProfile,
@@ -131,103 +123,36 @@ export default function Profile() {
   const toast = useToast()
   const updateProfileMutation = useUpdateProfile(authProfile?.id ?? '')
 
-  // ── Mode mock : court-circuit complet ─────────────────────────────────────
-  // Si VITE_USE_PROFILE_MOCK=true, on rend la page avec les données fictives
-  // de PROFILE_MOCK_VISITOR sans appeler Supabase. Permet d'itérer sur l'UI
-  // sans consommer le quota free plan (cf. second-agent/01).
-  //
-  // Pour tester le mode "owner" en mock : ajouter `?own=1` à l'URL
-  // (ex: /profile?own=1) → ProfileHeader rendra Modifier+Paramètres au lieu
-  // de Migrer+Share+Options. Permet d'itérer sur l'UX owner sans Supabase.
-  if (USE_PROFILE_MOCK) {
-    const mockIsOwn =
-      typeof window !== 'undefined' &&
-      new URLSearchParams(window.location.search).get('own') === '1'
-    return (
-      <div className="flex flex-col min-h-screen bg-cream-lighter">
-        <HomeNavbar />
-        <main id="main-content" className="flex-1 w-full pb-20 md:pb-6">
-          {/* Header pleine largeur (banner 100%, contenu cap 1392px à l'intérieur) */}
-          <ProfileHeader
-            profile={PROFILE_MOCK_VISITOR}
-            isOwnProfile={mockIsOwn}
-            onEditProfile={() => setShowEditPanel(true)}
-            onSettings={() => setShowSettingsPanel(true)}
-            onShare={() => setShowShareSheet(true)}
-            onOptions={() => {
-              /* géré en interne par ProfileHeader (menu 3-pts visiteur) */
-            }}
-          />
-
-          {/* Container principal pour le contenu sous le header.
-              Padding aligné sur le header (px-4 mobile, px-6 desktop avec
-              container interne px-12 pour aligner avec l'avatar). */}
-          <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 mt-6">
-            {/* Cards "À propos" + "ADN observateur" — DESKTOP UNIQUEMENT.
-                Figma 6385:74456 : layout = About flex (808px) + gap 16px + ADN fixe 320px.
-                `items-start` pour que chaque card prenne sa hauteur naturelle
-                (pas d'étirement vertical pour matcher la plus grande). */}
-            <div className="hidden md:grid md:grid-cols-[1fr_320px] gap-4 mb-6 md:px-12 items-start">
-              <ProfileAboutCard profile={PROFILE_MOCK_VISITOR} />
-              <ProfileDNACard interests={PROFILE_MOCK_VISITOR.interests} />
-            </div>
-
-            {/* Tabs (4 sur desktop / 5 avec "À propos" sur mobile).
-                Wrappée en md:px-12 pour aligner la border-bottom + le premier
-                tab avec les cards au-dessus (Nicolas 2026-05-01 : éviter
-                le décalage entre la ligne et le premier tab). */}
-            <div className="md:px-12">
-              <ProfileTabs
-                profile={PROFILE_MOCK_VISITOR}
-                userPosts={PROFILE_MOCK_POSTS}
-                savedPosts={PROFILE_MOCK_INSPIRATIONS}
-                isOwnProfile={mockIsOwn}
-              />
-            </div>
-          </div>
-        </main>
-        <MobileBottomNav />
-        {showEditPanel && (
-          <EditProfilePanel
-            profile={PROFILE_MOCK_VISITOR}
-            onClose={() => setShowEditPanel(false)}
-            onSave={() => {
-              /* mock: pas de persistance */
-            }}
-          />
-        )}
-        {showSettingsPanel && <SettingsPanel onClose={() => setShowSettingsPanel(false)} />}
-        {showShareSheet && (
-          <SharePopover
-            shareUrl={`${window.location.origin}/profile/${PROFILE_MOCK_VISITOR.username}`}
-            title={`Découvre le profil de @${PROFILE_MOCK_VISITOR.username} sur Naturegraph`}
-            onClose={() => setShowShareSheet(false)}
-          />
-        )}
-      </div>
-    )
-  }
-
-  // ── Sélection des données ─────────────────────────────────────────────────
+  // ── Sélection des données profil ──────────────────────────────────────────
 
   let profileData: ProfileDisplayData | null = null
+  let profileId: string | undefined
   let isLoading = false
 
   if (isOwnProfile) {
     // Propre profil : préfère la version fraîche de useProfile, fallback sur authProfile
     const source = supabaseOwnProfile ?? authProfile
     profileData = source ? profileToDisplayData(source as Profile) : null
+    profileId = (source as Profile | null | undefined)?.id
   } else {
     isLoading = isVisitorLoading
     profileData = supabaseVisitorProfile ? profileToDisplayData(supabaseVisitorProfile) : null
+    profileId = supabaseVisitorProfile?.id
   }
 
-  // TODO [BACKEND] — Brancher postService.getPostsByUser(profile.id) via useQuery
-  const userPosts: import('@/components/home/FeedPost').MockPost[] = []
+  // ── Posts publiés par cet utilisateur (onglet "Journal nature") ───────────
+  // Tri chronologique inverse, limite 20. RLS : seuls les posts publics et
+  // publiés sont retournés (cohérent avec le feed home).
+  const { data: userPostsRaw } = useUserPosts(profileId)
+  const userPosts: MockPost[] = (userPostsRaw ?? []).map((p, i) => postFeedItemToMockPost(p, i))
 
-  // TODO [BACKEND] — savedPostService.getSavedPostsByUser(profile.id)
-  // Backend cible : table `saved_posts (user_id, post_id, created_at)` JOIN `posts`.
-  const savedPosts: import('@/components/home/FeedPost').MockPost[] = []
+  // ── Posts sauvegardés (onglet "Collection") ───────────────────────────────
+  // Visible uniquement sur le propre profil (RLS saved_posts owner-only).
+  // Pour un visiteur on retourne tableau vide → ProfileTabs masque l'onglet.
+  const { data: savedPostsResult } = useSavedPostsPage(1, 20)
+  const savedPosts: MockPost[] = isOwnProfile
+    ? (savedPostsResult?.data ?? []).map((p, i) => postFeedItemToMockPost(p, i))
+    : []
 
   /**
    * Appelé par EditProfilePanel lors de la sauvegarde (mode owner uniquement).
@@ -349,6 +274,7 @@ export default function Profile() {
           {/* Tabs (4 desktop / 5 mobile avec "À propos") + contenu actif */}
           <div className="md:px-12">
             <ProfileTabs
+              profileId={profileId ?? ''}
               profile={profileData}
               userPosts={userPosts}
               savedPosts={savedPosts}

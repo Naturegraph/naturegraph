@@ -111,7 +111,14 @@ function formatPostDate(isoDate: string): string {
   }
 }
 
-function postFeedItemToMockPost(item: PostFeedItem, index = 0): MockPost {
+/**
+ * Adaptateur PostFeedItem → MockPost (UI).
+ *
+ * Exporté pour être réutilisé dans `Profile.tsx` (onglet Journal nature) et
+ * partout où on rend des posts via `<FeedPost>`. Évite de dupliquer la
+ * logique de mapping (titre, location, format, reactions, etc.).
+ */
+export function postFeedItemToMockPost(item: PostFeedItem, index = 0): MockPost {
   const authorName = item.author
     ? `${item.author.first_name} ${item.author.last_name}`.trim() || item.author.username
     : 'Utilisateur'
