@@ -1,13 +1,42 @@
 /**
- * EditPhotoTab — Onglet "Photo de profil" du panneau d'édition de profil
+ * EditPhotoTab — Onglet "Photo de profil" du panneau d'édition
  *
- * Deux sections :
- *  1. Avatar : prévisualisation circulaire + boutons Changer / Supprimer
- *  2. Bannière : prévisualisation rectangulaire + boutons Changer / Supprimer
+ * Pixel-perfect Figma 6385:76303 (desktop) / 6385:73995 (mobile, état "défaut").
  *
- * Les upload sont des stubs — TODO [BACKEND] storageService.uploadAvatar()
+ * Comportement AUTO-SAVE (Nicolas 2026-05-02) :
+ *   Pas de bouton "Sauvegarder les modifications" sur cet onglet — chaque
+ *   action Changer / Supprimer est persistée immédiatement.
+ *   → Pas de form HTML5 (pas de submit), pas de footer.
+ *   → EditProfilePanel masque son footer quand activeTab === 'photo'.
+ *
+ * Structure (2 sections séparées par un bandeau cream) :
+ *   1. Photo de profil : avatar circulaire 112×112 (à gauche) + boutons Changer
+ *      / Supprimer stackés verticalement (à droite)
+ *      → Format recommandé : 512 × 512 px (ratio 1:1)
+ *   2. Bannière : preview 160×128 rounded-lg (à gauche) + boutons stackés
+ *      → Format recommandé : 1200 × 400 px (ratio 3:1)
+ *
+ * État "défaut" (nouvel utilisateur sans avatar/banner) :
+ *   - Avatar : hermine icon dans cercle border-primary + bg-primary-light
+ *   - Banner : box vide bg-primary-light (lavande) sans image
+ *
+ * TODO [BACKEND] Phase 2 — voir second-agent/03-profil-backend-notes.md §8
+ *   1. Créer 2 buckets Storage Supabase :
+ *      - `avatars` (public read, owner write, max 1MB, MIME image/*)
+ *      - `banners` (public read, owner write, max 2MB, MIME image/*)
+ *   2. Service `storageService.uploadAvatar(file: File): Promise<string>`
+ *      → renvoie URL publique après upload + compression côté client (WebP)
+ *   3. Service `storageService.uploadBanner(file: File): Promise<string>`
+ *   4. Validation MIME + taille côté Edge Function (sécurité vs JS bypass)
+ *   5. Mutation `useUpdateProfile()` met à jour `profiles.avatar_url`/`banner_url`
+ *      avec optimistic update (preview locale avant retour serveur).
+ *   6. Suppression : DELETE storage object + UPDATE profiles SET avatar_url=null
+ *   7. Génération de tailles multiples (thumbnail / medium / full) via Supabase
+ *      Image Transformations OU pré-process Edge Function avec sharp.
+ *   8. Toast feedback (succès / erreur) après chaque action auto-save.
  */
 
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pencil, Trash2 } from 'lucide-react'
 import hermineIcon from '@/assets/images/hermine-icon.png'
@@ -21,90 +50,269 @@ interface EditPhotoTabProps {
   onClose: () => void
 }
 
-// ─── Composant ────────────────────────────────────────────────────────────────
+// ─── Sous-composants : boutons stackés ────────────────────────────────────────
 
-/** Gestion de l'avatar et de la bannière du profil */
-export function EditPhotoTab({ profile }: EditPhotoTabProps) {
+interface ButtonProps {
+  label: string
+  onClick: () => void
+  disabled?: boolean
+}
+
+/**
+ * Bouton "Changer" — primary, icône Pencil. Pleine largeur de la colonne.
+ * Au clic, déclenche un input file caché géré par le parent.
+ */
+function ChangeButton({ label, onClick }: ButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full inline-flex items-center justify-center gap-2 h-10 px-3 rounded-full bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+    >
+      <Pencil className="size-4 shrink-0" aria-hidden="true" />
+      {label}
+    </button>
+  )
+}
+
+/**
+ * Bouton "Supprimer" — outlined, icône Trash. Disabled si pas de photo
+ * custom à supprimer (pour éviter de "supprimer le défaut").
+ */
+function DeleteButton({ label, onClick, disabled }: ButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="w-full inline-flex items-center justify-center gap-2 h-10 px-3 rounded-full bg-background border-[0.5px] border-border text-foreground text-sm font-bold hover:border-primary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground"
+    >
+      <Trash2 className="size-4 shrink-0" aria-hidden="true" />
+      {label}
+    </button>
+  )
+}
+
+// ─── Composant principal ──────────────────────────────────────────────────────
+
+// `onClose` est dans le type pour rester homogène avec les autres tabs, mais
+// l'auto-save ne ferme jamais le panel après un changement de photo.
+export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
   const { t } = useTranslation()
 
-  return (
-    <div className="flex flex-col gap-6 p-4">
-      {/* ── Section Avatar ── */}
-      <div className="flex flex-col gap-3">
-        <p className="text-sm font-semibold text-foreground">{t('profile.edit.photoAvatar')}</p>
+  // État local des previews — synchronisé avec le profil entrant. Quand
+  // l'utilisateur change/supprime, on update ce state ET on call onSave
+  // immédiatement (auto-save). Le parent persiste via React Query.
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatar_url)
+  const [bannerUrl, setBannerUrl] = useState<string | null>(profile.banner_url)
 
-        <div className="flex items-center gap-4">
-          {/* Prévisualisation avatar */}
-          <div className="size-20 rounded-full overflow-hidden bg-primary-light border-2 border-border shrink-0">
+  // Refs vers les inputs file cachés (un par section).
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const bannerInputRef = useRef<HTMLInputElement>(null)
+
+  // Refs miroir des URLs — synchronisés via un effect (et non pendant le render
+  // pour respecter React 19 strict mode). Permet au cleanup unmount d'accéder
+  // à la valeur la plus récente sans relancer l'effect à chaque changement
+  // (ce qui révoquerait l'URL active).
+  const avatarUrlRef = useRef<string | null>(profile.avatar_url)
+  const bannerUrlRef = useRef<string | null>(profile.banner_url)
+
+  useEffect(() => {
+    avatarUrlRef.current = avatarUrl
+    bannerUrlRef.current = bannerUrl
+  })
+
+  // Cleanup des Blob URLs au démontage uniquement. Le cleanup intra-session
+  // (changement / suppression) est déjà géré inline dans handleFileChange
+  // / handleDelete via URL.revokeObjectURL.
+  useEffect(() => {
+    return () => {
+      const a = avatarUrlRef.current
+      const b = bannerUrlRef.current
+      if (a?.startsWith('blob:')) URL.revokeObjectURL(a)
+      if (b?.startsWith('blob:')) URL.revokeObjectURL(b)
+    }
+  }, [])
+
+  /**
+   * Handler générique upload d'un fichier image.
+   *
+   * Phase 1 (mock) : `URL.createObjectURL` pour preview immédiate.
+   * Phase 2 (backend) : remplacer par `storageService.uploadAvatar(file)` →
+   * URL Supabase publique (cf. second-agent/03 §8).
+   */
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>, kind: 'avatar' | 'banner') {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validation côté client (MIME + taille). Backend renforce ces règles
+    // côté Edge Function avant l'upload final (vs JS bypass).
+    // TODO [BACKEND] — remplacer console.warn par toast via ToastContext :
+    //   useToast().error(t('profile.edit.errorImageType' | 'errorImageSize'))
+    if (!file.type.startsWith('image/')) {
+      console.warn(
+        t('profile.edit.errorImageType', {
+          defaultValue: 'Fichier non supporté — image attendue.',
+        }),
+      )
+      return
+    }
+    const maxBytes = kind === 'avatar' ? 1_048_576 : 2_097_152 // 1 / 2 MB
+    if (file.size > maxBytes) {
+      console.warn(
+        t('profile.edit.errorImageSize', {
+          defaultValue: `Fichier trop volumineux (max ${maxBytes / 1e6} MB).`,
+          maxMb: maxBytes / 1e6,
+        }),
+      )
+      return
+    }
+
+    // Preview locale immédiate via Blob URL.
+    const localUrl = URL.createObjectURL(file)
+    if (kind === 'avatar') {
+      // Cleanup ancienne blob URL si existante.
+      if (avatarUrl?.startsWith('blob:')) URL.revokeObjectURL(avatarUrl)
+      setAvatarUrl(localUrl)
+      // Auto-save : persiste l'URL (Phase 2 : sera remplacée par l'URL Supabase).
+      onSave({ avatar_url: localUrl })
+    } else {
+      if (bannerUrl?.startsWith('blob:')) URL.revokeObjectURL(bannerUrl)
+      setBannerUrl(localUrl)
+      onSave({ banner_url: localUrl })
+    }
+
+    // Reset input pour permettre de re-sélectionner le même fichier juste après.
+    e.target.value = ''
+  }
+
+  /** Suppression : reset state + propage `null` au parent. */
+  function handleDelete(kind: 'avatar' | 'banner') {
+    if (kind === 'avatar') {
+      if (avatarUrl?.startsWith('blob:')) URL.revokeObjectURL(avatarUrl)
+      setAvatarUrl(null)
+      onSave({ avatar_url: null })
+    } else {
+      if (bannerUrl?.startsWith('blob:')) URL.revokeObjectURL(bannerUrl)
+      setBannerUrl(null)
+      onSave({ banner_url: null })
+    }
+  }
+
+  const hasCustomAvatar = !!avatarUrl
+  const hasCustomBanner = !!bannerUrl
+
+  return (
+    // Pas de form ici — l'onglet auto-save chaque action sans validation
+    // explicite (pas de bouton Sauvegarder dans le footer pour ce tab).
+    <div className="flex flex-col gap-6 px-5 py-5">
+      {/* Inputs file cachés — déclenchés par les boutons Changer. */}
+      <input
+        ref={avatarInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => handleFileChange(e, 'avatar')}
+      />
+      <input
+        ref={bannerInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => handleFileChange(e, 'banner')}
+      />
+
+      {/* ── Section Photo de profil ── */}
+      <section className="flex flex-col gap-3">
+        <h3 className="font-title font-bold text-lg text-foreground leading-tight">
+          {t('profile.edit.photoAvatar', { defaultValue: 'Photo de profil' })}
+        </h3>
+
+        <div className="flex items-center justify-between gap-4">
+          {/* Avatar 112×112 — défaut hermine sur fond lavande, custom photo. */}
+          <div
+            className={`size-28 rounded-full overflow-hidden shrink-0 flex items-center justify-center ${
+              hasCustomAvatar
+                ? 'bg-cream-lighter border-[0.5px] border-border'
+                : 'bg-primary-light border-2 border-primary'
+            }`}
+          >
             <img
-              src={profile.avatar_url ?? hermineIcon}
-              alt="Profil actuel"
-              className="size-full object-cover"
+              src={avatarUrl ?? hermineIcon}
+              alt={t('profile.edit.avatarAlt', { defaultValue: 'Photo de profil actuelle' })}
+              className={hasCustomAvatar ? 'size-full object-cover' : 'size-16 object-contain'}
               loading="lazy"
             />
           </div>
 
-          {/* Actions */}
-          <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <Pencil className="size-3.5" aria-hidden="true" />
-              {t('profile.edit.change')}
-            </button>
-            <button
-              type="button"
-              className="flex items-center gap-2 px-4 py-2 rounded-full border border-border text-sm font-medium text-foreground hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <Trash2 className="size-3.5" aria-hidden="true" />
-              {t('profile.edit.delete')}
-            </button>
+          <div className="flex flex-col gap-2 w-40 shrink-0">
+            <ChangeButton
+              label={t('profile.edit.change', { defaultValue: 'Changer' })}
+              onClick={() => avatarInputRef.current?.click()}
+            />
+            <DeleteButton
+              label={t('profile.edit.delete', { defaultValue: 'Supprimer' })}
+              onClick={() => handleDelete('avatar')}
+              disabled={!hasCustomAvatar}
+            />
           </div>
         </div>
 
-        <p className="text-xs text-muted-foreground">{t('profile.edit.photoAvatarHint')}</p>
-      </div>
+        <p className="text-xs italic text-muted-foreground">
+          {t('profile.edit.photoAvatarHint', {
+            defaultValue: 'Format recommandé : 512 × 512 px (ratio 1:1)',
+          })}
+        </p>
+      </section>
 
-      {/* Séparateur */}
-      <div className="h-px bg-border" aria-hidden="true" />
+      {/* Séparateur de section — 4px solid border edge-to-edge.
+          Reproduit exactement le séparateur entre 2 FeedPost sur mobile
+          (cf. FeedPost.tsx ligne 293 : `border-b-4 border-border`). */}
+      <div className="-mx-5 h-1 bg-border" aria-hidden="true" />
 
       {/* ── Section Bannière ── */}
-      <div className="flex flex-col gap-3">
-        <p className="text-sm font-semibold text-foreground">{t('profile.edit.photoBanner')}</p>
+      <section className="flex flex-col gap-3">
+        <h3 className="font-title font-bold text-lg text-foreground leading-tight">
+          {t('profile.edit.photoBanner', { defaultValue: 'Bannière' })}
+        </h3>
 
-        {/* Prévisualisation bannière */}
-        <div className="h-24 rounded-xl overflow-hidden bg-[var(--color-action-light)] border border-border">
-          {profile.banner_url && (
-            <img
-              src={profile.banner_url}
-              alt="Bannière actuelle"
-              className="w-full h-full object-cover"
-              loading="lazy"
+        <div className="flex items-center justify-between gap-4">
+          <div
+            className={`w-40 h-32 rounded-lg overflow-hidden shrink-0 ${
+              hasCustomBanner
+                ? 'border-[0.5px] border-border'
+                : 'bg-primary-light border-[0.5px] border-border'
+            }`}
+          >
+            {bannerUrl && (
+              <img
+                src={bannerUrl}
+                alt={t('profile.edit.bannerAlt', { defaultValue: 'Bannière actuelle' })}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2 w-40 shrink-0">
+            <ChangeButton
+              label={t('profile.edit.change', { defaultValue: 'Changer' })}
+              onClick={() => bannerInputRef.current?.click()}
             />
-          )}
+            <DeleteButton
+              label={t('profile.edit.delete', { defaultValue: 'Supprimer' })}
+              onClick={() => handleDelete('banner')}
+              disabled={!hasCustomBanner}
+            />
+          </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <Pencil className="size-3.5" aria-hidden="true" />
-            {t('profile.edit.change')}
-          </button>
-          <button
-            type="button"
-            className="flex items-center gap-2 px-4 py-2 rounded-full border border-border text-sm font-medium text-foreground hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <Trash2 className="size-3.5" aria-hidden="true" />
-            {t('profile.edit.delete')}
-          </button>
-        </div>
-
-        <p className="text-xs text-muted-foreground">{t('profile.edit.photoBannerHint')}</p>
-      </div>
+        <p className="text-xs italic text-muted-foreground">
+          {t('profile.edit.photoBannerHint', {
+            defaultValue: 'Format recommandé : 1200 × 400 px (ratio 3:1)',
+          })}
+        </p>
+      </section>
     </div>
   )
 }
