@@ -44,17 +44,18 @@ export function MobileBottomNav({
     return location.pathname === path || location.pathname.startsWith(path + '/')
   }
 
-  /** Classes CSS pour un item de navigation (actif vs inactif) */
+  /** Classes CSS pour un item de navigation (actif vs inactif).
+      Figma 6385:70645 : icônes seules, sans label, taille 24px (size-6). */
   function itemClasses(active: boolean): string {
     return [
-      'flex flex-col items-center justify-center gap-1 flex-1 py-2 transition-colors',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded',
-      active ? 'text-primary' : 'text-muted-foreground',
+      'flex items-center justify-center flex-1 h-full transition-colors',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full',
+      active ? 'text-primary' : 'text-foreground',
     ].join(' ')
   }
 
-  /** Taille des icônes standard (20px, légèrement plus grand si actif via strokeWidth) */
-  const iconSize = 'size-5'
+  /** Taille des icônes — 24px Figma (size-6). Stroke 2 par défaut. */
+  const iconSize = 'size-6'
 
   return (
     <nav
@@ -71,7 +72,6 @@ export function MobileBottomNav({
           aria-label={t('nav.explore')}
         >
           <Menu className={iconSize} strokeWidth={2} aria-hidden="true" />
-          <span className="text-[10px] leading-tight font-medium">{t('nav.explore')}</span>
         </button>
 
         {/* ── Accueil ──────────────────────────────────────────────────────── */}
@@ -87,7 +87,6 @@ export function MobileBottomNav({
             strokeWidth={isActive('/home') ? 2.5 : 2}
             aria-hidden="true"
           />
-          <span className="text-[10px] leading-tight font-medium">{t('nav.home')}</span>
         </button>
 
         {/* ── Contribuer (FAB) — masqué pour les invités ───────────────────── */}
@@ -115,7 +114,6 @@ export function MobileBottomNav({
           aria-label={t('common.search')}
         >
           <Search className={iconSize} strokeWidth={2} aria-hidden="true" />
-          <span className="text-[10px] leading-tight font-medium">{t('common.search')}</span>
         </button>
 
         {/* ── Profil ───────────────────────────────────────────────────────── */}
@@ -139,7 +137,6 @@ export function MobileBottomNav({
               aria-hidden="true"
             />
           )}
-          <span className="text-[10px] leading-tight font-medium">{t('nav.profile')}</span>
         </button>
       </div>
     </nav>

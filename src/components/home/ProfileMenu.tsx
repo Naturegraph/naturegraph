@@ -384,8 +384,15 @@ export function ProfileMenu({ onClose }: ProfileMenuProps) {
         <div className="flex flex-col gap-2">
           <SectionLabel label="Principal" />
           <div>
-            {/* Mon profil — feature gated (page profil en construction) */}
-            <MenuItem icon={<User className="size-5" />} label="Mon profil" disabled />
+            {/* Mon profil — câblé sur la page /profile (audit + refonte en cours) */}
+            <MenuItem
+              icon={<User className="size-5" />}
+              label="Mon profil"
+              onClick={() => {
+                onClose()
+                navigate('/profile')
+              }}
+            />
             {/* Paramètres — feature gated (page globale en cours de construction) */}
             <MenuItem icon={<Settings className="size-5" />} label="Paramètres" disabled />
           </div>

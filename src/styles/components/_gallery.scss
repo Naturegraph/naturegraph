@@ -1,17 +1,25 @@
 // ============================================
 // Gallery Masonry — Naturegraph
 // ============================================
-// Vue galerie du feed : layout masonry pur CSS via `columns`.
-// Préféré à une solution JS (RGESN, sobriété numérique).
-// 3 colonnes desktop, 2 colonnes mobile.
+// Vue galerie du feed + onglet Inspirations du profil : layout masonry pur
+// CSS via `columns`. Préféré à une solution JS (RGESN, sobriété numérique).
+//   - Mobile  (< 768px) : 2 colonnes
+//   - Tablet  (md, ≥ 768px) : 3 colonnes
+//   - Desktop (lg, ≥ 1024px) : 4 colonnes
+// Les ratios des images sont préservés naturellement (pas d'aspect-ratio
+// imposé sur les `.gallery-item`) → vrai effet masonry.
 
 .gallery-masonry {
   columns: 2;
   column-gap: 8px;
 
-  // Desktop : 3 colonnes
+  // Tablet
   @media (min-width: 768px) {
     columns: 3;
+  }
+  // Desktop
+  @media (min-width: 1024px) {
+    columns: 4;
   }
 }
 
