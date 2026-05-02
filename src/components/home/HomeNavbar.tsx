@@ -46,6 +46,7 @@ import { NotificationsPanel } from './NotificationsPanel'
 import { ContributeModal } from './ContributeModal'
 import { LocationModal } from './LocationModal'
 import { ProfileMenu } from './ProfileMenu'
+import { SettingsPanel } from '@/components/settings/SettingsPanel'
 import logoColor from '@/assets/logos/logo-wordmark-color.svg'
 
 // ─── Props ───────────────────────────────────────────────────────────────────
@@ -108,6 +109,11 @@ export function HomeNavbar({
   const [showContribute, setShowContribute] = useState(false)
   const [showLocationModal, setShowLocationModal] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+  // SettingsPanel ouvert depuis le ProfileMenu (item "Paramètres") — son
+  // state vit dans HomeNavbar (et non ProfileMenu) pour survivre à la
+  // fermeture du ProfileMenu : on ferme le menu profil ET on ouvre les
+  // paramètres en parallèle, sans superposition visuelle.
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false)
 
   // Refs pour ancrer les dropdowns
   const notifBtnRef = useRef<HTMLButtonElement>(null)
@@ -382,7 +388,18 @@ export function HomeNavbar({
                       />
                     </button>
 
-                    {showProfileMenu && <ProfileMenu onClose={() => setShowProfileMenu(false)} />}
+                    {showProfileMenu && (
+                      <ProfileMenu
+                        onClose={() => setShowProfileMenu(false)}
+                        onOpenSettings={() => {
+                          // Ferme le menu profil ET ouvre le panel settings.
+                          // Le state `showSettingsPanel` vit dans HomeNavbar
+                          // pour survivre au démontage du ProfileMenu.
+                          setShowProfileMenu(false)
+                          setShowSettingsPanel(true)
+                        }}
+                      />
+                    )}
                   </div>
                 ) : (
                   /* Lien "Se connecter" — style secondaire pill */
@@ -396,6 +413,10 @@ export function HomeNavbar({
           </div>
         </div>
       </header>
+
+      {/* Settings panel global — ouvert depuis le ProfileMenu (item Paramètres),
+          accessible depuis n'importe quelle page via la navbar. */}
+      {showSettingsPanel && <SettingsPanel onClose={() => setShowSettingsPanel(false)} />}
     </>
   )
 }

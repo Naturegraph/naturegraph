@@ -25,6 +25,7 @@ import { ProfileTabs } from '@/components/profile/ProfileTabs'
 import { ProfileAboutCard } from '@/components/profile/ProfileAboutCard'
 import { ProfileDNACard } from '@/components/profile/ProfileDNACard'
 import { EditProfilePanel } from '@/components/profile/EditProfilePanel'
+import { SettingsPanel } from '@/components/settings/SettingsPanel'
 // SharePopover du feed réutilisé pour cohérence (Nicolas 2026-05-01).
 import { SharePopover } from '@/components/home/SharePopover'
 import type { Profile } from '@/types/database'
@@ -111,6 +112,7 @@ export default function Profile() {
 
   // Panneaux superposés
   const [showEditPanel, setShowEditPanel] = useState(false)
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [showShareSheet, setShowShareSheet] = useState(false)
 
   // ── Requêtes Supabase ────────────────────────────────────────────────────
@@ -146,11 +148,7 @@ export default function Profile() {
             profile={PROFILE_MOCK_VISITOR}
             isOwnProfile={mockIsOwn}
             onEditProfile={() => setShowEditPanel(true)}
-            onSettings={() => {
-              // TODO [BACKEND] — Naviguer vers /settings (page paramètres compte).
-              // Pour l'instant on ouvre simplement le panel d'édition pour démo.
-              setShowEditPanel(true)
-            }}
+            onSettings={() => setShowSettingsPanel(true)}
             onShare={() => setShowShareSheet(true)}
             onOptions={() => {
               /* géré en interne par ProfileHeader (menu 3-pts visiteur) */
@@ -194,6 +192,7 @@ export default function Profile() {
             }}
           />
         )}
+        {showSettingsPanel && <SettingsPanel onClose={() => setShowSettingsPanel(false)} />}
         {showShareSheet && (
           <SharePopover
             shareUrl={`${window.location.origin}/profile/${PROFILE_MOCK_VISITOR.username}`}
@@ -302,10 +301,7 @@ export default function Profile() {
           profile={profileData}
           isOwnProfile={isOwnProfile}
           onEditProfile={() => setShowEditPanel(true)}
-          onSettings={() => {
-            // TODO [BACKEND] — Naviguer vers /settings (page paramètres compte).
-            setShowEditPanel(true)
-          }}
+          onSettings={() => setShowSettingsPanel(true)}
           onShare={() => setShowShareSheet(true)}
         />
 
@@ -341,6 +337,8 @@ export default function Profile() {
           onSave={handleSave}
         />
       )}
+
+      {showSettingsPanel && <SettingsPanel onClose={() => setShowSettingsPanel(false)} />}
 
       {showShareSheet && (
         <SharePopover
