@@ -29,6 +29,8 @@ import { ProfileStats } from './tabs/ProfileStats'
 type TabId = 'about' | 'journal' | 'inspirations' | 'community' | 'stats'
 
 interface ProfileTabsProps {
+  /** ID du profil affiché — requis pour l'onglet Communauté (queries follows) */
+  profileId: string
   /** Données complètes du profil affiché */
   profile: ProfileDisplayData
   /** Posts de cet utilisateur pour l'onglet Journal */
@@ -77,7 +79,13 @@ const TABS: TabDef[] = [
  * Barre d'onglets horizontale scrollable + rendu du contenu de l'onglet actif.
  * L'onglet "À propos" est sélectionné par défaut.
  */
-export function ProfileTabs({ profile, userPosts, savedPosts, isOwnProfile }: ProfileTabsProps) {
+export function ProfileTabs({
+  profileId,
+  profile,
+  userPosts,
+  savedPosts,
+  isOwnProfile,
+}: ProfileTabsProps) {
   const { t } = useTranslation()
   // Tab par défaut : "journal" (Journal nature) — règle d'usage Nicolas
   // 2026-05-01 : à l'arrivée sur un profil, l'onglet Journal doit toujours
@@ -201,6 +209,7 @@ export function ProfileTabs({ profile, userPosts, savedPosts, isOwnProfile }: Pr
         )}
         {activeTab === 'community' && (
           <ProfileCommunity
+            profileId={profileId}
             followersCount={profile.followers_count}
             followingCount={profile.following_count}
           />
