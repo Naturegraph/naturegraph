@@ -9,12 +9,13 @@
  * Convention de nommage : `{user_id}/{timestamp}.{ext}`. Le préfixe user_id
  * est exploité par les RLS storage pour vérifier l'ownership.
  *
- * Compression côté client : on tente une conversion WebP via Canvas pour
- * réduire la taille de payload (les buckets n'acceptent que les MIME image/*).
- * Si le navigateur ne supporte pas, on upload tel quel.
+ * Sécurité : tous les uploads sont strippés de leurs métadonnées EXIF via
+ * `stripImageExif()` avant stockage (RGPD Art 5(1)(c) + Art 25). Cf.
+ * `docs/AUDIT_LEGAL.md` NC-3 et `mediaService.ts`.
  */
 
 import { supabase } from '@/lib/supabase'
+import { stripImageExif } from '@/utils/stripImageExif'
 
 export type StorageBucket = 'avatars' | 'banners'
 
@@ -53,10 +54,15 @@ export async function uploadImage(bucket: StorageBucket, file: File): Promise<Up
     throw new Error(`Fichier trop volumineux (max ${maxBytes / 1e6} MB pour ${bucket})`)
   }
 
-  const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+  // Strip EXIF avant upload (RGPD Art 5(1)(c) + Art 25).
+  // Le re-encodage canvas peut convertir PNG → JPEG, donc on prend
+  // l'extension du File résultant.
+  const stripped = await stripImageExif(file)
+
+  const ext = stripped.name.split('.').pop()?.toLowerCase() ?? 'jpg'
   const path = `${user.id}/${Date.now()}.${ext}`
 
-  const { error: uploadError } = await supabase.storage.from(bucket).upload(path, file, {
+  const { error: uploadError } = await supabase.storage.from(bucket).upload(path, stripped, {
     cacheControl: '3600',
     upsert: false,
   })
