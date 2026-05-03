@@ -6,12 +6,18 @@
  * conformité LCEN Art. 6 III (loi française) et identification du
  * responsable de publication.
  *
- * Contenu i18n dans `fr.json` / `en.json` sous `legal.terms.*` :
- *   - Éditeur du site
- *   - Hébergement (Vercel + Supabase)
- *   - Propriété intellectuelle
- *   - Responsabilité
- *   - Droit applicable
+ * Structure 6 sections (MVP, version produit) :
+ *   1. Éditeur du service
+ *   2. Hébergement
+ *   3. Propriété intellectuelle
+ *   4. Responsabilité
+ *   5. Données utilisateurs (renvoi vers Privacy Policy)
+ *   6. Droit applicable (FR + Loi 25)
+ *
+ * Le contenu i18n vit dans `fr.json` / `en.json` sous `legal.terms.*` —
+ * jamais hardcodé, jamais inventé. Les valeurs juridiques inconnues
+ * (nom légal de l'éditeur, hébergeur exact) sont explicitement marquées
+ * "À COMPLÉTER".
  *
  * Accessibilité (WCAG AA) :
  *   - Sémantique <main> + <article> + <section>
@@ -29,14 +35,14 @@ import { useTranslation } from 'react-i18next'
 export default function Legal() {
   const { t } = useTranslation()
 
-  // 5 sections des mentions légales — alignées sur LCEN Art. 6 III FR
-  const sections = [
-    { titleKey: 'legal.terms.editorTitle', contentKey: 'legal.terms.editorContent' },
-    { titleKey: 'legal.terms.hostingTitle', contentKey: 'legal.terms.hostingContent' },
-    { titleKey: 'legal.terms.ipTitle', contentKey: 'legal.terms.ipContent' },
-    { titleKey: 'legal.terms.liabilityTitle', contentKey: 'legal.terms.liabilityContent' },
-    { titleKey: 'legal.terms.lawTitle', contentKey: 'legal.terms.lawContent' },
-  ] as const
+  // 6 sections numérotées des mentions légales.
+  // Inclut désormais une section 5 dédiée aux données utilisateurs (renvoi
+  // vers la politique de confidentialité) pour respecter la séparation
+  // mentions légales / privacy policy.
+  const sections = Array.from({ length: 6 }, (_, i) => ({
+    titleKey: `legal.terms.section${i + 1}Title`,
+    contentKey: `legal.terms.section${i + 1}Content`,
+  }))
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)] flex flex-col">
@@ -52,9 +58,14 @@ export default function Legal() {
 
         <article>
           <header className="mb-10">
-            <h1 className="text-3xl md:text-4xl font-bold font-[var(--font-heading)] text-[var(--color-text-primary)]">
+            <h1 className="text-3xl md:text-4xl font-bold font-[var(--font-heading)] text-[var(--color-text-primary)] mb-3">
               {t('legal.terms.title', { defaultValue: 'Mentions légales' })}
             </h1>
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              {t('legal.terms.lastUpdated', {
+                defaultValue: 'Dernière mise à jour : 02 mai 2026',
+              })}
+            </p>
           </header>
 
           <div className="flex flex-col gap-8">
@@ -67,8 +78,9 @@ export default function Legal() {
                   id={`legal-section-${index + 1}-heading`}
                   className="text-xl md:text-2xl font-semibold font-[var(--font-heading)] text-[var(--color-text-primary)] mb-3"
                 >
-                  {t(section.titleKey, { defaultValue: '' })}
+                  {index + 1}. {t(section.titleKey, { defaultValue: '' })}
                 </h2>
+                {/* whitespace-pre-line conserve les sauts de ligne (listes simples). */}
                 <p className="text-base text-[var(--color-text-primary)] leading-relaxed whitespace-pre-line">
                   {t(section.contentKey, { defaultValue: '' })}
                 </p>
