@@ -29,16 +29,13 @@ const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
  * Types MIME autorisés.
  * Note : la vérification `f.type.startsWith('image/')` était insuffisante car
  * un attaquant peut changer le MIME type côté client. On cible les formats
- * spécifiques attendus pour les observations nature (JPEG, PNG, WebP, HEIC).
+ * spécifiques attendus pour les observations nature (JPEG, PNG, WebP).
+ *
+ * HEIC/HEIF retiré le 2026-05-03 : l'EXIF stripping (stripImageExif) utilise
+ * Canvas API qui ne supporte pas HEIC nativement → upload échouait sur iOS
+ * (~50% des testeurs). iOS génère du JPEG quand l'app cible le refuse.
  */
-const ALLOWED_MIME_TYPES = new Set([
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp',
-  'image/heic',
-  'image/heif',
-])
+const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'])
 
 /**
  * Valide un fichier avant ajout à la liste.
@@ -170,7 +167,7 @@ export function MediaUploader({ files, onChange, maxFiles = 4, error }: MediaUpl
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+        accept="image/jpeg,image/png,image/webp"
         multiple
         className="sr-only"
         aria-hidden="true"
