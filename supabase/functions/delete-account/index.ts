@@ -69,11 +69,34 @@ Deno.serve(async (req: Request) => {
         .eq('id', userId)
     }
 
-    // Nettoyage Storage (toujours)
-    for (const bucket of ['avatars', 'post-media', 'notebook-covers', 'exports']) {
-      const { data: list } = await admin.storage.from(bucket).list(userId, { limit: 1000 })
-      if (list?.length) {
-        await admin.storage.from(bucket).remove(list.map((f) => `${userId}/${f.name}`))
+    // Nettoyage Storage (toujours, mode 'hard' ET 'anonymize').
+    // IMPORTANT : la liste doit inclure TOUS les buckets où l'utilisateur peut
+    // avoir uploadé du contenu, sinon des fichiers orphelins avec PII (photo)
+    // restent accessibles via les URLs publiques après suppression du compte
+    // → fuite RGPD. Le bucket `banners` (créé par migration 20260502) avait
+    // été oublié dans la version initiale (Fix #5).
+    //
+    // Convention de chemin pour tous ces buckets : {userId}/{...}.{ext}
+    // → on liste les fichiers sous le préfixe `userId` puis on les supprime.
+    const STORAGE_BUCKETS = [
+      'avatars', // Photo de profil
+      'banners', // Bannière de profil (migration 20260502)
+      'post-media', // Photos des observations
+      'notebook-covers', // Couvertures de carnets
+      'exports', // Exports RGPD générés (privé)
+    ] as const
+
+    for (const bucket of STORAGE_BUCKETS) {
+      try {
+        const { data: list } = await admin.storage.from(bucket).list(userId, { limit: 1000 })
+        if (list?.length) {
+          await admin.storage.from(bucket).remove(list.map((f) => `${userId}/${f.name}`))
+        }
+      } catch (err) {
+        // Si un bucket n'existe pas (ex: migration pas appliquée sur cet env),
+        // on log mais on continue — la suppression des autres buckets ne doit
+        // pas être bloquée par un seul bucket manquant.
+        console.warn(`[delete-account] Failed to clean bucket "${bucket}":`, err)
       }
     }
 
