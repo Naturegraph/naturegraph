@@ -15,9 +15,16 @@
  * L'Edge Function est protégée par JWT (header Authorization). L'utilisateur
  * supprime son propre compte uniquement (pas de modération via cette API).
  *
- * Phase 2 future : ajouter un délai de grâce 30 jours (table
- * `account_deletion_requests` avec scheduled_for, cron J+30) pour permettre
- * l'annulation. Pour l'instant la suppression est immédiate.
+ * Comportement MVP (décision produit Q-PROD-5)
+ * ────────────────────────────────────────────
+ * La suppression est **immédiate et irréversible**. La politique de
+ * confidentialité (cf. fr.json:1035 et en.json:1035) reflète ce comportement.
+ * Aucun délai de grâce n'est implémenté.
+ *
+ * Backlog Phase 3 (post-beta, selon retour utilisateur)
+ * ─────────────────────────────────────────────────────
+ * Ajouter un délai de grâce 30 jours (table `account_deletion_requests`
+ * avec scheduled_for, cron J+30) pour permettre l'annulation.
  */
 
 import { supabase } from '@/lib/supabase'

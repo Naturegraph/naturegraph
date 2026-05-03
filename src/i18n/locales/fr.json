@@ -1032,7 +1032,7 @@
       "section3Title": "Cookies",
       "section3Content": "Naturegraph utilise uniquement des cookies essentiels au fonctionnement du site (session, préférences de langue). Aucun cookie publicitaire ou de traçage n'est utilisé. Notre engagement éco-responsable passe aussi par la sobriété numérique.",
       "section4Title": "Conservation des données",
-      "section4Content": "Vos données sont conservées tant que votre compte est actif. Vous pouvez demander la suppression de votre compte et de toutes vos données à tout moment. Les données sont alors supprimées sous 30 jours.",
+      "section4Content": "Vos données sont conservées tant que votre compte est actif. Vous pouvez supprimer votre compte et toutes vos données à tout moment depuis vos paramètres. La suppression est effective immédiatement et de manière irréversible. Les sauvegardes techniques chiffrées de Supabase peuvent conserver une trace pendant 7 à 30 jours avant rotation totale.",
       "section5Title": "Vos droits (RGPD)",
       "section5Content": "Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, de suppression, de portabilité et d'opposition concernant vos données personnelles. Pour exercer ces droits, contactez-nous à privacy@naturegraph.fr.",
       "section6Title": "Contact",
