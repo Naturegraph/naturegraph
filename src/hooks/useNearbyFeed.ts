@@ -79,8 +79,18 @@ export function useNearbyFeed(page = 1) {
       }
 
       // 2. Charge les détails des posts avec jointure author + media
-      const { data: posts, error: postsError } = await supabase
-        .from('posts')
+      //
+      // Lecture via `posts_public` (cf. Fix #2 et migration
+      // `20260503_posts_public_view.sql`) qui masque latitude/longitude/city
+      // quand `location_hidden=true` pour les non-propriétaires. Le filtre
+      // radius PostGIS s'applique en amont (RPC nearby) sur la table `posts`
+      // (avec coords floutées par le trigger `blur_hidden_location`), puis
+      // on charge les détails enrichis via la vue.
+      // Cast `any` temporaire — `posts_public` sera dans `supabase.ts`
+      // après régénération des types post-application de la migration.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: posts, error: postsError } = await (supabase as any)
+        .from('posts_public')
         .select(
           `
           *,

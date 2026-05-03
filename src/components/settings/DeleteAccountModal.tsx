@@ -6,46 +6,35 @@
  * suppression de compte. Concentre uniquement la copy + le branchement —
  * toute la logique a11y / layout / focus / Escape vit dans ConfirmModal.
  *
- * Acte comme la **2ème étape de double confirmation** :
+ * Comportement MVP (décision produit Q-PROD-5)
+ * ────────────────────────────────────────────
+ * La suppression est **immédiate et irréversible**. Aucun délai de grâce.
+ *
  *   1. L'utilisateur clique sur "Supprimer mon compte" dans SettingsPanel
  *   2. Cette modal s'affiche (titre + description + 2 boutons)
- *   3. Clic sur "Confirmer" → onConfirm() (signOut + cleanup mock Phase 1)
+ *   3. Clic sur "Confirmer" → `useDeleteAccount.mutateAsync('hard')`
+ *      → Edge Function `delete-account` invoquée :
+ *        - Nettoyage Storage tous les buckets (avatars, banners, post-media,
+ *          notebook-covers, exports) sous {userId}/
+ *        - `auth.admin.deleteUser(userId)` → CASCADE sur profiles, posts,
+ *          media, reactions, comments, follows, saved_posts, hidden_posts,
+ *          notebooks, etc.
+ *        - support_tickets et security_audit_log : `user_id = NULL` (FK
+ *          SET NULL) — anonymisation J+30 via cron `anonymize_orphan_audit_logs`
+ *      → queryClient.clear() + signOut local côté client
+ *      → redirection vers / (landing)
  *
- * TODO [BACKEND] Phase 2 — voir second-agent/03-profil-backend-notes.md §15.
+ * TODO [BACKLOG Phase 3 — pas pour MVP]
+ * ──────────────────────────────────────
+ * Si on veut introduire un délai de grâce dans le futur (par retour
+ * utilisateur post-beta) :
+ *   - Table `account_deletion_requests` (user_id, requested_at, scheduled_for)
+ *   - Email transactionnel + lien d'annulation
+ *   - Cron J+30 qui exécute la suppression effective
+ *   - RPC `cancel_account_deletion()`
  *
- *   Le flux production sera plus riche que la simple confirmation locale :
- *
- *   1. **Bouton Confirmer** → RPC `request_account_deletion(reason?)` :
- *        - INSERT dans `account_deletion_requests` (user_id, requested_at,
- *          scheduled_for = now() + INTERVAL '30 days')
- *        - Email transactionnel (Edge Function + template Supabase Auth) :
- *          confirmation reçue + lien d'annulation valable 30 jours
- *        - Sign out forcé sur tous les devices (RPC `signout_all_devices`)
- *        - Toast succès + redirect /home
- *
- *   2. **Pendant les 30 jours** :
- *        - Les RLS bloquent la connexion (vue `active_profiles` excluant
- *          les `account_deletion_requests` non-cancelled)
- *        - Email rappel à J+7, J+15, J+25 avec lien d'annulation
- *        - Bouton "Annuler la suppression" disponible dans /settings si l'user
- *          parvient à se reconnecter (RPC `cancel_account_deletion()`)
- *
- *   3. **À J+30** (Cron Supabase Function quotidien) :
- *        - Suppression effective : DELETE FROM profiles WHERE id IN (...)
- *        - Cascade vers posts, comments, reactions, follows, saved_posts
- *        - Suppression des avatars/banners du Storage
- *        - Email final "votre compte a été supprimé"
- *
- *   4. **Anti-fraude / sécurité** :
- *        - Limit 1 demande active par user (UNIQUE constraint sur user_id)
- *        - Logger IP + user-agent au moment de la demande (audit trail)
- *        - Pas de demande possible si compte créé < 24h (anti spam-account)
- *        - 2FA / re-auth password obligatoire côté UI avant le RPC (Phase 3)
- *
- *   5. **RGPD compliance** :
- *        - Documenter durée de rétention (30 jours pour annulation)
- *        - Export RGPD recommandé AVANT suppression (lien dans la modal)
- *        - Conserver les logs anonymisés (post.author_id → null)
+ * Pour le MVP : suppression immédiate suffit + aligne sur la promesse de la
+ * politique de confidentialité (cf. fr.json:1035 et en.json:1035).
  */
 
 import { useTranslation } from 'react-i18next'

@@ -100,6 +100,20 @@ const POST_FEED_SELECT = `
         is_cover, license, created_at, updated_at)
 ` as const
 
+// ─── Vue de lecture sécurisée ─────────────────────────────────────────────────
+//
+// Toutes les LECTURES du feed passent par la vue `posts_public` qui masque
+// les données de localisation (latitude, longitude, city, region, country,
+// location_name, location_point) pour les viewers qui ne sont pas l'auteur,
+// quand `location_hidden = true`.
+//
+// Les ÉCRITURES (createPost, updatePost, deletePost, INSERT reactions, etc.)
+// restent sur la table `posts` directement — la vue est lecture seule.
+//
+// Cf. migration `20260503_posts_public_view.sql` et docs/SYNTHESE_AUDITS.md
+// (cause racine RC-B partie API/DB).
+const POSTS_READ_SOURCE = 'posts_public' as const
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 /**
@@ -136,8 +150,14 @@ export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
     }
   }
 
-  let query = supabase
-    .from('posts')
+  // Lecture via la vue `posts_public` qui masque latitude/longitude/city/etc.
+  // pour les viewers qui ne sont pas l'auteur, quand `location_hidden=true`.
+  // Cf. migration `20260503_posts_public_view.sql` et Fix #2.
+  // Le cast `any` est temporaire — `posts_public` sera dans `supabase.ts`
+  // après régénération des types post-migration appliquée.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query = (supabase as any)
+    .from(POSTS_READ_SOURCE)
     .select(POST_FEED_SELECT, { count: 'exact' })
     .eq('status', 'published')
     .eq('visibility', 'public')
@@ -230,12 +250,16 @@ export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
 /**
  * Récupère un post par son ID avec toutes ses relations.
  * Utilisé pour la page de détail d'un post et les partages.
+ *
+ * Lecture via `posts_public` (cf. Fix #2) — les coordonnées sont masquées
+ * si `location_hidden=true` ET le viewer n'est pas l'auteur.
  */
 export async function getPostById(postId: string): Promise<PostFeedItem | null> {
   if (!supabase) throw new Error('Supabase non configuré')
 
-  const { data, error } = await supabase
-    .from('posts')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from(POSTS_READ_SOURCE)
     .select(POST_FEED_SELECT)
     .eq('id', postId)
     .single()
@@ -404,8 +428,13 @@ export async function getPostsByUser(
 ): Promise<PostFeedItem[]> {
   if (!supabase) throw new Error('Supabase non configuré')
 
-  let query = supabase
-    .from('posts')
+  // Lecture via `posts_public` (cf. Fix #2). Quand l'utilisateur consulte son
+  // propre profil (userId === auth.uid()), il voit ses coordonnées. Quand un
+  // visiteur consulte un autre profil, les coords sont NULL pour les posts
+  // avec `location_hidden=true`.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query = (supabase as any)
+    .from(POSTS_READ_SOURCE)
     .select(POST_FEED_SELECT)
     .eq('user_id', userId)
     .eq('status', 'published')

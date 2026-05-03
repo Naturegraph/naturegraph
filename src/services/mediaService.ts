@@ -4,12 +4,21 @@
  * Convention de chemin : {bucket}/{user_id}/{post_id?}/{uuid}.{ext}
  * RLS Storage : owner-only en ecriture, public en lecture (sauf bucket exports).
  *
- * Note : la conversion WebP / strip EXIF cote client est volontairement
- * minimaliste pour le MVP (juste validation type/size). Sprint suivant : ajouter
- * compression via canvas + retrait EXIF via piexif/exifr.
+ * Sécurité :
+ *   - Tous les uploads sont strippés de leurs métadonnées EXIF via
+ *     `stripImageExif()` AVANT l'envoi à Supabase Storage. Cela retire
+ *     coordonnées GPS, date prise, marque/modèle appareil, ICC profile.
+ *   - RGPD Art 5(1)(c) minimisation + Art 25 Privacy by Default.
+ *   - Cf. `docs/AUDIT_LEGAL.md` NC-3 et `docs/AUDIT_SUPABASE.md` P-3.
+ *
+ * Important : l'extraction EXIF pour pré-remplir le formulaire (date, GPS
+ * suggéré dans l'étape 3) est faite AVANT cet appel, sur les Files
+ * originaux côté composant (`extractPhotoMetadata.ts`). Ici on ne fait
+ * que stripper avant le stockage.
  */
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { stripImageExif } from '@/utils/stripImageExif'
 
 const ACCEPTED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024 // 2 MB
@@ -35,9 +44,15 @@ export async function uploadAvatar(file: File, userId: string): Promise<string> 
   }
   if (file.size > MAX_AVATAR_BYTES) throw new Error('Fichier trop lourd (max 2 Mo)')
 
-  const path = `${userId}/avatar.${ext(file)}`
-  const { error } = await supabase.storage.from('avatars').upload(path, file, {
-    contentType: file.type,
+  // Strip EXIF AVANT upload — RGPD Art 5(1)(c) minimisation. Le re-encodage
+  // canvas génère un nouveau File sans aucune métadonnée (GPS, date prise,
+  // marque appareil, etc.). L'extension peut changer (PNG → JPG) — sans
+  // impact car le path est déterministe via `ext(stripped)`.
+  const stripped = await stripImageExif(file)
+
+  const path = `${userId}/avatar.${ext(stripped)}`
+  const { error } = await supabase.storage.from('avatars').upload(path, stripped, {
+    contentType: stripped.type,
     upsert: true,
     // Cache 1 an immutable — les avatars sont uploadés sur un path déterministe
     // et l'upsert remplace le contenu, donc on peut bénéficier d'un cache long.
@@ -99,10 +114,22 @@ export async function uploadPostMedia(params: {
   }
   if (file.size > MAX_POST_MEDIA_BYTES) throw new Error('Fichier trop lourd (max 10 Mo)')
 
-  const path = `${userId}/${postId}/${uuid()}.${ext(file)}`
+  // Strip EXIF AVANT upload — RGPD Art 5(1)(c) minimisation. Le re-encodage
+  // canvas retire systématiquement coordonnées GPS, date de prise de vue,
+  // marque/modèle appareil, ICC profile, etc. Sans cela, un visiteur qui
+  // télécharge la photo via le bucket public peut extraire les coordonnées
+  // GPS exactes même si l'utilisateur a coché "Région masquée" — risque
+  // RGPD majeur + risque écologique pour les espèces sensibles.
+  //
+  // L'extraction EXIF pour pré-remplir l'étape 3 du formulaire a été faite
+  // en amont (cf. `extractPhotoMetadata.ts` côté EncounterStep1), sur les
+  // Files originaux. Ici on strippe uniquement avant le stockage.
+  const stripped = await stripImageExif(file)
 
-  const { error: upErr } = await supabase.storage.from('post-media').upload(path, file, {
-    contentType: file.type,
+  const path = `${userId}/${postId}/${uuid()}.${ext(stripped)}`
+
+  const { error: upErr } = await supabase.storage.from('post-media').upload(path, stripped, {
+    contentType: stripped.type,
     upsert: false,
     // Cache 1 an immutable — chaque photo a un path UUID unique (jamais
     // ré-écrit), donc on peut maxer le cache navigateur en toute sécurité.
@@ -123,8 +150,8 @@ export async function uploadPostMedia(params: {
     status: 'ready' as const,
     url: pub.publicUrl,
     original_url: pub.publicUrl,
-    mime_type: file.type,
-    file_size: file.size,
+    mime_type: stripped.type,
+    file_size: stripped.size,
     alt: altText ?? null,
     display_order: displayOrder,
     copyright_notice: copyrightNotice,
