@@ -28,6 +28,7 @@
  */
 
 import { supabase } from '@/lib/supabase'
+import { clearLocalMotivations } from '@/services/onboardingPersistence'
 
 export type AccountDeletionMode = 'hard' | 'anonymize'
 
@@ -59,6 +60,9 @@ export async function deleteAccount(
     throw new Error('Authentification requise pour supprimer le compte')
   }
 
+  // Capture l'userId AVANT signOut pour le cleanup localStorage en aval.
+  const userId = session.user.id
+
   const { data, error } = await supabase.functions.invoke('delete-account', {
     body: { mode },
     headers: {
@@ -72,6 +76,11 @@ export async function deleteAccount(
   if (!data?.ok) {
     throw new Error(data?.error ?? 'Suppression refusée par le serveur')
   }
+
+  // Cleanup données client-side associées au compte (RC-E motivations).
+  // Pas critique fonctionnellement mais propre côté privacy : on n'oublie
+  // pas de trace orpheline dans le navigateur après suppression compte.
+  clearLocalMotivations(userId)
 
   // Sign out local (les cookies/storage Supabase sont aussi nettoyés par
   // l'Edge Function via auth.admin.deleteUser, mais on force ici pour être

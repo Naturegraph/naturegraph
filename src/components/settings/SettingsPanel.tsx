@@ -35,6 +35,7 @@ import {
   Mail,
   AlignLeft,
   FileText,
+  Download,
   LogOut,
   Trash2,
   ArrowLeft,
@@ -42,6 +43,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { useDeleteAccount } from '@/hooks/useAccountDeletion'
+import { useDataExport } from '@/hooks/useDataExport'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { DeleteAccountModal } from './DeleteAccountModal'
 import { SettingsSecurityView } from './SettingsSecurityView'
@@ -81,6 +83,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const { signOut } = useAuth()
   const toast = useToast()
   const deleteAccountMutation = useDeleteAccount()
+  const dataExportMutation = useDataExport()
 
   /** Sous-vue actuellement ouverte (null = liste principale) */
   const [section, setSection] = useState<SettingsSection | null>(null)
@@ -134,6 +137,32 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
     await signOut()
     onClose()
     navigate('/home')
+  }
+
+  /**
+   * Export RGPD — déclenche la génération + téléchargement automatique du JSON.
+   * RGPD Art. 20 (portabilité) + Loi 25 Art. 27.3.
+   * L'Edge Function `export-data` génère un export complet (profile, settings,
+   * posts, media, comments, reactions, follows, notebooks) puis retourne une
+   * URL signée 24h. Le hook lance le download via un anchor invisible.
+   */
+  async function handleDataExport() {
+    try {
+      await dataExportMutation.mutateAsync({
+        filenamePrefix: t('rgpd.export.filenamePrefix', {
+          defaultValue: 'naturegraph-export',
+        }),
+      })
+      toast.success(t('rgpd.export.success', { defaultValue: 'Export téléchargé' }))
+    } catch (err) {
+      console.error('[Settings] data export failed', err)
+      toast.error(
+        t('rgpd.export.error', {
+          defaultValue: "Échec de l'export. Réessaie plus tard.",
+        }),
+        err instanceof Error ? err.message : undefined,
+      )
+    }
   }
 
   /**
@@ -226,6 +255,8 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               onOpenSection={setSection}
               onSignOut={() => setShowLogoutModal(true)}
               onDeleteAccount={() => setShowDeleteModal(true)}
+              onExportData={handleDataExport}
+              isExporting={dataExportMutation.isPending}
             />
           ) : (
             <SettingsSubView section={section} />
@@ -317,9 +348,19 @@ interface SettingsListProps {
   onOpenSection: (s: SettingsSection) => void
   onSignOut: () => void
   onDeleteAccount: () => void
+  /** Déclenche l'export RGPD (Art. 20 portabilité). */
+  onExportData: () => void
+  /** True pendant la génération de l'export (disable + label loading). */
+  isExporting: boolean
 }
 
-function SettingsList({ onOpenSection, onSignOut, onDeleteAccount }: SettingsListProps) {
+function SettingsList({
+  onOpenSection,
+  onSignOut,
+  onDeleteAccount,
+  onExportData,
+  isExporting,
+}: SettingsListProps) {
   const { t } = useTranslation()
 
   // Figma Frame 4701 : items remplissent la largeur du contenu (400px).
@@ -357,6 +398,20 @@ function SettingsList({ onOpenSection, onSignOut, onDeleteAccount }: SettingsLis
         })}
         onClick={() => onOpenSection('license')}
       />
+      {/* Export RGPD — droit à la portabilité (Art. 20 / Loi 25 Art. 27.3).
+          Téléchargement d'un JSON complet de toutes les données de l'utilisateur
+          via l'Edge Function `export-data`. URL signée 24h, bucket privé. */}
+      <SettingsItem
+        icon={<Download className="size-5" aria-hidden="true" />}
+        label={
+          isExporting
+            ? t('rgpd.export.downloading', { defaultValue: 'Préparation de l’export…' })
+            : t('rgpd.export.title', { defaultValue: 'Exporter mes données' })
+        }
+        onClick={onExportData}
+        disabled={isExporting}
+        noTrailing
+      />
       <SettingsItem
         icon={<LogOut className="size-5" aria-hidden="true" />}
         label={t('settings.items.signOut', { defaultValue: 'Déconnexion' })}
@@ -391,6 +446,8 @@ interface SettingsItemProps {
   noTrailing?: boolean
   /** Si true, label + icône en rouge (Suppression compte). */
   danger?: boolean
+  /** Si true, item désactivé (en cours d'opération asynchrone — ex: export RGPD). */
+  disabled?: boolean
 }
 
 function SettingsItem({
@@ -401,6 +458,7 @@ function SettingsItem({
   href,
   noTrailing,
   danger,
+  disabled,
 }: SettingsItemProps) {
   // Figma Frame 4707 : item h-14 (56px), gap 32px entre contenu gauche
   // (icon+label) et trailing icon. Gap 16px entre icon et label. Séparateur
@@ -455,7 +513,13 @@ function SettingsItem({
 
   return (
     <li className={liClasses}>
-      <button type="button" onClick={onClick} className={`${baseClasses} ${stateClasses}`}>
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className={`${baseClasses} ${stateClasses} disabled:opacity-50 disabled:cursor-not-allowed`}
+        aria-busy={disabled || undefined}
+      >
         {content}
       </button>
     </li>

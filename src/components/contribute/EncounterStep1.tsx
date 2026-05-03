@@ -49,14 +49,7 @@ const FORMAT_LABELS: Record<DisplayFormat, { main: string; ratio: string }> = {
   '1:1': { main: 'Carré', ratio: '(1:1)' },
 }
 
-const ALLOWED_MIME_TYPES = new Set([
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp',
-  'image/heic',
-  'image/heif',
-])
+const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'])
 
 function validateFile(file: File): string | null {
   if (!ALLOWED_MIME_TYPES.has(file.type)) {
@@ -432,7 +425,7 @@ export function EncounterStep1({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+        accept="image/jpeg,image/png,image/webp"
         multiple
         className="sr-only"
         aria-hidden="true"
