@@ -982,6 +982,16 @@
     "logoutDesc": "Tu seras redirigé vers la page d'accueil",
     "deleteAccountDesc": "Cette action est irréversible. Toutes tes données seront supprimées.",
     "deleteAccountConfirm": "Es-tu sûr de vouloir supprimer ton compte ?",
+    "delete": {
+      "title": "Es-tu sûr·e de vouloir supprimer ton compte ?",
+      "description": "Cette action est immédiate et irréversible. Toutes tes données, photos et observations seront supprimées définitivement et ne pourront pas être récupérées.",
+      "usernameLabel": "Pour confirmer, tape ton nom d'utilisateur ci-dessous",
+      "usernameLoading": "chargement…",
+      "confirm": "Supprimer définitivement",
+      "successTitle": "Compte supprimé",
+      "successDesc": "Toutes tes données ont été effacées.",
+      "error": "Impossible de supprimer le compte pour l'instant."
+    },
     "weeklyGoal": "Objectif hebdomadaire",
     "weeklyGoalDesc": "Nombre de partages visés par semaine",
     "weeklyGoalDecrease": "Diminuer l'objectif",
@@ -1037,6 +1047,8 @@
       "section5Content": "Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, de suppression, de portabilité et d'opposition concernant vos données personnelles. Pour exercer ces droits, contactez-nous à privacy@naturegraph.fr.",
       "section6Title": "Contact",
       "section6Content": "Pour toute question relative à la protection de vos données : privacy@naturegraph.fr. Responsable du traitement : Naturegraph, France.",
+      "section7Title": "Utilisateurs du Québec / Canada (Loi 25)",
+      "section7Content": "Pour les utilisateurs résidant au Québec, conformément à la Loi 25 (Loi modernisant la protection des renseignements personnels), vous disposez des mêmes droits que ceux prévus par le RGPD : accès, rectification, désindexation et portabilité de vos renseignements. La personne en charge de la protection des renseignements personnels peut être contactée à l'adresse privacy@naturegraph.fr. En cas de litige, vous pouvez adresser une plainte à la Commission d'accès à l'information du Québec (CAI).",
       "backHome": "Retour à l'accueil"
     },
     "terms": {
@@ -1052,6 +1064,28 @@
       "lawTitle": "Droit applicable",
       "lawContent": "Le présent site est soumis au droit français. En cas de litige, les tribunaux français seront seuls compétents. L'utilisation du service implique l'acceptation des présentes mentions légales.",
       "backHome": "Retour à l'accueil"
+    }
+  },
+
+  "cookies": {
+    "banner": {
+      "title": "Cookies essentiels uniquement",
+      "message": "Naturegraph utilise uniquement des cookies strictement nécessaires au fonctionnement du site (session de connexion, préférences de langue). Aucun cookie publicitaire ou de traçage n'est utilisé.",
+      "accept": "J'ai compris",
+      "learnMore": "En savoir plus",
+      "ariaRegion": "Information sur les cookies"
+    }
+  },
+
+  "rgpd": {
+    "export": {
+      "title": "Exporter mes données",
+      "description": "Téléchargez l'ensemble des données personnelles que Naturegraph détient à votre sujet, au format JSON (droit à la portabilité — RGPD Art. 20 / Loi 25 Art. 27.3).",
+      "button": "Télécharger mes données",
+      "downloading": "Préparation de l'export…",
+      "success": "Export téléchargé",
+      "error": "Échec de l'export. Réessaie plus tard ou contacte privacy@naturegraph.fr.",
+      "filenamePrefix": "naturegraph-export"
     }
   },
 

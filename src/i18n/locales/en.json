@@ -982,6 +982,16 @@
     "logoutDesc": "You will be redirected to the home page",
     "deleteAccountDesc": "This action is irreversible. All your data will be deleted.",
     "deleteAccountConfirm": "Are you sure you want to delete your account?",
+    "delete": {
+      "title": "Are you sure you want to delete your account?",
+      "description": "This action is immediate and irreversible. All your data, photos and observations will be permanently deleted and cannot be recovered.",
+      "usernameLabel": "To confirm, type your username below",
+      "usernameLoading": "loading…",
+      "confirm": "Delete permanently",
+      "successTitle": "Account deleted",
+      "successDesc": "All your data has been erased.",
+      "error": "Cannot delete account right now."
+    },
     "weeklyGoal": "Weekly goal",
     "weeklyGoalDesc": "Number of observations per week",
     "weeklyGoalDecrease": "Decrease goal",
@@ -1037,6 +1047,8 @@
       "section5Content": "In accordance with the GDPR, you have the right to access, rectify, delete, port and object to your personal data. To exercise these rights, contact us at privacy@naturegraph.fr.",
       "section6Title": "Contact",
       "section6Content": "For any questions regarding data protection: privacy@naturegraph.fr. Data controller: Naturegraph, France.",
+      "section7Title": "Quebec / Canada Users (Law 25)",
+      "section7Content": "For users residing in Quebec, under Law 25 (Act to modernize legislative provisions as regards the protection of personal information), you have the same rights as those provided by the GDPR: access, rectification, de-indexing and portability of your information. The person in charge of personal information protection can be contacted at privacy@naturegraph.fr. In case of dispute, you may file a complaint with the Commission d'accès à l'information du Québec (CAI).",
       "backHome": "Back to home"
     },
     "terms": {
@@ -1052,6 +1064,28 @@
       "lawTitle": "Applicable Law",
       "lawContent": "This site is subject to French law. In case of dispute, French courts shall have sole jurisdiction. Use of the service implies acceptance of these legal notices.",
       "backHome": "Back to home"
+    }
+  },
+
+  "cookies": {
+    "banner": {
+      "title": "Essential cookies only",
+      "message": "Naturegraph only uses cookies strictly necessary for the site to function (login session, language preferences). No advertising or tracking cookies are used.",
+      "accept": "Got it",
+      "learnMore": "Learn more",
+      "ariaRegion": "Cookie information"
+    }
+  },
+
+  "rgpd": {
+    "export": {
+      "title": "Export my data",
+      "description": "Download all personal data Naturegraph holds about you, in JSON format (right to data portability — GDPR Art. 20 / Law 25 Art. 27.3).",
+      "button": "Download my data",
+      "downloading": "Preparing export…",
+      "success": "Export downloaded",
+      "error": "Export failed. Try again later or contact privacy@naturegraph.fr.",
+      "filenamePrefix": "naturegraph-export"
     }
   },
 

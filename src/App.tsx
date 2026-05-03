@@ -6,6 +6,7 @@ import { ToastProvider } from '@/contexts/ToastContext'
 import { LocationProvider } from '@/contexts/LocationContext'
 import { SpeciesProvider } from '@/contexts/SpeciesContext'
 import { AccessibilityProvider } from '@/contexts/AccessibilityContext'
+import { CookieBanner } from '@/components/layout/CookieBanner'
 
 export default function App() {
   return (
@@ -24,6 +25,9 @@ export default function App() {
                     Aller au contenu principal
                   </a>
                   <Outlet />
+                  {/* CookieBanner global — RGPD/ePrivacy/Loi 25 information layer.
+                      Affiché une seule fois par navigateur (localStorage). */}
+                  <CookieBanner />
                 </ToastProvider>
               </SpeciesProvider>
             </LocationProvider>
