@@ -39,7 +39,7 @@ jobs:
           JS_SIZE=$(find dist/assets -name '*.js' -exec gzip -c {} + | wc -c)
           JS_KB=$((JS_SIZE / 1024))
           echo "JS gzip total: ${JS_KB}KB"
-          # Budget MVP : 320 KB gzip (somme de TOUS les chunks JS, pas la critical
+          # Budget MVP : 325 KB gzip (somme de TOUS les chunks JS, pas la critical
           # path). Note : le first-paint réel pour la home charge ~190 KB gzip
           # (index + vendor + supabase + i18n) — le reste est lazy-loaded par
           # route (Auth, Profile, Contribute, Settings, Notifications).
@@ -48,9 +48,15 @@ jobs:
           #   - services saved/follow/block/hidden/report + hooks RQ (~5 KB)
           #   - SharePopover modal Figma (~3 KB)
           #   - règle confidentialité localisation feed
-          # Si on dépasse 320, code-split d'abord (lazy), bump en dernier recours.
-          if [ "$JS_KB" -gt 320 ]; then
-            echo "::error::JS bundle exceeds 320KB gzip budget (${JS_KB}KB)"
+          # Bumped 320→325 le 2026-05-03 suite à RC-D Privacy by Design (PR #49) :
+          #   - Cookie Banner + dataExport service + useDataExport hook
+          #   - DeleteAccountModal réécrit (matching strict username)
+          #   - Privacy.tsx (11 sections) + Legal.tsx (6 sections)
+          #   - +~50 clés i18n FR/EN (legal.privacy.* legal.terms.* cookies.* rgpd.*)
+          # Code-split de Privacy/Legal en lazy déjà en place.
+          # Si on dépasse 325, code-split d'abord (lazy), bump en dernier recours.
+          if [ "$JS_KB" -gt 325 ]; then
+            echo "::error::JS bundle exceeds 325KB gzip budget (${JS_KB}KB)"
             exit 1
           fi
-          echo "✓ Bundle within eco-conception budget (${JS_KB}/320 KB)"
+          echo "✓ Bundle within eco-conception budget (${JS_KB}/325 KB)"
