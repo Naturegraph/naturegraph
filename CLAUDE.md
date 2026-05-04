@@ -35,7 +35,7 @@ Plateforme web citoyenne biodiversite. React 19 + TypeScript + Vite + Tailwind +
 - Source de verite : `docs/backend/database-architecture.md` + `docs/backend/schema.sql`
 - Types TS : `src/types/supabase.ts` — generes via `npx supabase gen types typescript`, jamais edites a la main
 - Migrations SQL : `supabase/migrations/` — format timestamp YYYYMMDD_nom.sql (ex: 20260401_rls_fixes.sql)
-- Toute modification de schema doit mettre a jour : SQL, database.ts, DATA_ARCHITECTURE.md
+- Toute modification de schema doit mettre a jour : SQL, database.ts, docs/backend/database-architecture.md
 - Compteurs denormalises maintenus par triggers PostgreSQL (pas cote client)
 - PostGIS pour les requetes geographiques (ST_DWithin)
 - RLS obligatoire sur toute nouvelle table
@@ -76,7 +76,17 @@ src/
   types/             Types TypeScript
   data/mock/         Mock data pour dev (25 users, 125+ posts)
 docs/
-  DATA_ARCHITECTURE.md   Schema de donnees complet
+  README.md                          Index master de la doc
+  PROJECT_STRUCTURE.md               Carte vivante du repo
+  USER_STORIES.md, PLAN_ACTION.md    Vision + roadmap
+  PRD_*.md, EPIC_*.md                Specs produit par feature
+  AUDIT_*.md, SYNTHESE_*.md          Audits + causes racines
+  backend/                           Architecture DB + relations + schema.sql
+  api-connection/                    Setup Supabase + endpoints + auth flow
+  design-system/                     Tokens + composants Figma
+  security/                          RLS + RGPD + media
+  devops/                            Environments + deployment + monitoring
+  archive/sessions/                  Notes session passees (memoire historique)
 supabase/
   migrations/        Migrations SQL PostgreSQL + PostGIS
 ```

@@ -1,6 +1,6 @@
 # 🧭 EPIC — Localisation Privacy-First (Naturegraph)
 
-> Document de découpage opérationnel. Référence produit : `docs/PRD-LOCALIZATION.md`.
+> Document de découpage opérationnel. Référence produit : `docs/PRD_LOCALIZATION.md`.
 > Dernière mise à jour : 2026-04-14
 > Propriétaires : Nicolas (Lead Product Designer), agents IA
 
@@ -366,7 +366,7 @@ Backend
 
 ## 🔗 Références
 
-- `docs/PRD-LOCALIZATION.md` — PRD produit
+- `docs/PRD_LOCALIZATION.md` — PRD produit
 - `docs/backend/database-architecture.md` — schéma global
 - `GUIDELINES.md` — éco-conception + a11y
 - `docs/PRD_ONBOARDING.md` — flow onboarding existant
