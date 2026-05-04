@@ -1,0 +1,51 @@
+-- ============================================================================
+-- Fix : retire la contrainte legacy display_order_positive qui rejetait
+-- display_order = 0 (utilise pour la premiere photo cover du post).
+-- ============================================================================
+--
+-- Bug visible utilisateur : impossibilite de creer une observation
+-- (formulaire Encounter echoue a la fin du chargement, post supprime par
+-- rollback automatique).
+--
+-- Erreur Postgres : "new row for relation media violates check constraint
+-- display_order_positive" (logs MCP Supabase 2026-05-04).
+--
+-- Cause racine
+-- ------------
+-- Deux contraintes CHECK contradictoires cohabitaient sur media.display_order :
+--
+--   1. display_order_positive  : CHECK (display_order > 0)
+--      → contrainte historique 1-indexee, rejette display_order = 0
+--
+--   2. media_display_order_range : CHECK (display_order IS NULL
+--                                         OR (display_order >= 0 AND <= 3))
+--      → contrainte v3/v4 photo-management, 0-indexee, range 0-3 pour 4 photos
+--
+-- La nouvelle contrainte (range 0-3) a ete ajoutee dans le refactor photo-
+-- management v3/v4 (migrations 20260423/20260424) mais l'ancienne 1-indexee
+-- n'a jamais ete supprimee → conflit silencieux.
+--
+-- Code applicatif concerne
+-- ------------------------
+-- src/services/mediaService.ts ligne 105 : `displayOrder = 0` par defaut
+-- (premiere photo = cover, indexage 0-based aligne avec le tableau de fichiers
+-- form.files[i] dans ContributeEncounterForm.tsx).
+--
+-- Fix
+-- ---
+-- DROP la contrainte legacy. La contrainte media_display_order_range reste
+-- active et garantit la coherence (0-3 inclus + NULL).
+-- ============================================================================
+
+ALTER TABLE public.media DROP CONSTRAINT IF EXISTS display_order_positive;
+
+-- Verification post-migration (a executer manuellement pour validation)
+-- ---------------------------------------------------------------------
+-- SELECT pg_get_constraintdef(oid) AS def, conname
+-- FROM pg_constraint
+-- WHERE conrelid = 'public.media'::regclass
+--   AND contype = 'c'
+--   AND conname LIKE '%display_order%';
+--
+-- Doit retourner UNIQUEMENT media_display_order_range, plus aucune mention
+-- de display_order_positive.
