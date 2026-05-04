@@ -149,6 +149,18 @@ const WEATHER_EMOJI: Record<string, string> = {
   snowy: '🌨️',
 }
 
+/** Emoji par type d'habitat — affiche en premier dans la rangee meta du post. */
+const HABITAT_EMOJI: Record<string, string> = {
+  forest: '🌳',
+  park_garden: '🌷',
+  prairie_heath: '🌾',
+  urban: '🏙️',
+  river: '🏞️',
+  lake_wetland: '💧',
+  mountain: '⛰️',
+  sea_coast: '🌊',
+}
+
 /**
  * Icône d'en-tête + couleur par type de post (règle globale projet).
  * Voir second-agent/04-feedpost-icon-color-by-type.md.
@@ -433,6 +445,7 @@ export function FeedPost({
             const labelHabitat = habitat
               ? t(`contribute.habitat.${habitat}`, { defaultValue: habitat })
               : null
+            const emojiHabitat = habitat ? HABITAT_EMOJI[habitat] : null
 
             const labelWeather = weather
               ? t(`contribute.weather.${weather}`, { defaultValue: weather })
@@ -448,7 +461,12 @@ export function FeedPost({
             // Construire le pipeline de segments dans l'ordre demandé
             const segments: React.ReactNode[] = []
             if (labelHabitat) {
-              segments.push(<span key="habitat">{labelHabitat}</span>)
+              segments.push(
+                <span key="habitat" className="inline-flex items-center gap-1">
+                  {emojiHabitat && <span aria-hidden="true">{emojiHabitat}</span>}
+                  {labelHabitat}
+                </span>,
+              )
             }
             if (labelWeather) {
               segments.push(
