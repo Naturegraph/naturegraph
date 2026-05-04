@@ -10,7 +10,7 @@
  * - "Voir plus / Voir moins" annonce le changement d'état
  */
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -59,6 +59,8 @@ export interface MockPost {
   clouds?: string
   /** Enum DB brut (`'morning' | 'afternoon' | 'dusk' | 'evening' | 'night'`) — traduit côté composant. */
   timeOfDay?: string
+  /** Enum DB brut (`'forest' | 'sea_coast' | 'park_garden' | ...`) — traduit côté composant. */
+  habitat?: string
   category: { icon: string; label: string }
   /** Nom commun (si identifié) — sinon laisser undefined / null pour fallback i18n. */
   species?: string | null
@@ -199,6 +201,7 @@ export function FeedPost({
   weather,
   clouds,
   timeOfDay,
+  habitat,
   // category : prop conservée dans l'interface mais l'affichage est maintenant
   // dérivé de taxonomic_group + species (cf. règle catégorie+espèce unifiée).
   category: _category,
@@ -420,9 +423,17 @@ export function FeedPost({
             )}
           </div>
 
-          {/* Météo / moment — météo avec emoji (Figma 6385:55806), moment sans
-              emoji (Figma : juste le label). second-agent/05. */}
+          {/* Habitat / météo / moment — ordre demandé Nicolas 2026-05-04 :
+              1. Habitat (en premier si renseigné)
+              2. Météo (avec emoji)
+              3. Moment de la journée
+              Selon ce que l'utilisateur a complété, on peut avoir 1, 2 ou 3 segments.
+              Cf. Figma 6385:55806 + second-agent/05. */}
           {(() => {
+            const labelHabitat = habitat
+              ? t(`contribute.habitat.${habitat}`, { defaultValue: habitat })
+              : null
+
             const labelWeather = weather
               ? t(`contribute.weather.${weather}`, { defaultValue: weather })
               : null
@@ -434,28 +445,41 @@ export function FeedPost({
 
             const labelClouds = clouds || null
 
-            if (!labelWeather && !labelClouds && !labelTimeOfDay) return null
+            // Construire le pipeline de segments dans l'ordre demandé
+            const segments: React.ReactNode[] = []
+            if (labelHabitat) {
+              segments.push(<span key="habitat">{labelHabitat}</span>)
+            }
+            if (labelWeather) {
+              segments.push(
+                <span key="weather" className="inline-flex items-center gap-1">
+                  {emojiWeather && <span aria-hidden="true">{emojiWeather}</span>}
+                  {labelWeather}
+                </span>,
+              )
+            }
+            if (labelClouds) {
+              segments.push(<span key="clouds">{labelClouds}</span>)
+            }
+            if (labelTimeOfDay) {
+              segments.push(<span key="time">{labelTimeOfDay}</span>)
+            }
 
+            if (segments.length === 0) return null
+
+            // Joindre avec separateur " • " entre chaque segment
             return (
               <div className="flex gap-2 items-center flex-wrap text-sm text-foreground">
-                {labelWeather && (
-                  <span className="inline-flex items-center gap-1">
-                    {emojiWeather && <span aria-hidden="true">{emojiWeather}</span>}
-                    {labelWeather}
-                  </span>
-                )}
-                {labelWeather && labelClouds && (
-                  <span aria-hidden="true" className="text-xs">
-                    •
-                  </span>
-                )}
-                {labelClouds && <span>{labelClouds}</span>}
-                {(labelWeather || labelClouds) && labelTimeOfDay && (
-                  <span aria-hidden="true" className="text-xs">
-                    •
-                  </span>
-                )}
-                {labelTimeOfDay && <span>{labelTimeOfDay}</span>}
+                {segments.map((seg, i) => (
+                  <React.Fragment key={i}>
+                    {i > 0 && (
+                      <span aria-hidden="true" className="text-xs">
+                        •
+                      </span>
+                    )}
+                    {seg}
+                  </React.Fragment>
+                ))}
               </div>
             )
           })()}
