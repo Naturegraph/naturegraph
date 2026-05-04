@@ -123,10 +123,19 @@ export function postFeedItemToMockPost(item: PostFeedItem, index = 0): MockPost 
     ? `${item.author.first_name} ${item.author.last_name}`.trim() || item.author.username
     : 'Utilisateur'
 
-  // Titre = première phrase de la description (max 80 chars) ou la description entière
-  const firstSentence = item.description.split(/[.!?]/)[0].trim()
-  const title =
-    firstSentence.length > 0 ? firstSentence.slice(0, 80) : item.description.slice(0, 80)
+  // Titre : on PRIORISE le titre DB s'il existe (saisie utilisateur explicite).
+  // Fallback : si pas de titre, premiere phrase de la description (max 80 chars).
+  // Bug fix 2026-05-04 : avant on derivait toujours le titre de la description,
+  // ce qui ignorait totalement le vrai titre saisi par l'utilisateur dans le
+  // formulaire Encounter et donnait l'impression que les posts "se melangeaient".
+  const explicitTitle = item.title?.trim() ?? ''
+  let title: string
+  if (explicitTitle.length > 0) {
+    title = explicitTitle.slice(0, 80)
+  } else {
+    const firstSentence = item.description.split(/[.!?]/)[0].trim()
+    title = firstSentence.length > 0 ? firstSentence.slice(0, 80) : item.description.slice(0, 80)
+  }
 
   return {
     id: item.id,
@@ -158,6 +167,7 @@ export function postFeedItemToMockPost(item: PostFeedItem, index = 0): MockPost 
     content: item.description,
     weather: item.weather ?? undefined,
     timeOfDay: item.time_of_day ?? undefined,
+    habitat: item.habitat ?? undefined,
     category: {
       icon: getTaxonomicEmoji(item.taxonomic_group),
       label: item.taxonomic_group ?? 'Autre',

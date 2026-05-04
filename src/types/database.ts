@@ -183,6 +183,9 @@ export interface Post {
   type: PostType
   status: PostStatus
   visibility: Visibility
+  /** Titre court optionnel (max 80 chars). Saisi explicitement par l'utilisateur
+   *  dans le formulaire Encounter step 3. Migration : 20260501_add_post_title_column.sql */
+  title: string | null
   description: string
   tags: string[]
   // Location
