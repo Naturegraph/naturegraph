@@ -26,7 +26,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
 import {
   UserX,
   UserPlus,
@@ -36,7 +35,6 @@ import {
   VolumeX,
   EyeOff,
   Flag,
-  Pencil,
   Trash2,
   Check,
 } from 'lucide-react'
@@ -61,13 +59,12 @@ interface PostOptionsMenuProps {
   isOwnPost: boolean
   onClose: () => void
   /**
-   * Callback édition — redirige vers le formulaire de modification
-   * TODO [BACKEND] — navigate(`/contribute/edit/${postId}`)
-   */
-  onEdit?: () => void
-  /**
-   * Callback suppression — à connecter à DELETE /posts/:id
-   * TODO [BACKEND] — postService.deletePost(postId) + invalider cache
+   * Callback suppression — connecté à postService.deletePost via useDeletePost.
+   *
+   * Note Phase 2 : un callback `onEdit` était prévu mais l'implémentation
+   * frontend (ContributeEditForm + ?edit param dans Contribute/index.tsx)
+   * est repoussée. Le service backend `updatePost` est déjà prêt
+   * (cf. postService.ts:323).
    */
   onDelete?: () => void
 }
@@ -137,11 +134,9 @@ export function PostOptionsMenu({
   authorId,
   isOwnPost,
   onClose,
-  onEdit,
   onDelete,
 }: PostOptionsMenuProps) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const firstItemRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const [linkCopied, setLinkCopied] = useState(false)
@@ -209,16 +204,9 @@ export function PostOptionsMenu({
     }, 1500)
   }
 
-  /** Navigation vers le formulaire d'édition du post */
-  function handleEdit() {
-    onClose()
-    if (onEdit) {
-      onEdit()
-      return
-    }
-    // TODO [BACKEND] — navigate(`/contribute/edit/${postId}`)
-    navigate(`/contribute?edit=${postId}`)
-  }
+  // handleEdit retiré du MVP : ContributeEditForm pas encore implémenté.
+  // À réintégrer en Phase 2 avec route /contribute?type=nature_encounter&edit=:id
+  // + détection de l'edit param dans Contribute/index.tsx + pré-remplissage form.
 
   /**
    * Suppression du post
@@ -281,17 +269,15 @@ export function PostOptionsMenu({
 
   // ── Contenu du menu selon le mode ─────────────────────────────────────────
 
+  // MVP : "Modifier mon observation" n'est pas encore implementé côté frontend
+  // (route /contribute?edit=... attend ?type=... → redirige vers /home).
+  // L'item est masqué pour ne pas frustrer l'utilisateur. Phase 2 :
+  // implémenter ContributeEditForm avec pré-remplissage + updatePost service.
+  // Backend updatePost service est déjà prêt (cf. postService.ts:323).
   const ownPostItems = (
     <>
       <MenuItem
         itemRef={firstItemRef as React.RefObject<HTMLButtonElement>}
-        icon={<Pencil className="size-5" />}
-        label={t('home.post.options.edit')}
-        description={t('home.post.options.editDesc')}
-        onClick={handleEdit}
-      />
-      <div className="h-px bg-border mx-5" aria-hidden="true" />
-      <MenuItem
         icon={
           linkCopied ? <Check className="size-5 text-green-600" /> : <Link className="size-5" />
         }
