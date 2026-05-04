@@ -74,14 +74,12 @@ function getTaxonomicEmoji(group: string | null | undefined): string {
  *   · sinon         → 1:1 (carré)
  * Sans dimensions connues → fallback 16:9 (l'historique du feed est en paysage).
  */
-/**
- * Override déterministe du format pour le visuel feed (3 formats Figma) —
- * distribue paysage / portrait / carré sur les posts via un round-robin
- * simple. Conservé tant que la BDD n'a pas une variété de `display_format`.
- */
-function pickTempFormat(index: number): MockPost['format'] {
-  const FORMATS: MockPost['format'][] = ['16:9', 'portrait', '1:1']
-  return FORMATS[index % FORMATS.length]
+function derivePostFormat(width?: number, height?: number): MockPost['format'] {
+  if (!width || !height) return '16:9'
+  const ratio = width / height
+  if (ratio < 0.85) return 'portrait'
+  if (ratio > 1.15) return '16:9'
+  return '1:1'
 }
 
 /**
@@ -118,7 +116,7 @@ function formatPostDate(isoDate: string): string {
  * partout où on rend des posts via `<FeedPost>`. Évite de dupliquer la
  * logique de mapping (titre, location, format, reactions, etc.).
  */
-export function postFeedItemToMockPost(item: PostFeedItem, index = 0): MockPost {
+export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost {
   const authorName = item.author
     ? `${item.author.first_name} ${item.author.last_name}`.trim() || item.author.username
     : 'Utilisateur'
@@ -184,14 +182,14 @@ export function postFeedItemToMockPost(item: PostFeedItem, index = 0): MockPost 
     // l'étape 1 du formulaire de contribution. Fallback ratio-based si la
     // colonne est absente (legacy posts pré-migration 20260429).
     //
-    // [TEMP — second-agent/01-feed-formats-temp-override.md]
-    // Tant que tous les posts en BDD ont display_format='16:9', on alterne
-    // les 3 formats sur l'id du post pour permettre la validation visuelle.
-    // À RETIRER dès que la BDD contient des posts avec différents formats.
-    format: pickTempFormat(index),
-    // Valeur réelle (sera utilisée quand le TEMP sera retiré) :
-    //   (item as { display_format?: MockPost['format'] }).display_format ??
-    //   derivePostFormat(item.media?.[0]?.width, item.media?.[0]?.height)
+    // 2026-05-04 : retrait du pickTempFormat (override round-robin temp) car
+    // les utilisateurs reels ont maintenant des display_format distincts en DB.
+    // L'override causait l'inversion paysage/carre dans le feed.
+    format:
+      ((item as { display_format?: MockPost['format'] }).display_format as
+        | MockPost['format']
+        | undefined) ??
+      derivePostFormat(item.media?.[0]?.width ?? undefined, item.media?.[0]?.height ?? undefined),
     images: (item.media ?? []).map((m) => ({
       url: m.url,
       alt: m.alt ?? '',
