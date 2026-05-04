@@ -143,12 +143,15 @@ export function ProfileFeed({ userPosts, isOwnProfile }: ProfileFeedProps) {
             <FeedGallery posts={sortedPosts} />
           </div>
         ) : (
-          <div className="-mx-4 md:mx-0 grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-6">
+          <div className="-mx-4 md:mx-0 grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-6 items-start">
+            {/* items-start : chaque carte adopte la hauteur de son contenu (vs
+                stretch par defaut qui aligne sur la plus haute card de la rangee
+                -> creait un grand vide blanc en bas de la card la plus courte).
+                Decision Nicolas 2026-05-04 : decalage horizontal accepte, vide
+                blanc refuse. */}
             {sortedPosts.map((post) => (
               // `isOwnPost` : sur son propre profil, tous les posts du tab
               // Journal sont siens → menu 3-pts expose Modifier / Supprimer.
-              // TODO [BACKEND] postService.deletePost(postId) — soft delete via
-              // posts.deleted_at + RLS (auth.uid() = author_id).
               <FeedPost key={post.id} {...post} isOwnPost={isOwnProfile} />
             ))}
           </div>
