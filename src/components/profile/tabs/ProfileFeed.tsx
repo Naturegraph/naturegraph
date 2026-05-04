@@ -143,16 +143,17 @@ export function ProfileFeed({ userPosts, isOwnProfile }: ProfileFeedProps) {
             <FeedGallery posts={sortedPosts} />
           </div>
         ) : (
-          <div className="-mx-4 md:mx-0 grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-6 items-start">
-            {/* items-start : chaque carte adopte la hauteur de son contenu (vs
-                stretch par defaut qui aligne sur la plus haute card de la rangee
-                -> creait un grand vide blanc en bas de la card la plus courte).
-                Decision Nicolas 2026-05-04 : decalage horizontal accepte, vide
-                blanc refuse. */}
+          <div className="-mx-4 md:mx-0 columns-1 md:columns-2 gap-0 md:gap-6 [column-fill:_balance]">
+            {/* CSS Multi-Column Layout (Masonry pure) :
+                - columns-1 / md:columns-2 : 1 colonne mobile, 2 colonnes desktop
+                - column-fill: balance : remplit toutes les colonnes uniformement
+                - chaque card en break-inside:avoid pour eviter les coupures
+                Decision Nicolas 2026-05-04 : layout Pinterest-style, vide
+                blanc elimine, decalage horizontal accepte. */}
             {sortedPosts.map((post) => (
-              // `isOwnPost` : sur son propre profil, tous les posts du tab
-              // Journal sont siens → menu 3-pts expose Modifier / Supprimer.
-              <FeedPost key={post.id} {...post} isOwnPost={isOwnProfile} />
+              <div key={post.id} className="break-inside-avoid mb-0 md:mb-6">
+                <FeedPost {...post} isOwnPost={isOwnProfile} />
+              </div>
             ))}
           </div>
         )
