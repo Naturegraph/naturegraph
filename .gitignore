@@ -21,6 +21,9 @@ design-references/
 # Figma Make generated source (reference only, not part of the app)
 naturegraph-make/
 
+# Supabase CLI temporary cache (gen types, etc.)
+supabase/.temp/
+
 # Claude Code config (machine-specific)
 .claude/
 
