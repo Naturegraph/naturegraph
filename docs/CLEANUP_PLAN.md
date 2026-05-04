@@ -1,9 +1,33 @@
 # Naturegraph — Plan de cleanup repo & structure
 
-> **Version** : 1.0 — 2026-05-03
+> **Version** : 1.1 — 2026-05-04 — ✅ **EXÉCUTÉ** (PR #56, #57, #58)
 > **Source** : inspection lecture seule du repo (root + docs + src/assets + package.json + git status)
 > **Posture** : pensée maintenance · réduire la friction de découverte des documents · pas de refacto code
 > **Lecture cible** : 5 minutes pour comprendre, 1h pour exécuter
+
+---
+
+## ✅ Statut d'exécution (2026-05-04)
+
+Le cleanup décrit dans ce document a été **exécuté** et mergé sur `main` via PR #58.
+
+**Ce qui a été fait** :
+
+- ✅ 10 assets orphans supprimés (~2 MB) — vérifiés via grep, 0 import
+- ✅ `dist/`, `supabase/.temp/`, `naturegraph-make/` supprimés du disque
+- ✅ `supabase/.temp/` ajouté au `.gitignore`
+- ✅ Renommages cohérence : `PRD-/EPIC-` → `PRD_/EPIC_` (3 fichiers)
+- ✅ Consolidation : `docs/guidelines/backend-guidelines.md` → `docs/backend/`
+- ✅ Consolidation : `docs/prd/photo-management.md` → `docs/PRD_PHOTO_MANAGEMENT.md`
+- ✅ Archivage : `second-agent/` (9 fichiers) → `docs/archive/sessions/`
+- ✅ `docs/README.md` réécrit comme master index complet
+- ✅ `CLAUDE.md` mis à jour (références correctes vers la nouvelle structure)
+- ✅ Auto-delete-branch GitHub désactivé (fix RC-H G-2 récidive develop)
+- ✅ Build + lint vérifiés (npm run build SUCCESS, 0 lint errors)
+
+**Décision rédactionnelle** : la structure numérotée 8 catégories (`01-product/`, `02-prd/`, etc.) initialement proposée n'a **pas** été appliquée pour éviter de casser les ~30 cross-références entre markdowns. La structure plate actuelle + master index README résout le problème de découvrabilité avec le même résultat.
+
+**État cible atteint** : un nouveau membre de l'équipe trouve l'info en <30 secondes via `docs/README.md`.
 
 ---
 
