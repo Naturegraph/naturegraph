@@ -17,16 +17,16 @@
 
 ## 2. Conventions de nommage
 
-| Type | Convention | Exemple |
-|---|---|---|
-| Table | `snake_case`, pluriel | `post_media`, `notebook_entries` |
-| Colonne | `snake_case`, singulier | `author_id`, `published_at` |
-| FK | `<entité>_id` | `post_id`, `user_id` |
-| Index | `idx_<table>_<col>[_<type>]` | `idx_posts_published_at`, `idx_posts_location_gist` |
-| Trigger | `trg_<table>_<action>` | `trg_posts_counters` |
-| Function | `verbe_objet` | `update_post_counters`, `can_see_post` |
-| Migration | `YYYYMMDD_<scope>_<desc>.sql` | `20260403_security_hardening.sql` |
-| Policy | `<table>_<action>` | `posts_select`, `profiles_update` |
+| Type      | Convention                    | Exemple                                             |
+| --------- | ----------------------------- | --------------------------------------------------- |
+| Table     | `snake_case`, pluriel         | `post_media`, `notebook_entries`                    |
+| Colonne   | `snake_case`, singulier       | `author_id`, `published_at`                         |
+| FK        | `<entité>_id`                 | `post_id`, `user_id`                                |
+| Index     | `idx_<table>_<col>[_<type>]`  | `idx_posts_published_at`, `idx_posts_location_gist` |
+| Trigger   | `trg_<table>_<action>`        | `trg_posts_counters`                                |
+| Function  | `verbe_objet`                 | `update_post_counters`, `can_see_post`              |
+| Migration | `YYYYMMDD_<scope>_<desc>.sql` | `20260403_security_hardening.sql`                   |
+| Policy    | `<table>_<action>`            | `posts_select`, `profiles_update`                   |
 
 ## 3. Workflow modification de schéma
 
@@ -94,16 +94,16 @@ Toujours wrapper avec un type d'erreur custom pour Sentry.
 
 ## 5. Anti-patterns interdits
 
-| ❌ | ✅ |
-|---|---|
-| `supabase.from('profiles').delete().eq('id', user.id)` côté client | Edge Function `delete-account` |
-| `COUNT(*)` à chaque rendu | Compteurs `*_count` mis à jour par triggers |
-| `WHERE LOWER(username) = $1` | `username` en `CITEXT`, comparaison directe |
-| Stocker un fichier en colonne `bytea` | Toujours Supabase Storage |
-| `// @ts-ignore` sur une requête supabase | Régénérer les types |
-| Bypass RLS avec service_role pour « simplifier » | Écrire une fonction `SECURITY DEFINER` ciblée |
-| Injection SQL via template strings | Toujours `.eq()`, `.in()`, paramétré |
-| Exposer `auth.users` directement | Toujours passer par `profiles` |
+| ❌                                                                 | ✅                                            |
+| ------------------------------------------------------------------ | --------------------------------------------- |
+| `supabase.from('profiles').delete().eq('id', user.id)` côté client | Edge Function `delete-account`                |
+| `COUNT(*)` à chaque rendu                                          | Compteurs `*_count` mis à jour par triggers   |
+| `WHERE LOWER(username) = $1`                                       | `username` en `CITEXT`, comparaison directe   |
+| Stocker un fichier en colonne `bytea`                              | Toujours Supabase Storage                     |
+| `// @ts-ignore` sur une requête supabase                           | Régénérer les types                           |
+| Bypass RLS avec service_role pour « simplifier »                   | Écrire une fonction `SECURITY DEFINER` ciblée |
+| Injection SQL via template strings                                 | Toujours `.eq()`, `.in()`, paramétré          |
+| Exposer `auth.users` directement                                   | Toujours passer par `profiles`                |
 
 ## 6. Performance — réflexes
 
@@ -126,15 +126,15 @@ Toujours wrapper avec un type d'erreur custom pour Sentry.
 
 ## 8. Documentation — chaque modification doit mettre à jour
 
-| Fichier | Quand |
-|---|---|
-| `supabase/migrations/*.sql` | Toujours (nouvelle migration) |
-| `src/types/supabase.ts` | Toujours (gen types) |
-| `docs/backend/schema.sql` | Si schéma logique change |
-| `docs/backend/relations.md` | Si nouvelles FK / cardinalités |
-| `docs/security/rls-policies.md` | Si nouvelles policies |
-| `docs/api-connection/endpoints.md` | Si nouveaux services / hooks |
-| `CLAUDE.md` | Si nouvelles règles transversales |
+| Fichier                            | Quand                             |
+| ---------------------------------- | --------------------------------- |
+| `supabase/migrations/*.sql`        | Toujours (nouvelle migration)     |
+| `src/types/supabase.ts`            | Toujours (gen types)              |
+| `docs/backend/schema.sql`          | Si schéma logique change          |
+| `docs/backend/relations.md`        | Si nouvelles FK / cardinalités    |
+| `docs/security/rls-policies.md`    | Si nouvelles policies             |
+| `docs/api-connection/endpoints.md` | Si nouveaux services / hooks      |
+| `CLAUDE.md`                        | Si nouvelles règles transversales |
 
 ## 9. Process de revue (table ronde)
 
