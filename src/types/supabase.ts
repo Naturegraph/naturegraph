@@ -1,3 +1,16 @@
+// =============================================================================
+// SUPABASE TYPES (auto-generated)
+// =============================================================================
+//
+// Source : Supabase MCP `generate_typescript_types` (BATCH 12 — 2026-05-13)
+// Regenerer apres TOUTE migration : `npx supabase gen types typescript`
+// ou via Supabase MCP `mcp__supabase__generate_typescript_types`.
+//
+// Convention : NE JAMAIS editer ce fichier a la main.
+// Si une table/colonne manque, c'est qu'une migration n'a pas ete appliquee.
+//
+// =============================================================================
+
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
@@ -86,6 +99,13 @@ export type Database = {
             columns: ['post_id']
             isOneToOne: false
             referencedRelation: 'posts'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'comments_post_id_fkey'
+            columns: ['post_id']
+            isOneToOne: false
+            referencedRelation: 'posts_public'
             referencedColumns: ['id']
           },
           {
@@ -248,6 +268,13 @@ export type Database = {
             referencedColumns: ['id']
           },
           {
+            foreignKeyName: 'hidden_posts_post_id_fkey'
+            columns: ['post_id']
+            isOneToOne: false
+            referencedRelation: 'posts_public'
+            referencedColumns: ['id']
+          },
+          {
             foreignKeyName: 'hidden_posts_user_id_fkey'
             columns: ['user_id']
             isOneToOne: false
@@ -323,6 +350,13 @@ export type Database = {
             columns: ['post_id']
             isOneToOne: false
             referencedRelation: 'posts'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'identification_proposals_post_id_fkey'
+            columns: ['post_id']
+            isOneToOne: false
+            referencedRelation: 'posts_public'
             referencedColumns: ['id']
           },
         ]
@@ -460,6 +494,13 @@ export type Database = {
             referencedColumns: ['id']
           },
           {
+            foreignKeyName: 'media_post_id_fkey'
+            columns: ['post_id']
+            isOneToOne: false
+            referencedRelation: 'posts_public'
+            referencedColumns: ['id']
+          },
+          {
             foreignKeyName: 'media_species_id_fkey'
             columns: ['species_id']
             isOneToOne: false
@@ -518,6 +559,13 @@ export type Database = {
             columns: ['observation_id']
             isOneToOne: false
             referencedRelation: 'posts'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'notebook_observations_observation_id_fkey'
+            columns: ['observation_id']
+            isOneToOne: false
+            referencedRelation: 'posts_public'
             referencedColumns: ['id']
           },
         ]
@@ -963,6 +1011,13 @@ export type Database = {
             referencedColumns: ['id']
           },
           {
+            foreignKeyName: 'reactions_post_id_fkey'
+            columns: ['post_id']
+            isOneToOne: false
+            referencedRelation: 'posts_public'
+            referencedColumns: ['id']
+          },
+          {
             foreignKeyName: 'reactions_user_id_fkey'
             columns: ['user_id']
             isOneToOne: false
@@ -1021,6 +1076,13 @@ export type Database = {
             referencedColumns: ['id']
           },
           {
+            foreignKeyName: 'reports_post_id_fkey'
+            columns: ['post_id']
+            isOneToOne: false
+            referencedRelation: 'posts_public'
+            referencedColumns: ['id']
+          },
+          {
             foreignKeyName: 'reports_profile_id_fkey'
             columns: ['profile_id']
             isOneToOne: false
@@ -1075,6 +1137,13 @@ export type Database = {
             referencedColumns: ['id']
           },
           {
+            foreignKeyName: 'saved_posts_post_id_fkey'
+            columns: ['post_id']
+            isOneToOne: false
+            referencedRelation: 'posts_public'
+            referencedColumns: ['id']
+          },
+          {
             foreignKeyName: 'saved_posts_user_id_fkey'
             columns: ['user_id']
             isOneToOne: false
@@ -1083,6 +1152,51 @@ export type Database = {
           },
           {
             foreignKeyName: 'saved_posts_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      security_audit_log: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          ip_address: unknown
+          metadata: Json | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'security_audit_log_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'security_audit_log_user_id_fkey'
             columns: ['user_id']
             isOneToOne: false
             referencedRelation: 'profiles_public'
@@ -1173,6 +1287,60 @@ export type Database = {
           },
         ]
       }
+      support_tickets: {
+        Row: {
+          created_at: string
+          email_sent: boolean
+          id: string
+          ip_address: unknown
+          message: string
+          resolved_at: string | null
+          status: string
+          subject: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email_sent?: boolean
+          id?: string
+          ip_address?: unknown
+          message: string
+          resolved_at?: string | null
+          status?: string
+          subject: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email_sent?: boolean
+          id?: string
+          ip_address?: unknown
+          message?: string
+          resolved_at?: string | null
+          status?: string
+          subject?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'support_tickets_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'support_tickets_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       taxref_cache: {
         Row: {
           author: string | null
@@ -1253,6 +1421,7 @@ export type Database = {
           email_notifications: boolean
           language: string
           newsletter: boolean
+          notif_frequency: string
           push_notifications: boolean
           reduced_motion: boolean
           show_sensitive_data: boolean
@@ -1265,6 +1434,7 @@ export type Database = {
           email_notifications?: boolean
           language?: string
           newsletter?: boolean
+          notif_frequency?: string
           push_notifications?: boolean
           reduced_motion?: boolean
           show_sensitive_data?: boolean
@@ -1277,6 +1447,7 @@ export type Database = {
           email_notifications?: boolean
           language?: string
           newsletter?: boolean
+          notif_frequency?: string
           push_notifications?: boolean
           reduced_motion?: boolean
           show_sensitive_data?: boolean
@@ -1371,6 +1542,150 @@ export type Database = {
           },
           {
             foreignKeyName: 'notifications_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      posts_public: {
+        Row: {
+          city: string | null
+          comments_count: number | null
+          country: string | null
+          created_at: string | null
+          description: string | null
+          display_format: string | null
+          encounter_date: string | null
+          habitat: string | null
+          id: string | null
+          identification_status: string | null
+          latitude: number | null
+          likes_count: number | null
+          location_hidden: boolean | null
+          location_name: string | null
+          location_point: unknown
+          longitude: number | null
+          multiple_observations: boolean | null
+          phenomenon: string | null
+          published_at: string | null
+          region: string | null
+          scientific_name: string | null
+          shares_count: number | null
+          species_identified: boolean | null
+          species_name: string | null
+          status: string | null
+          tags: string[] | null
+          taxonomic_group: string | null
+          taxref_id: string | null
+          taxref_license: string | null
+          taxref_rank: string | null
+          taxref_source: string | null
+          taxref_updated_at: string | null
+          time_of_day: string | null
+          title: string | null
+          type: string | null
+          updated_at: string | null
+          user_id: string | null
+          views_count: number | null
+          visibility: string | null
+          weather: string | null
+        }
+        Insert: {
+          city?: never
+          comments_count?: number | null
+          country?: never
+          created_at?: string | null
+          description?: string | null
+          display_format?: string | null
+          encounter_date?: string | null
+          habitat?: string | null
+          id?: string | null
+          identification_status?: string | null
+          latitude?: never
+          likes_count?: number | null
+          location_hidden?: boolean | null
+          location_name?: never
+          location_point?: never
+          longitude?: never
+          multiple_observations?: boolean | null
+          phenomenon?: string | null
+          published_at?: string | null
+          region?: never
+          scientific_name?: string | null
+          shares_count?: number | null
+          species_identified?: boolean | null
+          species_name?: string | null
+          status?: string | null
+          tags?: string[] | null
+          taxonomic_group?: string | null
+          taxref_id?: string | null
+          taxref_license?: string | null
+          taxref_rank?: string | null
+          taxref_source?: string | null
+          taxref_updated_at?: string | null
+          time_of_day?: string | null
+          title?: string | null
+          type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          views_count?: number | null
+          visibility?: string | null
+          weather?: string | null
+        }
+        Update: {
+          city?: never
+          comments_count?: number | null
+          country?: never
+          created_at?: string | null
+          description?: string | null
+          display_format?: string | null
+          encounter_date?: string | null
+          habitat?: string | null
+          id?: string | null
+          identification_status?: string | null
+          latitude?: never
+          likes_count?: number | null
+          location_hidden?: boolean | null
+          location_name?: never
+          location_point?: never
+          longitude?: never
+          multiple_observations?: boolean | null
+          phenomenon?: string | null
+          published_at?: string | null
+          region?: never
+          scientific_name?: string | null
+          shares_count?: number | null
+          species_identified?: boolean | null
+          species_name?: string | null
+          status?: string | null
+          tags?: string[] | null
+          taxonomic_group?: string | null
+          taxref_id?: string | null
+          taxref_license?: string | null
+          taxref_rank?: string | null
+          taxref_source?: string | null
+          taxref_updated_at?: string | null
+          time_of_day?: string | null
+          title?: string | null
+          type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          views_count?: number | null
+          visibility?: string | null
+          weather?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'posts_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'posts_user_id_fkey'
             columns: ['user_id']
             isOneToOne: false
             referencedRelation: 'profiles_public'
@@ -1597,6 +1912,7 @@ export type Database = {
             }
             Returns: string
           }
+      anonymize_orphan_audit_logs: { Args: never; Returns: number }
       can_see_notebook: { Args: { p_notebook_id: string }; Returns: boolean }
       can_see_post: { Args: { p_post_id: string }; Returns: boolean }
       clear_user_location: { Args: { p_user_id: string }; Returns: undefined }

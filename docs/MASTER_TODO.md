@@ -47,7 +47,7 @@
 
 ## Frontend / Backend
 
-- [ ] **T-001** | Backend | S | — | 🔴 | Régénérer `src/types/supabase.ts` via `npx supabase gen types typescript --project-id hrxgduvworofnrjmgpcj`
+- [x] **T-001** | Backend | S | — | 🔴 | ~~Régénérer `src/types/supabase.ts`~~ (BATCH 12 — 2026-05-13) — _genere via MCP Supabase `generate_typescript_types`, 89798 chars, header explicatif ajoute. Build OK avec nouveaux types._
 - [ ] **T-002** | Backend | M | T-001 | 🔴 | Fix les 22 casts `as unknown as` un par un (12 fichiers concernés)
 - [ ] **T-003** | Backend | S | T-001+T-002 | 🔴 | CI gate : script drift detection types ↔ migrations (fail si désynchro)
 - [x] **T-004** | Backend | S | — | 🔴 | ~~Helper `requireSupabase()` centralisé~~ (BATCH 1 — #90, 2026-05-13) — _adoption progressive a faire (helper dispo)_
@@ -144,7 +144,7 @@
 - [ ] **T-061** | Sécurité | M | — | 🟠 | Tests storage policies (unauthorized access blocked)
 - [ ] **T-062** | Sécurité | S | — | 🟠 | Magic numbers vérification serveur (uploads images)
 - [ ] **T-063** | Sécurité | S | — | 🟠 | Banned usernames côté serveur (Edge Function/RPC, sortir du bundle)
-- [ ] **T-064** | Sécurité | XS | — | 🟠 | Audit advisors Supabase (performance + security)
+- [x] **T-064** | Sécurité | XS | — | 🟠 | ~~Audit advisors Supabase (performance + security)~~ (BATCH 12 — 2026-05-13) — _63 security lints (1 ERROR faux positif PostGIS) + 146 perf lints. Voir `docs/AUDIT_ADVISORS_2026-05-13.md`. Confirme T-065 / T-066 / T-067._
 - [ ] **T-065** | Supabase | M | — | 🟠 | Cleanup 50 RLS policies dupliquées (legacy + nouvelles cohabitent)
 - [ ] **T-066** | Supabase | XS | — | 🟠 | 4 indexes dupliqués DB : DROP les doublons
 - [ ] **T-067** | Supabase | S | — | 🟠 | Optimiser `auth.uid()` → `(SELECT auth.uid())` (55 policies advisors)
