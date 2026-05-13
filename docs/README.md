@@ -36,6 +36,7 @@
 | [`MASTER_TODO.md`](MASTER_TODO.md)                     | 📌 **Document de pilotage central** (105 tâches T-001 à T-105) | v1.0 — 2026-05-04 |
 | [`CONSOLIDATION_ROADMAP.md`](CONSOLIDATION_ROADMAP.md) | Plan séquencé en 6 phases (~3 mois)                            | v1.0 — 2026-05-04 |
 | [`NEXT_TASKS.md`](NEXT_TASKS.md)                       | Checklist priorisée actionable                                 | v1.0 — 2026-05-04 |
+| [`QUICK_WINS.md`](QUICK_WINS.md)                       | 📌 **47 quick wins exhaustifs** (~42h, intercalables)          | v1.0 — 2026-05-04 |
 
 ---
 
