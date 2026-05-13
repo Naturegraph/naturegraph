@@ -16,6 +16,7 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import { useProfile, useProfileByUsername, useUpdateProfile } from '@/hooks/useProfile'
 import { useUserPosts } from '@/hooks/usePost'
 import { useSavedPostsPage } from '@/hooks/useSavedPosts'
@@ -96,6 +97,10 @@ export default function Profile() {
   const { t } = useTranslation()
   const { username } = useParams<{ username: string }>()
   const { profile: authProfile } = useAuth()
+
+  // BATCH 10 / QW-UX1 : titre dynamique pour onglet navigateur
+  // (utilise le username quand on visite un profil tiers, sinon "Profil").
+  usePageTitle(username ? `@${username}` : t('nav.profile'))
 
   // Sécurité : un visiteur déconnecté ne doit JAMAIS être traité comme owner.
   // Auparavant `!username || authProfile?.username === username` → un user
