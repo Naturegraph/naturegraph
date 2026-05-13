@@ -39,7 +39,7 @@ jobs:
           JS_SIZE=$(find dist/assets -name '*.js' -exec gzip -c {} + | wc -c)
           JS_KB=$((JS_SIZE / 1024))
           echo "JS gzip total: ${JS_KB}KB"
-          # Budget MVP : 325 KB gzip (somme de TOUS les chunks JS, pas la critical
+          # Budget MVP : 330 KB gzip (somme de TOUS les chunks JS, pas la critical
           # path). Note : le first-paint réel pour la home charge ~190 KB gzip
           # (index + vendor + supabase + i18n) — le reste est lazy-loaded par
           # route (Auth, Profile, Contribute, Settings, Notifications).
@@ -53,10 +53,15 @@ jobs:
           #   - DeleteAccountModal réécrit (matching strict username)
           #   - Privacy.tsx (11 sections) + Legal.tsx (6 sections)
           #   - +~50 clés i18n FR/EN (legal.privacy.* legal.terms.* cookies.* rgpd.*)
+          # Bumped 325→330 le 2026-05-13 suite a BATCH 5 + BATCH 6 :
+          #   - 3 primitives <EmptyState> <ErrorState> <LoadingState> (~1 KB gzip)
+          #   - adoption progressive (NotificationsPage, NotificationsPanel, FeedSection)
+          #   - investissement court terme, gain a moyen terme : chaque adoption
+          #     supprime du code inline (~30 lignes par site)
           # Code-split de Privacy/Legal en lazy déjà en place.
-          # Si on dépasse 325, code-split d'abord (lazy), bump en dernier recours.
-          if [ "$JS_KB" -gt 325 ]; then
-            echo "::error::JS bundle exceeds 325KB gzip budget (${JS_KB}KB)"
+          # Si on dépasse 330, code-split d'abord (lazy), bump en dernier recours.
+          if [ "$JS_KB" -gt 330 ]; then
+            echo "::error::JS bundle exceeds 330KB gzip budget (${JS_KB}KB)"
             exit 1
           fi
-          echo "✓ Bundle within eco-conception budget (${JS_KB}/325 KB)"
+          echo "✓ Bundle within eco-conception budget (${JS_KB}/330 KB)"
