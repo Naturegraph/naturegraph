@@ -20,15 +20,25 @@
  *   - Click backdrop ferme la modal
  */
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 
 export interface ConfirmModalProps {
-  /** Titre H2 de la modal */
-  title: string
-  /** Description / explication de l'action */
-  description: string
+  /** Titre H2 de la modal — string ou ReactNode (slot, ex: `<>Supprimer <em>{name}</em> ?</>`) */
+  title: ReactNode
+  /** Description / explication de l'action — string ou ReactNode (slot pour <ul>, <strong>, etc.) */
+  description: ReactNode
+  /**
+   * Icone optionnelle affichee au-dessus du titre (BATCH 8 / T-025).
+   * Recommandation : couleur conforme au variant (rouge pour 'danger').
+   */
+  icon?: ReactNode
+  /**
+   * Slot optionnel pour contenu additionnel entre description et boutons
+   * (BATCH 8 / T-025). Cas d'usage : champ de confirmation, checkbox, lien help.
+   */
+  children?: ReactNode
   /** Label du bouton de confirmation (ex: "Confirmer", "Se déconnecter") */
   confirmLabel: string
   /** Label du bouton d'annulation (défaut : "Annuler" via i18n) */
@@ -38,6 +48,12 @@ export interface ConfirmModalProps {
    * `danger`  : bouton rouge (action destructive — suppression compte).
    */
   variant?: 'default' | 'danger'
+  /**
+   * Desactive le bouton de confirmation (BATCH 8 / T-025).
+   * Utile quand `children` contient un champ de validation qui doit etre
+   * rempli avant de pouvoir confirmer (ex: matching strict username).
+   */
+  confirmDisabled?: boolean
   /** Annule l'action (ferme la modal) */
   onCancel: () => void
   /** Confirme l'action */
@@ -47,9 +63,12 @@ export interface ConfirmModalProps {
 export function ConfirmModal({
   title,
   description,
+  icon,
+  children,
   confirmLabel,
   cancelLabel,
   variant = 'default',
+  confirmDisabled = false,
   onCancel,
   onConfirm,
 }: ConfirmModalProps) {
@@ -101,14 +120,23 @@ export function ConfirmModal({
           aria-hidden="true"
         />
 
-        {/* Header : titre + bouton X */}
+        {/* Header : titre + bouton X.
+            BATCH 8 / T-025 : si `icon` passe, affiche un bloc decoratif au-dessus
+            du titre (couleur conforme au variant en pratique). */}
         <div className="flex items-start justify-between gap-4 mt-2 md:mt-0">
-          <h2
-            id="confirm-modal-title"
-            className="font-title font-bold text-xl md:text-2xl text-foreground leading-tight flex-1"
-          >
-            {title}
-          </h2>
+          <div className="flex-1 flex flex-col gap-2">
+            {icon && (
+              <div className="text-foreground" aria-hidden="true">
+                {icon}
+              </div>
+            )}
+            <h2
+              id="confirm-modal-title"
+              className="font-title font-bold text-xl md:text-2xl text-foreground leading-tight"
+            >
+              {title}
+            </h2>
+          </div>
           <button
             type="button"
             onClick={onCancel}
@@ -119,10 +147,14 @@ export function ConfirmModal({
           </button>
         </div>
 
-        {/* Description */}
-        <p id="confirm-modal-desc" className="text-sm text-foreground leading-relaxed">
+        {/* Description — accepte ReactNode (slot) depuis BATCH 8 / T-025 */}
+        <div id="confirm-modal-desc" className="text-sm text-foreground leading-relaxed">
           {description}
-        </p>
+        </div>
+
+        {/* Slot children optionnel (BATCH 8 / T-025) — contenu additionnel entre
+            description et actions (ex: input de confirmation, checkbox, helper). */}
+        {children && <div className="flex flex-col gap-3">{children}</div>}
 
         {/* Actions : Annuler (focus initial) + Confirmer */}
         <div className="flex gap-3 mt-2">
@@ -137,7 +169,8 @@ export function ConfirmModal({
           <button
             type="button"
             onClick={onConfirm}
-            className={`flex-1 h-12 rounded-full text-sm font-bold transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${confirmClasses}`}
+            disabled={confirmDisabled}
+            className={`flex-1 h-12 rounded-full text-sm font-bold transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${confirmClasses}`}
           >
             {confirmLabel}
           </button>
