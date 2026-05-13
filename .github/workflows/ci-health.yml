@@ -69,7 +69,7 @@ jobs:
       - name: Open issue on failure
         # Seulement si health-check a exit code >= 2 (erreur critique)
         if: steps.health.outputs.exit == '2' || steps.health.outputs.exit == '3'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs')
