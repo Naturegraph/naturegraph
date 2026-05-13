@@ -48,6 +48,7 @@ import {
   type GroupedNotification,
 } from '@/utils/groupNotifications'
 import { trackNotifEvent } from '@/utils/notificationAnalytics'
+import { EmptyState, LoadingState } from '@/components/ui'
 
 // ─── Helpers date ─────────────────────────────────────────────────────────────
 
@@ -320,30 +321,13 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
       {/* Liste groupée par date */}
       <div className="max-h-[420px] overflow-y-auto">
         {isLoading && (
-          <ul
-            className="divide-y divide-border"
-            aria-busy="true"
-            aria-label={t('home.notifications.loading')}
-          >
-            {Array.from({ length: 4 }).map((_, i) => (
-              <li key={i} className="flex items-start gap-3 px-5 py-3">
-                <div className="size-10 rounded-full bg-muted animate-pulse shrink-0" />
-                <div className="flex-1 min-w-0 space-y-2">
-                  <div className="h-3 w-24 bg-muted rounded-full animate-pulse" />
-                  <div className="h-3 w-3/4 bg-muted rounded-full animate-pulse" />
-                </div>
-                <div className="h-3 w-10 bg-muted rounded-full animate-pulse shrink-0" />
-              </li>
-            ))}
-          </ul>
+          <LoadingState variant="skeleton" rows={4} label={t('home.notifications.loading')} />
         )}
         {!isLoading && notifs.length === 0 && (
-          <div className="px-5 py-10 text-center">
-            <p className="text-sm font-medium text-foreground">{t('home.notifications.empty')}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t('home.notifications.emptyHint')}
-            </p>
-          </div>
+          <EmptyState
+            title={t('home.notifications.empty')}
+            description={t('home.notifications.emptyHint')}
+          />
         )}
         {groups.map((group, gi) => (
           <div key={group.key}>

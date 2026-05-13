@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { LayoutList, LayoutGrid, Filter, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { ErrorState } from '@/components/ui'
 import { FeedPost } from './FeedPost'
 import { FeedGallery } from './FeedGallery'
 import { FeedFilterPanel, DEFAULT_FILTERS } from './FeedFilterPanel'
@@ -362,6 +363,7 @@ export function FeedSection({
     data: feedData,
     isLoading: isFeedLoading,
     isError: isFeedError,
+    refetch: refetchFeed,
   } = useFeed(
     {
       tab: tabToServiceTab[activeTab],
@@ -605,14 +607,19 @@ export function FeedSection({
       {/* État chargement */}
       {isLoading_ && <FeedSkeleton />}
 
-      {/* État erreur */}
+      {/* État erreur — utilise la primitive ErrorState (BATCH 6 / T-020).
+          Ajoute un bouton "Réessayer" qui declenche refetch() — UX amelioree. */}
       {isError_ && (
-        <div role="alert" className="bg-background md:rounded-card rounded-none p-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            {t('home.feed.loadError', {
-              defaultValue: 'Impossible de charger le feed. Réessaie dans un instant.',
+        <div className="bg-background md:rounded-card rounded-none">
+          <ErrorState
+            title={t('home.feed.loadErrorTitle', { defaultValue: 'Impossible de charger le feed' })}
+            description={t('home.feed.loadError', {
+              defaultValue:
+                'Réessaie dans un instant. Si le probleme persiste, verifie ta connexion.',
             })}
-          </p>
+            onRetry={() => refetchFeed()}
+            retryLabel={t('common.retry', { defaultValue: 'Réessayer' })}
+          />
         </div>
       )}
 
