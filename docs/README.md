@@ -30,14 +30,15 @@
 
 ## ⭐ Documents centraux (à consulter en priorité)
 
-| Document                                                           | Description                                                                   | Version                     |
-| ------------------------------------------------------------------ | ----------------------------------------------------------------------------- | --------------------------- |
-| [`PROJECT_MASTER.md`](PROJECT_MASTER.md)                           | 📌 **Source de vérité unique** engineering                                    | v1.0 — 2026-05-04           |
-| [`MASTER_TODO.md`](MASTER_TODO.md)                                 | 📌 **Document de pilotage central** (105 tâches T-001 à T-105)                | v1.0 — 2026-05-04           |
-| [`CONSOLIDATION_ROADMAP.md`](CONSOLIDATION_ROADMAP.md)             | Plan séquencé en 6 phases (~3 mois)                                           | v1.0 — 2026-05-04           |
-| [`NEXT_TASKS.md`](NEXT_TASKS.md)                                   | Checklist priorisée actionable                                                | v1.0 — 2026-05-04           |
-| [`QUICK_WINS.md`](QUICK_WINS.md)                                   | 📌 **47 quick wins exhaustifs** (~42h, intercalables)                         | v1.0 — 2026-05-04           |
-| [`BETA_CLOSED_ACCESS_STRATEGY.md`](BETA_CLOSED_ACCESS_STRATEGY.md) | 📌 **Stratégie beta fermée future** (50→100→public, clés d'accès, garde-fous) | v1.0 — 2026-05-04 (différé) |
+| Document                                                                               | Description                                                                   | Version                     |
+| -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------- |
+| [`PROJECT_MASTER.md`](PROJECT_MASTER.md)                                               | 📌 **Source de vérité unique** engineering                                    | v1.0 — 2026-05-04           |
+| [`MASTER_TODO.md`](MASTER_TODO.md)                                                     | 📌 **Document de pilotage central** (105 tâches T-001 à T-105)                | v1.0 — 2026-05-04           |
+| [`CONSOLIDATION_ROADMAP.md`](CONSOLIDATION_ROADMAP.md)                                 | Plan séquencé en 6 phases (~3 mois)                                           | v1.0 — 2026-05-04           |
+| [`NEXT_TASKS.md`](NEXT_TASKS.md)                                                       | Checklist priorisée actionable                                                | v1.0 — 2026-05-04           |
+| [`QUICK_WINS.md`](QUICK_WINS.md)                                                       | 📌 **47 quick wins exhaustifs** (~42h, intercalables)                         | v1.0 — 2026-05-04           |
+| [`BETA_CLOSED_ACCESS_STRATEGY.md`](BETA_CLOSED_ACCESS_STRATEGY.md)                     | 📌 **Stratégie beta fermée future** (50→100→public, clés d'accès, garde-fous) | v1.0 — 2026-05-04 (différé) |
+| [`ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md`](ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md) | 📌 **Stratégie centre de contrôle admin** (10 modules, ~26j dev)              | v1.0 — 2026-05-04 (différé) |
 
 ---
 
