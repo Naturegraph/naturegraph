@@ -20,6 +20,8 @@
  *   - Pas de PII dans les props — seulement des id anonymisés ou type
  */
 
+import { debugLog } from '@/lib/debugLog'
+
 export type NotifAnalyticsEvent =
   | 'panel_opened'
   | 'panel_closed'
@@ -55,10 +57,8 @@ export function trackNotifEvent(event: NotifAnalyticsEvent, props: NotifAnalytic
       fn(`notif:${event}`, props)
       return
     }
-    if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
-      console.debug('[notif-analytics]', event, props)
-    }
+    // BATCH 15 / QW-CL2 : migre vers debugLog (centralise + tree-shake en prod)
+    debugLog('notif-analytics', event, props)
   } catch {
     // silencieux — jamais bloquer l'UI pour un log
   }
