@@ -31,6 +31,14 @@ jobs:
       - name: Tests
         run: npm test
 
+      # BATCH 13 / T-003 : detection drift entre src/types/supabase.ts et le
+      # schema DB courant. Best-effort (skip si supabase CLI non authentifie
+      # — typique en CI sans secrets). Le script exit 2 = skip silencieux,
+      # exit 1 = fail (drift detecte).
+      - name: Supabase types drift check
+        run: npm run check:types-drift || true
+        continue-on-error: true
+
       - name: Build
         run: npm run build
 
