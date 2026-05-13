@@ -1,9 +1,21 @@
 # Naturegraph — Audit Design System (Core UI System)
 
-> **Version** : 1.0 — 2026-05-04
+> **Version** : 1.1 — 2026-05-04 (consolidation post-master plan)
 > **Posture** : staff design engineer / DS lead. Inspection de l'UI existante avant refacto.
 > **Objectif** : cartographier l'état réel du design system pour définir une base scalable niveau SaaS moderne.
 > **Source** : lecture exhaustive `src/components/ui/`, `src/styles/`, `src/index.css`, components par domaine.
+
+> **Update v1.1 — Consolidation Master Plan (2026-05-04)** :
+>
+> Ce document s'intègre dans la suite documentaire consolidée :
+>
+> - `docs/PROJECT_MASTER.md` — Source de vérité globale
+> - `docs/CONSOLIDATION_ROADMAP.md` — Plan séquencé 6 phases (Phase 5 = ce doc)
+> - `docs/MASTER_TODO.md` — Tâches T-045 à T-052 + T-024, T-025 (fusion doublons UI)
+> - `docs/STORYBOOK_STRATEGY.md` — Plan Storybook détaillé (complémentaire de ce doc)
+> - `docs/AUDIT_TECH_DEBT_GLOBAL.md` — Composants obèses C-1 (lien direct avec PS-1)
+>
+> **À lire ensemble** pour avoir la vision complète DS + Architecture + Roadmap.
 
 ---
 
