@@ -159,8 +159,15 @@ export function VerificationForm({
             {t('auth.verify.codeLabel')}
           </p>
 
-          {/* Inputs OTP */}
-          <div className="flex gap-2 mb-3" onPaste={handlePaste}>
+          {/* Inputs OTP — autocomplete one-time-code pour iOS auto-fill + aria-label (T-054) */}
+          <div
+            className="flex gap-2 mb-3"
+            onPaste={handlePaste}
+            role="group"
+            aria-label={t('auth.verify.codeGroupLabel', {
+              defaultValue: 'Code de vérification 6 chiffres',
+            })}
+          >
             {code.map((digit, i) => (
               <input
                 key={i}
@@ -174,10 +181,14 @@ export function VerificationForm({
                 onChange={(e) => handleChange(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
                 disabled={isLoading}
+                autoComplete={i === 0 ? 'one-time-code' : 'off'}
+                aria-label={t('auth.verify.digitLabel', {
+                  defaultValue: 'Chiffre {{n}} sur 6',
+                  n: i + 1,
+                })}
                 className={`w-full aspect-square max-w-[56px] text-center text-xl font-semibold rounded-lg border bg-[var(--color-action-light)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-colors disabled:opacity-50 ${
                   error ? 'border-[var(--color-error)]' : 'border-transparent'
                 }`}
-                aria-label={`Chiffre ${i + 1}`}
               />
             ))}
           </div>
@@ -189,8 +200,12 @@ export function VerificationForm({
             </p>
           )}
 
-          {/* Timer */}
-          <p className="text-sm text-[var(--color-text-tertiary)] mb-4">
+          {/* Timer — aria-live polite pour lecteurs d'ecran (T-055) */}
+          <p
+            className="text-sm text-[var(--color-text-tertiary)] mb-4"
+            aria-live="polite"
+            aria-atomic="true"
+          >
             {t('auth.verify.timer', { time: formatTime(timer) })}
           </p>
 

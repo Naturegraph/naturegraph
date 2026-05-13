@@ -1,0 +1,36 @@
+# CODEOWNERS — Auto-assignation reviewers
+# Documentation : https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Usage : tout fichier modifié dans une PR auto-assigne le owner correspondant.
+# Convention : owner doit être un username GitHub précédé de @
+
+# Tout par défaut → Nicolas
+* @nicolas-douaron
+
+# Documentation
+/docs/                 @nicolas-douaron
+*.md                   @nicolas-douaron
+CLAUDE.md              @nicolas-douaron
+GUIDELINES.md          @nicolas-douaron
+
+# Backend Supabase (critique)
+/supabase/migrations/  @nicolas-douaron
+/supabase/functions/   @nicolas-douaron
+
+# Frontend critique
+/src/services/         @nicolas-douaron
+/src/components/ui/    @nicolas-douaron
+/src/contexts/         @nicolas-douaron
+/src/lib/              @nicolas-douaron
+
+# Tests
+/src/test/             @nicolas-douaron
+**/*.test.ts           @nicolas-douaron
+**/*.test.tsx          @nicolas-douaron
+
+# Config repo
+/.github/              @nicolas-douaron
+/.husky/               @nicolas-douaron
+package.json           @nicolas-douaron
+tsconfig.json          @nicolas-douaron
+vite.config.ts         @nicolas-douaron
