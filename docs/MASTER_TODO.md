@@ -84,7 +84,7 @@
 - [ ] **T-022** | UI | S | — | 🟠 | Indicateur progression onboarding (4 étapes visibles)
 - [ ] **T-023** | UI | S | — | 🟠 | Spinner pendant uploads photo
 - [x] **T-024** | UI | S | — | 🟠 | ~~Fusion Switch + ToggleSwitch (doublon)~~ (BATCH 7 — #109, 2026-05-13) — _Switch supprime (dead code, 0 usages), ToggleSwitch garde comme primitive unique_
-- [ ] **T-025** | UI | S | — | 🟠 | Enrichir `ConfirmModal` avec slots optionnels
+- [x] **T-025** | UI | S | — | 🟠 | ~~Enrichir `ConfirmModal` avec slots optionnels~~ (BATCH 8 — 2026-05-13) — _title/description acceptent ReactNode, slot `icon`, slot `children` (contenu additionnel), prop `confirmDisabled`_
 
 ## UX
 
@@ -130,8 +130,8 @@
 - [x] **T-053** | A11Y | XS | — | 🟠 | ~~Fix A1 : Onboarding multi-select `role="group"` + `aria-pressed`~~ (BATCH 3 — #92, 2026-05-13)
 - [x] **T-054** | A11Y | XS | — | 🟠 | ~~Fix A2 : OTP form `aria-label` + `autocomplete="one-time-code"`~~ (BATCH 3 — #92, 2026-05-13)
 - [x] **T-055** | A11Y | XS | — | 🟠 | ~~Fix A3 : OTP timer `aria-live`~~ (BATCH 3 — #92, 2026-05-13)
-- [ ] **T-056** | A11Y | XS | — | 🟠 | Fix A4 : FAQ accordion `aria-expanded`
-- [ ] **T-057** | A11Y | XS | — | 🟠 | Fix A5 : Burger menu mobile `aria-label`
+- [x] **T-056** | A11Y | XS | — | 🟠 | ~~Fix A4 : FAQ accordion `aria-expanded`~~ — _deja conforme : Accordion.tsx l.54-55 a `aria-expanded` + `aria-controls` + `role="region"`_
+- [x] **T-057** | A11Y | XS | — | 🟠 | ~~Fix A5 : Burger menu mobile `aria-label`~~ — _deja conforme : Landing/Navbar.tsx l.128 a `aria-label` i18n + `aria-expanded`_
 - [x] **T-058** | A11Y | S | — | 🟠 | ~~Fix A6 : Focus trap modals (boucle complète)~~ — _deja conforme : Modal utilise `<dialog>` HTML5 + showModal() qui gere le focus trap nativement_
 - [x] **T-059** | A11Y | XS | — | 🟠 | ~~Fix A7 : Step indicator onboarding `aria-current="step"`~~ — _deja conforme : StepIndicator utilise `role="progressbar"` (equivalent semantique)_
 - [ ] **T-060** | A11Y | S | T-053→T-059 | 🟠 | Audit Lighthouse + axe-core sur 5 pages clés
