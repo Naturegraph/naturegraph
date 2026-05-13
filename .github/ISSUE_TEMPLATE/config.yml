@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/Naturegraph/naturegraph/tree/main/docs
+    about: Consulte d'abord la documentation
+  - name: 🔒 Vulnérabilité sécurité
+    url: https://github.com/Naturegraph/naturegraph/security/policy
+    about: Pour les failles de sécurité, suis la procédure de divulgation responsable (ne pas ouvrir une issue publique)

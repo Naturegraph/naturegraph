@@ -90,8 +90,14 @@ export function OnboardingInterests({ onContinue, onSkip, onExit }: OnboardingIn
             </p>
           )}
 
-          {/* Grille des catégories */}
-          <div className="flex flex-wrap gap-2 items-start w-full shrink-0">
+          {/* Grille des catégories - role="group" + aria-label pour a11y WCAG AA (T-053) */}
+          <div
+            className="flex flex-wrap gap-2 items-start w-full shrink-0"
+            role="group"
+            aria-label={t('onboarding.interests.groupLabel', {
+              defaultValue: "Sélectionne tes centres d'intérêt nature",
+            })}
+          >
             {INTERESTS.map(({ id, emoji }) => {
               const isSelected = selectedInterests.includes(id)
               /** Numéro d'ordre de sélection (1, 2, 3) — null si non sélectionné */

@@ -290,15 +290,28 @@ function useMouseTracking() {
 
   const mouse: MouseTracking = { mouseXPx, mouseYPx, containerW, containerH }
 
+  // Throttle via requestAnimationFrame (QW-I1 / T-074) — limite a ~60fps max.
+  // Avant : handleMouseMove fire a chaque pixel deplacé (potentiellement 200+ fois/sec
+  // sur ecran haute frequence) → CPU + batterie mobile + bas de gamme.
+  // Apres : 1 update par frame (RAF) → fluide visuellement, gain CPU significatif.
+  const rafIdRef = useRef<number | null>(null)
+  const pendingEventRef = useRef<{ clientX: number; clientY: number } | null>(null)
+
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      const el = containerRef.current
-      if (!el) return
-      const rect = el.getBoundingClientRect()
-      rawMouseXPx.set(e.clientX - rect.left)
-      rawMouseYPx.set(e.clientY - rect.top)
-      containerW.set(rect.width)
-      containerH.set(rect.height)
+      pendingEventRef.current = { clientX: e.clientX, clientY: e.clientY }
+      if (rafIdRef.current !== null) return
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null
+        const el = containerRef.current
+        const pending = pendingEventRef.current
+        if (!el || !pending) return
+        const rect = el.getBoundingClientRect()
+        rawMouseXPx.set(pending.clientX - rect.left)
+        rawMouseYPx.set(pending.clientY - rect.top)
+        containerW.set(rect.width)
+        containerH.set(rect.height)
+      })
     },
     [rawMouseXPx, rawMouseYPx, containerW, containerH],
   )
