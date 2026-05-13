@@ -60,7 +60,7 @@ jobs:
       - name: Upload JSON report
         # Toujours uploader, même si le health-check a failed
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ci-health-report-${{ github.run_id }}
           path: logs/
