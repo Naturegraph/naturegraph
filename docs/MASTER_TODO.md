@@ -80,9 +80,9 @@
 - [x] **T-018** | UI | S | — | 🟠 | ~~Créer `<ErrorState />` primitive~~ (BATCH 5 — #94, 2026-05-13)
 - [x] **T-019** | UI | S | — | 🟠 | ~~Créer `<LoadingState />` primitive~~ (BATCH 5 — #94, 2026-05-13)
 - [x] **T-020** | UI | S | T-017+T-018+T-019 | 🟠 | ~~Adopter Empty/Error/Loading dans 5+ endroits clés~~ (BATCH 6 + 7 — #106 + #109, 2026-05-13) — adoption dans NotificationsPage / NotificationsPanel / FeedSection (retry) / SearchPanel (empty). ProfileSidebar reste avec skeleton custom (layout user-row trop specifique pour primitive generique).
-- [ ] **T-021** | UI | S | — | 🟠 | Skeleton sur feed (vs Spinner actuel)
-- [ ] **T-022** | UI | S | — | 🟠 | Indicateur progression onboarding (4 étapes visibles)
-- [ ] **T-023** | UI | S | — | 🟠 | Spinner pendant uploads photo
+- [x] **T-021** | UI | S | — | 🟠 | ~~Skeleton sur feed (vs Spinner actuel)~~ — _deja conforme : `FeedSection.tsx` utilise `<FeedSkeleton>` post-shaped (avatar + image placeholder + texte) qui imite la structure des cards, pas un Spinner. Animation respecte `prefers-reduced-motion`._
+- [x] **T-022** | UI | S | — | 🟠 | ~~Indicateur progression onboarding (4 étapes visibles)~~ — _deja conforme : `StepIndicator.tsx` utilise `role="progressbar"` + `aria-valuenow/valuemax/valuemin/valuetext` + 4 dots visibles. Adopte dans OnboardingStep1 → Step4._
+- [x] **T-023** | UI | S | — | 🟠 | ~~Spinner pendant uploads photo~~ (BATCH 9 — 2026-05-13) — _Loader2 motion-safe + aria-busy ajoutes : ContributeEncounterForm CTA "Publier", ContributeInstantForm CTA "Publier", EditPhotoTab ChangeButton (avatar+banner)_
 - [x] **T-024** | UI | S | — | 🟠 | ~~Fusion Switch + ToggleSwitch (doublon)~~ (BATCH 7 — #109, 2026-05-13) — _Switch supprime (dead code, 0 usages), ToggleSwitch garde comme primitive unique_
 - [x] **T-025** | UI | S | — | 🟠 | ~~Enrichir `ConfirmModal` avec slots optionnels~~ (BATCH 8 — 2026-05-13) — _title/description acceptent ReactNode, slot `icon`, slot `children` (contenu additionnel), prop `confirmDisabled`_
 

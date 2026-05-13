@@ -16,7 +16,7 @@
 
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, X, ImageOff, RotateCcw, ImageUp } from 'lucide-react'
+import { ArrowLeft, X, ImageOff, RotateCcw, ImageUp, Loader2 } from 'lucide-react'
 import type { TimeOfDay, WeatherCondition, HabitatType, DisplayFormat } from '@/types/database'
 import { EncounterStep1 } from './EncounterStep1'
 import { EncounterStep2 } from './EncounterStep2'
@@ -652,6 +652,7 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
                 size="md"
                 className="flex-1"
                 disabled={isSubmitting}
+                aria-busy={isSubmitting}
                 onClick={(e) => {
                   // Soumission programmatique via React (pas de form natif HTML)
                   // — handleSubmit accepte un FormEvent-like mais on lui passe
@@ -659,7 +660,20 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
                   handleSubmit(e as unknown as React.FormEvent)
                 }}
               >
-                {isSubmitting ? t('common.loading') : t('contribute.panel.publishBtn')}
+                {/* BATCH 9 / T-023 : spinner pendant upload + soumission.
+                    Icone motion-safe (respecte prefers-reduced-motion). */}
+                {isSubmitting ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2
+                      className="size-4 motion-safe:animate-spin"
+                      aria-hidden="true"
+                      strokeWidth={2.5}
+                    />
+                    {t('common.loading')}
+                  </span>
+                ) : (
+                  t('contribute.panel.publishBtn')
+                )}
               </Button>
             )}
           </div>
