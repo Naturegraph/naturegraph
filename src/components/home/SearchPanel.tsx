@@ -37,6 +37,7 @@ import { useQuery } from '@tanstack/react-query'
 import { searchProfiles, searchSpecies } from '@/services/searchService'
 import type { SpeciesHit, ProfileHit } from '@/services/searchService'
 import { useSpecies } from '@/contexts/SpeciesContext'
+import { EmptyState } from '@/components/ui'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -452,11 +453,8 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
         )}
 
         {/* ── Aucun résultat ──────────────────────────────────────────── */}
-        {noResults && (
-          <p className="px-5 py-8 text-center text-sm text-muted-foreground">
-            Aucun résultat pour «&nbsp;{query}&nbsp;»
-          </p>
-        )}
+        {/* BATCH 7 / T-020 : adoption primitive EmptyState (a11y role=status + aria-live) */}
+        {noResults && <EmptyState title={`Aucun résultat pour « ${query} »`} className="py-8" />}
 
         {/* ── Résultats Espèces ───────────────────────────────────────── */}
         {hasQuery &&

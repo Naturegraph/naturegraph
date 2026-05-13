@@ -28,7 +28,9 @@ export { Input } from './Input'
 export { Textarea } from './Textarea'
 export { Select } from './Select'
 export { Checkbox } from './Checkbox'
-export { Switch } from './Switch'
+// `Switch` (input-checkbox) supprime BATCH 7 (T-024) — 0 usage in app.
+// `ToggleSwitch` (button role=switch) reste la seule primitive switch.
+export { ToggleSwitch } from './ToggleSwitch'
 export { FormField } from './FormField'
 
 // Data display

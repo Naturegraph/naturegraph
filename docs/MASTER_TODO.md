@@ -1,6 +1,6 @@
 # Naturegraph — MASTER TODO (Document de pilotage central)
 
-> **Version** : 1.2 — 2026-05-13 (cycle BATCHES 1-6 livre)
+> **Version** : 1.3 — 2026-05-13 (cycle BATCHES 1-7 livre)
 > **Statut** : 📌 **DOCUMENT DE PILOTAGE CENTRAL** — à mettre à jour à chaque tâche complétée
 > **Source** : consolidation de tous les audits + roadmap + quick wins
 > **Lecture cible** : ouvrir chaque matin pour identifier la prochaine tâche
@@ -15,9 +15,10 @@
 - **BATCH 4** (#93) — Perf : RAF throttle Hero + lazy StatsSidebar — _QW-PERF_
 - **BATCH 5** (#94) — DS : primitives `<EmptyState>` `<ErrorState>` `<LoadingState>` — _T-017 T-018 T-019_
 - **HOTFIX** (#96) — `groupNotifications` flaky test (fenetre symetrique)
-- **BATCH 6** (#98) — Adoption primitives Empty/Loading sur NotificationsPage + NotificationsPanel — _T-020 (2/5)_
+- **BATCH 6** (#106) — Adoption primitives Empty/Loading sur NotificationsPage + NotificationsPanel + ErrorState retry sur FeedSection — _T-020 (3/4)_
+- **BATCH 7** (#109) — Adoption EmptyState SearchPanel + delete dead `Switch.tsx` — _T-020 (4/4) finish + T-024_
 
-→ Branches `main` `staging` `develop` toutes alignees au SHA `1eb9122`.
+→ Branches `main` `staging` `develop` toutes alignees au SHA `5af5c61` (apres BATCH 6).
 
 ---
 
@@ -78,11 +79,11 @@
 - [x] **T-017** | UI | S | — | 🟠 | ~~Créer `<EmptyState />` primitive~~ (BATCH 5 — #94, 2026-05-13)
 - [x] **T-018** | UI | S | — | 🟠 | ~~Créer `<ErrorState />` primitive~~ (BATCH 5 — #94, 2026-05-13)
 - [x] **T-019** | UI | S | — | 🟠 | ~~Créer `<LoadingState />` primitive~~ (BATCH 5 — #94, 2026-05-13)
-- [ ] **T-020** | UI | S | T-017+T-018+T-019 | 🟠 | Adopter Empty/Error/Loading dans 5+ endroits clés _(BATCH 6 en cours : NotificationsPage + NotificationsPanel adoptes, 3 endroits restants : FeedSection / SearchPanel / ProfileSidebar)_
+- [x] **T-020** | UI | S | T-017+T-018+T-019 | 🟠 | ~~Adopter Empty/Error/Loading dans 5+ endroits clés~~ (BATCH 6 + 7 — #106 + #109, 2026-05-13) — adoption dans NotificationsPage / NotificationsPanel / FeedSection (retry) / SearchPanel (empty). ProfileSidebar reste avec skeleton custom (layout user-row trop specifique pour primitive generique).
 - [ ] **T-021** | UI | S | — | 🟠 | Skeleton sur feed (vs Spinner actuel)
 - [ ] **T-022** | UI | S | — | 🟠 | Indicateur progression onboarding (4 étapes visibles)
 - [ ] **T-023** | UI | S | — | 🟠 | Spinner pendant uploads photo
-- [ ] **T-024** | UI | S | — | 🟠 | Fusion Switch + ToggleSwitch (doublon)
+- [x] **T-024** | UI | S | — | 🟠 | ~~Fusion Switch + ToggleSwitch (doublon)~~ (BATCH 7 — #109, 2026-05-13) — _Switch supprime (dead code, 0 usages), ToggleSwitch garde comme primitive unique_
 - [ ] **T-025** | UI | S | — | 🟠 | Enrichir `ConfirmModal` avec slots optionnels
 
 ## UX
