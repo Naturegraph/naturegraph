@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft } from 'lucide-react'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 export default function NotFound() {
   const { t } = useTranslation()
+  // BATCH 10 / QW-UX1 : titre dynamique pour onglet navigateur
+  usePageTitle(t('notFound.title', 'Page introuvable'))
 
   return (
     <main

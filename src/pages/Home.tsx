@@ -17,7 +17,9 @@
  */
 
 import { useState, lazy, Suspense } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import { HomeNavbar } from '@/components/home/HomeNavbar'
 import { GuestSidebar } from '@/components/home/GuestSidebar'
 import { ProfileSidebar } from '@/components/home/ProfileSidebar'
@@ -43,7 +45,10 @@ const StatsSidebar = lazy(() =>
 )
 
 export default function Home() {
+  const { t } = useTranslation()
   const { isAuthenticated } = useAuth()
+  // BATCH 10 / QW-UX1 : titre dynamique pour onglet navigateur (SEO + UX)
+  usePageTitle(t('nav.home'))
   const [showContributeModal, setShowContributeModal] = useState(false)
 
   /** Type actif dans le panneau inline — null = panneau fermé */

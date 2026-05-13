@@ -45,6 +45,7 @@ import {
 } from '@/components/notifications/NotifItem'
 import { trackNotifEvent } from '@/utils/notificationAnalytics'
 import { EmptyState, LoadingState } from '@/components/ui'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 // ─── Catégories de filtres ────────────────────────────────────────────────────
 
@@ -73,6 +74,9 @@ export default function NotificationsPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [filter, setFilter] = useState<FilterKey>('all')
+
+  // BATCH 10 / QW-UX1 : titre dynamique pour onglet navigateur
+  usePageTitle(t('nav.notifications'))
 
   const markAsRead = useMarkAsRead(user?.id)
   const markAllAsRead = useMarkAllAsRead(user?.id)

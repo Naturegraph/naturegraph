@@ -19,6 +19,7 @@ import { ArrowLeft, Globe, LogOut, Trash2, Bell, Check } from 'lucide-react'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLocation } from '@/contexts/LocationContext'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import { INTEREST_LABELS } from '@/constants/interests'
 import { useUpdateProfile } from '@/hooks/useProfile'
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings'
@@ -53,6 +54,9 @@ export default function Settings() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const { profile, signOut } = useAuth()
+
+  // BATCH 10 / QW-UX1 : titre dynamique pour onglet navigateur
+  usePageTitle(t('nav.settings'))
   const { userLocation, updateLocation, clearLocation } = useLocation()
   const { success: notifySuccess } = useToast()
   const updateProfile = useUpdateProfile(profile?.id ?? '')
@@ -140,6 +144,9 @@ export default function Settings() {
 
   function handleLogout() {
     signOut()
+    // BATCH 10 / QW-UX3 : feedback visuel a la deconnexion (toast).
+    // Le toast vit au-dela du navigate (ToastProvider est haut dans l'arbre).
+    notifySuccess(t('settings.logoutSuccess', 'Tu es deconnecte. A bientot !'))
     navigate('/')
   }
 

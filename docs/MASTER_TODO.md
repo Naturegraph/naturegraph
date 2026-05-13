@@ -17,8 +17,11 @@
 - **HOTFIX** (#96) — `groupNotifications` flaky test (fenetre symetrique)
 - **BATCH 6** (#106) — Adoption primitives Empty/Loading sur NotificationsPage + NotificationsPanel + ErrorState retry sur FeedSection — _T-020 (3/4)_
 - **BATCH 7** (#109) — Adoption EmptyState SearchPanel + delete dead `Switch.tsx` — _T-020 (4/4) finish + T-024_
+- **BATCH 8** (#112) — ConfirmModal slots ReactNode + icon + children + confirmDisabled — _T-025_
+- **BATCH 9** (#115) — Spinners Loader2 motion-safe sur uploads photo (Encounter / Instant / EditPhotoTab) — _T-023 + T-021/T-022 already conformant_
+- **BATCH 10** (#118) — usePageTitle hook + apply 6 pages + toast feedback logout — _QW-UX1 + QW-UX3_
 
-→ Branches `main` `staging` `develop` toutes alignees au SHA `5af5c61` (apres BATCH 6).
+→ Branches `main` `staging` `develop` toutes alignees au SHA `25a40be` (apres BATCH 9).
 
 ---
 
