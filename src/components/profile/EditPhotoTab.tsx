@@ -38,7 +38,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, Loader2 } from 'lucide-react'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 import { useToast } from '@/contexts/ToastContext'
 import { uploadImage } from '@/services/storageService'
@@ -59,20 +59,31 @@ interface ButtonProps {
   label: string
   onClick: () => void
   disabled?: boolean
+  /** BATCH 9 / T-023 : etat upload (affiche spinner + disable). */
+  uploading?: boolean
 }
 
 /**
  * Bouton "Changer" — primary, icône Pencil. Pleine largeur de la colonne.
  * Au clic, déclenche un input file caché géré par le parent.
+ *
+ * BATCH 9 / T-023 : prop `uploading` affiche Loader2 a la place de Pencil
+ * + disable le bouton (evite double-clic). Motion-safe.
  */
-function ChangeButton({ label, onClick }: ButtonProps) {
+function ChangeButton({ label, onClick, uploading = false }: ButtonProps) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full inline-flex items-center justify-center gap-2 h-10 px-3 rounded-full bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      disabled={uploading}
+      aria-busy={uploading}
+      className="w-full inline-flex items-center justify-center gap-2 h-10 px-3 rounded-full bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
     >
-      <Pencil className="size-4 shrink-0" aria-hidden="true" />
+      {uploading ? (
+        <Loader2 className="size-4 shrink-0 motion-safe:animate-spin" aria-hidden="true" />
+      ) : (
+        <Pencil className="size-4 shrink-0" aria-hidden="true" />
+      )}
       {label}
     </button>
   )
@@ -103,11 +114,10 @@ function DeleteButton({ label, onClick, disabled }: ButtonProps) {
 export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
   const { t } = useTranslation()
   const toast = useToast()
-  // `isUploading` réservé pour afficher un état chargement sur les boutons
-  // dans une itération UI ultérieure. Le state est mis à jour côté logique
-  // (handleFileChange) mais pas encore consommé visuellement — on garde
-  // pour préparer l'ajout d'un spinner sans refacto.
-  const [, setIsUploading] = useState<'avatar' | 'banner' | null>(null)
+  // `isUploading` — desormais consomme visuellement (BATCH 9 / T-023) :
+  // les boutons "Changer" affichent un Loader2 motion-safe pendant l'upload,
+  // sont disabled pour empecher le double-clic, et exposent aria-busy.
+  const [isUploading, setIsUploading] = useState<'avatar' | 'banner' | null>(null)
 
   // État local des previews — synchronisé avec le profil entrant. Quand
   // l'utilisateur change/supprime, on update ce state ET on call onSave
@@ -294,11 +304,12 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
             <ChangeButton
               label={t('profile.edit.change', { defaultValue: 'Changer' })}
               onClick={() => avatarInputRef.current?.click()}
+              uploading={isUploading === 'avatar'}
             />
             <DeleteButton
               label={t('profile.edit.delete', { defaultValue: 'Supprimer' })}
               onClick={() => handleDelete('avatar')}
-              disabled={!hasCustomAvatar}
+              disabled={!hasCustomAvatar || isUploading === 'avatar'}
             />
           </div>
         </div>
@@ -343,11 +354,12 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
             <ChangeButton
               label={t('profile.edit.change', { defaultValue: 'Changer' })}
               onClick={() => bannerInputRef.current?.click()}
+              uploading={isUploading === 'banner'}
             />
             <DeleteButton
               label={t('profile.edit.delete', { defaultValue: 'Supprimer' })}
               onClick={() => handleDelete('banner')}
-              disabled={!hasCustomBanner}
+              disabled={!hasCustomBanner || isUploading === 'banner'}
             />
           </div>
         </div>
