@@ -1,10 +1,11 @@
 # Naturegraph — MASTER TODO (Document de pilotage central)
 
-> **Version** : 1.0 — 2026-05-04
+> **Version** : 1.1 — 2026-05-04 (ajout section Quick Wins)
 > **Statut** : 📌 **DOCUMENT DE PILOTAGE CENTRAL** — à mettre à jour à chaque tâche complétée
-> **Source** : consolidation de tous les audits + roadmap
+> **Source** : consolidation de tous les audits + roadmap + quick wins
 > **Lecture cible** : ouvrir chaque matin pour identifier la prochaine tâche
 > **Usage** : cocher au fur et à mesure + ajouter date d'achèvement
+> **Complément** : voir [`docs/QUICK_WINS.md`](QUICK_WINS.md) pour les 47 micro-tâches détaillées
 
 ---
 
@@ -217,6 +218,57 @@
 - [ ] **R-6** | Process | XS | — | 🟠 | Tag git `release-YYYY-MM-DD` sur main
 - [ ] **R-7** | QA | XS | — | 🟠 | Smoke test prod après deploy
 - [ ] **R-8** | Docs | XS | — | 🟡 | Ajouter ligne dans `RELEASE_READINESS.md`
+
+---
+
+# ⚡ QUICK WINS
+
+> 📌 **47 micro-tâches identifiées** dans [`docs/QUICK_WINS.md`](QUICK_WINS.md).
+> Effort total : ~42h cumul (~5j dev étalable).
+> À intercaler entre les grosses tâches T-XXX.
+
+## 🔴 Quick wins critiques (5 tâches, ~2h)
+
+- [ ] **QW-C1** — Régénérer types Supabase (30 min) — lié T-001
+- [ ] **QW-C2** — CI sur push staging (30 min) — lié T-006
+- [ ] **QW-C3** — Désactiver merge_commit + rebase_merge (5 min) — lié T-042
+- [ ] **QW-C4** — `@types/leaflet` → devDependencies (5 min) — lié T-090
+- [ ] **QW-C5** — Fix 16 warnings ESLint react-refresh (30 min) — lié T-092
+
+## 🟠 Quick wins importants (12 tâches, ~25h)
+
+### Performance
+
+- [ ] **QW-I1** — Throttle Hero mouse tracking 30fps (30 min)
+- [ ] **QW-I2** — Lazy import StatsSidebar mobile (1h)
+- [ ] **QW-I3** — Tree-shake lucide-react (2h)
+- [ ] **QW-I4** — Compression image client avatars/banners (2h)
+- [ ] **QW-I5** — Lazy load useFollowers/useFollowing (1h)
+
+### UI / UX
+
+- [ ] **QW-I6** — Badge "Bientôt" Statistiques profil (1h)
+- [ ] **QW-I7** — Spinner pendant uploads photo (2h)
+- [ ] **QW-I8** — Skeleton sur feed (4h)
+- [ ] **QW-I9** — Indicateur progression onboarding (4h)
+
+### Code quality
+
+- [ ] **QW-I10** — Helper `requireSupabase()` (4h)
+- [ ] **QW-I11** — Hook `useRequiredUser()` (4h)
+- [ ] **QW-I12** — Convention TODOs `(date, owner, #issue)` (1h)
+
+## 🟡 Quick wins confort (30 tâches, ~15h)
+
+> Détails complets dans [`docs/QUICK_WINS.md`](QUICK_WINS.md) section "Quick Wins Confort".
+
+**Catégories** :
+
+- A11Y micro-fixes : QW-A1 à QW-A6 (6 tâches, ~3h)
+- Code propre : QW-CL1 à QW-CL4 (4 tâches, ~2h)
+- UX cosmétique : QW-UX1 à QW-UX22 (22 tâches, ~10h)
+- Sécurité : QW-S1 à QW-S3 (3 tâches, ~45 min)
+- Docs : QW-D1 à QW-D3 (3 tâches, ~2h)
 
 ---
 
