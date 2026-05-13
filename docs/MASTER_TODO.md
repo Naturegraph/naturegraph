@@ -49,7 +49,7 @@
 
 - [x] **T-001** | Backend | S | — | 🔴 | ~~Régénérer `src/types/supabase.ts`~~ (BATCH 12 — 2026-05-13) — _genere via MCP Supabase `generate_typescript_types`, 89798 chars, header explicatif ajoute. Build OK avec nouveaux types._
 - [ ] **T-002** | Backend | M | T-001 | 🔴 | Fix les 22 casts `as unknown as` un par un (12 fichiers concernés)
-- [ ] **T-003** | Backend | S | T-001+T-002 | 🔴 | CI gate : script drift detection types ↔ migrations (fail si désynchro)
+- [x] **T-003** | Backend | S | T-001+T-002 | 🔴 | ~~CI gate : script drift detection types ↔ migrations~~ (BATCH 13 — 2026-05-13) — _Script `scripts/check-supabase-types-drift.mjs` + cmd `npm run check:types-drift` + step CI (continue-on-error : skip si pas authentifie, fail si drift detecte). Pour activer en CI strict : ajouter secret `SUPABASE_ACCESS_TOKEN` + retirer `continue-on-error`._
 - [x] **T-004** | Backend | S | — | 🔴 | ~~Helper `requireSupabase()` centralisé~~ (BATCH 1 — #90, 2026-05-13) — _adoption progressive a faire (helper dispo)_
 - [x] **T-005** | Backend | S | — | 🔴 | ~~Hook `useRequiredUser()` centralisé~~ (BATCH 1 — #90, 2026-05-13) — _adoption progressive a faire (hook dispo)_
 
