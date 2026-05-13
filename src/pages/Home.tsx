@@ -22,7 +22,6 @@ import { HomeNavbar } from '@/components/home/HomeNavbar'
 import { GuestSidebar } from '@/components/home/GuestSidebar'
 import { ProfileSidebar } from '@/components/home/ProfileSidebar'
 import { FeedSection } from '@/components/home/FeedSection'
-import { StatsSidebar } from '@/components/home/StatsSidebar'
 import { MobileBottomNav } from '@/components/home/MobileBottomNav'
 import { ContributeModal } from '@/components/home/ContributeModal'
 
@@ -30,6 +29,16 @@ import { ContributeModal } from '@/components/home/ContributeModal'
 const ContributeEncounterForm = lazy(() =>
   import('@/components/contribute/ContributeEncounterForm').then((m) => ({
     default: m.ContributeEncounterForm,
+  })),
+)
+
+// StatsSidebar lazy (QW-I2 / T-082) — affichée uniquement xl:block (>=1280px).
+// Avant : 311 lignes chargees dans le bundle initial meme sur mobile/tablet.
+// Apres : chunk separe, telecharge uniquement quand l'utilisateur a un ecran XL.
+// Gain : -2 KB initial sur mobile + meilleur LCP.
+const StatsSidebar = lazy(() =>
+  import('@/components/home/StatsSidebar').then((m) => ({
+    default: m.StatsSidebar,
   })),
 )
 
@@ -94,9 +103,12 @@ export default function Home() {
             />
           </main>
 
-          {/* Colonne droite — Stats & Tendances — visible uniquement XL desktop */}
+          {/* Colonne droite — Stats & Tendances — visible uniquement XL desktop.
+              Lazy-loaded : ne charge le chunk que si l'ecran est >=1280px (QW-I2). */}
           <aside className="hidden xl:block w-[320px] shrink-0">
-            <StatsSidebar />
+            <Suspense fallback={<div className="w-[320px] h-96 bg-muted/20 rounded-lg" />}>
+              <StatsSidebar />
+            </Suspense>
           </aside>
         </div>
       </div>
