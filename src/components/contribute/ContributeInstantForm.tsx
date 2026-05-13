@@ -16,7 +16,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Send } from 'lucide-react'
+import { ArrowLeft, Send, Loader2 } from 'lucide-react'
 import type { TimeOfDay, Visibility } from '@/types/database'
 import { MediaUploader } from './MediaUploader'
 import { LocationPicker } from './LocationPicker'
@@ -188,9 +188,16 @@ export function ContributeInstantForm() {
             type="submit"
             form="instant-form"
             disabled={isSubmitting}
+            aria-busy={isSubmitting}
             className="flex items-center gap-2 h-9 px-4 rounded-button bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
-            <Send className="size-4" aria-hidden="true" />
+            {/* BATCH 9 / T-023 : spinner pendant upload. Icone Send remplacee
+                par Loader2 motion-safe (prefers-reduced-motion). */}
+            {isSubmitting ? (
+              <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
+            ) : (
+              <Send className="size-4" aria-hidden="true" />
+            )}
             {isSubmitting ? t('common.loading') : t('contribute.publish')}
           </button>
         </div>
