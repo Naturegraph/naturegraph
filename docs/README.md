@@ -28,6 +28,17 @@
 
 ---
 
+## ⭐ Documents centraux (à consulter en priorité)
+
+| Document                                               | Description                                                    | Version           |
+| ------------------------------------------------------ | -------------------------------------------------------------- | ----------------- |
+| [`PROJECT_MASTER.md`](PROJECT_MASTER.md)               | 📌 **Source de vérité unique** engineering                     | v1.0 — 2026-05-04 |
+| [`MASTER_TODO.md`](MASTER_TODO.md)                     | 📌 **Document de pilotage central** (105 tâches T-001 à T-105) | v1.0 — 2026-05-04 |
+| [`CONSOLIDATION_ROADMAP.md`](CONSOLIDATION_ROADMAP.md) | Plan séquencé en 6 phases (~3 mois)                            | v1.0 — 2026-05-04 |
+| [`NEXT_TASKS.md`](NEXT_TASKS.md)                       | Checklist priorisée actionable                                 | v1.0 — 2026-05-04 |
+
+---
+
 ## 🎯 Produit & roadmap
 
 | Document                                       | Description                                          | Version           |
@@ -36,7 +47,8 @@
 | [`PLAN_ACTION.md`](PLAN_ACTION.md)             | Priorisation produit (bugs, UX, backend, perf, a11y) | v1.1 — 2026-05-02 |
 | [`RELEASE_READINESS.md`](RELEASE_READINESS.md) | Verdict pré-release                                  | 2026-05-02        |
 | [`PROJECT_STRUCTURE.md`](PROJECT_STRUCTURE.md) | Carte vivante du repo (onboarding équipe)            | v1.0 — 2026-05-03 |
-| [`CLEANUP_PLAN.md`](CLEANUP_PLAN.md)           | Plan de nettoyage du projet                          | v1.0 — 2026-05-03 |
+| [`CLEANUP_PLAN.md`](CLEANUP_PLAN.md)           | Plan de nettoyage du projet (v1.1 ✅ exécuté)        | v1.1 — 2026-05-04 |
+| [`CLEANUP_PROJECT.md`](CLEANUP_PROJECT.md)     | Cleanup v2 post-execution (reste à nettoyer)         | v1.0 — 2026-05-04 |
 
 ---
 
@@ -63,18 +75,22 @@ Tous les Product Requirement Documents, naming uniformisé `PRD_*` :
 
 État de santé du projet (audits + synthèses + plans correctifs) :
 
-| Document                                       | Type                                       | Date       | Verdict                |
-| ---------------------------------------------- | ------------------------------------------ | ---------- | ---------------------- |
-| [`SYNTHESE_AUDITS.md`](SYNTHESE_AUDITS.md)     | Synthèse causes racines RC-A à RC-G        | 2026-05-02 | Roadmap                |
-| [`SYNTHESE_GIT.md`](SYNTHESE_GIT.md)           | Cause racine RC-H Git                      | 2026-05-03 | Action P0+P1           |
-| [`AUDIT_FLOWS.md`](AUDIT_FLOWS.md)             | Audit fonctionnel par flow                 | v1.1       | 12 flows audités       |
-| [`AUDIT_TECHNIQUE.md`](AUDIT_TECHNIQUE.md)     | Dette technique (composants, casts, TODOs) | 2026-05-02 | 5 dettes               |
-| [`AUDIT_PERFORMANCE.md`](AUDIT_PERFORMANCE.md) | Bundle + perf + éco-conception             | 2026-05-02 | Budget 325 KB OK       |
-| [`AUDIT_LEGAL.md`](AUDIT_LEGAL.md)             | RGPD + Loi 25                              | 2026-05-02 | NC résolues            |
-| [`AUDIT_SUPABASE.md`](AUDIT_SUPABASE.md)       | DB + RLS + Edge Functions                  | 2026-05-02 | Drift résorbé          |
-| [`AUDIT_DB_LIVE.md`](AUDIT_DB_LIVE.md)         | État live MCP Supabase                     | 2026-05-03 | DB opérationnelle      |
-| [`AUDIT_GIT.md`](AUDIT_GIT.md)                 | Repo Git + branches + workflow             | 2026-05-03 | 3 critiques + 5 dettes |
-| [`PLAN_ACTION_GIT.md`](PLAN_ACTION_GIT.md)     | Plan exécution post-audit Git              | 2026-05-03 | Phase 0 + 1 + 2        |
+| Document                                                 | Type                                       | Date              | Verdict                        |
+| -------------------------------------------------------- | ------------------------------------------ | ----------------- | ------------------------------ |
+| [`SYNTHESE_AUDITS.md`](SYNTHESE_AUDITS.md)               | Synthèse causes racines RC-A à RC-G        | 2026-05-02        | Roadmap                        |
+| [`SYNTHESE_GIT.md`](SYNTHESE_GIT.md)                     | Cause racine RC-H Git                      | 2026-05-03        | Action P0+P1                   |
+| [`AUDIT_FLOWS.md`](AUDIT_FLOWS.md)                       | Audit fonctionnel par flow                 | v1.1              | 12 flows audités               |
+| [`AUDIT_TECHNIQUE.md`](AUDIT_TECHNIQUE.md)               | Dette technique (composants, casts, TODOs) | 2026-05-02        | 5 dettes                       |
+| [`AUDIT_PERFORMANCE.md`](AUDIT_PERFORMANCE.md)           | Bundle + perf + éco-conception             | 2026-05-02        | Budget 325 KB OK               |
+| [`AUDIT_LEGAL.md`](AUDIT_LEGAL.md)                       | RGPD + Loi 25                              | 2026-05-02        | NC résolues                    |
+| [`AUDIT_SUPABASE.md`](AUDIT_SUPABASE.md)                 | DB + RLS + Edge Functions                  | 2026-05-02        | Drift résorbé                  |
+| [`AUDIT_DB_LIVE.md`](AUDIT_DB_LIVE.md)                   | État live MCP Supabase                     | 2026-05-03        | DB opérationnelle              |
+| [`AUDIT_GIT.md`](AUDIT_GIT.md)                           | Repo Git + branches + workflow (v1)        | 2026-05-03        | Consolidé dans AUDIT_GITHUB.md |
+| [`AUDIT_GITHUB.md`](AUDIT_GITHUB.md)                     | **v2** GitHub + Workflow + CI/CD + Repo    | 2026-05-04        | 11 problèmes, 8 axes           |
+| [`AUDIT_DESIGN_SYSTEM.md`](AUDIT_DESIGN_SYSTEM.md)       | Audit DS (38 primitives, 6 PS structurels) | v1.1 — 2026-05-04 | À traiter Phase 5              |
+| [`AUDIT_TECH_DEBT_GLOBAL.md`](AUDIT_TECH_DEBT_GLOBAL.md) | Dette technique globale post-fixes         | 2026-05-04        | 3 critiques + 7 + 7            |
+| [`STORYBOOK_STRATEGY.md`](STORYBOOK_STRATEGY.md)         | Stratégie Storybook (mapping + roadmap)    | 2026-05-04        | Phase 5 dédiée                 |
+| [`PLAN_ACTION_GIT.md`](PLAN_ACTION_GIT.md)               | Plan exécution post-audit Git (v1)         | 2026-05-03        | Consolidé dans AUDIT_GITHUB.md |
 
 ---
 
