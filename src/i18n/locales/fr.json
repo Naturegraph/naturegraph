@@ -980,6 +980,7 @@
     "notificationsComingSoon": "La gestion des notifications arrive bientôt.",
     "logout": "Se déconnecter",
     "logoutDesc": "Tu seras redirigé vers la page d'accueil",
+    "logoutSuccess": "Tu es déconnecté. À bientôt !",
     "deleteAccountDesc": "Cette action est irréversible. Toutes tes données seront supprimées.",
     "deleteAccountConfirm": "Es-tu sûr de vouloir supprimer ton compte ?",
     "delete": {
