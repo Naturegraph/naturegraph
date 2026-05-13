@@ -47,3 +47,11 @@ export { Alert } from './Alert'
 export { Modal } from './Modal'
 export { Spinner } from './Spinner'
 export { Skeleton, SkeletonGroup } from './Skeleton'
+
+// States (T-017 / T-018 / T-019 — primitives unifiées loading/empty/error)
+export { EmptyState } from './EmptyState'
+export type { EmptyStateProps } from './EmptyState'
+export { ErrorState } from './ErrorState'
+export type { ErrorStateProps } from './ErrorState'
+export { LoadingState } from './LoadingState'
+export type { LoadingStateProps } from './LoadingState'
