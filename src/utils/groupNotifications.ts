@@ -66,8 +66,13 @@ export function groupNotifications(notifs: Notification[]): GroupedNotification[
       if (other.reference_type !== n.reference_type) continue
       if (other.reference_id !== n.reference_id) continue
 
-      const diff = nDate - new Date(other.created_at).getTime()
-      if (diff < 0 || diff > WINDOW_MS) continue
+      // Fenêtre symétrique : on regroupe si les deux notifs sont à moins de 24h
+      // l'une de l'autre, indépendamment de l'ordre dans le tableau.
+      // (Le tri DESC est respecté en pratique mais ne doit pas être une
+      // précondition stricte — sinon le regroupement devient flaky quand deux
+      // notifs ont le même timestamp à la milliseconde près, cf. tests CI.)
+      const diff = Math.abs(nDate - new Date(other.created_at).getTime())
+      if (diff > WINDOW_MS) continue
 
       usedIds.add(other.id)
       group.group_count += 1
