@@ -20,8 +20,13 @@
 - **BATCH 8** (#112) — ConfirmModal slots ReactNode + icon + children + confirmDisabled — _T-025_
 - **BATCH 9** (#115) — Spinners Loader2 motion-safe sur uploads photo (Encounter / Instant / EditPhotoTab) — _T-023 + T-021/T-022 already conformant_
 - **BATCH 10** (#118) — usePageTitle hook + apply 6 pages + toast feedback logout — _QW-UX1 + QW-UX3_
+- **BATCH 11** (#98-#105) — Cleanup GitHub : 3 GH Actions PRs mergees, 5 npm major bumps fermees (TS 6, ESLint 10) avec justifications
+- **BATCH 12** (#121) — Regen `src/types/supabase.ts` via MCP + audit advisors complet (`docs/AUDIT_ADVISORS_2026-05-13.md`) — _T-001 + T-064_
+- **BATCH 13** (#124) — CI gate drift detection types vs DB (`scripts/check-supabase-types-drift.mjs`) — _T-003_
+- **BATCH 14** (#127) — Migration `20260513_drop_duplicate_indexes.sql` (4 indexes droppes) — _T-066_
+- **BATCH 15** (#TBD) — Migration `console.debug` → `debugLog` dans 2 utils (compressPhoto + notificationAnalytics) — _QW-CL2 partiel_
 
-→ Branches `main` `staging` `develop` toutes alignees au SHA `25a40be` (apres BATCH 9).
+→ Branches `main` `staging` `develop` toutes alignees au SHA `700dedc` (apres BATCH 14).
 
 ---
 

@@ -32,6 +32,8 @@
  *   · Aujourd'hui : tout le monde est Free → seul le tier FREE est actif
  */
 
+import { debugLog } from '@/lib/debugLog'
+
 // ─── Tiers — paramètres par niveau d'abonnement ──────────────────────────────
 
 export interface CompressionTier {
@@ -270,15 +272,14 @@ export async function compressPhoto(file: File, options: CompressOptions = {}): 
     }
 
     // Log dev pour ajuster les paramètres si besoin (no-op en prod)
-    if (import.meta.env?.DEV) {
-      const ratio = ((bestBlob.size / file.size) * 100).toFixed(0)
-      // eslint-disable-next-line no-console
-      console.debug(
-        `[compressPhoto] ${file.name}: ${(file.size / 1024).toFixed(0)}KB → ` +
-          `${(bestBlob.size / 1024).toFixed(0)}KB (${ratio}%) ` +
-          `${mime} q=${bestQuality.toFixed(2)} ${targetW}×${targetH}`,
-      )
-    }
+    // BATCH 15 / QW-CL2 : migre vers debugLog (centralise + tree-shake en prod)
+    const ratio = ((bestBlob.size / file.size) * 100).toFixed(0)
+    debugLog(
+      'compressPhoto',
+      `${file.name}: ${(file.size / 1024).toFixed(0)}KB → ` +
+        `${(bestBlob.size / 1024).toFixed(0)}KB (${ratio}%) ` +
+        `${mime} q=${bestQuality.toFixed(2)} ${targetW}×${targetH}`,
+    )
 
     return new File([bestBlob], rename(file.name, ext), {
       type: mime,
