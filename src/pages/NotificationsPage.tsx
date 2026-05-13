@@ -44,6 +44,7 @@ import {
   resolveDeepLink,
 } from '@/components/notifications/NotifItem'
 import { trackNotifEvent } from '@/utils/notificationAnalytics'
+import { EmptyState, LoadingState } from '@/components/ui'
 
 // ─── Catégories de filtres ────────────────────────────────────────────────────
 
@@ -190,32 +191,19 @@ export default function NotificationsPage() {
       {/* Liste */}
       <main role="tabpanel" className="max-w-3xl mx-auto px-4 py-6">
         {query.isLoading && (
-          <ul
-            className="divide-y divide-border bg-cream-lighter border border-border rounded-xl overflow-hidden"
-            aria-busy="true"
-            aria-label={t('home.notifications.page.loading')}
-          >
-            {Array.from({ length: 6 }).map((_, i) => (
-              <li key={i} className="flex items-start gap-3 px-4 py-4">
-                <div className="size-10 rounded-full bg-muted animate-pulse shrink-0" />
-                <div className="flex-1 min-w-0 space-y-2">
-                  <div className="h-3 w-24 bg-muted rounded-full animate-pulse" />
-                  <div className="h-3 w-3/4 bg-muted rounded-full animate-pulse" />
-                </div>
-              </li>
-            ))}
-          </ul>
+          <LoadingState
+            variant="skeleton"
+            rows={6}
+            label={t('home.notifications.page.loading')}
+            className="bg-cream-lighter border border-border rounded-xl"
+          />
         )}
 
         {!query.isLoading && grouped.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-sm font-medium text-foreground">
-              {t('home.notifications.page.empty')}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t('home.notifications.page.emptyHint')}
-            </p>
-          </div>
+          <EmptyState
+            title={t('home.notifications.page.empty')}
+            description={t('home.notifications.page.emptyHint')}
+          />
         )}
 
         {grouped.length > 0 && (

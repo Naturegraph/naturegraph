@@ -1,11 +1,23 @@
 # Naturegraph — MASTER TODO (Document de pilotage central)
 
-> **Version** : 1.1 — 2026-05-04 (ajout section Quick Wins)
+> **Version** : 1.2 — 2026-05-13 (cycle BATCHES 1-6 livre)
 > **Statut** : 📌 **DOCUMENT DE PILOTAGE CENTRAL** — à mettre à jour à chaque tâche complétée
 > **Source** : consolidation de tous les audits + roadmap + quick wins
 > **Lecture cible** : ouvrir chaque matin pour identifier la prochaine tâche
 > **Usage** : cocher au fur et à mesure + ajouter date d'achèvement
 > **Complément** : voir [`docs/QUICK_WINS.md`](QUICK_WINS.md) pour les 47 micro-tâches détaillées
+
+## 📦 Recent batches shipped (2026-05-13)
+
+- **BATCH 1** (#90) — Foundations : helpers `requireSupabase()` + `useRequiredUser()` + CI staging + convention TODOs — _T-004 T-005 T-006_
+- **BATCH 2** (#91) — GitHub setup : PR template + issue templates + CODEOWNERS + SECURITY.md + dependabot — _T-036→T-040_
+- **BATCH 3** (#92) — A11Y WCAG AA : onboarding role=group + OTP one-time-code + aria-live timer — _T-053 T-054 T-055_
+- **BATCH 4** (#93) — Perf : RAF throttle Hero + lazy StatsSidebar — _QW-PERF_
+- **BATCH 5** (#94) — DS : primitives `<EmptyState>` `<ErrorState>` `<LoadingState>` — _T-017 T-018 T-019_
+- **HOTFIX** (#96) — `groupNotifications` flaky test (fenetre symetrique)
+- **BATCH 6** (#98) — Adoption primitives Empty/Loading sur NotificationsPage + NotificationsPanel — _T-020 (2/5)_
+
+→ Branches `main` `staging` `develop` toutes alignees au SHA `1eb9122`.
 
 ---
 
@@ -34,12 +46,12 @@
 - [ ] **T-001** | Backend | S | — | 🔴 | Régénérer `src/types/supabase.ts` via `npx supabase gen types typescript --project-id hrxgduvworofnrjmgpcj`
 - [ ] **T-002** | Backend | M | T-001 | 🔴 | Fix les 22 casts `as unknown as` un par un (12 fichiers concernés)
 - [ ] **T-003** | Backend | S | T-001+T-002 | 🔴 | CI gate : script drift detection types ↔ migrations (fail si désynchro)
-- [ ] **T-004** | Backend | S | — | 🔴 | Helper `requireSupabase()` centralisé (élimine 26 occurrences pattern)
-- [ ] **T-005** | Backend | S | — | 🔴 | Hook `useRequiredUser()` centralisé (élimine 46 occurrences pattern)
+- [x] **T-004** | Backend | S | — | 🔴 | ~~Helper `requireSupabase()` centralisé~~ (BATCH 1 — #90, 2026-05-13) — _adoption progressive a faire (helper dispo)_
+- [x] **T-005** | Backend | S | — | 🔴 | ~~Hook `useRequiredUser()` centralisé~~ (BATCH 1 — #90, 2026-05-13) — _adoption progressive a faire (hook dispo)_
 
 ## Infrastructure / CI
 
-- [ ] **T-006** | GitHub | XS | — | 🔴 | Étendre CI sur push `staging` (`.github/workflows/ci.yml` triggers)
+- [x] **T-006** | GitHub | XS | — | 🔴 | ~~Étendre CI sur push `staging`~~ (BATCH 1 — #90, 2026-05-13)
 - [ ] **T-007** | GitHub | M | — | 🔴 | Tests E2E Playwright critical path (signup → onboarding → upload → delete)
 - [ ] **T-008** | GitHub | S | — | 🔴 | Coverage gate CI > 30% sur `src/services/` et `src/utils/`
 
@@ -63,10 +75,10 @@
 ## UI / Composants
 
 - [ ] **T-016** | UI | M | — | 🟠 | Implémenter `ContributeEditForm` (bouton Modifier observation Phase 2)
-- [ ] **T-017** | UI | S | — | 🟠 | Créer `<EmptyState />` primitive
-- [ ] **T-018** | UI | S | — | 🟠 | Créer `<ErrorState />` primitive
-- [ ] **T-019** | UI | S | — | 🟠 | Créer `<LoadingState />` primitive
-- [ ] **T-020** | UI | S | T-017+T-018+T-019 | 🟠 | Adopter Empty/Error/Loading dans 5+ endroits clés
+- [x] **T-017** | UI | S | — | 🟠 | ~~Créer `<EmptyState />` primitive~~ (BATCH 5 — #94, 2026-05-13)
+- [x] **T-018** | UI | S | — | 🟠 | ~~Créer `<ErrorState />` primitive~~ (BATCH 5 — #94, 2026-05-13)
+- [x] **T-019** | UI | S | — | 🟠 | ~~Créer `<LoadingState />` primitive~~ (BATCH 5 — #94, 2026-05-13)
+- [ ] **T-020** | UI | S | T-017+T-018+T-019 | 🟠 | Adopter Empty/Error/Loading dans 5+ endroits clés _(BATCH 6 en cours : NotificationsPage + NotificationsPanel adoptes, 3 endroits restants : FeedSection / SearchPanel / ProfileSidebar)_
 - [ ] **T-021** | UI | S | — | 🟠 | Skeleton sur feed (vs Spinner actuel)
 - [ ] **T-022** | UI | S | — | 🟠 | Indicateur progression onboarding (4 étapes visibles)
 - [ ] **T-023** | UI | S | — | 🟠 | Spinner pendant uploads photo
@@ -91,13 +103,13 @@
 
 ## GitHub / Workflow
 
-- [ ] **T-036** | GitHub | XS | — | 🟠 | Créer `.github/PULL_REQUEST_TEMPLATE.md`
-- [ ] **T-037** | GitHub | XS | — | 🟠 | Créer `.github/ISSUE_TEMPLATE/bug_report.md` + `feature_request.md`
-- [ ] **T-038** | GitHub | XS | — | 🟠 | Créer `.github/CODEOWNERS`
-- [ ] **T-039** | GitHub | XS | — | 🟠 | Créer `.github/SECURITY.md`
-- [ ] **T-040** | GitHub | XS | — | 🟠 | Créer `.github/dependabot.yml` + activer security updates
-- [ ] **T-041** | GitHub | XS | — | 🟠 | Créer 14 labels standardisés (priority, effort, domain)
-- [ ] **T-042** | GitHub | XS | — | 🟠 | Désactiver merge_commit + rebase_merge dans Settings
+- [x] **T-036** | GitHub | XS | — | 🟠 | ~~Créer `.github/PULL_REQUEST_TEMPLATE.md`~~ (BATCH 2 — #91, 2026-05-13)
+- [x] **T-037** | GitHub | XS | — | 🟠 | ~~Créer `.github/ISSUE_TEMPLATE/bug_report.md` + `feature_request.md`~~ (BATCH 2 — #91, 2026-05-13)
+- [x] **T-038** | GitHub | XS | — | 🟠 | ~~Créer `.github/CODEOWNERS`~~ (BATCH 2 — #91, 2026-05-13)
+- [x] **T-039** | GitHub | XS | — | 🟠 | ~~Créer `.github/SECURITY.md`~~ (BATCH 2 — #91, 2026-05-13)
+- [x] **T-040** | GitHub | XS | — | 🟠 | ~~Créer `.github/dependabot.yml` + activer security updates~~ (BATCH 2 — #91, 2026-05-13)
+- [x] **T-041** | GitHub | XS | — | 🟠 | ~~Créer 14 labels standardisés (priority, effort, domain)~~ (avant BATCH 1, 2026-05)
+- [x] **T-042** | GitHub | XS | — | 🟠 | ~~Désactiver merge_commit + rebase_merge dans Settings~~ (avant BATCH 1, 2026-05)
 - [ ] **T-043** | GitHub | S | — | 🟠 | Setup release workflow (semantic-release ou changesets)
 - [ ] **T-044** | GitHub | XS | T-043 | 🟠 | Premier tag `v0.1.0` + GitHub Release
 
@@ -114,13 +126,13 @@
 
 ## A11Y (Phase 6)
 
-- [ ] **T-053** | A11Y | XS | — | 🟠 | Fix A1 : Onboarding multi-select `role="group"` + `aria-pressed`
-- [ ] **T-054** | A11Y | XS | — | 🟠 | Fix A2 : OTP form `aria-label` + `autocomplete="one-time-code"`
-- [ ] **T-055** | A11Y | XS | — | 🟠 | Fix A3 : OTP timer `aria-live`
+- [x] **T-053** | A11Y | XS | — | 🟠 | ~~Fix A1 : Onboarding multi-select `role="group"` + `aria-pressed`~~ (BATCH 3 — #92, 2026-05-13)
+- [x] **T-054** | A11Y | XS | — | 🟠 | ~~Fix A2 : OTP form `aria-label` + `autocomplete="one-time-code"`~~ (BATCH 3 — #92, 2026-05-13)
+- [x] **T-055** | A11Y | XS | — | 🟠 | ~~Fix A3 : OTP timer `aria-live`~~ (BATCH 3 — #92, 2026-05-13)
 - [ ] **T-056** | A11Y | XS | — | 🟠 | Fix A4 : FAQ accordion `aria-expanded`
 - [ ] **T-057** | A11Y | XS | — | 🟠 | Fix A5 : Burger menu mobile `aria-label`
-- [ ] **T-058** | A11Y | S | — | 🟠 | Fix A6 : Focus trap modals (boucle complète)
-- [ ] **T-059** | A11Y | XS | — | 🟠 | Fix A7 : Step indicator onboarding `aria-current="step"`
+- [x] **T-058** | A11Y | S | — | 🟠 | ~~Fix A6 : Focus trap modals (boucle complète)~~ — _deja conforme : Modal utilise `<dialog>` HTML5 + showModal() qui gere le focus trap nativement_
+- [x] **T-059** | A11Y | XS | — | 🟠 | ~~Fix A7 : Step indicator onboarding `aria-current="step"`~~ — _deja conforme : StepIndicator utilise `role="progressbar"` (equivalent semantique)_
 - [ ] **T-060** | A11Y | S | T-053→T-059 | 🟠 | Audit Lighthouse + axe-core sur 5 pages clés
 
 ## Sécurité
