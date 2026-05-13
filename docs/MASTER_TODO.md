@@ -146,7 +146,7 @@
 - [ ] **T-063** | Sécurité | S | — | 🟠 | Banned usernames côté serveur (Edge Function/RPC, sortir du bundle)
 - [x] **T-064** | Sécurité | XS | — | 🟠 | ~~Audit advisors Supabase (performance + security)~~ (BATCH 12 — 2026-05-13) — _63 security lints (1 ERROR faux positif PostGIS) + 146 perf lints. Voir `docs/AUDIT_ADVISORS_2026-05-13.md`. Confirme T-065 / T-066 / T-067._
 - [ ] **T-065** | Supabase | M | — | 🟠 | Cleanup 50 RLS policies dupliquées (legacy + nouvelles cohabitent)
-- [ ] **T-066** | Supabase | XS | — | 🟠 | 4 indexes dupliqués DB : DROP les doublons
+- [x] **T-066** | Supabase | XS | — | 🟠 | ~~4 indexes dupliqués DB : DROP les doublons~~ (BATCH 14 — 2026-05-13) — _Migration `20260513_drop_duplicate_indexes.sql` appliquee via MCP. 4 indexes dropped : `idx_follows_following` + `idx_hidden_posts_post` + `idx_saved_posts_post` + `idx_saved_posts_user_saved`. Verifie : 4 indexes restants (1 par table)._
 - [ ] **T-067** | Supabase | S | — | 🟠 | Optimiser `auth.uid()` → `(SELECT auth.uid())` (55 policies advisors)
 
 ## Forms unification (Phase 5)
