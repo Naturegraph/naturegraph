@@ -980,6 +980,7 @@
     "notificationsComingSoon": "Notification management is coming soon.",
     "logout": "Log out",
     "logoutDesc": "You will be redirected to the home page",
+    "logoutSuccess": "You are logged out. See you soon!",
     "deleteAccountDesc": "This action is irreversible. All your data will be deleted.",
     "deleteAccountConfirm": "Are you sure you want to delete your account?",
     "delete": {
