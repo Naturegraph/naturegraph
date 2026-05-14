@@ -51,6 +51,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useToast } from '@/contexts/ToastContext'
 import { useIsAdmin } from '@/hooks/useIsAdmin'
 import { useAdminAction } from '@/hooks/useAdminAction'
+import { PAGE_SIZES, STALE_TIMES } from '@/constants/reactQuery'
 import type { Json } from '@/types/supabase'
 
 // ─── Types ──────────────────────────────────────────────────────────────
@@ -81,7 +82,7 @@ interface PendingAction {
   report: ReportRow | null
 }
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = PAGE_SIZES.ADMIN_DEFAULT
 
 // ─── Helpers ─────────────────────────────────────────────────────────────
 
@@ -152,7 +153,7 @@ export default function AdminModeration() {
       if (error) throw error
       return { rows: (reports ?? []) as ReportRow[], total: count ?? 0 }
     },
-    staleTime: 30 * 1000,
+    staleTime: STALE_TIMES.MEDIUM,
     refetchOnWindowFocus: true,
   })
 
@@ -171,7 +172,7 @@ export default function AdminModeration() {
       return map
     },
     enabled: reporterIds.length > 0,
-    staleTime: 5 * 60 * 1000,
+    staleTime: STALE_TIMES.VERY_LONG,
   })
 
   const rows = data?.rows ?? []
