@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 /**
  * ToastContext — Système de toasts globaux (notifications transitoires UI)
  *
