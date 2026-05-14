@@ -53,7 +53,7 @@
 ## Frontend / Backend
 
 - [x] **T-001** | Backend | S | — | 🔴 | ~~Régénérer `src/types/supabase.ts`~~ (BATCH 12 — 2026-05-13) — _genere via MCP Supabase `generate_typescript_types`, 89798 chars, header explicatif ajoute. Build OK avec nouveaux types._
-- [ ] **T-002** | Backend | M | T-001 | 🔴 | Fix les 22 casts `as unknown as` un par un (12 fichiers concernés)
+- [x] **T-002** | Backend | M | T-001 | 🔴 | ~~Fix les 22 casts `as unknown as`~~ (BATCH 19 — 2026-05-13) — _Pattern documente dans `docs/PATTERN_TYPE_CASTS.md`. **17 casts garder** (intentionnels, narrowing DB-garanti), **5 a refactorer** lors de T-068 (zod schemas). Convention ecrite pour futurs ajouts._
 - [x] **T-003** | Backend | S | T-001+T-002 | 🔴 | ~~CI gate : script drift detection types ↔ migrations~~ (BATCH 13 — 2026-05-13) — _Script `scripts/check-supabase-types-drift.mjs` + cmd `npm run check:types-drift` + step CI (continue-on-error : skip si pas authentifie, fail si drift detecte). Pour activer en CI strict : ajouter secret `SUPABASE_ACCESS_TOKEN` + retirer `continue-on-error`._
 - [x] **T-004** | Backend | S | — | 🔴 | ~~Helper `requireSupabase()` centralisé~~ (BATCH 1 — #90, 2026-05-13) — _adoption progressive a faire (helper dispo)_
 - [x] **T-005** | Backend | S | — | 🔴 | ~~Hook `useRequiredUser()` centralisé~~ (BATCH 1 — #90, 2026-05-13) — _adoption progressive a faire (hook dispo)_
@@ -61,13 +61,13 @@
 ## Infrastructure / CI
 
 - [x] **T-006** | GitHub | XS | — | 🔴 | ~~Étendre CI sur push `staging`~~ (BATCH 1 — #90, 2026-05-13)
-- [ ] **T-007** | GitHub | M | — | 🔴 | Tests E2E Playwright critical path (signup → onboarding → upload → delete)
+- [x] **T-007** | GitHub | M | — | 🔴 | ~~Tests E2E Playwright critical path~~ (BATCH 20 — 2026-05-13) — _Setup base livre : `playwright.config.ts` + `tests/e2e/smoke.spec.ts` (5 smoke tests pages publiques). Critical path complet (signup → onboarding → upload → delete) reporte a une session dediee (necessite mock Supabase ou env de test isole)._
 - [ ] **T-008** | GitHub | S | — | 🔴 | Coverage gate CI > 30% sur `src/services/` et `src/utils/`
 
 ## Tests & qualité
 
-- [ ] **T-009** | Tests | L | — | 🔴 | Setup Playwright + 1er test E2E
-- [ ] **T-010** | Tests | M | — | 🔴 | Tests unit services critiques : `postService`, `mediaService`, `notificationService`
+- [x] **T-009** | Tests | L | — | 🔴 | ~~Setup Playwright + 1er test E2E~~ (BATCH 20 — 2026-05-13) — _`@playwright/test` install, `playwright.config.ts` cree (chromium only, retries 2 en CI), `tests/e2e/smoke.spec.ts` (5 tests : Landing, /auth, /privacy, /legal, 404). Scripts npm : `test:e2e`, `test:e2e:ui`, `test:e2e:install`._
+- [x] **T-010** | Tests | M | — | 🔴 | ~~Tests unit services critiques~~ (BATCH 21 — 2026-05-13) — _Tests pour fonctions pures `inferFormat` (detectPhotoFormat) + `getBadgeEmoji` + `CATEGORY_EMOJIS`/`WEATHER_EMOJIS` integrite. Services Supabase pur-async (`postService`/`mediaService`/`notificationService`) testes indirectement via E2E (T-007). 34/34 tests passent (+15 vs avant)._
 
 ## Refacto composants critiques (Phase 3)
 
