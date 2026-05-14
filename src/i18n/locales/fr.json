@@ -242,6 +242,24 @@
       "resend": "Renvoyer le code",
       "timer": "Code valide pendant {{time}}",
       "demoCode": "Mode démo — Ton code OTP : {{code}}"
+    },
+    "beta": {
+      "title": "Beta fermée",
+      "description": "Naturegraph est en beta fermée. Entre ta clé d'accès pour créer ton compte.",
+      "codeLabel": "Clé d'accès",
+      "submit": "Vérifier ma clé",
+      "success": "Clé validée !",
+      "noKey": "Pas de clé ? Rejoindre la waitlist",
+      "alreadyAccount": "Déjà un compte ?",
+      "login": "Connexion",
+      "consentLabel": "J'accepte les conditions de la beta : tester l'application, partager mes retours, respecter la communauté",
+      "consentRequired": "Tu dois accepter les conditions de la beta pour continuer",
+      "errorFormat": "Format invalide. Attendu : NG-XXXX-XXXX",
+      "errorInvalid": "Clé invalide ou déjà utilisée. Vérifie ou contacte-nous.",
+      "errorExpired": "Clé expirée. Contacte-nous pour en obtenir une nouvelle.",
+      "errorRateLimited": "Trop de tentatives. Réessaie dans 10 minutes.",
+      "errorServer": "Erreur serveur. Réessaie dans un instant.",
+      "errorGeneric": "Une erreur est survenue."
     }
   },
 
@@ -1123,5 +1141,208 @@
     "error": "Erreur",
     "warning": "Attention",
     "info": "Information"
+  },
+
+  "admin": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "users": "Utilisateurs",
+      "moderation": "Modération",
+      "beta": "Beta",
+      "audit": "Audit"
+    },
+    "header": {
+      "title": "Admin · Naturegraph",
+      "back": "Quitter admin"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "statusOk": "Système opérationnel",
+      "phaseOpen": "Phase {{phase}} beta ouverte",
+      "phaseClosed": "Beta fermée",
+      "kpi": {
+        "users": "Utilisateurs",
+        "posts": "Posts (7j)",
+        "reports": "Signalements",
+        "betaQuota": "Beta quota"
+      },
+      "openReportsTitle": "Signalements ouverts",
+      "viewAll": "Tout voir",
+      "noReports": "🟢 Aucun signalement ouvert. Tout est calme.",
+      "reportsWaiting": "signalement(s) en attente de traitement",
+      "betaTitle": "Beta status",
+      "manage": "Gérer",
+      "acceptingSignups": "🟢 Accepting new signups",
+      "signupsClosed": "🔴 Signups fermés (quota plein ou pause)"
+    },
+    "users": {
+      "title": "Utilisateurs",
+      "totalLabel": "utilisateurs au total",
+      "searchPlaceholder": "Rechercher par nom, username, email...",
+      "searchLabel": "Recherche utilisateurs",
+      "filterLabel": "Filtrer par rôle",
+      "filterAll": "Tous",
+      "filterAdmins": "Admins",
+      "filterRegular": "Utilisateurs",
+      "noResults": "Aucun utilisateur trouvé pour \"{{search}}\"",
+      "noUsers": "Aucun utilisateur dans cette catégorie.",
+      "columns": {
+        "user": "Utilisateur",
+        "email": "Email",
+        "posts": "Posts",
+        "role": "Rôle",
+        "actions": "Actions"
+      },
+      "pagination": "Pagination utilisateurs",
+      "previous": "Précédent",
+      "next": "Suivant",
+      "page": "Page {{current}} / {{total}}",
+      "actions": {
+        "viewProfile": "Voir profil",
+        "promote": "Promouvoir modérateur",
+        "demote": "Retirer admin",
+        "suspend": "Suspendre 7 jours",
+        "ban": "Bannir définitivement"
+      },
+      "modal": {
+        "promoteTitle": "Promouvoir @{{username}} ?",
+        "promoteDesc": "Cet utilisateur aura accès à /admin (role moderator).",
+        "demoteTitle": "Retirer @{{username}} des admins ?",
+        "demoteDesc": "L'accès /admin sera révoqué. Action réversible.",
+        "suspendTitle": "Suspendre @{{username}} 7 jours ?",
+        "suspendDesc": "Suspension de 7 jours. Réversible. Loguée dans admin_actions.",
+        "banTitle": "Bannir @{{username}} définitivement ?",
+        "banDesc": "⚠️ BAN PERMANENT. Action IRRÉVERSIBLE. Loguée dans admin_actions.",
+        "reasonLabel": "Raison (10 caractères min — affichée dans l'audit log)",
+        "reasonPlaceholder": "Ex: harcèlement répété, spam massif...",
+        "reasonRequired": "Raison obligatoire pour {{action}}",
+        "confirmPromote": "Promouvoir",
+        "confirmDemote": "Retirer",
+        "confirmSuspend": "Suspendre",
+        "confirmBan": "Bannir définitivement"
+      },
+      "success": {
+        "promote": "{{username}} promu modérateur",
+        "demote": "{{username}} retiré des admins",
+        "suspend": "{{username}} suspendu 7 jours",
+        "ban": "{{username}} banni définitivement"
+      },
+      "errorAction": "Erreur action admin"
+    },
+    "moderation": {
+      "title": "Modération",
+      "totalLabel": "signalement(s)",
+      "filterStatus": "Filtrer par statut",
+      "filterPriority": "Filtrer par priorité",
+      "allStatuses": "Tous les statuts",
+      "allPriorities": "Toutes priorités",
+      "empty": "🟢 Aucun signalement ouvert. Tout est calme.",
+      "emptyResults": "🟢 Aucun résultat. Tout est calme.",
+      "status": {
+        "new": "🆕 Nouveau",
+        "in_review": "👁 En cours",
+        "resolved": "✅ Résolu",
+        "dismissed": "✕ Rejeté"
+      },
+      "priority": {
+        "low": "Basse",
+        "medium": "Moyenne",
+        "high": "Haute",
+        "critical": "Critique"
+      },
+      "by": "Par",
+      "noteLabel": "Note :",
+      "actions": {
+        "view": "Voir {{type}}",
+        "take": "Prendre",
+        "resolve": "Résoudre",
+        "dismiss": "Rejeter (non valide)",
+        "removeContent": "Supprimer contenu"
+      },
+      "modal": {
+        "resolveTitle": "Résoudre ce signalement ?",
+        "resolveDesc": "Marquer comme résolu. Une note d'explication est requise (visible dans l'audit log).",
+        "dismissTitle": "Rejeter ce signalement ?",
+        "dismissDesc": "Rejeter ce signalement comme non valide. Notes obligatoires (visibles dans l'audit log).",
+        "removeTitle": "Supprimer le contenu signalé ?",
+        "removeDesc": "⚠️ Le contenu sera supprimé (soft-delete). Cette action est loguée dans admin_actions et IRRÉVERSIBLE.",
+        "notesLabel": "Notes (10 caractères min)",
+        "reasonLabel": "Raison (10 caractères min)",
+        "notesPlaceholder": "Explication de la décision (visible audit log)...",
+        "reasonPlaceholder": "Ex: spam confirmé, contenu inapproprié...",
+        "notesRequired": "Notes (10 caractères min) requises pour {{action}}.",
+        "reasonRequired": "Raison (10 caractères min) requise pour supprimer.",
+        "confirmResolve": "Résoudre",
+        "confirmDismiss": "Rejeter",
+        "confirmRemove": "Supprimer contenu"
+      },
+      "success": {
+        "takeOver": "Signalement assigné. Status: en cours.",
+        "resolve": "Signalement marqué comme résolu",
+        "dismiss": "Signalement rejeté",
+        "remove": "Contenu {{type}} supprimé"
+      },
+      "errorAction": "Erreur action",
+      "warningLogged": "Toutes actions loguées"
+    },
+    "beta": {
+      "title": "Gestion beta fermée",
+      "phase": "Phase {{n}}",
+      "usersOf": "{{current}} / {{max}} users ({{pct}}%)",
+      "acceptingSignups": "🟢 Accepting signups",
+      "signupsClosed": "🔴 Closed",
+      "generate": "Générer 10 clés (vague {{n}})",
+      "generating": "Génération...",
+      "generateSuccess": "10 clés générées (vague {{n}})",
+      "generateError": "Erreur génération clés",
+      "keysTitle": "Clés d'accès ({{count}})",
+      "keysEmpty": "Aucune clé générée. Clique \"Générer 10 clés\" pour démarrer la vague 1.",
+      "columns": {
+        "code": "Code",
+        "batch": "Batch",
+        "status": "Status",
+        "expire": "Expire",
+        "actions": "Actions"
+      },
+      "status": {
+        "deactivated": "🚫 désactivée",
+        "used": "✅ utilisée",
+        "expired": "🔴 expirée",
+        "valid": "🟢 valide"
+      },
+      "actions": {
+        "copy": "Copier {{code}}",
+        "deactivate": "Désactiver {{code}}"
+      },
+      "deactivateConfirm": "Désactiver la clé {{code}} ?",
+      "deactivated": "Clé désactivée",
+      "deactivateError": "Erreur désactivation",
+      "copied": "Copié : {{code}}",
+      "copyError": "Impossible de copier",
+      "waitlistTitle": "Waitlist ({{count}})",
+      "waitlistEmpty": "🟢 Waitlist vide.",
+      "registered": "Inscrit {{when}}",
+      "statsTitle": "Tentatives signups (7 derniers jours)"
+    },
+    "audit": {
+      "title": "Audit logs",
+      "filterLabel": "Filtrer par action",
+      "filterAll": "Toutes actions",
+      "empty": "Aucune action loguée.",
+      "showing": "100 dernières actions affichées (immutable — trigger Postgres)",
+      "justNow": "à l'instant",
+      "minutesAgo": "il y a {{n}}min",
+      "hoursAgo": "il y a {{n}}h",
+      "daysAgo": "il y a {{n}}j"
+    },
+    "common": {
+      "loading": "Chargement...",
+      "verifyingAdmin": "Vérification administrateur...",
+      "roleBadge": {
+        "super_admin": "super_admin",
+        "moderator": "moderator",
+        "support": "support"
+      }
+    }
   }
 }

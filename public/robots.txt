@@ -1,0 +1,31 @@
+# Naturegraph — robots.txt
+# Refs : BATCH 36 pre-launch SEO
+
+User-agent: *
+Allow: /
+Allow: /signup
+Allow: /login
+Allow: /waitlist
+Allow: /contact
+Allow: /privacy
+Allow: /legal
+
+# Pages app : indexables si SSR/SSG (sinon ignorees car SPA)
+Allow: /home
+Allow: /explore
+Allow: /profile/*
+
+# Zones privees / admin : jamais indexer
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /settings
+Disallow: /notifications
+Disallow: /onboarding
+Disallow: /contribute
+
+# Verifiers
+Disallow: /api/
+Disallow: /.well-known/
+
+# Sitemap principal
+Sitemap: https://naturegraph.fr/sitemap.xml

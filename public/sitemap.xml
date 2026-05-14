@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Naturegraph — sitemap.xml
+  Refs : BATCH 36 pre-launch SEO
+
+  Strategie MVP : sitemap statique avec les pages publiques cles.
+  Phase 2 : generation dynamique via script CI quand on aura plus de
+  contenu indexable (profils publics, posts publics).
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Landing page (priorite max) -->
+  <url>
+    <loc>https://naturegraph.fr/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Auth pages (entree user) -->
+  <url>
+    <loc>https://naturegraph.fr/signup</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://naturegraph.fr/login</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Waitlist (entree beta closed) -->
+  <url>
+    <loc>https://naturegraph.fr/waitlist</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Pages app publiques -->
+  <url>
+    <loc>https://naturegraph.fr/home</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://naturegraph.fr/explore</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Contact + Legal -->
+  <url>
+    <loc>https://naturegraph.fr/contact</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://naturegraph.fr/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://naturegraph.fr/legal</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+</urlset>
