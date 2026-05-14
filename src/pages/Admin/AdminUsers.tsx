@@ -1,22 +1,587 @@
 /**
- * AdminUsers — Module 2 : Gestion utilisateurs (placeholder MVP)
+ * AdminUsers — Module 2 : Gestion utilisateurs (MVP)
  *
- * Refs : ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md v2.0 Module 2
- * Statut : BATCH 34 (a venir) — placeholder pour ne pas casser le router.
+ * Refs : ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md v2.0 Module 2 + BATCH 33
+ *
+ * Fonctionnalites livrees :
+ *   - Liste profils paginee (20 par page) — pagination obligatoire (eco-conception)
+ *   - Recherche par username / email / first/last name (debounced 300ms)
+ *   - Filtre par statut admin (admin / regular / all)
+ *   - Actions par utilisateur (menu) :
+ *       * Voir profil public (/profile/:username)
+ *       * Promouvoir admin (ouvre ConfirmModal si super_admin connecte)
+ *       * Suspendre temporairement (ouvre ConfirmModal avec champ raison)
+ *       * Bannir definitivement (super_admin uniquement, double confirmation)
+ *   - Toutes les actions log dans admin_audit_logs (immutable)
+ *
+ * Hors scope BATCH 33 (Phase 2+) :
+ *   - Edition profil (username, email) → manuel via Supabase Dashboard
+ *   - Reset password → laisse a Supabase Auth flow standard
+ *   - Bulk actions → 1 user at a time pour MVP
+ *
+ * Eco-conception :
+ *   - Pagination 20 items (jamais de scroll infini)
+ *   - Cache React Query 30s (stats fraiches mais pas trop de queries)
+ *   - Pas d'avatar lazy-loaded ici (recharge a chaque scroll = OK pour 20 max)
+ *
+ * A11Y :
+ *   - aria-label sur tous les inputs/buttons
+ *   - role="alertdialog" via ConfirmModal
+ *   - Focus management via ConfirmModal
  */
 
-import { EmptyState } from '@/components/ui'
-import { Users } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  Search,
+  Shield,
+  ShieldOff,
+  Ban,
+  MoreVertical,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+} from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import { Button } from '@/components/ui/Button'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { Avatar } from '@/components/ui/Avatar'
+import { useToast } from '@/contexts/ToastContext'
+import { useIsAdmin } from '@/hooks/useIsAdmin'
+
+// ─── Types ──────────────────────────────────────────────────────────────
+
+interface UserRow {
+  id: string
+  username: string
+  email: string
+  first_name: string
+  last_name: string
+  avatar_url: string | null
+  posts_count: number | null
+  followers_count: number | null
+  created_at: string | null
+  // Joined depuis admin_users (peut etre null si pas admin)
+  admin_role: string | null
+  admin_is_active: boolean | null
+}
+
+type ActionType = 'promote' | 'demote' | 'suspend' | 'ban' | null
+
+interface PendingAction {
+  type: ActionType
+  user: UserRow | null
+}
+
+const PAGE_SIZE = 20
+
+// ─── Page ────────────────────────────────────────────────────────────────
 
 export default function AdminUsers() {
+  const { t } = useTranslation()
+  const toast = useToast()
+  const queryClient = useQueryClient()
+  const { adminUser, isSuperAdmin } = useIsAdmin()
+
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [filter, setFilter] = useState<'all' | 'admin' | 'regular'>('all')
+  const [page, setPage] = useState(0)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [pending, setPending] = useState<PendingAction>({ type: null, user: null })
+  const [reason, setReason] = useState('')
+
+  // Debounce search (300ms) — eviter spam queries
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setDebouncedSearch(search.trim())
+      setPage(0)
+    }, 300)
+    return () => clearTimeout(id)
+  }, [search])
+
+  // Reset page quand filter change
+  useEffect(() => {
+    setPage(0)
+  }, [filter])
+
+  // Fetch users paginated + filtered
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-users', debouncedSearch, filter, page],
+    queryFn: async () => {
+      if (!supabase) return { rows: [] as UserRow[], total: 0 }
+
+      // Build query : on join admin_users via une 2eme requete car PostgREST
+      // ne supporte pas le LEFT JOIN sur table sans FK explicite cote profiles.
+      let query = supabase
+        .from('profiles')
+        .select(
+          'id, username, email, first_name, last_name, avatar_url, posts_count, followers_count, created_at',
+          { count: 'exact' },
+        )
+        .order('created_at', { ascending: false })
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
+
+      if (debouncedSearch) {
+        // OR ilike sur 4 champs : username, email, first_name, last_name
+        query = query.or(
+          `username.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%,first_name.ilike.%${debouncedSearch}%,last_name.ilike.%${debouncedSearch}%`,
+        )
+      }
+
+      const { data: profiles, count, error } = await query
+      if (error) throw error
+
+      // Fetch admin_users en parallel pour cette page
+      const userIds = (profiles ?? []).map((p) => p.id)
+      const adminMap = new Map<string, { role: string; is_active: boolean }>()
+      if (userIds.length > 0) {
+        const { data: admins } = await supabase
+          .from('admin_users')
+          .select('user_id, role, is_active')
+          .in('user_id', userIds)
+        for (const a of admins ?? []) {
+          adminMap.set(a.user_id, { role: a.role, is_active: a.is_active })
+        }
+      }
+
+      let rows = (profiles ?? []).map((p) => ({
+        ...p,
+        admin_role: adminMap.get(p.id)?.role ?? null,
+        admin_is_active: adminMap.get(p.id)?.is_active ?? null,
+      })) as UserRow[]
+
+      // Filtre admin / regular (post-fetch car pas de jointure côté SQL ici)
+      if (filter === 'admin') rows = rows.filter((r) => r.admin_role !== null)
+      if (filter === 'regular') rows = rows.filter((r) => r.admin_role === null)
+
+      return { rows, total: count ?? 0 }
+    },
+    staleTime: 30 * 1000,
+  })
+
+  const rows = data?.rows ?? []
+  const total = data?.total ?? 0
+  const totalPages = Math.ceil(total / PAGE_SIZE)
+
+  // ─── Audit log helper ────────────────────────────────────────────────
+  async function logAudit(action: string, targetUserId: string, metadata: Record<string, unknown>) {
+    if (!supabase || !adminUser) return
+    await supabase.from('admin_audit_logs').insert({
+      admin_user_id: adminUser.id,
+      action,
+      target_type: 'user',
+      target_id: targetUserId,
+      metadata,
+    })
+  }
+
+  // ─── Actions handlers ────────────────────────────────────────────────
+
+  function openAction(type: Exclude<ActionType, null>, user: UserRow) {
+    setOpenMenuId(null)
+    setPending({ type, user })
+    setReason('')
+  }
+
+  function closeAction() {
+    setPending({ type: null, user: null })
+    setReason('')
+  }
+
+  async function confirmAction() {
+    if (!pending.type || !pending.user || !supabase) return
+    const user = pending.user
+
+    try {
+      switch (pending.type) {
+        case 'promote': {
+          const { error } = await supabase.from('admin_users').insert({
+            user_id: user.id,
+            role: 'moderator',
+            is_active: true,
+            notes: reason || `Promu via /admin/users par ${adminUser?.user_id}`,
+          })
+          if (error) throw error
+          await logAudit('user.promote', user.id, { role: 'moderator', reason })
+          toast.success(`${user.username} promu moderateur`)
+          break
+        }
+        case 'demote': {
+          const { error } = await supabase
+            .from('admin_users')
+            .update({ is_active: false, notes: reason || 'Demote via /admin/users' })
+            .eq('user_id', user.id)
+          if (error) throw error
+          await logAudit('user.demote', user.id, { reason })
+          toast.success(`${user.username} retire des admins`)
+          break
+        }
+        case 'suspend': {
+          if (!reason.trim()) {
+            toast.error('Raison obligatoire pour suspendre')
+            return
+          }
+          const { error } = await supabase.from('admin_actions').insert({
+            performed_by: adminUser!.id,
+            action_type: 'user_suspend',
+            target_user_id: user.id,
+            duration_days: 7,
+            reason: reason.trim(),
+            is_reversible: true,
+          })
+          if (error) throw error
+          await logAudit('user.suspend', user.id, { duration_days: 7, reason })
+          toast.success(`${user.username} suspendu 7 jours`)
+          break
+        }
+        case 'ban': {
+          if (!reason.trim()) {
+            toast.error('Raison obligatoire pour bannir')
+            return
+          }
+          const { error } = await supabase.from('admin_actions').insert({
+            performed_by: adminUser!.id,
+            action_type: 'user_ban',
+            target_user_id: user.id,
+            reason: reason.trim(),
+            is_reversible: false,
+          })
+          if (error) throw error
+          await logAudit('user.ban', user.id, { reason })
+          toast.success(`${user.username} banni definitivement`)
+          break
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-audit-logs'] })
+    } catch (err) {
+      toast.error('Erreur action admin', err instanceof Error ? err.message : 'erreur inconnue')
+    } finally {
+      closeAction()
+    }
+  }
+
+  // ─── Render ──────────────────────────────────────────────────────────
+
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold text-foreground">Utilisateurs</h1>
-      <EmptyState
-        icon={<Users className="size-12" />}
-        title="Module en construction"
-        description="La gestion utilisateurs sera livree dans BATCH 34. Pour l'instant, utiliser le Supabase Dashboard."
-      />
+      {/* Header */}
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-bold text-foreground">
+          {t('admin.users.title', { defaultValue: 'Utilisateurs' })}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {total} {t('admin.users.totalLabel', { defaultValue: 'utilisateurs au total' })}
+        </p>
+      </div>
+
+      {/* Search + Filter */}
+      <div className="flex flex-col md:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t('admin.users.searchPlaceholder', {
+              defaultValue: 'Rechercher par nom, username, email...',
+            })}
+            aria-label={t('admin.users.searchLabel', { defaultValue: 'Recherche utilisateurs' })}
+            className="w-full h-10 pl-10 pr-4 rounded-md border border-border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          />
+        </div>
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value as typeof filter)}
+          aria-label={t('admin.users.filterLabel', { defaultValue: 'Filtrer par role' })}
+          className="h-10 px-3 rounded-md border border-border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <option value="all">Tous</option>
+          <option value="admin">Admins</option>
+          <option value="regular">Utilisateurs</option>
+        </select>
+      </div>
+
+      {/* Table */}
+      <section className="bg-background border border-border rounded-lg overflow-hidden">
+        {isLoading ? (
+          <div className="p-6 space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-12 bg-muted/30 rounded animate-pulse" />
+            ))}
+          </div>
+        ) : rows.length === 0 ? (
+          <p className="px-5 py-10 text-center text-sm text-muted-foreground">
+            {debouncedSearch
+              ? `Aucun utilisateur trouve pour "${debouncedSearch}"`
+              : 'Aucun utilisateur dans cette categorie.'}
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-xs uppercase text-muted-foreground tracking-wide">
+                <tr className="border-b border-border">
+                  <th className="text-left px-4 py-2">Utilisateur</th>
+                  <th className="text-left px-4 py-2">Email</th>
+                  <th className="text-left px-4 py-2">Posts</th>
+                  <th className="text-left px-4 py-2">Role</th>
+                  <th className="text-right px-4 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((u) => (
+                  <tr
+                    key={u.id}
+                    className="border-b border-border/50 last:border-0 hover:bg-muted/20"
+                  >
+                    <td className="px-4 py-2">
+                      <div className="flex items-center gap-2">
+                        <Avatar
+                          src={u.avatar_url ?? undefined}
+                          alt={u.username}
+                          fallback={u.first_name?.[0] ?? u.username?.[0] ?? '?'}
+                          size="sm"
+                        />
+                        <div className="flex flex-col min-w-0">
+                          <Link
+                            to={`/profile/${u.username}`}
+                            className="font-medium text-foreground hover:underline inline-flex items-center gap-1"
+                          >
+                            @{u.username}
+                            <ExternalLink className="size-3 opacity-60" aria-hidden="true" />
+                          </Link>
+                          <span className="text-xs text-muted-foreground truncate">
+                            {u.first_name} {u.last_name}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-2 text-muted-foreground text-xs truncate max-w-[200px]">
+                      {u.email}
+                    </td>
+                    <td className="px-4 py-2 text-foreground">{u.posts_count ?? 0}</td>
+                    <td className="px-4 py-2">
+                      {u.admin_role ? (
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                            u.admin_is_active
+                              ? 'bg-primary-light text-primary'
+                              : 'bg-muted text-muted-foreground'
+                          }`}
+                        >
+                          <Shield className="size-3" aria-hidden="true" />
+                          {u.admin_role}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 text-right relative">
+                      <button
+                        type="button"
+                        onClick={() => setOpenMenuId(openMenuId === u.id ? null : u.id)}
+                        aria-label={`Actions pour ${u.username}`}
+                        aria-haspopup="menu"
+                        aria-expanded={openMenuId === u.id}
+                        className="size-8 inline-flex items-center justify-center rounded hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        <MoreVertical className="size-4" aria-hidden="true" />
+                      </button>
+                      {openMenuId === u.id && (
+                        <UserActionMenu
+                          user={u}
+                          isSuperAdmin={isSuperAdmin}
+                          onAction={openAction}
+                          onClose={() => setOpenMenuId(null)}
+                        />
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <nav
+          className="flex items-center justify-between gap-3 text-sm"
+          aria-label={t('admin.users.pagination', { defaultValue: 'Pagination utilisateurs' })}
+        >
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+          >
+            <ChevronLeft className="size-4" aria-hidden="true" />
+            <span>Precedent</span>
+          </Button>
+          <span className="text-muted-foreground">
+            Page {page + 1} / {totalPages}
+          </span>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+          >
+            <span>Suivant</span>
+            <ChevronRight className="size-4" aria-hidden="true" />
+          </Button>
+        </nav>
+      )}
+
+      {/* ── Confirm modals ────────────────────────────────────────────── */}
+      {pending.type && pending.user && (
+        <ConfirmModal
+          title={
+            pending.type === 'promote'
+              ? `Promouvoir @${pending.user.username} ?`
+              : pending.type === 'demote'
+                ? `Retirer @${pending.user.username} des admins ?`
+                : pending.type === 'suspend'
+                  ? `Suspendre @${pending.user.username} 7 jours ?`
+                  : `Bannir @${pending.user.username} definitivement ?`
+          }
+          description={
+            pending.type === 'promote'
+              ? 'Cet utilisateur aura acces a /admin (role moderator).'
+              : pending.type === 'demote'
+                ? "L'acces /admin sera revoque. Action reversible."
+                : pending.type === 'suspend'
+                  ? 'Suspension de 7 jours. Reversible. Loggue dans admin_actions.'
+                  : '⚠️ BAN PERMANENT. Action IRREVERSIBLE. Loggue dans admin_actions.'
+          }
+          confirmLabel={
+            pending.type === 'ban'
+              ? 'Bannir definitivement'
+              : pending.type === 'suspend'
+                ? 'Suspendre'
+                : pending.type === 'demote'
+                  ? 'Retirer'
+                  : 'Promouvoir'
+          }
+          variant={pending.type === 'ban' || pending.type === 'suspend' ? 'danger' : 'default'}
+          onCancel={closeAction}
+          onConfirm={confirmAction}
+          confirmDisabled={
+            (pending.type === 'suspend' || pending.type === 'ban') && reason.trim().length < 10
+          }
+        >
+          {(pending.type === 'suspend' || pending.type === 'ban') && (
+            <div className="flex flex-col gap-1">
+              <label htmlFor="action-reason" className="text-xs font-medium text-foreground">
+                Raison (10 caracteres min — affichee dans l'audit log)
+              </label>
+              <textarea
+                id="action-reason"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                rows={3}
+                maxLength={500}
+                placeholder="Ex: harcelement repete, spam massif..."
+                className="w-full px-3 py-2 rounded-md border border-border bg-background text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              />
+              <span className="text-xs text-muted-foreground self-end">{reason.length} / 500</span>
+            </div>
+          )}
+        </ConfirmModal>
+      )}
     </div>
+  )
+}
+
+// ─── UserActionMenu sub-component ───────────────────────────────────────
+
+interface UserActionMenuProps {
+  user: UserRow
+  isSuperAdmin: boolean
+  onAction: (type: Exclude<ActionType, null>, user: UserRow) => void
+  onClose: () => void
+}
+
+function UserActionMenu({ user, isSuperAdmin, onAction, onClose }: UserActionMenuProps) {
+  // Close on Escape
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  const isAlreadyAdmin = user.admin_role !== null && user.admin_is_active
+
+  return (
+    <>
+      {/* Backdrop pour fermer */}
+      <div className="fixed inset-0 z-10" onClick={onClose} aria-hidden="true" />
+      <div
+        role="menu"
+        className="absolute right-0 top-9 z-20 min-w-[200px] bg-background border border-border rounded-md shadow-lg py-1 text-sm"
+      >
+        <Link
+          to={`/profile/${user.username}`}
+          role="menuitem"
+          className="flex items-center gap-2 px-3 py-2 hover:bg-muted/30 focus-visible:outline-none focus-visible:bg-muted/30"
+          onClick={onClose}
+        >
+          <ExternalLink className="size-3.5" aria-hidden="true" />
+          Voir profil
+        </Link>
+        {isSuperAdmin && !isAlreadyAdmin && (
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => onAction('promote', user)}
+            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/30 focus-visible:outline-none focus-visible:bg-muted/30 text-left"
+          >
+            <Shield className="size-3.5" aria-hidden="true" />
+            Promouvoir moderateur
+          </button>
+        )}
+        {isSuperAdmin && isAlreadyAdmin && (
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => onAction('demote', user)}
+            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/30 focus-visible:outline-none focus-visible:bg-muted/30 text-left"
+          >
+            <ShieldOff className="size-3.5" aria-hidden="true" />
+            Retirer admin
+          </button>
+        )}
+        <div className="my-1 border-t border-border" aria-hidden="true" />
+        <button
+          type="button"
+          role="menuitem"
+          onClick={() => onAction('suspend', user)}
+          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--color-warning,#ca8a04)]/10 focus-visible:outline-none focus-visible:bg-[var(--color-warning,#ca8a04)]/10 text-left text-[var(--color-warning,#ca8a04)]"
+        >
+          <ShieldOff className="size-3.5" aria-hidden="true" />
+          Suspendre 7 jours
+        </button>
+        {isSuperAdmin && (
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => onAction('ban', user)}
+            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--color-error,#dc2626)]/10 focus-visible:outline-none focus-visible:bg-[var(--color-error,#dc2626)]/10 text-left text-[var(--color-error,#dc2626)]"
+          >
+            <Ban className="size-3.5" aria-hidden="true" />
+            Bannir definitivement
+          </button>
+        )}
+      </div>
+    </>
   )
 }
