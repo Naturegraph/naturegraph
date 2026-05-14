@@ -13,7 +13,15 @@
 
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { LayoutDashboard, Users, ShieldAlert, Key, FileText, Home as HomeIcon } from 'lucide-react'
+import {
+  LayoutDashboard,
+  Users,
+  ShieldAlert,
+  Shield,
+  Key,
+  FileText,
+  Home as HomeIcon,
+} from 'lucide-react'
 import { useIsAdmin } from '@/hooks/useIsAdmin'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
@@ -36,7 +44,11 @@ export default function AdminLayout() {
       {/* ── Header ─────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-10 bg-foreground text-background border-b border-border h-14 flex items-center px-4 md:px-6">
         <div className="flex-1 flex items-center gap-3">
-          <span className="font-bold text-base">🛡️ Naturegraph Admin</span>
+          {/* BATCH 42 : remplace emoji 🛡️ par icone Lucide (coherence DS, accessible). */}
+          <span className="font-bold text-base inline-flex items-center gap-2">
+            <Shield className="size-4 text-primary" aria-hidden="true" />
+            Naturegraph Admin
+          </span>
           <span className="hidden md:inline-block text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary uppercase tracking-wide">
             {role ?? 'role'}
           </span>

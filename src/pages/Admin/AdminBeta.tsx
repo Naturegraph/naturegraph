@@ -19,6 +19,7 @@ import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { useToast } from '@/contexts/ToastContext'
 import { useAdminAction } from '@/hooks/useAdminAction'
+import { STALE_TIMES } from '@/constants/reactQuery'
 
 // ─── Types DB rows ────────────────────────────────────────────────────────
 
@@ -94,7 +95,7 @@ export default function AdminBeta() {
         .maybeSingle()
       return (data as BetaQuota | null) ?? null
     },
-    staleTime: 30 * 1000,
+    staleTime: STALE_TIMES.MEDIUM,
   })
 
   // Liste cles
@@ -109,7 +110,7 @@ export default function AdminBeta() {
         .limit(100)
       return (data ?? []) as unknown as BetaAccessKey[]
     },
-    staleTime: 30 * 1000,
+    staleTime: STALE_TIMES.MEDIUM,
   })
 
   // Waitlist
@@ -125,7 +126,7 @@ export default function AdminBeta() {
         .limit(50)
       return (data ?? []) as unknown as BetaWaitlistEntry[]
     },
-    staleTime: 60 * 1000,
+    staleTime: STALE_TIMES.LONG,
   })
 
   // Stats signups 7j (groupes par outcome)
@@ -145,7 +146,7 @@ export default function AdminBeta() {
       }
       return counts
     },
-    staleTime: 60 * 1000,
+    staleTime: STALE_TIMES.LONG,
   })
 
   // Next batch number (max + 1)
