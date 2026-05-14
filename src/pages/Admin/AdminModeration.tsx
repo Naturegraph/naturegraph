@@ -50,6 +50,7 @@ import { Button } from '@/components/ui/Button'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useToast } from '@/contexts/ToastContext'
 import { useIsAdmin } from '@/hooks/useIsAdmin'
+import type { Json } from '@/types/supabase'
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -175,7 +176,8 @@ export default function AdminModeration() {
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
   // ─── Audit log helper ────────────────────────────────────────────────
-  async function logAudit(action: string, reportId: string, metadata: Record<string, unknown>) {
+  // Note : metadata typee Json pour matcher le schema Supabase (pas Record<string, unknown>).
+  async function logAudit(action: string, reportId: string, metadata: Json) {
     if (!supabase || !adminUser) return
     await supabase.from('admin_audit_logs').insert({
       admin_user_id: adminUser.id,
