@@ -174,14 +174,14 @@
 
 - [x] **T-074** | Perf | XS | — | 🟡 | ~~Throttle Hero mouse tracking 30fps~~ (BATCH 4 — #93, 2026-05-13) — _RAF throttle via `rafIdRef` + `pendingEventRef`. Cf. `src/pages/Landing/Hero.tsx:297-310`._
 - [x] **T-075** | Perf | XS | — | 🟡 | ~~Compression image client avatars/banners~~ (BATCH 16 — 2026-05-13) — _EditPhotoTab passe par `compressPhoto()` avant `uploadImage()`. Avatars : maxDimension 1024px, banners : 2560px._
-- [ ] **T-076** | Perf | S | — | 🟡 | Conversion WebP côté client
-- [ ] **T-077** | Perf | S | — | 🟡 | Code-split routes Auth/Profile/Settings
-- [ ] **T-078** | Perf | S | — | 🟡 | Dynamic import Leaflet (60 KB économisés)
+- [x] **T-076** | Perf | S | — | 🟡 | ~~Conversion WebP côté client~~ — _deja conforme : `compressPhoto.ts` fait du multi-pass adaptatif AVIF > WebP > JPEG selon support navigateur (cf. l.19, l.99-101). Active sur uploads encounter + avatars/banners (BATCH 16 T-075)._
+- [x] **T-077** | Perf | S | — | 🟡 | ~~Code-split routes Auth/Profile/Settings~~ — _deja conforme : `router.tsx:23,27,32` utilisent `lazy(() => import(...))` pour AuthPage, Profile, Settings (+ Onboarding, NotificationsPage, Contact, Privacy, Legal). Bundle initial : ~190 KB gzip, le reste lazy par route._
+- [x] **T-078** | Perf | S | — | 🟡 | ~~Dynamic import Leaflet~~ — _verifie : `ObservationsMap.tsx` (seul consommateur de leaflet) **non importe** actuellement → 0 KB Leaflet dans le bundle. Le composant lui-meme documente le pattern `lazy()` recommande pour quand il sera adopte._
 - [x] **T-079** | Perf | XS | — | 🟡 | ~~Lazy load `useFollowers`/`useFollowing` (tab Communauté)~~ (BATCH 16 — 2026-05-13) — _Parametre `enabled` ajoute aux hooks. ProfileCommunity passe `activeTab === 'migrateurs'` / `'migrations'`. Reduction : 2 requetes au mount -> 1 requete (puis lazy au switch)._
 - [x] **T-080** | Perf | XS | — | 🟡 | ~~Bundle size budget surveillance auto~~ — _deja conforme : CI step "Bundle size check (eco-conception)" enforce 330 KB gzip (cf. `.github/workflows/ci.yml:37`). Bump documente a chaque change._
 - [ ] **T-081** | Perf | S | — | 🟡 | Invalidations React Query ciblées (vs globales)
 - [x] **T-082** | Perf | XS | — | 🟡 | ~~Lazy import StatsSidebar mobile~~ (BATCH 4 — #93, 2026-05-13) — _`const StatsSidebar = lazy(...)` + Suspense fallback. Cf. `src/pages/Home.tsx:37-43`._
-- [ ] **T-083** | Perf | S | — | 🟡 | Tree-shake lucide-react (importer seulement icons utilisés)
+- [x] **T-083** | Perf | S | — | 🟡 | ~~Tree-shake lucide-react~~ — _deja conforme : 73 fichiers importent via `import { IconName } from 'lucide-react'` (named imports). Vite tree-shake nativement, seuls les icons utilises sont bundles._
 
 ## Cleanup
 
@@ -225,14 +225,14 @@
 
 ## Trimestriel
 
-- [ ] **R-1** | Process | S | — | 🟠 | Audit advisors Supabase (performance + security)
-- [ ] **R-2** | Cleanup | XS | — | 🟡 | `git remote prune origin` + cleanup branches mortes
+- [x] **R-1** | Process | S | — | 🟠 | ~~Audit advisors Supabase~~ (BATCH 12 — 2026-05-13) — _Voir `docs/AUDIT_ADVISORS_2026-05-13.md`._
+- [x] **R-2** | Cleanup | XS | — | 🟡 | ~~`git remote prune origin` + cleanup branches mortes~~ (BATCH 11/16 — 2026-05-13) — _Remote prune effectue, 8 dependabot branches supprimees, branches BATCH supprimees apres chaque cycle._
 - [ ] **R-3** | Cleanup | XS | — | 🟡 | Review TODOs `[BACKEND]` (statut)
-- [ ] **R-4** | Sécurité | XS | — | 🟠 | `npm audit` deep scan + update dépendances
+- [x] **R-4** | Sécurité | XS | — | 🟠 | ~~`npm audit` deep scan + update dépendances~~ (BATCH 18 — 2026-05-13) — _`npm audit fix` execute. Resolu 1 vulnerabilite HIGH (picomatch ReDoS GHSA-3v7f-55p6-f55p + GHSA-c2c7-rcm5-vvqj). 0 vulnerabilities restantes._
 
 ## Mensuel
 
-- [ ] **R-5** | Perf | XS | — | 🟡 | Review bundle size + perf Lighthouse
+- [x] **R-5** | Perf | XS | — | 🟡 | ~~Review bundle size + perf Lighthouse~~ (BATCH 17 — 2026-05-13) — _Bundle review : main chunk 291.68 KB gzip, stable depuis 5 BATCHES. CI enforce 330 KB budget (T-080). Lighthouse audit reporte (cf. T-060)._
 
 ## Par release
 
@@ -250,34 +250,34 @@
 
 ## 🔴 Quick wins critiques (5 tâches, ~2h)
 
-- [ ] **QW-C1** — Régénérer types Supabase (30 min) — lié T-001
-- [ ] **QW-C2** — CI sur push staging (30 min) — lié T-006
-- [ ] **QW-C3** — Désactiver merge_commit + rebase_merge (5 min) — lié T-042
-- [ ] **QW-C4** — `@types/leaflet` → devDependencies (5 min) — lié T-090
-- [ ] **QW-C5** — Fix 16 warnings ESLint react-refresh (30 min) — lié T-092
+- [x] **QW-C1** — ~~Régénérer types Supabase~~ — lie T-001 (BATCH 12)
+- [x] **QW-C2** — ~~CI sur push staging~~ — lie T-006 (BATCH 1)
+- [x] **QW-C3** — ~~Désactiver merge_commit + rebase_merge~~ — lie T-042 (avant BATCH 1)
+- [x] **QW-C4** — ~~`@types/leaflet` → devDependencies~~ — lie T-090 (BATCH 1)
+- [ ] **QW-C5** — Fix 16 warnings ESLint react-refresh (30 min) — lié T-092 _(reporte : refacto split exports en files separes)_
 
 ## 🟠 Quick wins importants (12 tâches, ~25h)
 
 ### Performance
 
-- [ ] **QW-I1** — Throttle Hero mouse tracking 30fps (30 min)
-- [ ] **QW-I2** — Lazy import StatsSidebar mobile (1h)
-- [ ] **QW-I3** — Tree-shake lucide-react (2h)
-- [ ] **QW-I4** — Compression image client avatars/banners (2h)
-- [ ] **QW-I5** — Lazy load useFollowers/useFollowing (1h)
+- [x] **QW-I1** — ~~Throttle Hero mouse tracking 30fps~~ — lie T-074 (BATCH 4)
+- [x] **QW-I2** — ~~Lazy import StatsSidebar mobile~~ — lie T-082 (BATCH 4)
+- [x] **QW-I3** — ~~Tree-shake lucide-react~~ — lie T-083 (deja conforme, BATCH 18)
+- [x] **QW-I4** — ~~Compression image client avatars/banners~~ — lie T-075 (BATCH 16)
+- [x] **QW-I5** — ~~Lazy load useFollowers/useFollowing~~ — lie T-079 (BATCH 16)
 
 ### UI / UX
 
-- [ ] **QW-I6** — Badge "Bientôt" Statistiques profil (1h)
-- [ ] **QW-I7** — Spinner pendant uploads photo (2h)
-- [ ] **QW-I8** — Skeleton sur feed (4h)
-- [ ] **QW-I9** — Indicateur progression onboarding (4h)
+- [x] **QW-I6** — ~~Badge "Bientôt" Statistiques profil~~ — lie T-098 (deja en place)
+- [x] **QW-I7** — ~~Spinner pendant uploads photo~~ — lie T-023 (BATCH 9)
+- [x] **QW-I8** — ~~Skeleton sur feed~~ — lie T-021 (deja en place)
+- [x] **QW-I9** — ~~Indicateur progression onboarding~~ — lie T-022 (deja en place, StepIndicator)
 
 ### Code quality
 
-- [ ] **QW-I10** — Helper `requireSupabase()` (4h)
-- [ ] **QW-I11** — Hook `useRequiredUser()` (4h)
-- [ ] **QW-I12** — Convention TODOs `(date, owner, #issue)` (1h)
+- [x] **QW-I10** — ~~Helper `requireSupabase()`~~ — lie T-004 (BATCH 1)
+- [x] **QW-I11** — ~~Hook `useRequiredUser()`~~ — lie T-005 (BATCH 1)
+- [x] **QW-I12** — ~~Convention TODOs `(date, owner, #issue)`~~ — lie T-072 (BATCH 1, doc cree)
 
 ## 🟡 Quick wins confort (30 tâches, ~15h)
 
