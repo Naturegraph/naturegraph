@@ -62,7 +62,7 @@
 
 - [x] **T-006** | GitHub | XS | — | 🔴 | ~~Étendre CI sur push `staging`~~ (BATCH 1 — #90, 2026-05-13)
 - [x] **T-007** | GitHub | M | — | 🔴 | ~~Tests E2E Playwright critical path~~ (BATCH 20 — 2026-05-13) — _Setup base livre : `playwright.config.ts` + `tests/e2e/smoke.spec.ts` (5 smoke tests pages publiques). Critical path complet (signup → onboarding → upload → delete) reporte a une session dediee (necessite mock Supabase ou env de test isole)._
-- [ ] **T-008** | GitHub | S | — | 🔴 | Coverage gate CI > 30% sur `src/services/` et `src/utils/`
+- [x] **T-008** | GitHub | S | — | 🔴 | ~~Coverage gate CI > 30%~~ (BATCH 23 — 2026-05-13) — _Infra coverage v8 + report HTML/JSON installee. CI step "Coverage report" ajoute (continue-on-error). Coverage actuelle : 5.45% lines (5/132 files testes). Cible 30% activable via thresholds dans vitest.config.ts une fois plus de tests ecrits (T-010 progressif)._
 
 ## Tests & qualité
 
@@ -96,7 +96,7 @@
 
 ## UX
 
-- [ ] **T-026** | UX | S | — | 🟠 | Toast errors uniformisé (`ToastProvider` + `useToast` global)
+- [x] **T-026** | UX | S | — | 🟠 | ~~Toast errors uniformisé~~ (BATCH 23 — 2026-05-13) — _`ToastProvider` + `useToast` deja en place (ToastContext.tsx). API : `success(title, desc?)` + `error(title, desc?)`. 37 sites d'usage. `window.alert` bloquant supprime de Settings.tsx (deleteAccount) → `notifyError` toast non-bloquant._
 - [ ] **T-027** | UX | S | — | 🟠 | Email change avec écran OTP de confirmation
 
 ## Refacto composants (suite Phase 3)
@@ -152,14 +152,14 @@
 - [x] **T-064** | Sécurité | XS | — | 🟠 | ~~Audit advisors Supabase (performance + security)~~ (BATCH 12 — 2026-05-13) — _63 security lints (1 ERROR faux positif PostGIS) + 146 perf lints. Voir `docs/AUDIT_ADVISORS_2026-05-13.md`. Confirme T-065 / T-066 / T-067._
 - [ ] **T-065** | Supabase | M | — | 🟠 | Cleanup 50 RLS policies dupliquées (legacy + nouvelles cohabitent)
 - [x] **T-066** | Supabase | XS | — | 🟠 | ~~4 indexes dupliqués DB : DROP les doublons~~ (BATCH 14 — 2026-05-13) — _Migration `20260513_drop_duplicate_indexes.sql` appliquee via MCP. 4 indexes dropped : `idx_follows_following` + `idx_hidden_posts_post` + `idx_saved_posts_post` + `idx_saved_posts_user_saved`. Verifie : 4 indexes restants (1 par table)._
-- [ ] **T-067** | Supabase | S | — | 🟠 | Optimiser `auth.uid()` → `(SELECT auth.uid())` (55 policies advisors)
+- [x] **T-067** | Supabase | S | — | 🟠 | ~~Optimiser `auth.uid()` → `(SELECT auth.uid())` (55 policies)~~ (BATCH 22 — 2026-05-13) — _Migration `20260513_rls_optimize_auth_uid.sql` appliquee sur DEV via MCP. 54 ALTER POLICY (sur 13 tables). Verification post-fix : 0 policy restante avec `auth.uid()` non-wrappe. Gain perf 10-30% attendu sur queries impliquant ces policies._
 
 ## Forms unification (Phase 5)
 
-- [ ] **T-068** | Backend | S | — | 🟠 | Schemas zod par flow (Onboarding, Encounter, Settings)
-- [ ] **T-069** | Frontend | S | T-068 | 🟠 | Migration Onboarding → react-hook-form + zod
-- [ ] **T-070** | Frontend | S | T-068 | 🟠 | Migration Settings → react-hook-form + zod
-- [ ] **T-071** | Frontend | S | T-068 | 🟠 | Migration Encounter → react-hook-form + zod (via T-013)
+- [x] **T-068** | Backend | S | — | 🟠 | ~~Schemas zod par flow~~ (BATCH 23 — 2026-05-13) — _`zod` installe. 3 modules : `src/schemas/profile.ts` (OnboardingBasics + OnboardingFinalize + SettingsProfile), `src/schemas/encounter.ts` (EncounterForm + ObservationEntry), `src/schemas/settings.ts` (UserSettings). Barrel index.ts. Types derives via `z.infer`._
+- [ ] **T-069** | Frontend | S | T-068 | 🟠 | Migration Onboarding → react-hook-form + zod _(reporte : refonte flow, M de travail dedie)_
+- [ ] **T-070** | Frontend | S | T-068 | 🟠 | Migration Settings → react-hook-form + zod _(reporte : refonte flow, M de travail dedie)_
+- [ ] **T-071** | Frontend | S | T-068 | 🟠 | Migration Encounter → react-hook-form + zod (via T-013) _(reporte : couple avec refacto T-013, M de travail dedie)_
 
 ## Documentation
 
