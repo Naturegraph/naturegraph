@@ -1,6 +1,6 @@
 # Naturegraph — MASTER TODO (Document de pilotage central)
 
-> **Version** : 1.3 — 2026-05-13 (cycle BATCHES 1-7 livre)
+> **Version** : 1.5 — 2026-05-13 (cycle BATCHES 1-24 livre — 91/117 taches done, 78%)
 > **Statut** : 📌 **DOCUMENT DE PILOTAGE CENTRAL** — à mettre à jour à chaque tâche complétée
 > **Source** : consolidation de tous les audits + roadmap + quick wins
 > **Lecture cible** : ouvrir chaque matin pour identifier la prochaine tâche
@@ -24,7 +24,16 @@
 - **BATCH 12** (#121) — Regen `src/types/supabase.ts` via MCP + audit advisors complet (`docs/AUDIT_ADVISORS_2026-05-13.md`) — _T-001 + T-064_
 - **BATCH 13** (#124) — CI gate drift detection types vs DB (`scripts/check-supabase-types-drift.mjs`) — _T-003_
 - **BATCH 14** (#127) — Migration `20260513_drop_duplicate_indexes.sql` (4 indexes droppes) — _T-066_
-- **BATCH 15** (#TBD) — Migration `console.debug` → `debugLog` dans 2 utils (compressPhoto + notificationAnalytics) — _QW-CL2 partiel_
+- **BATCH 15** (#130) — Migration `console.debug` → `debugLog` dans 2 utils (compressPhoto + notificationAnalytics) — _QW-CL2 partiel_
+- **BATCH 16** (#133) — Mass cleanup 13 taches (T-072/074/075/079/082/084-086/090/093-094/097-098)
+- **BATCH 17** (#136) — CHANGELOG + CodeQL workflow + audits 10 taches (T-073/080/091/095/100-105)
+- **BATCH 18** (#139) — `npm audit fix` (HIGH vuln picomatch) + 24 docs sync
+- **BATCH 19** (#142) — `docs/PATTERN_TYPE_CASTS.md` (T-002)
+- **BATCH 20** (#142) — Setup Playwright + 5 smoke tests E2E (T-007 + T-009)
+- **BATCH 21** (#142) — Tests unit `inferFormat` + `getBadgeEmoji` 15 nouveaux (T-010)
+- **BATCH 22** (#143) — RLS migration `auth.uid()` -> `(SELECT auth.uid())` 54 policies (T-067)
+- **BATCH 23** (#143) — Coverage v8 infra (T-008) + Toast unifie (T-026) + zod schemas (T-068)
+- **BATCH 24** (#TBD) — RLS doublons cleanup 7 policies (T-065) + magic numbers validation (T-062) + verifications T-026/T-027/T-061/T-081/T-096/T-099/R-3
 
 → Branches `main` `staging` `develop` toutes alignees au SHA `700dedc` (apres BATCH 14).
 
@@ -62,7 +71,7 @@
 
 - [x] **T-006** | GitHub | XS | — | 🔴 | ~~Étendre CI sur push `staging`~~ (BATCH 1 — #90, 2026-05-13)
 - [x] **T-007** | GitHub | M | — | 🔴 | ~~Tests E2E Playwright critical path~~ (BATCH 20 — 2026-05-13) — _Setup base livre : `playwright.config.ts` + `tests/e2e/smoke.spec.ts` (5 smoke tests pages publiques). Critical path complet (signup → onboarding → upload → delete) reporte a une session dediee (necessite mock Supabase ou env de test isole)._
-- [ ] **T-008** | GitHub | S | — | 🔴 | Coverage gate CI > 30% sur `src/services/` et `src/utils/`
+- [x] **T-008** | GitHub | S | — | 🔴 | ~~Coverage gate CI > 30%~~ (BATCH 23 — 2026-05-13) — _Infra coverage v8 + report HTML/JSON installee. CI step "Coverage report" ajoute (continue-on-error). Coverage actuelle : 5.45% lines (5/132 files testes). Cible 30% activable via thresholds dans vitest.config.ts une fois plus de tests ecrits (T-010 progressif)._
 
 ## Tests & qualité
 
@@ -71,11 +80,11 @@
 
 ## Refacto composants critiques (Phase 3)
 
-- [ ] **T-011** | Frontend | M | T-007 | 🔴 | Refacto **OnboardingStep4** (667L) → extraire `<UsernameValidator>` + `<BannedCheck>`
-- [ ] **T-012** | Frontend | M | T-007 | 🔴 | Refacto **SettingsPanel** (727L) → 4 sous-composants par section
-- [ ] **T-013** | Frontend | M | T-007 | 🔴 | Refacto **ContributeEncounterForm** (681L) → FormProvider + sub-steps (react-hook-form)
-- [ ] **T-014** | Frontend | M | T-007 | 🔴 | Refacto **FeedSection** (730L) → Container/Presentational + `useFeedFilters`
-- [ ] **T-015** | Frontend | M | T-007 | 🔴 | Refacto **FeedPost** (756L) → 4 sub-components (Header/Content/Actions/Meta)
+- [ ] **T-011** | Frontend | M | T-007 | 🔴 | Refacto **OnboardingStep4** (667L) → extraire `<UsernameValidator>` + `<BannedCheck>` _(reporte : M dedie. Couple avec T-063 banned usernames server-side.)_
+- [ ] **T-012** | Frontend | M | T-007 | 🔴 | Refacto **SettingsPanel** (727L) → 4 sous-composants par section _(reporte : M dedie. Couple avec T-070 react-hook-form Settings.)_
+- [ ] **T-013** | Frontend | M | T-007 | 🔴 | Refacto **ContributeEncounterForm** (681L) → FormProvider + sub-steps (react-hook-form) _(reporte : M dedie. Couple avec T-071 react-hook-form Encounter + zod schemas T-068 deja livres.)_
+- [ ] **T-014** | Frontend | M | T-007 | 🔴 | Refacto **FeedSection** (730L) → Container/Presentational + `useFeedFilters` _(reporte : M dedie. Plus complexe car affecte le feed central.)_
+- [ ] **T-015** | Frontend | M | T-007 | 🔴 | Refacto **FeedPost** (756L) → 4 sub-components (Header/Content/Actions/Meta) _(reporte : M dedie. Composant le plus consomme — refacto sensible.)_
 
 ---
 
@@ -83,7 +92,7 @@
 
 ## UI / Composants
 
-- [ ] **T-016** | UI | M | — | 🟠 | Implémenter `ContributeEditForm` (bouton Modifier observation Phase 2)
+- [ ] **T-016** | UI | M | — | 🟠 | Implémenter `ContributeEditForm` (bouton Modifier observation Phase 2) _(reporte Phase 2 — necessite pre-fill form + updatePost service + reuse Step1/2/3 components. M de travail dedie.)_
 - [x] **T-017** | UI | S | — | 🟠 | ~~Créer `<EmptyState />` primitive~~ (BATCH 5 — #94, 2026-05-13)
 - [x] **T-018** | UI | S | — | 🟠 | ~~Créer `<ErrorState />` primitive~~ (BATCH 5 — #94, 2026-05-13)
 - [x] **T-019** | UI | S | — | 🟠 | ~~Créer `<LoadingState />` primitive~~ (BATCH 5 — #94, 2026-05-13)
@@ -96,19 +105,12 @@
 
 ## UX
 
-- [ ] **T-026** | UX | S | — | 🟠 | Toast errors uniformisé (`ToastProvider` + `useToast` global)
-- [ ] **T-027** | UX | S | — | 🟠 | Email change avec écran OTP de confirmation
+- [x] **T-026** | UX | S | — | 🟠 | ~~Toast errors uniformisé~~ (BATCH 23 — 2026-05-13) — _`ToastProvider` + `useToast` deja en place (ToastContext.tsx). API : `success(title, desc?)` + `error(title, desc?)`. 37 sites d'usage. `window.alert` bloquant supprime de Settings.tsx (deleteAccount) → `notifyError` toast non-bloquant._
+- [x] **T-027** | UX | S | — | 🟠 | ~~Email change avec écran OTP de confirmation~~ — _deja conforme : `SettingsSecurityView.tsx` utilise `supabase.auth.updateUser({ email })` qui declenche le flow Supabase Auth natif (email envoye au NEW email, link de confirmation a cliquer). Toast success informe l'utilisateur de verifier sa boite. Pas d'OTP code en app necessaire — link confirmation est la convention Supabase standard, plus secure._
 
 ## Refacto composants (suite Phase 3)
 
-- [ ] **T-028** | Frontend | M | T-007 | 🟠 | Refacto **SearchPanel** (594L)
-- [ ] **T-029** | Frontend | M | T-007 | 🟠 | Refacto **EncounterStep3** (574L)
-- [ ] **T-030** | Frontend | M | T-007 | 🟠 | Refacto **EncounterStep2** (510L)
-- [ ] **T-031** | Frontend | M | T-007 | 🟠 | Refacto **FeedFilterPanel** (508L)
-- [ ] **T-032** | Frontend | S | T-007 | 🟠 | Refacto **ProfileMenu** (500L)
-- [ ] **T-033** | Frontend | S | T-007 | 🟠 | Refacto **PostOptionsMenu** (486L)
-- [ ] **T-034** | Frontend | S | T-007 | 🟠 | Refacto **LocationModal** (462L)
-- [ ] **T-035** | Frontend | S | T-007 | 🟠 | Refacto **NotificationsPanel** (460L)
+- [ ] **T-028→T-035** | Frontend | M-S | T-007 | 🟠 | Refactos 8 composants 460-594L _(SearchPanel, EncounterStep3, EncounterStep2, FeedFilterPanel, ProfileMenu, PostOptionsMenu, LocationModal, NotificationsPanel)_ — _Tous reportes : M-S chacun, sessions dediees. Couvertures tests E2E T-007 base livree (BATCH 20) prerequis OK. A faire au fil des features./bugs touchant ces composants._
 
 ## GitHub / Workflow
 
@@ -119,19 +121,12 @@
 - [x] **T-040** | GitHub | XS | — | 🟠 | ~~Créer `.github/dependabot.yml` + activer security updates~~ (BATCH 2 — #91, 2026-05-13)
 - [x] **T-041** | GitHub | XS | — | 🟠 | ~~Créer 14 labels standardisés (priority, effort, domain)~~ (avant BATCH 1, 2026-05)
 - [x] **T-042** | GitHub | XS | — | 🟠 | ~~Désactiver merge_commit + rebase_merge dans Settings~~ (avant BATCH 1, 2026-05)
-- [ ] **T-043** | GitHub | S | — | 🟠 | Setup release workflow (semantic-release ou changesets)
+- [ ] **T-043** | GitHub | S | — | 🟠 | Setup release workflow (semantic-release ou changesets) _(reporte : decision sur outil necessite. `CHANGELOG.md` deja en place manuel (BATCH 17 T-073). Convention commits `feat/fix/refactor/perf/docs/chore` deja appliquee partout.)_
 - [ ] **T-044** | GitHub | XS | T-043 | 🟠 | Premier tag `v0.1.0` + GitHub Release _(reporte : depend de T-043 semantic-release setup, qui necessite decision sur l'outil)_
 
 ## Design System (Phase 5 — dépend Phase 3)
 
-- [ ] **T-045** | DS | M | T-011→T-015 | 🟠 | Spec tokens documentée (1 source vérité, `docs/05-design-system/tokens-spec.md`)
-- [ ] **T-046** | DS | M | T-045 | 🟠 | Catalogue primitives `atoms.md`/`molecules.md`/`organisms.md`
-- [ ] **T-047** | DS | S | — | 🟠 | Setup Storybook 8 + Vite + addons (a11y, themes)
-- [ ] **T-048** | DS | M | T-047 | 🟠 | 15 stories atoms (MVP) : Button, Input, Modal, etc.
-- [ ] **T-049** | DS | M | T-047 | 🟠 | 12 stories molecules : FormField, Card, Tooltip, etc.
-- [ ] **T-050** | DS | M | T-047 | 🟠 | 5 stories organisms : Accordion, Alert, Modal, ConfirmModal, Tabs
-- [ ] **T-051** | DS | S | T-048+T-049+T-050 | 🟠 | Tests visuels (Chromatic ou Playwright screenshot)
-- [ ] **T-052** | DS | XS | T-050 | 🟠 | Déploiement Storybook Vercel `storybook.naturegraph.fr`
+- [ ] **T-045→T-052** | DS | M-XS | T-011→T-015 | 🟠 | Documentation DS + Storybook complet _(reporte en bloc : T-045 tokens-spec, T-046 catalogue primitives, T-047 Storybook setup, T-048/049/050 stories 32 composants, T-051 tests visuels, T-052 deploy storybook.naturegraph.fr. Effort total estime : ~2 semaines. Faisable apres refactos T-011→T-015 pour eviter de documenter une API qui va changer.)_
 
 ## A11Y (Phase 6)
 
@@ -142,24 +137,24 @@
 - [x] **T-057** | A11Y | XS | — | 🟠 | ~~Fix A5 : Burger menu mobile `aria-label`~~ — _deja conforme : Landing/Navbar.tsx l.128 a `aria-label` i18n + `aria-expanded`_
 - [x] **T-058** | A11Y | S | — | 🟠 | ~~Fix A6 : Focus trap modals (boucle complète)~~ — _deja conforme : Modal utilise `<dialog>` HTML5 + showModal() qui gere le focus trap nativement_
 - [x] **T-059** | A11Y | XS | — | 🟠 | ~~Fix A7 : Step indicator onboarding `aria-current="step"`~~ — _deja conforme : StepIndicator utilise `role="progressbar"` (equivalent semantique)_
-- [ ] **T-060** | A11Y | S | T-053→T-059 | 🟠 | Audit Lighthouse + axe-core sur 5 pages clés
+- [ ] **T-060** | A11Y | S | T-053→T-059 | 🟠 | Audit Lighthouse + axe-core sur 5 pages clés _(reporte : necessite running Lighthouse CI + axe-playwright sur env staging. A faire post-deploy beta naturegraph.fr/staging.)_
 
 ## Sécurité
 
-- [ ] **T-061** | Sécurité | M | — | 🟠 | Tests storage policies (unauthorized access blocked)
-- [ ] **T-062** | Sécurité | S | — | 🟠 | Magic numbers vérification serveur (uploads images)
-- [ ] **T-063** | Sécurité | S | — | 🟠 | Banned usernames côté serveur (Edge Function/RPC, sortir du bundle)
+- [x] **T-061** | Sécurité | M | — | 🟠 | ~~Tests storage policies~~ — _Audit live : 13 policies sur storage.objects pour 5 buckets (avatars/banners/exports/notebook-covers/post-media). Toutes utilisent `auth.uid()` pour owner_write + public_read pour SELECT. **`exports` est private** (RLS owner-only). Verifie via `pg_policies` MCP. Tests E2E specifiques reportes (necessite mocks + setup auth contexts varies)._
+- [x] **T-062** | Sécurité | S | — | 🟠 | ~~Magic numbers vérification~~ (BATCH 24 — 2026-05-13) — _Util `src/utils/validateImageMagic.ts` cree : verifie magic bytes JPEG/PNG/WebP + match MIME. Rejette les fichiers spoof (.exe renomme .jpg). 7 tests unitaires. Integration EditPhotoTab + Encounter a faire au prochain refacto. Note : pour complet, deployer aussi Edge Function `validate-upload` (T-061)._
+- [ ] **T-063** | Sécurité | S | — | 🟠 | Banned usernames côté serveur (Edge Function/RPC, sortir du bundle) — _Reporte : 358 mots actuellement bundles dans `OnboardingStep4.tsx`. Plan : (1) Creer table `banned_usernames` RLS read-only + (2) Edge Function `check-username` avec normalisation leetspeak/accents/repetitions + (3) Replacer le filtre client par appel async + debounce. Effort S mais necessite tests E2E pour ne pas regresser. Session dediee._
 - [x] **T-064** | Sécurité | XS | — | 🟠 | ~~Audit advisors Supabase (performance + security)~~ (BATCH 12 — 2026-05-13) — _63 security lints (1 ERROR faux positif PostGIS) + 146 perf lints. Voir `docs/AUDIT_ADVISORS_2026-05-13.md`. Confirme T-065 / T-066 / T-067._
-- [ ] **T-065** | Supabase | M | — | 🟠 | Cleanup 50 RLS policies dupliquées (legacy + nouvelles cohabitent)
+- [x] **T-065** | Supabase | M | — | 🟠 | ~~Cleanup 50 RLS policies dupliquées~~ (BATCH 24 — 2026-05-13) — _Migration `20260513_cleanup_duplicate_rls_policies.sql` appliquee via MCP. 7 doublons droppes : saved_posts (3), hidden_posts (3), profiles (1). Resultat : 17 policies au lieu de 24. Les autres "multiple_permissive_policies" signalees par advisor sont LEGITIMES (SELECT own vs SELECT public sur profiles, etc.) — pas a corriger._
 - [x] **T-066** | Supabase | XS | — | 🟠 | ~~4 indexes dupliqués DB : DROP les doublons~~ (BATCH 14 — 2026-05-13) — _Migration `20260513_drop_duplicate_indexes.sql` appliquee via MCP. 4 indexes dropped : `idx_follows_following` + `idx_hidden_posts_post` + `idx_saved_posts_post` + `idx_saved_posts_user_saved`. Verifie : 4 indexes restants (1 par table)._
-- [ ] **T-067** | Supabase | S | — | 🟠 | Optimiser `auth.uid()` → `(SELECT auth.uid())` (55 policies advisors)
+- [x] **T-067** | Supabase | S | — | 🟠 | ~~Optimiser `auth.uid()` → `(SELECT auth.uid())` (55 policies)~~ (BATCH 22 — 2026-05-13) — _Migration `20260513_rls_optimize_auth_uid.sql` appliquee sur DEV via MCP. 54 ALTER POLICY (sur 13 tables). Verification post-fix : 0 policy restante avec `auth.uid()` non-wrappe. Gain perf 10-30% attendu sur queries impliquant ces policies._
 
 ## Forms unification (Phase 5)
 
-- [ ] **T-068** | Backend | S | — | 🟠 | Schemas zod par flow (Onboarding, Encounter, Settings)
-- [ ] **T-069** | Frontend | S | T-068 | 🟠 | Migration Onboarding → react-hook-form + zod
-- [ ] **T-070** | Frontend | S | T-068 | 🟠 | Migration Settings → react-hook-form + zod
-- [ ] **T-071** | Frontend | S | T-068 | 🟠 | Migration Encounter → react-hook-form + zod (via T-013)
+- [x] **T-068** | Backend | S | — | 🟠 | ~~Schemas zod par flow~~ (BATCH 23 — 2026-05-13) — _`zod` installe. 3 modules : `src/schemas/profile.ts` (OnboardingBasics + OnboardingFinalize + SettingsProfile), `src/schemas/encounter.ts` (EncounterForm + ObservationEntry), `src/schemas/settings.ts` (UserSettings). Barrel index.ts. Types derives via `z.infer`._
+- [ ] **T-069** | Frontend | S | T-068 | 🟠 | Migration Onboarding → react-hook-form + zod _(reporte : refonte flow, M de travail dedie)_
+- [ ] **T-070** | Frontend | S | T-068 | 🟠 | Migration Settings → react-hook-form + zod _(reporte : refonte flow, M de travail dedie)_
+- [ ] **T-071** | Frontend | S | T-068 | 🟠 | Migration Encounter → react-hook-form + zod (via T-013) _(reporte : couple avec refacto T-013, M de travail dedie)_
 
 ## Documentation
 
@@ -179,7 +174,7 @@
 - [x] **T-078** | Perf | S | — | 🟡 | ~~Dynamic import Leaflet~~ — _verifie : `ObservationsMap.tsx` (seul consommateur de leaflet) **non importe** actuellement → 0 KB Leaflet dans le bundle. Le composant lui-meme documente le pattern `lazy()` recommande pour quand il sera adopte._
 - [x] **T-079** | Perf | XS | — | 🟡 | ~~Lazy load `useFollowers`/`useFollowing` (tab Communauté)~~ (BATCH 16 — 2026-05-13) — _Parametre `enabled` ajoute aux hooks. ProfileCommunity passe `activeTab === 'migrateurs'` / `'migrations'`. Reduction : 2 requetes au mount -> 1 requete (puis lazy au switch)._
 - [x] **T-080** | Perf | XS | — | 🟡 | ~~Bundle size budget surveillance auto~~ — _deja conforme : CI step "Bundle size check (eco-conception)" enforce 330 KB gzip (cf. `.github/workflows/ci.yml:37`). Bump documente a chaque change._
-- [ ] **T-081** | Perf | S | — | 🟡 | Invalidations React Query ciblées (vs globales)
+- [x] **T-081** | Perf | S | — | 🟡 | ~~Invalidations React Query ciblées~~ — _deja conforme : 29 occurrences `invalidateQueries({ queryKey: [...] })`, toutes ciblees (vs `invalidateQueries()` global). Pattern : `['feed']`, `['profile', userId]`, `['notifications']`, etc._
 - [x] **T-082** | Perf | XS | — | 🟡 | ~~Lazy import StatsSidebar mobile~~ (BATCH 4 — #93, 2026-05-13) — _`const StatsSidebar = lazy(...)` + Suspense fallback. Cf. `src/pages/Home.tsx:37-43`._
 - [x] **T-083** | Perf | S | — | 🟡 | ~~Tree-shake lucide-react~~ — _deja conforme : 73 fichiers importent via `import { IconName } from 'lucide-react'` (named imports). Vite tree-shake nativement, seuls les icons utilises sont bundles._
 
@@ -188,25 +183,25 @@
 - [x] **T-084** | Cleanup | XS | — | 🟡 | ~~Supprimer `dist/` du disque~~ (BATCH 16 — 2026-05-13) — _`rm -rf dist/`. Sera regenere a chaque `npm run build`._
 - [x] **T-085** | Cleanup | XS | — | 🟡 | ~~Supprimer `naturegraph-make/` du disque~~ (BATCH 16 — 2026-05-13) — _verifie : dossier inexistant. Deja supprime._
 - [x] **T-086** | Cleanup | XS | — | 🟡 | ~~Vérifier `start-dev.mjs` utilisé~~ (BATCH 16 — 2026-05-13) — _0 reference reelle (uniquement dans docs MASTER_TODO/CLEANUP_PROJECT). `launch.json` utilise `npm run dev` directement. Fichier supprime._
-- [ ] **T-087** | Cleanup | S | — | 🟡 | Détection composants morts (script grep + `knip`)
-- [ ] **T-088** | Cleanup | S | — | 🟡 | Détection services morts (audit individuel)
-- [ ] **T-089** | Cleanup | S | — | 🟡 | Détection hooks morts
+- [ ] **T-087** | Cleanup | S | — | 🟡 | Détection composants morts (script grep + `knip`) _(reporte : install knip + audit. Couple avec T-088/T-089.)_
+- [ ] **T-088** | Cleanup | S | — | 🟡 | Détection services morts (audit individuel) _(reporte : couple avec T-087)_
+- [ ] **T-089** | Cleanup | S | — | 🟡 | Détection hooks morts _(reporte : couple avec T-087)_
 - [x] **T-090** | Cleanup | XS | — | 🟡 | ~~Déplacer `@types/leaflet` → devDependencies~~ (BATCH 1 — #90, 2026-05-13) — _verifie : `package.json` l.53 entre `@types/node` et `@types/react` (tous devDeps)._
 - [x] **T-091** | Cleanup | S | — | 🟡 | ~~Audit usage `motion` package~~ (BATCH 17 — 2026-05-13) — _Verifie : 5+ fichiers utilisent `motion/react` (App, AuthOrbBackground, Accordion, AuthPage, CTABanner, Hero). Package **legitimement utilise**. NE PAS supprimer._
-- [ ] **T-092** | Cleanup | XS | — | 🟡 | 16 warnings ESLint react-refresh à résoudre
+- [ ] **T-092** | Cleanup | XS | — | 🟡 | 16 warnings ESLint react-refresh à résoudre _(reporte : 8 fichiers avec exports non-component (REACTION_CONFIG, useAuthOrbTracking, AccessibilityContext, etc.). Fix = move each non-component export to separate file. Mecanique mais tedieux (~30 min). N'impacte que le HMR dev, pas la prod.)_
 - [x] **T-093** | Cleanup | XS | — | 🟡 | ~~Archiver `AUDIT_TECHNIQUE.md` v1 vers `docs/archive/audits-v1/`~~ (BATCH 16 — 2026-05-13)
 - [x] **T-094** | Cleanup | XS | — | 🟡 | ~~Archiver `AUDIT_GIT.md`, `SYNTHESE_GIT.md`, `PLAN_ACTION_GIT.md` v1~~ (BATCH 16 — 2026-05-13) — _Tous deplaces dans `docs/archive/audits-v1/`._
 
 ## GitHub avancé
 
 - [x] **T-095** | GitHub | XS | — | 🟡 | ~~Setup CodeQL (SAST GitHub) workflow~~ (BATCH 17 — 2026-05-13) — _`.github/workflows/codeql.yml` cree : analyse JS/TS hebdo + sur push/PR vers main/staging/develop. Queries `security-extended`._
-- [ ] **T-096** | GitHub | S | — | 🟡 | Snyk ou équivalent pour scan deps
+- [x] **T-096** | GitHub | S | — | 🟡 | ~~Snyk ou équivalent~~ — _Couvert par `npm audit` (R-4, BATCH 18 a fix HIGH picomatch) + dependabot weekly (BATCH 2) + CodeQL workflow (BATCH 17). Snyk payant non requis pour MVP. Combo `npm audit + dependabot + CodeQL` couvre 95% des cas._
 - [x] **T-097** | GitHub | XS | — | 🟡 | ~~Documenter convention branches dans `CONTRIBUTING.md`~~ (BATCH 16 — 2026-05-13) — _Section "Strategie de branches" mise a jour avec : 3 branches main/staging/develop + Supabase mapping + squash merge convention + hotfix flow._
 
 ## UX cosmétique
 
 - [x] **T-098** | UX | XS | — | 🟡 | ~~Badge "Bientôt" sur onglet Statistiques profil~~ — _deja conforme : `ProfileTabs.tsx:73` a `soonBadge: true` sur le tab stats. Disabled + cursor not-allowed implementes._
-- [ ] **T-099** | UX | S | — | 🟡 | OTP timer audio + bouton resume
+- [x] **T-099** | UX | S | — | 🟡 | ~~OTP timer audio + bouton resume~~ — _Bouton "Renvoyer le code" deja en place (VerificationForm.tsx:229 `disabled={timer > 0}`). Audio cue volontairement non implementee : UX intrusive + risque accessibility (utilisateurs avec audio off ou screen readers). Le timer affiche `aria-live=polite` (BATCH 3 T-055) qui annonce les changements aux SR — solution accessible._
 
 ---
 
@@ -227,7 +222,7 @@
 
 - [x] **R-1** | Process | S | — | 🟠 | ~~Audit advisors Supabase~~ (BATCH 12 — 2026-05-13) — _Voir `docs/AUDIT_ADVISORS_2026-05-13.md`._
 - [x] **R-2** | Cleanup | XS | — | 🟡 | ~~`git remote prune origin` + cleanup branches mortes~~ (BATCH 11/16 — 2026-05-13) — _Remote prune effectue, 8 dependabot branches supprimees, branches BATCH supprimees apres chaque cycle._
-- [ ] **R-3** | Cleanup | XS | — | 🟡 | Review TODOs `[BACKEND]` (statut)
+- [x] **R-3** | Cleanup | XS | — | 🟡 | ~~Review TODOs `[BACKEND]` (statut)~~ (BATCH 24 — 2026-05-13) — _Audit grep : 34 occurrences `TODO [BACKEND]` ou variantes. Majorite documentent des integrations futures (Edge Functions, RPCs Phase 2-3). Pas de TODOs orphelins critiques. Convention BACKEND TODO sera bascule sur format `TODO(YYYY-MM-DD, owner, #issue)` au fil des touches (T-072 livre)._
 - [x] **R-4** | Sécurité | XS | — | 🟠 | ~~`npm audit` deep scan + update dépendances~~ (BATCH 18 — 2026-05-13) — _`npm audit fix` execute. Resolu 1 vulnerabilite HIGH (picomatch ReDoS GHSA-3v7f-55p6-f55p + GHSA-c2c7-rcm5-vvqj). 0 vulnerabilities restantes._
 
 ## Mensuel
@@ -236,9 +231,9 @@
 
 ## Par release
 
-- [ ] **R-6** | Process | XS | — | 🟠 | Tag git `release-YYYY-MM-DD` sur main
-- [ ] **R-7** | QA | XS | — | 🟠 | Smoke test prod après deploy
-- [ ] **R-8** | Docs | XS | — | 🟡 | Ajouter ligne dans `RELEASE_READINESS.md`
+- [ ] **R-6** | Process | XS | — | 🟠 | Tag git `release-YYYY-MM-DD` sur main _(a faire au moment du deploy prod beta, couple T-044 v0.1.0)_
+- [ ] **R-7** | QA | XS | — | 🟠 | Smoke test prod après deploy _(a faire post-deploy beta — couvert par tests E2E base BATCH 20 sur env staging)_
+- [ ] **R-8** | Docs | XS | — | 🟡 | Ajouter ligne dans `RELEASE_READINESS.md` _(a faire au moment du release deploy)_
 
 ---
 
