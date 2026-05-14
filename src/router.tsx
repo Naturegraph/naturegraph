@@ -32,6 +32,7 @@ const Contribute = lazy(() => import('./pages/Contribute'))
 const Settings = lazy(() => import('./pages/Settings'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
+const Waitlist = lazy(() => import('./pages/Waitlist'))
 
 /**
  * Wrapper Suspense pour les pages lazy-loaded.
@@ -103,6 +104,18 @@ export const router = createBrowserRouter([
             <ProtectedRoute>
               <Onboarding />
             </ProtectedRoute>
+          </LazyPage>
+        ),
+      },
+
+      // Waitlist — accessible sans auth (BATCH 30 / BETA_STRATEGY Phase 1)
+      // Affiche le formulaire d'inscription a la liste d'attente.
+      // Redirigee depuis BetaKeyGate quand le quota est plein.
+      {
+        path: 'waitlist',
+        element: (
+          <LazyPage>
+            <Waitlist />
           </LazyPage>
         ),
       },

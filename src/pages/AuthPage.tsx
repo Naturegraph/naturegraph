@@ -15,12 +15,17 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { SignupForm, LoginForm, VerificationForm } from '@/components/auth'
+import { BetaKeyGate } from '@/components/auth/BetaKeyGate'
 import { AuthOrbBackground, useAuthOrbTracking } from '@/components/auth/AuthOrbBackground'
 import OnboardingComponent from '@/components/onboarding'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type AuthMode = 'signup' | 'login' | 'verification' | 'onboarding'
+// BATCH 30 / BETA_STRATEGY : mode 'beta-key' avant signup quand beta fermee.
+// Activable via env var VITE_BETA_GATE_ENABLED (toggle pour tests / dev).
+type AuthMode = 'beta-key' | 'signup' | 'login' | 'verification' | 'onboarding'
+
+const BETA_GATE_ENABLED = import.meta.env.VITE_BETA_GATE_ENABLED === 'true'
 
 interface AuthPageProps {
   /** Mode initial — 'signup' par défaut */
@@ -58,9 +63,14 @@ export default function AuthPage({
   const prefersReducedMotion = useReducedMotion()
   const { containerRef, mouse, handleMouseMove, handleMouseLeave } = useAuthOrbTracking()
 
-  const [mode, setMode] = useState<AuthMode>(initialMode)
+  // BATCH 30 : si beta gate active, signup commence par 'beta-key' au lieu de 'signup'.
+  const [mode, setMode] = useState<AuthMode>(
+    initialMode === 'signup' && BETA_GATE_ENABLED ? 'beta-key' : initialMode,
+  )
   const [initialAuthMode, setInitialAuthMode] = useState<'signup' | 'login'>(initialMode)
   const [pendingEmail, setPendingEmail] = useState('')
+  // BATCH 30 : keyId stocke apres validation beta — utile pour future traçabilite (Phase 2).
+  const [, setValidatedKeyId] = useState<string | null>(null)
 
   // Raccourcis de navigation avec fallback useNavigate
   const goto = {
@@ -125,6 +135,18 @@ export default function AuthPage({
       {/* Contenu avec transitions fluides */}
       <div className="relative z-10 w-full md:w-auto flex items-center justify-center md:p-6">
         <AnimatePresence mode="wait">
+          {mode === 'beta-key' && (
+            <motion.div key="beta-key" {...slideVariants} transition={slideTransition}>
+              <BetaKeyGate
+                onValidated={(keyId) => {
+                  setValidatedKeyId(keyId)
+                  setMode('signup')
+                }}
+                onSwitchToLogin={() => setMode('login')}
+              />
+            </motion.div>
+          )}
+
           {mode === 'signup' && (
             <motion.div key="signup" {...slideVariants} transition={slideTransition}>
               <SignupForm
