@@ -39,12 +39,16 @@ Les migrations suivantes doivent etre appliquees sur **`naturegraph-prod`** dans
 npx supabase migration list --linked
 
 # Migrations a appliquer (si absentes en PROD) :
-1. 20260513_drop_duplicate_indexes.sql          # cleanup index doublons (BATCH 14)
-2. 20260513_rls_optimize_auth_uid.sql           # RLS perf (BATCH 22)
-3. 20260513_cleanup_duplicate_rls_policies.sql  # cleanup policies (BATCH 24)
-4. 20260514_beta_admin_system.sql               # 8 tables + 5 RPC + 13 RLS (BATCH 28)
-5. 20260514_anonymize_beta_signup_log_cron.sql  # cron RGPD J+30 (BATCH 36)
+1. 20260513_drop_duplicate_indexes.sql            # cleanup index doublons (BATCH 14)
+2. 20260513_rls_optimize_auth_uid.sql             # RLS perf (BATCH 22)
+3. 20260513_cleanup_duplicate_rls_policies.sql    # cleanup policies (BATCH 24)
+4. 20260514_beta_admin_system.sql                 # 8 tables + 5 RPC + 13 RLS (BATCH 28)
+5. 20260514_anonymize_beta_signup_log_cron.sql    # cron RGPD J+30 (BATCH 36)
+6. 20260514_fix_admin_users_rls_recursion.sql     # FIX critique RLS admin (BATCH 37)
 ```
+
+> ⚠️ **BATCH 37 critique** : sans ce fix, `useIsAdmin` hook echoue avec recursion
+> infinie et /admin redirige vers /home. A appliquer OBLIGATOIREMENT avant le bootstrap super_admin.
 
 > Note : la RPC `generate_beta_keys` est incluse dans le fichier
 > `20260514_beta_admin_system.sql` (pas dans un fichier separe).
