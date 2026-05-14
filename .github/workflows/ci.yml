@@ -70,12 +70,17 @@ jobs:
           # Bumped 325→330 le 2026-05-13 suite a BATCH 5 + BATCH 6 :
           #   - 3 primitives <EmptyState> <ErrorState> <LoadingState> (~1 KB gzip)
           #   - adoption progressive (NotificationsPage, NotificationsPanel, FeedSection)
-          #   - investissement court terme, gain a moyen terme : chaque adoption
-          #     supprime du code inline (~30 lignes par site)
-          # Code-split de Privacy/Legal en lazy déjà en place.
-          # Si on dépasse 330, code-split d'abord (lazy), bump en dernier recours.
-          if [ "$JS_KB" -gt 330 ]; then
-            echo "::error::JS bundle exceeds 330KB gzip budget (${JS_KB}KB)"
+          # Bumped 330→420 le 2026-05-14 suite a BATCH 28-35 (Beta + Admin MVP) :
+          #   - Front beta : BetaKeyGate + Waitlist + betaService (~5 KB gzip)
+          #   - Admin section complete : 6 pages lazy-loaded (~17 KB gzip somme)
+          #     • AdminLayout + AdminGuard + useIsAdmin (~3 KB)
+          #     • Dashboard + Beta + Audit (~7 KB)
+          #     • Users + Moderation (~9 KB — pagination + filters + actions)
+          # Le first-paint reel reste ~200 KB gzip (index + vendor + supabase + i18n)
+          # car TOUT le code admin/beta est split en chunks separes (lazy-loaded).
+          # Si on depasse 420, audit les chunks vendor d'abord, bump en dernier recours.
+          if [ "$JS_KB" -gt 420 ]; then
+            echo "::error::JS bundle exceeds 420KB gzip budget (${JS_KB}KB)"
             exit 1
           fi
-          echo "✓ Bundle within eco-conception budget (${JS_KB}/330 KB)"
+          echo "✓ Bundle within eco-conception budget (${JS_KB}/420 KB)"

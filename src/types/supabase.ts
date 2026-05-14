@@ -2,12 +2,10 @@
 // SUPABASE TYPES (auto-generated)
 // =============================================================================
 //
-// Source : Supabase MCP `generate_typescript_types` (BATCH 12 — 2026-05-13)
-// Regenerer apres TOUTE migration : `npx supabase gen types typescript`
-// ou via Supabase MCP `mcp__supabase__generate_typescript_types`.
+// Source : Supabase MCP `generate_typescript_types` (BATCH 32 — 2026-05-14)
+// Regenerer apres TOUTE migration via Supabase MCP.
 //
 // Convention : NE JAMAIS editer ce fichier a la main.
-// Si une table/colonne manque, c'est qu'une migration n'a pas ete appliquee.
 //
 // =============================================================================
 
@@ -21,6 +19,299 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_actions: {
+        Row: {
+          action_type: string
+          created_at: string
+          duration_days: number | null
+          id: string
+          is_reversible: boolean
+          metadata: Json | null
+          performed_by: string
+          reason: string
+          related_report_id: string | null
+          reverted_at: string | null
+          reverted_by: string | null
+          target_content_id: string | null
+          target_content_type: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          duration_days?: number | null
+          id?: string
+          is_reversible?: boolean
+          metadata?: Json | null
+          performed_by: string
+          reason: string
+          related_report_id?: string | null
+          reverted_at?: string | null
+          reverted_by?: string | null
+          target_content_id?: string | null
+          target_content_type?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          duration_days?: number | null
+          id?: string
+          is_reversible?: boolean
+          metadata?: Json | null
+          performed_by?: string
+          reason?: string
+          related_report_id?: string | null
+          reverted_at?: string | null
+          reverted_by?: string | null
+          target_content_id?: string | null
+          target_content_type?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'admin_actions_performed_by_fkey'
+            columns: ['performed_by']
+            isOneToOne: false
+            referencedRelation: 'admin_users'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'admin_actions_related_report_id_fkey'
+            columns: ['related_report_id']
+            isOneToOne: false
+            referencedRelation: 'moderation_reports'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'admin_actions_reverted_by_fkey'
+            columns: ['reverted_by']
+            isOneToOne: false
+            referencedRelation: 'admin_users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      admin_audit_logs: {
+        Row: {
+          action: string
+          admin_user_id: string
+          after_state: Json | null
+          before_state: Json | null
+          created_at: string
+          id: string
+          ip_address: unknown
+          metadata: Json | null
+          target_id: string | null
+          target_type: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          after_state?: Json | null
+          before_state?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          after_state?: Json | null
+          before_state?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'admin_audit_logs_admin_user_id_fkey'
+            columns: ['admin_user_id']
+            isOneToOne: false
+            referencedRelation: 'admin_users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      admin_users: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      beta_access_keys: {
+        Row: {
+          batch_number: number
+          code: string
+          created_at: string
+          created_by: string | null
+          current_uses: number
+          expires_at: string
+          id: string
+          is_active: boolean
+          max_uses: number
+          notes: string | null
+          used_at: string | null
+          used_by_user_id: string | null
+        }
+        Insert: {
+          batch_number: number
+          code: string
+          created_at?: string
+          created_by?: string | null
+          current_uses?: number
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          notes?: string | null
+          used_at?: string | null
+          used_by_user_id?: string | null
+        }
+        Update: {
+          batch_number?: number
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          current_uses?: number
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          notes?: string | null
+          used_at?: string | null
+          used_by_user_id?: string | null
+        }
+        Relationships: []
+      }
+      beta_quota_config: {
+        Row: {
+          accepting_new_signups: boolean
+          current_phase: number
+          current_user_count: number
+          id: number
+          max_users_total: number
+          updated_at: string
+        }
+        Insert: {
+          accepting_new_signups?: boolean
+          current_phase?: number
+          current_user_count?: number
+          id?: number
+          max_users_total?: number
+          updated_at?: string
+        }
+        Update: {
+          accepting_new_signups?: boolean
+          current_phase?: number
+          current_user_count?: number
+          id?: number
+          max_users_total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      beta_signup_log: {
+        Row: {
+          attempted_code: string | null
+          created_at: string
+          id: string
+          ip_address: unknown
+          outcome: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          attempted_code?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          outcome: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          attempted_code?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          outcome?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      beta_waitlist: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          invited_at: string | null
+          invited_with_key_id: string | null
+          motivation: string | null
+          notes: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          invited_at?: string | null
+          invited_with_key_id?: string | null
+          motivation?: string | null
+          notes?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          invited_at?: string | null
+          invited_with_key_id?: string | null
+          motivation?: string | null
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'beta_waitlist_invited_with_key_id_fkey'
+            columns: ['invited_with_key_id']
+            isOneToOne: false
+            referencedRelation: 'beta_access_keys'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       blocks: {
         Row: {
           blocked_id: string
@@ -526,6 +817,69 @@ export type Database = {
             columns: ['user_id']
             isOneToOne: false
             referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      moderation_reports: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          description: string | null
+          id: string
+          priority: string
+          reason: string
+          reporter_id: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          priority?: string
+          reason: string
+          reporter_id: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          priority?: string
+          reason?: string
+          reporter_id?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'moderation_reports_assigned_to_fkey'
+            columns: ['assigned_to']
+            isOneToOne: false
+            referencedRelation: 'admin_users'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'moderation_reports_resolved_by_fkey'
+            columns: ['resolved_by']
+            isOneToOne: false
+            referencedRelation: 'admin_users'
             referencedColumns: ['id']
           },
         ]
@@ -1915,6 +2269,7 @@ export type Database = {
       anonymize_orphan_audit_logs: { Args: never; Returns: number }
       can_see_notebook: { Args: { p_notebook_id: string }; Returns: boolean }
       can_see_post: { Args: { p_post_id: string }; Returns: boolean }
+      claim_beta_access_key: { Args: { p_code: string }; Returns: string }
       clear_user_location: { Args: { p_user_id: string }; Returns: undefined }
       disablelongtransactions: { Args: never; Returns: string }
       dropgeometrycolumn:
@@ -1949,6 +2304,35 @@ export type Database = {
         | { Args: { table_name: string }; Returns: string }
       enablelongtransactions: { Args: never; Returns: string }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      generate_beta_keys: {
+        Args: {
+          p_batch_number: number
+          p_count?: number
+          p_expires_days?: number
+          p_max_uses?: number
+          p_notes?: string
+        }
+        Returns: {
+          batch_number: number
+          code: string
+          created_at: string
+          created_by: string | null
+          current_uses: number
+          expires_at: string
+          id: string
+          is_active: boolean
+          max_uses: number
+          notes: string | null
+          used_at: string | null
+          used_by_user_id: string | null
+        }[]
+        SetofOptions: {
+          from: '*'
+          to: 'beta_access_keys'
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       geometry: { Args: { '': string }; Returns: unknown }
       geometry_above: {
         Args: { geom1: unknown; geom2: unknown }
@@ -2049,6 +2433,8 @@ export type Database = {
       geomfromewkt: { Args: { '': string }; Returns: unknown }
       gettransactionid: { Args: never; Returns: unknown }
       immutable_unaccent: { Args: { '': string }; Returns: string }
+      increment_beta_user_count: { Args: never; Returns: undefined }
+      is_admin: { Args: { p_user_id: string }; Returns: boolean }
       is_notif_enabled: {
         Args: { p_type: string; p_user_id: string }
         Returns: boolean
@@ -2106,6 +2492,10 @@ export type Database = {
       }
       postgis_version: { Args: never; Returns: string }
       postgis_wagyu_version: { Args: never; Returns: string }
+      release_beta_access_key: {
+        Args: { p_key_id: string }
+        Returns: undefined
+      }
       reverse_geocode_city: {
         Args: { lat: number; lng: number; max_distance_km?: number }
         Returns: {
