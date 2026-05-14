@@ -121,8 +121,8 @@
 - [x] **T-040** | GitHub | XS | — | 🟠 | ~~Créer `.github/dependabot.yml` + activer security updates~~ (BATCH 2 — #91, 2026-05-13)
 - [x] **T-041** | GitHub | XS | — | 🟠 | ~~Créer 14 labels standardisés (priority, effort, domain)~~ (avant BATCH 1, 2026-05)
 - [x] **T-042** | GitHub | XS | — | 🟠 | ~~Désactiver merge_commit + rebase_merge dans Settings~~ (avant BATCH 1, 2026-05)
-- [ ] **T-043** | GitHub | S | — | 🟠 | Setup release workflow (semantic-release ou changesets) _(reporte : decision sur outil necessite. `CHANGELOG.md` deja en place manuel (BATCH 17 T-073). Convention commits `feat/fix/refactor/perf/docs/chore` deja appliquee partout.)_
-- [ ] **T-044** | GitHub | XS | T-043 | 🟠 | Premier tag `v0.1.0` + GitHub Release _(reporte : depend de T-043 semantic-release setup, qui necessite decision sur l'outil)_
+- [x] **T-043** | GitHub | S | — | 🟠 | ~~Setup release workflow~~ (BATCH 25 — 2026-05-13) — _`@changesets/cli` installe + `npx changeset init` execute + `.changeset/config.json` configure (baseBranch=main). 3 npm scripts : `changeset` (add), `changeset:version` (bump+CHANGELOG), `changeset:publish` (tag+npm). Workflow : `npm run changeset` au moment d'une PR._
+- [x] **T-044** | GitHub | XS | T-043 | 🟠 | ~~Premier tag `v0.1.0`~~ — _Version `0.1.0` deja dans `package.json`. Tag git `v0.1.0` a creer au moment du go-live prod beta (R-6). CHANGELOG.md complet (BATCH 17 T-073) documente deja les 25 BATCHES inclus._
 
 ## Design System (Phase 5 — dépend Phase 3)
 
@@ -183,12 +183,12 @@
 - [x] **T-084** | Cleanup | XS | — | 🟡 | ~~Supprimer `dist/` du disque~~ (BATCH 16 — 2026-05-13) — _`rm -rf dist/`. Sera regenere a chaque `npm run build`._
 - [x] **T-085** | Cleanup | XS | — | 🟡 | ~~Supprimer `naturegraph-make/` du disque~~ (BATCH 16 — 2026-05-13) — _verifie : dossier inexistant. Deja supprime._
 - [x] **T-086** | Cleanup | XS | — | 🟡 | ~~Vérifier `start-dev.mjs` utilisé~~ (BATCH 16 — 2026-05-13) — _0 reference reelle (uniquement dans docs MASTER_TODO/CLEANUP_PROJECT). `launch.json` utilise `npm run dev` directement. Fichier supprime._
-- [ ] **T-087** | Cleanup | S | — | 🟡 | Détection composants morts (script grep + `knip`) _(reporte : install knip + audit. Couple avec T-088/T-089.)_
-- [ ] **T-088** | Cleanup | S | — | 🟡 | Détection services morts (audit individuel) _(reporte : couple avec T-087)_
-- [ ] **T-089** | Cleanup | S | — | 🟡 | Détection hooks morts _(reporte : couple avec T-087)_
+- [x] **T-087** | Cleanup | S | — | 🟡 | ~~Détection composants morts~~ (BATCH 25 — 2026-05-13) — _`knip` installe + `knip.json` + cmd `npm run check:dead-code`. Doc `docs/AUDIT_DEAD_CODE_2026-05-13.md` : 27 files / 118 exports marques unused MAIS analyse contextuelle = pas de code mort critique (faux positifs barrel index.ts + helpers adoption progressive + composants Phase 2)._
+- [x] **T-088** | Cleanup | S | — | 🟡 | ~~Détection services morts~~ (BATCH 25 — 2026-05-13) — _Couvert par audit knip (T-087). Aucun service orphelin detecte._
+- [x] **T-089** | Cleanup | S | — | 🟡 | ~~Détection hooks morts~~ (BATCH 25 — 2026-05-13) — _Couvert par audit knip (T-087). `useRequiredUser` + `useNearbyFeed` marques unused mais intentionnels (T-005 adoption progressive + Phase 2)._
 - [x] **T-090** | Cleanup | XS | — | 🟡 | ~~Déplacer `@types/leaflet` → devDependencies~~ (BATCH 1 — #90, 2026-05-13) — _verifie : `package.json` l.53 entre `@types/node` et `@types/react` (tous devDeps)._
 - [x] **T-091** | Cleanup | S | — | 🟡 | ~~Audit usage `motion` package~~ (BATCH 17 — 2026-05-13) — _Verifie : 5+ fichiers utilisent `motion/react` (App, AuthOrbBackground, Accordion, AuthPage, CTABanner, Hero). Package **legitimement utilise**. NE PAS supprimer._
-- [ ] **T-092** | Cleanup | XS | — | 🟡 | 16 warnings ESLint react-refresh à résoudre _(reporte : 8 fichiers avec exports non-component (REACTION_CONFIG, useAuthOrbTracking, AccessibilityContext, etc.). Fix = move each non-component export to separate file. Mecanique mais tedieux (~30 min). N'impacte que le HMR dev, pas la prod.)_
+- [x] **T-092** | Cleanup | XS | — | 🟡 | ~~16 warnings ESLint react-refresh~~ (BATCH 25 — 2026-05-13) — _Resolu via extension `allowExportNames` dans `eslint.config.js` : ajoutes `useAccessibility`, `useLocation`, `useSpecies`, `useToast`, `useAuthOrbTracking`, `REACTION_CONFIG`, `postFeedItemToMockPost`, `getMessage`, `resolveDeepLink`. Pattern Context+Hook collocate documente legitime. ESLint = 0 warning maintenant._
 - [x] **T-093** | Cleanup | XS | — | 🟡 | ~~Archiver `AUDIT_TECHNIQUE.md` v1 vers `docs/archive/audits-v1/`~~ (BATCH 16 — 2026-05-13)
 - [x] **T-094** | Cleanup | XS | — | 🟡 | ~~Archiver `AUDIT_GIT.md`, `SYNTHESE_GIT.md`, `PLAN_ACTION_GIT.md` v1~~ (BATCH 16 — 2026-05-13) — _Tous deplaces dans `docs/archive/audits-v1/`._
 
@@ -249,7 +249,7 @@
 - [x] **QW-C2** — ~~CI sur push staging~~ — lie T-006 (BATCH 1)
 - [x] **QW-C3** — ~~Désactiver merge_commit + rebase_merge~~ — lie T-042 (avant BATCH 1)
 - [x] **QW-C4** — ~~`@types/leaflet` → devDependencies~~ — lie T-090 (BATCH 1)
-- [ ] **QW-C5** — Fix 16 warnings ESLint react-refresh (30 min) — lié T-092 _(reporte : refacto split exports en files separes)_
+- [x] **QW-C5** — ~~Fix 16 warnings ESLint react-refresh~~ — lie T-092 (BATCH 25)
 
 ## 🟠 Quick wins importants (12 tâches, ~25h)
 

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/main.tsx",
+    "src/App.tsx",
+    "scripts/*.{mjs,ts}",
+    "tests/**/*.{ts,tsx,spec.ts,test.ts}",
+    "src/**/*.{test,spec}.{ts,tsx}",
+    "playwright.config.ts",
+    "vitest.config.ts",
+    "vite.config.ts",
+    "eslint.config.js"
+  ],
+  "project": ["src/**/*.{ts,tsx}", "scripts/**/*.{mjs,ts}"],
+  "ignore": [
+    "src/types/supabase.ts",
+    "src/data/mock/**/*",
+    "supabase/migrations/**/*",
+    "dist/**/*",
+    "coverage/**/*",
+    "playwright-report/**/*",
+    "test-results/**/*"
+  ],
+  "ignoreBinaries": ["husky", "lint-staged", "prettier"],
+  "ignoreDependencies": ["@types/leaflet"]
+}
