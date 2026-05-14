@@ -43,6 +43,7 @@ import hermineIcon from '@/assets/images/hermine-icon.png'
 import { useToast } from '@/contexts/ToastContext'
 import { uploadImage } from '@/services/storageService'
 import { isSupabaseConfigured } from '@/lib/supabase'
+import { compressPhoto } from '@/utils/compressPhoto'
 import type { ProfileDisplayData } from './ProfileHeader'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -214,7 +215,13 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
     setIsUploading(kind)
     try {
       const bucket = kind === 'avatar' ? 'avatars' : 'banners'
-      const { publicUrl } = await uploadImage(bucket, file)
+      // BATCH 16 / T-075 : compression client avant upload (eco-conception).
+      // Avatars : 1024px max ; banners : 2560px max (TIER_FREE default).
+      // Reduit storage 50-80% et accelere l'upload sur connexions mobiles.
+      const compressed = await compressPhoto(file, {
+        maxDimension: kind === 'avatar' ? 1024 : 2560,
+      })
+      const { publicUrl } = await uploadImage(bucket, compressed)
       // Remplace la Blob URL par l'URL Supabase persistée.
       if (kind === 'avatar') {
         if (avatarUrl?.startsWith('blob:')) URL.revokeObjectURL(avatarUrl)
