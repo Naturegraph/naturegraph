@@ -38,3 +38,11 @@ supabase/.temp/
 *.sln
 *.sw?
 Taxref/
+
+# Playwright (BATCH 20 / T-009)
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+# Vitest coverage (BATCH 23 / T-008)
+/coverage/
