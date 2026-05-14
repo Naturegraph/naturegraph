@@ -1,8 +1,9 @@
 # Naturegraph — MASTER TODO (post cycle 1)
 
-> **Version** : 2.0 — 2026-05-13 (refondu BATCH 26 post-cleanup cycle 1)
-> **Statut** : 📌 **98/117 taches livrees (84%)** — 19 restantes
+> **Version** : 2.1 — 2026-05-14 (BATCH 27-35 livres pour beta launch)
+> **Statut** : 📌 **Beta closed access ready** — 19 refactos optionnels restants
 > **Voir le bilan complet** : [`STATUS_2026-05-13.md`](STATUS_2026-05-13.md)
+> **Voir runbook launch** : [`BETA_LAUNCH_RUNBOOK.md`](BETA_LAUNCH_RUNBOOK.md)
 > **Lecture cible** : ouvrir au debut de chaque session pour identifier la prochaine tache
 
 ---
@@ -30,6 +31,24 @@ Resume :
 - **DB Supabase** : audit advisors + 54 RLS policies wrap + 4 indexes drop + 7 doublons cleanup (BATCH 12, 14, 22, 24)
 - **Tests & Quality** : Playwright E2E + tests unit + coverage v8 + ESLint 0 warning + knip + npm audit fix HIGH (BATCH 18, 20, 21, 23, 25)
 - **Docs** : CONTRIBUTING + CHANGELOG + PATTERN_TYPE_CASTS + CONVENTIONS_TODO + AUDITS frais (BATCH 16, 17, 19, 26)
+
+---
+
+## 🚀 Cycle 2 livre — Beta launch (9 BATCHES — BATCH 27-35)
+
+> **Statut** : 🟢 Tout livre, pret pour passage en prod. Voir [`BETA_LAUNCH_RUNBOOK.md`](BETA_LAUNCH_RUNBOOK.md).
+
+- **BATCH 27** : Docs strategies v2.0 (BETA_CLOSED_ACCESS_STRATEGY + ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY)
+- **BATCH 28** : DB foundation (8 tables admin + beta + 4 RPC + 13 RLS policies + trigger immutabilite audit log)
+- **BATCH 29** : Edge Function `validate-beta-key` (Deno + rate limit 5/IP/10min + format regex + RPC claim atomic)
+- **BATCH 30** : Front signup (BetaKeyGate + Waitlist + AuthPage mode 'beta-key' + service beta)
+- **BATCH 31** : Admin layout (AdminGuard + AdminLayout + 5 routes lazy `/admin/*`)
+- **BATCH 32** : Admin Module 1 Dashboard + Module 4 Beta + Module 5 Audit (RPC generate_beta_keys)
+- **BATCH 33** : Admin Module 2 Users (search debounced + filter + 4 actions + log audit) + Module 3 Moderation (filters + 4 actions + reporter lookup + soft-remove content)
+- **BATCH 34** : Tests E2E beta flow Playwright (7 tests : waitlist, signup gate, admin redirect, format auto)
+- **BATCH 35** : Beta Launch Runbook (sections A-H : DB + Vercel + super_admin bootstrap + cles + invitations + monitoring + rollback + checklist)
+
+**Actions Nicolas requises pour go-live** : voir [`BETA_LAUNCH_RUNBOOK.md`](BETA_LAUNCH_RUNBOOK.md) Section H.
 
 ---
 
@@ -168,6 +187,7 @@ npm run changeset           # add changeset for release
 
 ## 📜 Historique versions
 
+- **v2.1** (2026-05-14) — BATCH 27-35 livres pour beta closed access. Beta launch ready.
 - **v2.0** (2026-05-13) — Refondu post-cycle 1 (BATCH 26). 98/117 done, focus sur les 19 restantes.
 - **v1.5** (2026-05-13) — Cycle BATCHES 1-24 livre. 91/117 done.
 - **v1.0** (2026-05-04) — Document de pilotage initial avec 105 taches T-001 a T-105.
