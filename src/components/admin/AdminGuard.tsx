@@ -32,9 +32,10 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // 2. Non authentifie -> /auth (sauvegarder le path pour redirect post-login)
+  // 2. Non authentifie -> /login (sauvegarder le path pour redirect post-login)
+  // Note : route est /login dans router.tsx (pas /auth qui n'existe pas).
   if (!isAuthenticated) {
-    return <Navigate to="/auth" state={{ from: location }} replace />
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />
   }
 
   // 3. Authentifie mais pas admin -> /home (pas de page 403 pour eviter leak)
