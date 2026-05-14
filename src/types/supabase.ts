@@ -1,14 +1,3 @@
-// =============================================================================
-// SUPABASE TYPES (auto-generated)
-// =============================================================================
-//
-// Source : Supabase MCP `generate_typescript_types` (BATCH 32 — 2026-05-14)
-// Regenerer apres TOUTE migration via Supabase MCP.
-//
-// Convention : NE JAMAIS editer ce fichier a la main.
-//
-// =============================================================================
-
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
@@ -2266,9 +2255,17 @@ export type Database = {
             }
             Returns: string
           }
+      anonymize_beta_signup_log: { Args: never; Returns: number }
       anonymize_orphan_audit_logs: { Args: never; Returns: number }
       can_see_notebook: { Args: { p_notebook_id: string }; Returns: boolean }
       can_see_post: { Args: { p_post_id: string }; Returns: boolean }
+      check_beta_access_key_validity: {
+        Args: { p_code: string }
+        Returns: {
+          reason: string
+          valid: boolean
+        }[]
+      }
       claim_beta_access_key: { Args: { p_code: string }; Returns: string }
       clear_user_location: { Args: { p_user_id: string }; Returns: undefined }
       disablelongtransactions: { Args: never; Returns: string }
