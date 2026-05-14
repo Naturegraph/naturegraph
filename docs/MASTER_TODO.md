@@ -163,7 +163,7 @@
 
 ## Documentation
 
-- [ ] **T-072** | Docs | S | — | 🟠 | Convention TODO `TODO(YYYY-MM-DD, owner, #issue)` documentée + appliquée (57+ occurrences)
+- [x] **T-072** | Docs | S | — | 🟠 | ~~Convention TODO `TODO(YYYY-MM-DD, owner, #issue)` documentée~~ (BATCH 1 — #90, 2026-05-13) — _Doc `docs/CONVENTIONS_TODO.md`. Application progressive aux 57+ occurrences existantes a faire au fil des touches._
 - [ ] **T-073** | Docs | XS | T-043 | 🟠 | CHANGELOG.md auto-généré
 
 ---
@@ -172,40 +172,40 @@
 
 ## Performance
 
-- [ ] **T-074** | Perf | XS | — | 🟡 | Throttle Hero mouse tracking 30fps (`Landing/Hero.tsx:180`)
-- [ ] **T-075** | Perf | XS | — | 🟡 | Compression image client avatars/banners (utilise `compressPhoto.ts` existant)
+- [x] **T-074** | Perf | XS | — | 🟡 | ~~Throttle Hero mouse tracking 30fps~~ (BATCH 4 — #93, 2026-05-13) — _RAF throttle via `rafIdRef` + `pendingEventRef`. Cf. `src/pages/Landing/Hero.tsx:297-310`._
+- [x] **T-075** | Perf | XS | — | 🟡 | ~~Compression image client avatars/banners~~ (BATCH 16 — 2026-05-13) — _EditPhotoTab passe par `compressPhoto()` avant `uploadImage()`. Avatars : maxDimension 1024px, banners : 2560px._
 - [ ] **T-076** | Perf | S | — | 🟡 | Conversion WebP côté client
 - [ ] **T-077** | Perf | S | — | 🟡 | Code-split routes Auth/Profile/Settings
 - [ ] **T-078** | Perf | S | — | 🟡 | Dynamic import Leaflet (60 KB économisés)
-- [ ] **T-079** | Perf | XS | — | 🟡 | Lazy load `useFollowers`/`useFollowing` (tab Communauté)
+- [x] **T-079** | Perf | XS | — | 🟡 | ~~Lazy load `useFollowers`/`useFollowing` (tab Communauté)~~ (BATCH 16 — 2026-05-13) — _Parametre `enabled` ajoute aux hooks. ProfileCommunity passe `activeTab === 'migrateurs'` / `'migrations'`. Reduction : 2 requetes au mount -> 1 requete (puis lazy au switch)._
 - [ ] **T-080** | Perf | XS | — | 🟡 | Bundle size budget surveillance auto (alerte > 300 KB)
 - [ ] **T-081** | Perf | S | — | 🟡 | Invalidations React Query ciblées (vs globales)
-- [ ] **T-082** | Perf | XS | — | 🟡 | Lazy import StatsSidebar mobile
+- [x] **T-082** | Perf | XS | — | 🟡 | ~~Lazy import StatsSidebar mobile~~ (BATCH 4 — #93, 2026-05-13) — _`const StatsSidebar = lazy(...)` + Suspense fallback. Cf. `src/pages/Home.tsx:37-43`._
 - [ ] **T-083** | Perf | S | — | 🟡 | Tree-shake lucide-react (importer seulement icons utilisés)
 
 ## Cleanup
 
-- [ ] **T-084** | Cleanup | XS | — | 🟡 | Supprimer `dist/` du disque si présent (gitignoré)
-- [ ] **T-085** | Cleanup | XS | — | 🟡 | Supprimer `naturegraph-make/` du disque si présent (gitignoré)
-- [ ] **T-086** | Cleanup | XS | — | 🟡 | Vérifier `start-dev.mjs` utilisé (sinon supprimer)
+- [x] **T-084** | Cleanup | XS | — | 🟡 | ~~Supprimer `dist/` du disque~~ (BATCH 16 — 2026-05-13) — _`rm -rf dist/`. Sera regenere a chaque `npm run build`._
+- [x] **T-085** | Cleanup | XS | — | 🟡 | ~~Supprimer `naturegraph-make/` du disque~~ (BATCH 16 — 2026-05-13) — _verifie : dossier inexistant. Deja supprime._
+- [x] **T-086** | Cleanup | XS | — | 🟡 | ~~Vérifier `start-dev.mjs` utilisé~~ (BATCH 16 — 2026-05-13) — _0 reference reelle (uniquement dans docs MASTER_TODO/CLEANUP_PROJECT). `launch.json` utilise `npm run dev` directement. Fichier supprime._
 - [ ] **T-087** | Cleanup | S | — | 🟡 | Détection composants morts (script grep + `knip`)
 - [ ] **T-088** | Cleanup | S | — | 🟡 | Détection services morts (audit individuel)
 - [ ] **T-089** | Cleanup | S | — | 🟡 | Détection hooks morts
-- [ ] **T-090** | Cleanup | XS | — | 🟡 | Déplacer `@types/leaflet` → devDependencies
+- [x] **T-090** | Cleanup | XS | — | 🟡 | ~~Déplacer `@types/leaflet` → devDependencies~~ (BATCH 1 — #90, 2026-05-13) — _verifie : `package.json` l.53 entre `@types/node` et `@types/react` (tous devDeps)._
 - [ ] **T-091** | Cleanup | S | — | 🟡 | Audit usage `motion` package (supprimer si non utilisé)
 - [ ] **T-092** | Cleanup | XS | — | 🟡 | 16 warnings ESLint react-refresh à résoudre
-- [ ] **T-093** | Cleanup | XS | — | 🟡 | Archiver `AUDIT_TECHNIQUE.md` v1 vers `docs/archive/audits-v1/`
-- [ ] **T-094** | Cleanup | XS | — | 🟡 | Archiver `AUDIT_GIT.md`, `SYNTHESE_GIT.md`, `PLAN_ACTION_GIT.md` v1 (remplacés)
+- [x] **T-093** | Cleanup | XS | — | 🟡 | ~~Archiver `AUDIT_TECHNIQUE.md` v1 vers `docs/archive/audits-v1/`~~ (BATCH 16 — 2026-05-13)
+- [x] **T-094** | Cleanup | XS | — | 🟡 | ~~Archiver `AUDIT_GIT.md`, `SYNTHESE_GIT.md`, `PLAN_ACTION_GIT.md` v1~~ (BATCH 16 — 2026-05-13) — _Tous deplaces dans `docs/archive/audits-v1/`._
 
 ## GitHub avancé
 
 - [ ] **T-095** | GitHub | XS | — | 🟡 | Setup CodeQL (SAST GitHub) workflow
 - [ ] **T-096** | GitHub | S | — | 🟡 | Snyk ou équivalent pour scan deps
-- [ ] **T-097** | GitHub | XS | — | 🟡 | Documenter convention branches dans `CONTRIBUTING.md`
+- [x] **T-097** | GitHub | XS | — | 🟡 | ~~Documenter convention branches dans `CONTRIBUTING.md`~~ (BATCH 16 — 2026-05-13) — _Section "Strategie de branches" mise a jour avec : 3 branches main/staging/develop + Supabase mapping + squash merge convention + hotfix flow._
 
 ## UX cosmétique
 
-- [ ] **T-098** | UX | XS | — | 🟡 | Badge "Bientôt" sur onglet Statistiques profil
+- [x] **T-098** | UX | XS | — | 🟡 | ~~Badge "Bientôt" sur onglet Statistiques profil~~ — _deja conforme : `ProfileTabs.tsx:73` a `soonBadge: true` sur le tab stats. Disabled + cursor not-allowed implementes._
 - [ ] **T-099** | UX | S | — | 🟡 | OTP timer audio + bouton resume
 
 ---
