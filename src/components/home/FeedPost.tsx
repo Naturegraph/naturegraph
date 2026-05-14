@@ -174,8 +174,8 @@ const POST_TYPE_ICON: Record<MockPost['postType'], { Icon: typeof Bird; colorCla
   },
   nature_instant: {
     Icon: MountainSnow,
-    // TODO [TOKEN] : ajouter --color-amber-primary dans _light-theme.scss
-    colorClass: 'text-[#cc7a00]',
+    // Amber brand primary — token CSS (BATCH 42).
+    colorClass: 'text-[var(--color-amber-primary)]',
   },
 }
 
