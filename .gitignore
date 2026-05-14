@@ -38,3 +38,8 @@ supabase/.temp/
 *.sln
 *.sw?
 Taxref/
+
+# Playwright (BATCH 20 / T-009)
+/test-results/
+/playwright-report/
+/playwright/.cache/
