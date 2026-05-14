@@ -1,34 +1,40 @@
 # Naturegraph — Stratégie Beta fermée (Closed Access)
 
-> **Version** : 1.0 — 2026-05-04
-> **Statut** : 📌 **DOCUMENT STRATÉGIQUE FUTUR** — non à exécuter maintenant
-> **Posture** : product manager + tech lead. Plan complet d'intégration utilisateurs progressifs.
-> **Pré-requis activation** : consolidation MVP complète (voir `CONSOLIDATION_ROADMAP.md` phases 1→6)
-> **Lecture cible** : 15 min pour absorber, à consulter une fois MVP consolidé.
+> **Version** : 2.0 — 2026-05-13 (refondu BATCH 27 — actionnable post cycle 1)
+> **Statut** : 🟢 **PRET A IMPLEMENTER** — pré-requis MVP cycle 1 valides (98/117 done)
+> **Posture** : product manager + tech lead. Plan complet d'integration utilisateurs progressifs.
+> **Effort total Phase 1** : ~5 jours dev (40h)
+> **Pre-requis** : voir checklist § "Pre-flight check" ci-dessous
 
 ---
 
-# ⚠️ Pré-requis activation
+## 🎯 TL;DR
 
-> Cette stratégie ne doit **PAS** être activée tant que la consolidation MVP n'est pas terminée.
+- **Phase 1** : 50 utilisateurs max, vagues de 10/semaine, 5 semaines.
+- **Système de cles d'acces** : 1 cle = 1 inscription, 12 chars, expire 7j.
+- **Quota plafonne en DB** (singleton `beta_quota_config`).
+- **Edge Function** valide + claim atomique (anti race condition).
+- **Dashboard admin minimal** : voir [`ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md`](ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md) Module Beta.
+- **Garde-fous arret automatique** sur 9 criteres (cf. § Garde-fous).
+- **Phase 2/3** progressives : 50 → 100 → ouverture publique avec rate limit.
 
-## Conditions de déclenchement
+---
 
-Avant d'ouvrir la beta fermée, tous les points suivants doivent être validés :
+## ✈️ Pre-flight check (avant lancement)
 
-- ✅ `CONSOLIDATION_ROADMAP.md` Phase 1 — Stabilisation critique terminée
-- ✅ `CONSOLIDATION_ROADMAP.md` Phase 2 — UX/UI consolidation terminée
-- ✅ `CONSOLIDATION_ROADMAP.md` Phase 3 — Refacto composants critiques terminée
-- ✅ `CONSOLIDATION_ROADMAP.md` Phase 4 — GitHub workflows pro terminée
-- ✅ `CONSOLIDATION_ROADMAP.md` Phase 6 — A11Y + sécurité + perf terminée
-- ✅ Tests E2E critical path passing (signup → onboarding → upload → delete)
-- ✅ Audits sécurité Supabase 0 critique
-- ✅ Conformité RGPD/Loi 25 validée
-- ✅ Aucun bug bloquant en backlog `MASTER_TODO.md` priorité 🔴
-- ✅ Monitoring Sentry/équivalent actif en prod
-- ✅ Runbook incident documenté
+Status au 2026-05-13 — cycle 1 livre :
 
-**Tant que tous ces points ne sont pas cochés, RIEN ne se déploie côté beta.**
+| Pre-requis                 | Statut         | Source                                                                                                   |
+| -------------------------- | -------------- | -------------------------------------------------------------------------------------------------------- |
+| Consolidation MVP terminée | 🟢 OK          | 98/117 taches done — [`STATUS_2026-05-13.md`](STATUS_2026-05-13.md)                                      |
+| Tests E2E critical path    | 🟡 Partiel     | 5 smoke tests Playwright (T-007/T-009 ✅). Critical path signup → onboarding → upload → delete a etoffer |
+| Audits sécurité Supabase   | 🟢 OK          | [`AUDIT_ADVISORS_2026-05-13.md`](AUDIT_ADVISORS_2026-05-13.md) — 0 ERROR critique                        |
+| Conformité RGPD/Loi 25     | 🟢 OK          | RC-D Privacy by Design livre (BATCH precedent) + cookie banner + delete account                          |
+| Aucun bug bloquant 🔴      | 🟢 OK          | Refactos composants > 200L = qualite, pas bloquant fonctionnel                                           |
+| Monitoring Sentry actif    | 🔴 **A FAIRE** | `lib/monitoring.ts` existe mais Sentry pas configure                                                     |
+| Runbook incident           | 🟢 OK          | [`DEPLOYMENT_RUNBOOK.md`](DEPLOYMENT_RUNBOOK.md)                                                         |
+
+**Action restante avant beta** : activer Sentry (1-2h dev).
 
 ---
 
@@ -36,42 +42,42 @@ Avant d'ouvrir la beta fermée, tous les points suivants doivent être validés 
 
 ## Philosophie
 
-Naturegraph évolue **progressivement** avec une approche **apprentissage > croissance** :
+Naturegraph evolue **progressivement** avec une approche **apprentissage > croissance** :
 
-- 🌱 Petit groupe contrôlé d'abord
+- 🌱 Petit groupe controle d'abord
 - 📊 Feedback qualitatif > quantitatif
 - 🛡️ Sécurité maximale avant tout
-- 🔍 Compréhension des usages réels
-- 🐛 Détection rapide des problèmes
-- ⚡ Itération rapide sur retours réels
+- 🔍 Comprehension des usages reels
+- 🐛 Detection rapide des problemes
+- ⚡ Iteration rapide sur retours reels
 
 **Le but n'est PAS la croissance rapide.** Le but est :
 
-1. **Apprendre** des usages réels d'utilisateurs réels
-2. **Stabiliser** sur du trafic réel (pas tests internes)
+1. **Apprendre** des usages reels d'utilisateurs reels
+2. **Stabiliser** sur du trafic reel (pas tests internes)
 3. **Corriger** rapidement avant que ça touche trop de monde
 4. **Consolider** la fondation produit avant d'ouvrir
 
 ---
 
-# 📈 Stratégie globale en 3 phases
+## 📈 Stratégie globale en 3 phases
 
 ```
-PHASE 1 — BETA FERMÉE ULTRA CONTRÔLÉE
+PHASE 1 — BETA FERMEE ULTRA CONTROLEE
    ↓
 [5 semaines, 50 users max, vagues de 10/semaine]
    ↓
-   GO / NO-GO chaque vendredi
+GO / NO-GO chaque vendredi
    ↓
-PHASE 2 — EXTENSION CONTRÔLÉE
+PHASE 2 — EXTENSION CONTROLEE
    ↓
-[50 → 100 users, vagues de 25, accès clés conservé]
+[50 → 100 users, vagues de 25, accès cles conserve]
    ↓
-   Stabilité prouvée + feedback consolidé
+Stabilite prouvee + feedback consolide
    ↓
 PHASE 3 — OUVERTURE PUBLIQUE
    ↓
-[Ouverture progressive sans clé, dashboard public]
+[Ouverture progressive sans cle, rate limit serveur]
 ```
 
 ---
@@ -80,19 +86,19 @@ PHASE 3 — OUVERTURE PUBLIQUE
 
 ## 🎯 Objectifs
 
-- Intégrer progressivement les **premiers vrais utilisateurs**
+- Integrer progressivement les **premiers vrais utilisateurs**
 - Limiter les risques de bugs en cascade
 - Surveiller la stabilité technique + UX
-- Observer les comportements réels (vs hypothèses produit)
-- Corriger rapidement chaque problème détecté
+- Observer les comportements reels (vs hypotheses produit)
+- Corriger rapidement chaque probleme detecte
 
 ## 📅 Planning Phase 1
 
 ### Vagues hebdomadaires (5 semaines max)
 
-| Semaine | Nouveaux users | Total cumulé | Action lundi               |
+| Semaine | Nouveaux users | Total cumule | Action lundi               |
 | ------- | -------------- | ------------ | -------------------------- |
-| **S1**  | 10             | 10           | Génération + envoi 10 clés |
+| **S1**  | 10             | 10           | Generation + envoi 10 cles |
 | **S2**  | 10             | 20           | Idem (si GO vendredi S1)   |
 | **S3**  | 10             | 30           | Idem (si GO vendredi S2)   |
 | **S4**  | 10             | 40           | Idem (si GO vendredi S3)   |
@@ -102,51 +108,51 @@ PHASE 3 — OUVERTURE PUBLIQUE
 
 ### Profil utilisateur cible Phase 1
 
-- Naturalistes amateurs sérieux (testeurs qualité)
-- Designers / développeurs (testeurs UX critiques)
-- Communauté Discord/Twitter Nicolas (early adopters engagés)
-- Famille proche / amis tech (testeurs feedback honnête)
+- Naturalistes amateurs serieux (testeurs qualite)
+- Designers / developpeurs (testeurs UX critiques)
+- Communaute Discord/Twitter Nicolas (early adopters engages)
+- Famille proche / amis tech (testeurs feedback honnete)
 
-**Total visé** : ~50 personnes recrutées **manuellement** avant ouverture.
+**Total vise** : ~50 personnes recrutees **manuellement** avant ouverture.
 
 ## 🔄 Processus hebdomadaire
 
 ### Lundi — Ouverture vague
 
-- Génération de 10 clés d'accès via dashboard admin
-- Envoi email perso à 10 nouveaux invités avec leur clé
-- Onboarding documenté inclus (vidéo 2 min ou tutoriel)
+- Generation de 10 cles d'acces via dashboard admin
+- Envoi email perso a 10 nouveaux invites avec leur cle
+- Onboarding documente inclus (video 2 min ou tutoriel)
 
 ### Mardi → Jeudi — Monitoring actif
 
 - Surveillance dashboard Supabase (errors, perf)
 - Support direct via email/Discord
-- Collecte feedback structuré (formulaire ou interview)
+- Collecte feedback structure (formulaire Tally ou interview)
 - Triage bugs / suggestions
 
-### Vendredi — Analyse + décision
+### Vendredi — Analyse + decision
 
-- Review métriques de la semaine
+- Review metriques de la semaine
 - Compilation feedback
-- **Décision GO / NO-GO** pour la vague suivante
+- **Decision GO / NO-GO** pour la vague suivante
 
 ## ⛔ Garde-fous arrêt vague
 
-**Arrêt IMMÉDIAT des vagues** si l'un des événements suivants :
+**Arrêt IMMEDIAT des vagues** si l'un des evenements suivants :
 
-| Catégorie          | Critère arrêt                                   |
+| Categorie          | Critere arrêt                                   |
 | ------------------ | ----------------------------------------------- |
-| Sécurité           | Faille découverte, données exposées             |
-| Données            | Corruption détectée, RLS bypass                 |
-| Onboarding         | Taux échec > 20% sur la semaine                 |
-| Auth               | Magic link échec > 10%                          |
-| Upload             | Échec > 15% des uploads                         |
+| Securite           | Faille decouverte, donnees exposees             |
+| Donnees            | Corruption detectee, RLS bypass                 |
+| Onboarding         | Taux echec > 20% sur la semaine                 |
+| Auth               | Magic link echec > 10%                          |
+| Upload             | Echec > 15% des uploads                         |
 | Suppression compte | Bug dans le flow RGPD                           |
-| DB                 | Erreurs Postgres > 1% des requêtes              |
+| DB                 | Erreurs Postgres > 1% des requetes              |
 | Infra              | Saturation Supabase ou Vercel                   |
-| Feedback           | > 30% des testeurs reportent un même bug majeur |
+| Feedback           | > 30% des testeurs reportent un meme bug majeur |
 
-**Pendant un arrêt** : focus 100% correction, aucune nouvelle vague tant que résolu + verified.
+**Pendant un arret** : focus 100% correction, aucune nouvelle vague tant que resolu + verified.
 
 ---
 
@@ -157,73 +163,74 @@ PHASE 3 — OUVERTURE PUBLIQUE
 ### Logique métier
 
 ```
-Génération clé (admin)
+Generation cle (admin)
     ↓
-Clé unique 12 caractères [A-Z0-9] (ex: NG-XK7M-9PQ2)
+Cle unique 12 caracteres [A-Z0-9] (ex: NG-XK7M-9PQ2)
     ↓
-1 clé = 1 utilisation (par défaut, configurable)
+1 cle = 1 utilisation (par defaut, configurable)
     ↓
-Expiration 7 jours après création
+Expiration 7 jours apres creation
     ↓
 Lors du signup :
     ↓
-1. User entre la clé
+1. User entre la cle
 2. Edge Function valide :
-   - clé existe ?
-   - clé active ?
-   - clé non utilisée ?
-   - clé non expirée ?
+   - cle existe ?
+   - cle active ?
+   - cle non utilisee ?
+   - cle non expiree ?
    - quota global non atteint ?
-3. Si OK : créer auth.users + marquer clé "used"
+3. Si OK : creer auth.users + marquer cle "used"
 4. Sinon : message erreur clair
 ```
 
 ### Format clé recommandé
 
 ```
-NG-XXXX-XXXX  (12 caractères, 2 tirets pour lisibilité)
+NG-XXXX-XXXX  (12 caracteres, 2 tirets pour lisibilite)
    │    │
    │    └── 4 chars random [A-Z0-9]
    └────── 4 chars random [A-Z0-9]
 ```
 
-**Préfixe `NG-`** pour identification visuelle facile (Naturegraph).
+**Prefixe `NG-`** pour identification visuelle facile (Naturegraph).
 
 **Pourquoi 12 chars ?** ~36^8 ≈ 2.8 × 10^12 combinaisons → brute force impossible.
 
-## Structure DB proposée
+## Structure DB
 
-### Table `beta_access_keys`
+### Migration `supabase/migrations/YYYYMMDD_beta_access_system.sql`
 
 ```sql
+-- ============================================================================
+-- Beta closed access system (Phase 1)
+-- ============================================================================
+
+-- 1. Cles d'acces
 CREATE TABLE public.beta_access_keys (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   code VARCHAR(15) UNIQUE NOT NULL,        -- "NG-XK7M-9PQ2"
   batch_number INT NOT NULL,                -- 1 = vague 1, 2 = vague 2, etc.
-  max_uses INT NOT NULL DEFAULT 1,          -- Usage unique par défaut
+  max_uses INT NOT NULL DEFAULT 1,
   current_uses INT NOT NULL DEFAULT 0,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '7 days'),
-  created_by UUID REFERENCES auth.users(id), -- Admin créateur
+  created_by UUID REFERENCES auth.users(id),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  used_at TIMESTAMPTZ,                       -- Timestamp première utilisation
-  used_by_user_id UUID REFERENCES auth.users(id),  -- Premier utilisateur
-  notes TEXT,                                -- Métadonnées admin (ex: "Famille Nicolas")
+  used_at TIMESTAMPTZ,
+  used_by_user_id UUID REFERENCES auth.users(id),
+  notes TEXT,
   CONSTRAINT positive_uses CHECK (current_uses >= 0 AND current_uses <= max_uses)
 );
 
--- Index pour validation rapide
-CREATE INDEX idx_beta_access_keys_code ON public.beta_access_keys(code) WHERE is_active = TRUE;
+CREATE INDEX idx_beta_access_keys_code_active ON public.beta_access_keys(code) WHERE is_active = TRUE;
 CREATE INDEX idx_beta_access_keys_batch ON public.beta_access_keys(batch_number);
-```
 
-### Table `beta_quota_config` (singleton)
-
-```sql
+-- 2. Config quota (singleton)
 CREATE TABLE public.beta_quota_config (
   id INT PRIMARY KEY DEFAULT 1,
-  current_phase INT NOT NULL DEFAULT 1,           -- 1 = Phase 1, 2 = Phase 2, 3 = Public
-  max_users_total INT NOT NULL DEFAULT 50,        -- Plafond Phase 1
+  current_phase INT NOT NULL DEFAULT 1,
+  max_users_total INT NOT NULL DEFAULT 50,
   current_user_count INT NOT NULL DEFAULT 0,
   accepting_new_signups BOOLEAN NOT NULL DEFAULT TRUE,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -231,57 +238,77 @@ CREATE TABLE public.beta_quota_config (
 );
 
 INSERT INTO public.beta_quota_config (id) VALUES (1);
-```
 
-### Table `beta_signup_log` (audit trail)
-
-```sql
+-- 3. Audit trail signups (IP anonymisee J+30 par cron T-067 existant)
 CREATE TABLE public.beta_signup_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   attempted_code VARCHAR(15),
-  outcome VARCHAR(50) NOT NULL,        -- 'success', 'invalid_code', 'expired', 'quota_full', 'already_used'
-  ip_address INET,                      -- Anonymisée J+30 (RGPD)
+  outcome VARCHAR(50) NOT NULL,            -- 'success', 'invalid_code', 'expired', 'quota_full', 'already_used'
+  ip_address INET,
   user_agent TEXT,
   user_id UUID REFERENCES auth.users(id),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_beta_signup_log_outcome ON public.beta_signup_log(outcome, created_at DESC);
+
+-- 4. Waitlist (quota plein)
+CREATE TABLE public.beta_waitlist (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  motivation TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  invited_at TIMESTAMPTZ,
+  invited_with_key_id UUID REFERENCES public.beta_access_keys(id),
+  notes TEXT
+);
+
+CREATE INDEX idx_beta_waitlist_pending ON public.beta_waitlist(created_at) WHERE invited_at IS NULL;
 ```
 
-## RLS Policies
+### RLS Policies — pattern (SELECT auth.uid()) (BATCH 22)
 
 ```sql
--- access_keys : seul admin lit/écrit
+-- access_keys : admin only
 ALTER TABLE public.beta_access_keys ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "admin_only_access_keys" ON public.beta_access_keys
   FOR ALL TO authenticated
-  USING (auth.uid() IN (
-    SELECT id FROM public.profiles WHERE role = 'admin'
+  USING ((SELECT auth.uid()) IN (
+    SELECT user_id FROM public.admin_users WHERE is_active = TRUE
   ));
 
--- quota_config : lecture publique (pour afficher état beta sur landing)
+-- quota_config : lecture publique (afficher etat beta sur landing), admin write
 ALTER TABLE public.beta_quota_config ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "public_read_quota" ON public.beta_quota_config
-  FOR SELECT TO anon, authenticated
-  USING (true);
+  FOR SELECT TO anon, authenticated USING (TRUE);
 
 CREATE POLICY "admin_write_quota" ON public.beta_quota_config
   FOR UPDATE TO authenticated
-  USING (auth.uid() IN (
-    SELECT id FROM public.profiles WHERE role = 'admin'
+  USING ((SELECT auth.uid()) IN (
+    SELECT user_id FROM public.admin_users WHERE is_active = TRUE
   ));
 
--- signup_log : insertion via Edge Function uniquement (SECURITY DEFINER)
--- lecture admin uniquement
+-- signup_log : insert via Edge Function (SECURITY DEFINER), read admin
 ALTER TABLE public.beta_signup_log ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "admin_read_signup_log" ON public.beta_signup_log
   FOR SELECT TO authenticated
-  USING (auth.uid() IN (
-    SELECT id FROM public.profiles WHERE role = 'admin'
+  USING ((SELECT auth.uid()) IN (
+    SELECT user_id FROM public.admin_users WHERE is_active = TRUE
+  ));
+
+-- waitlist : insert public (signup waitlist), read admin
+ALTER TABLE public.beta_waitlist ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "public_insert_waitlist" ON public.beta_waitlist
+  FOR INSERT TO anon, authenticated WITH CHECK (TRUE);
+
+CREATE POLICY "admin_read_waitlist" ON public.beta_waitlist
+  FOR SELECT TO authenticated
+  USING ((SELECT auth.uid()) IN (
+    SELECT user_id FROM public.admin_users WHERE is_active = TRUE
   ));
 ```
 
@@ -289,51 +316,87 @@ CREATE POLICY "admin_read_signup_log" ON public.beta_signup_log
 
 ```typescript
 // supabase/functions/validate-beta-key/index.ts
-//
-// Flow :
-// 1. Validate signature JWT (anon ou non-auth pour signup)
-// 2. Rate limit (Upstash Redis ou Supabase Rate Limit)
-// 3. Vérifier clé existe, active, non expirée, usage < max_uses
-// 4. Vérifier quota global non atteint
-// 5. Si tout OK :
-//    - Marquer clé "used" (atomic UPDATE)
-//    - Incrémenter current_user_count
-//    - Logger dans beta_signup_log
-//    - Retourner { valid: true }
-// 6. Sinon : logger échec + retourner { valid: false, reason }
+import { createClient } from 'jsr:@supabase/supabase-js@2'
 
-export async function handleRequest(req: Request) {
+export default async (req: Request) => {
   const { code } = await req.json()
 
-  // Rate limit : 5 tentatives / IP / 10 min
-  const rateLimitOk = await checkRateLimit(req.headers.get('x-forwarded-for'))
-  if (!rateLimitOk) {
-    return new Response(JSON.stringify({ error: 'Trop de tentatives' }), { status: 429 })
+  // 1. Rate limit : 5 tentatives / IP / 10 min
+  const ip = req.headers.get('x-forwarded-for') ?? 'unknown'
+  if (!(await checkRateLimit(ip))) {
+    return Response.json({ error: 'Trop de tentatives' }, { status: 429 })
   }
 
-  // Atomic CTE pour éviter race condition
-  const { data, error } = await supabase.rpc('claim_beta_access_key', { p_code: code })
-  // RPC fait : UPDATE beta_access_keys SET current_uses = current_uses + 1
-  // WHERE code = p_code AND is_active AND current_uses < max_uses AND expires_at > NOW()
-  // RETURNING id (NULL si invalide)
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  )
 
-  // Log outcome
-  await logSignupAttempt({ code, outcome: data ? 'success' : 'invalid' })
+  // 2. Atomic claim via RPC (evite race condition)
+  const { data: keyId } = await supabase.rpc('claim_beta_access_key', { p_code: code })
 
-  if (!data) {
-    return new Response(JSON.stringify({ valid: false, reason: 'invalid_or_used' }))
+  // 3. Log outcome
+  await supabase.from('beta_signup_log').insert({
+    attempted_code: code,
+    outcome: keyId ? 'success' : 'invalid_or_used',
+    ip_address: ip,
+    user_agent: req.headers.get('user-agent'),
+  })
+
+  if (!keyId) {
+    return Response.json({ valid: false, reason: 'invalid_or_used' })
   }
 
-  // Vérifier quota global
+  // 4. Verifier quota global
   const { data: quota } = await supabase.from('beta_quota_config').select('*').single()
-  if (quota.current_user_count >= quota.max_users_total) {
-    // Rollback : décrémenter la clé
-    await supabase.from('beta_access_keys').update({ current_uses: 0 }).eq('id', data.id)
-    return new Response(JSON.stringify({ valid: false, reason: 'quota_full' }))
+  if (!quota?.accepting_new_signups || quota.current_user_count >= quota.max_users_total) {
+    // Rollback : decrementer la cle (transactionnel)
+    await supabase.rpc('release_beta_access_key', { p_key_id: keyId })
+    return Response.json({ valid: false, reason: 'quota_full' })
   }
 
-  return new Response(JSON.stringify({ valid: true }))
+  return Response.json({ valid: true, key_id: keyId })
 }
+```
+
+### RPC functions accompagnantes
+
+```sql
+-- Claim atomique
+CREATE OR REPLACE FUNCTION public.claim_beta_access_key(p_code TEXT)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_key_id UUID;
+BEGIN
+  UPDATE public.beta_access_keys
+  SET current_uses = current_uses + 1,
+      used_at = COALESCE(used_at, NOW())
+  WHERE code = p_code
+    AND is_active = TRUE
+    AND current_uses < max_uses
+    AND expires_at > NOW()
+  RETURNING id INTO v_key_id;
+
+  RETURN v_key_id;
+END;
+$$;
+
+-- Rollback (si quota plein apres claim)
+CREATE OR REPLACE FUNCTION public.release_beta_access_key(p_key_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  UPDATE public.beta_access_keys
+  SET current_uses = GREATEST(current_uses - 1, 0),
+      used_at = NULL
+  WHERE id = p_key_id AND current_uses > 0;
+END;
+$$;
 ```
 
 ---
@@ -345,22 +408,22 @@ export async function handleRequest(req: Request) {
 ```
 Landing /auth/signup
     ↓
-Champ "Clé d'accès beta" (obligatoire)
+Champ "Cle d'acces beta" (obligatoire)
     ↓
 User saisit "NG-XK7M-9PQ2"
     ↓
-[CTA : "Vérifier ma clé"]
+[CTA : "Verifier ma cle"]
     ↓
 Edge Function validate-beta-key
     ↓
 SI valide :
-    → Champ "Email" apparaît (magic link)
+    → Champ "Email" apparait (magic link)
     → Reste du signup standard
 SI invalide :
     → Toast erreur explicite :
-       - "Clé invalide ou inutilisée" → ressayer
-       - "Clé expirée" → contacter pour renouveler
-       - "Beta complète" → page waitlist
+       - "Cle invalide ou inutilisee" → ressayer
+       - "Cle expiree" → contacter pour renouveler
+       - "Beta complete" → page waitlist
 ```
 
 ## Flow waitlist (quota atteint)
@@ -368,39 +431,16 @@ SI invalide :
 ```
 Landing
     ↓
-SI quota atteint (vérifié via SELECT max_users_total > current_user_count) :
-    → Banner top : "Beta complète, inscrivez-vous à la waitlist"
-    → CTA signup remplacé par :
+SI quota atteint :
+    → Banner top : "Beta complete, inscrivez-vous a la waitlist"
+    → CTA signup remplace par :
        [CTA : "Rejoindre la waitlist"]
     ↓
 Form simple : email + optionnel motivation
     ↓
-Stockage dans table `waitlist` (séparée)
+Stockage dans table `beta_waitlist`
     ↓
-Email automatique : "Inscrit en waitlist, position #XX, vous serez notifié(e)"
-```
-
-## Flow admin (dashboard simple)
-
-```
-/admin/beta (page protégée role='admin')
-    ↓
-3 sections :
-
-1. STATS GLOBALES
-   - Phase actuelle : 1
-   - Utilisateurs : 23 / 50 (46%)
-   - Clés émises : 30, utilisées : 23, expirées : 0, désactivées : 0
-   - Inscriptions échouées (24h) : 12 (avec breakdown raisons)
-
-2. GÉNÉRATION CLÉS
-   - [Bouton] "Générer 10 nouvelles clés (vague 3)"
-   - Configuration : max_uses=1, expires_in=7j, batch_number=auto-incrémenté
-   - Export CSV pour envoi mails personnalisés
-
-3. LISTE CLÉS
-   - Tableau : code, batch, used_by, status, created_at, expires_at, actions
-   - Actions : désactiver, réactiver, étendre expiration
+Email automatique : "Inscrit en waitlist, vous serez notifie(e)"
 ```
 
 ---
@@ -409,37 +449,23 @@ Email automatique : "Inscrit en waitlist, position #XX, vous serez notifié(e)"
 
 ## Anti brute-force
 
-1. **Rate limit Edge Function** : 5 tentatives / IP / 10 minutes (Upstash Redis ou natif Supabase)
-2. **Captcha optionnel** après 3 échecs (hCaptcha gratuit, RGPD-friendly)
-3. **Codes longs** (12 chars alphanumériques) → 36^8 = 2.8 × 10^12 combinaisons
-4. **Logs centralisés** : tous les échecs dans `beta_signup_log` pour audit
+1. **Rate limit Edge Function** : 5 tentatives / IP / 10 minutes
+2. **Captcha optionnel** apres 3 echecs (hCaptcha gratuit, RGPD-friendly)
+3. **Codes longs** : 36^8 = 2.8 × 10^12 combinaisons
+4. **Logs centralises** : tous les echecs dans `beta_signup_log` pour audit
 
 ## Anti partage abusif
 
-1. **1 clé = 1 utilisation** (par défaut, configurable au cas par cas)
-2. **Email signup distinct** de l'email où la clé a été envoyée (recommandé mais pas obligatoire)
-3. **IP tracking** sur usage de la clé (audit, pas blocage)
-4. **Détection patterns** : 1 même IP qui essaie plusieurs clés différentes = flag admin
+1. **1 cle = 1 utilisation** par defaut, configurable au cas par cas
+2. **IP tracking** sur usage de la cle (audit, pas blocage)
+3. **Detection patterns** : 1 meme IP qui essaie plusieurs cles differentes = flag admin
 
 ## Anti corruption données
 
 1. **RLS strict** sur tables beta (admin only sauf lecture quota)
-2. **Atomic UPDATE** pour claim de clé (évite race condition double-utilisation)
-3. **Transaction PostgreSQL** pour signup complet (auth.users INSERT + key.used)
-4. **Trigger validation** : empêche INSERT auth.users si quota plein (sécurité défensive)
-
-## Monitoring anomalies
-
-1. **Alerte si** :
-   - Taux échec signup > 30% sur 1h
-   - 1 IP fait > 10 tentatives en 5 min
-   - Quota saturé avant fin de semaine (vague trop rapide)
-   - Clés "leaked" (multiple IP différentes essaient la même clé)
-
-2. **Outils** :
-   - Supabase Dashboard logs
-   - Sentry pour erreurs front
-   - Email/Discord notification admin (via Edge Function cron)
+2. **Atomic UPDATE** pour claim de cle (RPC `claim_beta_access_key`)
+3. **Rollback transactionnel** si quota plein apres claim
+4. **Audit trail** complet dans `beta_signup_log`
 
 ---
 
@@ -449,53 +475,51 @@ Email automatique : "Inscrit en waitlist, position #XX, vous serez notifié(e)"
 
 | KPI                         | Cible          | Source                                      |
 | --------------------------- | -------------- | ------------------------------------------- |
-| Taux succès signup          | > 95%          | `beta_signup_log` outcome='success' / total |
-| Taux complétion onboarding  | > 80%          | `profiles.username IS NOT NULL` / signups   |
-| Taux upload réussi          | > 90%          | `media` inserts / tentatives                |
+| Taux succes signup          | > 95%          | `beta_signup_log` outcome='success' / total |
+| Taux completion onboarding  | > 80%          | `profiles.username IS NOT NULL` / signups   |
+| Taux upload reussi          | > 90%          | `media` inserts / tentatives                |
 | Errors front (Sentry)       | < 5 / semaine  | Sentry dashboard                            |
 | Errors back (Postgres logs) | < 10 / semaine | Supabase logs                               |
-| LCP médian mobile           | < 3s           | Lighthouse / RUM                            |
+| LCP median mobile           | < 3s           | Lighthouse / RUM                            |
 | Suppression compte sans bug | 100%           | Tests E2E + monitoring                      |
 
 ## Métriques engagement par vague
 
 | KPI                                     | Cible | Source                  |
 | --------------------------------------- | ----- | ----------------------- |
-| % users qui créent au moins 1 post      | > 50% | `posts` count per user  |
+| % users qui creent au moins 1 post      | > 50% | `posts` count per user  |
 | % users qui interagissent (like/follow) | > 60% | `reactions` + `follows` |
 | Posts moyens / user actif               | > 2   | aggregate `posts`       |
-| Retour à J+7                            | > 40% | `auth.sessions`         |
-| Retour à J+30                           | > 20% | idem                    |
+| Retour a J+7                            | > 40% | `auth.sessions`         |
+| Retour a J+30                           | > 20% | idem                    |
 
 ## Feedback qualitatif
 
-À chaque fin de vague, collecte structurée :
+A chaque fin de vague, collecte structuree via **Tally.so** (gratuit, RGPD-friendly) :
 
 | Question                          | Format            |
 | --------------------------------- | ----------------- |
-| "Note de l'expérience"            | 1-10              |
-| "Bug rencontrés"                  | Texte libre       |
+| "Note de l'experience"            | 1-10              |
+| "Bug rencontres"                  | Texte libre       |
 | "Feature manquante critique"      | Texte libre       |
-| "Recommanderais-tu Naturegraph ?" | Oui/Non/Peut-être |
-| "Suggestions priorité 1"          | Texte libre       |
-
-**Outil recommandé** : Tally.so (gratuit, RGPD-friendly, intégration email)
+| "Recommanderais-tu Naturegraph ?" | Oui/Non/Peut-etre |
+| "Suggestions priorite 1"          | Texte libre       |
 
 ---
 
 # PHASE 2 — Extension contrôlée (50 → 100 users)
 
-## ⚠️ Pré-requis activation Phase 2
+## Pre-requis activation Phase 2
 
-- ✅ Phase 1 terminée (50 users intégrés)
-- ✅ 0 bug critique non résolu
+- ✅ Phase 1 terminee (50 users integres)
+- ✅ 0 bug critique non resolu
 - ✅ Feedback qualitatif globalement positif (> 7/10 moyenne)
-- ✅ Stabilité technique prouvée (KPIs ci-dessus tous verts)
+- ✅ Stabilite technique prouvee (KPIs ci-dessus tous verts)
 - ✅ Monitoring mature (alertes automatiques actives)
 
 ## Planning Phase 2
 
-| Vague | Nouveaux users | Total | Durée      |
+| Vague | Nouveaux users | Total | Duree      |
 | ----- | -------------- | ----- | ---------- |
 | 6     | 25             | 75    | 2 semaines |
 | 7     | 25             | 100   | 2 semaines |
@@ -508,12 +532,12 @@ Email automatique : "Inscrit en waitlist, position #XX, vous serez notifié(e)"
 | ------------ | -------------- | ------------------------------------- |
 | Taille vague | 10/sem         | 25/2 sem                              |
 | Plafond      | 50             | 100                                   |
-| Profil users | Cercle proche  | Recrutement ouvert mais filtré        |
-| Onboarding   | Manuel email   | Email automatisé                      |
-| Support      | Direct Nicolas | + 1 community manager (si nécessaire) |
-| Système clés | Manuel         | Self-service (waitlist → clé auto)    |
+| Profil users | Cercle proche  | Recrutement ouvert mais filtre        |
+| Onboarding   | Manuel email   | Email automatise                      |
+| Support      | Direct Nicolas | + 1 community manager (si necessaire) |
+| Systeme cles | Manuel         | Self-service (waitlist → cle auto)    |
 
-## Configuration DB Phase 2
+## Activation Phase 2 (SQL)
 
 ```sql
 UPDATE public.beta_quota_config
@@ -527,31 +551,23 @@ WHERE id = 1;
 
 # PHASE 3 — Ouverture publique progressive
 
-## ⚠️ Pré-requis activation Phase 3
+## Pre-requis activation Phase 3
 
-- ✅ Phase 2 terminée (100 users intégrés)
-- ✅ Stabilité prouvée sur 100 users actifs
-- ✅ Monitoring mature et automatisé
-- ✅ Sécurité validée (audits annuels)
-- ✅ Performances validées (LCP < 2.5s à 100 users)
-- ✅ Design System stabilisé (Storybook complet)
-- ✅ Workflows équipe stabilisés (CI/CD + releases)
-- ✅ Dette critique traitée (toutes tâches `MASTER_TODO` 🔴 done)
-- ✅ Conformité RGPD/Loi 25 + revue juridique formelle
+- ✅ Phase 2 terminee (100 users integres)
+- ✅ Stabilite prouvee sur 100 users actifs
+- ✅ Monitoring mature et automatise
+- ✅ Securite validee (audits annuels)
+- ✅ Performances validees (LCP < 2.5s a 100 users)
+- ✅ Design System stabilise (Storybook complet — T-045-T-052)
+- ✅ Workflows equipe stabilises (CI/CD + releases)
 
-## Stratégie Phase 3
-
-### Option A — Ouverture totale immédiate (déconseillée)
-
-Risque : afflux non contrôlé, support saturé.
-
-### Option B — Ouverture progressive sans clé (recommandée)
+## Strategie recommandée : Ouverture progressive avec rate limit
 
 ```
-Semaine 1 Phase 3 : ouverture sans clé MAIS rate limit signup (50/jour)
+Semaine 1 Phase 3 : ouverture sans cle MAIS rate limit signup (50/jour)
 Semaine 2 : 100/jour
 Semaine 3 : 200/jour
-Semaine 4 : Illimité
+Semaine 4 : Illimite
 
 Tableau de bord public :
 - "Inscrits aujourd'hui : 47 / 100"
@@ -560,114 +576,104 @@ Tableau de bord public :
 
 Permet de :
 
-- Désactiver le système de clés (simplification UX)
-- Garder un contrôle progressif (rate limit serveur)
-- Lever progressivement les limites selon stabilité
-
-### Option C — Hybride : Clé optionnelle + ouverture libre
-
-Garder le système de clés pour les **early adopters VIP** (skip rate limit) et ouvrir le public en rate limit.
+- Desactiver le systeme de cles (simplification UX)
+- Garder un controle progressif (rate limit serveur)
+- Lever progressivement les limites selon stabilite
 
 ---
 
-# 🧰 Implémentation technique — estimation
+# 🧰 Plan d'implémentation Phase 1
 
-## Effort développement Phase 1 (clés + dashboard)
+## Effort développement détaillé
 
-| Tâche                                                                      | Effort | Pré-requis               |
-| -------------------------------------------------------------------------- | ------ | ------------------------ |
-| Migration SQL `beta_access_keys` + `beta_quota_config` + `beta_signup_log` | 2h     | MVP consolidé            |
-| RPC `claim_beta_access_key` atomic                                         | 2h     | Migration faite          |
-| Edge Function `validate-beta-key` (Deno)                                   | 4h     | RPC faite                |
-| RLS policies                                                               | 2h     | Tables créées            |
-| Modif page signup (`AuthForm`) avec champ clé                              | 4h     | Edge Function OK         |
-| Page admin `/admin/beta` (dashboard simple)                                | 1j     | Auth admin role en place |
-| Système d'envoi email mass (générer + envoyer 10 clés)                     | 4h     | Templates email          |
-| Page waitlist (formulaire + table `waitlist`)                              | 4h     | —                        |
-| Tests E2E Phase 1 flow complet                                             | 4h     | Phase 1 fini             |
-| Monitoring : alertes anomalies (cron Edge Function)                        | 4h     | —                        |
-| Documentation utilisateur (FAQ + tuto vidéo)                               | 1j     | —                        |
+| Tache                                                                    | Effort | Pre-requis                                |
+| ------------------------------------------------------------------------ | ------ | ----------------------------------------- |
+| **T-200** Migration SQL `beta_*` tables                                  | 2h     | Aucun                                     |
+| **T-201** RPC `claim_beta_access_key` + `release_beta_access_key` atomic | 2h     | T-200                                     |
+| **T-202** Edge Function `validate-beta-key` (Deno)                       | 4h     | T-201                                     |
+| **T-203** RLS policies                                                   | 2h     | T-200                                     |
+| **T-204** Modif page signup (`AuthForm`) avec champ cle                  | 4h     | T-202                                     |
+| **T-205** Page admin `/admin/beta` (dashboard simple)                    | 1j     | Auth admin role en place (Module 5 admin) |
+| **T-206** Systeme d'envoi email mass (generer + envoyer 10 cles)         | 4h     | Templates email                           |
+| **T-207** Page waitlist (formulaire + table `beta_waitlist`)             | 4h     | T-200                                     |
+| **T-208** Tests E2E Phase 1 flow complet                                 | 4h     | T-204 + T-205 + T-207                     |
+| **T-209** Monitoring alertes anomalies (cron Edge Function)              | 4h     | Aucun                                     |
+| **T-210** Documentation utilisateur (FAQ + tuto video)                   | 1j     | Phase 1 fini                              |
+| **T-211** Activer Sentry production                                      | 2h     | Aucun (preflight)                         |
 
-**Total Phase 1 implémentation** : ~5 jours dev (~40h)
+**Total Phase 1 implementation** : ~5 jours dev (~40h)
 
-**Quand ?** Après Phase 5 (Storybook + DS stabilisé) de `CONSOLIDATION_ROADMAP.md`, avant ouverture beta.
+## Sequence recommandée (ordre des batches)
 
-## Effort Phase 2
+1. **BATCH 28 — DB setup** : T-200 + T-201 + T-203 (~6h)
+2. **BATCH 29 — Edge Function** : T-202 (~4h)
+3. **BATCH 30 — Front signup** : T-204 + T-207 (~8h)
+4. **BATCH 31 — Admin minimal** : T-205 (depend Module 5 admin, voir ADMIN_STRATEGY)
+5. **BATCH 32 — Tooling** : T-206 + T-209 + T-211 (~10h)
+6. **BATCH 33 — Tests + docs** : T-208 + T-210 (~12h)
 
-| Tâche                                            | Effort |
-| ------------------------------------------------ | ------ |
-| Self-service waitlist → clé auto (Edge Function) | 1j     |
-| Dashboard admin enrichi (graphs, exports)        | 1j     |
-| Email templates automatisés (vague hebdo)        | 4h     |
+## Effort Phase 2 et 3 (synthese)
 
-**Total Phase 2 implémentation** : ~2.5 jours dev.
-
-## Effort Phase 3
-
-| Tâche                                        | Effort |
-| -------------------------------------------- | ------ |
-| Désactivation système clés (feature flag DB) | 4h     |
-| Rate limit signup par jour (Edge Function)   | 1j     |
-| Dashboard public "stats inscriptions"        | 4h     |
-
-**Total Phase 3 implémentation** : ~2 jours dev.
+| Phase   | Taches principales                                                                   | Effort |
+| ------- | ------------------------------------------------------------------------------------ | ------ |
+| Phase 2 | Self-service waitlist → cle auto, dashboard admin enrichi, email templates auto      | ~2.5j  |
+| Phase 3 | Desactivation systeme cles (feature flag), rate limit signup, dashboard public stats | ~2j    |
 
 ---
 
-# 📋 Checklist pré-lancement Phase 1
-
-À cocher AVANT d'activer la beta fermée :
+# 📋 Checklist activation Phase 1
 
 ## Technique
 
-- [ ] Migration SQL `beta_*` tables appliquée
-- [ ] Edge Function `validate-beta-key` déployée
-- [ ] Page signup avec champ clé fonctionnelle
-- [ ] Dashboard admin accessible
+- [ ] **T-211** Sentry production configure
+- [ ] **T-200/T-201/T-203** Migrations DB appliquees PROD
+- [ ] **T-202** Edge Function `validate-beta-key` deployee
+- [ ] **T-204** Page signup avec champ cle fonctionnelle
+- [ ] **T-205** Dashboard admin accessible
 - [ ] Rate limit fonctionnel (test brute force OK)
-- [ ] Tests E2E flow complet signup avec clé passing
-- [ ] Monitoring alertes actives (email + Discord/Slack)
-- [ ] Logs `beta_signup_log` vérifiés (anonymisation IP J+30)
+- [ ] **T-208** Tests E2E flow complet signup avec cle passing
+- [ ] **T-209** Monitoring alertes actives (email + Discord/Slack)
+- [ ] Logs `beta_signup_log` verifies (anonymisation IP J+30)
 
 ## Conformité
 
-- [ ] Pages Privacy/Legal à jour
-- [ ] Cookie banner actif
+- [ ] Pages Privacy/Legal a jour (deja OK BATCH precedent)
+- [ ] Cookie banner actif (deja OK)
 - [ ] Export RGPD fonctionnel sur testeur
-- [ ] Suppression compte testée (RGPD)
-- [ ] Conditions d'utilisation beta acceptées au signup
+- [ ] Suppression compte testee (RGPD)
+- [ ] Conditions d'utilisation beta acceptees au signup
 
 ## Produit
 
-- [ ] Email templates rédigés (clé + onboarding)
-- [ ] Tuto vidéo / FAQ écrite
-- [ ] Formulaire feedback hebdo prêt (Tally ou autre)
-- [ ] Liste 10 invités vague 1 préparée
+- [ ] Email templates rediges (cle + onboarding)
+- [ ] Tuto video / FAQ ecrite
+- [ ] Formulaire feedback hebdo pret (Tally ou autre)
+- [ ] Liste 10 invites vague 1 preparee
 
 ## Communication
 
-- [ ] Discord/Slack canal beta créé
-- [ ] Charte beta testeur écrite (NDA, attendus, etc.)
-- [ ] Process feedback documenté
-- [ ] Process incident documenté (qui alerter, comment réagir)
+- [ ] Discord/Slack canal beta cree
+- [ ] Charte beta testeur ecrite (NDA, attendus, etc.)
+- [ ] Process feedback documente
+- [ ] Process incident documente (qui alerter, comment reagir)
 
 ---
 
 # 🎯 Critères de succès Phase 1
 
-À la fin des 5 semaines (50 users) :
+A la fin des 5 semaines (50 users) :
 
-| Critère                               | Cible          | Verdict |
+| Critere                               | Cible          | Verdict |
 | ------------------------------------- | -------------- | ------- |
-| 50 users intégrés sans bug bloquant   | 100%           | ⬜      |
+| 50 users integres sans bug bloquant   | 100%           | ⬜      |
 | Taux satisfaction (questionnaire fin) | > 7/10 moyenne | ⬜      |
-| 0 incident sécurité                   | 0              | ⬜      |
-| 0 corruption de données               | 0              | ⬜      |
-| Posts créés total                     | > 50           | ⬜      |
-| Réactions/follows total               | > 200          | ⬜      |
+| 0 incident securite                   | 0              | ⬜      |
+| 0 corruption de donnees               | 0              | ⬜      |
+| Posts crees total                     | > 50           | ⬜      |
+| Reactions/follows total               | > 200          | ⬜      |
 | % users qui reviennent J+7            | > 40%          | ⬜      |
 | Sentry errors hebdo                   | < 5 critiques  | ⬜      |
-| Feedback bugs identifiés et priorisés | 100%           | ⬜      |
+| Feedback bugs identifies et priorises | 100%           | ⬜      |
 
 **Si TOUS verts** → GO Phase 2.
 **Si UN rouge** → analyse + correction + repartir.
@@ -679,54 +685,47 @@ Garder le système de clés pour les **early adopters VIP** (skip rate limit) et
 ## Bug critique découvert pendant vague
 
 ```
-1. Stop immédiat des nouvelles inscriptions (toggle `accepting_new_signups = false`)
+1. Stop immediat des nouvelles inscriptions :
+   UPDATE beta_quota_config SET accepting_new_signups = FALSE WHERE id = 1;
 2. Communication transparente aux beta testeurs (email + Discord)
 3. Investigation root cause
-4. Fix + déploiement
+4. Fix + deploiement
 5. Tests en staging
-6. Vérification incident résolu sur prod
-7. Réouverture inscriptions
-8. Documentation incident dans RELEASE_READINESS.md
+6. Verification incident resolu sur prod
+7. Reouverture inscriptions :
+   UPDATE beta_quota_config SET accepting_new_signups = TRUE WHERE id = 1;
+8. Documentation incident dans CHANGELOG.md + retrospective
 ```
 
 ## Saturation Supabase
 
 ```
-1. Vérifier plan Supabase actuel (Free / Pro / Team)
-2. Surveiller métriques :
+1. Verifier plan Supabase actuel (Free / Pro / Team)
+2. Surveiller metriques :
    - Database CPU > 80%
    - Storage > 80% du quota
    - Bandwidth > 80%
 3. Si proche limite : upgrade plan AVANT incident
-4. Si déjà saturé : stop signups + scale plan + reprise
+4. Si deja sature : stop signups + scale plan + reprise
 ```
 
 ---
 
 # 📎 Références croisées
 
-- `docs/CONSOLIDATION_ROADMAP.md` — Pré-requis activation
-- `docs/MASTER_TODO.md` — Tâches techniques avant beta (cf. Phase 1+2+6)
-- `docs/AUDIT_LEGAL.md` — RGPD/Loi 25 conformité
-- `docs/AUDIT_SUPABASE.md` — Architecture DB
-- `docs/DEPLOYMENT_RUNBOOK.md` — Procédures déploiement
-- `docs/RELEASE_READINESS.md` — Critères release
-- `CLAUDE.md` — Instructions IA + culture projet
+- [`STATUS_2026-05-13.md`](STATUS_2026-05-13.md) — etat technique cycle 1 (pre-requis OK)
+- [`MASTER_TODO.md`](MASTER_TODO.md) — taches restantes (refactos, Phase 2 features)
+- [`ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md`](ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md) — Module Beta du dashboard admin
+- [`AUDIT_ADVISORS_2026-05-13.md`](AUDIT_ADVISORS_2026-05-13.md) — securite DB live
+- [`DEPLOYMENT_RUNBOOK.md`](DEPLOYMENT_RUNBOOK.md) — procedures deploiement
 
 ---
 
-# ⚠️ Rappel statut
+# 📜 Historique versions
 
-**Ce document est STRATÉGIQUE pour la suite.**
-
-**Il NE doit PAS être exécuté tant que** :
-
-1. La consolidation MVP n'est pas terminée
-2. Toutes les phases 1-6 de `CONSOLIDATION_ROADMAP.md` sont validées
-3. Aucun bug critique en backlog
-
-**Quand activer ?** Probablement dans **2-3 mois** après finalisation consolidation.
+- **v2.0** (2026-05-13) — Refondu post cycle 1. Pre-requis MVP valides. Plan actionnable avec 12 taches T-200 a T-211. Pattern RLS `(SELECT auth.uid())` integre (BATCH 22).
+- **v1.0** (2026-05-04) — Premiere version strategique (futur, non actionnable). Pre-requis "MVP non consolide".
 
 ---
 
-**📌 Document de référence pour la stratégie beta fermée. À enrichir progressivement, ne pas exécuter prématurément.**
+**📌 Document operationnel pret pour activation. Phase 1 implementable en ~5 jours dev des que Sentry configure + decision Q-ADM-3 (admin route /admin vs sous-domaine).**
