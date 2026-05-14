@@ -2,18 +2,18 @@
 
 > **Index master** — chaque sujet a un et un seul document maître.
 > **Mise à jour** : à chaque ajout/déplacement de doc important.
-> **Etat post cycle 1** (2026-05-13) : 98/117 taches livrees, refondu BATCH 26.
+> **Etat post cycle 2** (2026-05-14) : Beta closed access ready — BATCH 27-37+ livres.
 
 ---
 
 ## ⭐ Point d'entree — commencer ici
 
-| Document                                          | Description                                                                                                               |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| 🎯 [`STATUS_2026-05-13.md`](STATUS_2026-05-13.md) | **Bilan final cycle 1** — etat technique global, 25 BATCHES livres, 19 taches restantes, recommandations reprise          |
-| 📌 [`MASTER_TODO.md`](MASTER_TODO.md)             | **Pilotage central v2.0** — 19 taches restantes organisees par contexte (refactos / Phase 2 / DS+Storybook / post-deploy) |
-| 📂 [`PROJECT_MASTER.md`](PROJECT_MASTER.md)       | **Source de verite engineering**                                                                                          |
-| 🗺️ [`PROJECT_STRUCTURE.md`](PROJECT_STRUCTURE.md) | **Carte vivante** du repo (onboarding equipe)                                                                             |
+| Document                                                                                  | Description                                                                |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| 📌 [`MASTER_TODO.md`](MASTER_TODO.md)                                                     | **Pilotage central v2.2** — etat actuel + BATCH livres + refactos restants |
+| 🚀 [`BETA_LAUNCH_RUNBOOK.md`](BETA_LAUNCH_RUNBOOK.md)                                     | **Runbook operationnel** — 8 sections A-H pour passer en prod              |
+| 🎯 [`BETA_CLOSED_ACCESS_STRATEGY.md`](BETA_CLOSED_ACCESS_STRATEGY.md)                     | Strategie beta fermee v2.0 (cles d'acces, garde-fous, 3 phases)            |
+| 🛡 [`ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md`](ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md) | Strategie admin MVP v2.0 (5 modules livres BATCH 31-37)                    |
 
 ---
 
@@ -21,8 +21,8 @@
 
 | Question                   | Document                                                                                                                                                                                                       |
 | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Etat actuel du projet**  | [`STATUS_2026-05-13.md`](STATUS_2026-05-13.md)                                                                                                                                                                 |
-| **Que faire maintenant ?** | [`MASTER_TODO.md`](MASTER_TODO.md)                                                                                                                                                                             |
+| **Etat actuel du projet**  | [`MASTER_TODO.md`](MASTER_TODO.md)                                                                                                                                                                             |
+| **Que faire maintenant ?** | [`MASTER_TODO.md`](MASTER_TODO.md) puis [`BETA_LAUNCH_RUNBOOK.md`](BETA_LAUNCH_RUNBOOK.md)                                                                                                                     |
 | **Workflow git + commits** | [`../CONTRIBUTING.md`](../CONTRIBUTING.md)                                                                                                                                                                     |
 | **Historique releases**    | [`../CHANGELOG.md`](../CHANGELOG.md)                                                                                                                                                                           |
 | **Vision produit**         | [`USER_STORIES.md`](USER_STORIES.md)                                                                                                                                                                           |
@@ -30,11 +30,11 @@
 | **Schema DB + RLS**        | [`backend/database-architecture.md`](backend/database-architecture.md)                                                                                                                                         |
 | **Politiques RLS**         | [`security/rls-policies.md`](security/rls-policies.md)                                                                                                                                                         |
 | **Design system tokens**   | [`design-system/tokens.md`](design-system/tokens.md)                                                                                                                                                           |
-| **Strategies Phase 2**     | [`BETA_CLOSED_ACCESS_STRATEGY.md`](BETA_CLOSED_ACCESS_STRATEGY.md) + [`ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md`](ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md) + [`STORYBOOK_STRATEGY.md`](STORYBOOK_STRATEGY.md) |
-| **Comment deployer ?**     | [`DEPLOYMENT_RUNBOOK.md`](DEPLOYMENT_RUNBOOK.md)                                                                                                                                                               |
+| **Strategies majeures**    | [`BETA_CLOSED_ACCESS_STRATEGY.md`](BETA_CLOSED_ACCESS_STRATEGY.md) + [`ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md`](ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md) + [`STORYBOOK_STRATEGY.md`](STORYBOOK_STRATEGY.md) |
+| **Comment deployer ?**     | [`BETA_LAUNCH_RUNBOOK.md`](BETA_LAUNCH_RUNBOOK.md) (Sections A-H)                                                                                                                                              |
 | **Sante CI**               | [`CI_HEALTH.md`](CI_HEALTH.md)                                                                                                                                                                                 |
 | **Index Figma**            | [`FIGMA_SCREENS.md`](FIGMA_SCREENS.md)                                                                                                                                                                         |
-| **Audits DB live**         | [`AUDIT_ADVISORS_2026-05-13.md`](AUDIT_ADVISORS_2026-05-13.md) + [`AUDIT_DEAD_CODE_2026-05-13.md`](AUDIT_DEAD_CODE_2026-05-13.md)                                                                              |
+| **Audits cycle 1 (13-05)** | [`archive/cycle-2-may-2026/`](archive/cycle-2-may-2026/) (STATUS + AUDIT_ADVISORS + AUDIT_DEAD_CODE)                                                                                                           |
 
 ---
 
@@ -76,14 +76,15 @@ Tous les Product Requirement Documents, naming uniformise `PRD_*` :
 
 ---
 
-## 🔎 Audits frais (post cycle 1, 2026-05-13)
+## 🔎 Audits archives
 
-| Document                                                         | Sujet                                                  |
-| ---------------------------------------------------------------- | ------------------------------------------------------ |
-| [`AUDIT_ADVISORS_2026-05-13.md`](AUDIT_ADVISORS_2026-05-13.md)   | Advisors Supabase live (63 security + 146 performance) |
-| [`AUDIT_DEAD_CODE_2026-05-13.md`](AUDIT_DEAD_CODE_2026-05-13.md) | Audit knip — analyse contextuelle des "unused"         |
+| Période  | Lien                                                     | Contenu                                              |
+| -------- | -------------------------------------------------------- | ---------------------------------------------------- |
+| Cycle 2  | [`archive/cycle-2-may-2026/`](archive/cycle-2-may-2026/) | STATUS + AUDIT_ADVISORS + AUDIT_DEAD_CODE (mai 2026) |
+| Cycle 1  | [`archive/cycle-1-may-2026/`](archive/cycle-1-may-2026/) | 16 docs cycle 1 (plans + audits avril-mai 2026)      |
+| V1 audit | [`archive/audits-v1/`](archive/audits-v1/)               | Premiers audits Git + technique                      |
 
-> Pour les audits anterieurs (avant cycle 1), voir [`archive/cycle-1-may-2026/`](archive/cycle-1-may-2026/).
+> A re-runner post-cleanup (BATCH 38-43) : un nouveau `AUDIT_ADVISORS_2026-05-15.md` + `AUDIT_DEAD_CODE_2026-05-15.md` actualisera l'etat.
 
 ---
 
@@ -122,7 +123,7 @@ Tous les Product Requirement Documents, naming uniformise `PRD_*` :
 
 | Document                                           | Sujet                                                    |
 | -------------------------------------------------- | -------------------------------------------------------- |
-| [`DEPLOYMENT_RUNBOOK.md`](DEPLOYMENT_RUNBOOK.md)   | Procedure deploiement step-by-step                       |
+| [`BETA_LAUNCH_RUNBOOK.md`](BETA_LAUNCH_RUNBOOK.md) | Runbook operationnel beta launch (8 sections A-H)        |
 | [`CI_HEALTH.md`](CI_HEALTH.md)                     | CI health check non-destructif                           |
 | [`devops/environments.md`](devops/environments.md) | Environnements local/staging/prod, variables, migrations |
 | [`devops/deployment.md`](devops/deployment.md)     | CI/CD, Vercel, headers securite, rollback, backups       |
@@ -172,5 +173,9 @@ Voir [`design-system/README.md`](design-system/README.md) pour l'index complet d
 ## 📜 Historique cycles
 
 - **Cycle 1** (2026-04-29 → 2026-05-13) : 25 BATCHES, 98 taches livrees, base MVP production-ready.
-  → Bilan complet : [`STATUS_2026-05-13.md`](STATUS_2026-05-13.md)
+  → Bilan complet : [`archive/cycle-2-may-2026/STATUS_2026-05-13.md`](archive/cycle-2-may-2026/STATUS_2026-05-13.md)
   → Docs archivees : [`archive/cycle-1-may-2026/`](archive/cycle-1-may-2026/)
+- **Cycle 2** (2026-05-13 → 2026-05-14) : BATCH 27-37+, beta closed access + admin MVP livres.
+  → Pilotage : [`MASTER_TODO.md`](MASTER_TODO.md) v2.2
+  → Runbook launch : [`BETA_LAUNCH_RUNBOOK.md`](BETA_LAUNCH_RUNBOOK.md)
+  → Docs archivees : [`archive/cycle-2-may-2026/`](archive/cycle-2-may-2026/)

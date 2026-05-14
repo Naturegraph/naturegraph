@@ -8,6 +8,5 @@ export { EditProfilePanel } from './EditProfilePanel'
 export { EditInfoTab } from './EditInfoTab'
 export { EditPhotoTab } from './EditPhotoTab'
 export { EditPrefsTab } from './EditPrefsTab'
-export { ShareProfileSheet } from './ShareProfileSheet'
 
 export * from './tabs'

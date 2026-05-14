@@ -31,6 +31,8 @@
  */
 
 import { useState, useEffect } from 'react'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { PAGE_SIZES, STALE_TIMES } from '@/constants/reactQuery'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -77,7 +79,7 @@ interface PendingAction {
   user: UserRow | null
 }
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = PAGE_SIZES.ADMIN_DEFAULT
 
 // ─── Page ────────────────────────────────────────────────────────────────
 
@@ -90,21 +92,19 @@ export default function AdminUsers() {
   const { logAction } = useAdminAction()
 
   const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'admin' | 'regular'>('all')
   const [page, setPage] = useState(0)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [pending, setPending] = useState<PendingAction>({ type: null, user: null })
   const [reason, setReason] = useState('')
 
-  // Debounce search (300ms) — eviter spam queries
+  // Debounce search (300ms) — eviter spam queries (BATCH 41 : hook DRY)
+  const debouncedSearch = useDebouncedValue(search.trim(), 300)
+
+  // Reset page quand le terme de recherche change
   useEffect(() => {
-    const id = setTimeout(() => {
-      setDebouncedSearch(search.trim())
-      setPage(0)
-    }, 300)
-    return () => clearTimeout(id)
-  }, [search])
+    setPage(0)
+  }, [debouncedSearch])
 
   // Reset page quand filter change
   useEffect(() => {
@@ -163,7 +163,7 @@ export default function AdminUsers() {
 
       return { rows, total: count ?? 0 }
     },
-    staleTime: 30 * 1000,
+    staleTime: STALE_TIMES.MEDIUM,
   })
 
   const rows = data?.rows ?? []

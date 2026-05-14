@@ -11,8 +11,10 @@ node_modules
 dist
 dist-ssr
 *.local
+# Env files — couvrir TOUTES les variantes (BATCH 39 hardening)
 .env
-.env.local
+.env.*
+!.env.example
 
 # Design references & mockups (not versioned)
 design-references/
