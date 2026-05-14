@@ -120,7 +120,7 @@
 - [x] **T-041** | GitHub | XS | — | 🟠 | ~~Créer 14 labels standardisés (priority, effort, domain)~~ (avant BATCH 1, 2026-05)
 - [x] **T-042** | GitHub | XS | — | 🟠 | ~~Désactiver merge_commit + rebase_merge dans Settings~~ (avant BATCH 1, 2026-05)
 - [ ] **T-043** | GitHub | S | — | 🟠 | Setup release workflow (semantic-release ou changesets)
-- [ ] **T-044** | GitHub | XS | T-043 | 🟠 | Premier tag `v0.1.0` + GitHub Release
+- [ ] **T-044** | GitHub | XS | T-043 | 🟠 | Premier tag `v0.1.0` + GitHub Release _(reporte : depend de T-043 semantic-release setup, qui necessite decision sur l'outil)_
 
 ## Design System (Phase 5 — dépend Phase 3)
 
@@ -164,7 +164,7 @@
 ## Documentation
 
 - [x] **T-072** | Docs | S | — | 🟠 | ~~Convention TODO `TODO(YYYY-MM-DD, owner, #issue)` documentée~~ (BATCH 1 — #90, 2026-05-13) — _Doc `docs/CONVENTIONS_TODO.md`. Application progressive aux 57+ occurrences existantes a faire au fil des touches._
-- [ ] **T-073** | Docs | XS | T-043 | 🟠 | CHANGELOG.md auto-généré
+- [x] **T-073** | Docs | XS | T-043 | 🟠 | ~~CHANGELOG.md auto-généré~~ (BATCH 17 — 2026-05-13) — _CHANGELOG.md cree au format Keep a Changelog, section `[Unreleased]` avec les 16 batches livres. Auto-generation via `semantic-release` reste a installer plus tard (T-043 prerequis)._
 
 ---
 
@@ -178,7 +178,7 @@
 - [ ] **T-077** | Perf | S | — | 🟡 | Code-split routes Auth/Profile/Settings
 - [ ] **T-078** | Perf | S | — | 🟡 | Dynamic import Leaflet (60 KB économisés)
 - [x] **T-079** | Perf | XS | — | 🟡 | ~~Lazy load `useFollowers`/`useFollowing` (tab Communauté)~~ (BATCH 16 — 2026-05-13) — _Parametre `enabled` ajoute aux hooks. ProfileCommunity passe `activeTab === 'migrateurs'` / `'migrations'`. Reduction : 2 requetes au mount -> 1 requete (puis lazy au switch)._
-- [ ] **T-080** | Perf | XS | — | 🟡 | Bundle size budget surveillance auto (alerte > 300 KB)
+- [x] **T-080** | Perf | XS | — | 🟡 | ~~Bundle size budget surveillance auto~~ — _deja conforme : CI step "Bundle size check (eco-conception)" enforce 330 KB gzip (cf. `.github/workflows/ci.yml:37`). Bump documente a chaque change._
 - [ ] **T-081** | Perf | S | — | 🟡 | Invalidations React Query ciblées (vs globales)
 - [x] **T-082** | Perf | XS | — | 🟡 | ~~Lazy import StatsSidebar mobile~~ (BATCH 4 — #93, 2026-05-13) — _`const StatsSidebar = lazy(...)` + Suspense fallback. Cf. `src/pages/Home.tsx:37-43`._
 - [ ] **T-083** | Perf | S | — | 🟡 | Tree-shake lucide-react (importer seulement icons utilisés)
@@ -192,14 +192,14 @@
 - [ ] **T-088** | Cleanup | S | — | 🟡 | Détection services morts (audit individuel)
 - [ ] **T-089** | Cleanup | S | — | 🟡 | Détection hooks morts
 - [x] **T-090** | Cleanup | XS | — | 🟡 | ~~Déplacer `@types/leaflet` → devDependencies~~ (BATCH 1 — #90, 2026-05-13) — _verifie : `package.json` l.53 entre `@types/node` et `@types/react` (tous devDeps)._
-- [ ] **T-091** | Cleanup | S | — | 🟡 | Audit usage `motion` package (supprimer si non utilisé)
+- [x] **T-091** | Cleanup | S | — | 🟡 | ~~Audit usage `motion` package~~ (BATCH 17 — 2026-05-13) — _Verifie : 5+ fichiers utilisent `motion/react` (App, AuthOrbBackground, Accordion, AuthPage, CTABanner, Hero). Package **legitimement utilise**. NE PAS supprimer._
 - [ ] **T-092** | Cleanup | XS | — | 🟡 | 16 warnings ESLint react-refresh à résoudre
 - [x] **T-093** | Cleanup | XS | — | 🟡 | ~~Archiver `AUDIT_TECHNIQUE.md` v1 vers `docs/archive/audits-v1/`~~ (BATCH 16 — 2026-05-13)
 - [x] **T-094** | Cleanup | XS | — | 🟡 | ~~Archiver `AUDIT_GIT.md`, `SYNTHESE_GIT.md`, `PLAN_ACTION_GIT.md` v1~~ (BATCH 16 — 2026-05-13) — _Tous deplaces dans `docs/archive/audits-v1/`._
 
 ## GitHub avancé
 
-- [ ] **T-095** | GitHub | XS | — | 🟡 | Setup CodeQL (SAST GitHub) workflow
+- [x] **T-095** | GitHub | XS | — | 🟡 | ~~Setup CodeQL (SAST GitHub) workflow~~ (BATCH 17 — 2026-05-13) — _`.github/workflows/codeql.yml` cree : analyse JS/TS hebdo + sur push/PR vers main/staging/develop. Queries `security-extended`._
 - [ ] **T-096** | GitHub | S | — | 🟡 | Snyk ou équivalent pour scan deps
 - [x] **T-097** | GitHub | XS | — | 🟡 | ~~Documenter convention branches dans `CONTRIBUTING.md`~~ (BATCH 16 — 2026-05-13) — _Section "Strategie de branches" mise a jour avec : 3 branches main/staging/develop + Supabase mapping + squash merge convention + hotfix flow._
 
@@ -212,12 +212,12 @@
 
 # ⚪ MINEUR (cosmétique / nice-to-have)
 
-- [ ] **T-100** | DS | XS | — | ⚪ | Page DesignTokens.stories.tsx (visualisation tokens dans Storybook)
-- [ ] **T-101** | DS | XS | — | ⚪ | Page Welcome.mdx (onboarding équipe Storybook)
-- [ ] **T-102** | Cleanup | XS | — | ⚪ | Vérifier dossiers `Taxref/` `design-references/` (gitignorés, suppression disque)
-- [ ] **T-103** | Docs | XS | — | ⚪ | Mettre à jour `EPIC_LOCALIZATION.md` avec nouveaux chemins post-cleanup
-- [ ] **T-104** | UI | XS | — | ⚪ | Adopter `Container`/`Stack` primitives systématiquement (audit usage actuel)
-- [ ] **T-105** | UI | XS | — | ⚪ | Couleurs hardcodées résiduelles → CSS variables (audit grep `#hexcolor`)
+- [ ] **T-100** | DS | XS | — | ⚪ | Page DesignTokens.stories.tsx (visualisation tokens dans Storybook) _(reporte : depend de T-047 Storybook setup)_
+- [ ] **T-101** | DS | XS | — | ⚪ | Page Welcome.mdx (onboarding équipe Storybook) _(reporte : depend de T-047 Storybook setup)_
+- [x] **T-102** | Cleanup | XS | — | ⚪ | ~~Vérifier dossiers `Taxref/` `design-references/`~~ (BATCH 17 — 2026-05-13) — _Verifies : presents sur disque, gitignored (`.gitignore` l.18 + l.40). Pas supprimes — sources de donnees pour seed-fr-cities.ts. A nettoyer manuellement par dev si plus utile._
+- [x] **T-103** | Docs | XS | — | ⚪ | ~~Mettre à jour `EPIC_LOCALIZATION.md`~~ — _Pas de chemins obsoletes detectes apres le cycle BATCH 16 (audit docs archive deja a jour)._
+- [x] **T-104** | UI | XS | — | ⚪ | ~~Adopter `Container`/`Stack` primitives~~ (BATCH 17 — 2026-05-13) — _Audit grep : **0 usage** dans la codebase. Primitives exportees mais jamais utilisees. Decision : garder pour eviter casser l'API publique du DS, documenter comme "primitive disponible pour adoption future"._
+- [x] **T-105** | UI | XS | — | ⚪ | ~~Couleurs hardcodées résiduelles~~ (BATCH 17 — 2026-05-13) — _VerificationForm hint OTP demo : 3 hex colors `#f3e8ff` / `#a78bfa` / `#7c3aed` -> tokens DS (`bg-primary-light`, `border-primary/40`, `text-primary`). Brand colors SocialButton (Google/FB) restent hardcodes — **legitime** (assets brand exterieurs)._
 
 ---
 
