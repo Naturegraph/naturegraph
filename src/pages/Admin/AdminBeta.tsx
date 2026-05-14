@@ -18,7 +18,7 @@ import { Key, Plus, Copy, Mail, X, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { useToast } from '@/contexts/ToastContext'
-import { useIsAdmin } from '@/hooks/useIsAdmin'
+import { useAdminAction } from '@/hooks/useAdminAction'
 
 // ─── Types DB rows ────────────────────────────────────────────────────────
 
@@ -77,7 +77,9 @@ export default function AdminBeta() {
   const { t } = useTranslation()
   const toast = useToast()
   const queryClient = useQueryClient()
-  const { adminUser } = useIsAdmin()
+  // BATCH 36 : hook centralise pour audit log (DRY, strategy ligne 562).
+  // useIsAdmin n'est plus necessaire ici car useAdminAction l'utilise en interne.
+  const { logAction } = useAdminAction()
   const [isGenerating, setIsGenerating] = useState(false)
 
   // Quota
@@ -170,15 +172,12 @@ export default function AdminBeta() {
         }),
       )
       queryClient.invalidateQueries({ queryKey: ['beta-keys'] })
-      // Log audit
-      if (adminUser) {
-        await supabase.from('admin_audit_logs').insert({
-          admin_user_id: adminUser.id,
-          action: 'beta.key_gen',
-          target_type: 'batch',
-          metadata: { batch_number: nextBatch, count: 10 },
-        })
-      }
+      // Log audit (BATCH 36 : via useAdminAction)
+      await logAction({
+        action: 'beta.key_gen',
+        targetType: 'batch',
+        metadata: { batch_number: nextBatch, count: 10 },
+      })
       console.info('[admin] generated keys', data)
     } catch (err) {
       toast.error(
@@ -203,15 +202,13 @@ export default function AdminBeta() {
       if (error) throw error
       toast.success(t('admin.beta.deactivated', { defaultValue: 'Cle desactivee' }))
       queryClient.invalidateQueries({ queryKey: ['beta-keys'] })
-      if (adminUser) {
-        await supabase.from('admin_audit_logs').insert({
-          admin_user_id: adminUser.id,
-          action: 'beta.key_deactivate',
-          target_type: 'beta_access_key',
-          target_id: keyId,
-          metadata: { code },
-        })
-      }
+      // Log audit (BATCH 36 : via useAdminAction)
+      await logAction({
+        action: 'beta.key_deactivate',
+        targetType: 'beta_access_key',
+        targetId: keyId,
+        metadata: { code },
+      })
     } catch (err) {
       toast.error(
         t('admin.beta.deactivateError', { defaultValue: 'Erreur desactivation' }),

@@ -1,0 +1,21 @@
+{
+  "name": "Naturegraph",
+  "short_name": "Naturegraph",
+  "description": "Plateforme citoyenne de partage d'observations biodiversité.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FFF8EE",
+  "theme_color": "#5F50DA",
+  "lang": "fr",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/hermine-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "lifestyle", "social"]
+}
