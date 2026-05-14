@@ -47,6 +47,13 @@
   --color-error-action: #{$semantic-red-600}; // #E8122C — action destructive (bouton Déconnexion, Supprimer)
   --color-info: #{$semantic-blue-700}; // #004178
 
+  // ── Brand secondary (Instant nature — BATCH 42) ──
+  // Spec Figma : amber #cc7a00 (cercle Instant nature dans ContributeModal +
+  // badge categorie nature_instant dans FeedPost). Pas dans la palette orange
+  // semantique car teinte specifique brand. Centralise pour eviter le hardcode
+  // dans 3+ composants.
+  --color-amber-primary: #cc7a00;
+
   // ── Semantic / Background ──
   --color-success-bg: #{$semantic-green-100}; // #C7F2DF
   --color-warning-bg: #{$semantic-orange-100}; // #FEE1C8

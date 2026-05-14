@@ -70,11 +70,8 @@ const CONTRIBUTION_TYPES: ContributionType[] = [
     description: "Partage un paysage ou un phénomène naturel qui t'a marqué.",
     /** Warm-bg-tertiary via CSS var (--color-bg-tertiary = #fff4e0) */
     cardBg: 'var(--color-bg-tertiary)',
-    /**
-     * Amber #cc7a00 — Figma spec, pas encore de CSS var.
-     * TODO [TOKEN] : ajouter --color-amber-primary dans _light-theme.scss
-     */
-    iconBg: '#cc7a00',
+    /** Amber brand primary — token CSS (BATCH 42 — _light/_dark theme). */
+    iconBg: 'var(--color-amber-primary)',
     Icon: MountainSnow,
     disabled: true,
   },

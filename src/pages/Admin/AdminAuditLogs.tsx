@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { FileText } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { EmptyState, LoadingState } from '@/components/ui'
+import { STALE_TIMES } from '@/constants/reactQuery'
 
 interface AuditLogRow {
   id: string
@@ -57,7 +58,7 @@ export default function AdminAuditLogs() {
       const { data } = await q
       return (data ?? []) as unknown as AuditLogRow[]
     },
-    staleTime: 30 * 1000,
+    staleTime: STALE_TIMES.MEDIUM,
   })
 
   const actions = useMemo(() => {
