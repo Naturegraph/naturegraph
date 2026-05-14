@@ -2,12 +2,10 @@
 // SUPABASE TYPES (auto-generated)
 // =============================================================================
 //
-// Source : Supabase MCP `generate_typescript_types` (BATCH 28 — 2026-05-14)
-// Regenerer apres TOUTE migration : `npx supabase gen types typescript`
-// ou via Supabase MCP `mcp__supabase__generate_typescript_types`.
+// Source : Supabase MCP `generate_typescript_types` (BATCH 32 — 2026-05-14)
+// Regenerer apres TOUTE migration via Supabase MCP.
 //
 // Convention : NE JAMAIS editer ce fichier a la main.
-// Si une table/colonne manque, c'est qu'une migration n'a pas ete appliquee.
 //
 // =============================================================================
 
@@ -2306,6 +2304,35 @@ export type Database = {
         | { Args: { table_name: string }; Returns: string }
       enablelongtransactions: { Args: never; Returns: string }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      generate_beta_keys: {
+        Args: {
+          p_batch_number: number
+          p_count?: number
+          p_expires_days?: number
+          p_max_uses?: number
+          p_notes?: string
+        }
+        Returns: {
+          batch_number: number
+          code: string
+          created_at: string
+          created_by: string | null
+          current_uses: number
+          expires_at: string
+          id: string
+          is_active: boolean
+          max_uses: number
+          notes: string | null
+          used_at: string | null
+          used_by_user_id: string | null
+        }[]
+        SetofOptions: {
+          from: '*'
+          to: 'beta_access_keys'
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       geometry: { Args: { '': string }; Returns: unknown }
       geometry_above: {
         Args: { geom1: unknown; geom2: unknown }
