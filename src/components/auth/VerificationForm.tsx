@@ -209,11 +209,12 @@ export function VerificationForm({
             {t('auth.verify.timer', { time: formatTime(timer) })}
           </p>
 
-          {/* Hint OTP — mode démo uniquement (Supabase non configuré) */}
+          {/* Hint OTP — mode démo uniquement (Supabase non configuré).
+              BATCH 17 / T-105 : couleurs hardcodees remplacees par tokens DS. */}
           {!isSupabaseConfigured && demoOtp && (
-            <div className="mb-6 flex items-center gap-2 px-4 py-3 rounded-lg bg-[#f3e8ff] border border-[#a78bfa]">
-              <span className="text-[#7c3aed] text-lg">🔐</span>
-              <p className="text-sm font-semibold text-[#7c3aed]">
+            <div className="mb-6 flex items-center gap-2 px-4 py-3 rounded-lg bg-primary-light border border-primary/40">
+              <span className="text-primary text-lg">🔐</span>
+              <p className="text-sm font-semibold text-primary">
                 {t('auth.verify.demoCode', { code: demoOtp })}
               </p>
             </div>
