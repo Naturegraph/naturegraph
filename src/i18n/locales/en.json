@@ -242,6 +242,24 @@
       "resend": "Resend code",
       "timer": "Code valid for {{time}}",
       "demoCode": "Demo mode — Your OTP code: {{code}}"
+    },
+    "beta": {
+      "title": "Closed beta",
+      "description": "Naturegraph is in closed beta. Enter your access key to create your account.",
+      "codeLabel": "Access key",
+      "submit": "Verify my key",
+      "success": "Key validated!",
+      "noKey": "No key? Join the waitlist",
+      "alreadyAccount": "Already have an account?",
+      "login": "Sign in",
+      "consentLabel": "I accept the beta terms: test the app, share feedback, respect the community",
+      "consentRequired": "You must accept the beta terms to continue",
+      "errorFormat": "Invalid format. Expected: NG-XXXX-XXXX",
+      "errorInvalid": "Invalid or already used key. Check or contact us.",
+      "errorExpired": "Key expired. Contact us to get a new one.",
+      "errorRateLimited": "Too many attempts. Try again in 10 minutes.",
+      "errorServer": "Server error. Try again in a moment.",
+      "errorGeneric": "An error occurred."
     }
   },
 
@@ -1123,5 +1141,208 @@
     "error": "Error",
     "warning": "Warning",
     "info": "Information"
+  },
+
+  "admin": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "users": "Users",
+      "moderation": "Moderation",
+      "beta": "Beta",
+      "audit": "Audit"
+    },
+    "header": {
+      "title": "Admin · Naturegraph",
+      "back": "Leave admin"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "statusOk": "System operational",
+      "phaseOpen": "Phase {{phase}} beta open",
+      "phaseClosed": "Beta closed",
+      "kpi": {
+        "users": "Users",
+        "posts": "Posts (7d)",
+        "reports": "Reports",
+        "betaQuota": "Beta quota"
+      },
+      "openReportsTitle": "Open reports",
+      "viewAll": "View all",
+      "noReports": "🟢 No open reports. All quiet.",
+      "reportsWaiting": "report(s) awaiting review",
+      "betaTitle": "Beta status",
+      "manage": "Manage",
+      "acceptingSignups": "🟢 Accepting new signups",
+      "signupsClosed": "🔴 Signups closed (quota full or paused)"
+    },
+    "users": {
+      "title": "Users",
+      "totalLabel": "users total",
+      "searchPlaceholder": "Search by name, username, email...",
+      "searchLabel": "Search users",
+      "filterLabel": "Filter by role",
+      "filterAll": "All",
+      "filterAdmins": "Admins",
+      "filterRegular": "Regular users",
+      "noResults": "No user found for \"{{search}}\"",
+      "noUsers": "No user in this category.",
+      "columns": {
+        "user": "User",
+        "email": "Email",
+        "posts": "Posts",
+        "role": "Role",
+        "actions": "Actions"
+      },
+      "pagination": "Users pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{current}} / {{total}}",
+      "actions": {
+        "viewProfile": "View profile",
+        "promote": "Promote to moderator",
+        "demote": "Remove admin",
+        "suspend": "Suspend 7 days",
+        "ban": "Ban permanently"
+      },
+      "modal": {
+        "promoteTitle": "Promote @{{username}}?",
+        "promoteDesc": "This user will have access to /admin (moderator role).",
+        "demoteTitle": "Remove @{{username}} from admins?",
+        "demoteDesc": "Admin access will be revoked. Reversible action.",
+        "suspendTitle": "Suspend @{{username}} for 7 days?",
+        "suspendDesc": "7-day suspension. Reversible. Logged in admin_actions.",
+        "banTitle": "Ban @{{username}} permanently?",
+        "banDesc": "⚠️ PERMANENT BAN. IRREVERSIBLE action. Logged in admin_actions.",
+        "reasonLabel": "Reason (10 chars min — shown in audit log)",
+        "reasonPlaceholder": "E.g.: repeated harassment, mass spam...",
+        "reasonRequired": "Reason required to {{action}}",
+        "confirmPromote": "Promote",
+        "confirmDemote": "Remove",
+        "confirmSuspend": "Suspend",
+        "confirmBan": "Ban permanently"
+      },
+      "success": {
+        "promote": "{{username}} promoted to moderator",
+        "demote": "{{username}} removed from admins",
+        "suspend": "{{username}} suspended for 7 days",
+        "ban": "{{username}} permanently banned"
+      },
+      "errorAction": "Admin action error"
+    },
+    "moderation": {
+      "title": "Moderation",
+      "totalLabel": "report(s)",
+      "filterStatus": "Filter by status",
+      "filterPriority": "Filter by priority",
+      "allStatuses": "All statuses",
+      "allPriorities": "All priorities",
+      "empty": "🟢 No open reports. All quiet.",
+      "emptyResults": "🟢 No results. All quiet.",
+      "status": {
+        "new": "🆕 New",
+        "in_review": "👁 In review",
+        "resolved": "✅ Resolved",
+        "dismissed": "✕ Dismissed"
+      },
+      "priority": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "critical": "Critical"
+      },
+      "by": "By",
+      "noteLabel": "Note:",
+      "actions": {
+        "view": "View {{type}}",
+        "take": "Take",
+        "resolve": "Resolve",
+        "dismiss": "Dismiss (not valid)",
+        "removeContent": "Remove content"
+      },
+      "modal": {
+        "resolveTitle": "Resolve this report?",
+        "resolveDesc": "Mark as resolved. An explanation note is required (visible in audit log).",
+        "dismissTitle": "Dismiss this report?",
+        "dismissDesc": "Dismiss this report as invalid. Notes required (visible in audit log).",
+        "removeTitle": "Remove the reported content?",
+        "removeDesc": "⚠️ Content will be removed (soft-delete). This action is logged in admin_actions and IRREVERSIBLE.",
+        "notesLabel": "Notes (10 chars min)",
+        "reasonLabel": "Reason (10 chars min)",
+        "notesPlaceholder": "Decision explanation (visible audit log)...",
+        "reasonPlaceholder": "E.g.: confirmed spam, inappropriate content...",
+        "notesRequired": "Notes (10 chars min) required to {{action}}.",
+        "reasonRequired": "Reason (10 chars min) required to remove.",
+        "confirmResolve": "Resolve",
+        "confirmDismiss": "Dismiss",
+        "confirmRemove": "Remove content"
+      },
+      "success": {
+        "takeOver": "Report assigned. Status: in review.",
+        "resolve": "Report marked as resolved",
+        "dismiss": "Report dismissed",
+        "remove": "Content {{type}} removed"
+      },
+      "errorAction": "Action error",
+      "warningLogged": "All actions logged"
+    },
+    "beta": {
+      "title": "Closed beta management",
+      "phase": "Phase {{n}}",
+      "usersOf": "{{current}} / {{max}} users ({{pct}}%)",
+      "acceptingSignups": "🟢 Accepting signups",
+      "signupsClosed": "🔴 Closed",
+      "generate": "Generate 10 keys (batch {{n}})",
+      "generating": "Generating...",
+      "generateSuccess": "10 keys generated (batch {{n}})",
+      "generateError": "Key generation error",
+      "keysTitle": "Access keys ({{count}})",
+      "keysEmpty": "No key generated. Click \"Generate 10 keys\" to start batch 1.",
+      "columns": {
+        "code": "Code",
+        "batch": "Batch",
+        "status": "Status",
+        "expire": "Expires",
+        "actions": "Actions"
+      },
+      "status": {
+        "deactivated": "🚫 deactivated",
+        "used": "✅ used",
+        "expired": "🔴 expired",
+        "valid": "🟢 valid"
+      },
+      "actions": {
+        "copy": "Copy {{code}}",
+        "deactivate": "Deactivate {{code}}"
+      },
+      "deactivateConfirm": "Deactivate key {{code}}?",
+      "deactivated": "Key deactivated",
+      "deactivateError": "Deactivation error",
+      "copied": "Copied: {{code}}",
+      "copyError": "Cannot copy",
+      "waitlistTitle": "Waitlist ({{count}})",
+      "waitlistEmpty": "🟢 Empty waitlist.",
+      "registered": "Registered {{when}}",
+      "statsTitle": "Signup attempts (last 7 days)"
+    },
+    "audit": {
+      "title": "Audit logs",
+      "filterLabel": "Filter by action",
+      "filterAll": "All actions",
+      "empty": "No action logged.",
+      "showing": "Last 100 actions shown (immutable — Postgres trigger)",
+      "justNow": "just now",
+      "minutesAgo": "{{n}}min ago",
+      "hoursAgo": "{{n}}h ago",
+      "daysAgo": "{{n}}d ago"
+    },
+    "common": {
+      "loading": "Loading...",
+      "verifyingAdmin": "Verifying admin access...",
+      "roleBadge": {
+        "super_admin": "super_admin",
+        "moderator": "moderator",
+        "support": "support"
+      }
+    }
   }
 }
