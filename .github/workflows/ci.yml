@@ -31,6 +31,12 @@ jobs:
       - name: Tests
         run: npm test
 
+      # BATCH 23 / T-008 : coverage report (informatif uniquement, fail desactive).
+      # Cible 30% activable plus tard via thresholds dans vitest.config.ts.
+      - name: Coverage report
+        run: npm run test:coverage || true
+        continue-on-error: true
+
       # BATCH 13 / T-003 : detection drift entre src/types/supabase.ts et le
       # schema DB courant. Best-effort (skip si supabase CLI non authentifie
       # — typique en CI sans secrets). Le script exit 2 = skip silencieux,

@@ -58,7 +58,7 @@ export default function Settings() {
   // BATCH 10 / QW-UX1 : titre dynamique pour onglet navigateur
   usePageTitle(t('nav.settings'))
   const { userLocation, updateLocation, clearLocation } = useLocation()
-  const { success: notifySuccess } = useToast()
+  const { success: notifySuccess, error: notifyError } = useToast()
   const updateProfile = useUpdateProfile(profile?.id ?? '')
   const queryClient = useQueryClient()
   const { data: userSettings } = useSettings(profile?.id)
@@ -167,9 +167,10 @@ export default function Settings() {
       await signOut()
       navigate('/')
     } catch (err) {
-      window.alert(
-        t('settings.deleteAccountError', 'Erreur : ') +
-          (err instanceof Error ? err.message : String(err)),
+      // BATCH 23 / T-026 : toast errors uniformisé (vs window.alert bloquant)
+      notifyError(
+        t('settings.deleteAccountError', 'Impossible de supprimer le compte'),
+        err instanceof Error ? err.message : String(err),
       )
     }
   }
