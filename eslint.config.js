@@ -25,7 +25,30 @@ export default defineConfig([
       // Eco-conception: avoid heavy patterns
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       // Allow hooks export alongside components in context files
-      'react-refresh/only-export-components': ['warn', { allowExportNames: ['useAuth', 'useThemeContext'] }],
+      // BATCH 25 / T-092 : extended allowExportNames pour Context+Hook + helpers
+      // collocate (source de verite). N'impacte que HMR dev, pas la prod.
+      'react-refresh/only-export-components': [
+        'warn',
+        {
+          allowExportNames: [
+            // Auth + theme hooks
+            'useAuth',
+            'useThemeContext',
+            // Context+Hook collocate
+            'useAccessibility',
+            'useLocation',
+            'useSpecies',
+            'useToast',
+            // Custom hooks collocate with components
+            'useAuthOrbTracking',
+            // Helpers/constants collocate as source of truth
+            'REACTION_CONFIG',
+            'postFeedItemToMockPost',
+            'getMessage',
+            'resolveDeepLink',
+          ],
+        },
+      ],
       // Autoriser les variables prefixees par _ comme intentionnellement inutilisees (ex: props TODO BACKEND)
       '@typescript-eslint/no-unused-vars': ['error', {
         argsIgnorePattern: '^_',
