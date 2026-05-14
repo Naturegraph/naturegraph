@@ -155,10 +155,17 @@ export function ProfileCommunity({
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<CommunityTab>('migrateurs')
 
-  // Charge les deux listes en parallèle (React Query dédoublonne et cache).
-  // L'onglet inactif reste prêt instantanément quand l'user toggle.
-  const { data: followers, isLoading: loadingFollowers } = useFollowers(profileId)
-  const { data: following, isLoading: loadingFollowing } = useFollowing(profileId)
+  // BATCH 16 / T-079 : lazy load — charge UNIQUEMENT la liste de l'onglet
+  // actif. Avant : 2 requetes en parallele toujours. Apres : 1 requete au
+  // mount + 1 supplementaire au premier switch d'onglet (puis cache).
+  const { data: followers, isLoading: loadingFollowers } = useFollowers(
+    profileId,
+    activeTab === 'migrateurs',
+  )
+  const { data: following, isLoading: loadingFollowing } = useFollowing(
+    profileId,
+    activeTab === 'migrations',
+  )
 
   const displayedUsers: CommunityProfile[] =
     activeTab === 'migrateurs' ? (followers ?? []) : (following ?? [])

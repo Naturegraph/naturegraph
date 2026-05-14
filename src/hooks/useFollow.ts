@@ -24,12 +24,16 @@ const FOLLOWING_KEY = (userId: string) => ['following', userId] as const
 /**
  * Liste les followers (migrateurs) d'un profil.
  * Utilisé par ProfileCommunity > onglet "Migrateurs".
+ *
+ * @param enabled (BATCH 16 / T-079) — Defaut true. Permet de "lazy load" :
+ *   pour eviter de charger les deux listes en parallele a l'ouverture du
+ *   ProfileCommunity, passer `enabled: activeTab === 'migrateurs'`.
  */
-export function useFollowers(userId: string | undefined) {
+export function useFollowers(userId: string | undefined, enabled = true) {
   return useQuery<CommunityProfile[], Error>({
     queryKey: FOLLOWERS_KEY(userId ?? ''),
     queryFn: () => getFollowers(userId!),
-    enabled: !!userId,
+    enabled: !!userId && enabled,
     staleTime: 60 * 1000,
   })
 }
@@ -37,12 +41,14 @@ export function useFollowers(userId: string | undefined) {
 /**
  * Liste les profils suivis (migrations) par un profil.
  * Utilisé par ProfileCommunity > onglet "Migrations".
+ *
+ * @param enabled (BATCH 16 / T-079) — Voir doc `useFollowers`.
  */
-export function useFollowing(userId: string | undefined) {
+export function useFollowing(userId: string | undefined, enabled = true) {
   return useQuery<CommunityProfile[], Error>({
     queryKey: FOLLOWING_KEY(userId ?? ''),
     queryFn: () => getFollowing(userId!),
-    enabled: !!userId,
+    enabled: !!userId && enabled,
     staleTime: 60 * 1000,
   })
 }
