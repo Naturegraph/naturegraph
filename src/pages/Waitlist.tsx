@@ -93,8 +93,8 @@ export default function Waitlist() {
                 'On t enverra un email avec ta cle d acces des qu une place se libere. En attendant, retrouve nous sur Discord !',
             })}
           </p>
-          <Button variant="primary" size="md" onClick={() => navigate('/')}>
-            {t('waitlist.backHome', { defaultValue: 'Retour a l accueil' })}
+          <Button variant="primary" size="md" onClick={() => navigate('/welcome')}>
+            {t('waitlist.backWelcome', { defaultValue: 'Retour a l accueil' })}
           </Button>
         </div>
       </main>
@@ -110,7 +110,7 @@ export default function Waitlist() {
         {/* Back link */}
         <button
           type="button"
-          onClick={() => navigate('/auth')}
+          onClick={() => navigate('/welcome')}
           className="self-start flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />

@@ -1,12 +1,21 @@
 /**
  * Router — Configuration des routes de l'application Naturegraph
  *
- * Organisation des routes :
- * - / : Landing page (publique, pas de header/footer)
- * - /signup, /login, /verify : Auth (PublicRoute — redirige si déjà connecté)
- * - /onboarding : Onboarding post-inscription (ProtectedRoute)
- * - /home, /explore, /profile : App principale (ProtectedRoute + MainLayout)
- * - * : Page 404
+ * Organisation des routes (BATCH 45 — Beta Access Gate total) :
+ * - /welcome : Welcome screen beta (entry point, public)
+ * - /waitlist : Inscription liste d'attente (public)
+ * - / : Landing page (Gated par BetaAccessGuard)
+ * - /signup, /login : Auth (Gated)
+ * - /home, /explore, /profile, etc : App principale (Gated + ProtectedRoute)
+ * - /admin : Admin (AdminGuard, pas besoin de BetaAccessGuard)
+ *
+ * BetaAccessGuard : verifie localStorage 'naturegraph-beta-access'.
+ *   - Si vide ou expire -> redirect /welcome
+ *   - Sinon -> render children
+ *
+ * Routes publiques (sans BetaAccessGuard) : /welcome, /waitlist uniquement.
+ * Routes legales (/contact /privacy /legal) sont sous BetaAccessGuard mais
+ * accessibles via lien direct (l'utilisateur peut les lire post-validation).
  *
  * Toutes les pages utilisent React.lazy() pour le code splitting (éco-conception).
  */
@@ -16,10 +25,12 @@ import { createBrowserRouter } from 'react-router-dom'
 import App from './App'
 import { MainLayout } from '@/components/layout'
 import { ProtectedRoute, PublicRoute, OnboardingGuard } from '@/components/guards'
+import { BetaAccessGuard } from '@/components/guards/BetaAccessGuard'
 import { AdminGuard } from '@/components/admin/AdminGuard'
 
 // ─── Lazy-loaded pages (code splitting pour éco-conception) ────────
 
+const Welcome = lazy(() => import('./pages/Welcome'))
 const Landing = lazy(() => import('./pages/Landing'))
 const AuthPage = lazy(() => import('./pages/AuthPage'))
 const Onboarding = lazy(() => import('./pages/Onboarding'))
@@ -72,25 +83,40 @@ export const router = createBrowserRouter([
   {
     element: <App />,
     children: [
-      // Landing page — publique, sans header/footer
+      // Welcome screen — entry point beta privee (BATCH 45)
+      // Aucun guard : c'est la porte d'entree.
       {
-        path: '/',
+        path: 'welcome',
         element: (
           <LazyPage>
-            <Landing />
+            <Welcome />
           </LazyPage>
         ),
       },
 
-      // Auth — signup et login via AuthPage unifiée
+      // Landing page — gated par BetaAccessGuard (BATCH 45)
+      {
+        path: '/',
+        element: (
+          <LazyPage>
+            <BetaAccessGuard>
+              <Landing />
+            </BetaAccessGuard>
+          </LazyPage>
+        ),
+      },
+
+      // Auth — signup et login (gated par BetaAccessGuard)
       // La vérification OTP et l'onboarding sont gérés en interne par AuthPage.
       {
         path: 'signup',
         element: (
           <LazyPage>
-            <PublicRoute>
-              <AuthPage initialMode="signup" />
-            </PublicRoute>
+            <BetaAccessGuard>
+              <PublicRoute>
+                <AuthPage initialMode="signup" />
+              </PublicRoute>
+            </BetaAccessGuard>
           </LazyPage>
         ),
       },
@@ -98,9 +124,11 @@ export const router = createBrowserRouter([
         path: 'login',
         element: (
           <LazyPage>
-            <PublicRoute>
-              <AuthPage initialMode="login" />
-            </PublicRoute>
+            <BetaAccessGuard>
+              <PublicRoute>
+                <AuthPage initialMode="login" />
+              </PublicRoute>
+            </BetaAccessGuard>
           </LazyPage>
         ),
       },
@@ -218,12 +246,15 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // Pages légales — publiques, standalone
+      // Pages légales — gated par BetaAccessGuard (BATCH 45 — beta privee)
+      // Note : si tu veux les rendre publiques au launch, retire le BetaAccessGuard.
       {
         path: 'contact',
         element: (
           <LazyPage>
-            <Contact />
+            <BetaAccessGuard>
+              <Contact />
+            </BetaAccessGuard>
           </LazyPage>
         ),
       },
@@ -231,7 +262,9 @@ export const router = createBrowserRouter([
         path: 'privacy',
         element: (
           <LazyPage>
-            <Privacy />
+            <BetaAccessGuard>
+              <Privacy />
+            </BetaAccessGuard>
           </LazyPage>
         ),
       },
@@ -239,7 +272,9 @@ export const router = createBrowserRouter([
         path: 'legal',
         element: (
           <LazyPage>
-            <Legal />
+            <BetaAccessGuard>
+              <Legal />
+            </BetaAccessGuard>
           </LazyPage>
         ),
       },

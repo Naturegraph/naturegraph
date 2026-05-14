@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next'
 import { Loader2, Key } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useToast } from '@/contexts/ToastContext'
+import { useBetaAccess } from '@/hooks/useBetaAccess'
 import { validateBetaKey, type BetaKeyReason } from '@/services/betaService'
 
 interface BetaKeyGateProps {
@@ -94,16 +95,22 @@ export function BetaKeyGate({ onValidated, onSwitchToLogin }: BetaKeyGateProps) 
   const { t } = useTranslation()
   const navigate = useNavigate()
   const toast = useToast()
-  const [code, setCode] = useState('')
+  // BATCH 45 : pre-fill avec le code valide depuis le welcome screen.
+  // L'utilisateur a deja saisi son code sur /welcome (validation readonly).
+  // Au signup, on consomme la cle via validateBetaKey() (claim atomic).
+  const { code: storedCode } = useBetaAccess()
+  const [code, setCode] = useState(storedCode ?? '')
   const [consent, setConsent] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Auto-focus l'input au mount (UX)
+  // Auto-focus l'input au mount (UX) — seulement si pas de code pre-rempli
   useEffect(() => {
-    const input = document.getElementById('beta-key-input')
-    input?.focus()
-  }, [])
+    if (!storedCode) {
+      const input = document.getElementById('beta-key-input')
+      input?.focus()
+    }
+  }, [storedCode])
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setCode(formatBetaCode(e.target.value))
