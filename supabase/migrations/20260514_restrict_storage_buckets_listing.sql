@@ -1,24 +1,20 @@
 -- ════════════════════════════════════════════════════════════════════════════
--- OPTIONAL — Restreindre Storage buckets listing (4 buckets publics)
+-- 20260514 — Restreindre Storage buckets listing (BATCH 44)
 -- ════════════════════════════════════════════════════════════════════════════
 --
--- ⚠️ NE PAS APPLIQUER SANS VALIDATION
--- ───────────────────────────────────
--- Cette migration est OPTIONNELLE et REQUIERT validation Nicolas car elle
--- peut casser des fonctionnalites de l'app si elle utilise `.list()` sur
--- ces buckets (verifier `grep -rn "storage.from.*list" src/`).
+-- STATUT : APPLIQUE sur DEV (Supabase MCP) le 2026-05-14
+-- ───────────────────────────────────────────────────────
+-- Verification preliminaire avant application :
+--   - grep -rn "storage.from.*\.list" src/  → 0 match
+--   - Seuls .upload(), .getPublicUrl(), .remove() sont utilises
+--   - Donc safe d'appliquer sans casser l'app
 --
--- Recommandation : appliquer apres avoir verifie que rien n'appelle
--- `.list()` ou `.listObjects()` sur les buckets avatars / banners /
--- notebook-covers / post-media.
---
--- Probleme (advisor Supabase `public_bucket_allows_listing`)
--- ───────────────────────────────────────────────────────────
--- Les 4 buckets publics ont une policy SELECT (USING bucket_id = 'X') qui
--- autorise NIMPORTE QUI (anon inclus) a lister tous les fichiers via :
+-- Probleme corrige (advisor Supabase `public_bucket_allows_listing`)
+-- ───────────────────────────────────────────────────────
+-- Les 4 buckets publics avaient une policy SELECT (USING bucket_id = 'X')
+-- qui autorisait NIMPORTE QUI (anon inclus) a lister tous les fichiers via :
 --   POST /storage/v1/object/list/{bucket}
---
--- Cela permet a un attaquant de scraper tous les avatars/banners/posts.
+-- Cela permettait a un attaquant de scraper tous les avatars/banners/posts.
 --
 -- Note : les URLs publiques (`.getPublicUrl()`) NE PASSENT PAS par RLS
 -- (elles vont directement au CDN). Donc restreindre SELECT n'empeche pas
