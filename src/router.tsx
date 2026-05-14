@@ -16,6 +16,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import App from './App'
 import { MainLayout } from '@/components/layout'
 import { ProtectedRoute, PublicRoute, OnboardingGuard } from '@/components/guards'
+import { AdminGuard } from '@/components/admin/AdminGuard'
 
 // ─── Lazy-loaded pages (code splitting pour éco-conception) ────────
 
@@ -32,6 +33,15 @@ const Contribute = lazy(() => import('./pages/Contribute'))
 const Settings = lazy(() => import('./pages/Settings'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
+const Waitlist = lazy(() => import('./pages/Waitlist'))
+
+// Admin (BATCH 31-32) — chunks separes (eco-conception : code admin lazy)
+const AdminLayout = lazy(() => import('./pages/Admin/AdminLayout'))
+const AdminDashboard = lazy(() => import('./pages/Admin/AdminDashboard'))
+const AdminBeta = lazy(() => import('./pages/Admin/AdminBeta'))
+const AdminUsers = lazy(() => import('./pages/Admin/AdminUsers'))
+const AdminModeration = lazy(() => import('./pages/Admin/AdminModeration'))
+const AdminAuditLogs = lazy(() => import('./pages/Admin/AdminAuditLogs'))
 
 /**
  * Wrapper Suspense pour les pages lazy-loaded.
@@ -103,6 +113,18 @@ export const router = createBrowserRouter([
             <ProtectedRoute>
               <Onboarding />
             </ProtectedRoute>
+          </LazyPage>
+        ),
+      },
+
+      // Waitlist — accessible sans auth (BATCH 30 / BETA_STRATEGY Phase 1)
+      // Affiche le formulaire d'inscription a la liste d'attente.
+      // Redirigee depuis BetaKeyGate quand le quota est plein.
+      {
+        path: 'waitlist',
+        element: (
+          <LazyPage>
+            <Waitlist />
           </LazyPage>
         ),
       },
@@ -220,6 +242,61 @@ export const router = createBrowserRouter([
             <Legal />
           </LazyPage>
         ),
+      },
+
+      // Admin section (BATCH 31-32) — protege par AdminGuard
+      // Defense en profondeur : RLS Postgres bloque aussi l'access aux donnees.
+      {
+        path: 'admin',
+        element: (
+          <LazyPage>
+            <AdminGuard>
+              <AdminLayout />
+            </AdminGuard>
+          </LazyPage>
+        ),
+        children: [
+          {
+            index: true,
+            element: (
+              <LazyPage>
+                <AdminDashboard />
+              </LazyPage>
+            ),
+          },
+          {
+            path: 'users',
+            element: (
+              <LazyPage>
+                <AdminUsers />
+              </LazyPage>
+            ),
+          },
+          {
+            path: 'moderation',
+            element: (
+              <LazyPage>
+                <AdminModeration />
+              </LazyPage>
+            ),
+          },
+          {
+            path: 'beta',
+            element: (
+              <LazyPage>
+                <AdminBeta />
+              </LazyPage>
+            ),
+          },
+          {
+            path: 'audit',
+            element: (
+              <LazyPage>
+                <AdminAuditLogs />
+              </LazyPage>
+            ),
+          },
+        ],
       },
 
       // 404 — page non trouvée

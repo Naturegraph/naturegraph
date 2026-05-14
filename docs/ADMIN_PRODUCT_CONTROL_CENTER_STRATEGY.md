@@ -1,596 +1,346 @@
-# Naturegraph — Admin Product Control Center (Stratégie)
+# Naturegraph — Admin Product Control Center (MVP)
 
-> **Version** : 1.0 — 2026-05-04
-> **Statut** : 📌 **DOCUMENT STRATÉGIQUE FUTUR** — non à exécuter maintenant
-> **Posture** : product manager + tech lead + design lead. Plan complet du futur centre de contrôle admin.
-> **Pré-requis activation** : consolidation MVP + Phase 1 beta fermée terminée
-> **Lecture cible** : 20 min pour absorber, à consulter avant implémentation admin
-
----
-
-# ⚠️ Pré-requis activation
-
-> Ce système admin ne doit **PAS** être construit tant que les pré-requis ne sont pas remplis.
-
-## Conditions de déclenchement
-
-1. ✅ `CONSOLIDATION_ROADMAP.md` Phase 1-6 terminées
-2. ✅ `BETA_CLOSED_ACCESS_STRATEGY.md` Phase 1 démarrée (besoin réel admin testé)
-3. ✅ Au moins 20 utilisateurs réels actifs (validation besoin)
-4. ✅ Quelques signalements / bugs réels remontés (matériau pour modération)
-5. ✅ Stack technique stabilisée (pas de gros refacto en cours)
-
-**Construire l'admin TROP TÔT** = sur-engineering. **Construire TROP TARD** = chaos opérationnel.
-
-**Timing recommandé** : début Phase 1 beta fermée (~mois 4 après consolidation MVP).
+> **Version** : 2.0 — 2026-05-13 (refondu BATCH 27 — SIMPLE MVP)
+> **Statut** : 🟢 **PRET A IMPLEMENTER** — pré-requis cycle 1 valides
+> **Posture** : product lead + tech lead. Plan **MVP minimal mais complet** pour piloter la beta.
+> **Effort total MVP** : ~3-4 jours dev (24-32h)
+> **Philosophie** : 5 modules essentiels, integres dans l'app existante (pas de sous-domaine). Iteration apres usage reel.
 
 ---
 
-# 🎯 Vision
+## 🎯 TL;DR
 
-## Le Super Admin n'est PAS un dashboard
+**Le but** : Avoir un admin **fonctionnel et simple** pour piloter la beta fermee — pas un Salesforce.
 
-C'est un **vrai centre de contrôle produit** qui doit permettre de :
+### Ce que l'admin MVP fait
 
-| Capacité            | Description                                 |
-| ------------------- | ------------------------------------------- |
-| 🩺 **Surveiller**   | Santé technique + comportement utilisateurs |
-| 👥 **Gérer**        | Utilisateurs, rôles, sanctions              |
-| 🚨 **Modérer**      | Spam, abus, contenu illégal                 |
-| 📊 **Analyser**     | Croissance, rétention, engagement           |
-| 🎫 **Beta piloter** | Vagues, clés d'accès, waitlist              |
-| 🛡️ **Sécuriser**    | Détecter abus, brute-force, multi-comptes   |
-| 🛠️ **Supporter**    | Tickets, signalements, communication        |
-| ⚙️ **Configurer**   | Paramètres produit sans toucher au code     |
-| 📝 **Tracer**       | Audit logs de toute action admin            |
+- ✅ Voir l'etat du systeme en 5 secondes (Dashboard)
+- ✅ Gerer la beta : generer cles, voir vagues, gerer waitlist
+- ✅ Moderer le contenu : signalements + ban/suspend basique
+- ✅ Voir + agir sur les users (chercher, modifier role, suspendre)
+- ✅ Tracer toute action admin (audit log immuable)
 
-## Anti-patterns à éviter
+### Ce que l'admin MVP **ne fait pas** (Phase 2+)
 
-- ❌ Dashboard "vanity metrics" (DAU sans action possible)
-- ❌ Tables sans filtres / recherche
-- ❌ Actions destructives sans confirmation
-- ❌ Pas de logs des actions admin (impossibilité audit)
-- ❌ Frontend admin couplé au frontend public (déploiements liés)
-- ❌ Pas de permissions granulaires (tout ou rien)
-- ❌ Charts complexes sans contexte
+- ❌ Analytics complexes (utiliser Supabase Dashboard pour MVP)
+- ❌ Mobile dedie (mobile = vue responsive de la version desktop)
+- ❌ ML / automatisations moderation
+- ❌ Permissions granulaires JSONB (rôles fixes suffisent)
+- ❌ 2FA (magic link Supabase suffit pour MVP, 2FA Phase 2)
+- ❌ Sous-domaine separe `admin.naturegraph.fr` (route `/admin` dans l'app suffit)
 
 ---
 
-# 🏛️ Philosophie système
+## ✈️ Pre-flight check
 
-## 4 Principes fondamentaux
-
-### 1. Simplicité visuelle
-
-- Hiérarchie forte (titres, espaces, contrastes)
-- Lecture rapide (scan visuel < 5 sec)
-- Informations actionnables (toujours un "que faire" à côté de "voir")
-
-### 2. Data orientée décision
-
-> Chaque donnée affichée DOIT permettre une décision OU une action.
-
-**Mauvais** : "DAU = 47" (et alors ?)
-**Bon** : "DAU = 47 (−12% vs hier) [Voir cohorte impactée]"
-
-### 3. Architecture modulaire
-
-```
-Admin App
-├── Modules (10)
-│   ├── Dashboard
-│   ├── Utilisateurs
-│   ├── Modération
-│   ├── Analytics
-│   ├── Beta
-│   ├── Sécurité
-│   ├── Monitoring
-│   ├── Support
-│   ├── Config
-│   └── Logs/Audit
-│
-├── Permissions (par module + par action)
-│
-└── Audit (toute action loggée)
-```
-
-### 4. Desktop FIRST, Mobile READY
-
-| Plateforme  | Usage                                                     | Focus                               |
-| ----------- | --------------------------------------------------------- | ----------------------------------- |
-| **Desktop** | Cockpit complet, modération massive, analytics profonds   | Tables avancées, multi-panels       |
-| **Mobile**  | Supervision rapide, modération urgente, alertes critiques | Actions essentielles, notifications |
+| Pre-requis                                                 | Statut                                                                |
+| ---------------------------------------------------------- | --------------------------------------------------------------------- |
+| Cycle 1 livre (98/117 done)                                | 🟢 OK                                                                 |
+| RLS `(SELECT auth.uid())` partout                          | 🟢 OK (BATCH 22)                                                      |
+| Tables `support_tickets` + `security_audit_log` existantes | 🟢 OK                                                                 |
+| Auth Supabase magic link operationnel                      | 🟢 OK                                                                 |
+| Beta system prevu en parallele                             | 🟡 [`BETA_CLOSED_ACCESS_STRATEGY.md`](BETA_CLOSED_ACCESS_STRATEGY.md) |
 
 ---
 
-# 🧩 Architecture en 10 modules
+# 🏛️ Philosophie MVP
 
-## Module 1 — Dashboard global
+## 4 Principes
 
-### Objectif
+### 1. **Simple > Complet**
 
-Vue d'ensemble en **< 5 secondes** : ce qui va, ce qui ne va pas, ce qui demande action.
+- 5 modules essentiels, pas 10
+- 1 page par module
+- Actions claires, pas de "ça depend"
 
-### Widgets prioritaires
+### 2. **Integre > Separe**
 
-| Widget                  | Données                              | Action associée       |
-| ----------------------- | ------------------------------------ | --------------------- |
-| **Utilisateurs actifs** | DAU, WAU, MAU avec tendance 7j       | → Module Analytics    |
-| **Nouveaux users**      | Aujourd'hui / Semaine / Mois         | → Module Users        |
-| **Rétention**           | J1, J7, J30 (cohortes)               | → Analytics > Cohorts |
-| **Observations**        | Total + aujourd'hui + moyenne/jour   | → Module Modération   |
-| **Uploads**             | Volume, échecs, taille moyenne       | → Module Monitoring   |
-| **Modération**          | Signalements ouverts, urgents        | → Module Modération   |
-| **Sécurité**            | Tentatives suspectes, bans récents   | → Module Sécurité     |
-| **Santé système**       | Status Supabase / Vercel / API       | → Module Monitoring   |
-| **Beta**                | Clés utilisées / restantes (Phase 1) | → Module Beta         |
-| **Tickets support**     | Ouverts, en attente                  | → Module Support      |
+- Route `/admin/*` dans l'app existante
+- Reuse du DS Naturegraph (Button, Modal, Card, Table)
+- Pas de stack admin separee (cohesion + simplicite deploy)
 
-### KPIs visibles permanents (bandeau top)
+### 3. **Actionnable > Vanity**
+
+- Chaque KPI affiche permet une action immediate
+- Pas de graphs "joli mais inutile"
+- Tableaux filtrables avec actions au bout de chaque ligne
+
+### 4. **Securise > Convivial**
+
+- RLS strict (admin only)
+- Toute action loggee dans `admin_audit_logs`
+- Confirmations modales pour actions destructives
+- 2FA reporte Phase 2 (acceptable pour MVP a 50 users)
+
+---
+
+# 🧩 Architecture MVP — 5 modules
+
+## Module 1 — Dashboard (page `/admin`)
+
+**Objectif** : Vue d'ensemble en 5 secondes.
+
+### Layout (1 ecran, pas de scroll initial)
 
 ```
-[🟢 Système OK]  [Users: 47]  [DAU: 23]  [Signalements: 0]  [Beta: 23/50]
+┌─────────────────────────────────────────────────────┐
+│  🟢 Systeme OK  •  Phase 1 beta  •  23 / 50 users    │
+├─────────────────────────────────────────────────────┤
+│                                                       │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐    │
+│  │ Users   │ │ Posts   │ │ Signal. │ │ Errors  │    │
+│  │  23     │ │  47     │ │  2 🟡   │ │  0 🟢   │    │
+│  │ +3 / 7j │ │ +12/ 7j │ │ → Mod.  │ │ → Mon.  │    │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘    │
+│                                                       │
+│  ┌──── Activite 7j ─────────────────────────────┐   │
+│  │  [Simple chart : signups + posts par jour]    │   │
+│  └───────────────────────────────────────────────┘   │
+│                                                       │
+│  ┌── Signalements ouverts (2) ─────┐ ┌── Beta ────┐ │
+│  │ • Spam x1 (post #abc, 2h)       │ │ Cles total: 30  │
+│  │ • Harcelement x1 (user X, 1d)   │ │ Utilisees: 23   │
+│  │ [Tout voir →]                    │ │ Disponibles: 7  │
+│  └─────────────────────────────────┘ │ Waitlist: 4     │
+│                                       └─────────────┘ │
+└─────────────────────────────────────────────────────┘
 ```
 
-Code couleur :
+### KPIs essentiels (4 boxes)
+
+| KPI                      | Source                                                                    | Action liee          |
+| ------------------------ | ------------------------------------------------------------------------- | -------------------- |
+| **Users**                | `SELECT COUNT(*) FROM profiles`                                           | → Module Users       |
+| **Posts (7j)**           | `SELECT COUNT(*) FROM posts WHERE created_at > NOW() - INTERVAL '7 days'` | → Module Moderation  |
+| **Signalements ouverts** | `SELECT COUNT(*) FROM moderation_reports WHERE status='new'`              | → Module Moderation  |
+| **Errors**               | Sentry API (futur) ou logs Postgres                                       | → Supabase Dashboard |
+
+### Code couleur
 
 - 🟢 Tout OK
-- 🟡 Attention (à surveiller)
+- 🟡 Attention (a surveiller)
 - 🔴 Critique (action requise)
 
 ---
 
-## Module 2 — Gestion utilisateurs
+## Module 2 — Utilisateurs (`/admin/users`)
 
-### Fonctionnalités
+**Objectif** : Trouver + agir sur un user en < 30 sec.
 
-#### Recherche avancée
+### Vue liste
 
-Filtres simultanés :
-
-- Email, username, ID
-- Date inscription (range)
-- Rôle (user, admin, moderator)
-- Statut (active, suspended, banned, deleted)
-- Activité (active 7j, inactive 30j+)
-- Pays (via IP)
-- Source invitation (batch beta)
-- A des signalements (oui/non)
-
-#### Fiche utilisateur 360°
-
-**Section Profil** :
-
-- Username, email, bio, avatar, banner
-- Rôle, statut
-- Date inscription, dernière connexion
-
-**Section Activité** :
-
-- Nb observations créées
-- Nb commentaires
-- Nb réactions données
-- Nb réactions reçues
-- Nb followers / following
-- Fréquence connexion (heatmap 30j)
-
-**Section Historique** :
-
-- Logs connexions (date, IP, device)
-- Changements username
-- Sanctions reçues (warnings, suspensions)
-- Suppressions de contenu
-
-**Section Sécurité** :
-
-- IPs uniques (anonymisées J+30 per RGPD)
-- Appareils détectés
-- Sessions actives
-- Comportements suspects flaggés
-
-### Actions admin (avec confirmation)
-
-| Action                          | Sévérité | Impact                   | Réversible    |
-| ------------------------------- | -------- | ------------------------ | ------------- |
-| Avertir utilisateur             | 🟢       | Notif privée             | Oui           |
-| Suspendre 7 jours               | 🟡       | Pas de login             | Auto-fin      |
-| Shadow ban                      | 🟡       | Contenu caché aux autres | Oui           |
-| Bannir définitivement           | 🔴       | Compte désactivé         | Oui (un-ban)  |
-| Reset onboarding                | 🟢       | Réaffiche onboarding     | Oui           |
-| Reset email (changement forcé)  | 🟡       | Demande nouvelle vérif   | Oui           |
-| Forcer logout (toutes sessions) | 🟢       | Sécurité                 | Auto-rétablit |
-| Modifier rôle                   | 🔴       | Permission élevée        | Oui           |
-| Supprimer contenu               | 🟡       | Soft delete              | Oui           |
-| Anonymiser compte               | 🔴       | RGPD anonymisation       | **Non**       |
-| Supprimer compte                | 🔴       | RGPD hard delete         | **Non**       |
-
-**Toutes ces actions** sont loggées dans `admin_audit_logs`.
-
----
-
-## Module 3 — Modération contenu
-
-### Types de signalements
-
-| Type                                              | Priorité par défaut  | SLA réponse |
-| ------------------------------------------------- | -------------------- | ----------- |
-| Spam                                              | 🟡 Moyenne           | 24h         |
-| Contenu offensant                                 | 🟠 Haute             | 12h         |
-| Harcèlement                                       | 🔴 Critique          | 4h          |
-| Faux contenu (info erronée)                       | 🟡 Moyenne           | 48h         |
-| Contenu dangereux (espèces protégées GPS visible) | 🔴 Critique          | 2h          |
-| Contenu illégal                                   | 🔴 Critique + Police | 1h          |
-
-### File modération (queue)
-
-Filtres :
-
-- Urgence (critique/haute/moyenne/basse)
-- Nb signalements (1, 2-5, 5+, 10+)
-- Utilisateur signalé (récidive : 2+ signalements antérieurs)
-- Type contenu (post, comment, profil)
-- Statut (nouveau, en cours, résolu)
-- Date
-
-### Actions modération
-
-| Action                               | Effet                                    |
-| ------------------------------------ | ---------------------------------------- |
-| Supprimer post                       | Soft delete + notif auteur               |
-| Masquer post (shadow)                | Visible auteur seulement, retiré du feed |
-| Avertir utilisateur                  | Notif + comptage warnings                |
-| Suspendre compte                     | 7/30 jours configurable                  |
-| Bannir compte                        | Définitif + IP block                     |
-| Demander review humaine              | Escalade vers Super Admin                |
-| Marquer faux positif                 | Apprentissage filtre auto                |
-| Forcer édition (description, espèce) | Modal édition côté admin                 |
-
-### Automatisations futures (Phase 2 admin)
-
-| Détection        | Approche                                               | Risque faux positif |
-| ---------------- | ------------------------------------------------------ | ------------------- |
-| Spam             | Patterns texte + fréquence                             | Moyen               |
-| Uploads suspects | Hash images + dimensions                               | Bas                 |
-| Bots             | Heuristique comportement (vitesse signup, taux upload) | Moyen               |
-| Multi-comptes    | Fingerprint device + IP + patterns                     | Haut                |
-| NSFW dans photos | Modèle ML externe (Modération API)                     | Bas                 |
-
-⚠️ **Phase 1 admin = modération MANUELLE** (volume bas, qualité prime).
-Phase 2 = automatisations seulement si volume > 50 signalements/sem.
-
----
-
-## Module 4 — Analytics & métriques
-
-### Acquisition
-
-| Métrique                     | Description                              | Source                          |
-| ---------------------------- | ---------------------------------------- | ------------------------------- |
-| Source users                 | Beta key batch, waitlist, direct (futur) | `beta_signup_log`               |
-| Conversion landing → signup  | % visiteurs landing → signup             | Web analytics (Plausible/Umami) |
-| Conversion waitlist → signup | Time-to-signup post-invitation           | `waitlist` + `auth.users`       |
-
-### Activation
-
-| Métrique                        | Cible MVP | Source                          |
-| ------------------------------- | --------- | ------------------------------- |
-| Onboarding terminé (4/4 étapes) | > 80%     | `profiles.username IS NOT NULL` |
-| Première observation < 7j       | > 50%     | `posts` first                   |
-| Premier follow < 14j            | > 30%     | `follows` first                 |
-| Première réaction < 7j          | > 60%     | `reactions` first               |
-
-### Rétention (cohortes)
+Tableau filtrable :
 
 ```
-Tableau cohort visuel :
+[Search: email/username]    [Status: tous▾]    [Role: tous▾]    [Inscrits: 30j▾]
 
-Cohort   | J1  | J7  | J30 | J90
-S1       | 90% | 60% | 40% | 25%
-S2       | 85% | 55% | 35% | -
-S3       | ...
+┌──────────────────────────────────────────────────────────────────────┐
+│ Avatar | Username   | Email          | Role  | Status | Inscrit |     │
+├──────────────────────────────────────────────────────────────────────┤
+│  👤   | @alice     | alice@...      | user  | 🟢 actif | 2j      |⋮  │
+│  👤   | @bob       | bob@...        | user  | 🟡 susp. | 5j      |⋮  │
+│  👤   | @nicolas   | nicolas@...    | admin | 🟢 actif | 30j     |⋮  │
+└──────────────────────────────────────────────────────────────────────┘
+
+[Pagination: 1 / 1]
 ```
 
-Code couleur :
+### Actions au bout de chaque ligne (menu ⋮)
 
-- > 50% J7 : 🟢
-- 30-50% : 🟡
-- < 30% : 🔴
+| Action                     | Effet                                  | Confirmation          |
+| -------------------------- | -------------------------------------- | --------------------- |
+| 👁️ Voir profil             | Page publique du profil                | Non                   |
+| ✉️ Voir email              | Affiche email complet                  | Non                   |
+| ⚠️ Avertir                 | Notif privee a l'user                  | Oui                   |
+| ⏸️ Suspendre 7j            | Bloque login                           | Oui                   |
+| 🚫 Bannir                  | Disable compte                         | Oui (saisie username) |
+| 🔄 Reset onboarding        | Reaffiche onboarding au prochain login | Oui                   |
+| 👑 Promouvoir admin        | role = 'admin' (Super Admin only)      | Oui (saisie raison)   |
+| 🗑️ Supprimer compte (RGPD) | Hard delete via Edge Function          | Oui (2 confirmations) |
 
-### Engagement
+**Toutes ces actions** sont loggees dans `admin_audit_logs`.
 
-| Métrique                       | Période |
-| ------------------------------ | ------- |
-| DAU / MAU ratio                | Hebdo   |
-| Sessions par user actif        | Hebdo   |
-| Temps moyen session            | Hebdo   |
-| Posts par user actif / semaine | Hebdo   |
-| Réactions données / post       | Mensuel |
+### Fiche user 360° (page `/admin/users/:id`)
 
-### Métriques produit
+Sections :
 
-**Feed** :
-
-- Vues totales feed
-- Scroll depth moyen
-- Posts lus / session
-- Taux clic sur post
-
-**Observations** :
-
-- Volume créé / jour
-- Distribution géographique (carte)
-- % avec espèce identifiée
-- % photos par observation
-
-**Onboarding** :
-
-- Drop-off par étape (1→2, 2→3, 3→4)
-- Temps moyen par étape
-- Sources d'abandon (back button, exit modal, timeout)
-
-**Fonctionnalités** :
-
-- Heatmap usage features
-- Features inutilisées (< 5% users)
-- Top features (par usage)
-
-### Métriques business futures
-
-- Coût infra / user actif
-- LTV (lifetime value, post-monétisation)
-- Conversion premium (si applicable)
+1. **Profil** : Username, email, bio, avatar, banner, date inscription
+2. **Activite** : Nb posts, commentaires, reactions, follows
+3. **Historique** : Sanctions recues, logs connexion (date, IP anonymisee)
+4. **Actions** : Boutons des actions ci-dessus
 
 ---
 
-## Module 5 — Beta management
+## Module 3 — Moderation (`/admin/moderation`)
 
-> **Lié à** [`BETA_CLOSED_ACCESS_STRATEGY.md`](BETA_CLOSED_ACCESS_STRATEGY.md)
+**Objectif** : Traiter les signalements rapidement.
 
-### Sous-module : Gestion clés d'accès
-
-- Liste clés (filtres : batch, status, expirée, utilisée)
-- Bouton "Générer X clés" (batch automatique)
-- Export CSV pour envoi emails
-- Désactivation manuelle / extension expiration
-
-### Sous-module : Gestion vagues
-
-- Vue chronologique (S1, S2, S3, ...)
-- Status par vague (active, terminée, GO/NO-GO)
-- KPIs par cohorte (rétention, engagement)
-- Décision GO/NO-GO formalisée (bouton + notes)
-
-### Sous-module : Suivi testeurs
-
-- Liste testeurs actifs / inactifs
-- Feedback hebdo (lien Tally)
-- Bugs remontés (par testeur)
-- Notes admin par testeur
-
-### Sous-module : Waitlist
-
-- Liste demandes (date, email, motivation)
-- Priorités (par profil)
-- Bouton "Inviter ces X personnes" (génère clés + envoie emails)
-
----
-
-## Module 6 — Sécurité & conformité
-
-### Surveillance temps réel
-
-| Événement                                   | Source                   | Alerte                |
-| ------------------------------------------- | ------------------------ | --------------------- |
-| Connexions suspectes (login pays différent) | `auth.sessions` + IP     | Email admin           |
-| Tentatives brute-force                      | `beta_signup_log` failed | Email + auto-block IP |
-| Spam burst (10+ posts en 1h)                | `posts` count par user   | Email                 |
-| Abus API (rate limit dépassé)               | Edge Function logs       | Slack                 |
-| Uploads suspects (taille anormale)          | `media` stats            | Email                 |
-| Multi-comptes (même fingerprint)            | Custom detector          | Email                 |
-
-### RGPD / Loi 25
-
-| Action                        | Module concerné               |
-| ----------------------------- | ----------------------------- |
-| Exports données utilisateur   | Module Utilisateurs > Fiche   |
-| Suppressions / anonymisations | Module Utilisateurs > Actions |
-| Consentements actifs          | Module Config > Consentements |
-| Audit logs accès admin        | Module Logs                   |
-| Cron J+30 anonymisation IP    | Backend (déjà actif)          |
-
-### Permissions admin
-
-| Rôle            | Permissions                                                   |
-| --------------- | ------------------------------------------------------------- |
-| **Super Admin** | Tout (rôle de Nicolas)                                        |
-| **Modérateur**  | Modération + Support + Vue Users (pas d'actions destructives) |
-| **Support**     | Support + Vue Users + lecture seule autres modules            |
-| **Analyste**    | Analytics + Monitoring (lecture seule)                        |
-
-⚠️ **Aucun rôle "Admin" générique** : toujours granulaire pour limiter dégâts en cas de compromission.
-
----
-
-## Module 7 — Monitoring technique
-
-### Dashboard temps réel
-
-| Métrique            | Source             | Seuil alerte  |
-| ------------------- | ------------------ | ------------- |
-| Erreurs front 5xx   | Sentry (futur)     | > 5 / minute  |
-| Erreurs back 5xx    | Edge Function logs | > 10 / minute |
-| Erreurs auth        | `auth.audit_log`   | > 20 / heure  |
-| Erreurs DB          | Postgres logs      | > 5 / heure   |
-| Uploads failed      | Storage logs       | > 10%         |
-| Latence API moyenne | Custom telemetry   | > 1s          |
-| Temps réponse home  | RUM                | > 2s          |
-| CPU Supabase        | Dashboard          | > 80%         |
-| Storage Supabase    | Quota check        | > 80%         |
-| Bandwidth Supabase  | Quota check        | > 80%         |
-
-### Alerting
-
-- **Email** : alertes critiques (24/7)
-- **Slack/Discord** : alertes warning
-- **In-app banner admin** : si système dégradé
-
-### Health checks
+### Vue queue
 
 ```
-[ ] Supabase DB     OK / Slow / Down
-[ ] Supabase Auth   OK / Slow / Down
-[ ] Supabase Storage OK / Slow / Down
-[ ] Vercel Frontend OK / Slow / Down
-[ ] Edge Functions  OK / Slow / Down
+[Status: nouveau▾]    [Priorite: tous▾]    [Type: tous▾]
+
+┌────────────────────────────────────────────────────────────────────┐
+│ ⏰ | Priorite | Type     | Signale | Par      | Raison       | ⋮ │
+├────────────────────────────────────────────────────────────────────┤
+│ 2h | 🔴 Haute | post     | post#7  | @alice   | Harcelement  | ⋮ │
+│ 1d | 🟡 Moy.  | post     | post#3  | @bob     | Spam         | ⋮ │
+│ 3d | 🟢 Bas   | comment  | cmt#12  | @charlie | Hors-sujet   | ⋮ │
+└────────────────────────────────────────────────────────────────────┘
 ```
+
+### Types signalements (table `moderation_reports.reason`)
+
+| Type                    | Priorite par defaut  | SLA reponse |
+| ----------------------- | -------------------- | ----------- |
+| `spam`                  | 🟡 Moyenne           | 24h         |
+| `offensive`             | 🟠 Haute             | 12h         |
+| `harassment`            | 🔴 Critique          | 4h          |
+| `wrong_info`            | 🟡 Moyenne           | 48h         |
+| `protected_species_gps` | 🔴 Critique          | 2h          |
+| `illegal_content`       | 🔴 Critique + Police | 1h          |
+
+### Actions par signalement
+
+| Action                   | Effet                         |
+| ------------------------ | ----------------------------- |
+| 👁️ Voir contenu          | Modal preview du post/comment |
+| 🗑️ Supprimer contenu     | Soft delete + notif auteur    |
+| 👻 Masquer (shadow)      | Visible auteur seulement      |
+| ⚠️ Avertir auteur        | Notif + comptage warnings     |
+| ⏸️ Suspendre auteur      | 7/30 jours                    |
+| ✅ Marquer faux positif  | Resout sans action            |
+| ⬆️ Escalader Super Admin | Notif Nicolas                 |
 
 ---
 
-## Module 8 — Support & signalements
+## Module 4 — Beta management (`/admin/beta`)
 
-### Tickets support
+> **Lie a** [`BETA_CLOSED_ACCESS_STRATEGY.md`](BETA_CLOSED_ACCESS_STRATEGY.md)
 
-Structure standard :
+**Objectif** : Piloter les vagues hebdomadaires sans toucher SQL.
 
-- ID, statut, priorité, sujet
-- User concerné (lien fiche)
-- Catégorie (bug, demande, question, signalement)
-- Historique messages
-- Tags
-- Assignation (qui traite)
-- SLA (temps réponse cible)
-
-### Workflow
+### Vue d'ensemble
 
 ```
-Ticket créé → Triage (auto ou manuel)
-    ↓
-Assigné à un agent
-    ↓
-En cours (réponses + investigation)
-    ↓
-Résolu (notif user + ticket fermé)
-    OU
-Escaladé (super admin requis)
+PHASE 1 — Beta fermee
+Users : 23 / 50  (46%)
+Status : 🟢 Accepting signups
+
+┌──── Vague actuelle (S3) ────────────────────────┐
+│  Demarree : Lundi 6 mai                          │
+│  Cles emises : 10                                │
+│  Utilisees : 7                                   │
+│  Expirees : 0                                    │
+│  Decision vendredi : GO / NO-GO                  │
+└──────────────────────────────────────────────────┘
+
+[Generer 10 nouvelles cles (vague 4)]
 ```
 
-### Bugs / Feedback
+### Sous-section : Cles d'acces
 
-Module séparé des tickets car nature différente :
+```
+┌──────────────────────────────────────────────────────────┐
+│ Code         | Batch | Status   | Used by | Expire dans   │
+├──────────────────────────────────────────────────────────┤
+│ NG-XK7M-9PQ2 | 3     | ✅ used  | @alice  | -             │
+│ NG-7L3F-RT8Z | 3     | 🟢 valid | -       | 5j            │
+│ NG-K9JR-2BFM | 2     | 🔴 expir | -       | -1d           │
+└──────────────────────────────────────────────────────────┘
+```
 
-- **Bug** : doit être reproduit + corrigé (lien à `MASTER_TODO.md` T-XXX)
-- **Feedback** : suggestion produit (lien à `PROJECT_MASTER.md` backlog)
+Actions par cle :
+
+- 🚫 Desactiver (force `is_active = FALSE`)
+- ⏰ Etendre expiration (+7j)
+- 📋 Copier le code
+
+### Sous-section : Waitlist
+
+```
+┌──────────────────────────────────────────────────────┐
+│ Email             | Motivation       | Inscrit | ⋮  │
+├──────────────────────────────────────────────────────┤
+│ jean@example.com  | "Photographe..." | 2d      | ⋮  │
+│ sophie@example.com| "Etudiante eco." | 5d      | ⋮  │
+└──────────────────────────────────────────────────────┘
+
+[Inviter ces 2 personnes (genere 2 cles + envoie mails)]
+```
+
+### Sous-section : Stats signups
+
+Resume hebdo des `beta_signup_log` :
+
+- Total tentatives : 47
+- Succes : 23 (49%)
+- Echecs : 24 (51%)
+  - Invalid code : 18
+  - Expired : 4
+  - Already used : 2
+
+→ Permet de detecter brute force / partage de cles.
 
 ---
 
-## Module 9 — Configuration plateforme
+## Module 5 — Audit logs (`/admin/audit`)
 
-### Paramètres modifiables sans deploy
+**Objectif** : Tracabilite complete + conformite RGPD.
 
-| Paramètre                           | Type  | Effet                                   |
-| ----------------------------------- | ----- | --------------------------------------- |
-| `beta_accepting_signups`            | bool  | Active/désactive nouvelles inscriptions |
-| `max_users_total`                   | int   | Plafond utilisateurs (Phase 1, 2)       |
-| `max_upload_size_mb`                | int   | Limite upload photos                    |
-| `max_observations_per_day_per_user` | int   | Anti-spam quota                         |
-| `maintenance_mode`                  | bool  | Affiche page maintenance pour tous      |
-| `feature_flags`                     | jsonb | Active/désactive features               |
-| `global_banner_message`             | text  | Bannière info top app                   |
-| `cookie_banner_version`             | int   | Force re-consentement RGPD              |
+### Vue logs
 
-### Feature flags (futur)
+```
+[Action: tous▾]    [Admin: tous▾]    [Date: 30j▾]    [User cible:]
 
-Exemple :
-
-```json
-{
-  "enable_comments": true,
-  "enable_notebooks": false,
-  "enable_dark_mode": true,
-  "enable_export_pdf": false,
-  "enable_share_external": true
-}
+┌────────────────────────────────────────────────────────────────┐
+│ Quand       | Admin    | Action          | Cible         | Voir│
+├────────────────────────────────────────────────────────────────┤
+│ il y a 2h   | nicolas  | user.ban        | @malicious_x  | →   │
+│ il y a 5h   | nicolas  | content.delete  | post#42       | →   │
+│ il y a 1j   | nicolas  | beta.key_gen    | batch #4      | →   │
+│ il y a 2j   | nicolas  | config.update   | beta_quota    | →   │
+└────────────────────────────────────────────────────────────────┘
 ```
 
-Permet de :
+### Detail d'un log (modal)
 
-- A/B tester features
-- Désactiver rapidement une feature buggée
-- Rollout progressif (% users)
+```
+Action : user.ban
+Quand : 2026-05-13 14:32:15
+Par : nicolas@naturegraph.fr (Super Admin)
+Cible : User @malicious_x (uuid: xxx-xxx)
+IP admin : 192.168.x.x (anonymisee J+90)
+Raison : "Spam multiple posts"
+Etat avant : { is_active: TRUE, posts_count: 12 }
+Etat apres : { is_active: FALSE, posts_count: 12 }
+Reversible : Oui [Revert]
+```
 
----
-
-## Module 10 — Logs & audit trail
-
-### Logs admin obligatoires
-
-Toute action admin DOIT être loggée :
-
-| Action                         | Données loggées                         |
-| ------------------------------ | --------------------------------------- |
-| Connexion admin                | Qui, quand, IP, device                  |
-| Modification rôle user         | Avant/après, par qui, raison            |
-| Suppression contenu            | Qui, quand, raison, snapshot du contenu |
-| Ban user                       | Qui, durée, raison                      |
-| Export données user (RGPD)     | Qui (admin), quand, user concerné       |
-| Modification config plateforme | Qui, avant/après, raison                |
-| Suppression compte forcée      | Qui (admin), user, raison               |
-
-### Historique navigation
-
-| Quoi                      | Quand            | Qui         | Impact           |
-| ------------------------- | ---------------- | ----------- | ---------------- |
-| Bouton "Bannir" cliqué    | 2026-05-10 14:32 | nicolas@... | User X banni 7j  |
-| Config max_upload modifié | 2026-05-10 11:00 | nicolas@... | 10 → 15 MB       |
-| Export RGPD user Y        | 2026-05-09 16:15 | nicolas@... | Données envoyées |
-
-### Recherche dans les logs
-
-Filtres :
-
-- Date range
-- Type d'action
-- Admin concerné
-- User impacté
-- Sévérité (critique, importante, normale)
+**Table `admin_audit_logs` est INSERT-ONLY** (RLS + triggers empechent UPDATE/DELETE).
 
 ---
 
-# 🧱 Architecture technique recommandée
+# 🏗️ Architecture technique
 
-## Stack frontend admin
+## Stack (reuse de l'existant)
 
-| Couche    | Choix                                                         | Justification                        |
-| --------- | ------------------------------------------------------------- | ------------------------------------ |
-| Framework | **React 19 + TypeScript + Vite**                              | Cohérent avec app publique           |
-| Routing   | **React Router 7** (admin = `/admin/*`)                       | Idem                                 |
-| State     | **TanStack Query** (server state) + **Zustand** (UI state)    | Server vs UI séparés                 |
-| Tables    | **TanStack Table v8**                                         | Standard du marché, performant       |
-| Charts    | **Recharts** ou **Tremor**                                    | Light, customisable                  |
-| UI Kit    | **shadcn/ui** (composants admin) ou **réutiliser DS interne** | Décision à prendre selon DS maturité |
-| Forms     | **react-hook-form + zod** (cohérent avec app)                 | DRY                                  |
-| Dates     | **date-fns** ou **Day.js**                                    | Plus light que Moment                |
-| Icons     | **lucide-react** (déjà dans le projet)                        | Cohérence                            |
+| Couche    | Choix                                                                                        | Justification                                           |
+| --------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Framework | **React 19 + TS strict + Vite**                                                              | Coherent avec app publique                              |
+| Routing   | **React Router 7** (`/admin/*`)                                                              | Idem                                                    |
+| State     | **TanStack Query** (deja en place)                                                           | DRY                                                     |
+| Tables    | **Composant table custom** (reuse Card + Stack du DS)                                        | Pas de TanStack Table pour MVP, simple html table       |
+| UI Kit    | **DS Naturegraph** (Button, Modal, ConfirmModal slots, EmptyState, ErrorState, LoadingState) | Coherence visuelle                                      |
+| Forms     | **react-hook-form + zod** (deja installes BATCH 23)                                          | DRY                                                     |
+| Charts    | **Aucun chart custom MVP**                                                                   | Supabase Dashboard suffit. Phase 2 : Tremor ou Recharts |
+| Icons     | **lucide-react**                                                                             | Coherence                                               |
 
-## Stack backend
+**Aucune nouvelle dependance** pour le MVP admin.
 
-### Supabase
+## Architecture DB — 4 tables nouvelles
 
-| Composant                  | Usage                                      |
-| -------------------------- | ------------------------------------------ |
-| Tables admin (8 nouvelles) | Voir architecture DB ci-dessous            |
-| RLS policies role-based    | Admin / Moderator / Support / Analyst      |
-| Edge Functions             | Actions complexes (bulk ban, exports)      |
-| pg_cron                    | Refresh stats matérialisées                |
-| Realtime                   | Notifications admin (signalements urgents) |
-
-### Hosting
-
-- Frontend admin : `admin.naturegraph.fr` (sous-domaine, Vercel séparé)
-- Authentification : SSO via auth.naturegraph (rôle admin requis)
-- **Bonne pratique** : déploiement admin **séparé** du frontend public (release indépendantes)
-
-## Architecture DB — 8 tables
+> **Note** : `support_tickets` et `security_audit_log` existent deja (cycle 1).
 
 ### Table `admin_users`
 
@@ -598,16 +348,19 @@ Filtres :
 CREATE TABLE public.admin_users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
-  role VARCHAR(20) NOT NULL,  -- 'super_admin', 'moderator', 'support', 'analyst'
-  permissions JSONB NOT NULL DEFAULT '{}',  -- Granularité fine
+  role VARCHAR(20) NOT NULL CHECK (role IN ('super_admin', 'moderator', 'support')),
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   created_by UUID REFERENCES auth.users(id),
-  notes TEXT,
-  CONSTRAINT valid_role CHECK (role IN ('super_admin', 'moderator', 'support', 'analyst'))
+  notes TEXT
 );
 
-CREATE INDEX idx_admin_users_user_id ON public.admin_users(user_id) WHERE is_active = TRUE;
+CREATE INDEX idx_admin_users_active ON public.admin_users(user_id) WHERE is_active = TRUE;
+
+-- Seed initial : Nicolas en super_admin
+-- (a executer manuellement post-deploy avec son user_id reel)
+-- INSERT INTO public.admin_users (user_id, role, notes)
+-- VALUES ('<NICOLAS_UUID>', 'super_admin', 'Fondateur');
 ```
 
 ### Table `moderation_reports`
@@ -616,38 +369,35 @@ CREATE INDEX idx_admin_users_user_id ON public.admin_users(user_id) WHERE is_act
 CREATE TABLE public.moderation_reports (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   reporter_id UUID NOT NULL REFERENCES auth.users(id),
-  target_type VARCHAR(20) NOT NULL,  -- 'post', 'comment', 'profile'
+  target_type VARCHAR(20) NOT NULL CHECK (target_type IN ('post', 'comment', 'profile')),
   target_id UUID NOT NULL,
-  reason VARCHAR(50) NOT NULL,  -- 'spam', 'offensive', 'harassment', etc.
+  reason VARCHAR(50) NOT NULL CHECK (reason IN ('spam', 'offensive', 'harassment', 'wrong_info', 'protected_species_gps', 'illegal_content', 'other')),
   description TEXT,
-  status VARCHAR(20) NOT NULL DEFAULT 'new',  -- 'new', 'in_review', 'resolved', 'dismissed'
-  priority VARCHAR(20) NOT NULL DEFAULT 'medium',
+  status VARCHAR(20) NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'in_review', 'resolved', 'dismissed')),
+  priority VARCHAR(20) NOT NULL DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'critical')),
   assigned_to UUID REFERENCES public.admin_users(id),
   resolved_at TIMESTAMPTZ,
   resolved_by UUID REFERENCES public.admin_users(id),
   resolution_notes TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CONSTRAINT valid_target_type CHECK (target_type IN ('post', 'comment', 'profile')),
-  CONSTRAINT valid_status CHECK (status IN ('new', 'in_review', 'resolved', 'dismissed')),
-  CONSTRAINT valid_priority CHECK (priority IN ('low', 'medium', 'high', 'critical'))
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_moderation_reports_status ON public.moderation_reports(status, priority, created_at DESC);
 CREATE INDEX idx_moderation_reports_target ON public.moderation_reports(target_type, target_id);
 ```
 
-### Table `moderation_actions`
+### Table `admin_actions` (action sur user/content)
 
 ```sql
-CREATE TABLE public.moderation_actions (
+CREATE TABLE public.admin_actions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  action_type VARCHAR(50) NOT NULL,  -- 'warn', 'suspend', 'ban', 'delete_content', 'unban', etc.
+  action_type VARCHAR(50) NOT NULL,  -- 'warn', 'suspend', 'ban', 'delete_content', 'unban', 'role_change', etc.
   target_user_id UUID REFERENCES auth.users(id),
-  target_content_id UUID,  -- post_id, comment_id, etc.
+  target_content_id UUID,
   target_content_type VARCHAR(20),
   performed_by UUID NOT NULL REFERENCES public.admin_users(id),
   reason TEXT NOT NULL,
-  duration_days INT,  -- pour suspensions
+  duration_days INT,
   related_report_id UUID REFERENCES public.moderation_reports(id),
   is_reversible BOOLEAN NOT NULL DEFAULT TRUE,
   reverted_at TIMESTAMPTZ,
@@ -656,22 +406,22 @@ CREATE TABLE public.moderation_actions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_moderation_actions_target_user ON public.moderation_actions(target_user_id, created_at DESC);
-CREATE INDEX idx_moderation_actions_performed_by ON public.moderation_actions(performed_by, created_at DESC);
+CREATE INDEX idx_admin_actions_target_user ON public.admin_actions(target_user_id, created_at DESC);
+CREATE INDEX idx_admin_actions_performed_by ON public.admin_actions(performed_by, created_at DESC);
 ```
 
-### Table `admin_audit_logs`
+### Table `admin_audit_logs` (IMMUTABLE)
 
 ```sql
 CREATE TABLE public.admin_audit_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   admin_user_id UUID NOT NULL REFERENCES public.admin_users(id),
-  action VARCHAR(100) NOT NULL,  -- 'user.ban', 'config.update', 'data.export', etc.
+  action VARCHAR(100) NOT NULL,  -- 'user.ban', 'content.delete', 'beta.key_gen', 'config.update', etc.
   target_type VARCHAR(50),
   target_id UUID,
   before_state JSONB,
   after_state JSONB,
-  ip_address INET,  -- Anonymisée J+90 (audit RGPD plus long que normal)
+  ip_address INET,
   user_agent TEXT,
   metadata JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -681,338 +431,311 @@ CREATE INDEX idx_admin_audit_logs_admin ON public.admin_audit_logs(admin_user_id
 CREATE INDEX idx_admin_audit_logs_action ON public.admin_audit_logs(action, created_at DESC);
 CREATE INDEX idx_admin_audit_logs_target ON public.admin_audit_logs(target_type, target_id);
 
--- Cette table est INSERT-ONLY (immutable). RLS + triggers empêchent UPDATE/DELETE.
+-- INSERT-ONLY : aucun UPDATE/DELETE autorise
+CREATE OR REPLACE FUNCTION public.prevent_audit_log_modification()
+RETURNS TRIGGER AS $$
+BEGIN
+  RAISE EXCEPTION 'admin_audit_logs is INSERT-ONLY';
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER no_update_audit_logs
+  BEFORE UPDATE OR DELETE ON public.admin_audit_logs
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_audit_log_modification();
 ```
 
-### Table `support_tickets` (déjà existe)
-
-Existe déjà en MVP (vue plus haut). À enrichir avec :
-
-- `priority`, `category`, `assigned_to`, `sla_due_at`
-
-### Table `analytics_events`
+### RLS Policies (pattern BATCH 22)
 
 ```sql
-CREATE TABLE public.analytics_events (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id),
-  session_id UUID,
-  event_type VARCHAR(50) NOT NULL,  -- 'page_view', 'click', 'form_submit', 'feature_used', etc.
-  event_name VARCHAR(100) NOT NULL,
-  properties JSONB DEFAULT '{}',
-  occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+-- admin_users : tous admins lisent, super_admin gere
+ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
 
--- Partitionnement par mois (volume potentiellement gros)
-CREATE INDEX idx_analytics_events_user ON public.analytics_events(user_id, occurred_at DESC);
-CREATE INDEX idx_analytics_events_type ON public.analytics_events(event_type, occurred_at DESC);
-```
+CREATE POLICY "admins_read_admin_users" ON public.admin_users
+  FOR SELECT TO authenticated
+  USING ((SELECT auth.uid()) IN (SELECT user_id FROM public.admin_users WHERE is_active = TRUE));
 
-⚠️ **Alternative recommandée** : utiliser **Plausible** ou **Umami** (analytics tiers RGPD-friendly) plutôt que rouler son propre analytics. Moins de dette technique.
+CREATE POLICY "super_admin_manage_admin_users" ON public.admin_users
+  FOR ALL TO authenticated
+  USING ((SELECT auth.uid()) IN (
+    SELECT user_id FROM public.admin_users WHERE is_active = TRUE AND role = 'super_admin'
+  ));
 
-### Table `security_events` (déjà existe partiellement)
+-- moderation_reports : users peuvent INSERT (signaler), admins lisent/modifient
+ALTER TABLE public.moderation_reports ENABLE ROW LEVEL SECURITY;
 
-Existe déjà (`security_audit_log`). À enrichir avec :
+CREATE POLICY "users_insert_reports" ON public.moderation_reports
+  FOR INSERT TO authenticated WITH CHECK ((SELECT auth.uid()) = reporter_id);
 
-- `event_severity` (low, medium, high, critical)
-- `auto_resolved` (bool)
+CREATE POLICY "admins_manage_reports" ON public.moderation_reports
+  FOR ALL TO authenticated
+  USING ((SELECT auth.uid()) IN (SELECT user_id FROM public.admin_users WHERE is_active = TRUE));
 
-### Table `platform_config`
+-- admin_actions : admins lisent/inserent
+ALTER TABLE public.admin_actions ENABLE ROW LEVEL SECURITY;
 
-```sql
-CREATE TABLE public.platform_config (
-  key VARCHAR(100) PRIMARY KEY,
-  value JSONB NOT NULL,
-  description TEXT,
-  updated_by UUID REFERENCES public.admin_users(id),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+CREATE POLICY "admins_manage_admin_actions" ON public.admin_actions
+  FOR ALL TO authenticated
+  USING ((SELECT auth.uid()) IN (SELECT user_id FROM public.admin_users WHERE is_active = TRUE));
 
--- Lecture publique (pour feature flags côté front)
--- Écriture admin seulement
+-- admin_audit_logs : admins INSERT + SELECT, jamais UPDATE/DELETE (trigger)
+ALTER TABLE public.admin_audit_logs ENABLE ROW LEVEL SECURITY;
 
--- Seed avec config initiale :
-INSERT INTO public.platform_config (key, value, description) VALUES
-('beta_accepting_signups', 'true', 'Accept new beta signups'),
-('max_users_total', '50', 'Phase 1 user cap'),
-('max_upload_size_mb', '10', 'Max upload size per file'),
-('maintenance_mode', 'false', 'Show maintenance page to all users'),
-('feature_flags', '{"comments": true, "notebooks": false}', 'Feature toggles');
+CREATE POLICY "admins_read_audit_logs" ON public.admin_audit_logs
+  FOR SELECT TO authenticated
+  USING ((SELECT auth.uid()) IN (SELECT user_id FROM public.admin_users WHERE is_active = TRUE));
+
+CREATE POLICY "admins_insert_audit_logs" ON public.admin_audit_logs
+  FOR INSERT TO authenticated
+  WITH CHECK ((SELECT auth.uid()) IN (SELECT user_id FROM public.admin_users WHERE is_active = TRUE));
 ```
 
 ---
 
-# 🎨 UX Admin
-
-## Layout desktop (cible)
+# 🎨 Structure code front (route /admin)
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│ Naturegraph Admin  | 🟢 Système OK | 👤 Nicolas | 🔔 3 alerts |⚙ │
-├──────────┬──────────────────────────────────────────────────────┤
-│          │ ► Dashboard                                          │
-│ [Logo]   │                                                       │
-│          │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐│
-│ 📊 Dash  │  │ DAU      │ │ Nouv.    │ │ Signal.  │ │ Erreurs  ││
-│ 👥 Users │  │   47     │ │   12     │ │   2 🟡   │ │   0 🟢   ││
-│ 🚨 Mod   │  └──────────┘ └──────────┘ └──────────┘ └──────────┘│
-│ 📈 Anal  │                                                       │
-│ 🎫 Beta  │  ┌──────────────────────────────────────────────┐    │
-│ 🛡️ Sec   │  │ Activité 7 derniers jours [chart]            │    │
-│ 🛠️ Mon   │  │                                              │    │
-│ 💬 Supp  │  └──────────────────────────────────────────────┘    │
-│ ⚙ Conf   │                                                       │
-│ 📝 Logs  │  ┌────────────────────┐ ┌────────────────────────┐  │
-│          │  │ Signalements rec.  │ │ Tickets support        │  │
-│          │  │ - Spam x2          │ │ #42 Login bug          │  │
-│          │  │ - Harcèlement x1   │ │ #41 Upload fail        │  │
-│          │  └────────────────────┘ └────────────────────────┘  │
-└──────────┴──────────────────────────────────────────────────────┘
+src/
+├── pages/
+│   ├── Admin/                       # ← Nouveau (MVP admin)
+│   │   ├── AdminLayout.tsx          # Layout commun (sidebar + header)
+│   │   ├── AdminDashboard.tsx       # Module 1
+│   │   ├── AdminUsers.tsx           # Module 2 (liste)
+│   │   ├── AdminUserDetail.tsx      # Fiche user 360
+│   │   ├── AdminModeration.tsx      # Module 3
+│   │   ├── AdminBeta.tsx            # Module 4
+│   │   └── AdminAuditLogs.tsx       # Module 5
+│   └── ...
+├── components/
+│   ├── admin/                       # ← Nouveau
+│   │   ├── AdminGuard.tsx           # Wrap route /admin/* — verifie role
+│   │   ├── AdminSidebar.tsx
+│   │   ├── KPIBox.tsx               # KPI card avec tendance
+│   │   ├── ActionMenu.tsx           # Menu actions par row
+│   │   ├── ConfirmDestructive.tsx   # Modal confirmation actions critiques
+│   │   └── AuditTrailEntry.tsx
+│   └── ...
+├── hooks/
+│   ├── useIsAdmin.ts                # Verifie role en DB
+│   ├── useAdminUsers.ts             # CRUD admin_users
+│   ├── useModerationReports.ts      # CRUD reports
+│   └── useAdminActions.ts           # Wrapper pour logger toute action
+├── services/
+│   └── adminService.ts              # API layer pour admin
+└── schemas/
+    └── admin.ts                     # zod schemas admin (deja prepare T-068)
 ```
 
-## Layout mobile (cible)
+### Garde route
 
-```
-┌──────────────────────┐
-│ 🟢 OK   ☰   🔔 3     │  ← Header collapsed
-├──────────────────────┤
-│                      │
-│  DAU: 47 ↗           │  ← KPIs prioritaires
-│  Signal.: 2 🟡       │
-│  Erreurs: 0 🟢       │
-│                      │
-│ ─────────────────── │
-│                      │
-│ 🚨 ALERTES URGENTES  │
-│ • Harcèlement (#42)  │  ← Tap → action rapide
-│ • Spam burst (#41)   │
-│                      │
-│ ─────────────────── │
-│                      │
-│ [📊][👥][🚨][📈]    │  ← Bottom nav modules
-└──────────────────────┘
-```
+```typescript
+// src/components/admin/AdminGuard.tsx
+import { Navigate } from 'react-router-dom'
+import { useIsAdmin } from '@/hooks/useIsAdmin'
+import { LoadingState } from '@/components/ui'
 
-## Densité d'information
-
-| Vue                | Densité cible                                   |
-| ------------------ | ----------------------------------------------- |
-| Dashboard          | **Faible** (vue scan rapide)                    |
-| Tables users / mod | **Haute** (50+ rows visible)                    |
-| Fiche user 360°    | **Moyenne** (informations groupées par section) |
-| Analytics charts   | **Moyenne** (1-2 charts par écran)              |
-
-## Composants admin spécifiques (en plus du DS public)
-
-| Composant                | Usage                                            |
-| ------------------------ | ------------------------------------------------ |
-| `<DataTable>`            | TanStack Table wrapper avec filtres + pagination |
-| `<KPIBox>`               | Widget chiffre + tendance + lien action          |
-| `<StatusBadge>`          | Statut user (active/banned/etc.)                 |
-| `<SeverityChip>`         | Critical / High / Medium / Low                   |
-| `<ActionMenu>`           | Menu actions avec confirmation                   |
-| `<AuditTrailEntry>`      | Ligne d'historique format standard               |
-| `<CohortMatrix>`         | Tableau cohort coloré (rétention)                |
-| `<TimelineChart>`        | Recharts wrapper avec axe temps                  |
-| `<UserAvatarWithStatus>` | Avatar + badge statut user                       |
-| `<ConfigEditor>`         | Form JSON avec validation schema                 |
-
----
-
-# 🔐 Sécurité admin
-
-## Authentification
-
-- **2FA obligatoire** pour tous les admins (TOTP via Supabase Auth)
-- **Sessions courtes** : 24h max, renouvelable
-- **IP whitelist** optionnelle (fonctionne Phase 2)
-- **Audit log** de chaque login admin
-
-## Autorisations
-
-```
-Super Admin    → Tout, sauf supprimer sa propre fiche admin
-Moderator      → Modération + lecture users (pas d'actions destructives)
-Support        → Lecture users + tickets + signalements
-Analyst        → Analytics + monitoring (lecture seule)
-```
-
-Granularité fine via `admin_users.permissions` (JSONB) :
-
-```json
-{
-  "users.read": true,
-  "users.suspend": true,
-  "users.ban": false,
-  "users.delete": false,
-  "moderation.review": true,
-  "config.read": true,
-  "config.write": false
+export function AdminGuard({ children }: { children: React.ReactNode }) {
+  const { isAdmin, isLoading } = useIsAdmin()
+  if (isLoading) return <LoadingState />
+  if (!isAdmin) return <Navigate to="/" replace />
+  return <>{children}</>
 }
 ```
 
+```typescript
+// router.tsx (extrait, ajout des routes /admin/*)
+{
+  path: '/admin',
+  element: <AdminGuard><AdminLayout /></AdminGuard>,
+  children: [
+    { index: true, element: <AdminDashboard /> },
+    { path: 'users', element: <AdminUsers /> },
+    { path: 'users/:userId', element: <AdminUserDetail /> },
+    { path: 'moderation', element: <AdminModeration /> },
+    { path: 'beta', element: <AdminBeta /> },
+    { path: 'audit', element: <AdminAuditLogs /> },
+  ],
+},
+```
+
+### Pattern action admin loggee
+
+```typescript
+// hooks/useAdminActions.ts
+export function useAdminAction() {
+  const supabase = useSupabase()
+  const { adminUser } = useIsAdmin()
+
+  return async function performAction({
+    action,
+    target_type,
+    target_id,
+    before_state,
+    after_state,
+    reason,
+  }: AdminActionInput) {
+    // 1. Effectuer l'action (UPDATE user, DELETE post, etc.)
+    // 2. Logger automatiquement
+    await supabase.from('admin_audit_logs').insert({
+      admin_user_id: adminUser.id,
+      action,
+      target_type,
+      target_id,
+      before_state,
+      after_state,
+      metadata: { reason },
+    })
+  }
+}
+```
+
+---
+
+# 🛡️ Sécurité MVP
+
+## Authentification
+
+- **Magic link Supabase** (cycle 1 livre) — pas de password
+- **Session 24h max** par defaut Supabase
+- **Audit log** de chaque login admin via trigger sur `auth.sessions`
+
+## Autorisation
+
+| Role            | Permissions                                           |
+| --------------- | ----------------------------------------------------- |
+| **super_admin** | Tout (Nicolas)                                        |
+| **moderator**   | Moderation + lecture users + actions non-destructives |
+| **support**     | Lecture users + reponse tickets                       |
+
+Verification simple via row dans `admin_users` (pas de JSONB granulaire pour MVP).
+
 ## Protection actions destructives
 
-| Action                     | Protection                                   |
-| -------------------------- | -------------------------------------------- |
-| Bannir compte              | Confirmation modale + saisie username target |
-| Supprimer compte (RGPD)    | Confirmation + 2FA challenge + audit log     |
-| Modifier rôle              | Confirmation + saisie justification          |
-| Export massif données      | Limit rate + audit log + chiffrement export  |
-| Modifier config plateforme | Confirmation + diff visible avant validation |
+| Action                | Protection                                         |
+| --------------------- | -------------------------------------------------- |
+| Bannir compte         | Modal confirmation + saisie username cible         |
+| Supprimer compte RGPD | Modal + saisie email cible + audit log obligatoire |
+| Modifier role         | Modal + saisie justification                       |
+| Supprimer post        | Modal + raison                                     |
 
-## Monitoring anomalies admin
+## Anti-leak admin role
 
-- Alertes si :
-  - 1 admin fait > 10 actions destructives en 1h
-  - Connexion admin depuis nouvelle IP/pays
-  - Tentative login admin sans 2FA
-  - Tentative accès endpoint admin sans rôle
+- **Aucun rendu d'UI admin** cote client sans verification serveur (RLS)
+- **Toutes les routes /admin/\*** appellent l'API qui re-verifie le role (defense en profondeur)
+- **Pas de stockage role en localStorage** (uniquement contexte memoire)
 
 ---
 
-# 🗓️ Plan implémentation par phases
+# 🗓️ Plan implémentation MVP
 
-## Phase 0 — Pré-requis (avant tout dev admin)
+## Effort développement par batch
 
-- [ ] MVP consolidé (cf. CONSOLIDATION_ROADMAP)
-- [ ] Beta Phase 1 démarrée (~20 users actifs)
-- [ ] Premiers signalements / bugs réels remontés
-- [ ] Décision : framework admin (shadcn vs DS interne)
+| Batch        | Module              | Taches                                                                           | Effort |
+| ------------ | ------------------- | -------------------------------------------------------------------------------- | ------ |
+| **BATCH 34** | DB Setup            | T-300 Migration `admin_*` + `moderation_*` tables + RLS + trigger immuable audit | 4h     |
+| **BATCH 35** | Route + Garde       | T-301 AdminGuard + AdminLayout + Sidebar + route `/admin`                        | 4h     |
+| **BATCH 36** | Module 1 Dashboard  | T-302 AdminDashboard (4 KPIs + queries Supabase)                                 | 4h     |
+| **BATCH 37** | Module 2 Users      | T-303 AdminUsers liste + AdminUserDetail fiche + 5 actions de base               | 1j     |
+| **BATCH 38** | Module 3 Moderation | T-304 AdminModeration queue + actions par signalement                            | 1j     |
+| **BATCH 39** | Module 4 Beta       | T-305 AdminBeta (cles + vagues + waitlist) — depend `BETA_STRATEGY`              | 1j     |
+| **BATCH 40** | Module 5 Audit      | T-306 AdminAuditLogs lecture + filtres                                           | 4h     |
 
-## Phase 1 admin — MVP admin (~10 jours dev)
+**Total MVP admin** : ~3-4 jours dev (24-32h)
 
-**Objectif** : centre de contrôle minimal mais fonctionnel.
+## Pre-requis avant BATCH 34
 
-### Modules livrés
-
-- Module 1 : Dashboard global (10 KPIs essentiels)
-- Module 2 : Gestion users (recherche + fiche + actions de base)
-- Module 3 : Modération basique (signalements + suppression)
-- Module 5 : Beta management (gestion clés, vagues, waitlist)
-- Module 10 : Audit logs (toute action loggée)
-
-### Stack
-
-- Frontend séparé sous `admin.naturegraph.fr`
-- 5 tables DB : `admin_users`, `moderation_reports`, `moderation_actions`, `admin_audit_logs`, `platform_config`
-- Edge Functions pour actions complexes
-- RLS strict role-based
-
-### Effort estimé
-
-- Architecture + setup : 1 jour
-- Module 1 Dashboard : 2 jours
-- Module 2 Users : 3 jours
-- Module 3 Modération : 2 jours
-- Module 5 Beta : 1 jour
-- Module 10 Audit logs : 1 jour
-- Tests + documentation : 1 jour
-
-**Total Phase 1 admin** : ~11 jours dev
-
-## Phase 2 admin — Analytics + Monitoring (~5 jours)
-
-- Module 4 : Analytics complets (cohortes, métriques produit)
-- Module 7 : Monitoring technique (alerting, health checks)
-- Integration tiers : Plausible/Umami pour analytics web
-- Sentry pour erreurs frontend
-
-## Phase 3 admin — Avancé (~5 jours)
-
-- Module 6 : Sécurité avancée (détection anomalies)
-- Module 8 : Support enrichi (workflow tickets)
-- Module 9 : Configuration plateforme (feature flags)
-- Automatisations modération (Phase 1 du module)
-
-## Phase 4 admin — Mobile + Scale (~5 jours)
-
-- App mobile admin (PWA ou React Native)
-- Notifications push pour alertes critiques
-- Optimisations perf (gros volumes)
-- Cache intelligent pour analytics lourds
-
-**Total roadmap admin** : ~26 jours dev étalable sur ~2 mois.
+- [ ] Decision Q-ADM-1 : route `/admin` ou sous-domaine ? **Recommandation : `/admin`** (MVP simple)
+- [ ] Decision Q-ADM-2 : feature flag `is_admin_enabled` ? **Recommandation : oui** (toggle env var)
+- [ ] User Nicolas declare comme super_admin (INSERT manuel apres migration)
 
 ---
 
-# 🎯 Critères de succès
+# 📋 Checklist activation admin MVP
 
-## Phase 1 admin
+## Technique
 
-- [ ] 100% des actions admin sont loggées
-- [ ] Recherche user < 1 sec sur 100 users
-- [ ] Workflow signalement → résolution fonctionnel
-- [ ] 0 erreur permission (RLS strict)
-- [ ] Gestion clés beta utilisable (vague hebdo via UI)
-- [ ] 2FA actif sur tous les comptes admin
+- [ ] **T-300** Migration DB `admin_*` + `moderation_*` appliquee
+- [ ] **T-301** AdminGuard fonctionnel (redirige non-admin)
+- [ ] **T-302-306** 5 modules livres
+- [ ] Tests E2E flow admin (login → action → audit log)
+- [ ] RLS testees (non-admin doit recevoir 403 sur toutes les routes admin)
 
-## Phase 4 admin (objectif final)
+## Securite
 
-- [ ] Admin desktop : 10 modules complets
-- [ ] Admin mobile : actions essentielles
-- [ ] Analytics : cohortes + funnel + rétention temps réel
-- [ ] Modération : 80% des cas standards traités < 4h
-- [ ] Alertes proactives sur anomalies
-- [ ] Onboarding nouveau admin : 1 jour
+- [ ] Action destructive sans confirmation = bug (tests E2E)
+- [ ] `admin_audit_logs` immutable verifie (try UPDATE/DELETE doit fail)
+- [ ] Aucune ref admin role en localStorage/sessionStorage
+- [ ] Nicolas declare super_admin en DB
+
+## Coherence visuelle
+
+- [ ] Reuse complete DS Naturegraph (pas de classes Tailwind hardcoded)
+- [ ] Adoption primitives EmptyState/ErrorState/LoadingState (BATCH 5+6+7)
+- [ ] Adoption ConfirmModal slots (BATCH 8)
 
 ---
 
-# 📋 Décisions à trancher (avant implémentation)
+# 🎯 Critères de succès MVP
 
-## Q-ADM-1 : Framework UI admin
+A la fin BATCH 40 :
 
-- **A** : shadcn/ui (rapide setup, lookFeel pro standard) — recommandé Phase 1
-- **B** : Réutiliser DS Naturegraph (cohérence visuelle, plus de travail)
-- **C** : Hybride (shadcn pour primitives admin spécifiques, DS pour le reste)
+| Critere                              | Cible | Verdict |
+| ------------------------------------ | ----- | ------- |
+| 5 modules accessibles via /admin/\*  | 100%  | ⬜      |
+| Recherche user < 1 sec sur 100 users | < 1s  | ⬜      |
+| 100% des actions admin sont loggees  | 100%  | ⬜      |
+| 0 erreur permission (RLS strict)     | 0     | ⬜      |
+| Generation cle beta utilisable       | OK    | ⬜      |
+| Workflow signalement → resolution    | OK    | ⬜      |
+| Tests E2E admin passing              | 100%  | ⬜      |
 
-## Q-ADM-2 : Analytics — interne ou tiers ?
+---
 
-- **A** : Plausible/Umami (RGPD-friendly, simple, gratuit pour < 100k events/mois) — recommandé
-- **B** : Roll own (table `analytics_events`, plus de contrôle, plus de dette)
-- **C** : Mixed (Plausible pour web + table custom pour events produit)
+# 🔮 Roadmap Phase 2 admin (apres validation MVP)
 
-## Q-ADM-3 : Déploiement admin
+> **A construire UNIQUEMENT si besoin reel** apres 50+ users actifs.
 
-- **A** : Sous-domaine séparé `admin.naturegraph.fr` (Vercel séparé) — recommandé
-- **B** : Route `/admin` dans app publique (couplé, déploiement lié)
-- **C** : App séparée hébergée différemment
+### Modules complementaires
 
-## Q-ADM-4 : Permissions granularité
+| Module                                           | Quand l'ajouter                    |
+| ------------------------------------------------ | ---------------------------------- |
+| **Analytics avances** (cohortes, funnel)         | > 100 users actifs                 |
+| **Monitoring technique** (graphs Sentry inline)  | Apres setup Sentry production      |
+| **Sécurité enrichie** (detection anomalies auto) | Si abus detectes                   |
+| **Support tickets workflow**                     | Si > 10 tickets/sem                |
+| **Configuration plateforme** (feature flags UI)  | Si A/B testing necessaire          |
+| **Mobile dedie**                                 | Si admin mobile devient blocant    |
+| **2FA TOTP**                                     | Phase 2 (apres > 100 users)        |
+| **Permissions granulaires JSONB**                | Si > 3 admins actifs               |
+| **Notifications push admin**                     | Si reaction temps reel critique    |
+| **App mobile PWA**                               | Phase 3 (apres ouverture publique) |
 
-- **A** : Rôles fixes (super_admin, moderator, support, analyst) — recommandé Phase 1
-- **B** : Permissions JSONB granulaire (flexibilité max, plus complexe)
-- **C** : Hybride : rôles par défaut + override par admin
+### Estimation effort Phase 2
+
+| Phase                                               | Effort | Quand                               |
+| --------------------------------------------------- | ------ | ----------------------------------- |
+| Phase 2 admin (analytics + monitoring)              | ~5j    | Apres validation MVP + 1 mois usage |
+| Phase 3 admin (securite + support enrichi + config) | ~5j    | Apres scale 100+ users              |
+| Phase 4 admin (mobile + scale + automations)        | ~5j    | Apres go-live public                |
+
+**Total Phase 2-4** : ~15 jours dev etalable sur 2-3 mois selon besoins reels.
 
 ---
 
 # 📎 Références croisées
 
-- `docs/CONSOLIDATION_ROADMAP.md` — Pré-requis MVP consolidé
-- `docs/BETA_CLOSED_ACCESS_STRATEGY.md` — Module 5 Beta management
-- `docs/AUDIT_LEGAL.md` — RGPD/Loi 25 (Module 6 conformité)
-- `docs/AUDIT_SUPABASE.md` — Architecture DB existante
-- `docs/MASTER_TODO.md` — Tâches admin à ajouter quand activé
-- `docs/PROJECT_MASTER.md` — Source vérité globale
-- `docs/AUDIT_DESIGN_SYSTEM.md` — DS à étendre pour admin
-- `CLAUDE.md` — Conventions code
+- [`STATUS_2026-05-13.md`](STATUS_2026-05-13.md) — etat technique cycle 1
+- [`MASTER_TODO.md`](MASTER_TODO.md) — taches restantes
+- [`BETA_CLOSED_ACCESS_STRATEGY.md`](BETA_CLOSED_ACCESS_STRATEGY.md) — Module 4 du admin (gestion beta)
+- [`PATTERN_TYPE_CASTS.md`](PATTERN_TYPE_CASTS.md) — convention `as unknown as` pour les rows admin
+- [`backend/database-architecture.md`](backend/database-architecture.md) — schema DB existant
 
 ---
 
-# ⚠️ Rappel statut
+# 📜 Historique versions
 
-**Ce document est STRATÉGIQUE pour la suite.**
-
-**Il NE doit PAS être construit tant que** :
-
-1. Consolidation MVP terminée
-2. Beta Phase 1 démarrée avec ~20 users actifs
-3. Besoins admin validés par usage réel (signalements, modération nécessaire)
-
-**Quand commencer ?** Probablement **mois 4-5** après finalisation consolidation, en parallèle du début de la beta fermée.
-
-**Anti-pattern à éviter** : construire l'admin AVANT d'avoir des utilisateurs réels = devine les besoins, mauvaise architecture, refonte ultérieure inévitable.
+- **v2.0** (2026-05-13) — Refondu post cycle 1. **MVP simple en 5 modules** (vs 10 en v1.0). Effort divise par 3 (3-4j vs 11j). Route `/admin` integree (pas de sous-domaine). Reuse DS. 4 tables DB (vs 8). Pas de 2FA / Tremor / TanStack Table. Roadmap Phase 2-4 clair pour iteration future.
+- **v1.0** (2026-05-04) — Version strategique complete (10 modules, app separee, 26 jours dev, 8 tables). Trop ambitieux pour MVP — refondu.
 
 ---
 
-**📌 Document de référence pour la stratégie Admin Product Control Center. À enrichir progressivement avec les retours d'usage réels, ne pas exécuter prématurément.**
+**📌 Document operationnel pret pour activation. MVP admin implementable en ~3-4 jours dev. Iteration Phase 2-4 quand besoin reel valide par usage.**
