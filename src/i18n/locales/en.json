@@ -1143,6 +1143,25 @@
     "info": "Information"
   },
 
+  "welcome": {
+    "title": "Welcome",
+    "heading": "Welcome to Naturegraph",
+    "subheading": "Glad to see you here! Naturegraph is currently in private beta. If you've received an access key, head this way. Otherwise, join our waitlist — every signup matters.",
+    "cta": {
+      "haveKey": "I have an access code",
+      "joinWaitlist": "Join the waitlist"
+    },
+    "codeLabel": "Your beta access key",
+    "codeHint": "The code is in your invitation email. It looks like NG-A1B2-C3D4.",
+    "validate": "Validate and enter",
+    "validating": "Validating...",
+    "back": "← Back",
+    "success": "Welcome to the Naturegraph beta!",
+    "footer": {
+      "tagline": "The citizen biodiversity platform — private beta 2026"
+    }
+  },
+
   "admin": {
     "nav": {
       "dashboard": "Dashboard",

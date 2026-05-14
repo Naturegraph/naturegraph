@@ -35,6 +35,47 @@ export interface BetaQuotaStatus {
   is_full: boolean
 }
 
+// ─── Validation READ-ONLY (BATCH 45 — welcome screen) ──────────────────────
+
+/**
+ * Verifie la validite d'une cle beta SANS la consommer.
+ *
+ * Differe de `validateBetaKey()` qui claim la cle.
+ *
+ * Use case (Nicolas BATCH 45) : welcome screen `/welcome` permet d'entrer
+ * un code pour debloquer l'acces au site. La cle n'est consommee qu'au
+ * signup final (via `validateBetaKey()` -> claim_beta_access_key).
+ *
+ * Permet a un user d'ouvrir le site, voir la landing, puis signup quand pret.
+ */
+export async function checkBetaAccessKey(code: string): Promise<BetaKeyValidation> {
+  if (!supabase) {
+    return { valid: false, reason: 'server_error' }
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('check_beta_access_key_validity', {
+      p_code: code.trim().toUpperCase(),
+    })
+
+    if (error) {
+      // Erreur reseau ou RPC
+      return { valid: false, reason: 'server_error' }
+    }
+
+    // RPC retourne TABLE(valid, reason) -> array avec 1 row
+    const row = Array.isArray(data) ? data[0] : data
+    if (!row) return { valid: false, reason: 'server_error' }
+
+    return {
+      valid: row.valid === true,
+      reason: row.reason as BetaKeyReason | undefined,
+    }
+  } catch {
+    return { valid: false, reason: 'server_error' }
+  }
+}
+
 // ─── Validation d'une cle (Edge Function) ─────────────────────────────────────
 
 /**
