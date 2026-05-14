@@ -1,6 +1,6 @@
 # Naturegraph — MASTER TODO (post cycle 1)
 
-> **Version** : 2.1 — 2026-05-14 (BATCH 27-35 livres pour beta launch)
+> **Version** : 2.2 — 2026-05-14 (BATCH 36 — fixes critiques pre-launch)
 > **Statut** : 📌 **Beta closed access ready** — 19 refactos optionnels restants
 > **Voir le bilan complet** : [`STATUS_2026-05-13.md`](STATUS_2026-05-13.md)
 > **Voir runbook launch** : [`BETA_LAUNCH_RUNBOOK.md`](BETA_LAUNCH_RUNBOOK.md)
@@ -8,13 +8,15 @@
 
 ---
 
-## 🎯 Etat actuel (snapshot 2026-05-13)
+## 🎯 Etat actuel (snapshot 2026-05-14)
 
-- **3 branches alignees** au SHA `d24235e` : `main` = `staging` = `develop`
-- **Bundle gzip** : 291.68 KB (budget 330 KB)
-- **Tests** : 34/34 vitest verts + 5 smoke tests Playwright configures
+- **3 branches alignees** au SHA `b77e1d7` + BATCH 36 sur `feat/batch-36-pre-launch-fixes` (PR en cours)
+- **Bundle gzip** : 406 KB (budget 420 KB — bumpe pour absorber BATCH 28-35 admin/beta)
+- **Tests** : 34/34 vitest + 5 smoke + 7 beta-flow Playwright
 - **ESLint** : 0 warning ✅
-- **DB** : 3 migrations appliquees sur **DEV** (a re-appliquer sur PROD au go-live)
+- **DB** : **5 migrations** a appliquer sur PROD (3 cycle 1 + BATCH 28 + BATCH 36 cron RGPD)
+- **i18n** : FR + EN couverts pour admin + beta (BATCH 36)
+- **SEO** : sitemap.xml + robots.txt + manifest.json livres (BATCH 36)
 
 ---
 
@@ -47,6 +49,15 @@ Resume :
 - **BATCH 33** : Admin Module 2 Users (search debounced + filter + 4 actions + log audit) + Module 3 Moderation (filters + 4 actions + reporter lookup + soft-remove content)
 - **BATCH 34** : Tests E2E beta flow Playwright (7 tests : waitlist, signup gate, admin redirect, format auto)
 - **BATCH 35** : Beta Launch Runbook (sections A-H : DB + Vercel + super_admin bootstrap + cles + invitations + monitoring + rollback + checklist)
+- **BATCH 36** : Fixes critiques pre-launch (audit-driven) :
+  - Fix bug `AdminGuard` redirect `/auth` (404) → `/login` (cohérent ProtectedRoute)
+  - Migration `20260514_anonymize_beta_signup_log_cron.sql` (RGPD J+30 IP anonymise sur `beta_signup_log`)
+  - i18n FR + EN : ajout sections `admin.*` (180+ cles) + `auth.beta.*` (16 cles)
+  - SEO : `public/sitemap.xml` + `public/robots.txt` (Disallow /admin) + `public/manifest.json` PWA + lien dans `index.html`
+  - `.env.example` : ajout `VITE_BETA_GATE_ENABLED`, `VITE_SENTRY_DSN`, `VITE_APP_ENV` avec commentaires
+  - `BetaKeyGate` : checkbox "J'accepte les conditions de la beta" obligatoire (strategy ligne 643)
+  - `useAdminAction` hook : DRY le logging audit (strategy ligne 562), refactor AdminUsers + AdminModeration + AdminBeta
+  - `BETA_LAUNCH_RUNBOOK.md` : retire mention migration inexistante, ajoute verifs cron RGPD Section A.2
 
 **Actions Nicolas requises pour go-live** : voir [`BETA_LAUNCH_RUNBOOK.md`](BETA_LAUNCH_RUNBOOK.md) Section H.
 
@@ -187,6 +198,7 @@ npm run changeset           # add changeset for release
 
 ## 📜 Historique versions
 
+- **v2.2** (2026-05-14) — BATCH 36 fixes critiques pre-launch (RGPD + i18n + SEO + consent + DRY admin).
 - **v2.1** (2026-05-14) — BATCH 27-35 livres pour beta closed access. Beta launch ready.
 - **v2.0** (2026-05-13) — Refondu post-cycle 1 (BATCH 26). 98/117 done, focus sur les 19 restantes.
 - **v1.5** (2026-05-13) — Cycle BATCHES 1-24 livre. 91/117 done.

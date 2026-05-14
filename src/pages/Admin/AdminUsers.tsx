@@ -50,6 +50,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { Avatar } from '@/components/ui/Avatar'
 import { useToast } from '@/contexts/ToastContext'
 import { useIsAdmin } from '@/hooks/useIsAdmin'
+import { useAdminAction } from '@/hooks/useAdminAction'
 import type { Json } from '@/types/supabase'
 
 // ─── Types ──────────────────────────────────────────────────────────────
@@ -85,6 +86,8 @@ export default function AdminUsers() {
   const toast = useToast()
   const queryClient = useQueryClient()
   const { adminUser, isSuperAdmin } = useIsAdmin()
+  // BATCH 36 : hook centralise pour audit log (DRY, strategy ligne 562).
+  const { logAction } = useAdminAction()
 
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -167,17 +170,9 @@ export default function AdminUsers() {
   const total = data?.total ?? 0
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
-  // ─── Audit log helper ────────────────────────────────────────────────
-  // Note : metadata est typee Json pour matcher le schema Supabase (pas Record<string, unknown>).
+  // ─── Audit log helper (BATCH 36 : delegate to useAdminAction) ───────
   async function logAudit(action: string, targetUserId: string, metadata: Json) {
-    if (!supabase || !adminUser) return
-    await supabase.from('admin_audit_logs').insert({
-      admin_user_id: adminUser.id,
-      action,
-      target_type: 'user',
-      target_id: targetUserId,
-      metadata,
-    })
+    await logAction({ action, targetType: 'user', targetId: targetUserId, metadata })
   }
 
   // ─── Actions handlers ────────────────────────────────────────────────

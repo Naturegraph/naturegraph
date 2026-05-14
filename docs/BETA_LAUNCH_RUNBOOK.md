@@ -39,9 +39,15 @@ Les migrations suivantes doivent etre appliquees sur **`naturegraph-prod`** dans
 npx supabase migration list --linked
 
 # Migrations a appliquer (si absentes en PROD) :
-1. 20260514_beta_admin_system.sql      # 8 tables + 4 RPC + 13 RLS policies
-2. 20260514_add_generate_beta_keys.sql # RPC generate_beta_keys (utilise par /admin/beta)
+1. 20260513_drop_duplicate_indexes.sql          # cleanup index doublons (BATCH 14)
+2. 20260513_rls_optimize_auth_uid.sql           # RLS perf (BATCH 22)
+3. 20260513_cleanup_duplicate_rls_policies.sql  # cleanup policies (BATCH 24)
+4. 20260514_beta_admin_system.sql               # 8 tables + 5 RPC + 13 RLS (BATCH 28)
+5. 20260514_anonymize_beta_signup_log_cron.sql  # cron RGPD J+30 (BATCH 36)
 ```
+
+> Note : la RPC `generate_beta_keys` est incluse dans le fichier
+> `20260514_beta_admin_system.sql` (pas dans un fichier separe).
 
 **Via MCP Supabase** (recommande) :
 
@@ -74,8 +80,8 @@ SELECT * FROM beta_quota_config WHERE id = 1;
 
 -- 3. Fonctions RPC presentes ?
 SELECT proname FROM pg_proc
-WHERE proname IN ('claim_beta_access_key', 'is_admin', 'generate_beta_keys');
--- Attendu : 3 rows
+WHERE proname IN ('claim_beta_access_key', 'is_admin', 'generate_beta_keys', 'anonymize_beta_signup_log');
+-- Attendu : 4 rows minimum
 
 -- 4. RLS policies actives ?
 SELECT tablename, count(*) FROM pg_policies
@@ -83,6 +89,11 @@ WHERE schemaname = 'public'
   AND (tablename LIKE 'admin_%' OR tablename LIKE 'beta_%')
 GROUP BY tablename;
 -- Attendu : 13 policies au total
+
+-- 5. Crons RGPD planifies ?
+SELECT jobname, schedule FROM cron.job
+WHERE jobname IN ('anonymize_orphan_audit_logs', 'anonymize_beta_signup_log');
+-- Attendu : 2 rows (J+30 sur security_audit_log et beta_signup_log)
 ```
 
 ### A.3 Deployer l'Edge Function

@@ -95,6 +95,7 @@ export function BetaKeyGate({ onValidated, onSwitchToLogin }: BetaKeyGateProps) 
   const navigate = useNavigate()
   const toast = useToast()
   const [code, setCode] = useState('')
+  const [consent, setConsent] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -116,6 +117,16 @@ export function BetaKeyGate({ onValidated, onSwitchToLogin }: BetaKeyGateProps) 
     const trimmed = code.trim().toUpperCase()
     if (trimmed.length < 11) {
       setError(t('auth.beta.errorFormat', { defaultValue: 'Format incomplet (NG-XXXX-XXXX)' }))
+      return
+    }
+
+    // BATCH 36 : consentement aux conditions beta obligatoire (strategy ligne 643).
+    if (!consent) {
+      setError(
+        t('auth.beta.consentRequired', {
+          defaultValue: 'Tu dois accepter les conditions de la beta pour continuer',
+        }),
+      )
       return
     }
 
@@ -192,11 +203,32 @@ export function BetaKeyGate({ onValidated, onSwitchToLogin }: BetaKeyGateProps) 
           )}
         </div>
 
+        {/* Consentement beta (BATCH 36 — strategy ligne 643) */}
+        <label className="flex items-start gap-3 text-sm text-foreground cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={consent}
+            onChange={(e) => {
+              setConsent(e.target.checked)
+              if (error) setError(null)
+            }}
+            disabled={isSubmitting}
+            aria-describedby="beta-consent-text"
+            className="mt-0.5 size-5 rounded border-border accent-primary cursor-pointer disabled:opacity-50"
+          />
+          <span id="beta-consent-text" className="leading-snug">
+            {t('auth.beta.consentLabel', {
+              defaultValue:
+                "J'accepte les conditions de la beta : tester l'application, partager mes retours, respecter la communaute",
+            })}
+          </span>
+        </label>
+
         <Button
           type="submit"
           variant="primary"
           size="md"
-          disabled={isSubmitting || code.length < 12}
+          disabled={isSubmitting || code.length < 12 || !consent}
           className="w-full"
         >
           {isSubmitting ? (
