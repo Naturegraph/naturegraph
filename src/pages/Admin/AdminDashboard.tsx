@@ -258,8 +258,9 @@ export default function AdminDashboard() {
         <h1 className="text-2xl font-bold text-foreground">
           {t('admin.dashboard.title', { defaultValue: 'Dashboard' })}
         </h1>
-        <p className="text-sm text-muted-foreground">
-          🟢 Système opérationnel · Phase {stats.betaAcceptingSignups ? '1 ouverte' : 'fermée'} ·{' '}
+        <p className="text-sm text-muted-foreground inline-flex items-center gap-1.5">
+          <span className="size-2 rounded-full bg-[var(--color-success)]" aria-hidden="true" />
+          Système opérationnel · Phase {stats.betaAcceptingSignups ? '1 ouverte' : 'fermée'} ·{' '}
           {stats.betaUsers}/{stats.betaMaxUsers} users ({betaPct}%)
         </p>
       </div>
@@ -339,9 +340,7 @@ export default function AdminDashboard() {
             </Link>
           </header>
           {recentReports.length === 0 ? (
-            <p className="px-5 py-8 text-center text-sm text-muted-foreground">
-              🟢 Aucun signalement
-            </p>
+            <p className="px-5 py-8 text-center text-sm text-muted-foreground">Aucun signalement</p>
           ) : (
             <ul className="divide-y divide-border">
               {recentReports.map((r) => (
@@ -540,6 +539,7 @@ function Sparkline({ data }: { data: ActivityPoint[] }) {
 }
 
 // ─── StatusBadge (pour signalements récents) ───────────────────────────────
+// BATCH 110 : remplace emojis 🆕/🔥 par icônes lucide AlertCircle/Flame.
 
 function StatusBadge({ status, priority }: { status: string; priority: string }) {
   const isCritical = priority === 'critical' || priority === 'high'
@@ -547,13 +547,14 @@ function StatusBadge({ status, priority }: { status: string; priority: string })
   if (isNew) {
     return (
       <span
-        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
           isCritical
             ? 'bg-[var(--color-error-bg)] text-[var(--color-error)]'
             : 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]'
         }`}
       >
-        {isCritical ? '🔥 Urgent' : '🆕 Nouveau'}
+        <AlertTriangle className="size-3" aria-hidden="true" />
+        {isCritical ? 'Urgent' : 'Nouveau'}
       </span>
     )
   }
