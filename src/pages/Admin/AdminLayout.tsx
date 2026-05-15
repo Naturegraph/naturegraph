@@ -120,7 +120,8 @@ export default function AdminLayout() {
               }`}
             >
               <Icon className="size-5" aria-hidden="true" />
-              <span>{item.label.slice(0, 8)}</span>
+              {/* BATCH 114 : truncate au lieu de slice() — préserve l'accent + responsive */}
+              <span className="max-w-full truncate px-0.5">{item.label}</span>
             </NavLink>
           )
         })}
