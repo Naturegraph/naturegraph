@@ -1,32 +1,30 @@
 /**
- * Welcome — Page d'entree beta fermee (Nicolas BATCH 45)
+ * Welcome — Page d'entree beta fermee
  *
- * Ton : convivial / chaleureux (validation Nicolas).
+ * Refs : strategie Nicolas BATCH 45 + corrections visuelles 51-58.
+ *
+ * Style : background teal-dark + pattern dots subtils + orbes anim (>=md).
+ * Carte centree style AuthForm (sans photo). Pas de logo. Contenu centre.
+ *
+ * BATCH 64 : layout factorise via <BetaAuthLayout> partage avec /waitlist.
  *
  * Flow :
- *   - Etat initial : message bienvenue + 2 boutons
+ *   - Etat initial : icon hermine + message bienvenue + 2 boutons
  *   - "J'ai un code" -> formulaire saisie code -> validation -> grantAccess -> redirect
  *   - "Je rejoins la waitlist" -> redirect /waitlist
- *
- * UX :
- *   - Mobile-first, max-w-md centre
- *   - Aucun lien vers le reste du site visible (beta privee)
- *   - Format code auto NG-XXXX-XXXX
- *   - Messages erreur i18n
- *   - A11Y : aria-label sur tous les inputs/buttons, role=alert sur erreurs
- *
- * Refs : strategie revisee Nicolas + BetaKeyGate.tsx (formatage code)
  */
 
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { KeyRound, Mail, Sparkles, Loader2 } from 'lucide-react'
+import { KeyRound, Mail, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { BetaAuthLayout } from '@/components/auth/BetaAuthLayout'
 import { useToast } from '@/contexts/ToastContext'
 import { useBetaAccess } from '@/hooks/useBetaAccess'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { checkBetaAccessKey, type BetaKeyReason } from '@/services/betaService'
+import hermineIcon from '@/assets/images/hermine-icon.png'
 
 type ViewState = 'initial' | 'enter-code'
 
@@ -53,19 +51,21 @@ function errorMessageForReason(
       return t('auth.beta.errorFormat', { defaultValue: 'Format invalide. Attendu : NG-XXXX-XXXX' })
     case 'invalid_or_used':
       return t('auth.beta.errorInvalid', {
-        defaultValue: 'Cle invalide ou deja utilisee. Verifie ou contacte-nous.',
+        defaultValue:
+          'Clé invalide ou déjà utilisée. Vérifie ou contacte-nous à naturegraph.fr@gmail.com.',
       })
     case 'expired':
       return t('auth.beta.errorExpired', {
-        defaultValue: 'Cle expiree. Contacte-nous pour en obtenir une nouvelle.',
+        defaultValue:
+          'Clé expirée. Contacte-nous à naturegraph.fr@gmail.com pour en obtenir une nouvelle.',
       })
     case 'quota_full':
       return t('auth.beta.errorQuotaFull', {
-        defaultValue: 'La beta est complete. Rejoins la waitlist pour etre notifie.',
+        defaultValue: 'La beta est complète. Rejoins la waitlist pour être notifié.',
       })
     case 'server_error':
       return t('auth.beta.errorServer', {
-        defaultValue: 'Erreur serveur. Reessaie dans un instant.',
+        defaultValue: 'Erreur serveur. Réessaie dans un instant.',
       })
     default:
       return t('auth.beta.errorGeneric', { defaultValue: 'Une erreur est survenue.' })
@@ -85,7 +85,7 @@ export default function Welcome() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Si l'utilisateur a deja l'acces, redirige vers la landing (ou path d'origine)
+  // Si l'user a deja un code valide en localStorage -> redirect immediat
   useEffect(() => {
     if (hasAccess) {
       const from = (location.state as { from?: string } | null)?.from ?? '/'
@@ -93,8 +93,7 @@ export default function Welcome() {
     }
   }, [hasAccess, location.state, navigate])
 
-  // Auto-focus l'input quand on entre dans la vue "enter-code"
-  // (alternative a11y-friendly a autoFocus prop, ref jsx-a11y/no-autofocus)
+  // Auto-focus input quand on bascule sur la vue enter-code
   useEffect(() => {
     if (view === 'enter-code') {
       const input = document.getElementById('welcome-beta-code')
@@ -125,11 +124,9 @@ export default function Welcome() {
     if (result.valid) {
       grantAccess(trimmed)
       toast.success(t('welcome.success', { defaultValue: 'Bienvenue dans la beta Naturegraph !' }))
-      // useEffect ci-dessus va detecter hasAccess === true et rediriger
       return
     }
 
-    // Si quota plein -> redirection waitlist
     if (result.reason === 'quota_full') {
       navigate('/waitlist', { replace: true })
       return
@@ -140,91 +137,93 @@ export default function Welcome() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-cream-lighter px-4 py-12">
-      <div className="w-full max-w-md flex flex-col gap-8">
-        {/* ── Header chaleureux ─────────────────────────────────────── */}
-        <div className="flex flex-col items-center gap-4 text-center">
-          {/* Icon scintillant pour donner un cote "exclusif mais accueillant" */}
-          <div className="size-20 rounded-full bg-primary-light flex items-center justify-center">
-            <Sparkles className="size-10 text-primary" aria-hidden="true" />
-          </div>
-          <div className="flex flex-col gap-2">
-            <h1 className="text-3xl font-bold font-title text-foreground">
-              {t('welcome.heading', { defaultValue: 'Bienvenue chez Naturegraph' })}
-            </h1>
-            <p className="text-base text-muted-foreground leading-relaxed">
-              {t('welcome.subheading', {
-                defaultValue:
-                  "Nous sommes ravis de te voir ! Naturegraph est actuellement en beta privee. Si tu as recu une cle d'acces, c'est par ici. Sinon, rejoins notre liste d'attente — chaque inscription compte.",
+    <BetaAuthLayout>
+      {/* Header : icon hermine + titre + description, tout centre */}
+      <div className="flex flex-col gap-3 items-center text-center w-full">
+        <img src={hermineIcon} alt="Naturegraph" className="size-16 mb-2" width={64} height={64} />
+        <h2 className="text-[var(--color-text-primary)]">
+          {t('welcome.heading', { defaultValue: 'Bienvenue' })}
+        </h2>
+        <p className="text-[var(--color-text-secondary)] text-base leading-relaxed">
+          {t('welcome.subheading', {
+            defaultValue:
+              "Naturegraph est en beta privée. Si tu as une clé d'accès, c'est par ici. Sinon, rejoins la liste d'attente.",
+          })}
+        </p>
+      </div>
+
+      {/* Contenu dynamique selon la vue */}
+      {view === 'initial' && (
+        <div className="flex flex-col gap-3 items-center w-full">
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={() => setView('enter-code')}
+            className="w-full"
+            icon={<KeyRound className="size-5" aria-hidden="true" />}
+          >
+            {t('welcome.cta.haveKey', { defaultValue: "J'ai un code d'accès" })}
+          </Button>
+          <Button
+            variant="secondary"
+            size="lg"
+            to="/waitlist"
+            className="w-full"
+            icon={<Mail className="size-5" aria-hidden="true" />}
+          >
+            {t('welcome.cta.joinWaitlist', {
+              defaultValue: "Rejoindre la liste d'attente",
+            })}
+          </Button>
+        </div>
+      )}
+
+      {view === 'enter-code' && (
+        <form
+          onSubmit={handleSubmitCode}
+          className="flex flex-col gap-4 items-center w-full"
+          noValidate
+        >
+          <div className="flex flex-col gap-2 w-full">
+            <label
+              htmlFor="welcome-beta-code"
+              className="text-sm font-medium text-[var(--color-text-primary)] text-center"
+            >
+              {t('welcome.codeLabel', { defaultValue: "Ta clé d'accès beta" })}
+            </label>
+            <input
+              id="welcome-beta-code"
+              type="text"
+              inputMode="text"
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              placeholder="NG-XXXX-XXXX"
+              value={code}
+              onChange={handleCodeChange}
+              maxLength={12}
+              disabled={isSubmitting}
+              aria-invalid={!!error}
+              aria-describedby={error ? 'welcome-code-error' : undefined}
+              className="w-full h-14 px-4 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] text-center text-xl font-mono tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] disabled:opacity-50"
+            />
+            {error && (
+              <p
+                id="welcome-code-error"
+                role="alert"
+                className="text-sm text-[var(--color-error,#dc2626)] text-center"
+              >
+                {error}
+              </p>
+            )}
+            <p className="text-xs text-[var(--color-text-secondary)] text-center">
+              {t('welcome.codeHint', {
+                defaultValue: "Le code se trouve dans l'email d'invitation.",
               })}
             </p>
           </div>
-        </div>
 
-        {/* ── View initiale : 2 CTAs ─────────────────────────────────── */}
-        {view === 'initial' && (
-          <div className="flex flex-col gap-3">
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={() => setView('enter-code')}
-              className="w-full"
-              icon={<KeyRound className="size-5" aria-hidden="true" />}
-            >
-              {t('welcome.cta.haveKey', { defaultValue: "J'ai un code d'acces" })}
-            </Button>
-            <Button
-              variant="secondary"
-              size="lg"
-              to="/waitlist"
-              className="w-full"
-              icon={<Mail className="size-5" aria-hidden="true" />}
-            >
-              {t('welcome.cta.joinWaitlist', { defaultValue: "Rejoindre la liste d'attente" })}
-            </Button>
-          </div>
-        )}
-
-        {/* ── View "Entrer le code" ──────────────────────────────────── */}
-        {view === 'enter-code' && (
-          <form onSubmit={handleSubmitCode} className="flex flex-col gap-4" noValidate>
-            <div className="flex flex-col gap-2">
-              <label htmlFor="welcome-beta-code" className="text-sm font-medium text-foreground">
-                {t('welcome.codeLabel', { defaultValue: "Ta cle d'acces beta" })}
-              </label>
-              <input
-                id="welcome-beta-code"
-                type="text"
-                inputMode="text"
-                autoComplete="off"
-                autoCapitalize="characters"
-                spellCheck={false}
-                placeholder="NG-XXXX-XXXX"
-                value={code}
-                onChange={handleCodeChange}
-                maxLength={12}
-                disabled={isSubmitting}
-                aria-invalid={!!error}
-                aria-describedby={error ? 'welcome-code-error' : undefined}
-                className="w-full h-14 px-4 rounded-md border border-border bg-background text-foreground text-center text-xl font-mono tracking-widest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
-              />
-              {error && (
-                <p
-                  id="welcome-code-error"
-                  role="alert"
-                  className="text-sm text-[var(--color-error,#dc2626)]"
-                >
-                  {error}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                {t('welcome.codeHint', {
-                  defaultValue:
-                    "Le code se trouve dans l'email d'invitation. Il ressemble a NG-A1B2-C3D4.",
-                })}
-              </p>
-            </div>
-
+          <div className="flex flex-col gap-3 items-center w-full pt-1">
             <Button
               type="submit"
               variant="primary"
@@ -242,30 +241,28 @@ export default function Welcome() {
               )}
             </Button>
 
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="md"
               onClick={() => {
                 setView('initial')
                 setCode('')
                 setError(null)
               }}
-              className="text-sm text-muted-foreground hover:text-foreground underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded text-center"
               disabled={isSubmitting}
+              className="w-full"
             >
-              {t('welcome.back', { defaultValue: '← Retour' })}
-            </button>
-          </form>
-        )}
+              {t('welcome.back', { defaultValue: 'Retour' })}
+            </Button>
+          </div>
+        </form>
+      )}
 
-        {/* ── Footer minimal ─────────────────────────────────────────── */}
-        <div className="text-center text-xs text-muted-foreground space-y-1">
-          <p>
-            {t('welcome.footer.tagline', {
-              defaultValue: 'La plateforme citoyenne de biodiversite — beta privee 2026',
-            })}
-          </p>
-        </div>
-      </div>
-    </div>
+      {/* Slogan Naturegraph avec separateur fin */}
+      <p className="text-center text-sm text-[var(--color-text-secondary)] italic w-full pt-4 border-t border-[var(--color-border)]/30">
+        {t('welcome.slogan', { defaultValue: 'Partageons nos émotions' })}
+      </p>
+    </BetaAuthLayout>
   )
 }

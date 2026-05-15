@@ -40,7 +40,9 @@
  *       created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
  *       resolved_at TIMESTAMPTZ
  *     );
- *     -- Email transactionnel (Resend) à staff@naturegraph.fr + accusé user
+ *     -- Email transactionnel (Resend) à naturegraph.fr@gmail.com + accusé user
+ *     -- ⚠️ Pendant la beta : utiliser naturegraph.fr@gmail.com (cf src/constants/contact.ts).
+ *     -- Migrer vers staff@naturegraph.fr quand le domaine sera transféré côté Hostinger.
  *     -- RLS : user peut SELECT ses propres tickets (transparence RGPD)
  *
  *   ## Validation côté serveur (Edge Function)

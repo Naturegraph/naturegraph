@@ -368,12 +368,16 @@ export function Hero({ onNavigate }: HeroProps) {
           </>
         )}
 
-        {/* Contenu centré */}
+        {/* Contenu centré
+            BATCH 65 : padding top responsive (pt-20 md:pt-24 lg:pt-0) pour
+            eviter que le contenu colle a la navbar en mobile/tablet.
+            En lg+, le centrage vertical (flex-1 + justify-center) gere
+            naturellement le spacing sans surcharge. */}
         <motion.div
           variants={stagger}
           initial="hidden"
           animate="visible"
-          className="relative z-10 flex flex-col items-center text-center px-6 md:px-16 flex-1 justify-center pb-16 lg:pb-20"
+          className="relative z-10 flex flex-col items-center text-center px-6 md:px-16 flex-1 justify-center pt-20 md:pt-24 lg:pt-0 pb-16 lg:pb-20"
         >
           {/* Titre H1 */}
           <motion.h1
