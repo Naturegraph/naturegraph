@@ -210,3 +210,32 @@ input[type='search']::-ms-reveal {
   width: 0;
   height: 0;
 }
+
+/**
+ * BATCH 115 : iOS Safari anti-zoom on focus
+ * ════════════════════════════════════════════════════════════════════════════
+ * iOS Safari zoome automatiquement sur un input si sa font-size est < 16px,
+ * pour "aider" l'utilisateur à voir ce qu'il tape. Comportement intrusif qui
+ * casse les designs avec text-sm (14px) sur les forms.
+ *
+ * Fix : force 16px sur tous les inputs/textarea/select EN MOBILE UNIQUEMENT
+ * (< 768px). Sur desktop on garde la taille du DS pour la densité visuelle.
+ *
+ * Note : Tailwind `text-base` (16px) override ce CSS sans souci car Tailwind
+ * utilities sont en @layer utilities (priorité supérieure à `body`).
+ */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/**
+ * BATCH 115 : prefix -webkit- explicite pour backdrop-filter sur Safari.
+ * Autoprefixer gère ce cas mais on duplique en SCSS pour les usages inline
+ * style (composants React) qui ne passent pas par PostCSS.
+ *
+ * Tailwind v4 `backdrop-blur-*` génère déjà -webkit- via autoprefixer (BATCH 115).
+ */
