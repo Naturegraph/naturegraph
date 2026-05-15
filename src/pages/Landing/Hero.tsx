@@ -178,7 +178,7 @@ function GradientOrb({
       initial={{ opacity: 0, scale: 0.6 }}
       animate={{ opacity: 0.7, scale: 1 }}
       transition={{ duration: 1.2, delay, ease: 'easeOut' }}
-      className={`absolute rounded-full blur-[80px] pointer-events-none ${size} ${position}`}
+      className={`absolute rounded-full blur-[40px] sm:blur-[60px] md:blur-[80px] pointer-events-none ${size} ${position}`}
       style={{
         background: `radial-gradient(circle, ${color1} 0%, ${color2} 70%, transparent 100%)`,
         x: smoothX,
