@@ -167,7 +167,15 @@
  *
  * Cible : `<input type="date" class="date-input-clean">` dans EncounterStep3,
  * EncounterStep4, ContributeInstantForm, etc.
+ *
+ * BATCH 91 (2026-05-15) : `color-scheme: light` force le picker natif a rester
+ * en mode clair meme si l'OS de l'utilisateur est en dark mode. Sans ca,
+ * Chrome/Safari/Edge affichent un picker sombre sur fond sombre — incompatible
+ * avec notre DS qui est exclusivement light pour la beta.
  */
+.date-input-clean {
+  color-scheme: light;
+}
 .date-input-clean::-webkit-calendar-picker-indicator {
   opacity: 0;
   cursor: pointer;
