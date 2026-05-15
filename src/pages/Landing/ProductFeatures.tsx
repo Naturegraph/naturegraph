@@ -221,8 +221,8 @@ export function ProductFeatures() {
     let ticking = false
 
     const handleScroll = () => {
-      // BATCH 66 : aligne sur le breakpoint xl: (1280px) du layout desktop
-      if (window.innerWidth < 1280) return
+      // BATCH 83 : aligne sur le breakpoint 2xl: (1536px) du layout desktop sticky
+      if (window.innerWidth < 1536) return
       if (ticking) return
 
       ticking = true
@@ -298,19 +298,16 @@ export function ProductFeatures() {
           </p>
         </div>
 
-        {/* ── Desktop : phone sticky + cartes alternées ────────────────── */}
+        {/* ── Desktop large : phone sticky + cartes alternées ──────────── */}
         {/*
-          BATCH 66 (Nicolas decision 2026-05-15) : breakpoint pousse de lg: a xl:
-          (1024px -> 1280px). Le layout sticky + cartes alternees demande beaucoup
-          d'espace lateral. En tablet 1024-1279px, les cartes etaient tronquees
-          ou collees au phone. On reserve maintenant ce layout aux ecrans >=1280px.
-
-          Principe : le wrapper a une minHeight explicite qui definit la zone de scroll.
-          Le phone sticky est en flux normal → son containing block = le wrapper.
-          Les cartes sont en absolute → n'ecrasent pas la hauteur du wrapper.
-          Aucun overflow sur les ancetres (overflow:hidden casse position:sticky).
+          BATCH 66 (xl:) puis BATCH 83 (2xl:) : le layout sticky-cards demande
+          beaucoup d'espace lateral pour ne pas tronquer les cartes contre le bord
+          de l'ecran. xl: (1280px) etait encore juste sur certaines fenetres
+          desktop typiques (laptop 13" / fenetre non-maximisee). On pousse a
+          2xl: (1536px) pour reserver ce layout aux ecrans vraiment larges.
+          En-dessous, le slider horizontal mobile prend le relais.
         */}
-        <div className="hidden xl:block relative pb-24" style={{ minHeight: '1750px' }}>
+        <div className="hidden 2xl:block relative pb-24" style={{ minHeight: '1750px' }}>
           {/* Phone sticky — reste centré à l'écran pendant tout le scroll */}
           <div
             className="sticky z-10 flex justify-center pointer-events-none"
@@ -362,8 +359,8 @@ export function ProductFeatures() {
           </div>
         </div>
 
-        {/* ── Mobile/Tablet : slider horizontal (BATCH 66 : couvre jusqu'a xl:) ── */}
-        <div className="xl:hidden pb-16">
+        {/* ── Mobile/Tablet/Desktop intermediaire : slider horizontal (BATCH 83) ── */}
+        <div className="2xl:hidden pb-16">
           <div className="overflow-hidden">
             <div id="features-slider" className="overflow-x-auto scrollbar-hide pb-6 px-6 md:px-10">
               <div className="flex gap-4 w-max items-stretch">

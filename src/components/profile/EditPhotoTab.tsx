@@ -43,6 +43,7 @@ import hermineIcon from '@/assets/images/hermine-icon.png'
 import { useToast } from '@/contexts/ToastContext'
 import { uploadImage } from '@/services/storageService'
 import { isSupabaseConfigured } from '@/lib/supabase'
+import { sanitizeImageUrl } from '@/lib/sanitize'
 import { compressPhoto } from '@/utils/compressPhoto'
 import type { ProfileDisplayData } from './ProfileHeader'
 
@@ -300,7 +301,7 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
             }`}
           >
             <img
-              src={avatarUrl ?? hermineIcon}
+              src={sanitizeImageUrl(avatarUrl) ?? hermineIcon}
               alt={t('profile.edit.avatarAlt', { defaultValue: 'Photo de profil actuelle' })}
               className={hasCustomAvatar ? 'size-full object-cover' : 'size-16 object-contain'}
               loading="lazy"
@@ -347,9 +348,9 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
                 : 'bg-primary-light border-[0.5px] border-border'
             }`}
           >
-            {bannerUrl && (
+            {sanitizeImageUrl(bannerUrl) && (
               <img
-                src={bannerUrl}
+                src={sanitizeImageUrl(bannerUrl)!}
                 alt={t('profile.edit.bannerAlt', { defaultValue: 'Bannière actuelle' })}
                 className="w-full h-full object-cover"
                 loading="lazy"

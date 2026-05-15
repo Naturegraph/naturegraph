@@ -81,9 +81,15 @@ Deno.serve(async (req: Request) => {
       },
     )
   } catch (e) {
-    return new Response(JSON.stringify({ ok: false, error: String(e) }), {
-      status: 500,
-      headers: { ...CORS, 'Content-Type': 'application/json' },
-    })
+    // BATCH 78 (CodeQL #2) : ne pas exposer la stack trace au client.
+    // Log cote serveur pour debug, retourner un message generique.
+    console.error('[export-data] internal error:', e)
+    return new Response(
+      JSON.stringify({ ok: false, error: 'Internal server error during export.' }),
+      {
+        status: 500,
+        headers: { ...CORS, 'Content-Type': 'application/json' },
+      },
+    )
   }
 })
