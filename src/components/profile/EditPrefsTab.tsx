@@ -178,9 +178,9 @@ export function EditPrefsTab({ profile, onSave, onClose }: EditPrefsTabProps) {
         </p>
       </div>
 
-      {/* ── Grille 2 colonnes ── Figma Frame 4240 : gap 8px (gap-2). */}
+      {/* ── Grille responsive (BATCH 114 : 1 col mobile, 2 cols sm+). */}
       <div
-        className="grid grid-cols-2 gap-2"
+        className="grid grid-cols-1 sm:grid-cols-2 gap-2"
         role="group"
         aria-label={t('profile.edit.interestsTitle', {
           defaultValue: "Centres d'intérêt",

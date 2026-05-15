@@ -362,7 +362,7 @@ export function EncounterStep1({
             removeLabel={labels.removeShort}
           />
 
-          <div className="grid grid-cols-4 gap-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1">
             {Array.from({ length: MAX_FILES }).map((_, i) =>
               i < files.length ? (
                 <ThumbSlot
