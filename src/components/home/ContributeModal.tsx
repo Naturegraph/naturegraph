@@ -231,7 +231,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
         role="dialog"
         aria-modal="true"
         aria-label="Partager une contribution"
-        className="hidden md:block absolute top-[calc(100%+8px)] right-0 w-[400px] bg-[var(--color-bg-primary)] border border-border/70 rounded-lg shadow-xl z-50 overflow-hidden p-1"
+        className="hidden md:block absolute top-[calc(100%+8px)] right-0 w-[400px] max-w-[calc(100vw-24px)] bg-[var(--color-bg-primary)] border border-border/70 rounded-lg shadow-xl z-50 overflow-hidden p-1"
       >
         {cards}
       </div>

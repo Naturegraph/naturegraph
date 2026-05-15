@@ -329,8 +329,8 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
         </button>
       </div>
 
-      {/* Liste groupée par date */}
-      <div className="max-h-[420px] overflow-y-auto">
+      {/* Liste groupée par date (BATCH 114 : max-h responsive — 60vh sur mobile pour gérer le clavier virtuel) */}
+      <div className="max-h-[60vh] md:max-h-[420px] overflow-y-auto">
         {isLoading && (
           <LoadingState variant="skeleton" rows={4} label={t('home.notifications.loading')} />
         )}
@@ -444,12 +444,12 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
         {panelContent}
       </div>
 
-      {/* Mobile : bottom sheet */}
+      {/* Mobile : bottom sheet (BATCH 114 : safe-area-inset-bottom pour iPhone home bar) */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label={t('home.notifications.title')}
-        className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-cream-lighter border-t border-border rounded-t-xl shadow-xl overflow-hidden"
+        className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-cream-lighter border-t border-border rounded-t-xl shadow-xl overflow-hidden pb-[env(safe-area-inset-bottom)]"
       >
         <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
           <div className="w-10 h-1 bg-border rounded-full" />

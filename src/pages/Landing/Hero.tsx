@@ -59,8 +59,8 @@ const springConfig = { damping: 20, stiffness: 80, mass: 0.6 }
 /** Chaque orbe : apparence + position au repos + force de répulsion */
 const orbConfigs = [
   {
-    /* Grande orbe mint — bas gauche */
-    size: 'w-[500px] h-[500px] lg:w-[700px] lg:h-[700px]',
+    /* Grande orbe mint — bas gauche (BATCH 114 : scale mobile pour éviter overflow horizontal) */
+    size: 'w-[260px] h-[260px] sm:w-[420px] sm:h-[420px] md:w-[500px] md:h-[500px] lg:w-[700px] lg:h-[700px]',
     color1: 'var(--color-accent-mint)',
     color2: 'var(--hero-orb-mint-20)',
     position: '-left-[15%] -bottom-[20%]',
@@ -72,7 +72,7 @@ const orbConfigs = [
   },
   {
     /* Orbe violette — haut droite */
-    size: 'w-[400px] h-[400px] lg:w-[600px] lg:h-[600px]',
+    size: 'w-[220px] h-[220px] sm:w-[340px] sm:h-[340px] md:w-[400px] md:h-[400px] lg:w-[600px] lg:h-[600px]',
     color1: 'var(--color-action-default)',
     color2: 'var(--hero-orb-action-15)',
     position: '-right-[10%] -top-[15%]',
@@ -84,7 +84,7 @@ const orbConfigs = [
   },
   {
     /* Orbe mint — centre droite */
-    size: 'w-[250px] h-[250px] lg:w-[350px] lg:h-[350px]',
+    size: 'w-[140px] h-[140px] sm:w-[200px] sm:h-[200px] md:w-[250px] md:h-[250px] lg:w-[350px] lg:h-[350px]',
     color1: 'var(--color-accent-mint)',
     color2: 'var(--hero-orb-mint-12)',
     position: 'right-[20%] bottom-[10%]',
@@ -96,7 +96,7 @@ const orbConfigs = [
   },
   {
     /* Orbe teal — haut gauche */
-    size: 'w-[300px] h-[300px]',
+    size: 'w-[160px] h-[160px] sm:w-[240px] sm:h-[240px] md:w-[300px] md:h-[300px]',
     color1: 'var(--color-highlight-tertiary)',
     color2: 'var(--hero-orb-teal-10)',
     position: 'left-[25%] top-[5%]',
@@ -379,10 +379,10 @@ export function Hero({ onNavigate }: HeroProps) {
           animate="visible"
           className="relative z-10 flex flex-col items-center text-center px-6 md:px-16 flex-1 justify-center pt-20 md:pt-24 lg:pt-0 pb-16 lg:pb-20"
         >
-          {/* Titre H1 */}
+          {/* Titre H1 (BATCH 114 : ajout sm pour éviter écrasement sur 360px) */}
           <motion.h1
             variants={fadeUp}
-            className="text-4xl md:text-5xl lg:text-[72px] font-bold text-[var(--color-text-white)] leading-[1.1] font-[var(--font-title)] max-w-[900px]"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-[72px] font-bold text-[var(--color-text-white)] leading-[1.1] font-[var(--font-title)] max-w-full sm:max-w-[600px] md:max-w-[900px]"
           >
             {t('landing.hero.titleLine1')}
             <br />
@@ -399,10 +399,10 @@ export function Hero({ onNavigate }: HeroProps) {
             {t('landing.hero.subtitle')}
           </motion.p>
 
-          {/* Boutons CTA */}
+          {/* Boutons CTA (BATCH 114 : gap responsive) */}
           <motion.div
             variants={fadeUp}
-            className="flex flex-col sm:flex-row items-center gap-4 mt-8 lg:mt-10 w-full sm:w-auto"
+            className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mt-6 sm:mt-8 lg:mt-10 w-full sm:w-auto"
           >
             <Button to="/signup" size="lg" className="w-full sm:w-auto">
               {t('landing.hero.ctaShare')}

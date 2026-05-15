@@ -509,8 +509,12 @@ function Sparkline({ data }: { data: ActivityPoint[] }) {
     )
   }
   const max = Math.max(...data.map((d) => d.posts), 1)
+  // BATCH 114 : sparkline plus haute sur mobile pour lisibilité
   return (
-    <div className="flex items-end gap-1 h-24" aria-label="Activité des 14 derniers jours">
+    <div
+      className="flex items-end gap-0.5 sm:gap-1 h-32 sm:h-24"
+      aria-label="Activité des 14 derniers jours"
+    >
       {data.map((d) => {
         const pct = (d.posts / max) * 100
         const dateLabel = new Date(d.date).toLocaleDateString('fr-FR', {
@@ -520,7 +524,7 @@ function Sparkline({ data }: { data: ActivityPoint[] }) {
         return (
           <div
             key={d.date}
-            className="flex-1 flex flex-col items-center gap-1 group"
+            className="flex-1 flex flex-col items-center gap-1 group min-w-0"
             title={`${dateLabel} : ${d.posts} post${d.posts > 1 ? 's' : ''}`}
           >
             <div
@@ -528,7 +532,7 @@ function Sparkline({ data }: { data: ActivityPoint[] }) {
               style={{ height: `${Math.max(pct, 2)}%` }}
               role="presentation"
             />
-            <span className="text-[9px] text-muted-foreground tabular-nums">
+            <span className="text-[8px] sm:text-[9px] text-muted-foreground tabular-nums truncate w-full text-center">
               {dateLabel.slice(0, 5)}
             </span>
           </div>

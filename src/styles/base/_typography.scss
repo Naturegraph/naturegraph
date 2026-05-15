@@ -32,33 +32,41 @@
 // Les utilities Tailwind (`text-2xl`, etc.) battent toujours car elles sont
 // dans `@layer utilities` cascadée APRES `@layer base`.
 
+// BATCH 114 : tailles responsive — clamp() pour une transition fluide
+// mobile (375px) → desktop (1280px+) sans média queries explicites.
+// Les utilities Tailwind (`text-Nxl`) restent prioritaires car en @layer utilities.
+
 @layer base {
   body h1 {
-    font-size: $font-size-3xl; // 48px — Figma: Title/H1
+    // 32px → 48px (de mobile 375px à desktop 1280px)
+    font-size: clamp(2rem, 1.5rem + 2vw, $font-size-3xl);
     font-weight: $font-weight-bold;
     line-height: $line-height-tight;
   }
 
   body h2 {
-    font-size: $font-size-2xl; // 32px — Figma: Title/H2
+    // 24px → 32px
+    font-size: clamp(1.5rem, 1.25rem + 1.25vw, $font-size-2xl);
     font-weight: $font-weight-bold;
     line-height: $line-height-tight;
   }
 
   body h3 {
-    font-size: $font-size-xl; // 24px — Figma: Headings/Heading
+    // 20px → 24px
+    font-size: clamp(1.25rem, 1.125rem + 0.625vw, $font-size-xl);
     font-weight: $font-weight-semibold;
     line-height: $line-height-tight;
   }
 
   body h4 {
-    font-size: $font-size-xl; // 24px — Figma: Headings/Heading/Size: 24
+    // 18px → 24px
+    font-size: clamp(1.125rem, 1rem + 0.625vw, $font-size-xl);
     font-weight: $font-weight-bold;
     line-height: $line-height-tight;
   }
 
   body h5 {
-    font-size: $font-size-lg; // 18px — Figma: Headings/Subheading/Size: 18
+    font-size: $font-size-lg; // 18px — Figma: Headings/Subheading
     font-weight: $font-weight-bold;
     line-height: $line-height-tight;
   }

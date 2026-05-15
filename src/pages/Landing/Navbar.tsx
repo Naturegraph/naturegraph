@@ -72,13 +72,13 @@ export function Navbar({ onNavigate }: NavbarProps) {
   }
 
   return (
-    <header className="relative z-30 flex items-center justify-between px-6 py-6 lg:px-12 lg:py-10">
-      {/* Logo */}
+    <header className="relative z-30 flex items-center justify-between px-4 sm:px-6 py-4 sm:py-6 lg:px-12 lg:py-10">
+      {/* Logo (BATCH 114 : scale mobile pour éviter de prendre 60% de l'écran) */}
       <Link to="/" className="flex items-center shrink-0">
         <img
           src={logoSimplified}
           alt={t('common.appName')}
-          className="w-[204px] h-auto"
+          className="w-[140px] sm:w-[180px] lg:w-[204px] h-auto"
           width={204}
           height={40}
         />
@@ -138,7 +138,7 @@ export function Navbar({ onNavigate }: NavbarProps) {
             role="dialog"
             aria-modal="true"
             aria-label={t('landing.nav.menu', { defaultValue: 'Menu' })}
-            className="lg:hidden fixed top-0 right-0 bottom-0 z-50 w-3/4 max-w-[400px] bg-[var(--color-bg-primary)] shadow-2xl flex flex-col motion-safe:animate-in motion-safe:slide-in-from-right motion-safe:duration-250"
+            className="lg:hidden fixed top-0 right-0 bottom-0 z-50 w-[85vw] max-w-[360px] sm:w-3/4 sm:max-w-[400px] bg-[var(--color-bg-primary)] shadow-2xl flex flex-col motion-safe:animate-in motion-safe:slide-in-from-right motion-safe:duration-250"
           >
             {/* Header du drawer : titre + close */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--color-border)]">

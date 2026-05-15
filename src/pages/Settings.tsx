@@ -213,7 +213,7 @@ export default function Settings() {
           </div>
 
           {/* Prénom + Nom */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FieldInput
               label={t('settings.firstName')}
               value={form.firstName}
@@ -253,7 +253,7 @@ export default function Settings() {
           </div>
 
           {/* Localisation */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FieldInput
               label={t('settings.city')}
               value={form.city}

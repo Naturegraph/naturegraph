@@ -249,8 +249,9 @@ export function HomeNavbar({
                     ) : (
                       <Locate className="size-5 text-foreground shrink-0" aria-hidden="true" />
                     )}
-                    <span className="text-foreground text-nowrap text-sm">
-                      {/* ?? ne couvre pas '' (string vide) — || est nécessaire ici */}
+                    <span className="text-foreground text-sm truncate max-w-[140px] md:max-w-[200px]">
+                      {/* ?? ne couvre pas '' (string vide) — || est nécessaire ici.
+                          BATCH 114 : truncate au lieu de text-nowrap pour éviter overflow navbar. */}
                       {locationLabel || t('home.navbar.setLocation')}
                     </span>
                   </button>
