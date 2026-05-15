@@ -11,7 +11,6 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui'
-// import { Globe } from 'lucide-react' // TODO: réactiver avec le language switcher
 import logoSimplified from '@/assets/logos/logo-simplified-light.svg'
 
 interface NavbarProps {
@@ -57,14 +56,7 @@ function NavLinkButton({
 
 export function Navbar({ onNavigate }: NavbarProps) {
   const { t } = useTranslation()
-  // const { i18n } = useTranslation() // TODO: réactiver avec le language switcher
   const [mobileOpen, setMobileOpen] = useState(false)
-
-  // TODO: réactiver le language switcher quand prêt
-  // const toggleLanguage = () => {
-  //   const next = i18n.language === 'fr' ? 'en' : 'fr'
-  //   i18n.changeLanguage(next)
-  // }
 
   const navLinks = [
     { label: t('landing.nav.discover'), id: 'discover' },
@@ -104,18 +96,9 @@ export function Navbar({ onNavigate }: NavbarProps) {
         ))}
       </nav>
 
-      {/* Desktop CTA (+ Language switcher masqué — fonctionnel, à activer plus tard) */}
+      {/* Desktop CTA — language switcher : voir docs/archive/feature-language-switcher.md
+          (réactivation Phase 2 quand EN sera production-ready) */}
       <div className="hidden lg:flex items-center gap-4">
-        {/* TODO: Activer le switcher de langue quand prêt
-        <button
-          onClick={toggleLanguage}
-          className="flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-white)]/80 hover:text-[var(--color-text-white)] transition-colors bg-transparent border border-[var(--color-text-white)]/20 rounded-full px-3 py-1.5 cursor-pointer"
-          aria-label={i18n.language === 'fr' ? 'Switch to English' : 'Passer en français'}
-        >
-          <Globe size={14} />
-          <span className="uppercase">{i18n.language === 'fr' ? 'EN' : 'FR'}</span>
-        </button>
-        */}
         <Button to="/signup" size="md">
           {t('landing.nav.signup')}
         </Button>

@@ -235,7 +235,8 @@ export default function AdminBeta() {
         targetType: 'batch',
         metadata: { batch_number: nextBatch, count: 10 },
       })
-      console.info('[admin] generated keys', data)
+      // Données loggées dans admin_audit_logs (action: beta.key_gen) — pas besoin de console
+      void data
     } catch (err) {
       toast.error(
         t('admin.beta.generateError', { defaultValue: 'Erreur generation cles' }),
