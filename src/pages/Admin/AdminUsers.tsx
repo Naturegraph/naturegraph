@@ -45,6 +45,10 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
+  UserPlus,
+  Info,
+  ShieldCheck,
+  Users as UsersIcon,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
@@ -91,9 +95,16 @@ export default function AdminUsers() {
   // BATCH 36 : hook centralise pour audit log (DRY, strategy ligne 562).
   const { logAction } = useAdminAction()
 
+  // BATCH 104 : 4 tabs au lieu d'un select. Plus visuel + plus de granularité.
+  //   all          → tous les profils
+  //   super_admin  → admin_role = 'super_admin'
+  //   moderator    → admin_role IN ('moderator', 'support')
+  //   migrateur    → admin_role IS NULL (utilisateurs normaux)
   const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState<'all' | 'admin' | 'regular'>('all')
+  const [filter, setFilter] = useState<'all' | 'super_admin' | 'moderator' | 'migrateur'>('all')
   const [page, setPage] = useState(0)
+  const [showRolesInfo, setShowRolesInfo] = useState(false)
+  const [showAddUser, setShowAddUser] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [pending, setPending] = useState<PendingAction>({ type: null, user: null })
   const [reason, setReason] = useState('')
@@ -157,9 +168,16 @@ export default function AdminUsers() {
         admin_is_active: adminMap.get(p.id)?.is_active ?? null,
       })) as UserRow[]
 
-      // Filtre admin / regular (post-fetch car pas de jointure côté SQL ici)
-      if (filter === 'admin') rows = rows.filter((r) => r.admin_role !== null)
-      if (filter === 'regular') rows = rows.filter((r) => r.admin_role === null)
+      // BATCH 104 : filtre par role precis (4 tabs)
+      if (filter === 'super_admin') {
+        rows = rows.filter((r) => r.admin_role === 'super_admin' && r.admin_is_active)
+      } else if (filter === 'moderator') {
+        rows = rows.filter(
+          (r) => (r.admin_role === 'moderator' || r.admin_role === 'support') && r.admin_is_active,
+        )
+      } else if (filter === 'migrateur') {
+        rows = rows.filter((r) => r.admin_role === null || !r.admin_is_active)
+      }
 
       return { rows, total: count ?? 0 }
     },
@@ -263,46 +281,146 @@ export default function AdminUsers() {
 
   // ─── Render ──────────────────────────────────────────────────────────
 
+  // BATCH 104 : configuration des 4 tabs (style ProfileTabs)
+  const TABS = [
+    { key: 'all' as const, label: 'Tous', icon: UsersIcon },
+    { key: 'super_admin' as const, label: 'Administrateurs', icon: ShieldCheck },
+    { key: 'moderator' as const, label: 'Modérateurs', icon: Shield },
+    { key: 'migrateur' as const, label: 'Migrateurs', icon: UsersIcon },
+  ]
+
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-foreground">
-          {t('admin.users.title', { defaultValue: 'Utilisateurs' })}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {total} {t('admin.users.totalLabel', { defaultValue: 'utilisateurs au total' })}
-        </p>
+      {/* Header + actions */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold text-foreground">
+            {t('admin.users.title', { defaultValue: 'Utilisateurs' })}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {total} {t('admin.users.totalLabel', { defaultValue: 'utilisateurs au total' })}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowRolesInfo((v) => !v)}
+            aria-expanded={showRolesInfo}
+            className="inline-flex items-center gap-1.5 h-10 px-3 rounded-full text-sm text-muted-foreground hover:text-foreground hover:bg-[var(--color-bg-secondary)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)]"
+          >
+            <Info className="size-4" aria-hidden="true" />
+            <span>Rôles</span>
+          </button>
+          {isSuperAdmin && (
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setShowAddUser(true)}
+              icon={<UserPlus className="size-4" aria-hidden="true" />}
+            >
+              Ajouter un utilisateur
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Search + Filter */}
-      <div className="flex flex-col md:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
-            aria-hidden="true"
-          />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('admin.users.searchPlaceholder', {
-              defaultValue: 'Rechercher par nom, username, email...',
-            })}
-            aria-label={t('admin.users.searchLabel', { defaultValue: 'Recherche utilisateurs' })}
-            className="w-full h-10 pl-10 pr-4 rounded-md border border-border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          />
-        </div>
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value as typeof filter)}
-          aria-label={t('admin.users.filterLabel', { defaultValue: 'Filtrer par role' })}
-          className="h-10 px-3 rounded-md border border-border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      {/* Encart explicatif des rôles (toggle via bouton Info) */}
+      {showRolesInfo && (
+        <aside
+          className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)]/40 p-5 flex flex-col gap-3"
+          role="region"
+          aria-label="Définition des rôles"
         >
-          <option value="all">Tous</option>
-          <option value="admin">Admins</option>
-          <option value="regular">Utilisateurs</option>
-        </select>
+          <h2 className="text-sm font-bold text-foreground inline-flex items-center gap-2">
+            <Info className="size-4 text-[var(--color-action-default)]" aria-hidden="true" />
+            Permissions et objectifs de chaque rôle
+          </h2>
+          <ul className="grid md:grid-cols-3 gap-3 text-sm">
+            <li className="bg-[var(--color-bg-primary)] rounded-lg p-3 border border-[var(--color-border)]">
+              <p className="font-semibold text-foreground inline-flex items-center gap-1.5 mb-1">
+                <ShieldCheck
+                  className="size-4 text-[var(--color-action-default)]"
+                  aria-hidden="true"
+                />
+                Administrateur
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Accès complet : gestion utilisateurs, modération, beta, audit, configuration
+                système. Peut promouvoir / révoquer d'autres admins.
+              </p>
+            </li>
+            <li className="bg-[var(--color-bg-primary)] rounded-lg p-3 border border-[var(--color-border)]">
+              <p className="font-semibold text-foreground inline-flex items-center gap-1.5 mb-1">
+                <Shield className="size-4 text-[var(--color-warning)]" aria-hidden="true" />
+                Modérateur
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Modération du contenu : signalements, suspensions temporaires (7j), masquage posts.
+                Ne peut pas bannir définitivement ni gérer les rôles.
+              </p>
+            </li>
+            <li className="bg-[var(--color-bg-primary)] rounded-lg p-3 border border-[var(--color-border)]">
+              <p className="font-semibold text-foreground inline-flex items-center gap-1.5 mb-1">
+                <UsersIcon
+                  className="size-4 text-[var(--color-text-secondary)]"
+                  aria-hidden="true"
+                />
+                Migrateur
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Utilisateur standard : observe, partage, interagit avec la communauté. Aucun accès
+                admin. Représente la majorité des comptes.
+              </p>
+            </li>
+          </ul>
+        </aside>
+      )}
+
+      {/* Tabs filtre par rôle */}
+      <div
+        role="tablist"
+        aria-label="Filtrer par rôle"
+        className="flex items-center gap-1 border-b border-[var(--color-border)] overflow-x-auto"
+      >
+        {TABS.map((tab) => {
+          const Icon = tab.icon
+          const isActive = filter === tab.key
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setFilter(tab.key)}
+              className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-action-default)] whitespace-nowrap ${
+                isActive
+                  ? 'border-[var(--color-action-default)] text-[var(--color-action-default)]'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Icon className="size-4" aria-hidden="true" />
+              {tab.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search
+          className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
+          aria-hidden="true"
+        />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('admin.users.searchPlaceholder', {
+            defaultValue: 'Rechercher par nom, username, email...',
+          })}
+          aria-label={t('admin.users.searchLabel', { defaultValue: 'Recherche utilisateurs' })}
+          className="w-full h-10 pl-10 pr-4 rounded-md border border-border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        />
       </div>
 
       {/* Table */}
@@ -435,6 +553,19 @@ export default function AdminUsers() {
             <ChevronRight className="size-4" aria-hidden="true" />
           </Button>
         </nav>
+      )}
+
+      {/* BATCH 104 : Modale "Ajouter un utilisateur" — stub MVP.
+          Pour l'instant ouvre la doc d'invitation. Phase 2 : form direct + RPC. */}
+      {showAddUser && (
+        <ConfirmModal
+          title="Ajouter un utilisateur"
+          description="La création directe via l'admin sera disponible Phase 2. Pour la beta, deux options : (1) Envoyer une clé beta à la personne depuis Gestion beta. (2) Promouvoir un utilisateur existant en modérateur via le menu actions de cette liste."
+          confirmLabel="J'ai compris"
+          variant="default"
+          onCancel={() => setShowAddUser(false)}
+          onConfirm={() => setShowAddUser(false)}
+        />
       )}
 
       {/* ── Confirm modals ────────────────────────────────────────────── */}
