@@ -52,23 +52,30 @@ export const TEXTAREA_CLASS =
  * Bouton primaire pill h-12 (48px) — action principale (Sauvegarder, Envoyer,
  * Mettre à jour, Confirmer). Pleine largeur via `flex-1` ou `w-full`.
  *
- * Utilisé partout où on a une CTA primary-violet : EditInfoTab, EditPhotoTab,
- * EditPrefsTab, SettingsSecurityView, SettingsHelpView, ConfirmModal default.
+ * BATCH 96 : aligne sur le DS Button (btn-press 3D + bonne couleur).
+ * Utilise les vraies classes btn-press du _buttons.scss pour la cohérence.
  */
 export const BUTTON_PRIMARY_CLASS =
-  'h-12 rounded-full bg-primary text-primary-foreground text-sm font-bold ' +
-  'hover:opacity-90 transition-opacity ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ' +
+  'inline-flex items-center justify-center h-12 px-6 rounded-full ' +
+  'btn-press btn-press-primary ' +
+  'bg-[var(--color-action-default)] text-[var(--color-text-white)] ' +
+  'text-sm font-bold font-[var(--font-body)] ' +
+  'transition-all ' +
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action-default)] ' +
   'disabled:opacity-50 disabled:cursor-not-allowed'
 
 /**
- * Bouton outlined pill h-12 (48px) — action secondaire (Annuler, etc.).
- * Border 0.5px standard, hover passe à border-primary + text-primary.
+ * Bouton secondaire pill h-12 (48px) — action de cancel / back.
+ * BATCH 96 : aligne sur btn-press-secondary (cohérence DS partout).
  */
 export const BUTTON_OUTLINE_CLASS =
-  'h-12 rounded-full bg-background border-[0.5px] border-border text-foreground text-sm font-bold ' +
-  'hover:border-primary hover:text-primary transition-colors ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary'
+  'inline-flex items-center justify-center h-12 px-6 rounded-full ' +
+  'btn-press btn-press-secondary ' +
+  'bg-transparent text-[var(--color-text-primary)] ' +
+  'text-sm font-bold font-[var(--font-body)] ' +
+  'transition-all ' +
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action-default)] ' +
+  'disabled:opacity-50 disabled:cursor-not-allowed'
 
 /**
  * Bouton danger pill h-12 — action destructive (Confirmer suppression compte).

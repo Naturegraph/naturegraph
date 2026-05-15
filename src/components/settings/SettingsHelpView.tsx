@@ -63,6 +63,7 @@ import { ChevronDown } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
 import { useSubmitHelpRequest } from '@/hooks/useSupport'
 import type { SupportSubject } from '@/services/supportService'
+import { CONTACT_EMAIL } from '@/constants/contact'
 import {
   INPUT_PILL_CLASS,
   TEXTAREA_CLASS,
@@ -110,13 +111,34 @@ export function SettingsHelpView() {
     e.preventDefault()
     if (!subject || message.trim().length < 20) return
     try {
+      // 1. INSERT en DB pour traçabilité (support_tickets, RLS user-owner)
       await submitMutation.mutateAsync({ subject, message })
+
+      // 2. BATCH 96 : ouvre mailto: vers naturegraph.fr@gmail.com pour garantir
+      //    la réception de l'email côté équipe — tant que SMTP custom + Resend
+      //    ne sont pas configurés sur Supabase Dashboard, le mailto est la seule
+      //    voie 100% reliable.
+      const subjectLabel = SUBJECT_LABELS[subject]
+      const subjectLine = `[Naturegraph Help] ${subjectLabel}`
+      const body = [
+        `Sujet : ${subjectLabel}`,
+        ``,
+        `Message :`,
+        message.trim(),
+        ``,
+        `---`,
+        `Envoyé depuis l'app Naturegraph (Settings → Besoin d'aide)`,
+      ].join('\n')
+      const mailtoUrl = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subjectLine)}&body=${encodeURIComponent(body)}`
+      // Ouvre le client mail en parallele (best-effort, sans bloquer)
+      window.location.href = mailtoUrl
+
       toast.success(
         t('settings.help.successTitle', {
-          defaultValue: 'Message envoyé',
+          defaultValue: 'Message prêt à partir',
         }),
         t('settings.help.successDesc', {
-          defaultValue: 'Merci ! Nous reviendrons vers toi rapidement.',
+          defaultValue: "Valide l'envoi dans ton application mail pour finaliser.",
         }),
       )
       setSubject(null)
