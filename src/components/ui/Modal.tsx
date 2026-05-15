@@ -68,7 +68,7 @@ function Modal({
       aria-labelledby={title ? 'modal-title' : undefined}
     >
       <div
-        className={`w-[90vw] ${sizeClasses[size]} bg-[var(--color-surface)] rounded-xl shadow-xl border border-[var(--color-border-light)] ${className}`}
+        className={`w-[92vw] sm:w-[90vw] ${sizeClasses[size]} max-h-[90vh] overflow-y-auto bg-[var(--color-surface)] rounded-xl shadow-xl border border-[var(--color-border-light)] ${className}`}
         {...props}
       >
         {title && (
