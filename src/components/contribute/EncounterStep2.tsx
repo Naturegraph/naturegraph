@@ -148,20 +148,19 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
           )}
         </div>
 
-        {/* Bouton filtre — circulaire 48px, border 1px, bg background */}
+        {/* Bouton filtre — BATCH 99 : border ajoutée pour cohérence avec autres icon buttons */}
         <button
           type="button"
           onClick={() => setFilterOpen((v) => !v)}
           aria-label={t('contribute.panel.filterSpecies', { defaultValue: 'Filtrer' })}
           aria-expanded={filterOpen}
           className={[
-            // Style strictement aligné sur le bouton filtre de la HomeNavbar :
-            // - Fermé (même avec filtres actifs) : transparent, juste le badge
-            //   compteur indique l'état → moins agressif visuellement.
-            // - Ouvert : bg-primary plein + icône blanche.
             'relative size-12 shrink-0 rounded-full flex items-center justify-center',
+            'border border-[var(--color-border)]',
             'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-            filterOpen ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted/50',
+            filterOpen
+              ? 'bg-primary text-primary-foreground border-primary'
+              : 'text-foreground hover:bg-muted/50 hover:border-foreground/40',
           ].join(' ')}
         >
           <Filter className="size-5" aria-hidden="true" />
@@ -440,7 +439,7 @@ export function EncounterStep2({
         <div className="rounded-xl border-[0.5px] border-border bg-background flex flex-col items-center overflow-hidden">
           <img src={hermineImg} alt="" width={230} height={128} className="mt-6" loading="lazy" />
           <div className="flex flex-col items-center gap-3 p-6 w-full">
-            <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-[#99FFCC] text-foreground text-sm font-body leading-none">
+            <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-primary-light text-[var(--color-action-default)] text-sm font-body font-medium leading-none">
               {t('contribute.panel.noResultsBadge', { defaultValue: 'Aucun résultat' })}
             </span>
             <p className="font-title font-bold text-lg text-foreground text-center">
@@ -503,8 +502,9 @@ export function EncounterStep2({
           </label>
        */}
 
-      {/* Attribution TAXREF obligatoire — voir CLAUDE.md */}
-      <p className="text-[10px] text-muted-foreground">{t('contribute.species.taxrefCredit')}</p>
+      {/* BATCH 99 : attribution TAXREF déplacée dans le footer de
+          ContributeEncounterForm (sous les 2 boutons Annuler/Suivant)
+          → hiérarchie de l'info plus claire + visible en permanence. */}
     </div>
   )
 }

@@ -592,12 +592,12 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
         {/* ── Footer sticky ──────────────────────────────────────────────── */}
         <div className="shrink-0 border-t border-border bg-cream-lighter px-5 py-4 flex flex-col gap-2">
           <div className="flex items-center gap-3">
-            {/* Bouton retour */}
+            {/* Bouton retour — BATCH 99 : style btn-press-secondary (cohérence DS) */}
             <button
               type="button"
               onClick={handleBack}
               aria-label={step === 1 ? t('common.close') : t('common.back')}
-              className="size-11 shrink-0 rounded-full border border-border flex items-center justify-center text-foreground hover:border-primary/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="size-11 shrink-0 rounded-full btn-press btn-press-secondary bg-transparent flex items-center justify-center text-[var(--color-text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action-default)]"
             >
               <ArrowLeft className="size-4" aria-hidden="true" />
             </button>
@@ -687,6 +687,16 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
             >
               {t('contribute.panel.skipPhotos')}
             </button>
+          )}
+
+          {/* BATCH 99 : attribution TAXREF en pied de page (étape 2 uniquement).
+              Hiérarchie de l'info : moins prominente, toujours visible. */}
+          {step === 2 && (
+            <p className="text-[10px] text-muted-foreground text-center mt-1">
+              {t('contribute.species.taxrefCredit', {
+                defaultValue: 'Données TAXREF — INPN, licence CC-BY',
+              })}
+            </p>
           )}
         </div>
       </div>
