@@ -81,6 +81,13 @@ export interface AuthFormProps {
   rememberMe?: RememberMeConfig
 }
 
+/**
+ * Feature flag : OAuth providers (Google/Apple/Facebook) caches pendant la beta.
+ * BATCH 49 (Nicolas decision 2026-05-14) : a passer a true uniquement sur demande
+ * explicite + cf. checklist dans le commentaire JSX du block OAuth ci-dessous.
+ */
+const OAUTH_PROVIDERS_ENABLED: boolean = false
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function AuthForm({
@@ -204,32 +211,53 @@ export function AuthForm({
           </div>
         </form>
 
-        {/* Séparateur "ou continuer avec" */}
-        <div className="relative w-full grid grid-cols-1 grid-rows-1 items-center">
-          <div className="row-start-1 col-start-1 h-px w-full bg-[var(--color-border)]" />
-          <div className="row-start-1 col-start-1 bg-[var(--color-bg-primary)] flex h-8 items-center justify-center px-3 mx-auto rounded-full">
-            <p className="text-[var(--color-text-secondary)] text-base">{orContinueLabel}</p>
-          </div>
-        </div>
+        {/*
+          ⚠️ BETA — OAuth providers caches (BATCH 49, decision Nicolas 2026-05-14)
+          ═══════════════════════════════════════════════════════════════════════
+          Pendant la beta privee, on cache les boutons "Continuer avec Google/Apple/Facebook"
+          ET le separateur "ou continuer avec" car les flux OAuth ne sont pas encore
+          configures cote Supabase (TODOs dans AuthContext signInWithOAuth) et on veut
+          forcer le signup OTP email pour traçabilite beta.
 
-        {/* Boutons sociaux */}
-        <div className="flex gap-4 items-center w-full">
-          <SocialButton
-            provider="google"
-            onClick={() => handleSocialLogin('google')}
-            disabled={isLoading}
-          />
-          <SocialButton
-            provider="apple"
-            onClick={() => handleSocialLogin('apple')}
-            disabled={isLoading}
-          />
-          <SocialButton
-            provider="facebook"
-            onClick={() => handleSocialLogin('facebook')}
-            disabled={isLoading}
-          />
-        </div>
+          NE PAS REACTIVER sans demande explicite de Nicolas. Au moment de la
+          reactivation (post-beta) :
+            1. Configurer les OAuth providers cote Supabase Dashboard
+            2. Brancher signInWithOAuth dans AuthContext (actuellement TODO ligne 409-420)
+            3. Retirer ce commentaire et le block `{false &&` ci-dessous
+            4. Documenter dans le PR la liste des providers actives
+
+          Refs : SESSION_HANDOFF.md "OAuth Google/Apple/FB stubs" (D-15) + Nicolas decision.
+        */}
+        {OAUTH_PROVIDERS_ENABLED && (
+          <>
+            {/* Séparateur "ou continuer avec" */}
+            <div className="relative w-full grid grid-cols-1 grid-rows-1 items-center">
+              <div className="row-start-1 col-start-1 h-px w-full bg-[var(--color-border)]" />
+              <div className="row-start-1 col-start-1 bg-[var(--color-bg-primary)] flex h-8 items-center justify-center px-3 mx-auto rounded-full">
+                <p className="text-[var(--color-text-secondary)] text-base">{orContinueLabel}</p>
+              </div>
+            </div>
+
+            {/* Boutons sociaux */}
+            <div className="flex gap-4 items-center w-full">
+              <SocialButton
+                provider="google"
+                onClick={() => handleSocialLogin('google')}
+                disabled={isLoading}
+              />
+              <SocialButton
+                provider="apple"
+                onClick={() => handleSocialLogin('apple')}
+                disabled={isLoading}
+              />
+              <SocialButton
+                provider="facebook"
+                onClick={() => handleSocialLogin('facebook')}
+                disabled={isLoading}
+              />
+            </div>
+          </>
+        )}
 
         {/* Lien de bascule */}
         <div className="flex gap-1 items-center text-[var(--color-text-secondary)] text-base pb-0.5">

@@ -221,7 +221,8 @@ export function ProductFeatures() {
     let ticking = false
 
     const handleScroll = () => {
-      if (window.innerWidth < 1024) return
+      // BATCH 66 : aligne sur le breakpoint xl: (1280px) du layout desktop
+      if (window.innerWidth < 1280) return
       if (ticking) return
 
       ticking = true
@@ -299,12 +300,17 @@ export function ProductFeatures() {
 
         {/* ── Desktop : phone sticky + cartes alternées ────────────────── */}
         {/*
-          Principe : le wrapper a une minHeight explicite qui définit la zone de scroll.
+          BATCH 66 (Nicolas decision 2026-05-15) : breakpoint pousse de lg: a xl:
+          (1024px -> 1280px). Le layout sticky + cartes alternees demande beaucoup
+          d'espace lateral. En tablet 1024-1279px, les cartes etaient tronquees
+          ou collees au phone. On reserve maintenant ce layout aux ecrans >=1280px.
+
+          Principe : le wrapper a une minHeight explicite qui definit la zone de scroll.
           Le phone sticky est en flux normal → son containing block = le wrapper.
-          Les cartes sont en absolute → n'écrasent pas la hauteur du wrapper.
-          Aucun overflow sur les ancêtres (overflow:hidden casse position:sticky).
+          Les cartes sont en absolute → n'ecrasent pas la hauteur du wrapper.
+          Aucun overflow sur les ancetres (overflow:hidden casse position:sticky).
         */}
-        <div className="hidden lg:block relative pb-24" style={{ minHeight: '1750px' }}>
+        <div className="hidden xl:block relative pb-24" style={{ minHeight: '1750px' }}>
           {/* Phone sticky — reste centré à l'écran pendant tout le scroll */}
           <div
             className="sticky z-10 flex justify-center pointer-events-none"
@@ -356,8 +362,8 @@ export function ProductFeatures() {
           </div>
         </div>
 
-        {/* ── Mobile/Tablet : slider horizontal ────────────────────────── */}
-        <div className="lg:hidden pb-16">
+        {/* ── Mobile/Tablet : slider horizontal (BATCH 66 : couvre jusqu'a xl:) ── */}
+        <div className="xl:hidden pb-16">
           <div className="overflow-hidden">
             <div id="features-slider" className="overflow-x-auto scrollbar-hide pb-6 px-6 md:px-10">
               <div className="flex gap-4 w-max items-stretch">
