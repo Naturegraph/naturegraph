@@ -90,11 +90,13 @@ export function ConfirmModal({
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [onCancel])
 
-  // Classes du bouton de confirmation selon le variant
+  // BATCH 110 : utilise btn-press du DS pour cohérence avec les autres boutons.
+  // Le variant 'danger' utilise btn-press-danger (rouge) si défini en SCSS,
+  // sinon fallback sur primary avec couleur error en override.
   const confirmClasses =
     variant === 'danger'
-      ? 'bg-[var(--color-error,_#9E0F22)] text-white hover:opacity-90 focus-visible:ring-[var(--color-error,_#9E0F22)]'
-      : 'bg-primary text-primary-foreground hover:opacity-90 focus-visible:ring-primary'
+      ? 'btn-press btn-press-primary bg-[var(--color-error)] text-white focus-visible:ring-[var(--color-error)]'
+      : 'btn-press btn-press-primary bg-[var(--color-action-default)] text-[var(--color-text-white)] focus-visible:ring-[var(--color-action-default)]'
 
   return (
     <>
@@ -156,13 +158,13 @@ export function ConfirmModal({
             description et actions (ex: input de confirmation, checkbox, helper). */}
         {children && <div className="flex flex-col gap-3">{children}</div>}
 
-        {/* Actions : Annuler (focus initial) + Confirmer */}
+        {/* Actions : Annuler (focus initial) + Confirmer — BATCH 110 cohérence DS btn-press */}
         <div className="flex gap-3 mt-2">
           <button
             ref={cancelBtnRef}
             type="button"
             onClick={onCancel}
-            className="flex-1 h-12 rounded-full bg-background border-[0.5px] border-border text-foreground text-sm font-bold hover:border-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="btn-press btn-press-secondary flex-1 h-12 rounded-full bg-background border-[0.5px] border-[var(--color-border)] text-[var(--color-text-primary)] text-sm font-bold hover:border-[var(--color-action-default)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)]"
           >
             {cancelLabel ?? t('common.cancel', { defaultValue: 'Annuler' })}
           </button>
@@ -170,7 +172,7 @@ export function ConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={confirmDisabled}
-            className={`flex-1 h-12 rounded-full text-sm font-bold transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${confirmClasses}`}
+            className={`flex-1 h-12 rounded-full text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${confirmClasses}`}
           >
             {confirmLabel}
           </button>

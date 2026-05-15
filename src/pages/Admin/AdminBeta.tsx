@@ -102,6 +102,10 @@ export default function AdminBeta() {
   const [keyToDelete, setKeyToDelete] = useState<BetaAccessKey | null>(null)
   // BATCH 108 : tab actif (cohérence AdminUsers : Clés / Waitlist / Stats)
   const [activeTab, setActiveTab] = useState<'keys' | 'waitlist' | 'stats'>('keys')
+  // BATCH 110 : multi-select pour actions bulk (désactiver/supprimer plusieurs clés)
+  const [selectedKeyIds, setSelectedKeyIds] = useState<Set<string>>(new Set())
+  const [bulkAction, setBulkAction] = useState<'deactivate' | 'delete' | null>(null)
+  const [bulkProcessing, setBulkProcessing] = useState(false)
 
   // Quota
   const { data: quota } = useQuery<BetaQuota | null>({
@@ -306,6 +310,73 @@ export default function AdminBeta() {
     }
   }
 
+  // ─── Multi-select bulk actions (BATCH 110) ──────────────────────────────
+  /** Toggle sélection d'une clé. Ne fonctionne que pour les clés non utilisées. */
+  function toggleKeySelection(keyId: string) {
+    setSelectedKeyIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(keyId)) next.delete(keyId)
+      else next.add(keyId)
+      return next
+    })
+  }
+
+  /** Sélectionne / désélectionne toutes les clés sélectionnables (= non utilisées). */
+  function toggleAllSelectable() {
+    const selectable = keys.filter((k) => k.current_uses < k.max_uses).map((k) => k.id)
+    setSelectedKeyIds((prev) => {
+      if (selectable.every((id) => prev.has(id))) return new Set()
+      return new Set(selectable)
+    })
+  }
+
+  /**
+   * Exécute l'action bulk (désactiver ou supprimer) sur toutes les clés sélectionnées.
+   * Loggée individuellement dans l'audit pour traçabilité.
+   */
+  async function handleBulkConfirm() {
+    if (!supabase || selectedKeyIds.size === 0 || !bulkAction) return
+    setBulkProcessing(true)
+    const ids = Array.from(selectedKeyIds)
+    const targetKeys = keys.filter((k) => ids.includes(k.id))
+    try {
+      if (bulkAction === 'deactivate') {
+        const { error } = await supabase
+          .from('beta_access_keys')
+          .update({ is_active: false })
+          .in('id', ids)
+        if (error) throw error
+        await logAction({
+          action: 'beta.key_bulk_deactivate',
+          targetType: 'batch',
+          metadata: { count: ids.length, codes: targetKeys.map((k) => k.code) },
+        })
+        toast.success(`${ids.length} clé(s) désactivée(s)`)
+      } else {
+        const { error } = await supabase.from('beta_access_keys').delete().in('id', ids)
+        if (error) throw error
+        await logAction({
+          action: 'beta.key_bulk_delete',
+          targetType: 'batch',
+          metadata: { count: ids.length, codes: targetKeys.map((k) => k.code) },
+        })
+        toast.success(`${ids.length} clé(s) supprimée(s)`)
+      }
+      setSelectedKeyIds(new Set())
+      queryClient.invalidateQueries({ queryKey: ['beta-keys'] })
+    } catch (err) {
+      toast.error('Erreur action bulk', err instanceof Error ? err.message : undefined)
+    } finally {
+      setBulkProcessing(false)
+      setBulkAction(null)
+    }
+  }
+
+  // Compte les clés sélectionnables (= non utilisées) pour la checkbox header
+  const selectableKeyIds = keys.filter((k) => k.current_uses < k.max_uses).map((k) => k.id)
+  const allSelectableSelected =
+    selectableKeyIds.length > 0 && selectableKeyIds.every((id) => selectedKeyIds.has(id))
+
   return (
     <div className="flex flex-col gap-6">
       {/* ── Header (BATCH 107 : bouton à droite pour cohérence avec AdminUsers) ── */}
@@ -324,13 +395,21 @@ export default function AdminBeta() {
                 {Math.round((quota.current_user_count / quota.max_users_total) * 100)}%)
               </span>
               <span
-                className={
+                className={`inline-flex items-center gap-1.5 ${
                   quota.accepting_new_signups
                     ? 'text-[var(--color-success,#16a34a)]'
                     : 'text-[var(--color-error,#dc2626)]'
-                }
+                }`}
               >
-                {quota.accepting_new_signups ? '🟢 Accepting signups' : '🔴 Closed'}
+                <span
+                  className={`size-2 rounded-full ${
+                    quota.accepting_new_signups
+                      ? 'bg-[var(--color-success)]'
+                      : 'bg-[var(--color-error)]'
+                  }`}
+                  aria-hidden="true"
+                />
+                {quota.accepting_new_signups ? 'Signups ouverts' : 'Signups fermés'}
               </span>
             </div>
           )}
@@ -401,6 +480,37 @@ export default function AdminBeta() {
         })}
       </div>
 
+      {/* ── BATCH 110 : Barre d'actions bulk (visible si au moins 1 clé sélectionnée) ── */}
+      {activeTab === 'keys' && selectedKeyIds.size > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 bg-primary-light/30 border border-primary/30 rounded-lg">
+          <p className="text-sm font-medium text-foreground">
+            <span className="font-bold tabular-nums">{selectedKeyIds.size}</span> clé(s)
+            sélectionnée(s)
+          </p>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setSelectedKeyIds(new Set())}>
+              Annuler la sélection
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setBulkAction('deactivate')}
+              icon={<X className="size-3.5" aria-hidden="true" />}
+            >
+              Désactiver
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setBulkAction('delete')}
+              icon={<Trash2 className="size-3.5" aria-hidden="true" />}
+            >
+              Supprimer
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* ── Tab : Clés d'accès ─────────────────────────────────── */}
       {activeTab === 'keys' && (
         <section className="bg-background border border-border rounded-lg overflow-hidden">
@@ -413,6 +523,17 @@ export default function AdminBeta() {
               <table className="w-full text-sm">
                 <thead className="text-xs uppercase text-muted-foreground tracking-wider bg-[var(--color-bg-secondary)]/50">
                   <tr>
+                    {/* BATCH 110 : checkbox header pour tout sélectionner */}
+                    <th className="px-3 py-3 w-10">
+                      <input
+                        type="checkbox"
+                        checked={allSelectableSelected}
+                        onChange={toggleAllSelectable}
+                        aria-label="Tout sélectionner"
+                        disabled={selectableKeyIds.length === 0}
+                        className="size-4 rounded border-border accent-[var(--color-action-default)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                      />
+                    </th>
                     <th className="text-left px-5 py-3 font-semibold">Code</th>
                     <th className="text-left px-5 py-3 font-semibold">Batch</th>
                     <th className="text-left px-5 py-3 font-semibold">Statut</th>
@@ -426,13 +547,37 @@ export default function AdminBeta() {
                     const status = keyStatus(k)
                     const usedBy = k.used_by_user_id ? keyUsersMap[k.used_by_user_id] : null
                     const isUsed = k.current_uses >= k.max_uses
+                    const isSelected = selectedKeyIds.has(k.id)
                     return (
                       <tr
                         key={k.id}
                         className={`border-t border-border/40 transition-colors hover:bg-[var(--color-bg-secondary)]/60 ${
-                          idx % 2 === 1 ? 'bg-[var(--color-bg-secondary)]/20' : ''
+                          isSelected
+                            ? 'bg-primary-light/20'
+                            : idx % 2 === 1
+                              ? 'bg-[var(--color-bg-secondary)]/20'
+                              : ''
                         }`}
                       >
+                        {/* BATCH 110 : checkbox de sélection par ligne (uniquement non utilisées) */}
+                        <td className="px-3 py-3 w-10">
+                          {!isUsed ? (
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleKeySelection(k.id)}
+                              aria-label={`Sélectionner ${k.code}`}
+                              className="size-4 rounded border-border accent-[var(--color-action-default)] cursor-pointer"
+                            />
+                          ) : (
+                            <span
+                              className="text-muted-foreground"
+                              title="Clé utilisée — non sélectionnable"
+                            >
+                              —
+                            </span>
+                          )}
+                        </td>
                         <td className="px-5 py-3 font-mono text-xs text-foreground">{k.code}</td>
                         <td className="px-5 py-3 text-muted-foreground">#{k.batch_number}</td>
                         <td className="px-5 py-3">
@@ -515,7 +660,7 @@ export default function AdminBeta() {
         <section className="bg-background border border-border rounded-lg overflow-hidden">
           {waitlist.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-muted-foreground">
-              🟢 Waitlist vide — personne n'attend de clé pour le moment.
+              Waitlist vide — personne n'attend de clé pour le moment.
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -598,6 +743,31 @@ export default function AdminBeta() {
           variant="danger"
           onCancel={() => setKeyToDelete(null)}
           onConfirm={handleDeleteKey}
+        />
+      )}
+
+      {/* BATCH 110 : Modal de confirmation pour les actions bulk (désactiver/supprimer en masse) */}
+      {bulkAction && (
+        <ConfirmModal
+          title={
+            bulkAction === 'delete'
+              ? `Supprimer ${selectedKeyIds.size} clé(s) définitivement ?`
+              : `Désactiver ${selectedKeyIds.size} clé(s) ?`
+          }
+          description={
+            bulkAction === 'delete'
+              ? 'Action irréversible. Les clés seront supprimées du tableau et de l\'audit. Préférer "Désactiver" pour conserver la trace.'
+              : "Les clés seront marquées comme inactives. Elles ne pourront plus être utilisées pour s'inscrire mais resteront visibles dans le tableau et l'audit."
+          }
+          confirmLabel={
+            bulkAction === 'delete'
+              ? `Supprimer ${selectedKeyIds.size} clé(s)`
+              : `Désactiver ${selectedKeyIds.size} clé(s)`
+          }
+          variant={bulkAction === 'delete' ? 'danger' : 'default'}
+          confirmDisabled={bulkProcessing}
+          onCancel={() => setBulkAction(null)}
+          onConfirm={handleBulkConfirm}
         />
       )}
 
