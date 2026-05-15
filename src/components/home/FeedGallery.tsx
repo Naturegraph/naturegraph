@@ -116,7 +116,7 @@ export function FeedGallery({ posts }: FeedGalleryProps) {
             key={item.id}
             type="button"
             onClick={() => openLightbox(item)}
-            className="gallery-item group block relative overflow-hidden rounded mb-2 w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            className="gallery-item group block relative overflow-hidden rounded w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             role="gridcell"
             aria-label={
               item.imagesCount > 1

@@ -211,7 +211,15 @@ export function FeedFilterPanel({
   }
 
   function handleSave() {
-    onApply(local)
+    // BATCH 89 : on force une nouvelle reference d'objet + deep-copy des sous-objets
+    // pour garantir que React detecte le changement (Object.is en useState).
+    // Sans ca, si l'user re-save les memes valeurs ou si l'objet local mute, le
+    // re-render parent peut etre skip.
+    onApply({
+      ...local,
+      categories: [...local.categories],
+      shareTypes: { ...local.shareTypes },
+    })
     onClose()
   }
 
@@ -438,8 +446,13 @@ export function FeedFilterPanel({
     <>
       {/* ═══════ Desktop : sidebar droite 448px ═══════ */}
       <div className="hidden md:block">
-        {/* Backdrop transparent cliquable — ferme le panneau au clic */}
-        <div className="fixed inset-0 z-40" onClick={onClose} aria-hidden="true" />
+        {/* Backdrop semi-transparent BATCH 89 : focus visuel sur le panneau,
+            click pour fermer. Avant : transparent total — pas de feedback visuel. */}
+        <div
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-200"
+          onClick={onClose}
+          aria-hidden="true"
+        />
 
         <aside
           role="dialog"
