@@ -41,6 +41,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import { Heading } from '@/components/ui/Heading'
 
 const STORAGE_KEY = 'naturegraph-cookies-acknowledged'
 const STORAGE_VERSION = 'v1'
@@ -111,17 +113,19 @@ export function CookieBanner() {
     >
       <div className="max-w-4xl mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row items-start md:items-center gap-4">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">
+          {/* Titre via primitive Heading h4 (DS) — coherence visuelle avec le reste de l'app */}
+          <Heading level="h4" as="h2" color="primary" className="mb-1">
             {t('cookies.banner.title', { defaultValue: 'Cookies essentiels uniquement' })}
-          </p>
+          </Heading>
           <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
             {t('cookies.banner.message', {
               defaultValue:
                 "Naturegraph utilise uniquement des cookies strictement nécessaires (session, préférences). Aucun cookie publicitaire ou de traçage n'est utilisé.",
             })}{' '}
+            {/* Link couleur primary (violet action) pour coherence DS — pas le highlight teal */}
             <Link
               to="/privacy"
-              className="text-[var(--color-highlight-primary)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-highlight-primary)] focus-visible:ring-offset-2 rounded"
+              className="text-[var(--color-action-default)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] focus-visible:ring-offset-2 rounded font-medium"
             >
               {t('cookies.banner.learnMore', { defaultValue: 'En savoir plus' })}
             </Link>
@@ -129,18 +133,15 @@ export function CookieBanner() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0 self-stretch md:self-auto">
-          <button
-            type="button"
-            onClick={handleAccept}
-            className="h-10 px-5 rounded-full bg-[var(--color-highlight-primary)] text-white text-sm font-semibold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-highlight-primary)] focus-visible:ring-offset-2"
-          >
+          {/* Bouton primary (variant Button DS) — coherence avec tous les CTA primary de l'app */}
+          <Button variant="primary" size="sm" onClick={handleAccept}>
             {t('cookies.banner.accept', { defaultValue: "J'ai compris" })}
-          </button>
+          </Button>
           <button
             type="button"
             onClick={handleAccept}
             aria-label={t('cookies.banner.accept', { defaultValue: "J'ai compris" })}
-            className="size-10 inline-flex items-center justify-center rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover,rgba(0,0,0,0.05))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-highlight-primary)] focus-visible:ring-offset-2 md:hidden"
+            className="size-10 inline-flex items-center justify-center rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover,rgba(0,0,0,0.05))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] focus-visible:ring-offset-2 md:hidden"
           >
             <X className="size-5" aria-hidden="true" />
           </button>

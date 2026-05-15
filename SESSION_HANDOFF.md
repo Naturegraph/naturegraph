@@ -3,10 +3,12 @@
 > **Document de transmission inter-session Claude Code.**  
 > Permet une reprise immédiate du projet sans contexte conversationnel préalable.
 
-**Dernière mise à jour** : 2026-05-14  
-**Session** : BATCH 27-45 (cycles 2 + 3 complets)  
-**SHA actuel main** : `b98d31f` (sera mis à jour à `<post-batch-45-sha>` après dernier merge)  
-**Branches alignées** : `main` = `develop` (content), `staging` aligné via merge
+**Dernière mise à jour** : 2026-05-14 (fin de session)  
+**Session** : BATCH 27-45 (cycles 2 + 3 complets, beta privée 100% prête)  
+**SHA actuel main** : `5655062` (release: BATCH 45 -> main, PR #171)  
+**Branches alignées** : `main` = `develop` (content identique), `staging` aligné via merge non-ff  
+**PRs ouvertes** : 0  
+**Branches remote** : 3 (main, staging, develop) — tout est propre
 
 ---
 
