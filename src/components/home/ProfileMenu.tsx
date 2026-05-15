@@ -328,7 +328,13 @@ export function ProfileMenu({ onClose, onOpenSettings }: ProfileMenuProps) {
   }, [onClose, showLogoutModal])
 
   // ── Fermeture sur clic extérieur (desktop) ────────────────────────────────
+  // BATCH 73 (bug fix) : ne PAS fermer le menu si le LogoutModal est ouvert.
+  // Sinon le clic sur "Oui me déconnecter" (hors menuRef car le modal est
+  // rendu via portal au niveau du body) déclenche onClose() -> ProfileMenu
+  // unmount -> showLogoutModal state perdu -> modal disparait avant que
+  // handleLogoutConfirm n'ait pu appeler signOut(). Plus rien ne se passe.
   useEffect(() => {
+    if (showLogoutModal) return // 🔒 garde anti-fermeture pendant la modale
     const fn = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) onClose()
     }
@@ -338,7 +344,7 @@ export function ProfileMenu({ onClose, onOpenSettings }: ProfileMenuProps) {
       clearTimeout(t)
       document.removeEventListener('mousedown', fn)
     }
-  }, [onClose])
+  }, [onClose, showLogoutModal])
 
   // ── Déconnexion ───────────────────────────────────────────────────────────
   // Après signOut, redirection vers la landing page pour ne pas laisser

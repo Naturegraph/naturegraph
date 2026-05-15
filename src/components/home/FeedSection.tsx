@@ -23,7 +23,8 @@ import { ErrorState } from '@/components/ui'
 import { FeedPost } from './FeedPost'
 import { FeedGallery } from './FeedGallery'
 import { FeedFilterPanel, DEFAULT_FILTERS } from './FeedFilterPanel'
-import { ForYouDiscoveryModal } from './ForYouDiscoveryModal'
+// BATCH 74 : ForYouDiscoveryModal supprime de la beta (decision Nicolas)
+// import { ForYouDiscoveryModal } from './ForYouDiscoveryModal'
 import type { FeedFilters } from './FeedFilterPanel'
 import type { MockPost } from './FeedPost'
 import { useAuth } from '@/contexts/AuthContext'
@@ -288,32 +289,18 @@ export function FeedSection({
   const [filters, setFilters] = useState<FeedFilters>({ ...DEFAULT_FILTERS })
   const [page, setPage] = useState(1)
 
-  // ─── Modale discovery "Pour vous" (non connecté) ──────────────
-  // Affichée au clic sur "Pour vous" quand l'utilisateur n'est pas connecté.
-  // Propose l'inscription sans forcer — CTA secondaire "Continuer à découvrir".
-  const [showForYouModal, setShowForYouModal] = useState(false)
-
-  /**
-   * Clic sur un tab :
-   *   - "Pour vous" non connecté → ouvre la modale discovery, reste sur Récent
-   *   - sinon → change l'onglet normalement
-   */
+  // BATCH 74 : suppression de la modale discovery "Pour vous" (decision Nicolas).
+  // Le tab "Pour vous" reste disable visuellement pour les non-connectes
+  // (cf. requiresAuth: true sur le tab) — aucun pop-up ne s'affiche, c'est
+  // simplement non-cliquable. Plus simple et moins intrusif pour la beta.
   const handleTabClick = useCallback(
     (tabId: FeedTab) => {
-      if (tabId === 'for-you' && !isAuthenticated) {
-        setShowForYouModal(true)
-        return
-      }
+      // Tab "Pour vous" requiert auth → si pas connecte, on ignore le clic.
+      if (tabId === 'for-you' && !isAuthenticated) return
       setActiveTab(tabId)
     },
     [isAuthenticated],
   )
-
-  /** Ferme la modale discovery et ramène sur Récent */
-  const handleForYouModalClose = useCallback(() => {
-    setShowForYouModal(false)
-    setActiveTab('recent')
-  }, [])
 
   // ─── CTA localisation (pour les utilisateurs connectés non-localisés) ─────
   // Modale affichée 1x/session — triggered depuis le tab "Pour vous"
@@ -728,8 +715,7 @@ export function FeedSection({
         />
       )}
 
-      {/* Modale discovery "Pour vous" — visiteurs non connectés */}
-      <ForYouDiscoveryModal isOpen={showForYouModal} onContinue={handleForYouModalClose} />
+      {/* BATCH 74 : modale discovery "Pour vous" supprimee de la beta. */}
 
       {/* Modale permission géolocalisation — utilisateurs connectés non-localisés (1x/session) */}
       <LocationPermissionModal
