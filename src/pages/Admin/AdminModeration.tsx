@@ -166,6 +166,51 @@ export default function AdminModeration() {
     refetchOnWindowFocus: true,
   })
 
+  // BATCH 108 : stats globales pour le header (nb par statut/priorité)
+  // Pas filtrées : reflètent toute la base, pas la page courante
+  const { data: stats } = useQuery({
+    queryKey: ['admin-reports-stats'],
+    queryFn: async () => {
+      if (!supabase) {
+        return {
+          openCount: 0,
+          inReviewCount: 0,
+          criticalCount: 0,
+          resolved7d: 0,
+        }
+      }
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+      const [openRes, inReviewRes, criticalRes, resolvedRes] = await Promise.all([
+        supabase
+          .from('moderation_reports')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'new'),
+        supabase
+          .from('moderation_reports')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'in_review'),
+        supabase
+          .from('moderation_reports')
+          .select('*', { count: 'exact', head: true })
+          .in('status', ['new', 'in_review'])
+          .eq('priority', 'critical'),
+        supabase
+          .from('moderation_reports')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'resolved')
+          .gte('resolved_at', sevenDaysAgo),
+      ])
+      return {
+        openCount: openRes.count ?? 0,
+        inReviewCount: inReviewRes.count ?? 0,
+        criticalCount: criticalRes.count ?? 0,
+        resolved7d: resolvedRes.count ?? 0,
+      }
+    },
+    staleTime: STALE_TIMES.MEDIUM,
+    refetchOnWindowFocus: true,
+  })
+
   // Fetch reporter usernames pour affichage (separate request pour eviter join complexe)
   const reporterIds = Array.from(new Set((data?.rows ?? []).map((r) => r.reporter_id)))
   const { data: reporterMap } = useQuery({
@@ -338,11 +383,39 @@ export default function AdminModeration() {
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold text-foreground inline-flex items-center gap-2">
           <ShieldAlert className="size-6" aria-hidden="true" />
-          {t('admin.moderation.title', { defaultValue: 'Moderation' })}
+          {t('admin.moderation.title', { defaultValue: 'Modération' })}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {total} {t('admin.moderation.totalLabel', { defaultValue: 'signalement(s)' })}
+          {total} signalement(s) {statusFilter !== 'all' && `(filtre : ${statusFilter})`}
         </p>
+      </div>
+
+      {/* BATCH 108 : Stats cards (KPIs modération globaux, non filtrés) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <ModStatCard
+          label="À traiter"
+          value={stats?.openCount ?? 0}
+          color={stats && stats.openCount > 0 ? 'warning' : 'success'}
+          hint="Nouveaux signalements"
+        />
+        <ModStatCard
+          label="En cours"
+          value={stats?.inReviewCount ?? 0}
+          color="info"
+          hint="Assignés à un modérateur"
+        />
+        <ModStatCard
+          label="Critiques"
+          value={stats?.criticalCount ?? 0}
+          color={stats && stats.criticalCount > 0 ? 'error' : 'muted'}
+          hint="Priorité critique non résolus"
+        />
+        <ModStatCard
+          label="Résolus (7j)"
+          value={stats?.resolved7d ?? 0}
+          color="success"
+          hint="Action prise cette semaine"
+        />
       </div>
 
       {/* Filters */}
@@ -999,5 +1072,51 @@ function ReportActionMenu({ report, onAction, onClose }: ReportActionMenuProps) 
         </div>
       </div>
     </>
+  )
+}
+
+// ─── ModStatCard (BATCH 108) ────────────────────────────────────────────────
+
+/**
+ * Carte stat compacte pour le header modération.
+ * 4 variantes de couleur selon la gravité du signal qu'elle représente.
+ */
+function ModStatCard({
+  label,
+  value,
+  color,
+  hint,
+}: {
+  label: string
+  value: number
+  color: 'success' | 'warning' | 'error' | 'info' | 'muted'
+  hint: string
+}) {
+  const colorMap: Record<typeof color, { valueClass: string; dot: string }> = {
+    success: {
+      valueClass: 'text-[var(--color-success)]',
+      dot: 'bg-[var(--color-success)]',
+    },
+    warning: {
+      valueClass: 'text-[var(--color-warning)]',
+      dot: 'bg-[var(--color-warning)]',
+    },
+    error: {
+      valueClass: 'text-[var(--color-error)]',
+      dot: 'bg-[var(--color-error)]',
+    },
+    info: { valueClass: 'text-primary', dot: 'bg-primary' },
+    muted: { valueClass: 'text-foreground', dot: 'bg-[var(--color-border)]' },
+  }
+  const c = colorMap[color]
+  return (
+    <div className="bg-background border border-border rounded-lg p-4 flex flex-col gap-1">
+      <div className="flex items-center gap-2">
+        <span className={`size-2 rounded-full ${c.dot}`} aria-hidden="true" />
+        <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
+      </div>
+      <span className={`text-2xl font-bold tabular-nums ${c.valueClass}`}>{value}</span>
+      <span className="text-xs text-muted-foreground">{hint}</span>
+    </div>
   )
 }
