@@ -615,6 +615,8 @@
       "empty": "Aucune notification pour le moment",
       "emptyHint": "Suis des profils pour voir leurs nouvelles rencontres ici.",
       "viewAll": "Voir toutes les notifications",
+      "markAllRead": "Tout marquer comme lu",
+      "markAllReadSuccess": "Toutes les notifications ont été marquées comme lues",
       "groupToday": "Aujourd'hui",
       "groupYesterday": "Hier",
       "groupDaysAgo": "Il y a {{count}} jours",

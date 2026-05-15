@@ -49,6 +49,7 @@ import {
   UserPlus,
   Info,
   ShieldCheck,
+  Trash2,
   Users as UsersIcon,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
@@ -72,12 +73,15 @@ interface UserRow {
   posts_count: number | null
   followers_count: number | null
   created_at: string | null
+  // BATCH 107 : suivi activité user
+  last_login_at: string | null
+  updated_at: string | null
   // Joined depuis admin_users (peut etre null si pas admin)
   admin_role: string | null
   admin_is_active: boolean | null
 }
 
-type ActionType = 'promote' | 'demote' | 'suspend' | 'ban' | null
+type ActionType = 'promote' | 'demote' | 'suspend' | 'ban' | 'delete' | null
 
 interface PendingAction {
   type: ActionType
@@ -85,6 +89,50 @@ interface PendingAction {
 }
 
 const PAGE_SIZE = PAGE_SIZES.ADMIN_DEFAULT
+
+// ─── Helpers date (BATCH 107) ────────────────────────────────────────────
+
+/**
+ * Format date courte localisée FR : 03/04/2026
+ * Utilisée pour "Inscrit le" — pas besoin d'heure, juste un repère temporel.
+ */
+function formatShortDate(iso: string | null): string {
+  if (!iso) return '—'
+  try {
+    return new Date(iso).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+  } catch {
+    return '—'
+  }
+}
+
+/**
+ * Format relatif : "il y a 5 min", "il y a 2j", "il y a 3 mois" ou date absolue si > 1 an.
+ * Utilisé pour "Dernière activité" — donne une lecture rapide de l'engagement.
+ */
+function formatRelativeTime(iso: string | null): string {
+  if (!iso) return 'Jamais'
+  try {
+    const date = new Date(iso)
+    const now = Date.now()
+    const diffMs = now - date.getTime()
+    const min = Math.floor(diffMs / 60_000)
+    if (min < 1) return "À l'instant"
+    if (min < 60) return `il y a ${min} min`
+    const h = Math.floor(min / 60)
+    if (h < 24) return `il y a ${h}h`
+    const d = Math.floor(h / 24)
+    if (d < 7) return `il y a ${d}j`
+    if (d < 30) return `il y a ${Math.floor(d / 7)} sem.`
+    if (d < 365) return `il y a ${Math.floor(d / 30)} mois`
+    return formatShortDate(iso)
+  } catch {
+    return '—'
+  }
+}
 
 // ─── Page ────────────────────────────────────────────────────────────────
 
@@ -146,7 +194,7 @@ export default function AdminUsers() {
       let query = supabase
         .from('profiles')
         .select(
-          'id, username, email, first_name, last_name, avatar_url, posts_count, followers_count, created_at',
+          'id, username, email, first_name, last_name, avatar_url, posts_count, followers_count, created_at, last_login_at, updated_at',
           { count: 'exact' },
         )
         .order(sort.column, { ascending: sort.ascending })
@@ -280,6 +328,33 @@ export default function AdminUsers() {
           if (error) throw error
           await logAudit('user.ban', user.id, { reason })
           toast.success(`${user.username} banni definitivement`)
+          break
+        }
+        // BATCH 107 : suppression totale via edge function admin-delete-user
+        case 'delete': {
+          if (reason.trim().length < 10) {
+            toast.error('Raison obligatoire (10 caractères min)')
+            return
+          }
+          const { data: sessionData } = await supabase.auth.getSession()
+          const accessToken = sessionData.session?.access_token
+          if (!accessToken) throw new Error('Session expirée, reconnectez-vous')
+
+          const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-delete-user`
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ target_user_id: user.id, reason: reason.trim() }),
+          })
+          const json = await res.json().catch(() => null)
+          if (!res.ok || !json?.ok) {
+            throw new Error(json?.error ?? `Erreur HTTP ${res.status}`)
+          }
+          // Audit log déjà inséré côté edge function (avant la suppression CASCADE)
+          toast.success(`Compte @${user.username} supprimé définitivement`)
           break
         }
       }
@@ -471,7 +546,9 @@ export default function AdminUsers() {
                   <th className="text-left px-4 py-2">Utilisateur</th>
                   <th className="text-left px-4 py-2">Email</th>
                   <th className="text-left px-4 py-2">Posts</th>
-                  <th className="text-left px-4 py-2">Role</th>
+                  <th className="text-left px-4 py-2">Inscrit le</th>
+                  <th className="text-left px-4 py-2">Dernière activité</th>
+                  <th className="text-left px-4 py-2">Rôle</th>
                   <th className="text-right px-4 py-2">Actions</th>
                 </tr>
               </thead>
@@ -507,6 +584,12 @@ export default function AdminUsers() {
                       {u.email}
                     </td>
                     <td className="px-4 py-2 text-foreground">{u.posts_count ?? 0}</td>
+                    <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
+                      {u.created_at ? formatShortDate(u.created_at) : '—'}
+                    </td>
+                    <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
+                      {formatRelativeTime(u.last_login_at ?? u.updated_at)}
+                    </td>
                     <td className="px-4 py-2">
                       {u.admin_role ? (
                         <span
@@ -621,7 +704,9 @@ export default function AdminUsers() {
                 ? `Retirer @${pending.user.username} des admins ?`
                 : pending.type === 'suspend'
                   ? `Suspendre @${pending.user.username} 7 jours ?`
-                  : `Bannir @${pending.user.username} definitivement ?`
+                  : pending.type === 'delete'
+                    ? `Supprimer définitivement @${pending.user.username} ?`
+                    : `Bannir @${pending.user.username} definitivement ?`
           }
           description={
             pending.type === 'promote'
@@ -630,7 +715,9 @@ export default function AdminUsers() {
                 ? "L'acces /admin sera revoque. Action reversible."
                 : pending.type === 'suspend'
                   ? 'Suspension de 7 jours. Reversible. Loggue dans admin_actions.'
-                  : '⚠️ BAN PERMANENT. Action IRREVERSIBLE. Loggue dans admin_actions.'
+                  : pending.type === 'delete'
+                    ? "⚠️ SUPPRESSION TOTALE — IRRÉVERSIBLE.\nLe compte, le profil, les posts, les carnets, les médias et toutes les données associées seront définitivement supprimés. Cette action est conforme RGPD (droit à l'oubli)."
+                    : '⚠️ BAN PERMANENT. Action IRREVERSIBLE. Loggue dans admin_actions.'
           }
           confirmLabel={
             pending.type === 'ban'
@@ -639,16 +726,23 @@ export default function AdminUsers() {
                 ? 'Suspendre'
                 : pending.type === 'demote'
                   ? 'Retirer'
-                  : 'Promouvoir'
+                  : pending.type === 'delete'
+                    ? 'Supprimer définitivement'
+                    : 'Promouvoir'
           }
-          variant={pending.type === 'ban' || pending.type === 'suspend' ? 'danger' : 'default'}
+          variant={
+            pending.type === 'ban' || pending.type === 'suspend' || pending.type === 'delete'
+              ? 'danger'
+              : 'default'
+          }
           onCancel={closeAction}
           onConfirm={confirmAction}
           confirmDisabled={
-            (pending.type === 'suspend' || pending.type === 'ban') && reason.trim().length < 10
+            (pending.type === 'suspend' || pending.type === 'ban' || pending.type === 'delete') &&
+            reason.trim().length < 10
           }
         >
-          {(pending.type === 'suspend' || pending.type === 'ban') && (
+          {(pending.type === 'suspend' || pending.type === 'ban' || pending.type === 'delete') && (
             <div className="flex flex-col gap-1">
               <label htmlFor="action-reason" className="text-xs font-medium text-foreground">
                 Raison (10 caracteres min — affichee dans l'audit log)
@@ -659,7 +753,11 @@ export default function AdminUsers() {
                 onChange={(e) => setReason(e.target.value)}
                 rows={3}
                 maxLength={500}
-                placeholder="Ex: harcelement repete, spam massif..."
+                placeholder={
+                  pending.type === 'delete'
+                    ? 'Ex: demande RGPD du user, compte de spam massif identifié...'
+                    : 'Ex: harcelement repete, spam massif...'
+                }
                 className="w-full px-3 py-2 rounded-md border border-border bg-background text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               />
               <span className="text-xs text-muted-foreground self-end">{reason.length} / 500</span>
@@ -768,6 +866,20 @@ function UserActionMenu({
           >
             <Ban className="size-3.5" aria-hidden="true" />
             Bannir definitivement
+          </button>
+        )}
+        {/* BATCH 107 : Suppression complète du compte (super_admin only).
+            Différent de "bannir" : DELETE FROM auth.users → CASCADE supprime profil,
+            posts, notebooks, storage, etc. RGPD-compliant + irréversible. */}
+        {isSuperAdmin && (
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => onAction('delete', user)}
+            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--color-error,#dc2626)]/10 focus-visible:outline-none focus-visible:bg-[var(--color-error,#dc2626)]/10 text-left text-[var(--color-error,#dc2626)]"
+          >
+            <Trash2 className="size-3.5" aria-hidden="true" />
+            Supprimer le compte
           </button>
         )}
       </div>
