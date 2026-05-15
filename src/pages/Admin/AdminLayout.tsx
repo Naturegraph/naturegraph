@@ -11,17 +11,10 @@
 
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import {
-  LayoutDashboard,
-  Users,
-  ShieldAlert,
-  ShieldCheck,
-  Key,
-  FileText,
-  ArrowLeft,
-} from 'lucide-react'
+import { LayoutDashboard, Users, ShieldAlert, Key, FileText, ArrowLeft } from 'lucide-react'
 import { useIsAdmin } from '@/hooks/useIsAdmin'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import hermineIcon from '@/assets/images/hermine-icon.png'
 
 const NAV_ITEMS = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -41,10 +34,17 @@ export default function AdminLayout() {
     <div className="min-h-screen bg-[var(--color-bg-secondary)] flex flex-col md:flex-row">
       {/* ════════ Sidebar desktop (gauche) ════════ */}
       <aside className="hidden md:flex md:flex-col w-64 shrink-0 bg-[var(--color-bg-primary)] border-r border-[var(--color-border)] sticky top-0 h-screen">
-        {/* Header sidebar : brand + role */}
+        {/* Header sidebar : logo hermine Naturegraph + brand + role (BATCH 105b) */}
         <div className="px-6 py-5 border-b border-[var(--color-border)]">
-          <div className="flex items-center gap-2 mb-2">
-            <ShieldCheck className="size-5 text-[var(--color-action-default)]" aria-hidden="true" />
+          <div className="flex items-center gap-2.5 mb-2">
+            <img
+              src={hermineIcon}
+              alt=""
+              className="size-7 shrink-0"
+              width={28}
+              height={28}
+              aria-hidden="true"
+            />
             <span className="font-bold text-base text-[var(--color-text-primary)]">
               Naturegraph
             </span>

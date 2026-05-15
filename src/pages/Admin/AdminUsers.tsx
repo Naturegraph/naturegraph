@@ -30,7 +30,8 @@
  *   - Focus management via ConfirmModal
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { PAGE_SIZES, STALE_TIMES } from '@/constants/reactQuery'
 import { Link } from 'react-router-dom'
@@ -102,10 +103,15 @@ export default function AdminUsers() {
   //   migrateur    → admin_role IS NULL (utilisateurs normaux)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'super_admin' | 'moderator' | 'migrateur'>('all')
+  // BATCH 105c : 4 tri simples (created_at desc/asc, posts_count desc, username asc)
+  const [sortMode, setSortMode] = useState<'newest' | 'oldest' | 'posts' | 'name'>('newest')
   const [page, setPage] = useState(0)
   const [showRolesInfo, setShowRolesInfo] = useState(false)
   const [showAddUser, setShowAddUser] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  // BATCH 105a : rect du bouton trigger pour positionner le menu via portal
+  const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null)
+  const menuTriggerRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
   const [pending, setPending] = useState<PendingAction>({ type: null, user: null })
   const [reason, setReason] = useState('')
 
@@ -122,21 +128,28 @@ export default function AdminUsers() {
     setPage(0)
   }, [filter])
 
+  // BATCH 105c : config tri SQL pour chaque mode
+  const sortConfig: Record<typeof sortMode, { column: string; ascending: boolean }> = {
+    newest: { column: 'created_at', ascending: false },
+    oldest: { column: 'created_at', ascending: true },
+    posts: { column: 'posts_count', ascending: false },
+    name: { column: 'username', ascending: true },
+  }
+
   // Fetch users paginated + filtered
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-users', debouncedSearch, filter, page],
+    queryKey: ['admin-users', debouncedSearch, filter, sortMode, page],
     queryFn: async () => {
       if (!supabase) return { rows: [] as UserRow[], total: 0 }
 
-      // Build query : on join admin_users via une 2eme requete car PostgREST
-      // ne supporte pas le LEFT JOIN sur table sans FK explicite cote profiles.
+      const sort = sortConfig[sortMode]
       let query = supabase
         .from('profiles')
         .select(
           'id, username, email, first_name, last_name, avatar_url, posts_count, followers_count, created_at',
           { count: 'exact' },
         )
-        .order('created_at', { ascending: false })
+        .order(sort.column, { ascending: sort.ascending })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
 
       if (debouncedSearch) {
@@ -405,22 +418,35 @@ export default function AdminUsers() {
         })}
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
-          aria-hidden="true"
-        />
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={t('admin.users.searchPlaceholder', {
-            defaultValue: 'Rechercher par nom, username, email...',
-          })}
-          aria-label={t('admin.users.searchLabel', { defaultValue: 'Recherche utilisateurs' })}
-          className="w-full h-10 pl-10 pr-4 rounded-md border border-border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        />
+      {/* Search + Tri (BATCH 105c) */}
+      <div className="flex flex-col md:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t('admin.users.searchPlaceholder', {
+              defaultValue: 'Rechercher par nom, username, email...',
+            })}
+            aria-label={t('admin.users.searchLabel', { defaultValue: 'Recherche utilisateurs' })}
+            className="w-full h-10 pl-10 pr-4 rounded-md border border-border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          />
+        </div>
+        <select
+          value={sortMode}
+          onChange={(e) => setSortMode(e.target.value as typeof sortMode)}
+          aria-label="Trier les utilisateurs"
+          className="h-10 pl-4 pr-9 rounded-md border border-border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+        >
+          <option value="newest">Plus récents</option>
+          <option value="oldest">Plus anciens</option>
+          <option value="posts">+ d'observations</option>
+          <option value="name">Ordre alphabétique</option>
+        </select>
       </div>
 
       {/* Table */}
@@ -497,10 +523,23 @@ export default function AdminUsers() {
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-2 text-right relative">
+                    <td className="px-4 py-2 text-right">
                       <button
                         type="button"
-                        onClick={() => setOpenMenuId(openMenuId === u.id ? null : u.id)}
+                        ref={(el) => {
+                          if (el) menuTriggerRefs.current.set(u.id, el)
+                          else menuTriggerRefs.current.delete(u.id)
+                        }}
+                        onClick={(e) => {
+                          const isOpen = openMenuId === u.id
+                          if (isOpen) {
+                            setOpenMenuId(null)
+                            setMenuAnchorRect(null)
+                          } else {
+                            setMenuAnchorRect(e.currentTarget.getBoundingClientRect())
+                            setOpenMenuId(u.id)
+                          }
+                        }}
                         aria-label={`Actions pour ${u.username}`}
                         aria-haspopup="menu"
                         aria-expanded={openMenuId === u.id}
@@ -513,7 +552,11 @@ export default function AdminUsers() {
                           user={u}
                           isSuperAdmin={isSuperAdmin}
                           onAction={openAction}
-                          onClose={() => setOpenMenuId(null)}
+                          onClose={() => {
+                            setOpenMenuId(null)
+                            setMenuAnchorRect(null)
+                          }}
+                          anchorRect={menuAnchorRect}
                         />
                       )}
                     </td>
@@ -635,9 +678,17 @@ interface UserActionMenuProps {
   isSuperAdmin: boolean
   onAction: (type: Exclude<ActionType, null>, user: UserRow) => void
   onClose: () => void
+  /** Rect du bouton trigger pour positionner le menu via portal (BATCH 105a). */
+  anchorRect: DOMRect | null
 }
 
-function UserActionMenu({ user, isSuperAdmin, onAction, onClose }: UserActionMenuProps) {
+function UserActionMenu({
+  user,
+  isSuperAdmin,
+  onAction,
+  onClose,
+  anchorRect,
+}: UserActionMenuProps) {
   // Close on Escape
   useEffect(() => {
     function handler(e: KeyboardEvent) {
@@ -649,13 +700,23 @@ function UserActionMenu({ user, isSuperAdmin, onAction, onClose }: UserActionMen
 
   const isAlreadyAdmin = user.admin_role !== null && user.admin_is_active
 
-  return (
+  // BATCH 105a : positionnement fixed via getBoundingClientRect du bouton parent
+  // (rendu via Portal au body pour eviter clip par overflow-x-auto de la table).
+  const menuStyle: React.CSSProperties = anchorRect
+    ? {
+        position: 'fixed',
+        top: anchorRect.bottom + 4,
+        right: window.innerWidth - anchorRect.right,
+      }
+    : {}
+
+  return createPortal(
     <>
-      {/* Backdrop pour fermer */}
-      <div className="fixed inset-0 z-10" onClick={onClose} aria-hidden="true" />
+      <div className="fixed inset-0 z-[60]" onClick={onClose} aria-hidden="true" />
       <div
         role="menu"
-        className="absolute right-0 top-9 z-20 min-w-[200px] bg-background border border-border rounded-md shadow-lg py-1 text-sm"
+        style={menuStyle}
+        className="z-[70] min-w-[200px] bg-background border border-border rounded-md shadow-lg py-1 text-sm"
       >
         <Link
           to={`/profile/${user.username}`}
@@ -710,6 +771,7 @@ function UserActionMenu({ user, isSuperAdmin, onAction, onClose }: UserActionMen
           </button>
         )}
       </div>
-    </>
+    </>,
+    document.body,
   )
 }

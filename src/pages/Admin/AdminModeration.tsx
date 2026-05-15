@@ -44,6 +44,10 @@ import {
   MoreVertical,
   ChevronLeft,
   ChevronRight,
+  X as XIcon,
+  Mail,
+  ExternalLink,
+  FileText,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
@@ -126,6 +130,11 @@ export default function AdminModeration() {
   const [priorityFilter, setPriorityFilter] = useState<'all' | ReportPriority>('all')
   const [page, setPage] = useState(0)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  // BATCH 106 : drawer side-panel pour voir le detail d'un signalement + envoyer notifs
+  const [detailReport, setDetailReport] = useState<ReportRow | null>(null)
+  const [notifTargetMsg, setNotifTargetMsg] = useState('')
+  const [notifReporterMsg, setNotifReporterMsg] = useState('')
+  const [sendingNotif, setSendingNotif] = useState(false)
   const [pending, setPending] = useState<PendingAction>({ type: null, report: null })
   const [notes, setNotes] = useState('')
 
@@ -397,7 +406,11 @@ export default function AdminModeration() {
                     : null
 
               return (
-                <li key={r.id} className="px-5 py-4">
+                <li
+                  key={r.id}
+                  className="px-5 py-4 hover:bg-[var(--color-bg-secondary)]/40 transition-colors"
+                >
+                  {/* BATCH 106 : bouton 'Détails' dans les actions ouvre le drawer */}
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                     {/* Left : info */}
                     <div className="flex-1 min-w-0 flex flex-col gap-1">
@@ -443,8 +456,17 @@ export default function AdminModeration() {
                       )}
                     </div>
 
-                    {/* Right : actions */}
+                    {/* Right : actions — bouton Détails ouvre le drawer (BATCH 106) */}
                     <div className="flex items-center gap-2 shrink-0 relative">
+                      <button
+                        type="button"
+                        onClick={() => setDetailReport(r)}
+                        aria-label={`Voir le détail du signalement`}
+                        className="h-8 px-3 inline-flex items-center gap-1.5 rounded-full text-xs font-medium text-[var(--color-action-default)] hover:bg-[var(--color-bg-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        <FileText className="size-3.5" aria-hidden="true" />
+                        Détails
+                      </button>
                       {targetLink && (
                         <Link
                           to={targetLink}
@@ -569,7 +591,348 @@ export default function AdminModeration() {
           </div>
         </ConfirmModal>
       )}
+
+      {/* BATCH 106 : Drawer side-panel pour le détail d'un signalement */}
+      {detailReport && (
+        <ReportDetailDrawer
+          report={detailReport}
+          onClose={() => {
+            setDetailReport(null)
+            setNotifTargetMsg('')
+            setNotifReporterMsg('')
+          }}
+          notifTargetMsg={notifTargetMsg}
+          setNotifTargetMsg={setNotifTargetMsg}
+          notifReporterMsg={notifReporterMsg}
+          setNotifReporterMsg={setNotifReporterMsg}
+          sendingNotif={sendingNotif}
+          setSendingNotif={setSendingNotif}
+          toast={toast}
+        />
+      )}
     </div>
+  )
+}
+
+// ─── ReportDetailDrawer (BATCH 106) ──────────────────────────────────────
+//
+// Side-panel slide-in droite avec :
+//   - Détails complets du signalement (status / priority / raison / description)
+//   - Preview du contenu signalé (post avec titre + description, profil avec username)
+//   - Compteur de signalements précédents sur la cible
+//   - Form notification à l'utilisateur signalé (motif suppression / avertissement)
+//   - Form notification au signaleur (confirmation de l'action)
+//   - Lien externe vers la cible
+//
+// L'envoi des notifs crée une row dans `notifications` + mailto: fallback.
+
+interface ReportDetailDrawerProps {
+  report: ReportRow
+  onClose: () => void
+  notifTargetMsg: string
+  setNotifTargetMsg: (v: string) => void
+  notifReporterMsg: string
+  setNotifReporterMsg: (v: string) => void
+  sendingNotif: boolean
+  setSendingNotif: (v: boolean) => void
+  toast: { success: (t: string, d?: string) => void; error: (t: string, d?: string) => void }
+}
+
+function ReportDetailDrawer({
+  report,
+  onClose,
+  notifTargetMsg,
+  setNotifTargetMsg,
+  notifReporterMsg,
+  setNotifReporterMsg,
+  sendingNotif,
+  setSendingNotif,
+  toast,
+}: ReportDetailDrawerProps) {
+  // Fetch preview du contenu signalé (post ou profil)
+  const { data: targetPreview } = useQuery({
+    queryKey: ['mod-target-preview', report.target_type, report.target_id],
+    queryFn: async () => {
+      if (!supabase) return null
+      if (report.target_type === 'post') {
+        const { data } = await supabase
+          .from('posts')
+          .select('id, title, description, user_id, type, status, visibility, created_at')
+          .eq('id', report.target_id)
+          .maybeSingle()
+        return data
+      }
+      if (report.target_type === 'profile') {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id, username, email, first_name, last_name, bio, posts_count')
+          .eq('id', report.target_id)
+          .maybeSingle()
+        return data
+      }
+      return null
+    },
+  })
+
+  // Compteur signalements précédents sur la même cible
+  const { data: relatedCount } = useQuery({
+    queryKey: ['mod-related-count', report.target_id],
+    queryFn: async () => {
+      if (!supabase) return 0
+      const { count } = await supabase
+        .from('moderation_reports')
+        .select('id', { count: 'exact', head: true })
+        .eq('target_id', report.target_id)
+      return count ?? 0
+    },
+  })
+
+  // Fetch info user signalé (pour son user_id si target=post)
+  const targetUserId =
+    report.target_type === 'profile'
+      ? report.target_id
+      : (targetPreview as { user_id?: string } | null)?.user_id
+
+  async function sendNotificationTo(
+    targetUserId: string,
+    title: string,
+    body: string,
+  ): Promise<boolean> {
+    if (!supabase || !targetUserId) return false
+    const { error } = await supabase.from('notifications').insert({
+      user_id: targetUserId,
+      type: 'system',
+      title,
+      body,
+      reference_id: report.id,
+      reference_type: 'moderation_report',
+      read: false,
+    })
+    return !error
+  }
+
+  async function handleSendTargetMsg() {
+    if (!targetUserId || notifTargetMsg.trim().length < 10) {
+      toast.error('Message trop court (10 caractères min)')
+      return
+    }
+    setSendingNotif(true)
+    const ok = await sendNotificationTo(
+      targetUserId,
+      'Message de l’équipe modération',
+      notifTargetMsg.trim(),
+    )
+    setSendingNotif(false)
+    if (ok) {
+      toast.success(
+        'Notification envoyée à l’utilisateur',
+        'Il la verra dans son panneau notifications.',
+      )
+      setNotifTargetMsg('')
+    } else {
+      toast.error('Erreur envoi notification')
+    }
+  }
+
+  async function handleSendReporterMsg() {
+    if (notifReporterMsg.trim().length < 10) {
+      toast.error('Message trop court (10 caractères min)')
+      return
+    }
+    setSendingNotif(true)
+    const ok = await sendNotificationTo(
+      report.reporter_id,
+      'Mise à jour sur ton signalement',
+      notifReporterMsg.trim(),
+    )
+    setSendingNotif(false)
+    if (ok) {
+      toast.success('Signaleur notifié', 'Confirmation envoyée dans son panneau.')
+      setNotifReporterMsg('')
+    } else {
+      toast.error('Erreur envoi notification au signaleur')
+    }
+  }
+
+  const targetExternalLink =
+    report.target_type === 'post'
+      ? `/post/${report.target_id}`
+      : report.target_type === 'profile'
+        ? `/profile/${report.target_id}`
+        : null
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm motion-safe:animate-in motion-safe:fade-in-0"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="Détail du signalement"
+        className="fixed top-0 right-0 bottom-0 z-50 w-full md:w-[480px] bg-[var(--color-bg-primary)] shadow-2xl flex flex-col motion-safe:animate-in motion-safe:slide-in-from-right motion-safe:duration-250"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)]">
+          <h3 className="text-base font-bold text-foreground inline-flex items-center gap-2">
+            <ShieldAlert className="size-4 text-[var(--color-action-default)]" aria-hidden="true" />
+            Détail du signalement
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer"
+            className="size-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-bg-secondary)]"
+          >
+            <XIcon className="size-4" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-5">
+          {/* Méta */}
+          <section className="flex flex-col gap-2">
+            <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+              Information
+            </h4>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="bg-[var(--color-bg-secondary)]/40 rounded-lg p-2.5">
+                <p className="text-xs text-muted-foreground">Statut</p>
+                <p className="font-medium text-foreground">{report.status}</p>
+              </div>
+              <div className="bg-[var(--color-bg-secondary)]/40 rounded-lg p-2.5">
+                <p className="text-xs text-muted-foreground">Priorité</p>
+                <p className="font-medium text-foreground">{report.priority}</p>
+              </div>
+              <div className="bg-[var(--color-bg-secondary)]/40 rounded-lg p-2.5">
+                <p className="text-xs text-muted-foreground">Type</p>
+                <p className="font-medium text-foreground capitalize">{report.target_type}</p>
+              </div>
+              <div className="bg-[var(--color-bg-secondary)]/40 rounded-lg p-2.5">
+                <p className="text-xs text-muted-foreground">Signalements totaux</p>
+                <p className="font-medium text-foreground">{relatedCount ?? '—'}</p>
+              </div>
+            </div>
+            <div className="bg-[var(--color-bg-secondary)]/40 rounded-lg p-3">
+              <p className="text-xs text-muted-foreground mb-1">Raison</p>
+              <p className="text-sm font-medium text-foreground">{report.reason}</p>
+              {report.description && (
+                <>
+                  <p className="text-xs text-muted-foreground mt-2 mb-1">Description</p>
+                  <p className="text-sm text-foreground italic">"{report.description}"</p>
+                </>
+              )}
+            </div>
+          </section>
+
+          {/* Preview cible */}
+          {targetPreview && (
+            <section className="flex flex-col gap-2">
+              <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                Aperçu du contenu signalé
+              </h4>
+              <div className="bg-[var(--color-bg-secondary)]/40 rounded-xl p-4 border border-[var(--color-border)]">
+                {report.target_type === 'post' ? (
+                  <>
+                    <p className="font-semibold text-foreground inline-flex items-center gap-1.5 mb-2">
+                      <FileText className="size-3.5" aria-hidden="true" />
+                      {(targetPreview as { title?: string }).title || '(Sans titre)'}
+                    </p>
+                    <p className="text-sm text-foreground line-clamp-4 whitespace-pre-line">
+                      {(targetPreview as { description?: string }).description ||
+                        '(Pas de description)'}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-semibold text-foreground mb-1">
+                      @{(targetPreview as { username?: string }).username}
+                    </p>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      {(targetPreview as { email?: string }).email}
+                    </p>
+                    {(targetPreview as { bio?: string | null }).bio && (
+                      <p className="text-sm text-foreground italic line-clamp-3">
+                        "{(targetPreview as { bio?: string }).bio}"
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {(targetPreview as { posts_count?: number }).posts_count ?? 0} observations
+                    </p>
+                  </>
+                )}
+              </div>
+              {targetExternalLink && (
+                <Link
+                  to={targetExternalLink}
+                  target="_blank"
+                  className="inline-flex items-center gap-1.5 text-xs text-[var(--color-action-default)] hover:underline"
+                >
+                  <ExternalLink className="size-3" aria-hidden="true" />
+                  Ouvrir dans un nouvel onglet
+                </Link>
+              )}
+            </section>
+          )}
+
+          {/* Form : notif à l'utilisateur signalé */}
+          {targetUserId && (
+            <section className="flex flex-col gap-2">
+              <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                Notifier l'utilisateur signalé
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                Crée une notification dans son panneau (motif suppression, avertissement, etc.).
+              </p>
+              <textarea
+                value={notifTargetMsg}
+                onChange={(e) => setNotifTargetMsg(e.target.value)}
+                rows={3}
+                maxLength={500}
+                placeholder="Ex : votre post a été masqué car il enfreint la règle X..."
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              />
+              <Button
+                size="sm"
+                onClick={handleSendTargetMsg}
+                disabled={sendingNotif || notifTargetMsg.trim().length < 10}
+                icon={<Mail className="size-4" aria-hidden="true" />}
+              >
+                Envoyer à l'utilisateur
+              </Button>
+            </section>
+          )}
+
+          {/* Form : notif au signaleur */}
+          <section className="flex flex-col gap-2">
+            <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+              Notifier le signaleur
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              Confirmation du traitement de son signalement (action prise, remerciement).
+            </p>
+            <textarea
+              value={notifReporterMsg}
+              onChange={(e) => setNotifReporterMsg(e.target.value)}
+              rows={3}
+              maxLength={500}
+              placeholder="Ex : merci pour ton signalement, nous avons retiré le contenu..."
+              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleSendReporterMsg}
+              disabled={sendingNotif || notifReporterMsg.trim().length < 10}
+              icon={<Mail className="size-4" aria-hidden="true" />}
+            >
+              Notifier le signaleur
+            </Button>
+          </section>
+        </div>
+      </aside>
+    </>
   )
 }
 
