@@ -63,13 +63,27 @@ function formatRelativeDate(iso: string): string {
   return `il y a ${Math.abs(diffDays)}j`
 }
 
-function keyStatus(k: BetaAccessKey): { label: string; color: string } {
-  if (!k.is_active) return { label: '🚫 desactivee', color: 'text-muted-foreground' }
+// BATCH 102 : statut sous forme de badge pill colore (cohereent DS Toast)
+function keyStatus(k: BetaAccessKey): { label: string; badgeClass: string } {
+  if (!k.is_active)
+    return {
+      label: 'Désactivée',
+      badgeClass: 'bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]',
+    }
   if (k.current_uses >= k.max_uses)
-    return { label: '✅ utilisee', color: 'text-[var(--color-success,#16a34a)]' }
+    return {
+      label: 'Utilisée',
+      badgeClass: 'bg-[var(--color-info-bg)] text-[var(--color-info)]',
+    }
   if (new Date(k.expires_at) < new Date())
-    return { label: '🔴 expiree', color: 'text-[var(--color-error,#dc2626)]' }
-  return { label: '🟢 valide', color: 'text-[var(--color-success,#16a34a)]' }
+    return {
+      label: 'Expirée',
+      badgeClass: 'bg-[var(--color-error-bg)] text-[var(--color-error)]',
+    }
+  return {
+    label: 'Valide',
+    badgeClass: 'bg-[var(--color-success-bg)] text-[var(--color-success)]',
+  }
 }
 
 // ─── Page ──────────────────────────────────────────────────────────────────
@@ -283,52 +297,60 @@ export default function AdminBeta() {
         </header>
         {keys.length === 0 ? (
           <p className="px-5 py-8 text-center text-sm text-muted-foreground">
-            Aucune cle generee. Clique "Generer 10 cles" pour demarrer la vague 1.
+            Aucune clé générée. Clique "Générer 10 clés" pour démarrer la vague 1.
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-xs uppercase text-muted-foreground tracking-wide">
-                <tr className="border-b border-border">
-                  <th className="text-left px-4 py-2">Code</th>
-                  <th className="text-left px-4 py-2">Batch</th>
-                  <th className="text-left px-4 py-2">Status</th>
-                  <th className="text-left px-4 py-2">Expire</th>
-                  <th className="text-right px-4 py-2">Actions</th>
+              <thead className="text-xs uppercase text-muted-foreground tracking-wider bg-[var(--color-bg-secondary)]/50">
+                <tr>
+                  <th className="text-left px-5 py-3 font-semibold">Code</th>
+                  <th className="text-left px-5 py-3 font-semibold">Batch</th>
+                  <th className="text-left px-5 py-3 font-semibold">Statut</th>
+                  <th className="text-left px-5 py-3 font-semibold">Expire</th>
+                  <th className="text-right px-5 py-3 font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {keys.map((k) => {
+                {keys.map((k, idx) => {
                   const status = keyStatus(k)
                   return (
                     <tr
                       key={k.id}
-                      className="border-b border-border/50 last:border-0 hover:bg-muted/20"
+                      className={`border-t border-border/40 transition-colors hover:bg-[var(--color-bg-secondary)]/60 ${
+                        idx % 2 === 1 ? 'bg-[var(--color-bg-secondary)]/20' : ''
+                      }`}
                     >
-                      <td className="px-4 py-2 font-mono text-xs text-foreground">{k.code}</td>
-                      <td className="px-4 py-2 text-muted-foreground">#{k.batch_number}</td>
-                      <td className={`px-4 py-2 ${status.color} font-medium`}>{status.label}</td>
-                      <td className="px-4 py-2 text-muted-foreground">
+                      <td className="px-5 py-3 font-mono text-xs text-foreground">{k.code}</td>
+                      <td className="px-5 py-3 text-muted-foreground">#{k.batch_number}</td>
+                      <td className="px-5 py-3">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${status.badgeClass}`}
+                        >
+                          {status.label}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-muted-foreground">
                         {formatRelativeDate(k.expires_at)}
                       </td>
-                      <td className="px-4 py-2 text-right">
+                      <td className="px-5 py-3 text-right">
                         <div className="inline-flex items-center gap-1">
                           <button
                             type="button"
                             onClick={() => handleCopyCode(k.code)}
                             aria-label={`Copier ${k.code}`}
-                            className="size-7 inline-flex items-center justify-center rounded hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                            className="size-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-bg-secondary)] text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                           >
-                            <Copy className="size-3.5" aria-hidden="true" />
+                            <Copy className="size-4" aria-hidden="true" />
                           </button>
                           {k.is_active && k.current_uses < k.max_uses && (
                             <button
                               type="button"
                               onClick={() => handleDeactivateKey(k.id, k.code)}
-                              aria-label={`Desactiver ${k.code}`}
-                              className="size-7 inline-flex items-center justify-center rounded hover:bg-[var(--color-error,#dc2626)]/10 text-[var(--color-error,#dc2626)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                              aria-label={`Désactiver ${k.code}`}
+                              className="size-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-error-bg)] text-muted-foreground hover:text-[var(--color-error)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)]"
                             >
-                              <X className="size-3.5" aria-hidden="true" />
+                              <X className="size-4" aria-hidden="true" />
                             </button>
                           )}
                         </div>
