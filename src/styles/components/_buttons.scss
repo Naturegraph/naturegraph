@@ -24,6 +24,17 @@
     box-shadow 0.1s ease,
     filter 0.2s ease;
   cursor: pointer;
+
+  // BATCH 114 : WCAG 2.5.5 touch target minimum 44x44 sur mobile/tablette.
+  // Sur desktop (>=lg/1024px) on relâche la contrainte pour les petits boutons icon-only.
+  // Les boutons explicitement size="sm" en Tailwind (h-8) gardent leur taille via specificity.
+  min-height: 44px;
+  min-width: 44px;
+
+  @media (min-width: 1024px) {
+    min-height: auto;
+    min-width: auto;
+  }
 }
 
 .btn-press:not(:disabled):hover {

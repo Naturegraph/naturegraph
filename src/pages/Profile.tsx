@@ -270,8 +270,9 @@ export default function Profile() {
             sur desktop, tabs alignées via md:px-12). */}
         <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 mt-6">
           {/* Cards "À propos" + "ADN observateur" — DESKTOP UNIQUEMENT.
-              Sur mobile ces cards sont rendues à l'intérieur du tab "À propos". */}
-          <div className="hidden md:grid md:grid-cols-[1fr_320px] gap-4 mb-6 md:px-12 items-start">
+              Sur mobile + tablette ces cards sont rendues à l'intérieur du tab "À propos".
+              BATCH 114 : md→lg pour ne pas écraser sur iPad portrait (768px). */}
+          <div className="hidden lg:grid lg:grid-cols-[1fr_320px] gap-4 mb-6 lg:px-12 items-start">
             <ProfileAboutCard profile={profileData} />
             <ProfileDNACard interests={profileData.interests} />
           </div>
