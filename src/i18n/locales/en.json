@@ -615,6 +615,8 @@
       "empty": "No notifications yet",
       "emptyHint": "Follow profiles to see their new encounters here.",
       "viewAll": "View all notifications",
+      "markAllRead": "Mark all as read",
+      "markAllReadSuccess": "All notifications marked as read",
       "groupToday": "Today",
       "groupYesterday": "Yesterday",
       "groupDaysAgo": "{{count}} days ago",

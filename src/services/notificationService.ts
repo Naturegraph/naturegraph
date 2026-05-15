@@ -107,6 +107,21 @@ export async function markAsRead(notificationId: string): Promise<void> {
   if (error) throw new Error(error.message)
 }
 
+/**
+ * Marque plusieurs notifications comme lues (mark-as-read groupé, BATCH 107).
+ * Utilisé quand l'utilisateur clique sur une notif regroupée (ex: "Alice & Bob ont réagi")
+ * pour marquer toutes les notifs sous-jacentes comme lues d'un coup.
+ */
+export async function markManyAsRead(notificationIds: string[]): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return
+  if (notificationIds.length === 0) return
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read: true })
+    .in('id', notificationIds)
+  if (error) throw new Error(error.message)
+}
+
 /** Marque toutes les notifications du user comme lues. */
 export async function markAllAsRead(userId: string): Promise<void> {
   if (!isSupabaseConfigured || !supabase) return

@@ -40,8 +40,9 @@ import {
   Bell,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useNotifications, useMarkAsRead } from '@/hooks/useNotifications'
-import type { Notification, NotificationType } from '@/services/notificationService'
+import { useToast } from '@/contexts/ToastContext'
+import { useNotifications, useMarkManyAsRead, useMarkAllAsRead } from '@/hooks/useNotifications'
+import type { NotificationType } from '@/services/notificationService'
 import {
   groupNotifications,
   formatGroupedActors,
@@ -158,7 +159,7 @@ function getMessage(type: NotificationType, t: (k: string) => string): string {
 // ─── Deep-link ────────────────────────────────────────────────────────────────
 
 /** Retourne la route vers laquelle naviguer selon reference_type/id. */
-function resolveDeepLink(n: Notification): string | null {
+function resolveDeepLink(n: GroupedNotification): string | null {
   if (!n.reference_id || !n.reference_type) return null
   switch (n.reference_type) {
     case 'post':
@@ -246,8 +247,10 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const toast = useToast()
   const { data: rawNotifs = [], isLoading } = useNotifications(user?.id)
-  const markAsRead = useMarkAsRead(user?.id)
+  const markManyAsRead = useMarkManyAsRead(user?.id)
+  const markAllAsRead = useMarkAllAsRead(user?.id)
   // Regroupe les notifs identiques < 24h (ex : "Alice & Bob ont réagi à ton post")
   const notifs = groupNotifications(rawNotifs)
   const groups = groupByDate(notifs)
@@ -280,10 +283,18 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
     }
   }, [onClose])
 
-  /** Clic sur une notif : mark-as-read + deep-link + close. */
-  const handleClick = (n: Notification) => {
+  /**
+   * Clic sur une notif (BATCH 107) :
+   *  - Mark-as-read groupé (toutes les notifs du groupe si regroupé)
+   *  - Deep-link si disponible → ferme panel + navigate
+   *  - Sinon ferme le panel pour donner un feedback visuel à l'utilisateur
+   *    (sans ça, cliquer sur une notif system donne l'impression que rien ne se passe)
+   */
+  const handleClick = (n: GroupedNotification) => {
     trackNotifEvent('notif_clicked', { notif_type: n.type })
-    if (!n.read) markAsRead.mutate(n.id)
+    if (!n.read && n.group_ids.length > 0) {
+      markManyAsRead.mutate(n.group_ids)
+    }
     const url = resolveDeepLink(n)
     if (url) {
       onClose()
@@ -391,19 +402,25 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
         ))}
       </div>
 
-      {/* Footer */}
-      <div className="px-5 py-3 border-t border-border">
-        <button
-          type="button"
-          onClick={() => {
-            onClose()
-            navigate('/notifications')
-          }}
-          className="w-full text-sm text-primary font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-        >
-          {t('home.notifications.viewAll')}
-        </button>
-      </div>
+      {/* Footer : tout marquer comme lu (la page /notifications n'existe pas, BATCH 107) */}
+      {unreadCount > 0 && (
+        <div className="px-5 py-3 border-t border-border">
+          <button
+            type="button"
+            onClick={() => {
+              markAllAsRead.mutate(undefined, {
+                onSuccess: () => {
+                  toast.success(t('home.notifications.markAllReadSuccess'))
+                },
+              })
+            }}
+            disabled={markAllAsRead.isPending}
+            className="w-full text-sm text-primary font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {t('home.notifications.markAllRead')}
+          </button>
+        </div>
+      )}
     </>
   )
 

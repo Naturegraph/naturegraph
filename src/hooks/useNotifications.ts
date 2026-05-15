@@ -11,6 +11,7 @@ import {
   listNotifications,
   countUnread,
   markAsRead,
+  markManyAsRead,
   markAllAsRead,
   type Notification,
 } from '@/services/notificationService'
@@ -72,6 +73,22 @@ export function useMarkAsRead(userId: string | undefined) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (notificationId: string) => markAsRead(notificationId),
+    onSuccess: () => {
+      if (!userId) return
+      qc.invalidateQueries({ queryKey: notificationsQueryKey(userId) })
+      qc.invalidateQueries({ queryKey: unreadCountQueryKey(userId) })
+    },
+  })
+}
+
+/**
+ * Marque plusieurs notifs lues en un appel (BATCH 107).
+ * Utilisé pour les notifs regroupées : on marque tous les IDs du groupe d'un coup.
+ */
+export function useMarkManyAsRead(userId: string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (notificationIds: string[]) => markManyAsRead(notificationIds),
     onSuccess: () => {
       if (!userId) return
       qc.invalidateQueries({ queryKey: notificationsQueryKey(userId) })
