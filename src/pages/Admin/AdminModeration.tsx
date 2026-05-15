@@ -31,6 +31,7 @@
  */
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -130,6 +131,9 @@ export default function AdminModeration() {
   const [priorityFilter, setPriorityFilter] = useState<'all' | ReportPriority>('all')
   const [page, setPage] = useState(0)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  // BATCH 109 : rect du bouton trigger pour positionner le menu via portal
+  // (fix clipping comme dans AdminUsers BATCH 105a)
+  const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null)
   // BATCH 106 : drawer side-panel pour voir le detail d'un signalement + envoyer notifs
   const [detailReport, setDetailReport] = useState<ReportRow | null>(null)
   const [notifTargetMsg, setNotifTargetMsg] = useState('')
@@ -557,7 +561,16 @@ export default function AdminModeration() {
                       {(r.status === 'new' || r.status === 'in_review') && (
                         <button
                           type="button"
-                          onClick={() => setOpenMenuId(openMenuId === r.id ? null : r.id)}
+                          onClick={(e) => {
+                            const isOpen = openMenuId === r.id
+                            if (isOpen) {
+                              setOpenMenuId(null)
+                              setMenuAnchorRect(null)
+                            } else {
+                              setMenuAnchorRect(e.currentTarget.getBoundingClientRect())
+                              setOpenMenuId(r.id)
+                            }
+                          }}
                           aria-label="Plus d'actions"
                           aria-haspopup="menu"
                           aria-expanded={openMenuId === r.id}
@@ -570,7 +583,11 @@ export default function AdminModeration() {
                         <ReportActionMenu
                           report={r}
                           onAction={openAction}
-                          onClose={() => setOpenMenuId(null)}
+                          onClose={() => {
+                            setOpenMenuId(null)
+                            setMenuAnchorRect(null)
+                          }}
+                          anchorRect={menuAnchorRect}
                         />
                       )}
                     </div>
@@ -1015,9 +1032,12 @@ interface ReportActionMenuProps {
   report: ReportRow
   onAction: (type: Exclude<ActionType, null>, report: ReportRow) => void
   onClose: () => void
+  /** BATCH 109 : rect du bouton trigger pour positionner le menu via Portal
+      (même fix que AdminUsers BATCH 105a — évite le clipping). */
+  anchorRect: DOMRect | null
 }
 
-function ReportActionMenu({ report, onAction, onClose }: ReportActionMenuProps) {
+function ReportActionMenu({ report, onAction, onClose, anchorRect }: ReportActionMenuProps) {
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
@@ -1026,12 +1046,23 @@ function ReportActionMenu({ report, onAction, onClose }: ReportActionMenuProps) 
     return () => document.removeEventListener('keydown', handler)
   }, [onClose])
 
-  return (
+  // BATCH 109 : position fixed calculée par rapport au bouton trigger
+  // pour éviter d'être clippé par les containers parents.
+  const menuStyle: React.CSSProperties = anchorRect
+    ? {
+        position: 'fixed',
+        top: anchorRect.bottom + 4,
+        right: window.innerWidth - anchorRect.right,
+      }
+    : {}
+
+  return createPortal(
     <>
-      <div className="fixed inset-0 z-10" onClick={onClose} aria-hidden="true" />
+      <div className="fixed inset-0 z-[60]" onClick={onClose} aria-hidden="true" />
       <div
         role="menu"
-        className="absolute right-0 top-9 z-20 min-w-[200px] bg-background border border-border rounded-md shadow-lg py-1 text-sm"
+        style={menuStyle}
+        className="z-[70] min-w-[220px] bg-background border border-border rounded-md shadow-lg py-1 text-sm"
       >
         <button
           type="button"
@@ -1040,7 +1071,7 @@ function ReportActionMenu({ report, onAction, onClose }: ReportActionMenuProps) 
           className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--color-success,#16a34a)]/10 text-[var(--color-success,#16a34a)] focus-visible:outline-none focus-visible:bg-[var(--color-success,#16a34a)]/10 text-left"
         >
           <CheckCircle2 className="size-3.5" aria-hidden="true" />
-          Resoudre
+          Résoudre
         </button>
         <button
           type="button"
@@ -1068,10 +1099,11 @@ function ReportActionMenu({ report, onAction, onClose }: ReportActionMenuProps) 
         <div className="my-1 border-t border-border" aria-hidden="true" />
         <div className="px-3 py-2 text-xs text-muted-foreground">
           <AlertTriangle className="size-3 inline mr-1" aria-hidden="true" />
-          Toutes actions loggees
+          Toutes actions loggées
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   )
 }
 
