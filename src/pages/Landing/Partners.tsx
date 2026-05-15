@@ -53,21 +53,21 @@ export function Partners() {
             {t('landing.partners.title')}
           </h2>
 
-          {/* Logos grid */}
-          <div className="grid grid-cols-2 md:flex md:flex-row items-center justify-center gap-8 lg:gap-16 w-full max-w-5xl">
+          {/* Logos grid — BATCH 71 : tailles reduites sur mobile pour ne pas deborder */}
+          <div className="grid grid-cols-2 md:flex md:flex-row items-center justify-center gap-6 md:gap-12 lg:gap-16 w-full max-w-5xl">
             {PARTNERS.map((partner) => (
               <a
                 key={partner.name}
                 href={partner.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="h-16 md:h-20 flex items-center justify-center transition-opacity hover:opacity-80 px-4"
+                className="h-10 md:h-16 lg:h-20 flex items-center justify-center transition-opacity hover:opacity-80 px-2 md:px-4"
                 aria-label={`Visiter le site web de ${partner.name}`}
               >
                 <img
                   src={partner.logo}
                   alt={partner.name}
-                  className="h-16 md:h-20 w-auto object-contain max-w-[220px]"
+                  className="h-10 md:h-16 lg:h-20 w-auto object-contain max-w-[120px] md:max-w-[180px] lg:max-w-[220px]"
                   loading="lazy"
                 />
               </a>
