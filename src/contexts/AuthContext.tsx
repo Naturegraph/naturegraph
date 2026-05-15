@@ -245,34 +245,85 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.warn('[Auth] getSession() timeout (5s) — reset loading state')
     }, 5000)
 
-    supabase.auth
-      .getSession()
-      .then(async ({ data: { session } }) => {
+    /**
+     * BATCH 103 (2026-05-15) : detection refresh token mort.
+     * Si le refresh token est invalide (sessions revoquees, token expire,
+     * etc.), on purge le storage local et on force signOut pour eviter
+     * une boucle infinie de retry Supabase qui bloque tout le chargement.
+     */
+    function isInvalidRefreshTokenError(err: unknown): boolean {
+      if (!err || typeof err !== 'object') return false
+      const msg = String((err as { message?: string }).message ?? '')
+      return /refresh token (not found|expired|invalid)/i.test(msg)
+    }
+
+    async function handleAuthBoot() {
+      try {
+        const { data, error } = await supabase!.auth.getSession()
         clearTimeout(bootTimeout)
+
+        if (error || isInvalidRefreshTokenError(error)) {
+          // Token mort -> purge + reset state, pas de retry
+          console.warn('[Auth] Refresh token invalide au boot, purge local storage')
+          clearAuthStorage()
+          await supabase!.auth.signOut({ scope: 'local' }).catch(() => {})
+          setState(
+            deriveState({
+              user: null,
+              session: null,
+              profile: null,
+              isLoading: false,
+              isAuthenticated: false,
+            }),
+          )
+          return
+        }
+
+        const session = data.session
         const user = session?.user ?? null
         const profile = user ? await fetchProfile(user.id) : null
         setState(deriveState({ user, session, profile, isLoading: false, isAuthenticated: !!user }))
-      })
-      .catch((err) => {
+      } catch (err) {
         clearTimeout(bootTimeout)
-        console.error('[Auth] getSession failed:', err)
+        if (isInvalidRefreshTokenError(err)) {
+          console.warn('[Auth] Refresh token mort detecte au boot, purge')
+          clearAuthStorage()
+          await supabase!.auth.signOut({ scope: 'local' }).catch(() => {})
+        } else {
+          console.error('[Auth] getSession failed:', err)
+        }
         setState((prev) => ({ ...prev, isLoading: false }))
-      })
+      }
+    }
+
+    void handleAuthBoot()
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // BATCH 103 : SIGNED_OUT déclenché par un refresh fail -> purge propre
+      if (event === 'SIGNED_OUT') {
+        clearAuthStorage()
+      }
       const user = session?.user ?? null
       const profile = user ? await fetchProfile(user.id) : null
       setState(deriveState({ user, session, profile, isLoading: false, isAuthenticated: !!user }))
     })
 
     // Refresh automatique de session toutes les 30 minutes
-    // Évite qu'une session expirée côté serveur reste valide côté client
+    // Évite qu'une session expirée côté serveur reste valide côté client.
+    // BATCH 103 : si le refresh token est mort, on signOut() proprement plutôt
+    // que de boucler sur des retry qui spamment la console et bloquent l'UI.
     const refreshInterval = setInterval(
       () => {
-        supabase?.auth.refreshSession().catch((err) => {
-          console.warn('[Auth] Session refresh failed:', err)
+        supabase?.auth.refreshSession().catch(async (err) => {
+          if (isInvalidRefreshTokenError(err)) {
+            console.warn('[Auth] Refresh token mort -> signOut local')
+            clearAuthStorage()
+            await supabase!.auth.signOut({ scope: 'local' }).catch(() => {})
+          } else {
+            console.warn('[Auth] Session refresh failed:', err)
+          }
         })
       },
       30 * 60 * 1000,
