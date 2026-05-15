@@ -38,6 +38,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ShieldAlert,
   AlertTriangle,
+  AlertCircle,
   CheckCircle2,
   XCircle,
   Trash2,
@@ -49,6 +50,9 @@ import {
   Mail,
   ExternalLink,
   FileText,
+  Image as ImageIcon,
+  Calendar,
+  Hash,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
@@ -103,11 +107,38 @@ function formatRelativeDate(iso: string): string {
   return `il y a ${diffDays}j`
 }
 
-const statusConfig: Record<ReportStatus, { label: string; color: string }> = {
-  new: { label: '🆕 Nouveau', color: 'text-[var(--color-warning,#ca8a04)]' },
-  in_review: { label: '👁 En cours', color: 'text-primary' },
-  resolved: { label: '✅ Resolu', color: 'text-[var(--color-success,#16a34a)]' },
-  dismissed: { label: '✕ Rejete', color: 'text-muted-foreground' },
+/**
+ * BATCH 110 : statusConfig sans emojis, avec icône lucide + badge complet.
+ * Utilisé dans la liste, les filtres, le drawer, l'audit.
+ */
+const statusConfig: Record<
+  ReportStatus,
+  { label: string; Icon: typeof CheckCircle2; badgeClass: string; dotClass: string }
+> = {
+  new: {
+    label: 'Nouveau',
+    Icon: AlertCircle,
+    badgeClass: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
+    dotClass: 'bg-[var(--color-warning)]',
+  },
+  in_review: {
+    label: 'En cours',
+    Icon: Eye,
+    badgeClass: 'bg-[var(--color-info-bg)] text-[var(--color-info)]',
+    dotClass: 'bg-[var(--color-info)]',
+  },
+  resolved: {
+    label: 'Résolu',
+    Icon: CheckCircle2,
+    badgeClass: 'bg-[var(--color-success-bg)] text-[var(--color-success)]',
+    dotClass: 'bg-[var(--color-success)]',
+  },
+  dismissed: {
+    label: 'Rejeté',
+    Icon: XCircle,
+    badgeClass: 'bg-[var(--color-bg-secondary)] text-muted-foreground',
+    dotClass: 'bg-[var(--color-border)]',
+  },
 }
 
 const priorityConfig: Record<ReportPriority, { label: string; color: string }> = {
@@ -431,10 +462,10 @@ export default function AdminModeration() {
           className="h-10 px-3 rounded-md border border-border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <option value="all">Tous les statuts</option>
-          <option value="new">🆕 Nouveau</option>
-          <option value="in_review">👁 En cours</option>
-          <option value="resolved">✅ Resolu</option>
-          <option value="dismissed">✕ Rejete</option>
+          <option value="new">Nouveau</option>
+          <option value="in_review">En cours</option>
+          <option value="resolved">Résolu</option>
+          <option value="dismissed">Rejeté</option>
         </select>
         <select
           value={priorityFilter}
@@ -459,17 +490,19 @@ export default function AdminModeration() {
             ))}
           </div>
         ) : rows.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-            🟢 {statusFilter === 'new' ? 'Aucun signalement ouvert.' : 'Aucun resultat.'} Tout est
-            calme.
-          </p>
+          <div className="px-5 py-10 text-center flex flex-col items-center gap-2 text-muted-foreground">
+            <CheckCircle2 className="size-8 text-[var(--color-success)]" aria-hidden="true" />
+            <p className="text-sm">
+              {statusFilter === 'new' ? 'Aucun signalement ouvert.' : 'Aucun résultat.'} Tout est
+              calme.
+            </p>
+          </div>
         ) : (
           <ul className="divide-y divide-border">
             {rows.map((r) => {
-              const status = statusConfig[r.status as ReportStatus] ?? {
-                label: r.status,
-                color: 'text-muted-foreground',
-              }
+              const statusKey = r.status as ReportStatus
+              const status = statusConfig[statusKey] ?? statusConfig.new
+              const StatusIcon = status.Icon
               const priority = priorityConfig[r.priority as ReportPriority] ?? {
                 label: r.priority,
                 color: 'text-muted-foreground',
@@ -487,12 +520,15 @@ export default function AdminModeration() {
                   key={r.id}
                   className="px-5 py-4 hover:bg-[var(--color-bg-secondary)]/40 transition-colors"
                 >
-                  {/* BATCH 106 : bouton 'Détails' dans les actions ouvre le drawer */}
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                     {/* Left : info */}
-                    <div className="flex-1 min-w-0 flex flex-col gap-1">
+                    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-xs font-semibold ${status.color}`}>
+                        {/* BATCH 110 : badge statut avec icône lucide (plus d'emojis) */}
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${status.badgeClass}`}
+                        >
+                          <StatusIcon className="size-3" aria-hidden="true" />
                           {status.label}
                         </span>
                         <span className="text-xs text-muted-foreground">•</span>
@@ -533,28 +569,39 @@ export default function AdminModeration() {
                       )}
                     </div>
 
-                    {/* Right : actions — bouton Détails ouvre le drawer (BATCH 106) */}
+                    {/* BATCH 110 : actions row simplifiée et cohérente.
+                        - Toujours visible : Détails (ouvre drawer = centre de commande)
+                        - Si target navigable : Voir (eye → nouvelle tab)
+                        - Si status='new' : Prendre (quick assign)
+                        - Le reste des actions est dans le drawer pour éviter la duplication */}
                     <div className="flex items-center gap-2 shrink-0 relative">
-                      <button
-                        type="button"
+                      <Button
+                        variant="primary"
+                        size="sm"
                         onClick={() => setDetailReport(r)}
-                        aria-label={`Voir le détail du signalement`}
-                        className="h-8 px-3 inline-flex items-center gap-1.5 rounded-full text-xs font-medium text-[var(--color-action-default)] hover:bg-[var(--color-bg-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        icon={<FileText className="size-3.5" aria-hidden="true" />}
                       >
-                        <FileText className="size-3.5" aria-hidden="true" />
                         Détails
-                      </button>
+                      </Button>
                       {targetLink && (
-                        <Link
-                          to={targetLink}
-                          className="size-8 inline-flex items-center justify-center rounded hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                          aria-label={`Voir ${r.target_type}`}
+                        <a
+                          href={targetLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="size-9 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-bg-secondary)] text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                          aria-label={`Ouvrir ${r.target_type} dans un nouvel onglet`}
+                          title="Ouvrir dans un nouvel onglet"
                         >
-                          <Eye className="size-4" aria-hidden="true" />
-                        </Link>
+                          <ExternalLink className="size-4" aria-hidden="true" />
+                        </a>
                       )}
                       {r.status === 'new' && (
-                        <Button variant="secondary" size="sm" onClick={() => quickReview(r)}>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => quickReview(r)}
+                          icon={<Eye className="size-3.5" aria-hidden="true" />}
+                        >
                           Prendre
                         </Button>
                       )}
@@ -574,7 +621,7 @@ export default function AdminModeration() {
                           aria-label="Plus d'actions"
                           aria-haspopup="menu"
                           aria-expanded={openMenuId === r.id}
-                          className="size-8 inline-flex items-center justify-center rounded hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                          className="size-9 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-bg-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         >
                           <MoreVertical className="size-4" aria-hidden="true" />
                         </button>
@@ -634,26 +681,26 @@ export default function AdminModeration() {
         <ConfirmModal
           title={
             pending.type === 'resolve'
-              ? `Resoudre ce signalement ?`
+              ? `Résoudre ce signalement ?`
               : pending.type === 'dismiss'
                 ? `Rejeter ce signalement ?`
                 : pending.type === 'remove_content'
-                  ? `Supprimer le contenu signale ?`
+                  ? `Supprimer le contenu signalé ?`
                   : 'Confirmer'
           }
           description={
             pending.type === 'resolve'
-              ? "Marquer comme resolu. Une note d'explication est requise (visible dans l'audit log)."
+              ? "Marquer comme résolu. Une note d'explication est requise (visible dans l'audit log)."
               : pending.type === 'dismiss'
                 ? "Rejeter ce signalement comme non valide. Notes obligatoires (visibles dans l'audit log)."
-                : '⚠️ Le contenu sera supprime (soft-delete). Cette action est loggue dans admin_actions et IRREVERSIBLE.'
+                : 'Attention : le contenu sera supprimé (soft-delete). Cette action est loggée dans admin_actions et IRRÉVERSIBLE.'
           }
           confirmLabel={
             pending.type === 'remove_content'
               ? 'Supprimer contenu'
               : pending.type === 'dismiss'
                 ? 'Rejeter'
-                : 'Resoudre'
+                : 'Résoudre'
           }
           variant={pending.type === 'remove_content' ? 'danger' : 'default'}
           onCancel={closeAction}
@@ -662,7 +709,7 @@ export default function AdminModeration() {
         >
           <div className="flex flex-col gap-1">
             <label htmlFor="action-notes" className="text-xs font-medium text-foreground">
-              {pending.type === 'remove_content' ? 'Raison' : 'Notes'} (10 caracteres min)
+              {pending.type === 'remove_content' ? 'Raison' : 'Notes'} (10 caractères min)
             </label>
             <textarea
               id="action-notes"
@@ -698,6 +745,17 @@ export default function AdminModeration() {
           sendingNotif={sendingNotif}
           setSendingNotif={setSendingNotif}
           toast={toast}
+          onAction={(type, report) => {
+            setDetailReport(null) // ferme le drawer avant d'ouvrir le confirm modal
+            setNotifTargetMsg('')
+            setNotifReporterMsg('')
+            openAction(type, report)
+          }}
+          onQuickReview={async (report) => {
+            await quickReview(report)
+            // Le drawer reste ouvert mais le statut va passer à 'in_review'
+            // → l'utilisateur peut continuer avec Résoudre/Rejeter
+          }}
         />
       )}
     </div>
@@ -726,6 +784,9 @@ interface ReportDetailDrawerProps {
   sendingNotif: boolean
   setSendingNotif: (v: boolean) => void
   toast: { success: (t: string, d?: string) => void; error: (t: string, d?: string) => void }
+  /** BATCH 110 : actions principales accessibles depuis le drawer (centre de commande) */
+  onAction: (type: Exclude<ActionType, null>, report: ReportRow) => void
+  onQuickReview: (report: ReportRow) => Promise<void>
 }
 
 function ReportDetailDrawer({
@@ -738,27 +799,57 @@ function ReportDetailDrawer({
   sendingNotif,
   setSendingNotif,
   toast,
+  onAction,
+  onQuickReview,
 }: ReportDetailDrawerProps) {
-  // Fetch preview du contenu signalé (post ou profil)
+  // BATCH 110 : fetch preview enrichi du contenu signalé
+  //   - Post : titre + description + species_name + media cover + auteur (username/avatar)
+  //   - Profile : username + bio + avatar + banner + stats
   const { data: targetPreview } = useQuery({
     queryKey: ['mod-target-preview', report.target_type, report.target_id],
     queryFn: async () => {
       if (!supabase) return null
       if (report.target_type === 'post') {
-        const { data } = await supabase
+        const { data: post } = await supabase
           .from('posts')
-          .select('id, title, description, user_id, type, status, visibility, created_at')
+          .select(
+            'id, title, description, user_id, type, status, visibility, created_at, species_name, scientific_name, location_name, encounter_date',
+          )
           .eq('id', report.target_id)
           .maybeSingle()
-        return data
+        if (!post) return null
+        // Fetch cover media + auteur en parallèle
+        const [mediaRes, authorRes] = await Promise.all([
+          supabase
+            .from('media')
+            .select('id, url, thumbnail_url, type')
+            .eq('post_id', post.id)
+            .order('display_order', { ascending: true })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from('profiles')
+            .select('id, username, avatar_url, first_name, last_name')
+            .eq('id', post.user_id)
+            .maybeSingle(),
+        ])
+        return {
+          kind: 'post' as const,
+          post,
+          media: mediaRes.data,
+          author: authorRes.data,
+        }
       }
       if (report.target_type === 'profile') {
-        const { data } = await supabase
+        const { data: profile } = await supabase
           .from('profiles')
-          .select('id, username, email, first_name, last_name, bio, posts_count')
+          .select(
+            'id, username, email, first_name, last_name, bio, avatar_url, banner_url, posts_count, followers_count, following_count, created_at',
+          )
           .eq('id', report.target_id)
           .maybeSingle()
-        return data
+        if (!profile) return null
+        return { kind: 'profile' as const, profile }
       }
       return null
     },
@@ -777,11 +868,13 @@ function ReportDetailDrawer({
     },
   })
 
-  // Fetch info user signalé (pour son user_id si target=post)
+  // BATCH 110 : derivation user_id de la cible (pour notif)
   const targetUserId =
     report.target_type === 'profile'
       ? report.target_id
-      : (targetPreview as { user_id?: string } | null)?.user_id
+      : targetPreview?.kind === 'post'
+        ? targetPreview.post.user_id
+        : undefined
 
   async function sendNotificationTo(
     targetUserId: string,
@@ -851,6 +944,15 @@ function ReportDetailDrawer({
         ? `/profile/${report.target_id}`
         : null
 
+  // BATCH 110 : statut/priorité avec icône lucide
+  const statusInfo = statusConfig[report.status as ReportStatus] ?? statusConfig.new
+  const StatusIcon = statusInfo.Icon
+  const priorityInfo = priorityConfig[report.priority as ReportPriority] ?? {
+    label: report.priority,
+    color: 'text-muted-foreground',
+  }
+  const canTakeAction = report.status === 'new' || report.status === 'in_review'
+
   return (
     <>
       <div
@@ -862,7 +964,7 @@ function ReportDetailDrawer({
         role="dialog"
         aria-modal="true"
         aria-label="Détail du signalement"
-        className="fixed top-0 right-0 bottom-0 z-50 w-full md:w-[480px] bg-[var(--color-bg-primary)] shadow-2xl flex flex-col motion-safe:animate-in motion-safe:slide-in-from-right motion-safe:duration-250"
+        className="fixed top-0 right-0 bottom-0 z-50 w-full md:w-[520px] bg-[var(--color-bg-primary)] shadow-2xl flex flex-col motion-safe:animate-in motion-safe:slide-in-from-right motion-safe:duration-250"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)]">
@@ -880,28 +982,79 @@ function ReportDetailDrawer({
           </button>
         </div>
 
+        {/* BATCH 110 : barre d'actions principales sticky en haut (visible si pas résolu) */}
+        {canTakeAction && (
+          <div className="flex items-center gap-2 px-5 py-3 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)]/30 flex-wrap">
+            {report.status === 'new' && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={async () => {
+                  await onQuickReview(report)
+                }}
+                icon={<Eye className="size-3.5" aria-hidden="true" />}
+              >
+                Prendre en charge
+              </Button>
+            )}
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => onAction('resolve', report)}
+              icon={<CheckCircle2 className="size-3.5" aria-hidden="true" />}
+            >
+              Résoudre
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => onAction('dismiss', report)}
+              icon={<XCircle className="size-3.5" aria-hidden="true" />}
+            >
+              Rejeter
+            </Button>
+            {(report.target_type === 'post' || report.target_type === 'comment') && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => onAction('remove_content', report)}
+                icon={<Trash2 className="size-3.5" aria-hidden="true" />}
+              >
+                Supprimer
+              </Button>
+            )}
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-5">
-          {/* Méta */}
+          {/* BATCH 110 : badges statut/priorité avec icônes lucide en première section */}
           <section className="flex flex-col gap-2">
             <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
               Information
             </h4>
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${statusInfo.badgeClass}`}
+              >
+                <StatusIcon className="size-3" aria-hidden="true" />
+                {statusInfo.label}
+              </span>
+              <span className={`text-xs font-medium ${priorityInfo.color}`}>
+                Priorité : {priorityInfo.label}
+              </span>
+              <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                <Calendar className="size-3" aria-hidden="true" />
+                {formatRelativeDate(report.created_at)}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-sm mt-1">
               <div className="bg-[var(--color-bg-secondary)]/40 rounded-lg p-2.5">
-                <p className="text-xs text-muted-foreground">Statut</p>
-                <p className="font-medium text-foreground">{report.status}</p>
-              </div>
-              <div className="bg-[var(--color-bg-secondary)]/40 rounded-lg p-2.5">
-                <p className="text-xs text-muted-foreground">Priorité</p>
-                <p className="font-medium text-foreground">{report.priority}</p>
-              </div>
-              <div className="bg-[var(--color-bg-secondary)]/40 rounded-lg p-2.5">
-                <p className="text-xs text-muted-foreground">Type</p>
+                <p className="text-xs text-muted-foreground">Type cible</p>
                 <p className="font-medium text-foreground capitalize">{report.target_type}</p>
               </div>
               <div className="bg-[var(--color-bg-secondary)]/40 rounded-lg p-2.5">
-                <p className="text-xs text-muted-foreground">Signalements totaux</p>
-                <p className="font-medium text-foreground">{relatedCount ?? '—'}</p>
+                <p className="text-xs text-muted-foreground">Signalements sur la cible</p>
+                <p className="font-medium text-foreground tabular-nums">{relatedCount ?? '—'}</p>
               </div>
             </div>
             <div className="bg-[var(--color-bg-secondary)]/40 rounded-lg p-3">
@@ -910,59 +1063,191 @@ function ReportDetailDrawer({
               {report.description && (
                 <>
                   <p className="text-xs text-muted-foreground mt-2 mb-1">Description</p>
-                  <p className="text-sm text-foreground italic">"{report.description}"</p>
+                  <p className="text-sm text-foreground italic">« {report.description} »</p>
                 </>
               )}
             </div>
           </section>
 
-          {/* Preview cible */}
+          {/* BATCH 110 : Preview riche du contenu signalé */}
           {targetPreview && (
             <section className="flex flex-col gap-2">
               <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                 Aperçu du contenu signalé
               </h4>
-              <div className="bg-[var(--color-bg-secondary)]/40 rounded-xl p-4 border border-[var(--color-border)]">
-                {report.target_type === 'post' ? (
+              <div className="bg-[var(--color-bg-primary)] rounded-xl border border-[var(--color-border)] overflow-hidden">
+                {targetPreview.kind === 'post' ? (
                   <>
-                    <p className="font-semibold text-foreground inline-flex items-center gap-1.5 mb-2">
-                      <FileText className="size-3.5" aria-hidden="true" />
-                      {(targetPreview as { title?: string }).title || '(Sans titre)'}
-                    </p>
-                    <p className="text-sm text-foreground line-clamp-4 whitespace-pre-line">
-                      {(targetPreview as { description?: string }).description ||
-                        '(Pas de description)'}
-                    </p>
+                    {/* Cover image (si présente) */}
+                    {targetPreview.media?.url ? (
+                      <div className="aspect-video bg-[var(--color-bg-secondary)] relative">
+                        <img
+                          src={targetPreview.media.thumbnail_url ?? targetPreview.media.url}
+                          alt={targetPreview.post.title ?? 'Aperçu'}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    ) : (
+                      <div className="aspect-video bg-[var(--color-bg-secondary)] flex items-center justify-center">
+                        <ImageIcon className="size-8 text-muted-foreground" aria-hidden="true" />
+                      </div>
+                    )}
+                    <div className="p-4 flex flex-col gap-2">
+                      <h5 className="font-semibold text-foreground">
+                        {targetPreview.post.title || '(Sans titre)'}
+                      </h5>
+                      {targetPreview.post.species_name && (
+                        <p className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                          <Hash className="size-3" aria-hidden="true" />
+                          {targetPreview.post.species_name}
+                          {targetPreview.post.scientific_name && (
+                            <span className="italic">({targetPreview.post.scientific_name})</span>
+                          )}
+                        </p>
+                      )}
+                      <p className="text-sm text-foreground line-clamp-4 whitespace-pre-line">
+                        {targetPreview.post.description || '(Pas de description)'}
+                      </p>
+                      {targetPreview.author && (
+                        <div className="flex items-center gap-2 pt-2 border-t border-[var(--color-border)]">
+                          {targetPreview.author.avatar_url ? (
+                            <img
+                              src={targetPreview.author.avatar_url}
+                              alt=""
+                              className="size-8 rounded-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="size-8 rounded-full bg-primary-light flex items-center justify-center text-xs font-bold text-primary">
+                              {(
+                                targetPreview.author.first_name?.[0] ??
+                                targetPreview.author.username?.[0] ??
+                                '?'
+                              ).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <Link
+                              to={`/profile/${targetPreview.author.username}`}
+                              target="_blank"
+                              className="text-sm font-medium text-foreground hover:underline truncate inline-flex items-center gap-1"
+                            >
+                              @{targetPreview.author.username}
+                              <ExternalLink className="size-3 opacity-60" aria-hidden="true" />
+                            </Link>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {targetPreview.author.first_name} {targetPreview.author.last_name}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </>
                 ) : (
                   <>
-                    <p className="font-semibold text-foreground mb-1">
-                      @{(targetPreview as { username?: string }).username}
-                    </p>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      {(targetPreview as { email?: string }).email}
-                    </p>
-                    {(targetPreview as { bio?: string | null }).bio && (
-                      <p className="text-sm text-foreground italic line-clamp-3">
-                        "{(targetPreview as { bio?: string }).bio}"
-                      </p>
+                    {/* Banner */}
+                    {targetPreview.profile.banner_url ? (
+                      <div className="h-24 bg-[var(--color-bg-secondary)] relative">
+                        <img
+                          src={targetPreview.profile.banner_url}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-24 bg-gradient-to-br from-primary-light to-teal-light/40" />
                     )}
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {(targetPreview as { posts_count?: number }).posts_count ?? 0} observations
-                    </p>
+                    <div className="px-4 pb-4 flex flex-col gap-2">
+                      <div className="flex items-end gap-3 -mt-8">
+                        {targetPreview.profile.avatar_url ? (
+                          <img
+                            src={targetPreview.profile.avatar_url}
+                            alt=""
+                            className="size-16 rounded-full object-cover ring-4 ring-[var(--color-bg-primary)]"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="size-16 rounded-full bg-primary-light flex items-center justify-center text-xl font-bold text-primary ring-4 ring-[var(--color-bg-primary)]">
+                            {(
+                              targetPreview.profile.first_name?.[0] ??
+                              targetPreview.profile.username?.[0] ??
+                              '?'
+                            ).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0 pb-1">
+                          <p className="text-base font-bold text-foreground">
+                            @{targetPreview.profile.username}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {targetPreview.profile.first_name} {targetPreview.profile.last_name}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                        <Mail className="size-3" aria-hidden="true" />
+                        {targetPreview.profile.email}
+                      </p>
+                      {targetPreview.profile.bio && (
+                        <p className="text-sm text-foreground italic line-clamp-3">
+                          « {targetPreview.profile.bio} »
+                        </p>
+                      )}
+                      <div className="grid grid-cols-3 gap-2 mt-1 text-center">
+                        <div className="bg-[var(--color-bg-secondary)]/40 rounded p-2">
+                          <p className="text-base font-bold text-foreground tabular-nums">
+                            {targetPreview.profile.posts_count ?? 0}
+                          </p>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            Posts
+                          </p>
+                        </div>
+                        <div className="bg-[var(--color-bg-secondary)]/40 rounded p-2">
+                          <p className="text-base font-bold text-foreground tabular-nums">
+                            {targetPreview.profile.followers_count ?? 0}
+                          </p>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            Suiveurs
+                          </p>
+                        </div>
+                        <div className="bg-[var(--color-bg-secondary)]/40 rounded p-2">
+                          <p className="text-base font-bold text-foreground tabular-nums">
+                            {targetPreview.profile.following_count ?? 0}
+                          </p>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            Suivis
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </>
                 )}
               </div>
               {targetExternalLink && (
-                <Link
-                  to={targetExternalLink}
+                <a
+                  href={targetExternalLink}
                   target="_blank"
-                  className="inline-flex items-center gap-1.5 text-xs text-[var(--color-action-default)] hover:underline"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs text-[var(--color-action-default)] hover:underline self-start"
                 >
                   <ExternalLink className="size-3" aria-hidden="true" />
                   Ouvrir dans un nouvel onglet
-                </Link>
+                </a>
               )}
+            </section>
+          )}
+
+          {!targetPreview && (
+            <section className="flex flex-col gap-2">
+              <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                Aperçu du contenu signalé
+              </h4>
+              <div className="bg-[var(--color-bg-secondary)]/40 rounded-xl p-4 text-center text-sm text-muted-foreground inline-flex items-center justify-center gap-2">
+                <AlertTriangle className="size-4" aria-hidden="true" />
+                Contenu introuvable (déjà supprimé ?)
+              </div>
             </section>
           )}
 
