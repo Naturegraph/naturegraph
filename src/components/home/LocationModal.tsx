@@ -15,9 +15,40 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { LocateFixed, Loader2, X, Search } from 'lucide-react'
+import { LocateFixed, Loader2, X, Search, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useLocation, type LocationCoords } from '@/contexts/LocationContext'
+
+// ─── Historique des recherches (localStorage) ─────────────────────────────────
+
+const HISTORY_KEY = 'naturegraph-location-history'
+const HISTORY_MAX = 5
+
+interface LocationHistoryItem {
+  label: string
+  lat: number
+  lon: number
+  ts: number
+}
+
+function readHistory(): LocationHistoryItem[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY)
+    if (!raw) return []
+    const arr = JSON.parse(raw) as LocationHistoryItem[]
+    return Array.isArray(arr) ? arr.slice(0, HISTORY_MAX) : []
+  } catch {
+    return []
+  }
+}
+
+function pushHistory(item: LocationHistoryItem) {
+  if (typeof window === 'undefined') return
+  const current = readHistory().filter((h) => h.label !== item.label)
+  const next = [item, ...current].slice(0, HISTORY_MAX)
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(next))
+}
 
 // ─── Nominatim helpers ────────────────────────────────────────────────────────
 
@@ -29,12 +60,22 @@ interface NominatimResult {
   address?: Record<string, string>
 }
 
-/** Construit un libellé lisible depuis une réponse Nominatim */
+/**
+ * Construit un libellé lisible depuis une réponse Nominatim.
+ * Format BATCH 92 : "Ville, Département, Région" (cohérent avec partage observation).
+ *   ex : "Ploërmel, Morbihan, Bretagne"
+ *   fallback : Ville, Région si pas de département
+ *   fallback ultime : 1er segment de display_name
+ */
 function toLabel(p: NominatimResult): string {
   const addr = p.address ?? {}
   const city = addr.city ?? addr.town ?? addr.village ?? addr.municipality
+  const department = addr.county ?? addr['state_district'] ?? ''
   const region = addr.state ?? ''
-  if (city) return region ? `${city}, ${region}` : city
+  if (city) {
+    const parts = [city, department, region].filter(Boolean)
+    return parts.join(', ')
+  }
   return p.display_name.split(',')[0].trim()
 }
 
@@ -120,6 +161,8 @@ export function LocationModal({ onClose }: LocationModalProps) {
   const [isSearching, setIsSearching] = useState(false)
   const [isGps, setIsGps] = useState(false)
   const [tempCoords, setTempCoords] = useState<LocationCoords | null>(null)
+  // BATCH 92 : historique des recherches précédentes (max 5, persistance localStorage)
+  const [history, setHistory] = useState<LocationHistoryItem[]>(() => readHistory())
   /**
    * État de confirmation GPS :
    * - 'idle'    → bouton cible visible normalement
@@ -212,18 +255,36 @@ export function LocationModal({ onClose }: LocationModalProps) {
   /** Annuler la confirmation GPS */
   const handleGpsCancel = useCallback(() => setGpsState('idle'), [])
 
-  function selectSuggestion(place: NominatimResult) {
-    setQuery(toLabel(place))
-    setTempCoords({ lat: parseFloat(place.lat), lon: parseFloat(place.lon) })
+  // BATCH 92 : useCallback pour eviter l'erreur ESLint react-hooks/purity
+  // (Date.now() considere impur si declare en fonction simple dans le body).
+  const selectSuggestion = useCallback((place: NominatimResult) => {
+    const label = toLabel(place)
+    const lat = parseFloat(place.lat)
+    const lon = parseFloat(place.lon)
+    setQuery(label)
+    setTempCoords({ lat, lon })
     setSuggestions([])
     setShowSuggestions(false)
-  }
+    pushHistory({ label, lat, lon, ts: Date.now() })
+    setHistory(readHistory())
+  }, [])
 
-  function handleApply() {
+  /** Selectionne directement un item de l'historique (BATCH 92) */
+  const selectHistoryItem = useCallback((item: LocationHistoryItem) => {
+    setQuery(item.label)
+    setTempCoords({ lat: item.lat, lon: item.lon })
+    setSuggestions([])
+    setShowSuggestions(false)
+  }, [])
+
+  const handleApply = useCallback(() => {
     setLocation(query || locationLabel, tempCoords)
     setLocationDistance(distance)
+    if (tempCoords && query) {
+      pushHistory({ label: query, lat: tempCoords.lat, lon: tempCoords.lon, ts: Date.now() })
+    }
     onClose()
-  }
+  }, [query, locationLabel, tempCoords, distance, setLocation, setLocationDistance, onClose])
 
   // Position tooltip : centre du thumb en fonction du % de la valeur dans la plage [75, 500]
   const fillPct = ((distance - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE)) * 100
@@ -327,13 +388,13 @@ export function LocationModal({ onClose }: LocationModalProps) {
           </p>
         )}
 
-        {/* Suggestions Nominatim */}
+        {/* Suggestions Nominatim — BATCH 92 : rounded-lg (8px) au lieu de xl (12px) */}
         {showSuggestions && (
           <ul
             id="location-suggestions"
             role="listbox"
             aria-label="Suggestions de localisation"
-            className="absolute top-[calc(100%+4px)] left-0 right-0 bg-cream-lighter border border-border rounded-xl shadow-lg z-10 overflow-hidden"
+            className="absolute top-[calc(100%+4px)] left-0 right-0 bg-cream-lighter border border-border rounded-lg shadow-lg z-10 overflow-hidden"
           >
             {suggestions.map((p) => (
               <li key={p.place_id} role="option" aria-selected={false}>
@@ -343,9 +404,11 @@ export function LocationModal({ onClose }: LocationModalProps) {
                   className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-primary-light/40 transition-colors"
                 >
                   <Search className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
-                  <span className="text-sm text-foreground">{toLabel(p)}</span>
+                  <span className="text-sm text-foreground flex-1 min-w-0 truncate">
+                    {toLabel(p)}
+                  </span>
                   {p.address?.country && (
-                    <span className="text-xs text-muted-foreground ml-auto">
+                    <span className="text-xs text-muted-foreground shrink-0">
                       {p.address.country}
                     </span>
                   )}
@@ -353,6 +416,36 @@ export function LocationModal({ onClose }: LocationModalProps) {
               </li>
             ))}
           </ul>
+        )}
+
+        {/*
+          Historique des recherches (BATCH 92) — affiche quand :
+          - L'utilisateur ne tape rien (query vide ou len < 2)
+          - Pas de suggestions en cours d'affichage
+          - On a des items en historique
+        */}
+        {!showSuggestions && !isSearching && query.trim().length < 2 && history.length > 0 && (
+          <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-cream-lighter border border-border rounded-lg shadow-lg z-10 overflow-hidden">
+            <p className="px-4 pt-3 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+              Recherches récentes
+            </p>
+            <ul role="listbox" aria-label="Recherches récentes">
+              {history.map((item) => (
+                <li key={`${item.label}-${item.ts}`} role="option" aria-selected={false}>
+                  <button
+                    type="button"
+                    onClick={() => selectHistoryItem(item)}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-primary-light/40 transition-colors"
+                  >
+                    <Clock className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+                    <span className="text-sm text-foreground flex-1 min-w-0 truncate">
+                      {item.label}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
 

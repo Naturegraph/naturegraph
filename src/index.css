@@ -188,3 +188,25 @@
 .date-input-clean::-webkit-clear-button {
   display: none;
 }
+
+/**
+ * BATCH 92 (2026-05-15) : masquer la croix native des inputs type="search".
+ * Chrome/Safari/Edge ajoutent une croix de reset native a l'interieur du input
+ * quand il contient du texte, ce qui cree un doublon avec nos boutons clear
+ * customs (lucide X). On masque tous les pseudo-elements webkit/edge pour
+ * garder uniquement notre bouton clear.
+ */
+input[type='search']::-webkit-search-cancel-button,
+input[type='search']::-webkit-search-decoration,
+input[type='search']::-webkit-search-results-button,
+input[type='search']::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+/* Edge legacy + IE11 */
+input[type='search']::-ms-clear,
+input[type='search']::-ms-reveal {
+  display: none;
+  width: 0;
+  height: 0;
+}
