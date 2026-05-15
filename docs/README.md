@@ -1,181 +1,83 @@
 # Documentation Naturegraph
 
-> **Index master** — chaque sujet a un et un seul document maître.
-> **Mise à jour** : à chaque ajout/déplacement de doc important.
-> **Etat post cycle 2** (2026-05-14) : Beta closed access ready — BATCH 27-37+ livres.
+> Index master — chaque sujet a un et un seul document maître.
+> Mise à jour : 2026-05-15 (post cleanup cycle 3 / BATCH 112).
 
 ---
 
-## ⭐ Point d'entree — commencer ici
+## ⭐ Points d'entrée
 
-| Document                                                                                  | Description                                                                |
-| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| 📌 [`MASTER_TODO.md`](MASTER_TODO.md)                                                     | **Pilotage central v2.2** — etat actuel + BATCH livres + refactos restants |
-| 🚀 [`BETA_LAUNCH_RUNBOOK.md`](BETA_LAUNCH_RUNBOOK.md)                                     | **Runbook operationnel** — 8 sections A-H pour passer en prod              |
-| 🎯 [`BETA_CLOSED_ACCESS_STRATEGY.md`](BETA_CLOSED_ACCESS_STRATEGY.md)                     | Strategie beta fermee v2.0 (cles d'acces, garde-fous, 3 phases)            |
-| 🛡 [`ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md`](ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md) | Strategie admin MVP v2.0 (5 modules livres BATCH 31-37)                    |
+| Document                                                                                  | Description                                                     |
+| ----------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| 🚀 [`BETA_LAUNCH_RUNBOOK.md`](BETA_LAUNCH_RUNBOOK.md)                                     | Runbook opérationnel — 8 sections A-H pour passer en prod       |
+| 🎯 [`BETA_CLOSED_ACCESS_STRATEGY.md`](BETA_CLOSED_ACCESS_STRATEGY.md)                     | Stratégie beta fermée v2.0 (clés d'accès, garde-fous, 3 phases) |
+| 🛡 [`ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md`](ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md) | Stratégie admin MVP v2.0 (5 modules livrés)                     |
+| 📖 [`USER_STORIES.md`](USER_STORIES.md)                                                   | Vision produit complète (référence QA)                          |
 
 ---
 
 ## 🗺️ Tu cherches… → tu vas dans…
 
-| Question                   | Document                                                                                                                                                                                                       |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Etat actuel du projet**  | [`MASTER_TODO.md`](MASTER_TODO.md)                                                                                                                                                                             |
-| **Que faire maintenant ?** | [`MASTER_TODO.md`](MASTER_TODO.md) puis [`BETA_LAUNCH_RUNBOOK.md`](BETA_LAUNCH_RUNBOOK.md)                                                                                                                     |
-| **Workflow git + commits** | [`../CONTRIBUTING.md`](../CONTRIBUTING.md)                                                                                                                                                                     |
-| **Historique releases**    | [`../CHANGELOG.md`](../CHANGELOG.md)                                                                                                                                                                           |
-| **Vision produit**         | [`USER_STORIES.md`](USER_STORIES.md)                                                                                                                                                                           |
-| **Spec d'une feature X**   | [`PRD_<FEATURE>.md`](#-prd--produit)                                                                                                                                                                           |
-| **Schema DB + RLS**        | [`backend/database-architecture.md`](backend/database-architecture.md)                                                                                                                                         |
-| **Politiques RLS**         | [`security/rls-policies.md`](security/rls-policies.md)                                                                                                                                                         |
-| **Design system tokens**   | [`design-system/tokens.md`](design-system/tokens.md)                                                                                                                                                           |
-| **Strategies majeures**    | [`BETA_CLOSED_ACCESS_STRATEGY.md`](BETA_CLOSED_ACCESS_STRATEGY.md) + [`ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md`](ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md) + [`STORYBOOK_STRATEGY.md`](STORYBOOK_STRATEGY.md) |
-| **Comment deployer ?**     | [`BETA_LAUNCH_RUNBOOK.md`](BETA_LAUNCH_RUNBOOK.md) (Sections A-H)                                                                                                                                              |
-| **Sante CI**               | [`CI_HEALTH.md`](CI_HEALTH.md)                                                                                                                                                                                 |
-| **Index Figma**            | [`FIGMA_SCREENS.md`](FIGMA_SCREENS.md)                                                                                                                                                                         |
-| **Audits cycle 1 (13-05)** | [`archive/cycle-2-may-2026/`](archive/cycle-2-may-2026/) (STATUS + AUDIT_ADVISORS + AUDIT_DEAD_CODE)                                                                                                           |
-
----
-
-## 🧭 Conventions techniques
-
-| Document                                         | Description                                         |
-| ------------------------------------------------ | --------------------------------------------------- |
-| [`CONVENTIONS_TODO.md`](CONVENTIONS_TODO.md)     | Format TODO `(YYYY-MM-DD, owner, #issue)`           |
-| [`PATTERN_TYPE_CASTS.md`](PATTERN_TYPE_CASTS.md) | Convention `as unknown as X` (narrowing DB-garanti) |
+| Question                 | Document                                                               |
+| ------------------------ | ---------------------------------------------------------------------- |
+| Workflow git + commits   | [`../CONTRIBUTING.md`](../CONTRIBUTING.md)                             |
+| Historique releases      | [`../CHANGELOG.md`](../CHANGELOG.md)                                   |
+| Eco-design + perf budget | [`../GUIDELINES.md`](../GUIDELINES.md)                                 |
+| Spec d'une feature       | section **PRD** ci-dessous                                             |
+| Schéma DB + RLS          | [`backend/database-architecture.md`](backend/database-architecture.md) |
+| Politiques RLS           | [`security/rls-policies.md`](security/rls-policies.md)                 |
+| Design system tokens     | [`design-system/tokens.md`](design-system/tokens.md)                   |
+| Comment déployer         | [`BETA_LAUNCH_RUNBOOK.md`](BETA_LAUNCH_RUNBOOK.md) sections A-H        |
+| Setup Supabase + auth    | [`api-connection/`](api-connection/)                                   |
+| Variables d'env          | [`devops/environments.md`](devops/environments.md)                     |
 
 ---
 
 ## 📋 PRD — Produit
 
-Tous les Product Requirement Documents, naming uniformise `PRD_*` :
+Tous les Product Requirement Documents (naming uniformisé `PRD_*`) :
 
-| Document                                             | Feature                             | Statut         |
-| ---------------------------------------------------- | ----------------------------------- | -------------- |
-| [`PRD_LANDING.md`](PRD_LANDING.md)                   | Landing page publique               | Live           |
-| [`PRD_HOMEPAGE.md`](PRD_HOMEPAGE.md)                 | Homepage connecte                   | Live           |
-| [`PRD_FEED_TABS.md`](PRD_FEED_TABS.md)               | Tabs Following / Pour vous          | Live           |
-| [`PRD_ONBOARDING.md`](PRD_ONBOARDING.md)             | Auth + onboarding 4 etapes          | Live (RC-E v2) |
-| [`PRD_PROFILE.md`](PRD_PROFILE.md)                   | Profil owner + visiteur             | Live           |
-| [`PRD_POST_FORMATS.md`](PRD_POST_FORMATS.md)         | Encounter / Voyage / Notebook       | Encounter live |
-| [`PRD_NOTIFICATIONS.md`](PRD_NOTIFICATIONS.md)       | Panel + digest hebdo                | Partial        |
-| [`PRD_LOCALIZATION.md`](PRD_LOCALIZATION.md)         | Localisation privacy-first          | Live (Phase 1) |
-| [`PRD_PHOTO_MANAGEMENT.md`](PRD_PHOTO_MANAGEMENT.md) | Photos non-destructives + EXIF      | Live (RC-D)    |
-| [`EPIC_LOCALIZATION.md`](EPIC_LOCALIZATION.md)       | Decoupage operationnel localization | Live           |
+| Document                                             | Feature                              | Statut               |
+| ---------------------------------------------------- | ------------------------------------ | -------------------- |
+| [`PRD_LANDING.md`](PRD_LANDING.md)                   | Landing page publique                | Live                 |
+| [`PRD_HOMEPAGE.md`](PRD_HOMEPAGE.md)                 | Homepage connectée (feed + tabs)     | Live                 |
+| [`PRD_ONBOARDING.md`](PRD_ONBOARDING.md)             | Auth + onboarding 4 étapes           | Live                 |
+| [`PRD_PROFILE.md`](PRD_PROFILE.md)                   | Profil owner + visiteur              | Live                 |
+| [`PRD_PHOTO_MANAGEMENT.md`](PRD_PHOTO_MANAGEMENT.md) | Upload + gallery photo               | Live                 |
+| [`PRD_POST_FORMATS.md`](PRD_POST_FORMATS.md)         | Formats observation / identification | Live                 |
+| [`PRD_NOTIFICATIONS.md`](PRD_NOTIFICATIONS.md)       | Notifications + panel                | Live                 |
+| [`PRD_LOCALIZATION.md`](PRD_LOCALIZATION.md)         | i18n FR/EN                           | Phase 1 (EN différé) |
 
 ---
 
-## 🔮 Strategies Phase 2 (futures)
+## 🏗️ Architecture
 
-| Document                                                                               | Description                                                   |
-| -------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| [`BETA_CLOSED_ACCESS_STRATEGY.md`](BETA_CLOSED_ACCESS_STRATEGY.md)                     | Strategie beta fermee 50→100→public, cles d'acces, garde-fous |
-| [`ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md`](ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md) | Centre de controle admin (10 modules, ~26j dev)               |
-| [`STORYBOOK_STRATEGY.md`](STORYBOOK_STRATEGY.md)                                       | Plan Storybook complet (T-045-T-052)                          |
-
----
-
-## 🔎 Audits archives
-
-| Période  | Lien                                                     | Contenu                                              |
-| -------- | -------------------------------------------------------- | ---------------------------------------------------- |
-| Cycle 2  | [`archive/cycle-2-may-2026/`](archive/cycle-2-may-2026/) | STATUS + AUDIT_ADVISORS + AUDIT_DEAD_CODE (mai 2026) |
-| Cycle 1  | [`archive/cycle-1-may-2026/`](archive/cycle-1-may-2026/) | 16 docs cycle 1 (plans + audits avril-mai 2026)      |
-| V1 audit | [`archive/audits-v1/`](archive/audits-v1/)               | Premiers audits Git + technique                      |
-
-> A re-runner post-cleanup (BATCH 38-43) : un nouveau `AUDIT_ADVISORS_2026-05-15.md` + `AUDIT_DEAD_CODE_2026-05-15.md` actualisera l'etat.
+| Dossier                              | Contenu                                      |
+| ------------------------------------ | -------------------------------------------- |
+| [`backend/`](backend/)               | Schema DB, relations FK, conventions backend |
+| [`api-connection/`](api-connection/) | Setup Supabase, auth flow, endpoints         |
+| [`design-system/`](design-system/)   | Tokens, guidelines, composants Figma         |
+| [`security/`](security/)             | RLS, RGPD, sécurité médias                   |
+| [`devops/`](devops/)                 | Deployment, environments, monitoring         |
 
 ---
 
-## 🏗️ Backend & donnees
+## 🌍 Stratégie & Roadmap
 
-| Document                                                               | Sujet                                                          |
-| ---------------------------------------------------------------------- | -------------------------------------------------------------- |
-| [`backend/database-architecture.md`](backend/database-architecture.md) | Architecture DB, principes, tables, justifications             |
-| [`backend/schema.sql`](backend/schema.sql)                             | Schema SQL canonique (extensions, tables, index, triggers)     |
-| [`backend/relations.md`](backend/relations.md)                         | Diagramme ER, cardinalites, justification des index            |
-| [`backend/backend-guidelines.md`](backend/backend-guidelines.md)       | Regles d'or backend, conventions, anti-patterns, PR checklists |
+| Document                                       | Description                        |
+| ---------------------------------------------- | ---------------------------------- |
+| [`EPIC_LOCALIZATION.md`](EPIC_LOCALIZATION.md) | Plan stratégique i18n (vagues 1-3) |
 
 ---
 
-## 🔌 Connexion API
+## 📦 Archives
 
-| Document                                                               | Sujet                                                |
-| ---------------------------------------------------------------------- | ---------------------------------------------------- |
-| [`api-connection/supabase-setup.md`](api-connection/supabase-setup.md) | Setup client Supabase, env vars, gen types           |
-| [`api-connection/endpoints.md`](api-connection/endpoints.md)           | Services TS, hooks React Query, cache keys, Realtime |
-| [`api-connection/auth-flow.md`](api-connection/auth-flow.md)           | Signup / login / reset / delete account              |
+Les docs des cycles précédents sont conservées dans [`archive/`](archive/) à titre de référence historique :
 
----
+- `archive/cycle-1-may-2026/` — Audits initiaux 2026-05-13
+- `archive/cycle-2-may-2026/` — Refactos + status 2026-05-13/14
+- `archive/cycle-3-may-2026/` — Cleanup pré-launch 2026-05-15
+- `archive/audits-v1/` — Premiers audits projet
+- `archive/sessions/` — Notes session par session
 
-## 🔒 Securite
-
-| Document                                                     | Sujet                                                     |
-| ------------------------------------------------------------ | --------------------------------------------------------- |
-| [`security/rls-policies.md`](security/rls-policies.md)       | Politiques RLS Postgres pour chaque table                 |
-| [`security/data-protection.md`](security/data-protection.md) | RGPD : registre, exports, droit a l'oubli, sous-traitants |
-| [`security/media-security.md`](security/media-security.md)   | Buckets Storage, pipeline upload, EXIF, especes sensibles |
-
----
-
-## 🚀 DevOps
-
-| Document                                           | Sujet                                                    |
-| -------------------------------------------------- | -------------------------------------------------------- |
-| [`BETA_LAUNCH_RUNBOOK.md`](BETA_LAUNCH_RUNBOOK.md) | Runbook operationnel beta launch (8 sections A-H)        |
-| [`CI_HEALTH.md`](CI_HEALTH.md)                     | CI health check non-destructif                           |
-| [`devops/environments.md`](devops/environments.md) | Environnements local/staging/prod, variables, migrations |
-| [`devops/deployment.md`](devops/deployment.md)     | CI/CD, Vercel, headers securite, rollback, backups       |
-| [`devops/monitoring.md`](devops/monitoring.md)     | Sentry, Supabase Advisors, metriques, alerting           |
-
----
-
-## 🎨 Design system
-
-Voir [`design-system/README.md`](design-system/README.md) pour l'index complet du DS.
-
-| Document                                                                         | Sujet                                                    |
-| -------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| [`design-system/README.md`](design-system/README.md)                             | Index design system                                      |
-| [`design-system/tokens.md`](design-system/tokens.md)                             | Couleurs, espacements, typographies (Quicksand + Mulish) |
-| [`design-system/audit.md`](design-system/audit.md)                               | Audit coherence UI vs Figma                              |
-| [`design-system/guidelines.md`](design-system/guidelines.md)                     | Regles UI (composants < 200 lignes, tokens uniquement)   |
-| [`design-system/components/atoms.md`](design-system/components/atoms.md)         | Atoms (Button, Input, Icon)                              |
-| [`design-system/components/molecules.md`](design-system/components/molecules.md) | Molecules (FormField, Card)                              |
-| [`design-system/components/organisms.md`](design-system/components/organisms.md) | Organisms (Header, Modal, Form)                          |
-| [`design-system/components/templates.md`](design-system/components/templates.md) | Templates de pages                                       |
-
----
-
-## 📚 References
-
-| Document                               | Sujet                                    |
-| -------------------------------------- | ---------------------------------------- |
-| [`FIGMA_SCREENS.md`](FIGMA_SCREENS.md) | Index nodes Figma par flow et breakpoint |
-| [`USER_STORIES.md`](USER_STORIES.md)   | Toutes les user stories Gherkin          |
-
----
-
-## 🗄️ Archives
-
-> **A ne PAS y aller** pour des informations a jour — utilise plutot les docs vivants ci-dessus.
-> **Y aller** pour comprendre l'historique des decisions techniques.
-
-| Archive                                                  | Contenu                                                 | Periode                 |
-| -------------------------------------------------------- | ------------------------------------------------------- | ----------------------- |
-| [`archive/cycle-1-may-2026/`](archive/cycle-1-may-2026/) | 16 docs cycle 1 : plans, audits, quick wins             | 2026-04-29 → 2026-05-13 |
-| [`archive/audits-v1/`](archive/audits-v1/)               | 4 docs audit v1 (TECHNIQUE, GIT, SYNTHESE, PLAN_ACTION) | 2026-05-02 → 2026-05-04 |
-| [`archive/sessions/`](archive/sessions/)                 | Notes de sessions de travail passees                    | Historique              |
-
----
-
-## 📜 Historique cycles
-
-- **Cycle 1** (2026-04-29 → 2026-05-13) : 25 BATCHES, 98 taches livrees, base MVP production-ready.
-  → Bilan complet : [`archive/cycle-2-may-2026/STATUS_2026-05-13.md`](archive/cycle-2-may-2026/STATUS_2026-05-13.md)
-  → Docs archivees : [`archive/cycle-1-may-2026/`](archive/cycle-1-may-2026/)
-- **Cycle 2** (2026-05-13 → 2026-05-14) : BATCH 27-37+, beta closed access + admin MVP livres.
-  → Pilotage : [`MASTER_TODO.md`](MASTER_TODO.md) v2.2
-  → Runbook launch : [`BETA_LAUNCH_RUNBOOK.md`](BETA_LAUNCH_RUNBOOK.md)
-  → Docs archivees : [`archive/cycle-2-may-2026/`](archive/cycle-2-may-2026/)
+À consulter **uniquement** pour comprendre l'historique d'une décision. Ne pas se référer pour le code actuel.
