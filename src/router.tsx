@@ -1,27 +1,42 @@
 /**
  * Router — Configuration des routes de l'application Naturegraph
  *
- * Organisation des routes (BATCH 45 — Beta Access Gate total) :
- * - /welcome : Welcome screen beta (entry point, public)
- * - /waitlist : Inscription liste d'attente (public)
- * - / : Landing page (Gated par BetaAccessGuard)
- * - /signup, /login : Auth (Gated)
- * - /home, /explore, /profile, etc : App principale (Gated + ProtectedRoute)
- * - /admin : Admin (AdminGuard, pas besoin de BetaAccessGuard)
+ * Organisation (BATCH 62 — defense en profondeur Beta Gate, decision Nicolas) :
+ *
+ *   ┌─ PUBLIC (sans BetaAccessGuard) ──────────────────────────────────┐
+ *   │  /welcome  : entry point beta (porte d'entree)                   │
+ *   │  /waitlist : inscription liste d'attente (public intentionnel)   │
+ *   └──────────────────────────────────────────────────────────────────┘
+ *
+ *   ┌─ ADMIN (gate propre AdminGuard + RLS, pas de BetaAccessGuard) ───┐
+ *   │  /admin/*                                                        │
+ *   └──────────────────────────────────────────────────────────────────┘
+ *
+ *   ┌─ BETA GATED (toutes les autres routes via <BetaGatedLayout>) ────┐
+ *   │  /, /signup, /login, /onboarding, /home, /contribute,            │
+ *   │  /profile, /profile/:username, /notifications, /settings,        │
+ *   │  /explore, /contact, /privacy, /legal, /* (404)                  │
+ *   └──────────────────────────────────────────────────────────────────┘
+ *
+ * BATCH 62 : le `<BetaGatedLayout>` factorise <BetaAccessGuard> en parent
+ * route. Toute nouvelle route ajoutee comme enfant herite automatiquement
+ * du gate — il est STRUCTURELLEMENT IMPOSSIBLE d'oublier la protection.
+ *
+ * Defense en profondeur :
+ *   - Frontend : BetaAccessGuard (localStorage gate, TTL 30j)
+ *   - Backend  : RLS Postgres + RPC SECURITY DEFINER (auth.uid())
+ *   - Auth     : ProtectedRoute redirige vers /login (lui-meme gated)
+ *   - Beta key : claim atomique au signup (max_uses=1)
  *
  * BetaAccessGuard : verifie localStorage 'naturegraph-beta-access'.
- *   - Si vide ou expire -> redirect /welcome
- *   - Sinon -> render children
+ *   - Si vide ou expire -> redirect /welcome (preserve from path)
+ *   - Sinon -> render children via <Outlet />
  *
- * Routes publiques (sans BetaAccessGuard) : /welcome, /waitlist uniquement.
- * Routes legales (/contact /privacy /legal) sont sous BetaAccessGuard mais
- * accessibles via lien direct (l'utilisateur peut les lire post-validation).
- *
- * Toutes les pages utilisent React.lazy() pour le code splitting (éco-conception).
+ * Toutes les pages utilisent React.lazy() pour le code splitting (eco-conception).
  */
 
 import { lazy, Suspense } from 'react'
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Outlet } from 'react-router-dom'
 import App from './App'
 import { MainLayout } from '@/components/layout'
 import { ProtectedRoute, PublicRoute, OnboardingGuard } from '@/components/guards'
@@ -77,12 +92,30 @@ function LazyPage({ children }: { children: React.ReactNode }) {
   )
 }
 
+/**
+ * Layout parent qui applique BetaAccessGuard a toutes ses routes enfants.
+ * Permet de factoriser le gate et garantir qu'aucune route ne peut etre
+ * ajoutee sans protection (defense en profondeur architecturale).
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+function BetaGatedLayout() {
+  return (
+    <BetaAccessGuard>
+      <Outlet />
+    </BetaAccessGuard>
+  )
+}
+
 // ─── Définition des routes ─────────────────────────────────────────
 
 export const router = createBrowserRouter([
   {
     element: <App />,
     children: [
+      // ════════════════════════════════════════════════════════════════
+      // ROUTES PUBLIQUES (sans BetaAccessGuard — exceptions intentionnelles)
+      // ════════════════════════════════════════════════════════════════
+
       // Welcome screen — entry point beta privee (BATCH 45)
       // Aucun guard : c'est la porte d'entree.
       {
@@ -94,60 +127,8 @@ export const router = createBrowserRouter([
         ),
       },
 
-      // Landing page — gated par BetaAccessGuard (BATCH 45)
-      {
-        path: '/',
-        element: (
-          <LazyPage>
-            <BetaAccessGuard>
-              <Landing />
-            </BetaAccessGuard>
-          </LazyPage>
-        ),
-      },
-
-      // Auth — signup et login (gated par BetaAccessGuard)
-      // La vérification OTP et l'onboarding sont gérés en interne par AuthPage.
-      {
-        path: 'signup',
-        element: (
-          <LazyPage>
-            <BetaAccessGuard>
-              <PublicRoute>
-                <AuthPage initialMode="signup" />
-              </PublicRoute>
-            </BetaAccessGuard>
-          </LazyPage>
-        ),
-      },
-      {
-        path: 'login',
-        element: (
-          <LazyPage>
-            <BetaAccessGuard>
-              <PublicRoute>
-                <AuthPage initialMode="login" />
-              </PublicRoute>
-            </BetaAccessGuard>
-          </LazyPage>
-        ),
-      },
-
-      // Onboarding standalone — fallback pour les accès directs
-      {
-        path: 'onboarding',
-        element: (
-          <LazyPage>
-            <ProtectedRoute>
-              <Onboarding />
-            </ProtectedRoute>
-          </LazyPage>
-        ),
-      },
-
       // Waitlist — accessible sans auth (BATCH 30 / BETA_STRATEGY Phase 1)
       // Affiche le formulaire d'inscription a la liste d'attente.
-      // Redirigee depuis BetaKeyGate quand le quota est plein.
       {
         path: 'waitlist',
         element: (
@@ -157,130 +138,11 @@ export const router = createBrowserRouter([
         ),
       },
 
-      // Home — accessible sans auth (mode invité), mais force l'onboarding pour les users authentifiés
-      {
-        path: 'home',
-        element: (
-          <LazyPage>
-            <OnboardingGuard>
-              <Home />
-            </OnboardingGuard>
-          </LazyPage>
-        ),
-      },
-
-      // Contributions — authentification requise, layout autonome (header propre au formulaire)
-      {
-        path: 'contribute',
-        element: (
-          <LazyPage>
-            <ProtectedRoute>
-              <Contribute />
-            </ProtectedRoute>
-          </LazyPage>
-        ),
-      },
-
-      // Profil — layout autonome (header intégré dans la page)
-      {
-        path: 'profile',
-        element: (
-          <LazyPage>
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          </LazyPage>
-        ),
-      },
-      {
-        path: 'profile/:username',
-        element: (
-          <LazyPage>
-            <OnboardingGuard>
-              <Profile />
-            </OnboardingGuard>
-          </LazyPage>
-        ),
-      },
-
-      // Notifications — page dédiée avec filtres + pagination curseur
-      {
-        path: 'notifications',
-        element: (
-          <LazyPage>
-            <ProtectedRoute>
-              <NotificationsPage />
-            </ProtectedRoute>
-          </LazyPage>
-        ),
-      },
-
-      // Paramètres — authentification requise, layout autonome
-      {
-        path: 'settings',
-        element: (
-          <LazyPage>
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          </LazyPage>
-        ),
-      },
-
-      // App principale — authentification requise + layout avec header/footer
-      {
-        element: (
-          <ProtectedRoute>
-            <MainLayout />
-          </ProtectedRoute>
-        ),
-        children: [
-          {
-            path: 'explore',
-            element: (
-              <LazyPage>
-                <Explore />
-              </LazyPage>
-            ),
-          },
-        ],
-      },
-
-      // Pages légales — gated par BetaAccessGuard (BATCH 45 — beta privee)
-      // Note : si tu veux les rendre publiques au launch, retire le BetaAccessGuard.
-      {
-        path: 'contact',
-        element: (
-          <LazyPage>
-            <BetaAccessGuard>
-              <Contact />
-            </BetaAccessGuard>
-          </LazyPage>
-        ),
-      },
-      {
-        path: 'privacy',
-        element: (
-          <LazyPage>
-            <BetaAccessGuard>
-              <Privacy />
-            </BetaAccessGuard>
-          </LazyPage>
-        ),
-      },
-      {
-        path: 'legal',
-        element: (
-          <LazyPage>
-            <BetaAccessGuard>
-              <Legal />
-            </BetaAccessGuard>
-          </LazyPage>
-        ),
-      },
-
-      // Admin section (BATCH 31-32) — protege par AdminGuard
-      // Defense en profondeur : RLS Postgres bloque aussi l'access aux donnees.
+      // ════════════════════════════════════════════════════════════════
+      // ADMIN — gate propre (AdminGuard + RLS), pas de BetaAccessGuard
+      // L'admin a son systeme d'auth distinct, et la RLS bloque l'acces
+      // aux donnees meme en cas de bypass cote client.
+      // ════════════════════════════════════════════════════════════════
       {
         path: 'admin',
         element: (
@@ -334,14 +196,190 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // 404 — page non trouvée
+      // ════════════════════════════════════════════════════════════════
+      // BETA GATED — toutes les autres routes
+      // <BetaGatedLayout> applique <BetaAccessGuard> sur tous les enfants.
+      // Toute nouvelle route ajoutee ici herite automatiquement du gate.
+      // ════════════════════════════════════════════════════════════════
       {
-        path: '*',
-        element: (
-          <LazyPage>
-            <NotFound />
-          </LazyPage>
-        ),
+        element: <BetaGatedLayout />,
+        children: [
+          // Landing page (BATCH 45)
+          {
+            path: '/',
+            element: (
+              <LazyPage>
+                <Landing />
+              </LazyPage>
+            ),
+          },
+
+          // Auth — signup et login
+          // La verification OTP et l'onboarding sont geres en interne par AuthPage.
+          {
+            path: 'signup',
+            element: (
+              <LazyPage>
+                <PublicRoute>
+                  <AuthPage initialMode="signup" />
+                </PublicRoute>
+              </LazyPage>
+            ),
+          },
+          {
+            path: 'login',
+            element: (
+              <LazyPage>
+                <PublicRoute>
+                  <AuthPage initialMode="login" />
+                </PublicRoute>
+              </LazyPage>
+            ),
+          },
+
+          // Onboarding standalone — fallback pour les acces directs
+          {
+            path: 'onboarding',
+            element: (
+              <LazyPage>
+                <ProtectedRoute>
+                  <Onboarding />
+                </ProtectedRoute>
+              </LazyPage>
+            ),
+          },
+
+          // Home — accessible sans auth (mode invite), mais force l'onboarding
+          // pour les users authentifies. Le BetaAccessGuard parent garantit
+          // qu'aucun mode invite ne peut bypasser la beta fermee.
+          {
+            path: 'home',
+            element: (
+              <LazyPage>
+                <OnboardingGuard>
+                  <Home />
+                </OnboardingGuard>
+              </LazyPage>
+            ),
+          },
+
+          // Contributions — authentification requise, layout autonome
+          {
+            path: 'contribute',
+            element: (
+              <LazyPage>
+                <ProtectedRoute>
+                  <Contribute />
+                </ProtectedRoute>
+              </LazyPage>
+            ),
+          },
+
+          // Profil — layout autonome (header integre dans la page)
+          {
+            path: 'profile',
+            element: (
+              <LazyPage>
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              </LazyPage>
+            ),
+          },
+          {
+            path: 'profile/:username',
+            element: (
+              <LazyPage>
+                <OnboardingGuard>
+                  <Profile />
+                </OnboardingGuard>
+              </LazyPage>
+            ),
+          },
+
+          // Notifications — page dediee avec filtres + pagination curseur
+          {
+            path: 'notifications',
+            element: (
+              <LazyPage>
+                <ProtectedRoute>
+                  <NotificationsPage />
+                </ProtectedRoute>
+              </LazyPage>
+            ),
+          },
+
+          // Parametres — authentification requise, layout autonome
+          {
+            path: 'settings',
+            element: (
+              <LazyPage>
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              </LazyPage>
+            ),
+          },
+
+          // App principale — authentification requise + layout avec header/footer
+          {
+            element: (
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
+            ),
+            children: [
+              {
+                path: 'explore',
+                element: (
+                  <LazyPage>
+                    <Explore />
+                  </LazyPage>
+                ),
+              },
+            ],
+          },
+
+          // Pages legales — gated par BetaAccessGuard (BATCH 45 — beta privee)
+          // Note : si tu veux les rendre publiques au launch, sortir du groupe
+          // <BetaGatedLayout> et les remettre au niveau racine.
+          {
+            path: 'contact',
+            element: (
+              <LazyPage>
+                <Contact />
+              </LazyPage>
+            ),
+          },
+          {
+            path: 'privacy',
+            element: (
+              <LazyPage>
+                <Privacy />
+              </LazyPage>
+            ),
+          },
+          {
+            path: 'legal',
+            element: (
+              <LazyPage>
+                <Legal />
+              </LazyPage>
+            ),
+          },
+
+          // 404 — page non trouvee (BATCH 62 : gated pour eviter bypass)
+          // Un user qui tape une URL random sans code beta est renvoye vers /welcome
+          // au lieu de voir directement la 404.
+          {
+            path: '*',
+            element: (
+              <LazyPage>
+                <NotFound />
+              </LazyPage>
+            ),
+          },
+        ],
       },
     ],
   },

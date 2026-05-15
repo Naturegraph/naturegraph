@@ -136,6 +136,30 @@
   }
 }
 
+/* ─── Toast progress bar (BATCH 63 — barre auto-dismiss) ────────────────── */
+
+@keyframes toast-progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.animate-toast-progress {
+  animation-name: toast-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-toast-progress {
+    animation: none;
+    width: 100%;
+  }
+}
+
 /**
  * Inputs date — masquer l'icône native (Webkit/Blink) pour ne garder que
  * notre icône custom Calendar (cohérence design system). Le clic sur l'input

@@ -19,7 +19,11 @@
 import { useCallback, useEffect, useState } from 'react'
 
 const STORAGE_KEY = 'naturegraph-beta-access'
-const TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 jours
+// BATCH 59 (2026-05-15) : TTL etendu a 30 jours pour la phase de test beta.
+// Permet aux beta testeurs de rester "loggue" sur le welcome plus longtemps
+// sans avoir a re-saisir leur code. A aligner avec l'expiration des cles en DB
+// (beta_access_keys.expires_at) si on veut une coherence parfaite.
+const TTL_MS = 30 * 24 * 60 * 60 * 1000 // 30 jours
 
 interface BetaAccessState {
   /** Le code valide (NG-XXXX-XXXX). Persiste en localStorage. */
