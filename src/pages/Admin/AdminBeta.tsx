@@ -15,7 +15,7 @@ import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Key, Plus, Copy, Mail, X, Loader2, Trash2, ExternalLink } from 'lucide-react'
+import { Key, Plus, Copy, Mail, X, Loader2, Trash2, ExternalLink, BarChart3 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
@@ -100,6 +100,8 @@ export default function AdminBeta() {
   const [isGenerating, setIsGenerating] = useState(false)
   // BATCH 107 : modale double-confirmation pour suppression réelle
   const [keyToDelete, setKeyToDelete] = useState<BetaAccessKey | null>(null)
+  // BATCH 108 : tab actif (cohérence AdminUsers : Clés / Waitlist / Stats)
+  const [activeTab, setActiveTab] = useState<'keys' | 'waitlist' | 'stats'>('keys')
 
   // Quota
   const { data: quota } = useQuery<BetaQuota | null>({
@@ -350,147 +352,241 @@ export default function AdminBeta() {
         </Button>
       </div>
 
-      {/* ── Cles ────────────────────────────────────────────────── */}
-      <section className="bg-background border border-border rounded-lg overflow-hidden">
-        <header className="flex items-center justify-between px-5 py-3 border-b border-border">
-          <h2 className="text-base font-semibold text-foreground inline-flex items-center gap-2">
-            <Key className="size-4" aria-hidden="true" />
-            Cles d'acces ({keys.length})
-          </h2>
-        </header>
-        {keys.length === 0 ? (
-          <p className="px-5 py-8 text-center text-sm text-muted-foreground">
-            Aucune clé générée. Clique "Générer 10 clés" pour démarrer la vague 1.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-xs uppercase text-muted-foreground tracking-wider bg-[var(--color-bg-secondary)]/50">
-                <tr>
-                  <th className="text-left px-5 py-3 font-semibold">Code</th>
-                  <th className="text-left px-5 py-3 font-semibold">Batch</th>
-                  <th className="text-left px-5 py-3 font-semibold">Statut</th>
-                  <th className="text-left px-5 py-3 font-semibold">Utilisateur</th>
-                  <th className="text-left px-5 py-3 font-semibold">Expire</th>
-                  <th className="text-right px-5 py-3 font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {keys.map((k, idx) => {
-                  const status = keyStatus(k)
-                  const usedBy = k.used_by_user_id ? keyUsersMap[k.used_by_user_id] : null
-                  const isUsed = k.current_uses >= k.max_uses
-                  return (
+      {/* ── BATCH 108 : Tabs pour cohérence avec AdminUsers (Clés / Waitlist / Stats) ── */}
+      <div
+        role="tablist"
+        aria-label="Sections beta"
+        className="flex items-center gap-1 border-b border-[var(--color-border)] overflow-x-auto"
+      >
+        {[
+          { key: 'keys' as const, label: "Clés d'accès", icon: Key, count: keys.length },
+          {
+            key: 'waitlist' as const,
+            label: 'Waitlist',
+            icon: Mail,
+            count: waitlist.length,
+          },
+          { key: 'stats' as const, label: 'Statistiques', icon: BarChart3, count: null },
+        ].map((tab) => {
+          const Icon = tab.icon
+          const isActive = activeTab === tab.key
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActiveTab(tab.key)}
+              className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-action-default)] whitespace-nowrap ${
+                isActive
+                  ? 'border-[var(--color-action-default)] text-[var(--color-action-default)]'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Icon className="size-4" aria-hidden="true" />
+              {tab.label}
+              {tab.count !== null && (
+                <span
+                  className={`text-xs px-1.5 py-0.5 rounded-full ${
+                    isActive
+                      ? 'bg-[var(--color-action-default)]/10 text-[var(--color-action-default)]'
+                      : 'bg-[var(--color-bg-secondary)] text-muted-foreground'
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* ── Tab : Clés d'accès ─────────────────────────────────── */}
+      {activeTab === 'keys' && (
+        <section className="bg-background border border-border rounded-lg overflow-hidden">
+          {keys.length === 0 ? (
+            <p className="px-5 py-8 text-center text-sm text-muted-foreground">
+              Aucune clé générée. Clique "Générer 10 clés" pour démarrer la vague 1.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs uppercase text-muted-foreground tracking-wider bg-[var(--color-bg-secondary)]/50">
+                  <tr>
+                    <th className="text-left px-5 py-3 font-semibold">Code</th>
+                    <th className="text-left px-5 py-3 font-semibold">Batch</th>
+                    <th className="text-left px-5 py-3 font-semibold">Statut</th>
+                    <th className="text-left px-5 py-3 font-semibold">Utilisateur</th>
+                    <th className="text-left px-5 py-3 font-semibold">Expire</th>
+                    <th className="text-right px-5 py-3 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {keys.map((k, idx) => {
+                    const status = keyStatus(k)
+                    const usedBy = k.used_by_user_id ? keyUsersMap[k.used_by_user_id] : null
+                    const isUsed = k.current_uses >= k.max_uses
+                    return (
+                      <tr
+                        key={k.id}
+                        className={`border-t border-border/40 transition-colors hover:bg-[var(--color-bg-secondary)]/60 ${
+                          idx % 2 === 1 ? 'bg-[var(--color-bg-secondary)]/20' : ''
+                        }`}
+                      >
+                        <td className="px-5 py-3 font-mono text-xs text-foreground">{k.code}</td>
+                        <td className="px-5 py-3 text-muted-foreground">#{k.batch_number}</td>
+                        <td className="px-5 py-3">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${status.badgeClass}`}
+                          >
+                            {status.label}
+                          </span>
+                        </td>
+                        {/* BATCH 107 : utilisateur ayant consommé la clé (si used) */}
+                        <td className="px-5 py-3 text-xs">
+                          {usedBy ? (
+                            <Link
+                              to={`/profile/${usedBy.username}`}
+                              className="inline-flex items-center gap-1 text-primary hover:underline"
+                              title={`${usedBy.first_name} ${usedBy.last_name}`}
+                            >
+                              @{usedBy.username}
+                              <ExternalLink className="size-3 opacity-60" aria-hidden="true" />
+                            </Link>
+                          ) : isUsed && k.used_by_user_id ? (
+                            <span className="text-muted-foreground italic">
+                              utilisateur supprimé
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3 text-muted-foreground">
+                          {formatRelativeDate(k.expires_at)}
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <div className="inline-flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleCopyCode(k.code)}
+                              aria-label={`Copier ${k.code}`}
+                              className="size-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-bg-secondary)] text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                            >
+                              <Copy className="size-4" aria-hidden="true" />
+                            </button>
+                            {k.is_active && !isUsed && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeactivateKey(k.id, k.code)}
+                                aria-label={`Désactiver ${k.code}`}
+                                title="Désactiver (conserve la trace)"
+                                className="size-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-warning-bg)] text-muted-foreground hover:text-[var(--color-warning)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-warning)]"
+                              >
+                                <X className="size-4" aria-hidden="true" />
+                              </button>
+                            )}
+                            {/* BATCH 107 : suppression réelle (DELETE).
+                              Bloquée si la clé a déjà été utilisée pour préserver l'audit. */}
+                            {!isUsed && (
+                              <button
+                                type="button"
+                                onClick={() => setKeyToDelete(k)}
+                                aria-label={`Supprimer ${k.code}`}
+                                title="Supprimer définitivement"
+                                className="size-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-error-bg)] text-muted-foreground hover:text-[var(--color-error)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)]"
+                              >
+                                <Trash2 className="size-4" aria-hidden="true" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ── Tab : Waitlist (BATCH 108 : refonte en tableau, cohérent avec Clés) ── */}
+      {activeTab === 'waitlist' && (
+        <section className="bg-background border border-border rounded-lg overflow-hidden">
+          {waitlist.length === 0 ? (
+            <p className="px-5 py-8 text-center text-sm text-muted-foreground">
+              🟢 Waitlist vide — personne n'attend de clé pour le moment.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs uppercase text-muted-foreground tracking-wider bg-[var(--color-bg-secondary)]/50">
+                  <tr>
+                    <th className="text-left px-5 py-3 font-semibold">Email</th>
+                    <th className="text-left px-5 py-3 font-semibold">Motivation</th>
+                    <th className="text-left px-5 py-3 font-semibold">Inscrit</th>
+                    <th className="text-right px-5 py-3 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {waitlist.map((entry, idx) => (
                     <tr
-                      key={k.id}
+                      key={entry.id}
                       className={`border-t border-border/40 transition-colors hover:bg-[var(--color-bg-secondary)]/60 ${
                         idx % 2 === 1 ? 'bg-[var(--color-bg-secondary)]/20' : ''
                       }`}
                     >
-                      <td className="px-5 py-3 font-mono text-xs text-foreground">{k.code}</td>
-                      <td className="px-5 py-3 text-muted-foreground">#{k.batch_number}</td>
-                      <td className="px-5 py-3">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${status.badgeClass}`}
-                        >
-                          {status.label}
-                        </span>
-                      </td>
-                      {/* BATCH 107 : utilisateur ayant consommé la clé (si used) */}
-                      <td className="px-5 py-3 text-xs">
-                        {usedBy ? (
-                          <Link
-                            to={`/profile/${usedBy.username}`}
-                            className="inline-flex items-center gap-1 text-primary hover:underline"
-                            title={`${usedBy.first_name} ${usedBy.last_name}`}
-                          >
-                            @{usedBy.username}
-                            <ExternalLink className="size-3 opacity-60" aria-hidden="true" />
-                          </Link>
-                        ) : isUsed && k.used_by_user_id ? (
-                          <span className="text-muted-foreground italic">utilisateur supprimé</span>
+                      <td className="px-5 py-3 text-foreground font-medium">{entry.email}</td>
+                      <td className="px-5 py-3 text-xs text-muted-foreground max-w-md">
+                        {entry.motivation ? (
+                          <span className="line-clamp-2" title={entry.motivation}>
+                            « {entry.motivation} »
+                          </span>
                         ) : (
-                          <span className="text-muted-foreground">—</span>
+                          <span className="italic">aucune</span>
                         )}
                       </td>
-                      <td className="px-5 py-3 text-muted-foreground">
-                        {formatRelativeDate(k.expires_at)}
+                      <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                        {formatRelativeDate(entry.created_at)}
                       </td>
                       <td className="px-5 py-3 text-right">
                         <div className="inline-flex items-center gap-1">
+                          {/* Copier l'email pour invitation manuelle (mailto:) */}
                           <button
                             type="button"
-                            onClick={() => handleCopyCode(k.code)}
-                            aria-label={`Copier ${k.code}`}
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(entry.email)
+                                toast.success(`Email copié : ${entry.email}`)
+                              } catch {
+                                toast.error('Impossible de copier')
+                              }
+                            }}
+                            aria-label={`Copier l'email ${entry.email}`}
+                            title="Copier l'email"
                             className="size-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-bg-secondary)] text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                           >
                             <Copy className="size-4" aria-hidden="true" />
                           </button>
-                          {k.is_active && !isUsed && (
-                            <button
-                              type="button"
-                              onClick={() => handleDeactivateKey(k.id, k.code)}
-                              aria-label={`Désactiver ${k.code}`}
-                              title="Désactiver (conserve la trace)"
-                              className="size-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-warning-bg)] text-muted-foreground hover:text-[var(--color-warning)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-warning)]"
-                            >
-                              <X className="size-4" aria-hidden="true" />
-                            </button>
-                          )}
-                          {/* BATCH 107 : suppression réelle (DELETE).
-                              Bloquée si la clé a déjà été utilisée pour préserver l'audit. */}
-                          {!isUsed && (
-                            <button
-                              type="button"
-                              onClick={() => setKeyToDelete(k)}
-                              aria-label={`Supprimer ${k.code}`}
-                              title="Supprimer définitivement"
-                              className="size-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-error-bg)] text-muted-foreground hover:text-[var(--color-error)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)]"
-                            >
-                              <Trash2 className="size-4" aria-hidden="true" />
-                            </button>
-                          )}
+                          {/* Ouvrir un mailto avec template d'invitation */}
+                          <a
+                            href={`mailto:${entry.email}?subject=${encodeURIComponent('Ton accès Naturegraph est prêt')}&body=${encodeURIComponent("Bonjour,\n\nMerci pour ton intérêt pour Naturegraph !\n\nVoici ta clé d'accès beta : [INSÉRER LA CLÉ DEPUIS L'ONGLET CLÉS]\n\nÀ très vite sur la plateforme,\nL'équipe Naturegraph")}`}
+                            aria-label={`Envoyer un email à ${entry.email}`}
+                            title="Envoyer une invitation par email"
+                            className="size-8 inline-flex items-center justify-center rounded-full hover:bg-primary-light text-muted-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                          >
+                            <Mail className="size-4" aria-hidden="true" />
+                          </a>
                         </div>
                       </td>
                     </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      {/* ── Waitlist ────────────────────────────────────────────── */}
-      <section className="bg-background border border-border rounded-lg overflow-hidden">
-        <header className="flex items-center justify-between px-5 py-3 border-b border-border">
-          <h2 className="text-base font-semibold text-foreground inline-flex items-center gap-2">
-            <Mail className="size-4" aria-hidden="true" />
-            Waitlist ({waitlist.length})
-          </h2>
-        </header>
-        {waitlist.length === 0 ? (
-          <p className="px-5 py-8 text-center text-sm text-muted-foreground">🟢 Waitlist vide.</p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {waitlist.map((entry) => (
-              <li key={entry.id} className="px-5 py-3 flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground truncate">{entry.email}</p>
-                  {entry.motivation && (
-                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                      "{entry.motivation}"
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Inscrit {formatRelativeDate(entry.created_at)}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* BATCH 107 : Modal de confirmation pour la suppression définitive d'une clé.
           Action irréversible : DELETE FROM beta_access_keys WHERE id = X. */}
@@ -505,25 +601,110 @@ export default function AdminBeta() {
         />
       )}
 
-      {/* ── Stats signups 7j ──────────────────────────────────── */}
-      {signupStats && (
-        <section className="bg-background border border-border rounded-lg p-5">
-          <h2 className="text-base font-semibold text-foreground mb-3">
-            Tentatives signups (7 derniers jours)
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-            {Object.entries(signupStats).map(([outcome, count]) => (
-              <div
-                key={outcome}
-                className="flex items-center justify-between p-3 bg-muted/30 rounded"
-              >
-                <span className="text-muted-foreground capitalize">
-                  {outcome.replace(/_/g, ' ')}
-                </span>
-                <span className="font-bold text-foreground">{count}</span>
-              </div>
-            ))}
+      {/* ── Tab : Statistiques (BATCH 108 : section dédiée avec interprétation) ── */}
+      {activeTab === 'stats' && (
+        <section className="bg-background border border-border rounded-lg p-5 flex flex-col gap-5">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-base font-semibold text-foreground inline-flex items-center gap-2">
+              <BarChart3 className="size-4" aria-hidden="true" />
+              Tentatives de signups (7 derniers jours)
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Mesure le pipeline beta : combien tentent, combien réussissent, et où ça casse.
+            </p>
           </div>
+
+          {!signupStats || Object.keys(signupStats).length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">
+              Aucune tentative enregistrée cette semaine.
+            </p>
+          ) : (
+            <>
+              {(() => {
+                const total = Object.values(signupStats).reduce((sum, n) => sum + n, 0)
+                const success = signupStats['success'] ?? 0
+                const conversionRate = total > 0 ? Math.round((success / total) * 100) : 0
+                return (
+                  <>
+                    {/* Score global */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="bg-[var(--color-bg-secondary)]/40 rounded-lg p-4 flex flex-col gap-1">
+                        <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                          Total
+                        </span>
+                        <span className="text-2xl font-bold text-foreground">{total}</span>
+                      </div>
+                      <div className="bg-[var(--color-success-bg)] rounded-lg p-4 flex flex-col gap-1">
+                        <span className="text-xs uppercase tracking-wider text-[var(--color-success)]">
+                          Succès
+                        </span>
+                        <span className="text-2xl font-bold text-[var(--color-success)]">
+                          {success}
+                        </span>
+                      </div>
+                      <div className="bg-[var(--color-error-bg)] rounded-lg p-4 flex flex-col gap-1">
+                        <span className="text-xs uppercase tracking-wider text-[var(--color-error)]">
+                          Échecs
+                        </span>
+                        <span className="text-2xl font-bold text-[var(--color-error)]">
+                          {total - success}
+                        </span>
+                      </div>
+                      <div className="bg-primary-light rounded-lg p-4 flex flex-col gap-1">
+                        <span className="text-xs uppercase tracking-wider text-primary">
+                          Conversion
+                        </span>
+                        <span className="text-2xl font-bold text-primary">{conversionRate}%</span>
+                      </div>
+                    </div>
+
+                    {/* Breakdown par outcome avec bar visuelle */}
+                    <div className="flex flex-col gap-2">
+                      <h3 className="text-sm font-semibold text-foreground">Détail par issue</h3>
+                      <ul className="flex flex-col gap-2">
+                        {Object.entries(signupStats)
+                          .sort(([, a], [, b]) => b - a)
+                          .map(([outcome, count]) => {
+                            const pct = total > 0 ? (count / total) * 100 : 0
+                            const isSuccess = outcome === 'success'
+                            return (
+                              <li key={outcome} className="flex flex-col gap-1">
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-foreground capitalize">
+                                    {outcome.replace(/_/g, ' ')}
+                                  </span>
+                                  <span className="text-muted-foreground tabular-nums">
+                                    {count} ({Math.round(pct)}%)
+                                  </span>
+                                </div>
+                                {/* Bar CSS pure (éco-conception : aucun lib graph) */}
+                                <div
+                                  className="h-2 rounded-full bg-[var(--color-bg-secondary)] overflow-hidden"
+                                  role="progressbar"
+                                  aria-valuenow={count}
+                                  aria-valuemin={0}
+                                  aria-valuemax={total}
+                                  aria-label={`${outcome} : ${count} sur ${total}`}
+                                >
+                                  <div
+                                    className={`h-full rounded-full transition-all ${
+                                      isSuccess
+                                        ? 'bg-[var(--color-success)]'
+                                        : 'bg-[var(--color-error)]'
+                                    }`}
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
+                              </li>
+                            )
+                          })}
+                      </ul>
+                    </div>
+                  </>
+                )
+              })()}
+            </>
+          )}
         </section>
       )}
     </div>
