@@ -131,33 +131,76 @@ export function Navbar({ onNavigate }: NavbarProps) {
         {mobileOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
-      {/* Mobile menu overlay */}
+      {/*
+        Mobile drawer (BATCH 70, Nicolas decision 2026-05-15) :
+        - Fixed full-height, slide-in depuis la droite, prend 3/4 de l'ecran (max 400px)
+        - Fond cream (--color-bg-primary) cohereent avec le reste de l'app
+        - Backdrop semi-transparent par-dessus le hero pour focus visuel
+        - z-50 pour passer au-dessus de tout (orbes Hero, etc.)
+        - Animation slide-in 250ms (respect motion-safe)
+        - Fermeture : click backdrop, click X, click sur un lien
+      */}
       {mobileOpen && (
-        <div className="lg:hidden absolute top-full left-0 right-0 z-30 bg-[var(--color-highlight-primary)] px-6 pb-6 space-y-3">
-          {navLinks.map((link) => (
-            <NavLinkButton
-              key={link.id}
-              label={link.label}
-              onClick={() => handleNav(link.id)}
-              variant="mobile"
-            />
-          ))}
-          <div className="flex items-center gap-3 pt-2">
-            {/* TODO: Activer le switcher de langue quand prêt
-            <button
-              onClick={toggleLanguage}
-              className="flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-white)]/80 hover:text-[var(--color-text-white)] bg-transparent border border-[var(--color-text-white)]/20 rounded-full px-3 py-1.5 cursor-pointer"
-              aria-label={i18n.language === 'fr' ? 'Switch to English' : 'Passer en français'}
+        <>
+          {/* Backdrop assombri */}
+          <button
+            type="button"
+            aria-label={t('landing.nav.closeMenu', { defaultValue: 'Fermer le menu' })}
+            onClick={() => setMobileOpen(false)}
+            className="lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-200"
+          />
+
+          {/* Drawer */}
+          <aside
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('landing.nav.menu', { defaultValue: 'Menu' })}
+            className="lg:hidden fixed top-0 right-0 bottom-0 z-50 w-3/4 max-w-[400px] bg-[var(--color-bg-primary)] shadow-2xl flex flex-col motion-safe:animate-in motion-safe:slide-in-from-right motion-safe:duration-250"
+          >
+            {/* Header du drawer : titre + close */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--color-border)]">
+              <span className="text-base font-bold text-[var(--color-text-primary)]">
+                {t('landing.nav.menu', { defaultValue: 'Menu' })}
+              </span>
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                aria-label={t('landing.nav.closeMenu', { defaultValue: 'Fermer le menu' })}
+                className="p-2 -mr-2 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] transition-colors"
+              >
+                <X size={22} aria-hidden="true" />
+              </button>
+            </div>
+
+            {/* Liens nav */}
+            <nav
+              className="flex-1 flex flex-col gap-1 px-4 py-6 overflow-y-auto"
+              aria-label={t('landing.nav.menu', { defaultValue: 'Menu' })}
             >
-              <Globe size={14} />
-              <span className="uppercase">{i18n.language === 'fr' ? 'EN' : 'FR'}</span>
-            </button>
-            */}
-            <Button to="/signup" size="md" className="flex-1" onClick={() => setMobileOpen(false)}>
-              {t('landing.nav.signup')}
-            </Button>
-          </div>
-        </div>
+              {navLinks.map((link) => (
+                <button
+                  key={link.id}
+                  onClick={() => handleNav(link.id)}
+                  className="w-full text-left px-4 py-3 rounded-xl text-base font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-action-default)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] transition-colors"
+                >
+                  {link.label}
+                </button>
+              ))}
+            </nav>
+
+            {/* CTA en bas */}
+            <div className="px-6 py-5 border-t border-[var(--color-border)]">
+              <Button
+                to="/signup"
+                size="lg"
+                className="w-full"
+                onClick={() => setMobileOpen(false)}
+              >
+                {t('landing.nav.signup')}
+              </Button>
+            </div>
+          </aside>
+        </>
       )}
     </header>
   )
