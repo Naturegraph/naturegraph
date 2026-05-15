@@ -30,8 +30,24 @@ function ext(file: File): string {
   return file.type.split('/').pop() ?? 'bin'
 }
 
+/**
+ * Génère un UUID v4 avec fallback compatible Safari < 15.4 (BATCH 115).
+ *
+ * `crypto.randomUUID()` n'est dispo que depuis Safari 15.4 (mars 2022).
+ * Le fallback utilise `crypto.getRandomValues()` (Safari 11+, universellement
+ * supporté) pour générer un UUID v4 conforme RFC 4122 sans dépendance externe.
+ */
 function uuid(): string {
-  return crypto.randomUUID()
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  // Fallback Safari < 15.4 : 16 bytes aléatoires → format UUID v4
+  const bytes = new Uint8Array(16)
+  crypto.getRandomValues(bytes)
+  bytes[6] = (bytes[6] & 0x0f) | 0x40 // version 4
+  bytes[8] = (bytes[8] & 0x3f) | 0x80 // variant 10
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
 // ── Avatar ───────────────────────────────────────────────────────────────────
