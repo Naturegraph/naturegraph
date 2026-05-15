@@ -1,12 +1,14 @@
 # Configuration des emails Naturegraph (BATCH 75-76)
 
-> Date : 2026-05-15  
-> Auteur : Nicolas + Claude  
+> ⚠️ **CES CONFIGURATIONS SONT MANUELLES — À FAIRE DANS LE DASHBOARD SUPABASE**  
+> Tant qu'elles ne sont pas appliquées, les utilisateurs reçoivent le template Supabase par défaut (gradient violet, 10 min, contact@naturegraph.fr — tout faux).
+>
+> Date : 2026-05-15 · Auteur : Nicolas + Claude  
 > Statut : à appliquer manuellement dans le Supabase Dashboard
 
 ## Pourquoi ce document
 
-Les emails OTP partent actuellement depuis `noreply@mail.supabase.co` — perçu comme spam ou non identifiable. L'utilisateur ne sait pas si c'est vraiment Naturegraph. Le template inclut aussi un gradient violet hors DS, un délai annoncé incorrect (10 min au lieu de 2), et un email de contact obsolète.
+Les emails OTP partent actuellement depuis `noreply@mail.supabase.co`, perçu comme spam ou non identifiable. L'utilisateur ne sait pas si c'est vraiment Naturegraph. Le template inclut aussi un gradient violet hors DS, un délai annoncé incorrect (10 min au lieu de 2), et un email de contact obsolète.
 
 Ce document liste **tout** ce qu'il faut configurer dans le Supabase Dashboard pour avoir :
 
@@ -313,7 +315,7 @@ Ton code Naturegraph : {{ .Token }}
               color: #8a8898;
             "
           >
-            © 2026 Naturegraph — Plateforme citoyenne biodiversité
+            © 2026 Naturegraph · Plateforme citoyenne biodiversité
           </p>
         </td>
       </tr>
@@ -441,7 +443,7 @@ function buildWaitlistEmailHtml({
       <p style="margin:0 0 6px;font-size:13px;color:#4a4869;">
         Une question ? <a href="mailto:naturegraph.fr@gmail.com" style="color:#5f5dd8;text-decoration:none;font-weight:600;">naturegraph.fr@gmail.com</a>
       </p>
-      <p style="margin:0;font-size:12px;color:#8a8898;">© 2026 Naturegraph — Plateforme citoyenne biodiversité</p>
+      <p style="margin:0;font-size:12px;color:#8a8898;">© 2026 Naturegraph · Plateforme citoyenne biodiversité</p>
     </td></tr>
   </table>
 </body></html>`

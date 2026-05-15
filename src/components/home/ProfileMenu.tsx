@@ -37,10 +37,11 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { User, Settings, LogOut, Palette, Eye, ChevronRight, Type } from 'lucide-react'
+import { User, Settings, LogOut, Palette, Eye, ChevronRight, Type, ShieldCheck } from 'lucide-react'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAccessibility, type TextSize } from '@/contexts/AccessibilityContext'
+import { useIsAdmin } from '@/hooks/useIsAdmin'
 import { LogoutModal } from './LogoutModal'
 
 // ─── Types & constantes ───────────────────────────────────────────────────────
@@ -312,6 +313,9 @@ export function ProfileMenu({ onClose, onOpenSettings }: ProfileMenuProps) {
   const { profile, signOut } = useAuth()
   const navigate = useNavigate()
   const { textSize, setTextSize, highContrast, setHighContrast } = useAccessibility()
+  // BATCH 85 : lien direct vers /admin pour les comptes admin (super_admin/moderator/support).
+  // Lecture cachée 5 min via React Query, donc pas de re-fetch a chaque ouverture du menu.
+  const { isAdmin, role } = useIsAdmin()
 
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
@@ -413,6 +417,20 @@ export function ProfileMenu({ onClose, onOpenSettings }: ProfileMenuProps) {
               label="Paramètres"
               onClick={() => onOpenSettings?.()}
             />
+            {/* Administration — visible uniquement pour les comptes admin (BATCH 85).
+                Le RLS bloque deja l'acces aux donnees admin pour les non-admins,
+                mais on cache l'entree de menu pour ne pas la suggerer aux users
+                normaux (decision Nicolas : compte admin invisible). */}
+            {isAdmin && (
+              <MenuItem
+                icon={<ShieldCheck className="size-5" />}
+                label={role === 'super_admin' ? 'Administration' : 'Espace admin'}
+                onClick={() => {
+                  onClose()
+                  navigate('/admin')
+                }}
+              />
+            )}
           </div>
         </div>
 

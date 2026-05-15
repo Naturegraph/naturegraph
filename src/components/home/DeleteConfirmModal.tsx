@@ -68,24 +68,41 @@ export function DeleteConfirmModal({ onClose, onConfirm }: DeleteConfirmModalPro
         {t('home.post.deleteModal.warning')}
       </p>
 
-      {/* Actions */}
-      <div className="flex gap-3 mt-6">
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex-1 h-11 rounded-button border border-border text-foreground font-semibold text-sm hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-        >
-          {t('home.post.deleteModal.cancel')}
-        </button>
+      {/*
+        Actions — BATCH 87 : style DS aligne sur LogoutModal et le reste de l'app.
+        Annuler : secondary (btn-press) / Confirmer : destructive flat avec --color-error-action
+      */}
+      <div className="flex flex-col gap-2.5 mt-6">
         <button
           type="button"
           onClick={() => {
             onConfirm()
             onClose()
           }}
-          className="flex-1 h-11 rounded-button bg-red-600 text-white font-semibold text-sm hover:bg-red-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2"
+          className="
+            w-full h-12 px-6 rounded-full
+            bg-[var(--color-error-action)] text-[var(--color-text-white)]
+            font-bold text-base
+            transition-all
+            hover:opacity-90 active:scale-[0.98]
+            focus-visible:outline-none focus-visible:ring-2
+            focus-visible:ring-[var(--color-error-action)] focus-visible:ring-offset-2
+          "
         >
           {t('home.post.deleteModal.confirm')}
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="
+            w-full h-12 px-6 rounded-full
+            btn-press btn-press-secondary
+            bg-transparent text-[var(--color-text-primary)]
+            font-bold text-base
+            transition-all
+          "
+        >
+          {t('home.post.deleteModal.cancel')}
         </button>
       </div>
     </>
