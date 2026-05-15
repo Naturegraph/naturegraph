@@ -8,21 +8,81 @@
  *   - remember = false → session écrite dans sessionStorage (effacée à la
  *                        fermeture du navigateur → reconnexion = nouveau OTP)
  *
+ * BATCH 115 — Safety iOS Safari Private Mode :
+ *   Tous les accès localStorage/sessionStorage sont enveloppés dans try/catch.
+ *   iOS Safari Private Mode lève QUOTA_EXCEEDED_ERR sur setItem au-delà de 0-5 MB.
+ *   Sans try/catch, l'auth crash silencieusement et le user ne peut pas se logger.
+ *   Fallback : memoire en cours (objet `memoryStorage`) → la session existe
+ *   uniquement le temps de l'onglet (acceptable en mode privé).
+ *
  * Limite connue — cookies HttpOnly impossibles en SPA pur :
  *   Un vrai stockage HttpOnly nécessiterait un backend proxy (Next.js SSR,
  *   edge function) émettant des cookies côté serveur. Ici on utilise le
- *   meilleur compromis possible en Vite SPA, en s'appuyant sur :
- *     - la rotation automatique des refresh tokens par Supabase,
- *     - l'access token JWT court (1h),
- *     - la révocation côté serveur via signOut() ou changement de mot de passe.
+ *   meilleur compromis possible en Vite SPA.
  *
  * Le flag "remember" est lui-même stocké dans sessionStorage : il est posé
  * avant l'envoi de l'OTP (signInWithOtp) et consommé au moment de la
  * vérification (verifyOtp), quand Supabase écrit la session via setItem().
  */
 
-/** Clé sessionStorage où est posé le flag "remember me" pendant le flow OTP */
 const REMEMBER_KEY = 'naturegraph-auth-remember'
+
+// BATCH 115 : fallback in-memory pour iOS Safari Private Mode (QUOTA_EXCEEDED)
+const memoryStorage = new Map<string, string>()
+
+// ─── Wrappers safe pour localStorage/sessionStorage ──────────────────────────
+
+function safeLocalGet(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key)
+  } catch {
+    return memoryStorage.get(`L:${key}`) ?? null
+  }
+}
+
+function safeLocalSet(key: string, value: string): void {
+  try {
+    window.localStorage.setItem(key, value)
+  } catch {
+    memoryStorage.set(`L:${key}`, value)
+  }
+}
+
+function safeLocalRemove(key: string): void {
+  try {
+    window.localStorage.removeItem(key)
+  } catch {
+    /* private mode : pas d'erreur */
+  }
+  memoryStorage.delete(`L:${key}`)
+}
+
+function safeSessionGet(key: string): string | null {
+  try {
+    return window.sessionStorage.getItem(key)
+  } catch {
+    return memoryStorage.get(`S:${key}`) ?? null
+  }
+}
+
+function safeSessionSet(key: string, value: string): void {
+  try {
+    window.sessionStorage.setItem(key, value)
+  } catch {
+    memoryStorage.set(`S:${key}`, value)
+  }
+}
+
+function safeSessionRemove(key: string): void {
+  try {
+    window.sessionStorage.removeItem(key)
+  } catch {
+    /* private mode : pas d'erreur */
+  }
+  memoryStorage.delete(`S:${key}`)
+}
+
+// ─── Public API ───────────────────────────────────────────────────────────────
 
 /**
  * Pose le choix "Se souvenir de moi" AVANT que Supabase écrive la session.
@@ -31,16 +91,16 @@ const REMEMBER_KEY = 'naturegraph-auth-remember'
 export function setRememberMe(remember: boolean): void {
   if (typeof window === 'undefined') return
   if (remember) {
-    sessionStorage.setItem(REMEMBER_KEY, '1')
+    safeSessionSet(REMEMBER_KEY, '1')
   } else {
-    sessionStorage.removeItem(REMEMBER_KEY)
+    safeSessionRemove(REMEMBER_KEY)
   }
 }
 
 /** Retourne l'état courant du flag "remember me" */
 export function isRememberMeActive(): boolean {
   if (typeof window === 'undefined') return false
-  return sessionStorage.getItem(REMEMBER_KEY) === '1'
+  return safeSessionGet(REMEMBER_KEY) === '1'
 }
 
 /**
@@ -58,24 +118,24 @@ export function isRememberMeActive(): boolean {
 export const authStorage = {
   getItem(key: string): string | null {
     if (typeof window === 'undefined') return null
-    return window.localStorage.getItem(key) ?? window.sessionStorage.getItem(key)
+    return safeLocalGet(key) ?? safeSessionGet(key)
   },
 
   setItem(key: string, value: string): void {
     if (typeof window === 'undefined') return
     if (isRememberMeActive()) {
-      window.localStorage.setItem(key, value)
-      window.sessionStorage.removeItem(key)
+      safeLocalSet(key, value)
+      safeSessionRemove(key)
     } else {
-      window.sessionStorage.setItem(key, value)
-      window.localStorage.removeItem(key)
+      safeSessionSet(key, value)
+      safeLocalRemove(key)
     }
   },
 
   removeItem(key: string): void {
     if (typeof window === 'undefined') return
-    window.localStorage.removeItem(key)
-    window.sessionStorage.removeItem(key)
+    safeLocalRemove(key)
+    safeSessionRemove(key)
   },
 }
 
@@ -85,10 +145,9 @@ export const authStorage = {
  */
 export function clearAuthStorage(): void {
   if (typeof window === 'undefined') return
-  // Purge la clé Supabase + le flag remember
   const keys = ['naturegraph-auth', REMEMBER_KEY]
   for (const k of keys) {
-    window.localStorage.removeItem(k)
-    window.sessionStorage.removeItem(k)
+    safeLocalRemove(k)
+    safeSessionRemove(k)
   }
 }
