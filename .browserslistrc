@@ -1,0 +1,21 @@
+# BATCH 115 : Cible navigateurs supportés en production
+#
+# Couvre ~99% des utilisateurs actifs en 2026 :
+#   - Chrome / Edge 88+ (jan 2021)
+#   - Firefox 78+ (juin 2020)
+#   - Safari 14+ (sept 2020)
+#   - iOS Safari 14+ (sept 2020)
+#   - Samsung Internet, Opera (last 2 versions)
+#
+# Utilisé par autoprefixer (via postcss.config.js) pour ajouter les prefixes
+# CSS (-webkit-, -moz-) automatiquement selon les besoins de ces navigateurs.
+# Vite ESBuild lit aussi browserslist pour ses transformations JS.
+
+last 2 versions
+> 0.5%
+not dead
+Safari >= 14
+iOS >= 14
+Firefox >= 78
+Edge >= 88
+Chrome >= 87

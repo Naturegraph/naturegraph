@@ -17,6 +17,11 @@ export default defineConfig({
     },
   },
   build: {
+    // BATCH 115 : cible explicite cross-browser pour le bundle prod.
+    // Couvre Safari 14+ (sept 2020), iOS 14+, Chrome 87+, Firefox 78+, Edge 88+
+    // = ~99% des utilisateurs actifs en 2026. Évite que esbuild émette
+    // du code ES2022+ que Safari 14 ne comprend pas.
+    target: ['es2020', 'edge88', 'firefox78', 'chrome87', 'safari14'],
     rollupOptions: {
       output: {
         manualChunks: {
