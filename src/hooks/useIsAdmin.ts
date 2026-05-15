@@ -45,7 +45,11 @@ export function useIsAdmin() {
       return data as unknown as AdminUserRow
     },
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000,
+    // BATCH 98 : staleTime réduit de 5min → 30s + refetch on mount.
+    // Avant : un changement de role en DB ne se reflétait pas avant 5min,
+    // donnant l'impression que le bouton Admin disparaissait (cache stale).
+    staleTime: 30 * 1000,
+    refetchOnMount: true,
   })
 
   return {

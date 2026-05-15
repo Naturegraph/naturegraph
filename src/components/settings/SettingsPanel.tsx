@@ -53,7 +53,7 @@ import { SettingsHelpView } from './SettingsHelpView'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /** ID des sous-vues — chaque section ouvre une sous-vue interne au panel. */
-type SettingsSection = 'security' | 'notifications' | 'help' | 'license'
+type SettingsSection = 'security' | 'notifications' | 'help' | 'license' | 'terms' | 'privacy'
 
 interface SettingsPanelProps {
   /** Ferme le panel (revient au profil) */
@@ -276,25 +276,22 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
         {section === null && (
           <div className="shrink-0 px-6 pt-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:pb-6 flex flex-col items-center gap-2">
             <div className="flex items-center gap-6">
+              {/*
+                BATCH 97 : liens CGU + Politique de confidentialite actives.
+                Ils ouvrent une sous-vue interne au panel (pas de navigation),
+                le bouton retour ramene sur la liste principale Parametres.
+              */}
               <button
                 type="button"
-                disabled
-                aria-disabled="true"
-                title={t('settings.footer.comingLater', {
-                  defaultValue: 'Disponible prochainement',
-                })}
-                className="font-title font-bold text-base leading-6 underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded cursor-not-allowed disabled:opacity-90"
+                onClick={() => setSection('terms')}
+                className="font-title font-bold text-base leading-6 underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
               >
                 {t('settings.footer.terms', { defaultValue: 'CGU' })}
               </button>
               <button
                 type="button"
-                disabled
-                aria-disabled="true"
-                title={t('settings.footer.comingLater', {
-                  defaultValue: 'Disponible prochainement',
-                })}
-                className="font-title font-bold text-base leading-6 underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded cursor-not-allowed disabled:opacity-90"
+                onClick={() => setSection('privacy')}
+                className="font-title font-bold text-base leading-6 underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
               >
                 {t('settings.footer.privacy', {
                   defaultValue: 'Politique de confidentialité',
@@ -538,6 +535,8 @@ const SECTION_TITLES: Record<SettingsSection, (t: SimpleT) => string> = {
   notifications: (t) => t('settings.items.notifications', { defaultValue: 'Notifications' }),
   help: (t) => t('settings.items.help', { defaultValue: "Besoin d'aide ?" }),
   license: (t) => t('settings.items.license', { defaultValue: "Licence et droits d'auteur" }),
+  terms: (t) => t('legal.terms.title', { defaultValue: 'Mentions légales' }),
+  privacy: (t) => t('legal.privacy.title', { defaultValue: 'Politique de confidentialité' }),
 }
 
 interface SettingsSubViewProps {
@@ -568,7 +567,63 @@ function SettingsSubView({ section }: SettingsSubViewProps) {
     return <SettingsLicenseView />
   }
 
+  // BATCH 97 : sous-vues CGU + Politique de confidentialité — réutilisent le
+  // même contenu i18n que les pages publiques /legal et /privacy. Le retour
+  // remet le SettingsPanel en mode liste principale (pas de navigation
+  // externe) — pas de conflit avec l'état ouvert du panel.
+  if (section === 'terms') {
+    return <SettingsLegalDocView kind="terms" />
+  }
+  if (section === 'privacy') {
+    return <SettingsLegalDocView kind="privacy" />
+  }
+
   return null
+}
+
+// ─── Sous-vues : CGU + Politique de confidentialité (BATCH 97) ───────────────
+
+/**
+ * Sous-vue legale partagee : affiche le contenu de legal.terms.* ou legal.privacy.*
+ * exactement comme sur les pages /legal et /privacy publiques, mais integre dans
+ * le SettingsPanel pour eviter de quitter le panel et perdre l'etat ouvert.
+ *
+ * Highlight des marqueurs [À COMPLÉTER ...] desactive ici (panel deja contextuel,
+ * pas besoin de visibilite supplementaire pour Nicolas en preview).
+ */
+function SettingsLegalDocView({ kind }: { kind: 'terms' | 'privacy' }) {
+  const { t } = useTranslation()
+  const sectionCount = kind === 'terms' ? 6 : 11
+  const i18nNamespace = kind === 'terms' ? 'legal.terms' : 'legal.privacy'
+  const sections = Array.from({ length: sectionCount }, (_, i) => ({
+    titleKey: `${i18nNamespace}.section${i + 1}Title`,
+    contentKey: `${i18nNamespace}.section${i + 1}Content`,
+  }))
+
+  return (
+    <article className="px-6 pb-6">
+      <header className="mb-6">
+        <p className="text-xs text-muted-foreground">
+          {t(`${i18nNamespace}.lastUpdated`, {
+            defaultValue: 'Dernière mise à jour : 02 mai 2026',
+          })}
+        </p>
+      </header>
+
+      <div className="flex flex-col gap-6">
+        {sections.map((section, index) => (
+          <section key={section.titleKey}>
+            <h3 className="text-base font-semibold text-foreground mb-2">
+              {index + 1}. {t(section.titleKey, { defaultValue: '' })}
+            </h3>
+            <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">
+              {t(section.contentKey, { defaultValue: '' })}
+            </p>
+          </section>
+        ))}
+      </div>
+    </article>
+  )
 }
 
 // ─── Sous-vue : Licence et droits d'auteur ────────────────────────────────────
