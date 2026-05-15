@@ -9,24 +9,32 @@
 // Les ratios des images sont préservés naturellement (pas d'aspect-ratio
 // imposé sur les `.gallery-item`) → vrai effet masonry.
 
+// BATCH 88 (2026-05-15) : spacing reduit de 8px a 4px sur mobile/tablet pour
+// densifier l'affichage et reduire l'effet "trop aere" entre colonnes et rows.
 .gallery-masonry {
   columns: 2;
-  column-gap: 8px;
+  column-gap: 4px;
 
   // Tablet
   @media (min-width: 768px) {
     columns: 3;
+    column-gap: 6px;
   }
   // Desktop
   @media (min-width: 1024px) {
     columns: 4;
+    column-gap: 6px;
   }
 }
 
 .gallery-item {
   break-inside: avoid;
   -webkit-column-break-inside: avoid;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   display: inline-block;
   width: 100%;
+
+  @media (min-width: 768px) {
+    margin-bottom: 6px;
+  }
 }
