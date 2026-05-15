@@ -106,6 +106,8 @@ describe('formatGroupedActors', () => {
     return {
       ...mk({}),
       group_count: usernames.length,
+      // BATCH 107 : group_ids requis sur GroupedNotification
+      group_ids: usernames.map((_u, i) => `n${i}`),
       grouped_actors: usernames.map((u, i) => ({
         id: `u${i}`,
         username: u,

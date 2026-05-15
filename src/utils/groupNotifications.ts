@@ -16,6 +16,8 @@ import type { Notification } from '@/services/notificationService'
 export interface GroupedNotification extends Notification {
   /** Nombre total de notifs représentées par cette ligne (>= 1) */
   group_count: number
+  /** IDs de toutes les notifs représentées (pour mark-as-read groupé, BATCH 107) */
+  group_ids: string[]
   /** Liste des acteurs (pour affichage multi-avatars) — toujours inclut le principal */
   grouped_actors: Array<{
     id: string | null
@@ -40,6 +42,7 @@ export function groupNotifications(notifs: Notification[]): GroupedNotification[
     const group: GroupedNotification = {
       ...n,
       group_count: 1,
+      group_ids: [n.id],
       grouped_actors: [
         { id: n.actor_id, username: n.actor_username, avatar_url: n.actor_avatar_url },
       ],
@@ -76,6 +79,7 @@ export function groupNotifications(notifs: Notification[]): GroupedNotification[
 
       usedIds.add(other.id)
       group.group_count += 1
+      group.group_ids.push(other.id)
       allRead = allRead && other.read
       // Déduplique par actor_id (un même user peut avoir plusieurs notifs, on compte une fois)
       if (!group.grouped_actors.some((a) => a.id && a.id === other.actor_id)) {

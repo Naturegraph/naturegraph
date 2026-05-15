@@ -12,11 +12,13 @@
  */
 
 import { useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Key, Plus, Copy, Mail, X, Loader2 } from 'lucide-react'
+import { Key, Plus, Copy, Mail, X, Loader2, Trash2, ExternalLink } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useToast } from '@/contexts/ToastContext'
 import { useAdminAction } from '@/hooks/useAdminAction'
 import { STALE_TIMES } from '@/constants/reactQuery'
@@ -96,6 +98,8 @@ export default function AdminBeta() {
   // useIsAdmin n'est plus necessaire ici car useAdminAction l'utilise en interne.
   const { logAction } = useAdminAction()
   const [isGenerating, setIsGenerating] = useState(false)
+  // BATCH 107 : modale double-confirmation pour suppression réelle
+  const [keyToDelete, setKeyToDelete] = useState<BetaAccessKey | null>(null)
 
   // Quota
   const { data: quota } = useQuery<BetaQuota | null>({
@@ -124,6 +128,38 @@ export default function AdminBeta() {
         .limit(100)
       return (data ?? []) as unknown as BetaAccessKey[]
     },
+    staleTime: STALE_TIMES.MEDIUM,
+  })
+
+  // BATCH 107 : Map user_id → profil pour les clés utilisées (afficher qui a utilisé quoi)
+  // On groupe les used_by_user_id et on les fetch en un seul query .in('id', ids)
+  // pour éviter N+1 requests.
+  const { data: keyUsersMap = {} } = useQuery<
+    Record<string, { username: string; first_name: string; last_name: string }>
+  >({
+    queryKey: [
+      'beta-keys-users',
+      keys
+        .map((k) => k.used_by_user_id)
+        .filter(Boolean)
+        .sort(),
+    ],
+    queryFn: async () => {
+      const userIds = Array.from(
+        new Set(keys.map((k) => k.used_by_user_id).filter((id): id is string => !!id)),
+      )
+      if (!supabase || userIds.length === 0) return {}
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, username, first_name, last_name')
+        .in('id', userIds)
+      const map: Record<string, { username: string; first_name: string; last_name: string }> = {}
+      for (const p of data ?? []) {
+        map[p.id] = { username: p.username, first_name: p.first_name, last_name: p.last_name }
+      }
+      return map
+    },
+    enabled: keys.length > 0,
     staleTime: STALE_TIMES.MEDIUM,
   })
 
@@ -232,6 +268,33 @@ export default function AdminBeta() {
     }
   }
 
+  /**
+   * BATCH 107 : Suppression réelle d'une clé (DELETE FROM beta_access_keys).
+   * À distinguer de handleDeactivateKey qui ne fait qu'un UPDATE is_active = false.
+   * Utile pour nettoyer les clés de test/erreur du tableau sans garder de trace.
+   * Si la clé a déjà été utilisée, on bloque côté UI (la donnée est liée au signup).
+   */
+  async function handleDeleteKey() {
+    if (!supabase || !keyToDelete) return
+    const target = keyToDelete
+    try {
+      const { error } = await supabase.from('beta_access_keys').delete().eq('id', target.id)
+      if (error) throw error
+      toast.success(`Clé ${target.code} supprimée`)
+      queryClient.invalidateQueries({ queryKey: ['beta-keys'] })
+      await logAction({
+        action: 'beta.key_delete',
+        targetType: 'beta_access_key',
+        targetId: target.id,
+        metadata: { code: target.code, batch_number: target.batch_number },
+      })
+    } catch (err) {
+      toast.error('Erreur suppression clé', err instanceof Error ? err.message : undefined)
+    } finally {
+      setKeyToDelete(null)
+    }
+  }
+
   async function handleCopyCode(code: string) {
     try {
       await navigator.clipboard.writeText(code)
@@ -243,47 +306,47 @@ export default function AdminBeta() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* ── Header + Quota ───────────────────────────────────────── */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-foreground">
-          {t('admin.beta.title', { defaultValue: 'Gestion beta fermee' })}
-        </h1>
-        {quota && (
-          <div className="flex flex-wrap items-center gap-4 text-sm">
-            <span className="px-3 py-1 rounded-full bg-primary-light text-primary font-medium">
-              Phase {quota.current_phase}
-            </span>
-            <span className="text-foreground">
-              <strong>{quota.current_user_count}</strong> / {quota.max_users_total} users (
-              {Math.round((quota.current_user_count / quota.max_users_total) * 100)}%)
-            </span>
-            <span
-              className={
-                quota.accepting_new_signups
-                  ? 'text-[var(--color-success,#16a34a)]'
-                  : 'text-[var(--color-error,#dc2626)]'
-              }
-            >
-              {quota.accepting_new_signups ? '🟢 Accepting signups' : '🔴 Closed'}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* ── Actions ─────────────────────────────────────────────── */}
-      <div className="flex flex-wrap gap-3">
-        <Button variant="primary" size="md" onClick={handleGenerateKeys} disabled={isGenerating}>
-          {isGenerating ? (
-            <span className="inline-flex items-center gap-2">
-              <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
-              Generation...
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-2">
-              <Plus className="size-4" aria-hidden="true" />
-              Generer 10 cles (vague {nextBatch})
-            </span>
+      {/* ── Header (BATCH 107 : bouton à droite pour cohérence avec AdminUsers) ── */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-2xl font-bold text-foreground">
+            {t('admin.beta.title', { defaultValue: 'Gestion beta fermee' })}
+          </h1>
+          {quota && (
+            <div className="flex flex-wrap items-center gap-4 text-sm">
+              <span className="px-3 py-1 rounded-full bg-primary-light text-primary font-medium">
+                Phase {quota.current_phase}
+              </span>
+              <span className="text-foreground">
+                <strong>{quota.current_user_count}</strong> / {quota.max_users_total} users (
+                {Math.round((quota.current_user_count / quota.max_users_total) * 100)}%)
+              </span>
+              <span
+                className={
+                  quota.accepting_new_signups
+                    ? 'text-[var(--color-success,#16a34a)]'
+                    : 'text-[var(--color-error,#dc2626)]'
+                }
+              >
+                {quota.accepting_new_signups ? '🟢 Accepting signups' : '🔴 Closed'}
+              </span>
+            </div>
           )}
+        </div>
+        <Button
+          variant="primary"
+          size="md"
+          onClick={handleGenerateKeys}
+          disabled={isGenerating}
+          icon={
+            isGenerating ? (
+              <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
+            ) : (
+              <Plus className="size-4" aria-hidden="true" />
+            )
+          }
+        >
+          {isGenerating ? 'Génération…' : `Générer 10 clés (vague ${nextBatch})`}
         </Button>
       </div>
 
@@ -307,6 +370,7 @@ export default function AdminBeta() {
                   <th className="text-left px-5 py-3 font-semibold">Code</th>
                   <th className="text-left px-5 py-3 font-semibold">Batch</th>
                   <th className="text-left px-5 py-3 font-semibold">Statut</th>
+                  <th className="text-left px-5 py-3 font-semibold">Utilisateur</th>
                   <th className="text-left px-5 py-3 font-semibold">Expire</th>
                   <th className="text-right px-5 py-3 font-semibold">Actions</th>
                 </tr>
@@ -314,6 +378,8 @@ export default function AdminBeta() {
               <tbody>
                 {keys.map((k, idx) => {
                   const status = keyStatus(k)
+                  const usedBy = k.used_by_user_id ? keyUsersMap[k.used_by_user_id] : null
+                  const isUsed = k.current_uses >= k.max_uses
                   return (
                     <tr
                       key={k.id}
@@ -330,6 +396,23 @@ export default function AdminBeta() {
                           {status.label}
                         </span>
                       </td>
+                      {/* BATCH 107 : utilisateur ayant consommé la clé (si used) */}
+                      <td className="px-5 py-3 text-xs">
+                        {usedBy ? (
+                          <Link
+                            to={`/profile/${usedBy.username}`}
+                            className="inline-flex items-center gap-1 text-primary hover:underline"
+                            title={`${usedBy.first_name} ${usedBy.last_name}`}
+                          >
+                            @{usedBy.username}
+                            <ExternalLink className="size-3 opacity-60" aria-hidden="true" />
+                          </Link>
+                        ) : isUsed && k.used_by_user_id ? (
+                          <span className="text-muted-foreground italic">utilisateur supprimé</span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
                       <td className="px-5 py-3 text-muted-foreground">
                         {formatRelativeDate(k.expires_at)}
                       </td>
@@ -343,14 +426,28 @@ export default function AdminBeta() {
                           >
                             <Copy className="size-4" aria-hidden="true" />
                           </button>
-                          {k.is_active && k.current_uses < k.max_uses && (
+                          {k.is_active && !isUsed && (
                             <button
                               type="button"
                               onClick={() => handleDeactivateKey(k.id, k.code)}
                               aria-label={`Désactiver ${k.code}`}
-                              className="size-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-error-bg)] text-muted-foreground hover:text-[var(--color-error)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)]"
+                              title="Désactiver (conserve la trace)"
+                              className="size-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-warning-bg)] text-muted-foreground hover:text-[var(--color-warning)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-warning)]"
                             >
                               <X className="size-4" aria-hidden="true" />
+                            </button>
+                          )}
+                          {/* BATCH 107 : suppression réelle (DELETE).
+                              Bloquée si la clé a déjà été utilisée pour préserver l'audit. */}
+                          {!isUsed && (
+                            <button
+                              type="button"
+                              onClick={() => setKeyToDelete(k)}
+                              aria-label={`Supprimer ${k.code}`}
+                              title="Supprimer définitivement"
+                              className="size-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-error-bg)] text-muted-foreground hover:text-[var(--color-error)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)]"
+                            >
+                              <Trash2 className="size-4" aria-hidden="true" />
                             </button>
                           )}
                         </div>
@@ -394,6 +491,19 @@ export default function AdminBeta() {
           </ul>
         )}
       </section>
+
+      {/* BATCH 107 : Modal de confirmation pour la suppression définitive d'une clé.
+          Action irréversible : DELETE FROM beta_access_keys WHERE id = X. */}
+      {keyToDelete && (
+        <ConfirmModal
+          title={`Supprimer définitivement la clé ${keyToDelete.code} ?`}
+          description="Cette action est irréversible. La clé sera supprimée du tableau et de l'audit. À utiliser uniquement pour nettoyer des clés générées par erreur. Pour conserver la trace, préférer 'Désactiver'."
+          confirmLabel="Supprimer définitivement"
+          variant="danger"
+          onCancel={() => setKeyToDelete(null)}
+          onConfirm={handleDeleteKey}
+        />
+      )}
 
       {/* ── Stats signups 7j ──────────────────────────────────── */}
       {signupStats && (
