@@ -22,49 +22,50 @@
   }
 }
 
-// ── Heading styles — DANS @layer base + :where() pour spécificité zéro ──
-// Double protection contre l'override des utilitaires Tailwind :
-//   1. `@layer base` → toujours plus bas que `@layer utilities` dans la cascade
-//   2. `:where(body h1)` → spécificité (0,0,0,0)
-// Bug 2026-05-01 : sans le layer, ces règles gagnaient TOUJOURS contre les
-// utilitaires Tailwind (qui sont dans @layer utilities) à cause des règles
-// de cascade des layers. Avec @layer base, tout utilitaire Tailwind override
-// automatiquement même `text-2xl` (specifity 0,0,1,0).
+// ── Heading styles — BATCH 47 fix ──
+// Bug 2026-05-14 : `:where(body h1-h5)` avait spec (0,0,0,0) battu par
+// Tailwind v4 preflight reset `h1-h6 { font-size: inherit }` (spec 0,0,0,1).
+// Resultat : tous les <h1-h5> bruts (sans class) heritaient de body 16px
+// au lieu d'utiliser nos sizes Figma. Casse 4+ composants Landing/Accordion.
+//
+// Fix : retirer `:where()` pour avoir spec (0,0,0,2) > preflight (0,0,0,1).
+// Les utilities Tailwind (`text-2xl`, etc.) battent toujours car elles sont
+// dans `@layer utilities` cascadée APRES `@layer base`.
 
 @layer base {
-  :where(body h1) {
-    font-size: $font-size-3xl; // 48px — Figma: Title/H1 (default uniquement)
+  body h1 {
+    font-size: $font-size-3xl; // 48px — Figma: Title/H1
     font-weight: $font-weight-bold;
     line-height: $line-height-tight;
   }
 
-  :where(body h2) {
-    font-size: $font-size-2xl; // 32px — Figma: Title/H2 (default uniquement)
+  body h2 {
+    font-size: $font-size-2xl; // 32px — Figma: Title/H2
     font-weight: $font-weight-bold;
     line-height: $line-height-tight;
   }
 
-  :where(body h3) {
+  body h3 {
     font-size: $font-size-xl; // 24px — Figma: Headings/Heading
     font-weight: $font-weight-semibold;
     line-height: $line-height-tight;
   }
 
-  :where(body h4) {
+  body h4 {
     font-size: $font-size-xl; // 24px — Figma: Headings/Heading/Size: 24
     font-weight: $font-weight-bold;
     line-height: $line-height-tight;
   }
 
-  :where(body h5) {
+  body h5 {
     font-size: $font-size-lg; // 18px — Figma: Headings/Subheading/Size: 18
     font-weight: $font-weight-bold;
     line-height: $line-height-tight;
   }
-}
 
-body h6 {
-  font-size: $font-size-md; // 16px
-  font-weight: $font-weight-semibold;
-  line-height: $line-height-tight;
+  body h6 {
+    font-size: $font-size-md; // 16px
+    font-weight: $font-weight-semibold;
+    line-height: $line-height-tight;
+  }
 }
