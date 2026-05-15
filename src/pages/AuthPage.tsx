@@ -14,15 +14,19 @@ import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
+import { useBetaAccess } from '@/hooks/useBetaAccess'
 import { SignupForm, LoginForm, VerificationForm } from '@/components/auth'
 import { BetaKeyGate } from '@/components/auth/BetaKeyGate'
 import { AuthOrbBackground, useAuthOrbTracking } from '@/components/auth/AuthOrbBackground'
 import OnboardingComponent from '@/components/onboarding'
+import { validateBetaKey } from '@/services/betaService'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 // BATCH 30 / BETA_STRATEGY : mode 'beta-key' avant signup quand beta fermee.
-// Activable via env var VITE_BETA_GATE_ENABLED (toggle pour tests / dev).
+// BATCH 48 : skip mode 'beta-key' si user a deja valide sa cle via /welcome
+// (welcome screen est le point d'entree unique depuis BATCH 45). Le claim de
+// la cle se fait silencieusement post-OTP via validateBetaKey().
 type AuthMode = 'beta-key' | 'signup' | 'login' | 'verification' | 'onboarding'
 
 const BETA_GATE_ENABLED = import.meta.env.VITE_BETA_GATE_ENABLED === 'true'
@@ -62,11 +66,21 @@ export default function AuthPage({
   const { success, error: notifyError } = useToast()
   const prefersReducedMotion = useReducedMotion()
   const { containerRef, mouse, handleMouseMove, handleMouseLeave } = useAuthOrbTracking()
+  // BATCH 48 : si le user vient du welcome screen, il a deja valide sa cle.
+  // On skip alors le BetaKeyGate intermediaire (qui ferait doublon UX).
+  const { code: storedBetaCode, revokeAccess } = useBetaAccess()
 
-  // BATCH 30 : si beta gate active, signup commence par 'beta-key' au lieu de 'signup'.
-  const [mode, setMode] = useState<AuthMode>(
-    initialMode === 'signup' && BETA_GATE_ENABLED ? 'beta-key' : initialMode,
-  )
+  // BATCH 30 + 48 : mode 'beta-key' uniquement si beta gate active ET pas de cle stockee.
+  // Le BetaAccessGuard (router-level) garantit deja qu'on a une cle valide,
+  // donc en pratique storedBetaCode est presque toujours present ici.
+  // Fallback 'beta-key' garde le filet de securite si le user arrive ici sans
+  // passer par /welcome (cas degrade ou bypass du guard).
+  const [mode, setMode] = useState<AuthMode>(() => {
+    if (initialMode === 'signup' && BETA_GATE_ENABLED && !storedBetaCode) {
+      return 'beta-key'
+    }
+    return initialMode
+  })
   const [initialAuthMode, setInitialAuthMode] = useState<'signup' | 'login'>(initialMode)
   const [pendingEmail, setPendingEmail] = useState('')
   // BATCH 30 : keyId stocke apres validation beta — utile pour future traçabilite (Phase 2).
@@ -96,8 +110,29 @@ export default function AuthPage({
     success(t('auth.success.codeSent'), t('auth.success.codeSentDescription'))
   }
 
-  function handleVerificationSuccess() {
+  async function handleVerificationSuccess() {
     if (initialAuthMode === 'signup') {
+      // BATCH 48 : claim de la cle beta apres OTP verifie (signup confirme).
+      // Le user a deja valide sa cle au welcome screen (readonly), maintenant
+      // on consomme reellement (claim_beta_access_key incremente current_uses
+      // + decrement quota global via Edge Function).
+      // Si claim echoue (rare : cle expiree entre welcome et signup), on
+      // affiche un toast mais on continue le flow (le compte est deja cree
+      // dans Supabase Auth — pas de rollback).
+      if (storedBetaCode && BETA_GATE_ENABLED) {
+        const claimResult = await validateBetaKey(storedBetaCode)
+        if (claimResult.valid && claimResult.key_id) {
+          setValidatedKeyId(claimResult.key_id)
+        } else {
+          // Claim a echoue mais compte cree. Log + revoke access local.
+          notifyError(
+            t('auth.beta.claimWarning', {
+              defaultValue: 'Compte cree mais validation cle echouee. Contacte le support.',
+            }),
+          )
+          revokeAccess()
+        }
+      }
       setMode('onboarding')
     } else {
       // Login : vérifier si l'onboarding est terminé via le profil (username réel)
