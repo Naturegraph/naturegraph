@@ -108,9 +108,15 @@ Deno.serve(async (req: Request) => {
       headers: { ...CORS, 'Content-Type': 'application/json' },
     })
   } catch (e) {
-    return new Response(JSON.stringify({ ok: false, error: String(e) }), {
-      status: 500,
-      headers: { ...CORS, 'Content-Type': 'application/json' },
-    })
+    // BATCH 78 (CodeQL #1) : ne pas exposer la stack trace au client.
+    // Log cote serveur pour debug, retourner un message generique.
+    console.error('[delete-account] internal error:', e)
+    return new Response(
+      JSON.stringify({ ok: false, error: 'Internal server error during account deletion.' }),
+      {
+        status: 500,
+        headers: { ...CORS, 'Content-Type': 'application/json' },
+      },
+    )
   }
 })
