@@ -572,8 +572,9 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
         aria-modal="true"
         aria-label="Recherche"
         className={[
-          // Mobile : bottom sheet fixe
-          'fixed inset-x-0 bottom-0 z-50 rounded-t-xl',
+          // Mobile : bottom sheet positionné au-dessus de la MobileBottomNav
+          //   (h-14 + safe-area), z-[60] pour passer au-dessus de la navbar (z-50).
+          'fixed inset-x-0 z-[60] rounded-t-xl bottom-[calc(3.5rem+env(safe-area-inset-bottom))]',
           // Desktop : dropdown absolue ancrée au bouton
           'md:absolute md:inset-auto md:bottom-auto',
           'md:top-[calc(100%+8px)] md:right-0 md:w-[480px] md:rounded-lg',

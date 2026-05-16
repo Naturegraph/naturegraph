@@ -22,7 +22,7 @@ import { useUserPosts } from '@/hooks/usePost'
 import { useSavedPostsPage } from '@/hooks/useSavedPosts'
 import { useToast } from '@/contexts/ToastContext'
 import { HomeNavbar } from '@/components/home/HomeNavbar'
-import { MobileBottomNav } from '@/components/home/MobileBottomNav'
+import { MobileNavLayer } from '@/components/home/MobileNavLayer'
 import { ProfileHeader } from '@/components/profile/ProfileHeader'
 import type { ProfileDisplayData } from '@/components/profile/ProfileHeader'
 import { ProfileTabs } from '@/components/profile/ProfileTabs'
@@ -86,7 +86,7 @@ function ProfileSkeleton() {
           </div>
         </div>
       </div>
-      <MobileBottomNav />
+      <MobileNavLayer />
     </div>
   )
 }
@@ -218,7 +218,7 @@ export default function Profile() {
             {t('profile.backToFeed')}
           </Link>
         </main>
-        <MobileBottomNav />
+        <MobileNavLayer />
       </div>
     )
   }
@@ -246,7 +246,7 @@ export default function Profile() {
             {t('profile.backToFeed')}
           </Link>
         </main>
-        <MobileBottomNav />
+        <MobileNavLayer />
       </div>
     )
   }
@@ -290,7 +290,7 @@ export default function Profile() {
         </div>
       </main>
 
-      <MobileBottomNav />
+      <MobileNavLayer />
 
       {showEditPanel && (
         <EditProfilePanel

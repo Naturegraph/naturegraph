@@ -493,18 +493,18 @@ export function ProfileMenu({ onClose, onOpenSettings }: ProfileMenuProps) {
         {menuContent}
       </div>
 
-      {/* Mobile : bottom sheet */}
+      {/* Mobile : bottom sheet positionné au-dessus de la MobileBottomNav
+          (h-14 + safe-area) pour rester entièrement accessible. */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Menu profil"
-        className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-[var(--color-bg-primary)] border-t border-border rounded-t-2xl shadow-xl overflow-hidden"
+        className="md:hidden fixed inset-x-0 z-[60] bg-[var(--color-bg-primary)] border-t border-border rounded-t-2xl shadow-xl overflow-hidden max-h-[80vh] flex flex-col bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
       >
-        <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
+        <div className="flex justify-center pt-3 pb-1 shrink-0" aria-hidden="true">
           <div className="w-10 h-1 bg-border rounded-full" />
         </div>
-        {menuContent}
-        <div className="h-safe-bottom h-4" aria-hidden="true" />
+        <div className="overflow-y-auto">{menuContent}</div>
       </div>
 
       {/* Modal de déconnexion saisonnière */}

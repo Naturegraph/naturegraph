@@ -24,7 +24,7 @@ import { HomeNavbar } from '@/components/home/HomeNavbar'
 import { GuestSidebar } from '@/components/home/GuestSidebar'
 import { ProfileSidebar } from '@/components/home/ProfileSidebar'
 import { FeedSection } from '@/components/home/FeedSection'
-import { MobileBottomNav } from '@/components/home/MobileBottomNav'
+import { MobileNavLayer } from '@/components/home/MobileNavLayer'
 import { ContributeModal } from '@/components/home/ContributeModal'
 
 // Chargé à la demande — chunk séparé (éco-conception : ne charge que si besoin)
@@ -118,8 +118,9 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Navigation mobile — visible md:hidden */}
-      <MobileBottomNav onContributeClick={() => setShowContributeModal(true)} />
+      {/* Navigation mobile — visible md:hidden.
+          MobileNavLayer orchestre la navbar bottom + les sheets (search, menu, profil, settings). */}
+      <MobileNavLayer onContributeClick={() => setShowContributeModal(true)} />
 
       {/* Sélection du type de contribution — dropdown desktop / bottom sheet mobile */}
       {showContributeModal && (

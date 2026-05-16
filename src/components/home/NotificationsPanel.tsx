@@ -444,12 +444,15 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
         {panelContent}
       </div>
 
-      {/* Mobile : bottom sheet (BATCH 114 : safe-area-inset-bottom pour iPhone home bar) */}
+      {/* Mobile : bottom sheet, positionné au-dessus de la MobileBottomNav
+          (h-14 + safe-area) pour ne pas masquer le footer "Tout marquer comme lu".
+          Le z-[60] passe au-dessus de la navbar (z-50) en sécurité même si le
+          panneau venait à se chevaucher (cas de scrolls inhabituels). */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label={t('home.notifications.title')}
-        className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-cream-lighter border-t border-border rounded-t-xl shadow-xl overflow-hidden pb-[env(safe-area-inset-bottom)]"
+        className="md:hidden fixed inset-x-0 z-[60] bg-cream-lighter border-t border-border rounded-t-xl shadow-xl overflow-hidden bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
       >
         <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
           <div className="w-10 h-1 bg-border rounded-full" />

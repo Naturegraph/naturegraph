@@ -23,6 +23,14 @@ interface MobileBottomNavProps {
   onSearchClick?: () => void
   /** Callback pour ouvrir le menu de navigation mobile (hamburger) */
   onMenuClick?: () => void
+  /**
+   * Callback pour ouvrir le menu profil (bottom sheet) en mode authentifié.
+   * Cohérence desktop : on ouvre d'abord le menu (Mon profil / Paramètres / Thème),
+   * et la navigation vers /profile se fait depuis ce menu.
+   * Si non fourni → fallback navigation directe vers /profile (rétrocompat).
+   * En mode invité, on navigue toujours vers /login (jamais ce callback).
+   */
+  onProfileClick?: () => void
 }
 
 /**
@@ -33,6 +41,7 @@ export function MobileBottomNav({
   onContributeClick,
   onSearchClick,
   onMenuClick,
+  onProfileClick,
 }: MobileBottomNavProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -116,13 +125,28 @@ export function MobileBottomNav({
           <Search className={iconSize} strokeWidth={2} aria-hidden="true" />
         </button>
 
-        {/* ── Profil ───────────────────────────────────────────────────────── */}
+        {/* ── Profil ───────────────────────────────────────────────────────────
+            Authentifié : ouvre le ProfileMenu (bottom sheet) — cohérence desktop.
+            Le menu contient Mon profil / Paramètres / Thème / Accessibilité / Déconnexion.
+            Si onProfileClick non fourni, fallback navigation directe (rétrocompat).
+            Invité : navigation directe vers /login. */}
         <button
           type="button"
-          onClick={() => navigate(isAuthenticated ? '/profile' : '/login')}
+          onClick={() => {
+            if (!isAuthenticated) {
+              navigate('/login')
+              return
+            }
+            if (onProfileClick) {
+              onProfileClick()
+            } else {
+              navigate('/profile')
+            }
+          }}
           className={itemClasses(isActive('/profile'))}
           aria-label={t('nav.profile')}
           aria-current={isActive('/profile') ? 'page' : undefined}
+          aria-haspopup={isAuthenticated && onProfileClick ? 'dialog' : undefined}
         >
           {isAuthenticated ? (
             <img
