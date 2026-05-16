@@ -1381,5 +1381,16 @@
         "support": "support"
       }
     }
+  },
+  "notFound": {
+    "title": "This page has migrated elsewhere",
+    "eyebrow": "Page not found",
+    "description": "The address you're looking for doesn't exist or has been moved. No worries, we'll bring you back to familiar ground.",
+    "backHome": "Back to home",
+    "exploreFeed": "Explore the feed",
+    "tryThese": "Or try these pages",
+    "suggestionsLabel": "Page suggestions",
+    "search": "Search",
+    "notifications": "Notifications"
   }
 }
