@@ -1381,5 +1381,16 @@
         "support": "support"
       }
     }
+  },
+  "notFound": {
+    "title": "Cette page a migré ailleurs",
+    "eyebrow": "Page introuvable",
+    "description": "L'adresse que tu cherches n'existe pas ou a été déplacée. Pas de panique, on te ramène en terrain connu.",
+    "backHome": "Retour à l'accueil",
+    "exploreFeed": "Explorer le feed",
+    "tryThese": "Ou essaie ces pages",
+    "suggestionsLabel": "Suggestions de pages",
+    "search": "Rechercher",
+    "notifications": "Notifications"
   }
 }
