@@ -372,12 +372,16 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
         onClick={onClose}
       />
 
-      {/* ── Panneau droit ────────────────────────────────────────────────── */}
+      {/* ── Panneau droit ──────────────────────────────────────────────────
+          z-[60] sur mobile pour passer au-dessus de la MobileBottomNav (z-50)
+          et garantir que les CTA "Suivant" / "Précédent" en bas du formulaire
+          restent tactiles. Sur desktop la navbar bottom n'existe pas, comportement
+          identique. */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label={t('contribute.encounterTitle')}
-        className="fixed inset-y-0 right-0 z-50 w-full md:w-[440px] bg-cream-lighter flex flex-col shadow-2xl"
+        className="fixed inset-y-0 right-0 z-[60] w-full md:w-[440px] bg-cream-lighter flex flex-col shadow-2xl"
       >
         {/* ── Header sticky ──────────────────────────────────────────────────
             Figma : gap 12px entre la row top et la progress bar, padding 24/16px,

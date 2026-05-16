@@ -236,12 +236,15 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
         {cards}
       </div>
 
-      {/* ── Mobile : bottom sheet ────────────────────────────────────────────── */}
+      {/* ── Mobile : bottom sheet positionné au-dessus de la MobileBottomNav
+              (h-14 + safe-area) — sinon les cartes "Rencontre nature" / "Instant nature"
+              tombent sous la navbar et leurs clics sont interceptés.
+              z-[60] > navbar z-50 pour ne pas laisser la navbar capturer les taps. */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Partager une contribution"
-        className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-[var(--color-bg-primary)] border-t border-border rounded-t-xl shadow-xl overflow-hidden"
+        className="md:hidden fixed inset-x-0 z-[60] bg-[var(--color-bg-primary)] border-t border-border rounded-t-xl shadow-xl overflow-hidden bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
       >
         {/* Handle bar */}
         <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
