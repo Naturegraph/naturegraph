@@ -12,15 +12,27 @@
  */
 
 import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Key, Plus, Copy, Mail, X, Loader2, Trash2, ExternalLink, BarChart3 } from 'lucide-react'
+import {
+  Key,
+  Plus,
+  Copy,
+  Mail,
+  X,
+  Loader2,
+  Trash2,
+  ExternalLink,
+  BarChart3,
+  Eye,
+} from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useToast } from '@/contexts/ToastContext'
 import { useAdminAction } from '@/hooks/useAdminAction'
+import { useBetaAccess } from '@/hooks/useBetaAccess'
 import { STALE_TIMES } from '@/constants/reactQuery'
 
 // ─── Types DB rows ────────────────────────────────────────────────────────
@@ -94,9 +106,13 @@ export default function AdminBeta() {
   const { t } = useTranslation()
   const toast = useToast()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   // BATCH 36 : hook centralise pour audit log (DRY, strategy ligne 562).
   // useIsAdmin n'est plus necessaire ici car useAdminAction l'utilise en interne.
   const { logAction } = useAdminAction()
+  // Nicolas 2026-05-19 : permet au super admin de revoir la welcome screen
+  // comme s'il découvrait le produit (clear le localStorage + redirect /welcome).
+  const { revokeAccess } = useBetaAccess()
   const [isGenerating, setIsGenerating] = useState(false)
   // BATCH 107 : modale double-confirmation pour suppression réelle
   const [keyToDelete, setKeyToDelete] = useState<BetaAccessKey | null>(null)
@@ -542,21 +558,39 @@ L'équipe Naturegraph`
             </div>
           )}
         </div>
-        <Button
-          variant="primary"
-          size="md"
-          onClick={handleGenerateKeys}
-          disabled={isGenerating}
-          icon={
-            isGenerating ? (
-              <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
-            ) : (
-              <Plus className="size-4" aria-hidden="true" />
-            )
-          }
-        >
-          {isGenerating ? 'Génération…' : `Générer 10 clés (vague ${nextBatch})`}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Nicolas 2026-05-19 : bouton pour revoir l'écran d'accueil beta
+              comme s'il était un nouvel utilisateur. Clear le localStorage
+              `naturegraph-beta-access` + redirige vers /welcome.
+              Le super admin peut ainsi tester le flow vu par ses testeurs. */}
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => {
+              revokeAccess()
+              toast.success("Accès beta réinitialisé — redirection vers l'écran d'accueil…")
+              setTimeout(() => navigate('/welcome'), 500)
+            }}
+            icon={<Eye className="size-4" aria-hidden="true" />}
+          >
+            Aperçu écran d&apos;accueil
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={handleGenerateKeys}
+            disabled={isGenerating}
+            icon={
+              isGenerating ? (
+                <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
+              ) : (
+                <Plus className="size-4" aria-hidden="true" />
+              )
+            }
+          >
+            {isGenerating ? 'Génération…' : `Générer 10 clés (vague ${nextBatch})`}
+          </Button>
+        </div>
       </div>
 
       {/* ── BATCH 108 : Tabs pour cohérence avec AdminUsers (Clés / Waitlist / Stats) ── */}
