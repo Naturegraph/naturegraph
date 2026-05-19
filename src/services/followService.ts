@@ -2,7 +2,7 @@
  * followService — Suivi d'utilisateurs
  *
  * Table `follows` — RLS : on ne peut suivre que pour soi-même.
- * Utilisé par les boutons Follow / Unfollow et par "Ne plus suivre" du
+ * Utilisé par les boutons Migrer / Ne plus migrer et par "Ne plus migrer avec" du
  * PostOptionsMenu (second-agent/12).
  */
 

@@ -239,13 +239,14 @@ export function SharePopover({ postId, shareUrl, title, onClose }: SharePopoverP
         </div>
       </div>
 
-      {/* Mobile : bottom sheet */}
-      <div className="md:hidden fixed inset-x-0 bottom-0 z-[80]">
+      {/* Mobile : bottom sheet positionné au-dessus de la MobileBottomNav
+          (h-14 + safe-area) pour que toutes les actions restent tactiles. */}
+      <div className="md:hidden fixed inset-x-0 bottom-0 z-[80] pb-[env(safe-area-inset-bottom)]">
         <div
           role="dialog"
           aria-modal="true"
           aria-label={t('home.share.title', { defaultValue: "Partager l'observation" })}
-          className="bg-background rounded-t-2xl shadow-2xl px-5 pt-4 pb-8"
+          className="bg-background rounded-t-2xl shadow-2xl px-5 pt-4 pb-5"
         >
           <div className="flex justify-center mb-3" aria-hidden="true">
             <div className="w-10 h-1 bg-border rounded-full" />

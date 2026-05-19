@@ -28,7 +28,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   UserX,
-  UserPlus,
+  TreeDeciduous,
   Bookmark,
   BookmarkCheck,
   Link,
@@ -51,7 +51,7 @@ import { useDeletePost } from '@/hooks/usePost'
 interface PostOptionsMenuProps {
   /** ID du post — pour construire l'URL de partage et les requêtes API */
   postId: string
-  /** Nom d'utilisateur de l'auteur (pour "Ne plus suivre @username") */
+  /** Nom d'utilisateur de l'auteur (pour "Ne plus migrer avec @username") */
   authorUsername: string
   /** ID de l'auteur (uuid) — utilisé par follow/block (cible des actions) */
   authorId?: string
@@ -173,15 +173,22 @@ export function PostOptionsMenu({
     return () => document.removeEventListener('keydown', fn)
   }, [onClose])
 
-  // Desktop : fermer si clic en dehors
+  // Fermer si clic en dehors du menu (desktop dropdown + mobile sheet).
+  // 2026-05-19 : `click` post-React + selector `[role="menu"]` au lieu de
+  // `mousedown` + `contains(ref)` — sinon les actions menu (Migrer, Favoris,
+  // Copier, Masquer, Signaler) ne s'exécutent pas en mobile car onClose()
+  // ferme le menu avant le click handler React.
   useEffect(() => {
     const fn = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) onClose()
+      const target = e.target as HTMLElement | null
+      if (!target) return
+      if (target.closest('[role="menu"]')) return
+      onClose()
     }
-    const t = setTimeout(() => document.addEventListener('mousedown', fn), 50)
+    const timer = setTimeout(() => document.addEventListener('click', fn), 50)
     return () => {
-      clearTimeout(t)
-      document.removeEventListener('mousedown', fn)
+      clearTimeout(timer)
+      document.removeEventListener('click', fn)
     }
   }, [onClose])
 
@@ -301,25 +308,30 @@ export function PostOptionsMenu({
       <MenuItem
         itemRef={firstItemRef as React.RefObject<HTMLButtonElement>}
         icon={
-          isCurrentlyFollowing ? (
-            <UserX className="size-5" />
-          ) : (
-            <UserPlus className="size-5 text-primary" />
-          )
+          // Branding Naturegraph : Migrer (vers / avec) = follow. L'icône
+          // TreeDeciduous est utilisée partout dans l'app (ProfileHeader,
+          // ProfileCommunity) pour incarner ce verbe. Cohérence visuelle
+          // imposée même dans le menu options du post.
+          isCurrentlyFollowing ? <UserX className="size-5" /> : <TreeDeciduous className="size-5" />
         }
         label={
           isCurrentlyFollowing
-            ? t('home.post.options.unfollow', { username: authorUsername })
+            ? t('home.post.options.unfollow', {
+                defaultValue: 'Ne plus migrer avec @{{username}}',
+                username: authorUsername,
+              })
             : t('home.post.options.follow', {
-                defaultValue: 'Suivre @{{username}}',
+                defaultValue: 'Migrer vers @{{username}}',
                 username: authorUsername,
               })
         }
         description={
           isCurrentlyFollowing
-            ? t('home.post.options.unfollowDesc')
+            ? t('home.post.options.unfollowDesc', {
+                defaultValue: 'Tu ne verras plus ses publications',
+              })
             : t('home.post.options.followDesc', {
-                defaultValue: 'Vous verrez ses publications dans votre feed',
+                defaultValue: 'Tu verras ses publications dans ton feed',
               })
         }
         onClick={() => handleTodo('follow-toggle')}
@@ -444,7 +456,7 @@ export function PostOptionsMenu({
         <div
           role="menu"
           aria-label={t('home.post.optionsMenu')}
-          className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-background rounded-t-2xl shadow-xl overflow-hidden"
+          className="md:hidden fixed inset-x-0 bottom-0 z-[60] bg-background rounded-t-2xl shadow-xl overflow-hidden pb-[env(safe-area-inset-bottom)]"
         >
           {/* Handle bar */}
           <div className="flex justify-center pt-3 pb-2" aria-hidden="true">
