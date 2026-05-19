@@ -424,6 +424,10 @@
     "title": "Explore biodiversity",
     "subtitle": "Observe, document and share your nature discoveries",
     "feedEmpty": "No observations yet",
+    "drawer": {
+      "title": "Trending",
+      "ariaLabel": "Trending and discoveries"
+    },
     "trending": {
       "title": "Trending",
       "thisWeek": "This week",

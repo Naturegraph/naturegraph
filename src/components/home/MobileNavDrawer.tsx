@@ -1,19 +1,19 @@
 /**
- * MobileNavDrawer — Drawer déclenché par l'icône burger de la MobileBottomNav.
+ * MobileNavDrawer — Drawer "Tendances" déclenché par l'icône burger mobile.
  *
- * Objectif (Nicolas 2026-05-19) : exposer sur mobile UNIQUEMENT le contenu des
- * sidebars desktop (left = GuestSidebar / ProfileSidebar, right = StatsSidebar).
- * La navigation (Accueil, Recherche, Notifications, Profil) est déjà couverte
- * par la MobileBottomNav — pas de duplication ici.
+ * Objectif (Nicolas 2026-05-19) : exposer sur mobile le contenu des sidebars
+ * desktop (left + right). La navigation (Accueil, Recherche, Notif, Profil)
+ * est déjà couverte par la MobileBottomNav — pas de duplication ici.
  *
  * Structure (bottom sheet ≤ 95vh) :
- *   1. Header titre + X (pas de handle bar — cohérence avec FilterPanel)
- *   2. Sidebar gauche : ProfileSidebar (connecté) OU GuestSidebar (invité)
- *   3. Sidebar droite : StatsSidebar (uniquement connecté — composant auth-only)
+ *   1. Handle bar (cohérence avec les autres sheets)
+ *   2. Header titre "Tendances" + X
+ *   3. Sidebar gauche : ProfileSidebar (auth) OU GuestSidebar (invité)
+ *   4. Sidebar droite : StatsSidebar (Impact + Tendances espèces) — affichée
+ *      dans les DEUX modes (le composant gère lui-même invité vs auth).
  *
- * Positionnement : sheet collé au bas qui recouvre la MobileBottomNav.
- * z-[60] passe au-dessus de la navbar (z-50), pb-[calc(...)] interne pour que
- * le contenu reste tactile au-dessus de la zone occupée par la navbar.
+ * Positionnement : sheet collé au bas, recouvre la MobileBottomNav via z-[60].
+ * pb-[env(safe-area-inset-bottom)] juste pour la zone home bar iPhone.
  *
  * Aucune nouvelle dépendance. Réutilise 100 % du Design System existant.
  */
@@ -69,7 +69,7 @@ export function MobileNavDrawer({ onClose }: MobileNavDrawerProps) {
       <aside
         role="dialog"
         aria-modal="true"
-        aria-label={t('nav.menu', { defaultValue: 'Menu' })}
+        aria-label={t('home.drawer.title', { defaultValue: 'Tendances' })}
         className="md:hidden fixed inset-x-0 bottom-0 z-[60] bg-cream-lighter border-t border-border rounded-t-2xl shadow-xl flex flex-col max-h-[95vh] pb-[env(safe-area-inset-bottom)]"
       >
         {/* Handle bar — cohérence avec les autres bottom sheets (9/10 en ont
@@ -78,10 +78,12 @@ export function MobileNavDrawer({ onClose }: MobileNavDrawerProps) {
           <div className="w-10 h-1 bg-border rounded-full" />
         </div>
 
-        {/* Header — Titre + close */}
+        {/* Header — Titre + close.
+            Titre orienté contenu (stats + découvertes) plutôt qu'un générique
+            "Menu" qui ne reflète pas ce qu'on affiche (retour Nicolas). */}
         <div className="flex items-center justify-between px-5 pt-2 pb-3 shrink-0">
           <h2 className="font-heading text-lg font-bold text-foreground">
-            {t('nav.menu', { defaultValue: 'Menu' })}
+            {t('home.drawer.title', { defaultValue: 'Tendances' })}
           </h2>
           <button
             ref={closeBtnRef}
@@ -94,19 +96,17 @@ export function MobileNavDrawer({ onClose }: MobileNavDrawerProps) {
           </button>
         </div>
 
-        {/* Contenu scrollable — uniquement sidebars (left + right).
-            On garde un gap pour aérer entre les deux blocs de cards. */}
+        {/* Contenu scrollable — sidebars left + right (gap pour aérer).
+            StatsSidebar est affichée dans les deux modes (le composant
+            précise "Affichée en mode invité et authentifié"). */}
         <div className="overflow-y-auto flex-1 px-4 pb-4 flex flex-col gap-4">
-          {/* Sidebar gauche : profil/guest (cards stats, intérêts, suggestions…) */}
+          {/* Sidebar gauche : profil/guest (stats perso ou CTA inscription). */}
           {isAuthenticated ? <ProfileSidebar /> : <GuestSidebar />}
 
-          {/* Sidebar droite : stats & tendances — seulement en mode authentifié
-              (le composant ne montre rien d'utile pour un visiteur déconnecté). */}
-          {isAuthenticated && (
-            <Suspense fallback={<div className="h-32 rounded-card bg-muted/20" />}>
-              <StatsSidebar />
-            </Suspense>
-          )}
+          {/* Sidebar droite : Impact + Tendances espèces (toujours affichée). */}
+          <Suspense fallback={<div className="h-32 rounded-card bg-muted/20" />}>
+            <StatsSidebar />
+          </Suspense>
         </div>
       </aside>
     </>
