@@ -2,20 +2,22 @@
  * EncounterStep2 — Étape 2 : Carnet d'observations
  *
  * Permet d'ajouter une ou plusieurs espèces observées à l'observation :
- *   - Recherche par nom commun ou scientifique (données TAXREF mock)
+ *   - Recherche par nom commun ou scientifique (mock COMMON_SPECIES en dev,
+ *     species_master Supabase en prod — Phase 2 selon PRD_SPECIES_DATABASE)
  *   - Chaque entrée comporte un compteur d'individus modifiable
  *   - Option "Je ne connais pas l'espèce" pour une entrée inconnue
  *   - Toggle "Activer l'aide à l'identification" pour les mystères
  *
  * Design inspiré du pattern "Carnet d'observations" Figma.
- * TODO [BACKEND] — Brancher sur la vraie API TAXREF (voir SpeciesSearch.tsx).
+ * Phase 1 (Nicolas 2026-05-19) : source de données = GBIF + Wikidata (CC0).
+ * TAXREF/INPN retiré du produit (cf. PRD_SPECIES_DATABASE.md).
  */
 
 import { useState, useId } from 'react'
 import { Search, Trash2, Plus, Minus, HelpCircle, Filter, X, Check } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
-import { TAXREF_SPECIES } from '@/constants/taxrefSpecies'
+import { COMMON_SPECIES } from '@/constants/commonSpecies'
 import { Button } from '@/components/ui/Button'
 import hermineImg from '@/assets/images/hermine-empty-state.png'
 
@@ -71,8 +73,8 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
 
   const filteredBase =
     groupFilters.size === 0
-      ? TAXREF_SPECIES
-      : TAXREF_SPECIES.filter((s) => groupFilters.has(s.group))
+      ? COMMON_SPECIES
+      : COMMON_SPECIES.filter((s) => groupFilters.has(s.group))
 
   const results =
     query.length >= 2
@@ -85,7 +87,7 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
           .slice(0, 6)
       : []
 
-  function handleSelect(species: (typeof TAXREF_SPECIES)[0]) {
+  function handleSelect(species: (typeof COMMON_SPECIES)[0]) {
     onAdd(species)
     setQuery('')
     setOpen(false)

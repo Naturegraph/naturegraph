@@ -1,18 +1,21 @@
 /**
- * Espèces TAXREF mock — données de référence pour l'autocomplétion
+ * Espèces communes — fallback de référence pour l'autocomplétion en dev/offline.
  *
- * Source : INPN (Inventaire National du Patrimoine Naturel), licence CC-BY.
- * Les cd_nom correspondent aux identifiants TAXREF officiels.
+ * Phase 1 (Nicolas 2026-05-19) : la stratégie TAXREF/INPN a été abandonnée
+ * (cf. PRD_SPECIES_DATABASE.md). On bascule sur GBIF (CC0) + Wikidata (CC0)
+ * pour la base de données complète en production — voir table Supabase
+ * `species_master`. Ce fichier sert uniquement de fallback minimal pour le
+ * dev local et les tests, quand `species_master` n'est pas accessible.
  *
- * Utilisé comme fallback quand Supabase / taxref_cache est indisponible.
- * En production, la recherche passe par searchService → taxref_cache.
- * Attribution CC-BY INPN obligatoire à conserver dans l'UI (voir CLAUDE.md).
+ * Les IDs ci-dessous sont des identifiants TAXREF historiques (cd_nom), conservés
+ * uniquement pour la traçabilité interne. Ils seront alignés sur les GBIF
+ * taxonKeys lors de la migration Phase 2.
  */
 
 import type { TaxonomicGroup } from '@/types/database'
 import { CATEGORY_EMOJIS } from '@/utils/badgeHelpers'
 
-export interface TaxrefSpecies {
+export interface CommonSpeciesEntry {
   id: string
   commonName: string
   scientificName: string
@@ -40,8 +43,11 @@ export const TAXONOMIC_GROUP_CONFIG: Record<string, { emoji: string; label: stri
   other: { emoji: '✨', label: 'Autre' },
 }
 
-/** Échantillon d'espèces TAXREF pour l'autocomplétion en développement */
-export const TAXREF_SPECIES: TaxrefSpecies[] = [
+/**
+ * Échantillon d'espèces courantes pour l'autocomplétion en dev/offline.
+ * Le seed complet (~5000 espèces) vient de `species_master` en production.
+ */
+export const COMMON_SPECIES: CommonSpeciesEntry[] = [
   { id: '4001', commonName: 'Mésange charbonnière', scientificName: 'Parus major', group: 'birds' },
   {
     id: '3586',

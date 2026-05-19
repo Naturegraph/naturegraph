@@ -12,7 +12,7 @@
  *   3. ILIKE simple
  *      → fallback universel, plus lent sur grands datasets
  *
- *   4. Mock local (TAXREF_SPECIES)
+ *   4. Mock local (COMMON_SPECIES)
  *      → si Supabase non configuré ou totalement indisponible
  *
  * Règle de sécurité : l'API TAXREF officielle n'est JAMAIS appelée
@@ -20,7 +20,7 @@
  */
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import { TAXREF_SPECIES } from '@/constants/taxrefSpecies'
+import { COMMON_SPECIES } from '@/constants/commonSpecies'
 
 // ─── Types exportés ───────────────────────────────────────────────────────────
 
@@ -49,12 +49,12 @@ const SPECIES_SELECT = 'cd_nom, scientific_name, common_name_fr, "group"' as con
 // ─── Fallback mock local ──────────────────────────────────────────────────────
 
 /**
- * Recherche locale sur le mock TAXREF_SPECIES.
+ * Recherche locale sur le mock COMMON_SPECIES.
  * Utilisée quand Supabase est indisponible.
  */
 function searchSpeciesMock(query: string, limit: number): SpeciesHit[] {
   const q = query.toLowerCase()
-  return TAXREF_SPECIES.filter(
+  return COMMON_SPECIES.filter(
     (s) => s.commonName.toLowerCase().includes(q) || s.scientificName.toLowerCase().includes(q),
   )
     .slice(0, limit)

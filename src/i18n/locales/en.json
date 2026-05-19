@@ -819,7 +819,7 @@
       "unknownDesc": "I'm not looking to identify",
       "searchPlaceholder": "Tit, fox...",
       "noResults": "No species found",
-      "taxrefCredit": "TAXREF data — INPN, CC-BY license",
+      "dataCredit": "Species data: GBIF + Wikidata",
       "skip": "Skip identification",
       "skipFromEmpty": "I don't know, skip",
       "serviceUnavailable": "Search unavailable — please try again",

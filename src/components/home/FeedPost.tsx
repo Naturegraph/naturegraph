@@ -29,7 +29,7 @@ import { ImageSlider } from './ImageSlider'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 import type { ReactionType } from '@/types/database'
 import { useSpecies } from '@/contexts/SpeciesContext'
-import { TAXONOMIC_GROUP_CONFIG } from '@/constants/taxrefSpecies'
+import { TAXONOMIC_GROUP_CONFIG } from '@/constants/commonSpecies'
 
 // ─── Type UI pour les posts du feed ──────────────────────────────────────────
 // Bridge entre le type DB (PostFeedItem) et le composant FeedPost.
