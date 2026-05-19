@@ -372,12 +372,16 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
         onClick={onClose}
       />
 
-      {/* ── Panneau droit ────────────────────────────────────────────────── */}
+      {/* ── Panneau droit ──────────────────────────────────────────────────
+          z-[60] sur mobile pour passer au-dessus de la MobileBottomNav (z-50)
+          et garantir que les CTA "Suivant" / "Précédent" en bas du formulaire
+          restent tactiles. Sur desktop la navbar bottom n'existe pas, comportement
+          identique. */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label={t('contribute.encounterTitle')}
-        className="fixed inset-y-0 right-0 z-50 w-full md:w-[440px] bg-cream-lighter flex flex-col shadow-2xl"
+        className="fixed inset-y-0 right-0 z-[60] w-full md:w-[440px] bg-cream-lighter flex flex-col shadow-2xl"
       >
         {/* ── Header sticky ──────────────────────────────────────────────────
             Figma : gap 12px entre la row top et la progress bar, padding 24/16px,
@@ -689,12 +693,13 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
             </button>
           )}
 
-          {/* BATCH 99 : attribution TAXREF en pied de page (étape 2 uniquement).
-              Hiérarchie de l'info : moins prominente, toujours visible. */}
+          {/* Attribution sources données en pied de page (étape 2 uniquement).
+              Phase 1 (Nicolas 2026-05-19) : TAXREF retiré, on bascule sur
+              GBIF (CC0) + Wikidata (CC0) pour la liste d'espèces. */}
           {step === 2 && (
             <p className="text-[10px] text-muted-foreground text-center mt-1">
-              {t('contribute.species.taxrefCredit', {
-                defaultValue: 'Données TAXREF — INPN, licence CC-BY',
+              {t('contribute.species.dataCredit', {
+                defaultValue: 'Données espèces : GBIF + Wikidata',
               })}
             </p>
           )}

@@ -371,7 +371,7 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
         aria-live="polite"
         aria-busy={isLoading}
         aria-label="Résultats de recherche"
-        className="max-h-[50vh] md:max-h-[400px] overflow-y-auto"
+        className="flex-1 overflow-y-auto md:max-h-[400px] md:flex-none"
       >
         {/* Empty state */}
         {showEmpty && (
@@ -551,20 +551,14 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
 
   return (
     <>
-      {/* ── Backdrop — mobile uniquement (desktop : click-outside via panelRef) ── */}
-      <div
-        className="md:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-50"
-        aria-hidden="true"
-        onClick={onClose}
-      />
-
       {/*
        * ── Panel unique — position responsif via Tailwind ────────────────────
-       *   Mobile  : fixed bottom sheet (inset-x-0 bottom-0, rounded-t-2xl)
-       *   Desktop : absolute dropdown depuis le parent div.relative du header
-       *             (md:absolute override md:inset-auto md:top-[...] md:right-0)
+       *   Mobile  : FULL PAGE (inset-0). Évite le mouvement du sheet quand le
+       *             clavier mobile s'ouvre. Plus lisible, plus conforme.
+       *   Desktop : dropdown ancré au bouton (md:absolute + top/right).
        *
        * Un seul div = un seul role="dialog", un seul panelRef, un seul inputRef.
+       * Pas de backdrop mobile : le panel couvre déjà tout l'écran.
        */}
       <div
         ref={panelRef}
@@ -572,19 +566,16 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
         aria-modal="true"
         aria-label="Recherche"
         className={[
-          // Mobile : bottom sheet fixe
-          'fixed inset-x-0 bottom-0 z-50 rounded-t-xl',
-          // Desktop : dropdown absolue ancrée au bouton
-          'md:absolute md:inset-auto md:bottom-auto',
-          'md:top-[calc(100%+8px)] md:right-0 md:w-[480px] md:rounded-lg',
+          // Mobile : full page, flex-col pour que la zone résultats scrolle
+          // dans son flex-1 (header + champ + filtres restent fixes en haut).
+          // pb-[env(safe-area-inset-bottom)] pour la home bar iPhone.
+          'fixed inset-0 z-[60] flex flex-col pb-[env(safe-area-inset-bottom)]',
+          // Desktop : reset full page → dropdown absolu ancré au bouton
+          'md:absolute md:inset-auto md:top-[calc(100%+8px)] md:right-0 md:w-[480px] md:rounded-lg md:pb-0 md:block',
           // Style commun
           'bg-cream-lighter border border-border shadow-xl overflow-hidden',
         ].join(' ')}
       >
-        {/* Handle bar — mobile uniquement */}
-        <div className="md:hidden flex justify-center pt-3 pb-1" aria-hidden="true">
-          <div className="w-10 h-1 bg-border rounded-full" />
-        </div>
         {panelContent}
       </div>
     </>

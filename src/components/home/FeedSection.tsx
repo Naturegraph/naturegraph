@@ -32,12 +32,15 @@ import { useLocation } from '@/contexts/LocationContext'
 import { useSpecies } from '@/contexts/SpeciesContext'
 import { useFeed, FEED_QUERY_KEY } from '@/hooks/useFeed'
 import { useHiddenPostIds } from '@/hooks/useHiddenPosts'
-import { useLocationCTA } from '@/hooks/useLocationCTA'
 import { useToggleReaction } from '@/hooks/usePost'
-import { LocationPermissionModal } from '@/components/location/LocationPermissionModal'
-import { requestBrowserLocation } from '@/lib/location/geocoding'
+// LocationPermissionModal + useLocationCTA + requestBrowserLocation retirés
+// de la Phase 1 (Nicolas 2026-05-19) — peu de données, modale prématurée.
+// Réactiver Phase 2 quand le volume justifiera le CTA géoloc.
+// import { useLocationCTA } from '@/hooks/useLocationCTA'
+// import { LocationPermissionModal } from '@/components/location/LocationPermissionModal'
+// import { requestBrowserLocation } from '@/lib/location/geocoding'
+// import type { LocationFormData } from '@/types/location'
 import type { PostFeedItem, ReactionType } from '@/types/database'
-import type { LocationFormData } from '@/types/location'
 import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
 
 /**
@@ -282,7 +285,9 @@ export function FeedSection({
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
-  const { updateLocation, locationCoords } = useLocation()
+  // updateLocation retiré avec la LocationPermissionModal (Phase 1) — n'est
+  // plus déclenché qu'au signup/onboarding et via les Settings.
+  const { locationCoords } = useLocation()
   // Species Context Layer — filtre global activé depuis la recherche (PRD §3.4 / §6.1)
   const { activeSpecies, clearActiveSpecies } = useSpecies()
   const [activeTab, setActiveTab] = useState<FeedTab>('recent')
@@ -302,29 +307,9 @@ export function FeedSection({
     [isAuthenticated],
   )
 
-  // ─── CTA localisation (pour les utilisateurs connectés non-localisés) ─────
-  // Modale affichée 1x/session — triggered depuis le tab "Pour vous"
-  const { showModal, dismissModal } = useLocationCTA()
-
-  /**
-   * Handler "Activer" de la modale localisation — tente la géoloc navigateur.
-   * Ferme la modale et sauvegarde la localisation si succès.
-   */
-  const handleActivateLocation = useCallback(async () => {
-    dismissModal()
-    const city = await requestBrowserLocation()
-    if (city) {
-      const locationData: LocationFormData = {
-        city,
-        radiusKm: 75,
-        visibility: 'region',
-        consentSource: 'browser',
-      }
-      await updateLocation(locationData).catch(() => {
-        // Erreur non-bloquante — l'utilisateur peut réessayer depuis les Settings
-      })
-    }
-  }, [dismissModal, updateLocation])
+  // CTA localisation retiré de la Phase 1 (Nicolas 2026-05-19) — peu de
+  // données au démarrage rend la modale prématurée. La géoloc reste
+  // disponible via l'onboarding et le LocationModal dans la navbar header.
 
   // Map des onglets UI → paramètres postService
   const tabToServiceTab: Record<FeedTab, 'recent' | 'popular' | 'for_you'> = {
@@ -716,13 +701,8 @@ export function FeedSection({
       )}
 
       {/* BATCH 74 : modale discovery "Pour vous" supprimee de la beta. */}
-
-      {/* Modale permission géolocalisation — utilisateurs connectés non-localisés (1x/session) */}
-      <LocationPermissionModal
-        isOpen={showModal}
-        onActivate={handleActivateLocation}
-        onSkip={dismissModal}
-      />
+      {/* LocationPermissionModal retirée Phase 1 (Nicolas 2026-05-19) —
+          composant conservé dans /components/location pour réactivation Phase 2. */}
     </section>
   )
 }

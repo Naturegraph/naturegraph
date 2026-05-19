@@ -14,7 +14,7 @@
  *   2. Notifications      → sous-vue Bientôt (Phase 2)
  *   3. Besoin d'aide ?    → sous-vue Bientôt (Phase 2)
  *   4. Partage tes idées  → lien externe (Tally form, à configurer)
- *   5. Licence et droits  → sous-vue avec attributions (TAXREF, Unsplash, Lucide…)
+ *   5. Licence et droits  → sous-vue avec attributions (GBIF, Wikidata, Unsplash, Lucide…)
  *   6. Déconnexion        → useAuth().signOut() + redirect /home
  *   7. Supprimer compte   → modal confirmation (DeleteAccountModal)
  *
@@ -233,7 +233,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               <ArrowLeft className="size-5" aria-hidden="true" />
             </button>
           ) : null}
-          <h2 className="font-title font-bold text-[32px] leading-[120%] text-foreground flex-1">
+          <h2 className="font-title font-bold text-xl md:text-[32px] leading-[120%] text-foreground flex-1 text-balance">
             {section === null
               ? t('settings.title', { defaultValue: 'Paramètres' })
               : SECTION_TITLES[section](t)}
@@ -634,17 +634,22 @@ function SettingsLegalDocView({ kind }: { kind: 'terms' | 'privacy' }) {
  * 5 sections séparées par dividers (1px bg-border) :
  *   1. Utilisation des contenus (intro)
  *   2. Droits sur les photos partagées (propriété user + licence d'usage)
- *   3. Données issues de sources tierces (TAXREF + lien)
+ *   3. Données issues de sources tierces (GBIF + Wikidata, Phase 1)
  *   4. Respect des droits d'auteur (interdictions)
  *   5. Besoin d'en savoir plus ? (lien vers CGU + contact)
+ *
+ * Phase 1 (Nicolas 2026-05-19) : TAXREF retiré au profit de GBIF (CC0) +
+ * Wikidata (CC0). Une intégration TAXREF officielle pourra revenir
+ * Phase 2 quand un vrai accord/API key sera en place.
  *
  * Le contenu est en clés i18n avec defaultValue (à intégrer dans fr.json/en.json).
  */
 function SettingsLicenseView() {
   const { t } = useTranslation()
 
-  // Lien officiel TAXREF (référentiel taxonomique INPN/MNHN).
-  const TAXREF_URL = 'https://inpn.mnhn.fr/programme/referentiel-taxonomique-taxref'
+  // Sources de données ouvertes utilisées en Phase 1.
+  const GBIF_URL = 'https://www.gbif.org'
+  const WIKIDATA_URL = 'https://www.wikidata.org'
 
   return (
     <div className="flex flex-col">
@@ -698,28 +703,51 @@ function SettingsLicenseView() {
         <p className="text-sm text-foreground leading-relaxed">
           {t('settings.license.sourcesBody1', {
             defaultValue:
-              'Nous utilisons des bases de données tierces pour enrichir les informations sur les espèces.',
+              'Pour enrichir les informations sur les espèces (noms vernaculaires, taxonomie, photos de référence), nous utilisons des bases de données ouvertes et collaboratives.',
           })}
         </p>
         <p className="text-sm text-foreground leading-relaxed">
           {t('settings.license.sourcesBody2', {
             defaultValue:
-              'Les données intégrées respectent les licences des fournisseurs et restent attribuées à leurs sources respectives.',
+              "Naturegraph s'appuie principalement sur deux sources, distribuées sous licence CC0 (domaine public) :",
           })}
         </p>
+        <ul className="text-sm text-foreground leading-relaxed list-disc pl-6 space-y-1">
+          <li>
+            <a
+              href={GBIF_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+            >
+              GBIF
+            </a>
+            {' : '}
+            {t('settings.license.gbifDesc', {
+              defaultValue:
+                'le référentiel taxonomique international ouvert (Global Biodiversity Information Facility).',
+            })}
+          </li>
+          <li>
+            <a
+              href={WIKIDATA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+            >
+              Wikidata
+            </a>
+            {' : '}
+            {t('settings.license.wikidataDesc', {
+              defaultValue: 'pour les noms vernaculaires en français et en québécois.',
+            })}
+          </li>
+        </ul>
         <p className="text-sm text-foreground leading-relaxed">
-          {t('settings.license.sourcesBody3Prefix', {
-            defaultValue: "Pour plus d'informations, consultez la documentation officielle de ",
+          {t('settings.license.sourcesBody3', {
+            defaultValue:
+              'Les utilisateurs restent libres de proposer des corrections et identifications via la fonction "Demander une identification".',
           })}
-          <a
-            href={TAXREF_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-bold underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-          >
-            Taxref
-          </a>
-          .
         </p>
       </section>
 

@@ -1,33 +1,40 @@
 // ============================================
-// Buttons — Naturegraph
+// Buttons — Naturegraph (Phase 1, simplifié)
 // ============================================
-// Effet 3D "press" partagé par le composant <Button> sur toute l'app.
-// Anciennement dans landing.css (scope trop restreint).
 //
-// BATCH 58 (2026-05-15) : les pseudo-classes :hover/:active/:focus-visible
-// sont scopees avec :not(:disabled) pour qu'un bouton desactive ne
-// reagisse plus aux interactions. Combine avec disabled:opacity-50 et
-// disabled:cursor-not-allowed (Tailwind, Button.tsx baseClasses) =>
-// l'utilisateur voit clairement que le bouton est bloque.
+// 2026-05-19 (Nicolas) : retour terrain sur la version 3D btn-press
+// (shadow portée + transform translateY au hover/active). Trop complexe,
+// peu apprécié pour la Phase 1 → on simplifie radicalement.
+//
+// Nouvelle direction (Phase 1) :
+//   - PAS de shadow (primary ni secondary)
+//   - Primary  : background plein (couleur appliquée via Tailwind sur le composant)
+//   - Secondary: transparent + border simple
+//   - Outline  : transparent + border translucide blanche (fonds sombres : Hero, Discord)
+//   - Hover    : opacity/brightness léger (pas de translation)
+//   - Focus    : outline ring (a11y inchangé)
+//
+// On garde les noms de classes (btn-press, btn-press-primary, etc.) pour
+// éviter de migrer les 12 fichiers consommateurs (rétrocompatibilité).
+// Renommage éventuel en `btn-simple` à voir en Phase 2 cleanup.
+//
+// BATCH 58 (2026-05-15) — règle conservée :
+// :hover/:active/:focus-visible sont scopées avec :not(:disabled) pour
+// qu'un bouton désactivé ne réagisse plus aux interactions. Combine avec
+// disabled:opacity-50 + disabled:cursor-not-allowed (Tailwind, baseClasses
+// dans Button.tsx) → l'utilisateur voit clairement que le bouton est bloqué.
 
-/**
- * .btn-press — Bouton 3D avec shadow portée
- * Le bouton "flotte" légèrement et s'enfonce au clic.
- * --btn-shadow-color : couleur de l'ombre, définie par la variante (.btn-press-primary, etc.)
- */
 .btn-press {
   position: relative;
-  transform: translateY(0);
-  box-shadow: 0 4px 0 0 var(--btn-shadow-color, rgba(0, 0, 0, 0.25));
-  transition:
-    transform 0.1s ease,
-    box-shadow 0.1s ease,
-    filter 0.2s ease;
   cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease,
+    filter 0.15s ease;
 
-  // BATCH 114 : WCAG 2.5.5 touch target minimum 44x44 sur mobile/tablette.
-  // Sur desktop (>=lg/1024px) on relâche la contrainte pour les petits boutons icon-only.
-  // Les boutons explicitement size="sm" en Tailwind (h-8) gardent leur taille via specificity.
+  // WCAG 2.5.5 touch target minimum 44x44 sur mobile/tablette.
+  // Sur desktop (≥1024px) on relâche pour les petits boutons icon-only.
   min-height: 44px;
   min-width: 44px;
 
@@ -38,86 +45,62 @@
 }
 
 .btn-press:not(:disabled):hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 0 0 var(--btn-shadow-color, rgba(0, 0, 0, 0.25));
-  filter: brightness(1.08);
+  // Léger assombrissement, pas de transform.
+  filter: brightness(0.95);
 }
 
 .btn-press:not(:disabled):active {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 0 var(--btn-shadow-color, rgba(0, 0, 0, 0.25));
-  filter: brightness(0.95);
-  transition-duration: 0.04s;
+  filter: brightness(0.88);
 }
 
 .btn-press:not(:disabled):focus-visible {
   outline: 2px solid var(--color-action-default);
-  outline-offset: 3px;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 0 0 var(--btn-shadow-color, rgba(0, 0, 0, 0.25));
+  outline-offset: 2px;
 }
 
-/** Variante primaire — shadow plus foncée que le bg violet */
+// ── Primary ─────────────────────────────────────────────────────────────────
+// Background plein appliqué par le composant via Tailwind
+// (bg-[var(--color-action-default)]). Aucune décoration supplémentaire ici.
 .btn-press-primary {
-  --btn-shadow-color: color-mix(in srgb, var(--color-action-default) 70%, black);
+  // No-op : laisser le composant gérer le background + couleur de texte.
 }
 
-/**
- * Variante secondary — outline teal sur fond clair.
- * Miroir de btn-press-outline mais pour fond blanc/crème.
- * Usage : actions secondaires dans l'interface app (auth, forms).
- */
+// ── Secondary ───────────────────────────────────────────────────────────────
+// Transparent + border simple. Border qui s'assombrit au hover.
 .btn-press-secondary {
-  --btn-shadow-color: rgba(0, 0, 0, 0.06);
-  box-shadow:
-    0 3px 0 0 var(--btn-shadow-color),
-    inset 0 0 0 1.5px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--color-border, rgba(0, 0, 0, 0.18));
 }
 
 .btn-press-secondary:not(:disabled):hover {
-  box-shadow:
-    0 6px 0 0 var(--btn-shadow-color),
-    inset 0 0 0 1.5px rgba(0, 0, 0, 0.28);
+  border-color: var(--color-action-default);
+  background-color: rgba(0, 0, 0, 0.025);
+  filter: none; // override le brightness global, c'est la border qui change
 }
 
 .btn-press-secondary:not(:disabled):active {
-  box-shadow:
-    0 1px 0 0 var(--btn-shadow-color),
-    inset 0 0 0 1.5px rgba(0, 0, 0, 0.18);
+  border-color: var(--color-action-default);
+  background-color: rgba(0, 0, 0, 0.05);
+  filter: none;
 }
 
-.btn-press-secondary:not(:disabled):focus-visible {
-  outline: 2px solid var(--color-action-default);
-  outline-offset: 3px;
-  box-shadow:
-    0 6px 0 0 var(--btn-shadow-color),
-    inset 0 0 0 1.5px rgba(0, 0, 0, 0.28);
-}
-
-/** Variante outline — shadow blanche translucide + border inset */
+// ── Outline ─────────────────────────────────────────────────────────────────
+// Pour fond sombre (Hero landing, Discord). Border translucide blanche.
 .btn-press-outline {
-  --btn-shadow-color: color-mix(in srgb, var(--color-text-white) 20%, transparent);
-  box-shadow:
-    0 4px 0 0 var(--btn-shadow-color),
-    inset 0 0 0 1px color-mix(in srgb, var(--color-text-white) 30%, transparent);
+  border: 1px solid color-mix(in srgb, white 30%, transparent);
 }
 
 .btn-press-outline:not(:disabled):hover {
-  box-shadow:
-    0 6px 0 0 var(--btn-shadow-color),
-    inset 0 0 0 1px color-mix(in srgb, var(--color-text-white) 40%, transparent);
+  border-color: color-mix(in srgb, white 55%, transparent);
+  background-color: rgba(255, 255, 255, 0.06);
+  filter: none;
 }
 
 .btn-press-outline:not(:disabled):active {
-  box-shadow:
-    0 1px 0 0 var(--btn-shadow-color),
-    inset 0 0 0 1px color-mix(in srgb, var(--color-text-white) 30%, transparent);
+  border-color: color-mix(in srgb, white 65%, transparent);
+  background-color: rgba(255, 255, 255, 0.1);
+  filter: none;
 }
 
 .btn-press-outline:not(:disabled):focus-visible {
-  outline: 2px solid var(--color-text-white);
-  outline-offset: 3px;
-  box-shadow:
-    0 6px 0 0 var(--btn-shadow-color),
-    inset 0 0 0 1px color-mix(in srgb, var(--color-text-white) 40%, transparent);
+  outline-color: var(--color-text-white);
 }

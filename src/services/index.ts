@@ -29,8 +29,9 @@
  *                           table: `notebooks` + `notebook_members`
  *                           Ref: NotificationsPanel (type 'notebook')
  *
- *   taxrefService         — cache TAXREF + recherche espèces (API externe ou table locale)
- *                           Ref: SearchPanel, FeedPost (espèces identifiées)
+ *   searchService         — recherche espèces dans species_master (GBIF + Wikidata,
+ *                           Phase 1). Voir PRD_SPECIES_DATABASE.md.
+ *                           Ref: SearchPanel, EncounterStep2 (autocomplete espèces).
  */
 
 export * from './profileService'

@@ -50,6 +50,7 @@ import {
 } from '@/utils/groupNotifications'
 import { trackNotifEvent } from '@/utils/notificationAnalytics'
 import { EmptyState, LoadingState } from '@/components/ui'
+import hermineIcon from '@/assets/images/hermine-icon.png'
 
 // ─── Helpers date ─────────────────────────────────────────────────────────────
 
@@ -211,27 +212,22 @@ function formatGroupLabel(
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
-/** Avatar de l'acteur avec fallback sur initiales. */
-function Avatar({ url, fallback }: { url: string | null; fallback: string }) {
-  if (url) {
-    return (
-      <img
-        src={url}
-        alt=""
-        aria-hidden="true"
-        loading="lazy"
-        width={40}
-        height={40}
-        className="size-10 rounded-full object-cover bg-primary-light"
-      />
-    )
-  }
+/**
+ * Avatar de l'acteur. Si pas de photo, on affiche l'hermine officielle
+ * (cohérence avec le reste de l'app — MobileBottomNav, ProfileHeader,
+ * EditPhotoTab, GuestSidebar, etc.). Plus d'initiales (Nicolas 2026-05-19).
+ */
+function Avatar({ url }: { url: string | null; fallback?: string }) {
   return (
-    <div className="size-10 rounded-full bg-primary-light flex items-center justify-center overflow-hidden">
-      <span className="text-sm font-bold text-primary" aria-hidden="true">
-        {fallback.slice(0, 2).toUpperCase()}
-      </span>
-    </div>
+    <img
+      src={url ?? hermineIcon}
+      alt=""
+      aria-hidden="true"
+      loading="lazy"
+      width={40}
+      height={40}
+      className="size-10 rounded-full object-cover bg-primary-light"
+    />
   )
 }
 
@@ -271,17 +267,29 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
     return () => document.removeEventListener('keydown', fn)
   }, [onClose])
 
-  // Fermer si clic en dehors du panel
+  // Fermer si clic en dehors du panel.
+  // 2026-05-19 (Nicolas) : "Tout marquer comme lu" ne fonctionnait pas en
+  // mobile — même cause que ProfileMenu : `mousedown` document handler
+  // tirait AVANT le click React du bouton interne, et panelRef pointe
+  // uniquement sur le dropdown desktop (caché en mobile). Du coup
+  // `panelRef.current.contains(target)` retournait false même pour un
+  // clic dans le sheet mobile → onClose() avant que la mutation ne fire.
+  // Fix : `click` post-React + `closest('[role="dialog"]')` pour matcher
+  // les 2 dialogues (desktop + mobile).
   useEffect(() => {
     const fn = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose()
+      const target = e.target as HTMLElement | null
+      if (!target) return
+      if (target.closest('[role="dialog"][aria-label="' + t('home.notifications.title') + '"]'))
+        return
+      onClose()
     }
-    const t = setTimeout(() => document.addEventListener('mousedown', fn), 50)
+    const timer = setTimeout(() => document.addEventListener('click', fn), 50)
     return () => {
-      clearTimeout(t)
-      document.removeEventListener('mousedown', fn)
+      clearTimeout(timer)
+      document.removeEventListener('click', fn)
     }
-  }, [onClose])
+  }, [onClose, t])
 
   /**
    * Clic sur une notif (BATCH 107) :
@@ -304,21 +312,12 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
 
   const panelContent = (
     <>
-      {/* Header */}
+      {/* Header — pas de badge unreadCount ici : doublon avec la cloche header
+          qui porte déjà le compteur (Nicolas 2026-05-19). */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-        <div className="flex items-center gap-2">
-          <p className="font-title font-bold text-base text-foreground">
-            {t('home.notifications.title')}
-          </p>
-          {unreadCount > 0 && (
-            <span
-              className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full"
-              aria-label={t('home.notifications.unreadBadge', { count: unreadCount })}
-            >
-              {unreadCount}
-            </span>
-          )}
-        </div>
+        <p className="font-title font-bold text-base text-foreground">
+          {t('home.notifications.title')}
+        </p>
         <button
           type="button"
           onClick={onClose}
@@ -444,12 +443,15 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
         {panelContent}
       </div>
 
-      {/* Mobile : bottom sheet (BATCH 114 : safe-area-inset-bottom pour iPhone home bar) */}
+      {/* Mobile : bottom sheet, positionné au-dessus de la MobileBottomNav
+          (h-14 + safe-area) pour ne pas masquer le footer "Tout marquer comme lu".
+          Le z-[60] passe au-dessus de la navbar (z-50) en sécurité même si le
+          panneau venait à se chevaucher (cas de scrolls inhabituels). */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label={t('home.notifications.title')}
-        className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-cream-lighter border-t border-border rounded-t-xl shadow-xl overflow-hidden pb-[env(safe-area-inset-bottom)]"
+        className="md:hidden fixed inset-x-0 bottom-0 z-[60] bg-cream-lighter border-t border-border rounded-t-xl shadow-xl overflow-hidden pb-[env(safe-area-inset-bottom)]"
       >
         <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
           <div className="w-10 h-1 bg-border rounded-full" />
