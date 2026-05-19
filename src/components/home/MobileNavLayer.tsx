@@ -56,14 +56,7 @@ export function MobileNavLayer({ onContributeClick }: MobileNavLayerProps) {
 
       {showSearch && <SearchPanel onClose={() => setShowSearch(false)} />}
 
-      {showDrawer && (
-        <MobileNavDrawer
-          onClose={() => setShowDrawer(false)}
-          // Permet d'ouvrir la recherche directement depuis le drawer
-          // (fermeture drawer + ouverture search en chaîne).
-          onSearchClick={() => setShowSearch(true)}
-        />
-      )}
+      {showDrawer && <MobileNavDrawer onClose={() => setShowDrawer(false)} />}
 
       {showProfile && (
         <ProfileMenu
