@@ -29,8 +29,8 @@
  *                           table: `notebooks` + `notebook_members`
  *                           Ref: NotificationsPanel (type 'notebook')
  *
- *   searchService         — recherche multi-niveaux espèces (species_master GBIF+Wikidata,
- *                           fallback mock COMMON_SPECIES). Voir PRD_SPECIES_DATABASE.md.
+ *   searchService         — recherche espèces dans species_master (GBIF + Wikidata,
+ *                           Phase 1). Voir PRD_SPECIES_DATABASE.md.
  *                           Ref: SearchPanel, EncounterStep2 (autocomplete espèces).
  */
 

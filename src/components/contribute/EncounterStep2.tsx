@@ -2,8 +2,8 @@
  * EncounterStep2 — Étape 2 : Carnet d'observations
  *
  * Permet d'ajouter une ou plusieurs espèces observées à l'observation :
- *   - Recherche par nom commun ou scientifique (mock COMMON_SPECIES en dev,
- *     species_master Supabase en prod — Phase 2 selon PRD_SPECIES_DATABASE)
+ *   - Recherche par nom commun ou scientifique dans species_master Supabase
+ *     (Phase 1 : seed ~200 espèces FR+QC, Phase 2 : expansion ~5 000 via GBIF)
  *   - Chaque entrée comporte un compteur d'individus modifiable
  *   - Option "Je ne connais pas l'espèce" pour une entrée inconnue
  *   - Toggle "Activer l'aide à l'identification" pour les mystères

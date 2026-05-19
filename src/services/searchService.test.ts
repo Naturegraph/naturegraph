@@ -1,26 +1,27 @@
 /**
  * Tests unitaires — searchService
  *
- * On ne teste pas l'intégration Supabase ici (cf. tests E2E Playwright pour
- * species_master), seulement le fallback mock COMMON_SPECIES qui couvre
- * le scénario "Supabase indisponible" (dev/offline ou DB down).
+ * Phase 1 (Nicolas 2026-05-19) : la source de production est species_master
+ * (~200 espèces FR+QC seed initial via GBIF + Wikidata CC0). Plus de mock
+ * fallback — on teste 100% sur Supabase via tests E2E Playwright.
  *
- * Phase 1 (Nicolas 2026-05-19) : species_master = source de production
- * (~200 espèces FR+QC seed initial). Le fallback mock garantit que la
- * recherche fonctionne même sans backend.
+ * Ces tests vérifient uniquement les comportements défensifs côté front :
+ *   - Validation de la requête (longueur min)
+ *   - Comportement quand Supabase n'est pas configuré (dev sans .env)
+ *   - Forme du retour (toujours un tableau, jamais null/undefined)
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-// Mock Supabase pour forcer le fallback (isSupabaseConfigured = false).
+// Mock Supabase pour simuler "non configuré" (cas dev/offline ou .env absent).
 vi.mock('@/lib/supabase', () => ({
   supabase: null,
   isSupabaseConfigured: false,
 }))
 
-import { searchSpecies, type SpeciesHit } from './searchService'
+import { searchSpecies, searchProfiles } from './searchService'
 
-describe('searchSpecies — fallback mock COMMON_SPECIES', () => {
+describe('searchSpecies — comportements défensifs', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -28,43 +29,44 @@ describe('searchSpecies — fallback mock COMMON_SPECIES', () => {
   it('retourne tableau vide si query < 2 caractères', async () => {
     expect(await searchSpecies('')).toEqual([])
     expect(await searchSpecies('a')).toEqual([])
+    expect(await searchSpecies(' ')).toEqual([])
   })
 
-  it('trouve une espèce par nom commun français', async () => {
+  it('retourne tableau vide si Supabase non configuré', async () => {
+    // Avec isSupabaseConfigured = false (mock ci-dessus), toutes les requêtes
+    // sortent tôt sur le early return.
     const hits = await searchSpecies('mésange')
-    expect(hits.length).toBeGreaterThan(0)
-    expect(hits.some((h: SpeciesHit) => h.common_name?.toLowerCase().includes('mésange'))).toBe(
-      true,
-    )
-  })
-
-  it('trouve une espèce par nom scientifique latin', async () => {
-    const hits = await searchSpecies('parus')
-    expect(hits.length).toBeGreaterThan(0)
-    expect(hits.some((h: SpeciesHit) => h.scientific_name.toLowerCase().includes('parus'))).toBe(
-      true,
-    )
-  })
-
-  it('respecte la limite de résultats', async () => {
-    const hits = await searchSpecies('e', 3) // "e" est dans beaucoup de noms — mais < 2 chars
-    expect(hits).toEqual([]) // query length < 2 → vide
-    const hits2 = await searchSpecies('er', 3)
-    expect(hits2.length).toBeLessThanOrEqual(3)
-  })
-
-  it('retourne tableau vide pour une espèce inconnue', async () => {
-    const hits = await searchSpecies('zzzqxqx')
     expect(hits).toEqual([])
   })
 
-  it('chaque SpeciesHit a les champs attendus', async () => {
+  it('retourne un tableau (jamais null/undefined) même pour requête vide', async () => {
     const hits = await searchSpecies('renard')
-    expect(hits.length).toBeGreaterThan(0)
-    const first = hits[0]
-    expect(first).toHaveProperty('taxref_id')
-    expect(first).toHaveProperty('scientific_name')
-    expect(first).toHaveProperty('common_name')
-    expect(first).toHaveProperty('group_label')
+    expect(Array.isArray(hits)).toBe(true)
+  })
+
+  it("respecte la signature de l'API (limit + group optionnels)", async () => {
+    // Vérification statique : ces appels doivent compiler et renvoyer un tableau.
+    const a = await searchSpecies('test')
+    const b = await searchSpecies('test', 5)
+    const c = await searchSpecies('test', 5, 'birds')
+    expect(Array.isArray(a)).toBe(true)
+    expect(Array.isArray(b)).toBe(true)
+    expect(Array.isArray(c)).toBe(true)
+  })
+})
+
+describe('searchProfiles — comportements défensifs', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('retourne tableau vide si query < 2 caractères', async () => {
+    expect(await searchProfiles('')).toEqual([])
+    expect(await searchProfiles('x')).toEqual([])
+  })
+
+  it('retourne tableau vide si Supabase non configuré', async () => {
+    const hits = await searchProfiles('alice')
+    expect(hits).toEqual([])
   })
 })

@@ -233,7 +233,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               <ArrowLeft className="size-5" aria-hidden="true" />
             </button>
           ) : null}
-          <h2 className="font-title font-bold text-[32px] leading-[120%] text-foreground flex-1">
+          <h2 className="font-title font-bold text-xl md:text-[32px] leading-[120%] text-foreground flex-1 text-balance">
             {section === null
               ? t('settings.title', { defaultValue: 'Paramètres' })
               : SECTION_TITLES[section](t)}

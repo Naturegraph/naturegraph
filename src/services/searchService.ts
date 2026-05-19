@@ -3,16 +3,18 @@
  * ====================================================
  * Stratégie de recherche espèces Phase 1 (Nicolas 2026-05-19) :
  *
- *   1. Supabase species_master + ILIKE multi-colonnes
- *      (FR + scientific + EN, accéléré par indexes GIN gin_trgm_ops).
- *      Tri par popularity DESC pour mettre les espèces communes en haut.
- *
- *   2. Mock local (COMMON_SPECIES, ~20 espèces dev/offline)
- *      → si Supabase non configuré ou totalement indisponible.
+ *   Supabase species_master + ILIKE multi-colonnes (FR + scientific + EN),
+ *   accéléré par indexes GIN gin_trgm_ops. Tri par popularity DESC pour
+ *   faire remonter les espèces communes.
  *
  * Sources des données (cf. PRD_SPECIES_DATABASE.md) :
  *   - species_master : ~200 espèces FR+QC seed initial (migration v2)
  *   - Expansion ~5 000 via scripts/seed-species-from-gbif.ts (Phase 2)
+ *
+ * 2026-05-19 (Nicolas) : suppression du mock local COMMON_SPECIES — on
+ * teste en condition réelle uniquement. Si Supabase est indisponible, on
+ * retourne un tableau vide (l'UI EncounterStep2 propose alors le fallback
+ * "Ajouter à valider par la communauté").
  *
  * Règle de sécurité : aucune API externe (GBIF, Wikidata, iNat) n'est
  * appelée directement depuis le front — toujours via une table Supabase
@@ -20,7 +22,6 @@
  */
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import { COMMON_SPECIES } from '@/constants/commonSpecies'
 
 // ─── Types exportés ───────────────────────────────────────────────────────────
 
@@ -46,28 +47,6 @@ export interface SpeciesHit {
 
 const SPECIES_MASTER_SELECT =
   'id, gbif_id, scientific_name, common_name_fr, common_name_en, taxonomic_group, popularity, image_url' as const
-
-// ─── Fallback mock local ──────────────────────────────────────────────────────
-
-/**
- * Recherche locale sur le mock COMMON_SPECIES.
- * Utilisée quand Supabase est indisponible.
- * Min 2 caractères pour rester cohérent avec le code Supabase path.
- */
-function searchSpeciesMock(query: string, limit: number): SpeciesHit[] {
-  const q = query.trim().toLowerCase()
-  if (q.length < 2) return []
-  return COMMON_SPECIES.filter(
-    (s) => s.commonName.toLowerCase().includes(q) || s.scientificName.toLowerCase().includes(q),
-  )
-    .slice(0, limit)
-    .map((s) => ({
-      taxref_id: s.id,
-      scientific_name: s.scientificName,
-      common_name: s.commonName,
-      group_label: s.group,
-    }))
-}
 
 /**
  * Mappe une ligne species_master vers SpeciesHit (interface stable utilisée
@@ -96,7 +75,8 @@ function toSpeciesHit(row: Record<string, unknown>): SpeciesHit {
  *      (les 3 indexes gin_trgm_ops sur common_name_fr / scientific_name /
  *      common_name_en accélèrent les ILIKE).
  *   2. Tri par popularity DESC pour mettre les espèces communes en haut.
- *   3. Fallback COMMON_SPECIES si Supabase indisponible (dev/offline).
+ *   3. Si Supabase indisponible : retourne [] (l'UI propose alors le fallback
+ *      "Ajouter à valider par la communauté" — cf. EncounterStep2).
  *
  * @param query  Terme saisi (minimum 2 caractères)
  * @param limit  Nombre max de résultats (défaut 10)
@@ -107,10 +87,9 @@ export async function searchSpecies(
   limit = 10,
   group?: string,
 ): Promise<SpeciesHit[]> {
-  // Fallback immédiat si Supabase non configuré
-  if (!isSupabaseConfigured || !supabase) {
-    return searchSpeciesMock(query, limit)
-  }
+  // Si Supabase non configuré : recherche vide (pas de mock fallback,
+  // Nicolas 2026-05-19 — test 100% réel sur species_master).
+  if (!isSupabaseConfigured || !supabase) return []
 
   const db = supabase!
   const q = query.trim()
@@ -141,13 +120,14 @@ export async function searchSpecies(
 
     if (error) {
       console.warn('[searchService] species_master search failed:', error.message)
-      return searchSpeciesMock(q, limit)
+      return []
     }
 
     return ((data ?? []) as Record<string, unknown>[]).map(toSpeciesHit)
   } catch {
-    // Supabase totalement indisponible → fallback mock
-    return searchSpeciesMock(q, limit)
+    // Supabase totalement indisponible : on retourne vide (l'UI propose
+    // le fallback "Ajouter à valider par la communauté").
+    return []
   }
 }
 

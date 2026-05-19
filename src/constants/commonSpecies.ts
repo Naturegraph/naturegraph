@@ -1,20 +1,24 @@
 /**
- * Espèces communes — fallback de référence pour l'autocomplétion en dev/offline.
+ * Configuration des groupes taxonomiques — labels FR + emojis.
  *
- * Phase 1 (Nicolas 2026-05-19) : la stratégie TAXREF/INPN a été abandonnée
- * (cf. PRD_SPECIES_DATABASE.md). On bascule sur GBIF (CC0) + Wikidata (CC0)
- * pour la base de données complète en production — voir table Supabase
- * `species_master`. Ce fichier sert uniquement de fallback minimal pour le
- * dev local et les tests, quand `species_master` n'est pas accessible.
+ * Phase 1 (Nicolas 2026-05-19) : suppression du mock COMMON_SPECIES.
+ * La base de données complète vit dans Supabase `species_master`
+ * (GBIF CC0 + Wikidata CC0). Ce fichier ne contient plus que la config
+ * d'affichage (emoji + label par groupe), utilisée par FeedPost, SearchPanel
+ * et EncounterStep2.
  *
- * Les IDs ci-dessous sont des identifiants TAXREF historiques (cd_nom), conservés
- * uniquement pour la traçabilité interne. Ils seront alignés sur les GBIF
- * taxonKeys lors de la migration Phase 2.
+ * Voir PRD_SPECIES_DATABASE.md pour la stratégie complète.
  */
 
 import type { TaxonomicGroup } from '@/types/database'
 import { CATEGORY_EMOJIS } from '@/utils/badgeHelpers'
 
+/**
+ * Type minimal d'une espèce — conservé pour compatibilité avec les rares
+ * endroits qui typent encore des entrées d'espèces locales (tests, mocks).
+ * En production, les espèces viennent de `species_master` et utilisent
+ * le type `SpeciesHit` exposé par `searchService`.
+ */
 export interface CommonSpeciesEntry {
   id: string
   commonName: string
@@ -42,95 +46,3 @@ export const TAXONOMIC_GROUP_CONFIG: Record<string, { emoji: string; label: stri
   plants: { emoji: CATEGORY_EMOJIS.plants, label: 'Plantes' },
   other: { emoji: '✨', label: 'Autre' },
 }
-
-/**
- * Échantillon d'espèces courantes pour l'autocomplétion en dev/offline.
- * Le seed complet (~5000 espèces) vient de `species_master` en production.
- */
-export const COMMON_SPECIES: CommonSpeciesEntry[] = [
-  { id: '4001', commonName: 'Mésange charbonnière', scientificName: 'Parus major', group: 'birds' },
-  {
-    id: '3586',
-    commonName: 'Hirondelle rustique',
-    scientificName: 'Hirundo rustica',
-    group: 'birds',
-  },
-  { id: '3248', commonName: 'Buse variable', scientificName: 'Buteo buteo', group: 'birds' },
-  {
-    id: '3562',
-    commonName: 'Rougegorge familier',
-    scientificName: 'Erithacus rubecula',
-    group: 'birds',
-  },
-  { id: '3861', commonName: 'Cygne tuberculé', scientificName: 'Cygnus olor', group: 'birds' },
-  {
-    id: '3664',
-    commonName: "Martin-pêcheur d'Europe",
-    scientificName: 'Alcedo atthis',
-    group: 'birds',
-  },
-  { id: '60612', commonName: 'Renard roux', scientificName: 'Vulpes vulpes', group: 'mammals' },
-  {
-    id: '100376',
-    commonName: "Hérisson d'Europe",
-    scientificName: 'Erinaceus europaeus',
-    group: 'mammals',
-  },
-  { id: '4831', commonName: 'Écureuil roux', scientificName: 'Sciurus vulgaris', group: 'mammals' },
-  { id: '60485', commonName: 'Blaireau européen', scientificName: 'Meles meles', group: 'mammals' },
-  {
-    id: '7021',
-    commonName: 'Chevreuil européen',
-    scientificName: 'Capreolus capreolus',
-    group: 'mammals',
-  },
-  {
-    id: '290',
-    commonName: 'Grenouille rousse',
-    scientificName: 'Rana temporaria',
-    group: 'amphibians',
-  },
-  {
-    id: '4878',
-    commonName: 'Salamandre tachetée',
-    scientificName: 'Salamandra salamandra',
-    group: 'amphibians',
-  },
-  {
-    id: '84913',
-    commonName: 'Lézard vert occidental',
-    scientificName: 'Lacerta bilineata',
-    group: 'reptiles',
-  },
-  {
-    id: '83791',
-    commonName: 'Couleuvre à collier',
-    scientificName: 'Natrix natrix',
-    group: 'reptiles',
-  },
-  {
-    id: '236193',
-    commonName: 'Coccinelle à sept points',
-    scientificName: 'Coccinella septempunctata',
-    group: 'insects',
-  },
-  {
-    id: '236074',
-    commonName: 'Libellule fauve',
-    scientificName: 'Libellula fulva',
-    group: 'insects',
-  },
-  {
-    id: '236551',
-    commonName: 'Lucane cerf-volant',
-    scientificName: 'Lucanus cervus',
-    group: 'insects',
-  },
-  {
-    id: '65474',
-    commonName: 'Pissenlit officinal',
-    scientificName: 'Taraxacum officinale',
-    group: 'plants',
-  },
-  { id: '25637', commonName: 'Chêne pédonculé', scientificName: 'Quercus robur', group: 'plants' },
-]
