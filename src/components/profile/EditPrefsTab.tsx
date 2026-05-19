@@ -178,9 +178,11 @@ export function EditPrefsTab({ profile, onSave, onClose }: EditPrefsTabProps) {
         </p>
       </div>
 
-      {/* ── Grille responsive (BATCH 114 : 1 col mobile, 2 cols sm+). */}
+      {/* ── Grille 2 colonnes (Nicolas 2026-05-19 : cohérence avec le reste
+           du design system — onboarding et autres sélecteurs sont en 2 cols
+           dès le mobile). */}
       <div
-        className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+        className="grid grid-cols-2 gap-2"
         role="group"
         aria-label={t('profile.edit.interestsTitle', {
           defaultValue: "Centres d'intérêt",

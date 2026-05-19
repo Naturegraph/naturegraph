@@ -17,7 +17,7 @@
  */
 
 import { useTranslation } from 'react-i18next'
-import { Atom } from 'lucide-react'
+import { Dna } from 'lucide-react'
 import { CATEGORY_EMOJIS } from '@/utils/badgeHelpers'
 import type { ProfileDisplayData } from './ProfileHeader'
 
@@ -69,7 +69,7 @@ export function ProfileDNACard({ interests, compact = false, maxItems = 3 }: Pro
           aria-hidden="true"
           className="size-8 rounded-full bg-[var(--color-highlight-primary)] text-[var(--color-text-inverse)] flex items-center justify-center shrink-0"
         >
-          <Atom className="size-5" />
+          <Dna className="size-5" />
         </span>
         <h2
           id="profile-dna-heading"

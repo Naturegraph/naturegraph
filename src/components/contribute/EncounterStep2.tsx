@@ -14,7 +14,7 @@
  */
 
 import { useState, useId, useEffect, useMemo } from 'react'
-import { Search, Trash2, Plus, Minus, HelpCircle, Filter, X, Check, PlusCircle } from 'lucide-react'
+import { Search, Trash2, Plus, Minus, HelpCircle, Filter, X, Check } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
 import { searchSpecies, type SpeciesHit } from '@/services/searchService'
@@ -29,15 +29,45 @@ export interface ObservationEntry {
   species: { id: string; commonName: string; scientificName: string; group: TaxonomicGroup } | null
   /** true = espèce non déterminée (mystère) */
   isUnknown: boolean
-  /**
-   * true = saisie libre par l'utilisateur, à valider par la communauté
-   * (Phase 1 fallback Nicolas 2026-05-19) : si l'espèce n'est pas trouvée
-   * dans species_master, on n'empêche pas la contribution — on flag
-   * pour identification collaborative ultérieure
-   * (cf. PRD_IDENTIFICATIONS_COLLABORATIVE.md).
-   */
-  needsValidation?: boolean
   count: number
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Échappe les caractères spéciaux regex pour rendre une chaîne safe dans
+ * un constructeur RegExp.
+ */
+function escapeRegExp(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * Met en gras la portion d'un texte qui matche la requête utilisateur
+ * (case-insensitive, multi-occurrence).
+ *
+ * Exemple : highlightMatch("Mésange charbonnière", "me") →
+ *   <span>M</span><strong>é</strong>... non — en fait, on matche "Mé" si
+ *   l'utilisateur tape "mé". Pour "me", on matche "Mé" si on ignore les
+ *   accents — mais on garde strict (pas de normalisation Unicode pour le
+ *   MVP, on relance la recherche côté DB avec ILIKE qui est déjà case-
+ *   insensitive mais accent-sensitive).
+ *
+ * Retourne un tableau de nœuds React (<strong> + <span>).
+ */
+function highlightMatch(text: string, query: string): React.ReactNode[] {
+  const q = query.trim()
+  if (!q) return [text]
+  const parts = text.split(new RegExp(`(${escapeRegExp(q)})`, 'gi'))
+  return parts.map((part, i) =>
+    part.toLowerCase() === q.toLowerCase() ? (
+      <strong key={i} className="font-bold text-foreground">
+        {part}
+      </strong>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  )
 }
 
 // ─── Sous-composants ──────────────────────────────────────────────────────────
@@ -66,7 +96,10 @@ const TAXONOMIC_FILTERS: { value: TaxonomicGroup; labelKey: string }[] = [
  * Phase 1 (Nicolas 2026-05-19) : query species_master via searchService
  * (~200 espèces FR+QC en seed initial, extension Phase 2 via GBIF script).
  * Debounce 250ms pour limiter les appels DB lors d'une saisie rapide.
- * Si zéro résultat : fallback "Ajouter à valider par la communauté".
+ * Si zéro résultat : on n'affiche rien (pas de fallback "Ajouter" pour
+ * éviter les erreurs de saisie libre — la communauté ajoutera les espèces
+ * manquantes via le workflow d'identification collaborative en Phase 2).
+ * La portion du texte qui matche la requête est mise en gras (highlightMatch).
  */
 function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['species']) => void }) {
   const { t } = useTranslation()
@@ -77,7 +110,6 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
   const [groupFilters, setGroupFilters] = useState<Set<TaxonomicGroup>>(new Set())
   const [filterOpen, setFilterOpen] = useState(false)
   const [results, setResults] = useState<SpeciesHit[]>([])
-  const [isLoading, setIsLoading] = useState(false)
 
   function toggleGroup(g: TaxonomicGroup) {
     setGroupFilters((prev) => {
@@ -106,7 +138,6 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
     setOpen(true)
     if (value.trim().length < 2) {
       setResults([])
-      setIsLoading(false)
     }
   }
 
@@ -121,7 +152,6 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
     let cancelled = false
     const timer = setTimeout(() => {
       if (cancelled) return
-      setIsLoading(true)
       searchSpecies(trimmed, 8, singleGroup)
         .then((hits) => {
           if (cancelled) return
@@ -131,12 +161,10 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
               ? hits.filter((h) => groupFilters.has((h.group_label ?? '') as TaxonomicGroup))
               : hits
           setResults(filtered.slice(0, 6))
-          setIsLoading(false)
         })
         .catch(() => {
           if (cancelled) return
           setResults([])
-          setIsLoading(false)
         })
     }, 250)
     return () => {
@@ -160,26 +188,6 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
     setQuery('')
     setOpen(false)
   }
-
-  /**
-   * Fallback Phase 1 : l'utilisateur tape un nom non trouvé en DB,
-   * on accepte la saisie libre avec flag `needsValidation` pour que
-   * la communauté valide ensuite l'identification.
-   */
-  function handleAddFreeText() {
-    const trimmed = query.trim()
-    if (trimmed.length < 2) return
-    onAdd({
-      id: `free-${Date.now()}`,
-      commonName: trimmed,
-      scientificName: '',
-      group: 'other' as TaxonomicGroup,
-    })
-    setQuery('')
-    setOpen(false)
-  }
-
-  const noResultsButQueryEntered = query.trim().length >= 2 && !isLoading && results.length === 0
 
   return (
     // `relative` sur le container racine permet au panel filtres d'être
@@ -206,65 +214,37 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
             />
           </div>
 
-          {/* Résultats autocomplete (species_master via searchService) */}
+          {/* Résultats autocomplete (species_master via searchService).
+              La portion qui matche la requête est rendue en gras pour
+              aider l'utilisateur à comprendre pourquoi le résultat remonte. */}
           {open && results.length > 0 && (
             <ul
               id={listId}
               role="listbox"
               className="absolute z-20 w-full mt-1 rounded-2xl border border-border bg-background shadow-lg overflow-hidden"
             >
-              {results.map((hit) => (
-                <li key={hit.taxref_id} role="option" aria-selected={false}>
-                  <button
-                    type="button"
-                    onMouseDown={() => handleSelect(hit)}
-                    className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-primary-light/30 transition-colors text-left"
-                  >
-                    <span>
-                      <span className="text-sm font-medium text-foreground block">
-                        {hit.common_name ?? hit.scientific_name}
+              {results.map((hit) => {
+                const commonName = hit.common_name ?? hit.scientific_name
+                return (
+                  <li key={hit.taxref_id} role="option" aria-selected={false}>
+                    <button
+                      type="button"
+                      onMouseDown={() => handleSelect(hit)}
+                      className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-primary-light/30 transition-colors text-left"
+                    >
+                      <span>
+                        <span className="text-sm font-medium text-foreground block">
+                          {highlightMatch(commonName, query)}
+                        </span>
+                        <span className="text-xs text-muted-foreground italic">
+                          {highlightMatch(hit.scientific_name, query)}
+                        </span>
                       </span>
-                      <span className="text-xs text-muted-foreground italic">
-                        {hit.scientific_name}
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              ))}
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
-          )}
-
-          {/* Fallback Phase 1 : aucun résultat trouvé pour la recherche.
-              On propose à l'utilisateur d'ajouter sa saisie en libre, à
-              valider ensuite par la communauté (cf. PRD identifications). */}
-          {open && noResultsButQueryEntered && (
-            <div className="absolute z-20 w-full mt-1 rounded-2xl border border-border bg-background shadow-lg p-4">
-              <p className="text-sm text-muted-foreground mb-3">
-                {t('contribute.panel.noSpeciesFound', {
-                  defaultValue: 'Pas trouvée dans notre catalogue ?',
-                })}
-              </p>
-              <button
-                type="button"
-                onMouseDown={handleAddFreeText}
-                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-primary-light/50 hover:bg-primary-light transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                <PlusCircle className="size-5 text-primary shrink-0" aria-hidden="true" />
-                <span className="flex flex-col min-w-0">
-                  <span className="text-sm font-semibold text-foreground truncate">
-                    {t('contribute.panel.addFreeSpeciesLabel', {
-                      defaultValue: 'Ajouter « {{query}} »',
-                      query: query.trim(),
-                    })}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {t('contribute.panel.addFreeSpeciesHint', {
-                      defaultValue: 'La communauté validera l’identification ensuite.',
-                    })}
-                  </span>
-                </span>
-              </button>
-            </div>
           )}
         </div>
 
