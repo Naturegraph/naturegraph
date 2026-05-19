@@ -69,7 +69,7 @@ export function MobileNavDrawer({ onClose }: MobileNavDrawerProps) {
       <aside
         role="dialog"
         aria-modal="true"
-        aria-label={t('home.drawer.title', { defaultValue: 'Tendances' })}
+        aria-label={t('home.drawer.ariaLabel', { defaultValue: 'Aperçu communauté et tendances' })}
         className="md:hidden fixed inset-x-0 bottom-0 z-[60] bg-cream-lighter border-t border-border rounded-t-2xl shadow-xl flex flex-col max-h-[95vh] pb-[env(safe-area-inset-bottom)]"
       >
         {/* Handle bar — cohérence avec les autres bottom sheets (9/10 en ont
@@ -79,11 +79,13 @@ export function MobileNavDrawer({ onClose }: MobileNavDrawerProps) {
         </div>
 
         {/* Header — Titre + close.
-            Titre orienté contenu (stats + découvertes) plutôt qu'un générique
-            "Menu" qui ne reflète pas ce qu'on affiche (retour Nicolas). */}
+            "Aperçu" = synthèse rapide du contenu sidebar (communauté +
+            stats d'impact + tendances espèces). Neutre, fonctionne pour
+            les 2 modes (invité + auth) et reflète mieux le contenu mixte
+            qu'un titre orienté seulement "tendances" ou "menu". */}
         <div className="flex items-center justify-between px-5 pt-2 pb-3 shrink-0">
           <h2 className="font-heading text-lg font-bold text-foreground">
-            {t('home.drawer.title', { defaultValue: 'Tendances' })}
+            {t('home.drawer.title', { defaultValue: 'Aperçu' })}
           </h2>
           <button
             ref={closeBtnRef}

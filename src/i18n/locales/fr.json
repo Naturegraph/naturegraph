@@ -425,8 +425,8 @@
     "subtitle": "Observez, documentez et partagez vos découvertes nature",
     "feedEmpty": "Aucune observation pour le moment",
     "drawer": {
-      "title": "Tendances",
-      "ariaLabel": "Tendances et découvertes"
+      "title": "Aperçu",
+      "ariaLabel": "Aperçu communauté et tendances"
     },
     "trending": {
       "title": "Tendances",
