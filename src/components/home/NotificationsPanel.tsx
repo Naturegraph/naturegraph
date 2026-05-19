@@ -452,7 +452,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
         role="dialog"
         aria-modal="true"
         aria-label={t('home.notifications.title')}
-        className="md:hidden fixed inset-x-0 z-[60] bg-cream-lighter border-t border-border rounded-t-xl shadow-xl overflow-hidden bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
+        className="md:hidden fixed inset-x-0 bottom-0 z-[60] bg-cream-lighter border-t border-border rounded-t-xl shadow-xl overflow-hidden pb-[calc(3.5rem+env(safe-area-inset-bottom))]"
       >
         <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
           <div className="w-10 h-1 bg-border rounded-full" />

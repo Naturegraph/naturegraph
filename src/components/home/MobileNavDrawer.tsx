@@ -172,7 +172,7 @@ export function MobileNavDrawer({ onClose, onSearchClick }: MobileNavDrawerProps
         role="dialog"
         aria-modal="true"
         aria-label={t('nav.menu', { defaultValue: 'Menu' })}
-        className="md:hidden fixed inset-x-0 z-[60] bg-cream-lighter border-t border-border rounded-t-2xl shadow-xl flex flex-col bottom-[calc(3.5rem+env(safe-area-inset-bottom))] max-h-[85vh]"
+        className="md:hidden fixed inset-x-0 bottom-0 z-[60] bg-cream-lighter border-t border-border rounded-t-2xl shadow-xl flex flex-col max-h-[95vh] pb-[calc(3.5rem+env(safe-area-inset-bottom))]"
       >
         {/* Handle bar (drag indicator visuel) */}
         <div className="flex justify-center pt-3 pb-1 shrink-0" aria-hidden="true">
