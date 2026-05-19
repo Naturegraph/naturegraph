@@ -234,11 +234,13 @@ export default function AdminBeta() {
     if (!supabase || isGenerating) return
     setIsGenerating(true)
     try {
+      // Nicolas 2026-05-19 : 365 jours minimum pour éviter de frustrer les
+      // testeurs avec des clés qui expirent trop vite (7j initialement).
       const { data, error } = await supabase.rpc('generate_beta_keys', {
         p_batch_number: nextBatch,
         p_count: 10,
         p_max_uses: 1,
-        p_expires_days: 7,
+        p_expires_days: 365,
         p_notes: `Vague ${nextBatch} — ${new Date().toISOString().slice(0, 10)}`,
       })
       if (error) throw error
@@ -332,35 +334,55 @@ export default function AdminBeta() {
 
   /**
    * Nicolas 2026-05-19 : associe une clé à une entrée waitlist + ouvre mailto.
-   * Workflow complet en une action :
-   *   1. UPDATE beta_waitlist SET invited_at = NOW(), invited_with_key_id = key.id
-   *   2. Ouvre mailto: avec le code de la clé pré-rempli dans le template
-   *   3. Toast de succès + log audit
-   *   4. Ferme la modal de picker + invalide les queries
-   * L'entrée waitlist disparaît du tableau (filtre `.is('invited_at', null)`).
+   *
+   * Workflow corrigé (loop loading fix) :
+   *   1. UPDATE beta_waitlist + .select() pour vérifier qu'une ligne est modifiée
+   *      (sinon RLS silently filter sans error → on throw nous-même)
+   *   2. Reset state UI IMMÉDIATEMENT (avant mailto pour éviter loop loading
+   *      si le navigateur fait du n'importe quoi avec mailto:)
+   *   3. Toast + invalidation queries pour rafraîchir
+   *   4. Audit log en fire-and-forget (n'attend pas — ne bloque pas l'UX)
+   *   5. Ouvre mailto via <a>.click() (plus fiable que window.location.href
+   *      qui peut "freezer" l'UI sur certains browsers sans handler mail)
    */
   async function handleInviteWithKey(entry: BetaWaitlistEntry, key: BetaAccessKey) {
-    if (!supabase) return
+    if (!supabase || invitingKeyId) return
     setInvitingKeyId(key.id)
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('beta_waitlist')
         .update({
           invited_at: new Date().toISOString(),
           invited_with_key_id: key.id,
         })
         .eq('id', entry.id)
+        .select()
       if (error) throw error
+      if (!data || data.length === 0) {
+        throw new Error(
+          'Aucune ligne mise à jour. Vérifie tes permissions admin sur beta_waitlist.',
+        )
+      }
 
-      // Log audit (BATCH 36 : via useAdminAction)
-      await logAction({
+      // Reset state EN PREMIER pour libérer l'UI avant toute action externe.
+      // Sinon mailto: peut "bloquer" l'UI sur un browser sans handler mail.
+      setInvitingKeyId(null)
+      setInviteWaitlistEntry(null)
+
+      toast.success(`Clé ${key.code} attribuée à ${entry.email} — ouverture du mail…`)
+      queryClient.invalidateQueries({ queryKey: ['beta-waitlist'] })
+      queryClient.invalidateQueries({ queryKey: ['beta-keys'] })
+
+      // Audit log en fire-and-forget (ne bloque pas l'UX)
+      logAction({
         action: 'beta.waitlist_invite',
         targetType: 'beta_waitlist',
         targetId: entry.id,
         metadata: { email: entry.email, key_code: key.code, key_id: key.id },
-      })
+      }).catch((e) => console.warn('[admin] audit log failed:', e))
 
-      // Ouvre mailto avec le code de la clé pré-rempli (pas de placeholder à remplacer)
+      // Ouvre mailto via <a>.click() — plus fiable que window.location.href
+      // sur tous les browsers (Chrome/Firefox/Safari).
       const subject = 'Ton accès Naturegraph est prêt !'
       const body = `Bonjour,
 
@@ -372,15 +394,12 @@ Saisis-la sur la page d'inscription pour créer ton compte.
 
 À très vite sur la plateforme,
 L'équipe Naturegraph`
-      window.location.href = `mailto:${entry.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-
-      toast.success(`Clé ${key.code} attribuée à ${entry.email} — ouverture du mail…`)
-      queryClient.invalidateQueries({ queryKey: ['beta-waitlist'] })
-      queryClient.invalidateQueries({ queryKey: ['beta-keys'] })
-      setInviteWaitlistEntry(null)
+      const link = document.createElement('a')
+      link.href = `mailto:${entry.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+      link.rel = 'noopener noreferrer'
+      link.click()
     } catch (err) {
       toast.error('Erreur attribution de la clé', err instanceof Error ? err.message : undefined)
-    } finally {
       setInvitingKeyId(null)
     }
   }
