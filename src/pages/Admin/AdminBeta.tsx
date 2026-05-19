@@ -137,11 +137,16 @@ export default function AdminBeta() {
     staleTime: STALE_TIMES.MEDIUM,
   })
 
-  // BATCH 107 : Map user_id → profil pour les clés utilisées (afficher qui a utilisé quoi)
-  // On groupe les used_by_user_id et on les fetch en un seul query .in('id', ids)
+  // BATCH 107 + Nicolas 2026-05-19 : Map user_id → profil COMPLET pour les clés utilisées.
+  // Inclut email + username + first_name + last_name pour permettre au super admin
+  // d'identifier qui a consommé chaque clé et de contacter la personne en cas d'erreur
+  // (mailto: link dans la colonne "Utilisateur"). On groupe en un seul query .in('id', ids)
   // pour éviter N+1 requests.
   const { data: keyUsersMap = {} } = useQuery<
-    Record<string, { username: string; first_name: string; last_name: string }>
+    Record<
+      string,
+      { username: string; first_name: string; last_name: string; email: string | null }
+    >
   >({
     queryKey: [
       'beta-keys-users',
@@ -157,11 +162,19 @@ export default function AdminBeta() {
       if (!supabase || userIds.length === 0) return {}
       const { data } = await supabase
         .from('profiles')
-        .select('id, username, first_name, last_name')
+        .select('id, username, first_name, last_name, email')
         .in('id', userIds)
-      const map: Record<string, { username: string; first_name: string; last_name: string }> = {}
+      const map: Record<
+        string,
+        { username: string; first_name: string; last_name: string; email: string | null }
+      > = {}
       for (const p of data ?? []) {
-        map[p.id] = { username: p.username, first_name: p.first_name, last_name: p.last_name }
+        map[p.id] = {
+          username: p.username,
+          first_name: p.first_name,
+          last_name: p.last_name,
+          email: p.email ?? null,
+        }
       }
       return map
     },
@@ -588,17 +601,42 @@ export default function AdminBeta() {
                             {status.label}
                           </span>
                         </td>
-                        {/* BATCH 107 : utilisateur ayant consommé la clé (si used) */}
+                        {/* BATCH 107 + Nicolas 2026-05-19 : utilisateur ayant consommé la clé.
+                            Affiche pseudo + nom complet + email pour permettre au super admin
+                            d'identifier la personne et la contacter directement (mailto:)
+                            si la clé a été utilisée par erreur ou s'il faut envoyer
+                            une nouvelle clé. */}
                         <td className="px-5 py-3 text-xs">
                           {usedBy ? (
-                            <Link
-                              to={`/profile/${usedBy.username}`}
-                              className="inline-flex items-center gap-1 text-primary hover:underline"
-                              title={`${usedBy.first_name} ${usedBy.last_name}`}
-                            >
-                              @{usedBy.username}
-                              <ExternalLink className="size-3 opacity-60" aria-hidden="true" />
-                            </Link>
+                            <div className="flex flex-col gap-0.5">
+                              <Link
+                                to={`/profile/${usedBy.username}`}
+                                className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+                                title={`${usedBy.first_name} ${usedBy.last_name}`}
+                              >
+                                @{usedBy.username}
+                                <ExternalLink className="size-3 opacity-60" aria-hidden="true" />
+                              </Link>
+                              {(usedBy.first_name || usedBy.last_name) && (
+                                <span className="text-muted-foreground">
+                                  {[usedBy.first_name, usedBy.last_name].filter(Boolean).join(' ')}
+                                </span>
+                              )}
+                              {usedBy.email && (
+                                <a
+                                  href={`mailto:${usedBy.email}?subject=${encodeURIComponent(
+                                    'Naturegraph — à propos de ta clé d’accès',
+                                  )}&body=${encodeURIComponent(
+                                    `Bonjour ${usedBy.first_name ?? usedBy.username},\n\nJe te recontacte au sujet de ta clé d'accès Naturegraph (${k.code}).\n\n[ton message]\n\nÀ très vite,\nNicolas\nNaturegraph`,
+                                  )}`}
+                                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary hover:underline"
+                                  title="Contacter par email"
+                                >
+                                  <Mail className="size-3 shrink-0 opacity-70" aria-hidden="true" />
+                                  {usedBy.email}
+                                </a>
+                              )}
+                            </div>
                           ) : isUsed && k.used_by_user_id ? (
                             <span className="text-muted-foreground italic">
                               utilisateur supprimé
