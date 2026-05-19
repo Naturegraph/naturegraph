@@ -546,7 +546,9 @@
       "commentCount": "{{count}} comment",
       "commentCount_other": "{{count}} comments",
       "options": {
-        "unfollow": "Unfollow @{{username}}",
+        "follow": "Migrate to @{{username}}",
+        "followDesc": "You'll see their posts in your feed",
+        "unfollow": "Stop migrating with @{{username}}",
         "unfollowDesc": "You will no longer see their posts",
         "addFavorite": "Add to favourites",
         "addFavoriteDesc": "Save for later",

@@ -546,8 +546,10 @@
       "commentCount": "{{count}} commentaire",
       "commentCount_other": "{{count}} commentaires",
       "options": {
-        "unfollow": "Ne plus suivre @{{username}}",
-        "unfollowDesc": "Vous ne verrez plus ses publications",
+        "follow": "Migrer vers @{{username}}",
+        "followDesc": "Tu verras ses publications dans ton feed",
+        "unfollow": "Ne plus migrer avec @{{username}}",
+        "unfollowDesc": "Tu ne verras plus ses publications",
         "addFavorite": "Ajouter aux favoris",
         "addFavoriteDesc": "Enregistrer pour plus tard",
         "copyLink": "Copier le lien",

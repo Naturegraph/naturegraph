@@ -28,7 +28,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   UserX,
-  UserPlus,
+  TreeDeciduous,
   Bookmark,
   BookmarkCheck,
   Link,
@@ -51,7 +51,7 @@ import { useDeletePost } from '@/hooks/usePost'
 interface PostOptionsMenuProps {
   /** ID du post — pour construire l'URL de partage et les requêtes API */
   postId: string
-  /** Nom d'utilisateur de l'auteur (pour "Ne plus suivre @username") */
+  /** Nom d'utilisateur de l'auteur (pour "Ne plus migrer avec @username") */
   authorUsername: string
   /** ID de l'auteur (uuid) — utilisé par follow/block (cible des actions) */
   authorId?: string
@@ -301,25 +301,34 @@ export function PostOptionsMenu({
       <MenuItem
         itemRef={firstItemRef as React.RefObject<HTMLButtonElement>}
         icon={
+          // Branding Naturegraph : Migrer (vers / avec) = follow. L'icône
+          // TreeDeciduous est utilisée partout dans l'app (ProfileHeader,
+          // ProfileCommunity) pour incarner ce verbe. Cohérence visuelle
+          // imposée même dans le menu options du post.
           isCurrentlyFollowing ? (
             <UserX className="size-5" />
           ) : (
-            <UserPlus className="size-5 text-primary" />
+            <TreeDeciduous className="size-5 text-primary" />
           )
         }
         label={
           isCurrentlyFollowing
-            ? t('home.post.options.unfollow', { username: authorUsername })
+            ? t('home.post.options.unfollow', {
+                defaultValue: 'Ne plus migrer avec @{{username}}',
+                username: authorUsername,
+              })
             : t('home.post.options.follow', {
-                defaultValue: 'Suivre @{{username}}',
+                defaultValue: 'Migrer vers @{{username}}',
                 username: authorUsername,
               })
         }
         description={
           isCurrentlyFollowing
-            ? t('home.post.options.unfollowDesc')
+            ? t('home.post.options.unfollowDesc', {
+                defaultValue: 'Tu ne verras plus ses publications',
+              })
             : t('home.post.options.followDesc', {
-                defaultValue: 'Vous verrez ses publications dans votre feed',
+                defaultValue: 'Tu verras ses publications dans ton feed',
               })
         }
         onClick={() => handleTodo('follow-toggle')}
