@@ -305,11 +305,7 @@ export function PostOptionsMenu({
           // TreeDeciduous est utilisée partout dans l'app (ProfileHeader,
           // ProfileCommunity) pour incarner ce verbe. Cohérence visuelle
           // imposée même dans le menu options du post.
-          isCurrentlyFollowing ? (
-            <UserX className="size-5" />
-          ) : (
-            <TreeDeciduous className="size-5 text-primary" />
-          )
+          isCurrentlyFollowing ? <UserX className="size-5" /> : <TreeDeciduous className="size-5" />
         }
         label={
           isCurrentlyFollowing

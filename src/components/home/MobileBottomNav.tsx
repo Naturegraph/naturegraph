@@ -98,21 +98,26 @@ export function MobileBottomNav({
           />
         </button>
 
-        {/* ── Contribuer (FAB) — masqué pour les invités ───────────────────── */}
-        <div className="flex items-center justify-center flex-1" aria-hidden={!isAuthenticated}>
-          {isAuthenticated ? (
-            <button
-              type="button"
-              onClick={onContributeClick}
-              className="relative -top-4 size-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 motion-safe:active:scale-95"
-              aria-label={t('nav.contribute')}
-            >
-              <Plus className="size-7" strokeWidth={2.5} aria-hidden="true" />
-            </button>
-          ) : (
-            /* Spacer vide pour maintenir l'espacement en mode invité */
-            <div className="size-14" />
-          )}
+        {/* ── Contribuer (FAB) — toujours visible ──────────────────────────────
+            Invité : click → navigate('/login') (incite à se connecter avant de partager).
+            Authentifié : click → onContributeClick (ouvre ContributeModal).
+            On garde le FAB violet dans les deux cas pour éviter un vide moche
+            au centre de la navbar (retour terrain Nicolas). */}
+        <div className="flex items-center justify-center flex-1">
+          <button
+            type="button"
+            onClick={() => {
+              if (isAuthenticated) {
+                onContributeClick?.()
+              } else {
+                navigate('/login')
+              }
+            }}
+            className="relative -top-4 size-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 motion-safe:active:scale-95"
+            aria-label={t('nav.contribute')}
+          >
+            <Plus className="size-7" strokeWidth={2.5} aria-hidden="true" />
+          </button>
         </div>
 
         {/* ── Recherche ────────────────────────────────────────────────────── */}
