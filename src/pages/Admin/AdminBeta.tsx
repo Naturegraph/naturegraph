@@ -106,6 +106,12 @@ export default function AdminBeta() {
   const [selectedKeyIds, setSelectedKeyIds] = useState<Set<string>>(new Set())
   const [bulkAction, setBulkAction] = useState<'deactivate' | 'delete' | null>(null)
   const [bulkProcessing, setBulkProcessing] = useState(false)
+  // Nicolas 2026-05-19 : flow "Inviter avec une clé" depuis la waitlist.
+  // - inviteWaitlistEntry : entrée waitlist sélectionnée → ouvre la modal de picker
+  // - waitlistToDelete : entrée waitlist à supprimer (ConfirmModal)
+  const [inviteWaitlistEntry, setInviteWaitlistEntry] = useState<BetaWaitlistEntry | null>(null)
+  const [waitlistToDelete, setWaitlistToDelete] = useState<BetaWaitlistEntry | null>(null)
+  const [invitingKeyId, setInvitingKeyId] = useState<string | null>(null)
 
   // Quota
   const { data: quota } = useQuery<BetaQuota | null>({
@@ -323,6 +329,95 @@ export default function AdminBeta() {
       toast.error(t('admin.beta.copyError', { defaultValue: 'Impossible de copier' }))
     }
   }
+
+  /**
+   * Nicolas 2026-05-19 : associe une clé à une entrée waitlist + ouvre mailto.
+   * Workflow complet en une action :
+   *   1. UPDATE beta_waitlist SET invited_at = NOW(), invited_with_key_id = key.id
+   *   2. Ouvre mailto: avec le code de la clé pré-rempli dans le template
+   *   3. Toast de succès + log audit
+   *   4. Ferme la modal de picker + invalide les queries
+   * L'entrée waitlist disparaît du tableau (filtre `.is('invited_at', null)`).
+   */
+  async function handleInviteWithKey(entry: BetaWaitlistEntry, key: BetaAccessKey) {
+    if (!supabase) return
+    setInvitingKeyId(key.id)
+    try {
+      const { error } = await supabase
+        .from('beta_waitlist')
+        .update({
+          invited_at: new Date().toISOString(),
+          invited_with_key_id: key.id,
+        })
+        .eq('id', entry.id)
+      if (error) throw error
+
+      // Log audit (BATCH 36 : via useAdminAction)
+      await logAction({
+        action: 'beta.waitlist_invite',
+        targetType: 'beta_waitlist',
+        targetId: entry.id,
+        metadata: { email: entry.email, key_code: key.code, key_id: key.id },
+      })
+
+      // Ouvre mailto avec le code de la clé pré-rempli (pas de placeholder à remplacer)
+      const subject = 'Ton accès Naturegraph est prêt !'
+      const body = `Bonjour,
+
+Merci pour ton intérêt pour Naturegraph ! Voici ta clé d'accès beta :
+
+  ${key.code}
+
+Saisis-la sur la page d'inscription pour créer ton compte.
+
+À très vite sur la plateforme,
+L'équipe Naturegraph`
+      window.location.href = `mailto:${entry.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+
+      toast.success(`Clé ${key.code} attribuée à ${entry.email} — ouverture du mail…`)
+      queryClient.invalidateQueries({ queryKey: ['beta-waitlist'] })
+      queryClient.invalidateQueries({ queryKey: ['beta-keys'] })
+      setInviteWaitlistEntry(null)
+    } catch (err) {
+      toast.error('Erreur attribution de la clé', err instanceof Error ? err.message : undefined)
+    } finally {
+      setInvitingKeyId(null)
+    }
+  }
+
+  /**
+   * Nicolas 2026-05-19 : supprime une entrée de la waitlist (DELETE).
+   * Utile pour nettoyer les doublons ou les emails invalides.
+   */
+  async function handleDeleteWaitlistEntry() {
+    if (!supabase || !waitlistToDelete) return
+    const target = waitlistToDelete
+    try {
+      const { error } = await supabase.from('beta_waitlist').delete().eq('id', target.id)
+      if (error) throw error
+      toast.success(`Entrée ${target.email} supprimée de la waitlist`)
+      await logAction({
+        action: 'beta.waitlist_delete',
+        targetType: 'beta_waitlist',
+        targetId: target.id,
+        metadata: { email: target.email },
+      })
+      queryClient.invalidateQueries({ queryKey: ['beta-waitlist'] })
+    } catch (err) {
+      toast.error('Erreur suppression', err instanceof Error ? err.message : undefined)
+    } finally {
+      setWaitlistToDelete(null)
+    }
+  }
+
+  /** Clés disponibles pour invitation : actives, non utilisées, non expirées. */
+  const availableKeys = useMemo(
+    () =>
+      keys.filter(
+        (k) => k.is_active && k.current_uses < k.max_uses && new Date(k.expires_at) > new Date(),
+      ),
+    [keys],
+  )
 
   // ─── Multi-select bulk actions (BATCH 110) ──────────────────────────────
   /** Toggle sélection d'une clé. Ne fonctionne que pour les clés non utilisées. */
@@ -735,7 +830,21 @@ export default function AdminBeta() {
                       </td>
                       <td className="px-5 py-3 text-right">
                         <div className="inline-flex items-center gap-1">
-                          {/* Copier l'email pour invitation manuelle (mailto:) */}
+                          {/* Nicolas 2026-05-19 : action principale = inviter avec une clé.
+                              Ouvre la modal de picker → choix d'une clé disponible →
+                              attribution + mailto pré-rempli avec le code en clair. */}
+                          <button
+                            type="button"
+                            onClick={() => setInviteWaitlistEntry(entry)}
+                            aria-label={`Inviter ${entry.email} avec une clé`}
+                            title="Inviter avec une clé"
+                            disabled={availableKeys.length === 0}
+                            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+                          >
+                            <Key className="size-3.5" aria-hidden="true" />
+                            Inviter
+                          </button>
+                          {/* Copier l'email (utile pour invitation manuelle hors flow) */}
                           <button
                             type="button"
                             onClick={async () => {
@@ -752,15 +861,16 @@ export default function AdminBeta() {
                           >
                             <Copy className="size-4" aria-hidden="true" />
                           </button>
-                          {/* Ouvrir un mailto avec template d'invitation */}
-                          <a
-                            href={`mailto:${entry.email}?subject=${encodeURIComponent('Ton accès Naturegraph est prêt')}&body=${encodeURIComponent("Bonjour,\n\nMerci pour ton intérêt pour Naturegraph !\n\nVoici ta clé d'accès beta : [INSÉRER LA CLÉ DEPUIS L'ONGLET CLÉS]\n\nÀ très vite sur la plateforme,\nL'équipe Naturegraph")}`}
-                            aria-label={`Envoyer un email à ${entry.email}`}
-                            title="Envoyer une invitation par email"
-                            className="size-8 inline-flex items-center justify-center rounded-full hover:bg-primary-light text-muted-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                          {/* Supprimer l'entrée de la waitlist (DELETE — utile pour doublons / spam) */}
+                          <button
+                            type="button"
+                            onClick={() => setWaitlistToDelete(entry)}
+                            aria-label={`Supprimer ${entry.email} de la waitlist`}
+                            title="Supprimer de la waitlist"
+                            className="size-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-error-bg)] text-muted-foreground hover:text-[var(--color-error)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)]"
                           >
-                            <Mail className="size-4" aria-hidden="true" />
-                          </a>
+                            <Trash2 className="size-4" aria-hidden="true" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -770,6 +880,110 @@ export default function AdminBeta() {
             </div>
           )}
         </section>
+      )}
+
+      {/* Nicolas 2026-05-19 : modal "Inviter avec une clé" — picker des clés disponibles.
+          Workflow : sélection d'une clé → handleInviteWithKey → UPDATE DB + mailto auto.
+          A11y : backdrop = button natif (close on click ou Enter/Espace).
+          Esc géré via le bouton X au coin haut-droit du dialog. */}
+      {inviteWaitlistEntry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label="Fermer la modale"
+            onClick={() => !invitingKeyId && setInviteWaitlistEntry(null)}
+            disabled={!!invitingKeyId}
+            className="absolute inset-0 bg-black/40 cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Inviter ${inviteWaitlistEntry.email}`}
+            className="relative bg-background rounded-lg border border-border max-w-lg w-full max-h-[80vh] flex flex-col shadow-xl"
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-border">
+              <div className="flex flex-col gap-1 min-w-0">
+                <h2 className="text-base font-bold text-foreground">
+                  Inviter {inviteWaitlistEntry.email}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Sélectionne une clé à attribuer — un mail sera ouvert avec le code pré-rempli.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setInviteWaitlistEntry(null)}
+                aria-label="Fermer"
+                disabled={!!invitingKeyId}
+                className="size-8 shrink-0 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-[var(--color-bg-secondary)] transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <X className="size-4" aria-hidden="true" />
+              </button>
+            </div>
+
+            {/* Liste des clés disponibles */}
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {availableKeys.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  Aucune clé disponible. Génère de nouvelles clés depuis l&apos;onglet &quot;Clés
+                  d&apos;accès&quot;.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {availableKeys.slice(0, 50).map((k) => (
+                    <li key={k.id}>
+                      <button
+                        type="button"
+                        onClick={() => handleInviteWithKey(inviteWaitlistEntry, k)}
+                        disabled={!!invitingKeyId}
+                        className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg border border-border hover:border-primary hover:bg-primary-light/20 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                          <span className="font-mono text-sm font-semibold text-foreground">
+                            {k.code}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Batch #{k.batch_number} · expire {formatRelativeDate(k.expires_at)}
+                          </span>
+                        </div>
+                        {invitingKeyId === k.id ? (
+                          <Loader2
+                            className="size-4 motion-safe:animate-spin text-primary shrink-0"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <span className="text-xs font-semibold text-primary shrink-0">
+                            Attribuer →
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Footer info */}
+            <div className="px-5 py-3 border-t border-border text-xs text-muted-foreground bg-[var(--color-bg-secondary)]/30 rounded-b-lg">
+              {availableKeys.length} clé{availableKeys.length > 1 ? 's' : ''} disponible
+              {availableKeys.length > 1 ? 's' : ''} sur {keys.length} totale
+              {keys.length > 1 ? 's' : ''}.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Nicolas 2026-05-19 : confirmation suppression entrée waitlist (DELETE). */}
+      {waitlistToDelete && (
+        <ConfirmModal
+          title={`Supprimer ${waitlistToDelete.email} de la waitlist ?`}
+          description="Cette action est irréversible. L'email sera retiré de la liste d'attente. À utiliser pour les doublons ou les emails invalides."
+          confirmLabel="Supprimer"
+          variant="danger"
+          onCancel={() => setWaitlistToDelete(null)}
+          onConfirm={handleDeleteWaitlistEntry}
+        />
       )}
 
       {/* BATCH 107 : Modal de confirmation pour la suppression définitive d'une clé.
