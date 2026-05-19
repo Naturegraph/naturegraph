@@ -117,16 +117,22 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
     return () => document.removeEventListener('keydown', fn)
   }, [onClose])
 
-  // Desktop : fermer si clic en dehors du dropdown
+  // Fermer si clic en dehors du dropdown/sheet.
+  // 2026-05-19 : même pattern que ProfileMenu/NotificationsPanel — `click`
+  // post-React + `closest()` qui matche desktop dropdown ET mobile sheet
+  // (sinon le ref desktop seul ferme le menu avant que onTypeSelect ne fire
+  // sur le tap d'une carte en mobile).
   useEffect(() => {
     const fn = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) onClose()
+      const target = e.target as HTMLElement | null
+      if (!target) return
+      if (target.closest('[role="dialog"][aria-label="Partager une contribution"]')) return
+      onClose()
     }
-    // Délai 50ms pour éviter que le clic d'ouverture ferme immédiatement
-    const t = setTimeout(() => document.addEventListener('mousedown', fn), 50)
+    const timer = setTimeout(() => document.addEventListener('click', fn), 50)
     return () => {
-      clearTimeout(t)
-      document.removeEventListener('mousedown', fn)
+      clearTimeout(timer)
+      document.removeEventListener('click', fn)
     }
   }, [onClose])
 
@@ -236,20 +242,23 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
         {cards}
       </div>
 
-      {/* ── Mobile : bottom sheet ────────────────────────────────────────────── */}
+      {/* ── Mobile : bottom sheet positionné au-dessus de la MobileBottomNav
+              (h-14 + safe-area) — sinon les cartes "Rencontre nature" / "Instant nature"
+              tombent sous la navbar et leurs clics sont interceptés.
+              z-[60] > navbar z-50 pour ne pas laisser la navbar capturer les taps. */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Partager une contribution"
-        className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-[var(--color-bg-primary)] border-t border-border rounded-t-xl shadow-xl overflow-hidden"
+        className="md:hidden fixed inset-x-0 bottom-0 z-[60] bg-[var(--color-bg-primary)] border-t border-border rounded-t-xl shadow-xl overflow-hidden pb-[env(safe-area-inset-bottom)]"
       >
         {/* Handle bar */}
         <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
           <div className="w-10 h-1 bg-border rounded-full" />
         </div>
-        {/* Titre */}
-        <p className="px-5 pt-3 pb-2 text-base font-title font-bold text-foreground">Partager</p>
-        <div className="px-2 pb-4">{cards}</div>
+        {/* Titre "Partager" retiré sur mobile (Nicolas 2026-05-19) — pas
+            d'intérêt sur sheet compacte, les cartes parlent d'elles-mêmes. */}
+        <div className="px-2 pt-2 pb-4">{cards}</div>
       </div>
     </>
   )

@@ -9,8 +9,12 @@
  * Variants : primary | outline | secondary | ghost | danger
  * Sizes    : sm (h-10) | md (h-12) | lg (h-14)
  *
- * Les variants `primary` et `outline` appliquent l'effet 3D btn-press
- * défini dans landing.css — cohérence visuelle garantie sur toute l'app.
+ * 2026-05-19 (Nicolas) — Phase 1 simplification :
+ * - Plus de shadow ni d'effet 3D translateY (anciennement btn-press).
+ * - Primary  : background plein, hover = brightness léger.
+ * - Secondary: transparent + border simple, hover = border-color qui pointe primary.
+ * - Outline  : transparent + border translucide blanche (fonds sombres).
+ * Voir styles/components/_buttons.scss pour la définition CSS commune.
  */
 
 import { forwardRef, type ButtonHTMLAttributes } from 'react'
@@ -40,21 +44,20 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<ButtonVariant, string> = {
   /**
-   * Bouton principal — violet solid, effet 3D btn-press.
+   * Bouton principal — violet solid, sobre (pas de shadow).
    * Usage : CTA primaires, actions importantes.
    */
   primary:
     'btn-press btn-press-primary bg-[var(--color-action-default)] text-[var(--color-text-white)] rounded-full',
 
   /**
-   * Bouton outline — transparent avec inset border via btn-press-outline.
+   * Bouton outline — transparent + border translucide blanche.
    * Usage : actions secondaires sur fonds sombres (Hero, Discord).
    */
   outline: 'btn-press btn-press-outline bg-transparent text-[var(--color-text-white)] rounded-full',
 
   /**
-   * Bouton secondaire — outline teal sur fond clair, effet 3D btn-press.
-   * Miroir du variant outline, adapté aux fonds blancs/crème.
+   * Bouton secondaire — transparent + border simple.
    * Usage : actions secondaires dans l'interface app (auth, forms).
    */
   secondary:

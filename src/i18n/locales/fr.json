@@ -424,6 +424,10 @@
     "title": "Explorez la biodiversité",
     "subtitle": "Observez, documentez et partagez vos découvertes nature",
     "feedEmpty": "Aucune observation pour le moment",
+    "drawer": {
+      "title": "Aperçu",
+      "ariaLabel": "Aperçu communauté et tendances"
+    },
     "trending": {
       "title": "Tendances",
       "thisWeek": "Cette semaine",
@@ -546,8 +550,10 @@
       "commentCount": "{{count}} commentaire",
       "commentCount_other": "{{count}} commentaires",
       "options": {
-        "unfollow": "Ne plus suivre @{{username}}",
-        "unfollowDesc": "Vous ne verrez plus ses publications",
+        "follow": "Migrer vers @{{username}}",
+        "followDesc": "Tu verras ses publications dans ton feed",
+        "unfollow": "Ne plus migrer avec @{{username}}",
+        "unfollowDesc": "Tu ne verras plus ses publications",
         "addFavorite": "Ajouter aux favoris",
         "addFavoriteDesc": "Enregistrer pour plus tard",
         "copyLink": "Copier le lien",
@@ -813,7 +819,7 @@
       "unknownDesc": "Je ne cherche pas à identifier",
       "searchPlaceholder": "Mésange, renard...",
       "noResults": "Aucune espèce trouvée",
-      "taxrefCredit": "Données TAXREF — INPN, licence CC-BY",
+      "dataCredit": "Données espèces : GBIF + Wikidata",
       "skip": "Passer l'identification",
       "skipFromEmpty": "Je ne sais pas, passer",
       "serviceUnavailable": "Recherche indisponible — réessaie dans un instant",

@@ -485,7 +485,9 @@ export function FeedFilterPanel({
         </aside>
       </div>
 
-      {/* ═══════ Mobile : bottom sheet plein écran ═══════ */}
+      {/* ═══════ Mobile : bottom sheet ═══════
+          Positionné au-dessus de la MobileBottomNav (h-14 + safe-area) pour
+          que le bouton "Sauvegarder" reste tactile. z-[60] > navbar z-50. */}
       <div className="md:hidden">
         <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} aria-hidden="true" />
 
@@ -493,9 +495,13 @@ export function FeedFilterPanel({
           role="dialog"
           aria-modal="true"
           aria-label={t('home.filters.title')}
-          className="fixed inset-x-0 bottom-0 z-50 bg-background rounded-t-2xl max-h-[90vh] flex flex-col"
+          className="fixed inset-x-0 bottom-0 z-[60] bg-background rounded-t-2xl max-h-[95vh] flex flex-col pb-[env(safe-area-inset-bottom)]"
         >
-          <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
+          {/* Handle bar — cohérence visuelle avec les autres bottom sheets. */}
+          <div className="flex justify-center pt-3 pb-1 shrink-0" aria-hidden="true">
+            <div className="w-10 h-1 bg-border rounded-full" />
+          </div>
+          <div className="flex items-center justify-between px-5 pt-2 pb-3 shrink-0">
             <h2 className="font-heading text-2xl font-bold text-foreground">
               {t('home.filters.title')}
             </h2>
@@ -511,9 +517,8 @@ export function FeedFilterPanel({
 
           <div className="overflow-y-auto flex-1 px-5 pb-4">{panelContent}</div>
 
-          <div className="shrink-0 border-t-[0.5px] border-border px-5 py-4 pb-safe">
-            {panelFooter}
-          </div>
+          {/* Footer collé en bas du sheet (le sheet est lui-même au-dessus de la navbar). */}
+          <div className="shrink-0 border-t-[0.5px] border-border px-5 py-4">{panelFooter}</div>
         </div>
       </div>
     </>

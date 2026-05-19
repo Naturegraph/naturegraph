@@ -151,7 +151,9 @@ export function HomeNavbar({
               aria-label="Naturegraph — Retour au fil d'actualité"
               className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
             >
-              <img src={logoColor} alt="Naturegraph" className="h-8 w-auto" />
+              {/* Mobile : h-6 (24px) pour laisser de la place aux boutons d'action.
+                  Desktop md+ : h-8 (32px) — taille de base inchangée. */}
+              <img src={logoColor} alt="Naturegraph" className="h-6 md:h-8 w-auto" />
             </Link>
 
             {/* Actions droite */}
@@ -213,7 +215,7 @@ export function HomeNavbar({
                     {(unreadCount ?? 0) > 0 && (
                       <span
                         aria-label={`${unreadCount} notifications non lues`}
-                        className="absolute top-1 right-1 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none pointer-events-none"
+                        className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold leading-none pointer-events-none ring-2 ring-cream-lighter"
                       >
                         {(unreadCount ?? 0) > 99 ? '99+' : unreadCount}
                       </span>
@@ -293,7 +295,7 @@ export function HomeNavbar({
                     {(unreadCount ?? 0) > 0 && (
                       <span
                         aria-label={`${unreadCount} notifications non lues`}
-                        className="absolute top-1 right-1 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none pointer-events-none"
+                        className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold leading-none pointer-events-none ring-2 ring-cream-lighter"
                       >
                         {(unreadCount ?? 0) > 99 ? '99+' : unreadCount}
                       </span>
