@@ -906,6 +906,10 @@
       "memberSince": "Member since {{date}}",
       "dna": "Observer DNA"
     },
+    "dna": {
+      "title": "Observer DNA",
+      "empty": "No observations yet."
+    },
     "journal": {
       "recent": "Recent",
       "popular": "Popular",
