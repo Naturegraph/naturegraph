@@ -173,15 +173,22 @@ export function PostOptionsMenu({
     return () => document.removeEventListener('keydown', fn)
   }, [onClose])
 
-  // Desktop : fermer si clic en dehors
+  // Fermer si clic en dehors du menu (desktop dropdown + mobile sheet).
+  // 2026-05-19 : `click` post-React + selector `[role="menu"]` au lieu de
+  // `mousedown` + `contains(ref)` — sinon les actions menu (Migrer, Favoris,
+  // Copier, Masquer, Signaler) ne s'exécutent pas en mobile car onClose()
+  // ferme le menu avant le click handler React.
   useEffect(() => {
     const fn = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) onClose()
+      const target = e.target as HTMLElement | null
+      if (!target) return
+      if (target.closest('[role="menu"]')) return
+      onClose()
     }
-    const t = setTimeout(() => document.addEventListener('mousedown', fn), 50)
+    const timer = setTimeout(() => document.addEventListener('click', fn), 50)
     return () => {
-      clearTimeout(t)
-      document.removeEventListener('mousedown', fn)
+      clearTimeout(timer)
+      document.removeEventListener('click', fn)
     }
   }, [onClose])
 

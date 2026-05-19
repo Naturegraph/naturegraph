@@ -117,16 +117,22 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
     return () => document.removeEventListener('keydown', fn)
   }, [onClose])
 
-  // Desktop : fermer si clic en dehors du dropdown
+  // Fermer si clic en dehors du dropdown/sheet.
+  // 2026-05-19 : même pattern que ProfileMenu/NotificationsPanel — `click`
+  // post-React + `closest()` qui matche desktop dropdown ET mobile sheet
+  // (sinon le ref desktop seul ferme le menu avant que onTypeSelect ne fire
+  // sur le tap d'une carte en mobile).
   useEffect(() => {
     const fn = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) onClose()
+      const target = e.target as HTMLElement | null
+      if (!target) return
+      if (target.closest('[role="dialog"][aria-label="Partager une contribution"]')) return
+      onClose()
     }
-    // Délai 50ms pour éviter que le clic d'ouverture ferme immédiatement
-    const t = setTimeout(() => document.addEventListener('mousedown', fn), 50)
+    const timer = setTimeout(() => document.addEventListener('click', fn), 50)
     return () => {
-      clearTimeout(t)
-      document.removeEventListener('mousedown', fn)
+      clearTimeout(timer)
+      document.removeEventListener('click', fn)
     }
   }, [onClose])
 

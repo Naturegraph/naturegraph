@@ -271,17 +271,29 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
     return () => document.removeEventListener('keydown', fn)
   }, [onClose])
 
-  // Fermer si clic en dehors du panel
+  // Fermer si clic en dehors du panel.
+  // 2026-05-19 (Nicolas) : "Tout marquer comme lu" ne fonctionnait pas en
+  // mobile — même cause que ProfileMenu : `mousedown` document handler
+  // tirait AVANT le click React du bouton interne, et panelRef pointe
+  // uniquement sur le dropdown desktop (caché en mobile). Du coup
+  // `panelRef.current.contains(target)` retournait false même pour un
+  // clic dans le sheet mobile → onClose() avant que la mutation ne fire.
+  // Fix : `click` post-React + `closest('[role="dialog"]')` pour matcher
+  // les 2 dialogues (desktop + mobile).
   useEffect(() => {
     const fn = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose()
+      const target = e.target as HTMLElement | null
+      if (!target) return
+      if (target.closest('[role="dialog"][aria-label="' + t('home.notifications.title') + '"]'))
+        return
+      onClose()
     }
-    const t = setTimeout(() => document.addEventListener('mousedown', fn), 50)
+    const timer = setTimeout(() => document.addEventListener('click', fn), 50)
     return () => {
-      clearTimeout(t)
-      document.removeEventListener('mousedown', fn)
+      clearTimeout(timer)
+      document.removeEventListener('click', fn)
     }
-  }, [onClose])
+  }, [onClose, t])
 
   /**
    * Clic sur une notif (BATCH 107) :
