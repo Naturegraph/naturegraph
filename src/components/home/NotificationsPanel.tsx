@@ -304,21 +304,12 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
 
   const panelContent = (
     <>
-      {/* Header */}
+      {/* Header — pas de badge unreadCount ici : doublon avec la cloche header
+          qui porte déjà le compteur (Nicolas 2026-05-19). */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-        <div className="flex items-center gap-2">
-          <p className="font-title font-bold text-base text-foreground">
-            {t('home.notifications.title')}
-          </p>
-          {unreadCount > 0 && (
-            <span
-              className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full"
-              aria-label={t('home.notifications.unreadBadge', { count: unreadCount })}
-            >
-              {unreadCount}
-            </span>
-          )}
-        </div>
+        <p className="font-title font-bold text-base text-foreground">
+          {t('home.notifications.title')}
+        </p>
         <button
           type="button"
           onClick={onClose}
