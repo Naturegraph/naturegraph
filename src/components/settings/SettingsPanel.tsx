@@ -721,10 +721,11 @@ function SettingsLicenseView() {
               className="font-bold underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
             >
               GBIF
-            </a>{' '}
+            </a>
+            {' : '}
             {t('settings.license.gbifDesc', {
               defaultValue:
-                '— Global Biodiversity Information Facility, référentiel taxonomique international ouvert.',
+                'le référentiel taxonomique international ouvert (Global Biodiversity Information Facility).',
             })}
           </li>
           <li>
@@ -735,9 +736,10 @@ function SettingsLicenseView() {
               className="font-bold underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
             >
               Wikidata
-            </a>{' '}
+            </a>
+            {' : '}
             {t('settings.license.wikidataDesc', {
-              defaultValue: '— pour les noms vernaculaires en français et en québécois.',
+              defaultValue: 'pour les noms vernaculaires en français et en québécois.',
             })}
           </li>
         </ul>
