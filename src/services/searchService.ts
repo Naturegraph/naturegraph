@@ -52,9 +52,11 @@ const SPECIES_MASTER_SELECT =
 /**
  * Recherche locale sur le mock COMMON_SPECIES.
  * Utilisée quand Supabase est indisponible.
+ * Min 2 caractères pour rester cohérent avec le code Supabase path.
  */
 function searchSpeciesMock(query: string, limit: number): SpeciesHit[] {
-  const q = query.toLowerCase()
+  const q = query.trim().toLowerCase()
+  if (q.length < 2) return []
   return COMMON_SPECIES.filter(
     (s) => s.commonName.toLowerCase().includes(q) || s.scientificName.toLowerCase().includes(q),
   )
