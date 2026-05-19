@@ -50,6 +50,7 @@ import {
 } from '@/utils/groupNotifications'
 import { trackNotifEvent } from '@/utils/notificationAnalytics'
 import { EmptyState, LoadingState } from '@/components/ui'
+import hermineIcon from '@/assets/images/hermine-icon.png'
 
 // ─── Helpers date ─────────────────────────────────────────────────────────────
 
@@ -211,27 +212,22 @@ function formatGroupLabel(
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
-/** Avatar de l'acteur avec fallback sur initiales. */
-function Avatar({ url, fallback }: { url: string | null; fallback: string }) {
-  if (url) {
-    return (
-      <img
-        src={url}
-        alt=""
-        aria-hidden="true"
-        loading="lazy"
-        width={40}
-        height={40}
-        className="size-10 rounded-full object-cover bg-primary-light"
-      />
-    )
-  }
+/**
+ * Avatar de l'acteur. Si pas de photo, on affiche l'hermine officielle
+ * (cohérence avec le reste de l'app — MobileBottomNav, ProfileHeader,
+ * EditPhotoTab, GuestSidebar, etc.). Plus d'initiales (Nicolas 2026-05-19).
+ */
+function Avatar({ url }: { url: string | null; fallback?: string }) {
   return (
-    <div className="size-10 rounded-full bg-primary-light flex items-center justify-center overflow-hidden">
-      <span className="text-sm font-bold text-primary" aria-hidden="true">
-        {fallback.slice(0, 2).toUpperCase()}
-      </span>
-    </div>
+    <img
+      src={url ?? hermineIcon}
+      alt=""
+      aria-hidden="true"
+      loading="lazy"
+      width={40}
+      height={40}
+      className="size-10 rounded-full object-cover bg-primary-light"
+    />
   )
 }
 
