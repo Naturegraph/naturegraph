@@ -14,7 +14,7 @@
  *   2. Notifications      → sous-vue Bientôt (Phase 2)
  *   3. Besoin d'aide ?    → sous-vue Bientôt (Phase 2)
  *   4. Partage tes idées  → lien externe (Tally form, à configurer)
- *   5. Licence et droits  → sous-vue avec attributions (TAXREF, Unsplash, Lucide…)
+ *   5. Licence et droits  → sous-vue avec attributions (GBIF, Wikidata, Unsplash, Lucide…)
  *   6. Déconnexion        → useAuth().signOut() + redirect /home
  *   7. Supprimer compte   → modal confirmation (DeleteAccountModal)
  *

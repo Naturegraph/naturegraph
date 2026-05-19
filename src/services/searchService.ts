@@ -15,8 +15,9 @@
  *   4. Mock local (COMMON_SPECIES)
  *      → si Supabase non configuré ou totalement indisponible
  *
- * Règle de sécurité : l'API TAXREF officielle n'est JAMAIS appelée
- * directement depuis le front — toujours via taxref_cache Supabase.
+ * Règle de sécurité : aucune API externe (GBIF, Wikidata, iNat) n'est
+ * appelée directement depuis le front — toujours via une table Supabase
+ * (species_master Phase 1, ou cache rate-limit-friendly Phase 2).
  */
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
@@ -33,7 +34,7 @@ export interface ProfileHit {
 }
 
 export interface SpeciesHit {
-  /** cd_nom TAXREF — identifiant unique */
+  /** Identifiant taxonomique (cd_nom legacy ou GBIF taxonKey Phase 2). */
   taxref_id: string
   scientific_name: string
   /** Nom commun français (peut être null pour taxons sans nom vernaculaire) */

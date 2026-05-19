@@ -64,9 +64,9 @@ export interface MockPost {
   category: { icon: string; label: string }
   /** Nom commun (si identifié) — sinon laisser undefined / null pour fallback i18n. */
   species?: string | null
-  /** Nom scientifique TAXREF (optionnel — enrichit le SpeciesHit pour le filtre) */
+  /** Nom scientifique latin (optionnel — enrichit le SpeciesHit pour le filtre) */
   scientific_name?: string | null
-  /** cd_nom TAXREF — identifiant unique espèce (optionnel) */
+  /** Identifiant taxonomique (cd_nom legacy ou GBIF taxonKey — Phase 2). Optionnel. */
   taxref_id?: string | null
   /** Groupe taxonomique de l'espèce (optionnel — emoji dans le chip) */
   taxonomic_group?: string | null

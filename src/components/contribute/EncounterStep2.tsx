@@ -504,9 +504,9 @@ export function EncounterStep2({
           </label>
        */}
 
-      {/* BATCH 99 : attribution TAXREF déplacée dans le footer de
-          ContributeEncounterForm (sous les 2 boutons Annuler/Suivant)
-          → hiérarchie de l'info plus claire + visible en permanence. */}
+      {/* Attribution sources (GBIF + Wikidata) affichée dans le footer
+          de ContributeEncounterForm (sous les boutons Annuler/Suivant)
+          — hiérarchie de l'info claire + visible en permanence. */}
     </div>
   )
 }
