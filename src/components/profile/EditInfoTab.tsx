@@ -2,14 +2,15 @@
  * EditInfoTab — Onglet "Informations" du panneau d'édition de profil
  *
  * Pixel-perfect Figma 6385:75440 (desktop) / 6385:73687 (mobile).
- * Champs :
+ * Champs Phase 1 :
  *   - Nom d'utilisateur (requis, état "rempli" en primary-light + border primary)
  *   - Présentation (textarea, 300 caractères max, fond background)
  *   - Mon objectif d'observations par semaine (number, helper italic)
- *   - Réseaux sociaux : 3 lignes (Globe / Instagram / Facebook)
- *     · icon container détaché à gauche
- *     · input pill au centre
- *     · bouton X clear à droite (visible si valeur)
+ *
+ * Phase 1 (Nicolas 2026-05-19) : la section "Réseaux sociaux" (Globe / Instagram /
+ * Facebook) est temporairement retirée — les champs ne sont affichés nulle part
+ * dans le produit pour le moment. Elle reviendra en Phase 2 quand la card About
+ * du profil exposera les liens.
  *
  * Bouton "Sauvegarder les modifications" en bas, pleine largeur primary.
  *
@@ -18,7 +19,6 @@
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Globe, Instagram, Facebook, X as XIcon } from 'lucide-react'
 import type { ProfileDisplayData } from './ProfileHeader'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -32,12 +32,8 @@ interface EditInfoTabProps {
 // ─── Styles partagés ──────────────────────────────────────────────────────────
 
 /**
- * Classe d'input pill commune — utilisée par username, weekGoal, et la base
- * des inputs réseaux sociaux (qui ajoutent leur propre padding pour l'icône
- * et le bouton X).
- *
- * État focus = bg-primary-light + border-primary + ring (Figma 6385:75440 :
- * tous les champs partagent la même apparence active).
+ * Classe d'input pill commune — utilisée par username + weekGoal.
+ * État focus = bg-primary-light + border-primary + ring (Figma 6385:75440).
  */
 const INPUT_PILL_CLASS =
   'w-full h-10 px-4 rounded-full border-[0.5px] border-border bg-background text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:bg-primary-light focus:border-primary focus:ring-2 focus:ring-primary'
@@ -49,72 +45,6 @@ const INPUT_PILL_CLASS =
 const TEXTAREA_CLASS =
   'w-full px-4 py-3 rounded-2xl border-[0.5px] border-border bg-background text-sm text-foreground placeholder:text-muted-foreground resize-none transition-colors focus:outline-none focus:bg-primary-light focus:border-primary focus:ring-2 focus:ring-primary'
 
-// ─── Sous-composant : ligne réseau social ─────────────────────────────────────
-
-interface SocialInputProps {
-  icon: React.ReactNode
-  value: string
-  onChange: (value: string) => void
-  placeholder: string
-  ariaLabel: string
-  /** Label i18n pour le bouton X clear (ex: "Effacer le site web"). */
-  clearLabel: string
-}
-
-/**
- * Ligne d'input réseau social — Figma 6385:73715.
- *   - Icon container 40×40 rounded-lg bordured à gauche (8px radius)
- *   - Input rounded-lg au centre (8px — Figma : moins arrondi que pill)
- *   - Bouton X clear à droite (apparaît si valeur saisie)
- *   - Aspect "input field" classique avec coins légers (Nicolas 2026-05-02 :
- *     "pas 100% arrondies ici pour les items mais 8px plus conforme").
- */
-function SocialInput({
-  icon,
-  value,
-  onChange,
-  placeholder,
-  ariaLabel,
-  clearLabel,
-}: SocialInputProps) {
-  const hasValue = value.length > 0
-  return (
-    <div className="flex items-center gap-2">
-      {/* Icon container détaché — rounded-lg (8px). */}
-      <span
-        aria-hidden="true"
-        className="size-10 shrink-0 rounded-lg border-[0.5px] border-border bg-background flex items-center justify-center text-foreground"
-      >
-        {icon}
-      </span>
-
-      {/* Input field — même état actif (bg-primary-light + border-primary)
-          que les autres champs, coins rounded-lg (8px) — Figma 6385:73715. */}
-      <div className="relative flex-1">
-        <input
-          type="url"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          aria-label={ariaLabel}
-          className="w-full h-10 pl-4 pr-10 rounded-lg border-[0.5px] border-border bg-background text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:bg-primary-light focus:border-primary focus:ring-2 focus:ring-primary"
-        />
-        {/* Bouton X clear — visible uniquement si valeur saisie */}
-        {hasValue && (
-          <button
-            type="button"
-            onClick={() => onChange('')}
-            aria-label={clearLabel}
-            className="absolute right-2 top-1/2 -translate-y-1/2 size-7 flex items-center justify-center rounded-full text-foreground hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <XIcon className="size-4" aria-hidden="true" />
-          </button>
-        )}
-      </div>
-    </div>
-  )
-}
-
 // ─── Composant principal ──────────────────────────────────────────────────────
 
 export function EditInfoTab({ profile, onSave, onClose }: EditInfoTabProps) {
@@ -123,33 +53,11 @@ export function EditInfoTab({ profile, onSave, onClose }: EditInfoTabProps) {
   const [username, setUsername] = useState(profile.username)
   const [bio, setBio] = useState(profile.bio ?? '')
   const [weekGoal, setWeekGoal] = useState(profile.weekProgress?.goal ?? 5)
-  // Pour les réseaux sociaux on stocke des URLs complètes (Figma) — l'affichage
-  // dans la card About fera l'extraction du handle (cf. ProfileAboutCard).
-  const [website, setWebsite] = useState(
-    profile.website
-      ? profile.website.startsWith('http')
-        ? profile.website
-        : `https://${profile.website}`
-      : '',
-  )
-  const [instagram, setInstagram] = useState(
-    profile.instagram ? `https://www.instagram.com/${profile.instagram}` : '',
-  )
-  // TODO [BACKEND] — Ajouter `facebook TEXT` dans la table `profiles` puis
-  //   intégrer ici (`profile.facebook` + propagation dans handleSave).
-  //   Pour l'instant l'input est saisi mais NON persisté — le state reste local.
-  const [facebook, setFacebook] = useState('')
 
   function handleSave() {
     onSave({
       username,
       bio: bio || null,
-      website: website || null,
-      // On retire le préfixe instagram.com pour stocker juste le handle —
-      // ProfileAboutCard reconstruit l'URL au rendu.
-      instagram:
-        instagram.replace(/^https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '') || null,
-      // facebook: TODO [BACKEND] — pas dans le schéma actuel.
       weekProgress: { current: profile.weekProgress?.current ?? 0, goal: weekGoal },
     })
     onClose()
@@ -227,51 +135,8 @@ export function EditInfoTab({ profile, onSave, onClose }: EditInfoTabProps) {
         </p>
       </div>
 
-      {/* ── Réseaux sociaux ── */}
-      <div className="flex flex-col gap-3">
-        <p className="text-sm font-medium text-foreground">
-          {t('profile.edit.socialLinks', { defaultValue: 'Réseaux sociaux' })}
-        </p>
-
-        <SocialInput
-          icon={<Globe className="size-4" aria-hidden="true" />}
-          value={website}
-          onChange={setWebsite}
-          placeholder={t('profile.edit.websitePlaceholder', {
-            defaultValue: 'https://www.example.fr',
-          })}
-          ariaLabel={t('profile.edit.websiteAria', { defaultValue: 'Site web' })}
-          clearLabel={t('profile.edit.clearWebsite', {
-            defaultValue: 'Effacer le site web',
-          })}
-        />
-
-        <SocialInput
-          icon={<Instagram className="size-4" aria-hidden="true" />}
-          value={instagram}
-          onChange={setInstagram}
-          placeholder={t('profile.edit.instagramPlaceholder', {
-            defaultValue: 'https://www.instagram.com/...',
-          })}
-          ariaLabel={t('profile.edit.instagramAria', { defaultValue: 'Instagram' })}
-          clearLabel={t('profile.edit.clearInstagram', {
-            defaultValue: 'Effacer le lien Instagram',
-          })}
-        />
-
-        <SocialInput
-          icon={<Facebook className="size-4" aria-hidden="true" />}
-          value={facebook}
-          onChange={setFacebook}
-          placeholder={t('profile.edit.facebookPlaceholder', {
-            defaultValue: 'https://www.facebook.com',
-          })}
-          ariaLabel={t('profile.edit.facebookAria', { defaultValue: 'Facebook' })}
-          clearLabel={t('profile.edit.clearFacebook', {
-            defaultValue: 'Effacer le lien Facebook',
-          })}
-        />
-      </div>
+      {/* Phase 1 : section "Réseaux sociaux" retirée temporairement —
+          revient en Phase 2 quand ProfileAboutCard exposera les liens. */}
 
       {/* Le bouton "Sauvegarder les modifications" est rendu dans le footer
           fixe de EditProfilePanel (sticky bottom) — submit déclenché par
