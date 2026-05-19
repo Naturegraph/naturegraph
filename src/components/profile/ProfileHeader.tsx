@@ -81,13 +81,15 @@ export function ProfileHeader({
   const badgeEmoji = profile.badges.length > 0 ? getBadgeEmoji(profile.badges[0]) : null
 
   return (
-    // Container avec padding 24px tout autour (Figma : Feed à x=24 y=24).
-    // Sur mobile, on réduit à 16px (px-4).
-    <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 pt-4 md:pt-6">
+    // Container : pas de padding latéral mobile pour que la bannière
+    // s'étende edge-to-edge (Nicolas 2026-05-19 — le padding créait un
+    // espace nul). Desktop garde le padding 24px + rounded-md.
+    <div className="w-full max-w-[1440px] mx-auto md:px-6 md:pt-6">
       {/* ── Bannière ──
           Figma 6385:74435 : Rectangle 1465 = 1392×224 rounded.
-          Hauteur fixe 224px sur desktop, plus courte sur mobile (h-44 = 176). */}
-      <div className="h-44 md:h-56 relative overflow-hidden rounded-md bg-[var(--color-action-light)]">
+          Hauteur fixe 224px sur desktop, plus courte sur mobile (h-44 = 176).
+          Mobile : full-bleed (pas de coins arrondis), Desktop : rounded-md. */}
+      <div className="h-44 md:h-56 relative overflow-hidden md:rounded-md bg-[var(--color-action-light)]">
         {profile.banner_url && (
           // Above-the-fold → loading="eager" + fetchpriority="high".
           // C'est le LCP de la page profil → on le charge en priorité.
@@ -107,8 +109,10 @@ export function ProfileHeader({
           Info+actions row commence 24px (md:mt-6) sous la bannière, donc
           PAS aligné au bas de l'avatar (Figma : info y=248 vs avatar y=168
           → info commence 80px après le top de l'avatar).
-          Mobile : avatar centré, overlap ~48px sur banner */}
-      <div className="relative">
+          Mobile : avatar centré, overlap ~48px sur banner.
+          Le padding mobile (px-4) est sur ce wrapper et plus sur le parent
+          pour que seule la bannière soit edge-to-edge. */}
+      <div className="relative px-4 md:px-0">
         <div className="relative flex flex-col md:flex-row md:items-start md:gap-6 md:px-12">
           {/* Avatar — chevauche la bannière (margin top négative)
               Desktop : aligné à gauche px-12 (48px), taille 128px, overlap 56px
