@@ -495,9 +495,13 @@ export function FeedFilterPanel({
           role="dialog"
           aria-modal="true"
           aria-label={t('home.filters.title')}
-          className="fixed inset-x-0 bottom-0 z-[60] bg-background rounded-t-2xl max-h-[95vh] flex flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))]"
+          className="fixed inset-x-0 bottom-0 z-[60] bg-background rounded-t-2xl max-h-[95vh] flex flex-col pb-[env(safe-area-inset-bottom)]"
         >
-          <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
+          {/* Handle bar — cohérence visuelle avec les autres bottom sheets. */}
+          <div className="flex justify-center pt-3 pb-1 shrink-0" aria-hidden="true">
+            <div className="w-10 h-1 bg-border rounded-full" />
+          </div>
+          <div className="flex items-center justify-between px-5 pt-2 pb-3 shrink-0">
             <h2 className="font-heading text-2xl font-bold text-foreground">
               {t('home.filters.title')}
             </h2>

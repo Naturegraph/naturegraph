@@ -444,7 +444,7 @@ export function PostOptionsMenu({
         <div
           role="menu"
           aria-label={t('home.post.optionsMenu')}
-          className="md:hidden fixed inset-x-0 bottom-0 z-[60] bg-background rounded-t-2xl shadow-xl overflow-hidden pb-[calc(3.5rem+env(safe-area-inset-bottom))]"
+          className="md:hidden fixed inset-x-0 bottom-0 z-[60] bg-background rounded-t-2xl shadow-xl overflow-hidden pb-[env(safe-area-inset-bottom)]"
         >
           {/* Handle bar */}
           <div className="flex justify-center pt-3 pb-2" aria-hidden="true">

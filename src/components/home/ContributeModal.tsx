@@ -244,7 +244,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
         role="dialog"
         aria-modal="true"
         aria-label="Partager une contribution"
-        className="md:hidden fixed inset-x-0 bottom-0 z-[60] bg-[var(--color-bg-primary)] border-t border-border rounded-t-xl shadow-xl overflow-hidden pb-[calc(3.5rem+env(safe-area-inset-bottom))]"
+        className="md:hidden fixed inset-x-0 bottom-0 z-[60] bg-[var(--color-bg-primary)] border-t border-border rounded-t-xl shadow-xl overflow-hidden pb-[env(safe-area-inset-bottom)]"
       >
         {/* Handle bar */}
         <div className="flex justify-center pt-3 pb-1" aria-hidden="true">

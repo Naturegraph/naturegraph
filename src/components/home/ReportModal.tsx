@@ -265,7 +265,7 @@ export function ReportModal({ postId, onClose }: ReportModalProps) {
       </div>
 
       {/* ── Mobile : bottom sheet ─────────────────────────────────────────── */}
-      <div className="md:hidden fixed inset-x-0 bottom-0 z-[80] pb-[calc(3.5rem+env(safe-area-inset-bottom))]">
+      <div className="md:hidden fixed inset-x-0 bottom-0 z-[80] pb-[env(safe-area-inset-bottom)]">
         <div
           role="dialog"
           aria-modal="true"

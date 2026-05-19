@@ -70,10 +70,16 @@ export function MobileNavDrawer({ onClose }: MobileNavDrawerProps) {
         role="dialog"
         aria-modal="true"
         aria-label={t('nav.menu', { defaultValue: 'Menu' })}
-        className="md:hidden fixed inset-x-0 bottom-0 z-[60] bg-cream-lighter border-t border-border rounded-t-2xl shadow-xl flex flex-col max-h-[95vh] pb-[calc(3.5rem+env(safe-area-inset-bottom))]"
+        className="md:hidden fixed inset-x-0 bottom-0 z-[60] bg-cream-lighter border-t border-border rounded-t-2xl shadow-xl flex flex-col max-h-[95vh] pb-[env(safe-area-inset-bottom)]"
       >
+        {/* Handle bar — cohérence avec les autres bottom sheets (9/10 en ont
+            un, on harmonise partout pour rester sur le même pattern visuel). */}
+        <div className="flex justify-center pt-3 pb-1 shrink-0" aria-hidden="true">
+          <div className="w-10 h-1 bg-border rounded-full" />
+        </div>
+
         {/* Header — Titre + close */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
+        <div className="flex items-center justify-between px-5 pt-2 pb-3 shrink-0">
           <h2 className="font-heading text-lg font-bold text-foreground">
             {t('nav.menu', { defaultValue: 'Menu' })}
           </h2>
