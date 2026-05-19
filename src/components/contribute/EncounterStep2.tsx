@@ -13,11 +13,11 @@
  * TAXREF/INPN retiré du produit (cf. PRD_SPECIES_DATABASE.md).
  */
 
-import { useState, useId } from 'react'
-import { Search, Trash2, Plus, Minus, HelpCircle, Filter, X, Check } from 'lucide-react'
+import { useState, useId, useEffect, useMemo } from 'react'
+import { Search, Trash2, Plus, Minus, HelpCircle, Filter, X, Check, PlusCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
-import { COMMON_SPECIES } from '@/constants/commonSpecies'
+import { searchSpecies, type SpeciesHit } from '@/services/searchService'
 import { Button } from '@/components/ui/Button'
 import hermineImg from '@/assets/images/hermine-empty-state.png'
 
@@ -29,6 +29,14 @@ export interface ObservationEntry {
   species: { id: string; commonName: string; scientificName: string; group: TaxonomicGroup } | null
   /** true = espèce non déterminée (mystère) */
   isUnknown: boolean
+  /**
+   * true = saisie libre par l'utilisateur, à valider par la communauté
+   * (Phase 1 fallback Nicolas 2026-05-19) : si l'espèce n'est pas trouvée
+   * dans species_master, on n'empêche pas la contribution — on flag
+   * pour identification collaborative ultérieure
+   * (cf. PRD_IDENTIFICATIONS_COLLABORATIVE.md).
+   */
+  needsValidation?: boolean
   count: number
 }
 
@@ -52,7 +60,14 @@ const TAXONOMIC_FILTERS: { value: TaxonomicGroup; labelKey: string }[] = [
   { value: 'reptiles', labelKey: 'taxonomy.reptiles' },
 ]
 
-/** Barre de recherche avec autocomplétion + bouton filtre circulaire (Figma 6385-50262) */
+/**
+ * Barre de recherche avec autocomplétion + bouton filtre circulaire (Figma 6385-50262).
+ *
+ * Phase 1 (Nicolas 2026-05-19) : query species_master via searchService
+ * (~200 espèces FR+QC en seed initial, extension Phase 2 via GBIF script).
+ * Debounce 250ms pour limiter les appels DB lors d'une saisie rapide.
+ * Si zéro résultat : fallback "Ajouter à valider par la communauté".
+ */
 function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['species']) => void }) {
   const { t } = useTranslation()
   const listId = useId()
@@ -61,6 +76,8 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
   // Filtres par groupe taxonomique — Set vide = tous les groupes acceptés.
   const [groupFilters, setGroupFilters] = useState<Set<TaxonomicGroup>>(new Set())
   const [filterOpen, setFilterOpen] = useState(false)
+  const [results, setResults] = useState<SpeciesHit[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
   function toggleGroup(g: TaxonomicGroup) {
     setGroupFilters((prev) => {
@@ -71,27 +88,98 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
     })
   }
 
-  const filteredBase =
-    groupFilters.size === 0
-      ? COMMON_SPECIES
-      : COMMON_SPECIES.filter((s) => groupFilters.has(s.group))
+  // Le filtre côté requête : si un seul groupe est sélectionné, on l'envoie
+  // au backend (filtrage SQL). Si plusieurs, on filtre côté client après fetch.
+  const singleGroup = useMemo(
+    () => (groupFilters.size === 1 ? Array.from(groupFilters)[0] : undefined),
+    [groupFilters],
+  )
 
-  const results =
-    query.length >= 2
-      ? filteredBase
-          .filter(
-            (s) =>
-              s.commonName.toLowerCase().includes(query.toLowerCase()) ||
-              s.scientificName.toLowerCase().includes(query.toLowerCase()),
-          )
-          .slice(0, 6)
-      : []
+  /**
+   * Met à jour la query et reset l'autocomplete si trop court.
+   * Le clear est dans le handler (pas dans useEffect) pour respecter la
+   * règle react-hooks/set-state-in-effect (pas de setState synchrone
+   * dans le body d'un effet — sinon cascading renders).
+   */
+  function handleQueryChange(value: string) {
+    setQuery(value)
+    setOpen(true)
+    if (value.trim().length < 2) {
+      setResults([])
+      setIsLoading(false)
+    }
+  }
 
-  function handleSelect(species: (typeof COMMON_SPECIES)[0]) {
-    onAdd(species)
+  // Debounced query → searchService.searchSpecies (species_master Supabase).
+  // L'effet ne touche aux states que de façon asynchrone (dans la promise)
+  // ou via les setters provenant de l'API externe — pas de setState sync
+  // dans le body de l'effet (cf. react-hooks/set-state-in-effect).
+  useEffect(() => {
+    const trimmed = query.trim()
+    if (trimmed.length < 2) return
+
+    let cancelled = false
+    const timer = setTimeout(() => {
+      if (cancelled) return
+      setIsLoading(true)
+      searchSpecies(trimmed, 8, singleGroup)
+        .then((hits) => {
+          if (cancelled) return
+          // Si plusieurs filtres actifs : filtrer côté client par group_label
+          const filtered =
+            groupFilters.size > 1
+              ? hits.filter((h) => groupFilters.has((h.group_label ?? '') as TaxonomicGroup))
+              : hits
+          setResults(filtered.slice(0, 6))
+          setIsLoading(false)
+        })
+        .catch(() => {
+          if (cancelled) return
+          setResults([])
+          setIsLoading(false)
+        })
+    }, 250)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [query, singleGroup, groupFilters])
+
+  /** Convertit un SpeciesHit en ObservationEntry.species pour le carnet. */
+  function hitToSpecies(hit: SpeciesHit): ObservationEntry['species'] {
+    return {
+      id: hit.taxref_id,
+      commonName: hit.common_name ?? hit.scientific_name,
+      scientificName: hit.scientific_name,
+      group: (hit.group_label ?? 'other') as TaxonomicGroup,
+    }
+  }
+
+  function handleSelect(hit: SpeciesHit) {
+    onAdd(hitToSpecies(hit))
     setQuery('')
     setOpen(false)
   }
+
+  /**
+   * Fallback Phase 1 : l'utilisateur tape un nom non trouvé en DB,
+   * on accepte la saisie libre avec flag `needsValidation` pour que
+   * la communauté valide ensuite l'identification.
+   */
+  function handleAddFreeText() {
+    const trimmed = query.trim()
+    if (trimmed.length < 2) return
+    onAdd({
+      id: `free-${Date.now()}`,
+      commonName: trimmed,
+      scientificName: '',
+      group: 'other' as TaxonomicGroup,
+    })
+    setQuery('')
+    setOpen(false)
+  }
+
+  const noResultsButQueryEntered = query.trim().length >= 2 && !isLoading && results.length === 0
 
   return (
     // `relative` sur le container racine permet au panel filtres d'être
@@ -105,10 +193,7 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
             <input
               type="search"
               value={query}
-              onChange={(e) => {
-                setQuery(e.target.value)
-                setOpen(true)
-              }}
+              onChange={(e) => handleQueryChange(e.target.value)}
               onFocus={() => setOpen(true)}
               onBlur={() => setTimeout(() => setOpen(false), 150)}
               placeholder={t('contribute.panel.searchSpecies')}
@@ -121,32 +206,65 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
             />
           </div>
 
-          {/* Résultats autocomplete */}
+          {/* Résultats autocomplete (species_master via searchService) */}
           {open && results.length > 0 && (
             <ul
               id={listId}
               role="listbox"
               className="absolute z-20 w-full mt-1 rounded-2xl border border-border bg-background shadow-lg overflow-hidden"
             >
-              {results.map((s) => (
-                <li key={s.id} role="option" aria-selected={false}>
+              {results.map((hit) => (
+                <li key={hit.taxref_id} role="option" aria-selected={false}>
                   <button
                     type="button"
-                    onMouseDown={() => handleSelect(s)}
+                    onMouseDown={() => handleSelect(hit)}
                     className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-primary-light/30 transition-colors text-left"
                   >
                     <span>
                       <span className="text-sm font-medium text-foreground block">
-                        {s.commonName}
+                        {hit.common_name ?? hit.scientific_name}
                       </span>
                       <span className="text-xs text-muted-foreground italic">
-                        {s.scientificName}
+                        {hit.scientific_name}
                       </span>
                     </span>
                   </button>
                 </li>
               ))}
             </ul>
+          )}
+
+          {/* Fallback Phase 1 : aucun résultat trouvé pour la recherche.
+              On propose à l'utilisateur d'ajouter sa saisie en libre, à
+              valider ensuite par la communauté (cf. PRD identifications). */}
+          {open && noResultsButQueryEntered && (
+            <div className="absolute z-20 w-full mt-1 rounded-2xl border border-border bg-background shadow-lg p-4">
+              <p className="text-sm text-muted-foreground mb-3">
+                {t('contribute.panel.noSpeciesFound', {
+                  defaultValue: 'Pas trouvée dans notre catalogue ?',
+                })}
+              </p>
+              <button
+                type="button"
+                onMouseDown={handleAddFreeText}
+                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-primary-light/50 hover:bg-primary-light transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <PlusCircle className="size-5 text-primary shrink-0" aria-hidden="true" />
+                <span className="flex flex-col min-w-0">
+                  <span className="text-sm font-semibold text-foreground truncate">
+                    {t('contribute.panel.addFreeSpeciesLabel', {
+                      defaultValue: 'Ajouter « {{query}} »',
+                      query: query.trim(),
+                    })}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {t('contribute.panel.addFreeSpeciesHint', {
+                      defaultValue: 'La communauté validera l’identification ensuite.',
+                    })}
+                  </span>
+                </span>
+              </button>
+            </div>
           )}
         </div>
 
