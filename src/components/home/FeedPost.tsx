@@ -12,7 +12,7 @@
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Bookmark,
   BookmarkCheck,
@@ -316,8 +316,13 @@ export function FeedPost({
         {/* Header : auteur */}
         <div className="flex items-start justify-between">
           <div className="flex gap-5 items-center">
-            {/* Avatar — Figma 48px, badge 24px (Background/Neutral/Secondary). */}
-            <div className="relative size-12 shrink-0">
+            {/* Avatar — Figma 48px, badge 24px (Background/Neutral/Secondary).
+                Wrapped Link → navigation vers le profil de l'auteur. */}
+            <Link
+              to={`/profile/${author.name}`}
+              aria-label={`Voir le profil de ${author.name}`}
+              className="relative size-12 shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
               <div className="size-full rounded-full overflow-hidden">
                 <img
                   src={author.avatar || hermineIcon}
@@ -337,13 +342,17 @@ export function FeedPost({
                   <span className="text-base leading-[1.5]">{author.badge}</span>
                 </div>
               )}
-            </div>
+            </Link>
 
-            {/* Infos auteur — Figma : nom 18px Quicksand Bold, date 14px Mulish. */}
+            {/* Infos auteur — Figma : nom 18px Quicksand Bold, date 14px Mulish.
+                Nom cliquable → profil (cohérence avec l'avatar). */}
             <div className="flex flex-col gap-1 min-w-0">
-              <p className="text-lg leading-[1.2] text-foreground font-bold truncate">
+              <Link
+                to={`/profile/${author.name}`}
+                className="text-lg leading-[1.2] text-foreground font-bold truncate hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
+              >
                 {author.name}
-              </p>
+              </Link>
               <div className="flex flex-wrap gap-2 items-center">
                 {(() => {
                   // Règle globale (second-agent/04) : icône + couleur par type.

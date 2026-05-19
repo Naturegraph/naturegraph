@@ -331,22 +331,37 @@ export function ProfileMenu({ onClose, onOpenSettings }: ProfileMenuProps) {
     return () => document.removeEventListener('keydown', fn)
   }, [onClose, showLogoutModal])
 
-  // ── Fermeture sur clic extérieur (desktop) ────────────────────────────────
+  // ── Fermeture sur clic extérieur ──────────────────────────────────────────
   // BATCH 73 (bug fix) : ne PAS fermer le menu si le LogoutModal est ouvert.
   // Sinon le clic sur "Oui me déconnecter" (hors menuRef car le modal est
   // rendu via portal au niveau du body) déclenche onClose() -> ProfileMenu
   // unmount -> showLogoutModal state perdu -> modal disparait avant que
   // handleLogoutConfirm n'ait pu appeler signOut(). Plus rien ne se passe.
+  //
+  // 2026-05-19 (Nicolas) : sur mobile les items du sheet ne réagissaient
+  // pas au clic. Cause : `mousedown` sur document tirait avant que React
+  // ne process le `click` du <button> MenuItem. De plus `menuRef` pointe
+  // uniquement vers le dropdown desktop (caché en mobile) → la condition
+  // `menuRef.current.contains(target)` retournait false même pour un clic
+  // dans le sheet mobile → onClose() fermait le menu avant que la
+  // navigation/handler n'ait lieu.
+  //
+  // Fix : utiliser `click` (post-React) + `closest('[role="dialog"]')`
+  // pour matcher les DEUX dialogues (desktop dropdown + mobile sheet).
   useEffect(() => {
     if (showLogoutModal) return // 🔒 garde anti-fermeture pendant la modale
     const fn = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) onClose()
+      const target = e.target as HTMLElement | null
+      if (!target) return
+      // Si le clic est dans un dialogue ProfileMenu (desktop OU mobile), on garde ouvert.
+      if (target.closest('[role="dialog"][aria-label="Menu profil"]')) return
+      onClose()
     }
     // Délai pour éviter que le clic d'ouverture ne ferme immédiatement
-    const t = setTimeout(() => document.addEventListener('mousedown', fn), 50)
+    const t = setTimeout(() => document.addEventListener('click', fn), 50)
     return () => {
       clearTimeout(t)
-      document.removeEventListener('mousedown', fn)
+      document.removeEventListener('click', fn)
     }
   }, [onClose, showLogoutModal])
 

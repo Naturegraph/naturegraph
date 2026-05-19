@@ -250,9 +250,9 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
         <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
           <div className="w-10 h-1 bg-border rounded-full" />
         </div>
-        {/* Titre */}
-        <p className="px-5 pt-3 pb-2 text-base font-title font-bold text-foreground">Partager</p>
-        <div className="px-2 pb-4">{cards}</div>
+        {/* Titre "Partager" retiré sur mobile (Nicolas 2026-05-19) — pas
+            d'intérêt sur sheet compacte, les cartes parlent d'elles-mêmes. */}
+        <div className="px-2 pt-2 pb-4">{cards}</div>
       </div>
     </>
   )
