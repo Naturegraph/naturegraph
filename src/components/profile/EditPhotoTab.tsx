@@ -292,9 +292,12 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
         </h3>
 
         <div className="flex items-center justify-between gap-4">
-          {/* Avatar 112×112 — défaut hermine sur fond lavande, custom photo. */}
+          {/* Avatar 112×112 — l'image (hermine par défaut ou photo custom) remplit
+              entièrement le cercle (size-full object-cover) pour un rendu cohérent
+              avec ProfileHeader et plus visuel (Nicolas 2026-05-19 : pas de padding
+              autour de la hermine dans l'éditeur, cela rendait l'aperçu petit). */}
           <div
-            className={`size-28 rounded-full overflow-hidden shrink-0 flex items-center justify-center ${
+            className={`size-28 rounded-full overflow-hidden shrink-0 ${
               hasCustomAvatar
                 ? 'bg-cream-lighter border-[0.5px] border-border'
                 : 'bg-primary-light border-2 border-primary'
@@ -303,7 +306,7 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
             <img
               src={sanitizeImageUrl(avatarUrl) ?? hermineIcon}
               alt={t('profile.edit.avatarAlt', { defaultValue: 'Photo de profil actuelle' })}
-              className={hasCustomAvatar ? 'size-full object-cover' : 'size-16 object-contain'}
+              className="size-full object-cover"
               loading="lazy"
             />
           </div>
