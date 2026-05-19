@@ -906,6 +906,10 @@
       "memberSince": "Migrateur depuis {{date}}",
       "dna": "ADN de l'observateur"
     },
+    "dna": {
+      "title": "ADN de l'observateur",
+      "empty": "Aucune observation pour le moment."
+    },
     "journal": {
       "recent": "Récent",
       "popular": "Populaire",
