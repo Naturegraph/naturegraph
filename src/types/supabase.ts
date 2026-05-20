@@ -267,7 +267,10 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          email_error: string | null
+          email_status: string | null
           id: string
+          invite_count: number
           invited_at: string | null
           invited_with_key_id: string | null
           motivation: string | null
@@ -276,7 +279,10 @@ export type Database = {
         Insert: {
           created_at?: string
           email: string
+          email_error?: string | null
+          email_status?: string | null
           id?: string
+          invite_count?: number
           invited_at?: string | null
           invited_with_key_id?: string | null
           motivation?: string | null
@@ -285,7 +291,10 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string
+          email_error?: string | null
+          email_status?: string | null
           id?: string
+          invite_count?: number
           invited_at?: string | null
           invited_with_key_id?: string | null
           motivation?: string | null
