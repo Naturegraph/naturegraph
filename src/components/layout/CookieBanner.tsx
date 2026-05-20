@@ -38,7 +38,6 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -121,14 +120,10 @@ export function CookieBanner() {
             {t('cookies.banner.message', {
               defaultValue:
                 "Naturegraph utilise uniquement des cookies strictement nécessaires (session, préférences). Aucun cookie publicitaire ou de traçage n'est utilisé.",
-            })}{' '}
-            {/* Link couleur primary (violet action) pour coherence DS — pas le highlight teal */}
-            <Link
-              to="/privacy"
-              className="text-[var(--color-action-default)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] focus-visible:ring-offset-2 rounded font-medium"
-            >
-              {t('cookies.banner.learnMore', { defaultValue: 'En savoir plus' })}
-            </Link>
+            })}
+            {/* Lien "En savoir plus" retiré (Nicolas 2026-05-20) : il pointait
+                vers /privacy sans valeur ajoutée immédiate pour ce message
+                déjà clair et autoporteur. */}
           </p>
         </div>
 
