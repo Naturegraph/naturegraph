@@ -15,7 +15,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "prepare": "husky",
-    "seed:cities": "npx tsx scripts/seed-fr-cities.ts",
+    "seed:cities": "node scripts/seed-cities.mjs",
     "ci:health": "node scripts/ci-health.mjs",
     "check:types-drift": "node scripts/check-supabase-types-drift.mjs",
     "test:e2e": "playwright test",
