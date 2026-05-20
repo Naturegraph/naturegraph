@@ -37,6 +37,8 @@ import { useQuery } from '@tanstack/react-query'
 import { searchProfiles, searchSpecies } from '@/services/searchService'
 import type { SpeciesHit, ProfileHit } from '@/services/searchService'
 import { useSpecies } from '@/contexts/SpeciesContext'
+import { TAXONOMIC_GROUP_CONFIG } from '@/constants/commonSpecies'
+import { highlightMatch } from '@/utils/highlightMatch'
 import { EmptyState } from '@/components/ui'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 
@@ -46,35 +48,17 @@ const RECENT_KEY = 'naturegraph-recent-searches-v2'
 const MAX_RECENT = 5
 
 /**
- * Libellés de groupe taxonomique affichés dans les résultats.
- * Format Figma : "· Mammifères" (préfixe point, muted, aligné à droite).
+ * Emoji + libellé FR d'un groupe taxonomique.
+ *
+ * On s'appuie sur `TAXONOMIC_GROUP_CONFIG` (source de vérité partagée —
+ * clés au PLURIEL : birds / mammals / insects…, alignées sur la colonne
+ * `species_master.taxonomic_group`). Les anciennes maps locales avaient
+ * des clés au SINGULIER → labels en anglais + emoji 🌍 par défaut
+ * (bug corrigé Nicolas 2026-05-20).
  */
-const GROUP_LABEL: Record<string, string> = {
-  bird: 'Oiseaux',
-  mammal: 'Mammifères',
-  reptile: 'Reptiles',
-  amphibian: 'Amphibiens',
-  fish: 'Poissons',
-  insect: 'Insectes',
-  plant: 'Plantes',
-  fungus: 'Champignons',
-  other: 'Espèce',
-}
-
-/**
- * Emoji catégorie — icône légère associée au groupe taxonomique.
- * Utilisé à la place d'une photo (trop lourd BDD, MVP).
- */
-const GROUP_EMOJI: Record<string, string> = {
-  bird: '🦅',
-  mammal: '🦊',
-  reptile: '🦎',
-  amphibian: '🐸',
-  fish: '🐟',
-  insect: '🦋',
-  plant: '🌿',
-  fungus: '🍄',
-  other: '🌍',
+function groupConfig(group: string | null): { emoji: string; label: string } {
+  const key = (group ?? 'other').toLowerCase()
+  return TAXONOMIC_GROUP_CONFIG[key] ?? TAXONOMIC_GROUP_CONFIG.other
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -140,17 +124,16 @@ function SkeletonRow() {
 }
 
 /**
- * Icône catégorie espèce — emoji dans un cercle coloré.
+ * Icône catégorie espèce — emoji du groupe taxonomique dans un cercle coloré.
  * Délibérément léger (pas d'image) pour le MVP.
  */
 function SpeciesCategoryIcon({ group }: { group: string | null }) {
-  const key = (group ?? 'other').toLowerCase()
   return (
     <div
       className="size-10 rounded-full bg-primary-light flex items-center justify-center shrink-0 text-lg leading-none"
       aria-hidden="true"
     >
-      {GROUP_EMOJI[key] ?? '🌍'}
+      {groupConfig(group).emoji}
     </div>
   )
 }
@@ -424,7 +407,7 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
                   {/* Badge groupe pour les espèces dans l'historique */}
                   {item.type === 'species' && item.group && (
                     <span className="text-xs text-muted-foreground shrink-0">
-                      · {GROUP_LABEL[(item.group ?? 'other').toLowerCase()] ?? item.group}
+                      · {groupConfig(item.group).label}
                     </span>
                   )}
                   <button
@@ -468,7 +451,7 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
                 </p>
               )}
               {filteredSpecies.map((s, i) => {
-                const groupKey = (s.group_label ?? 'other').toLowerCase()
+                const commonName = s.common_name ?? s.scientific_name
                 return (
                   <div key={s.taxref_id}>
                     {i > 0 && <div className="mx-5 h-px bg-border" aria-hidden="true" />}
@@ -483,16 +466,17 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
                     >
                       <SpeciesCategoryIcon group={s.group_label} />
                       <div className="flex-1 min-w-0">
+                        {/* Portion qui matche la requête mise en gras (highlightMatch). */}
                         <p className="text-sm font-semibold text-foreground truncate">
-                          {s.common_name ?? s.scientific_name}
+                          {highlightMatch(commonName, debouncedQuery)}
                         </p>
                         <p className="text-xs text-muted-foreground truncate italic">
-                          {s.scientific_name}
+                          {highlightMatch(s.scientific_name, debouncedQuery)}
                         </p>
                       </div>
-                      {/* Style Figma : "· Oiseaux" muted, aligné à droite */}
+                      {/* Libellé FR du groupe taxonomique, muted, aligné à droite. */}
                       <span className="text-xs text-muted-foreground shrink-0">
-                        · {GROUP_LABEL[groupKey] ?? s.group_label ?? 'Espèce'}
+                        · {groupConfig(s.group_label).label}
                       </span>
                     </button>
                   </div>
