@@ -7,7 +7,8 @@
  *   - Vue d'ensemble : phase actuelle + quota + status accepting
  *   - Liste cles : code, batch, status, used_by, expires_at, actions
  *   - Generation cles : modal "Generer X cles (vague N)" -> RPC generate_beta_keys
- *   - Waitlist : liste emails en attente + bouton "Inviter X personnes"
+ *   - Waitlist : suivi complet de chaque inscrit (En attente → Invité →
+ *     Inscrit), envoi/renvoi du code par email réel, statut d'envoi
  *   - Stats signups : success/echec breakdown 7j
  */
 
@@ -26,6 +27,8 @@ import {
   ExternalLink,
   BarChart3,
   Eye,
+  Send,
+  AlertTriangle,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
@@ -34,6 +37,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { useAdminAction } from '@/hooks/useAdminAction'
 import { useBetaAccess } from '@/hooks/useBetaAccess'
 import { STALE_TIMES } from '@/constants/reactQuery'
+import { sendBetaInvite, type BetaInviteResult } from '@/services/betaService'
 
 // ─── Types DB rows ────────────────────────────────────────────────────────
 
@@ -57,6 +61,20 @@ interface BetaWaitlistEntry {
   motivation: string | null
   created_at: string
   invited_at: string | null
+  /** Clé attribuée lors de l'invitation (NULL tant que non invité). */
+  invited_with_key_id: string | null
+  /** Nombre d'emails d'invitation envoyés avec succès (resend inclus). */
+  invite_count: number
+  /** Résultat du dernier envoi d'invitation. */
+  email_status: 'sent' | 'failed' | null
+  /** Détail de l'échec du dernier envoi (NULL si OK). */
+  email_error: string | null
+}
+
+/** Profil minimal d'un inscrit, pour relier une entrée waitlist à son compte. */
+interface RegisteredProfile {
+  id: string
+  username: string
 }
 
 interface BetaQuota {
@@ -100,6 +118,64 @@ function keyStatus(k: BetaAccessKey): { label: string; badgeClass: string } {
   }
 }
 
+/**
+ * Statut de suivi d'une entrée waitlist, dérivé de son état réel :
+ *   - Inscrit       : un compte existe pour cet email (priorité absolue)
+ *   - Échec d'envoi : le dernier email d'invitation n'est pas parti
+ *   - Invité        : clé envoyée, en attente de création de compte
+ *   - En attente    : sur la waitlist, pas encore invité
+ *
+ * `isRegistered` est calculé par jointure profiles.email = waitlist.email :
+ * la source de vérité est l'existence du compte, jamais une colonne stockée.
+ */
+function waitlistStatus(
+  entry: BetaWaitlistEntry,
+  isRegistered: boolean,
+): { label: string; badgeClass: string } {
+  if (isRegistered)
+    return {
+      label: 'Inscrit',
+      badgeClass: 'bg-[var(--color-success-bg)] text-[var(--color-success)]',
+    }
+  if (entry.email_status === 'failed')
+    return {
+      label: "Échec d'envoi",
+      badgeClass: 'bg-[var(--color-error-bg)] text-[var(--color-error)]',
+    }
+  if (entry.invited_at)
+    return {
+      label: 'Invité',
+      badgeClass: 'bg-[var(--color-info-bg)] text-[var(--color-info)]',
+    }
+  return {
+    label: 'En attente',
+    badgeClass: 'bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]',
+  }
+}
+
+/**
+ * Traduit la raison d'échec d'un envoi d'invitation en message actionnable
+ * pour le super admin (affiché dans le toast d'erreur).
+ */
+function inviteErrorMessage(result: BetaInviteResult): string {
+  switch (result.reason) {
+    case 'resend_not_configured':
+      return "L'envoi d'emails n'est pas configuré (secret RESEND_API_KEY manquant côté Supabase). Copie le code et transmets-le manuellement en attendant."
+    case 'resend_error':
+      return `Le service d'email a refusé l'envoi. ${result.detail ?? ''}`.trim()
+    case 'key_invalid':
+      return 'La clé attribuée est expirée ou déjà utilisée — attribue une autre clé.'
+    case 'not_admin':
+      return 'Droits admin insuffisants — reconnecte-toi.'
+    case 'waitlist_not_found':
+      return "L'entrée waitlist est introuvable (déjà supprimée ?)."
+    case 'key_not_found':
+      return 'Clé introuvable.'
+    default:
+      return result.detail ?? 'Erreur serveur inconnue. Réessaie dans un instant.'
+  }
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function AdminBeta() {
@@ -128,6 +204,9 @@ export default function AdminBeta() {
   const [inviteWaitlistEntry, setInviteWaitlistEntry] = useState<BetaWaitlistEntry | null>(null)
   const [waitlistToDelete, setWaitlistToDelete] = useState<BetaWaitlistEntry | null>(null)
   const [invitingKeyId, setInvitingKeyId] = useState<string | null>(null)
+  // Nicolas 2026-05-20 : renvoi du code depuis une entrée déjà invitée
+  // (l'id de l'entrée en cours de renvoi → spinner sur la bonne ligne).
+  const [resendingId, setResendingId] = useState<string | null>(null)
 
   // Quota
   const { data: quota } = useQuery<BetaQuota | null>({
@@ -204,20 +283,45 @@ export default function AdminBeta() {
     staleTime: STALE_TIMES.MEDIUM,
   })
 
-  // Waitlist
+  // Waitlist — TOUTES les entrées (Nicolas 2026-05-20 : ne plus masquer les
+  // invités via `.is('invited_at', null)`). Le statut de suivi est dérivé au
+  // rendu (cf. helper `waitlistStatus`), l'entrée reste visible de bout en bout.
   const { data: waitlist = [] } = useQuery<BetaWaitlistEntry[]>({
     queryKey: ['beta-waitlist'],
     queryFn: async () => {
       if (!supabase) return []
       const { data } = await supabase
         .from('beta_waitlist')
-        .select('id, email, motivation, created_at, invited_at')
-        .is('invited_at', null)
+        .select(
+          'id, email, motivation, created_at, invited_at, invited_with_key_id, invite_count, email_status, email_error',
+        )
         .order('created_at', { ascending: true })
-        .limit(50)
+        .limit(100)
       return (data ?? []) as unknown as BetaWaitlistEntry[]
     },
     staleTime: STALE_TIMES.LONG,
+  })
+
+  // Détection des inscrits : un email de la waitlist qui possède un profil =
+  // la personne a créé son compte. Jointure par email — source de vérité
+  // unique, pas de colonne de suivi à maintenir. Map clé = email en minuscule.
+  const { data: registeredByEmail = {} } = useQuery<Record<string, RegisteredProfile>>({
+    queryKey: ['beta-waitlist-registered', waitlist.map((w) => w.email).sort()],
+    queryFn: async () => {
+      const emails = waitlist.map((w) => w.email.toLowerCase())
+      if (!supabase || emails.length === 0) return {}
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, username, email')
+        .in('email', emails)
+      const map: Record<string, RegisteredProfile> = {}
+      for (const p of data ?? []) {
+        if (p.email) map[p.email.toLowerCase()] = { id: p.id, username: p.username }
+      }
+      return map
+    },
+    enabled: waitlist.length > 0,
+    staleTime: STALE_TIMES.MEDIUM,
   })
 
   // Stats signups 7j (groupes par outcome)
@@ -244,6 +348,14 @@ export default function AdminBeta() {
   const nextBatch = useMemo(() => {
     if (keys.length === 0) return 1
     return Math.max(...keys.map((k) => k.batch_number)) + 1
+  }, [keys])
+
+  // Index clé par id : permet d'afficher le code de la clé attribuée à une
+  // entrée waitlist (qui ne stocke que `invited_with_key_id`).
+  const keysById = useMemo(() => {
+    const map: Record<string, BetaAccessKey> = {}
+    for (const k of keys) map[k.id] = k
+    return map
   }, [keys])
 
   async function handleGenerateKeys() {
@@ -349,74 +461,82 @@ export default function AdminBeta() {
   }
 
   /**
-   * Nicolas 2026-05-19 : associe une clé à une entrée waitlist + ouvre mailto.
+   * Nicolas 2026-05-20 : envoie une VRAIE invitation beta via l'Edge Function
+   * `send-beta-invite` (email transactionnel Resend), en remplacement du
+   * `mailto:` qui ouvrait le client mail local sans aucune garantie d'envoi.
    *
-   * Workflow corrigé (loop loading fix) :
-   *   1. UPDATE beta_waitlist + .select() pour vérifier qu'une ligne est modifiée
-   *      (sinon RLS silently filter sans error → on throw nous-même)
-   *   2. Reset state UI IMMÉDIATEMENT (avant mailto pour éviter loop loading
-   *      si le navigateur fait du n'importe quoi avec mailto:)
-   *   3. Toast + invalidation queries pour rafraîchir
-   *   4. Audit log en fire-and-forget (n'attend pas — ne bloque pas l'UX)
-   *   5. Ouvre mailto via <a>.click() (plus fiable que window.location.href
-   *      qui peut "freezer" l'UI sur certains browsers sans handler mail)
+   * L'Edge Function : attribue la clé, envoie l'email (code + lien
+   * /welcome?code=…), et persiste le résultat sur `beta_waitlist`
+   * (email_status, email_error, invite_count). Le retour sent/échoué est
+   * remonté à Nicolas dans un toast explicite.
    */
   async function handleInviteWithKey(entry: BetaWaitlistEntry, key: BetaAccessKey) {
-    if (!supabase || invitingKeyId) return
+    if (invitingKeyId) return
     setInvitingKeyId(key.id)
     try {
-      const { data, error } = await supabase
-        .from('beta_waitlist')
-        .update({
-          invited_at: new Date().toISOString(),
-          invited_with_key_id: key.id,
-        })
-        .eq('id', entry.id)
-        .select()
-      if (error) throw error
-      if (!data || data.length === 0) {
-        throw new Error(
-          'Aucune ligne mise à jour. Vérifie tes permissions admin sur beta_waitlist.',
-        )
-      }
+      const result = await sendBetaInvite(entry.id, key.id)
 
-      // Reset state EN PREMIER pour libérer l'UI avant toute action externe.
-      // Sinon mailto: peut "bloquer" l'UI sur un browser sans handler mail.
+      // Libère l'UI (ferme la modale) avant d'afficher le retour.
       setInvitingKeyId(null)
       setInviteWaitlistEntry(null)
-
-      toast.success(`Clé ${key.code} attribuée à ${entry.email} — ouverture du mail…`)
       queryClient.invalidateQueries({ queryKey: ['beta-waitlist'] })
       queryClient.invalidateQueries({ queryKey: ['beta-keys'] })
 
-      // Audit log en fire-and-forget (ne bloque pas l'UX)
+      if (result.sent) {
+        toast.success(
+          `Invitation envoyée à ${entry.email}`,
+          `Clé ${key.code} — email transmis avec le lien d'activation.`,
+        )
+      } else {
+        toast.error(`Email NON envoyé à ${entry.email}`, inviteErrorMessage(result))
+      }
+
+      // Audit log fire-and-forget (ne bloque pas l'UX).
       logAction({
         action: 'beta.waitlist_invite',
         targetType: 'beta_waitlist',
         targetId: entry.id,
-        metadata: { email: entry.email, key_code: key.code, key_id: key.id },
+        metadata: {
+          email: entry.email,
+          key_code: key.code,
+          key_id: key.id,
+          sent: result.sent,
+          reason: result.reason ?? null,
+        },
       }).catch((e) => console.warn('[admin] audit log failed:', e))
-
-      // Ouvre mailto via <a>.click() — plus fiable que window.location.href
-      // sur tous les browsers (Chrome/Firefox/Safari).
-      const subject = 'Ton accès Naturegraph est prêt !'
-      const body = `Bonjour,
-
-Merci pour ton intérêt pour Naturegraph ! Voici ta clé d'accès beta :
-
-  ${key.code}
-
-Saisis-la sur la page d'inscription pour créer ton compte.
-
-À très vite sur la plateforme,
-L'équipe Naturegraph`
-      const link = document.createElement('a')
-      link.href = `mailto:${entry.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-      link.rel = 'noopener noreferrer'
-      link.click()
     } catch (err) {
-      toast.error('Erreur attribution de la clé', err instanceof Error ? err.message : undefined)
+      toast.error("Erreur lors de l'invitation", err instanceof Error ? err.message : undefined)
       setInvitingKeyId(null)
+    }
+  }
+
+  /**
+   * Nicolas 2026-05-20 : renvoie le code à une entrée déjà invitée, en
+   * réutilisant la clé déjà attribuée (`invited_with_key_id`). Un seul clic,
+   * sans modale — pour le cas courant « le testeur n'a pas reçu / a perdu
+   * l'email », ou pour réessayer après un échec d'envoi.
+   */
+  async function handleResendInvite(entry: BetaWaitlistEntry) {
+    if (resendingId || !entry.invited_with_key_id) return
+    setResendingId(entry.id)
+    try {
+      const result = await sendBetaInvite(entry.id, entry.invited_with_key_id)
+      queryClient.invalidateQueries({ queryKey: ['beta-waitlist'] })
+
+      if (result.sent) {
+        toast.success(`Code renvoyé à ${entry.email}`, "Un nouvel email d'invitation est parti.")
+      } else {
+        toast.error(`Renvoi échoué — ${entry.email}`, inviteErrorMessage(result))
+      }
+
+      logAction({
+        action: 'beta.waitlist_resend',
+        targetType: 'beta_waitlist',
+        targetId: entry.id,
+        metadata: { email: entry.email, sent: result.sent, reason: result.reason ?? null },
+      }).catch((e) => console.warn('[admin] audit log failed:', e))
+    } finally {
+      setResendingId(null)
     }
   }
 
@@ -842,7 +962,8 @@ L'équipe Naturegraph`
         </section>
       )}
 
-      {/* ── Tab : Waitlist (BATCH 108 : refonte en tableau, cohérent avec Clés) ── */}
+      {/* ── Tab : Waitlist — Nicolas 2026-05-20 : suivi complet. L'entrée reste
+          visible de l'inscription à la création de compte (statut dérivé). ── */}
       {activeTab === 'waitlist' && (
         <section className="bg-background border border-border rounded-lg overflow-hidden">
           {waitlist.length === 0 ? (
@@ -854,80 +975,175 @@ L'équipe Naturegraph`
               <table className="w-full text-sm">
                 <thead className="text-xs uppercase text-muted-foreground tracking-wider bg-[var(--color-bg-secondary)]/50">
                   <tr>
-                    <th className="text-left px-5 py-3 font-semibold">Email</th>
-                    <th className="text-left px-5 py-3 font-semibold">Motivation</th>
+                    <th className="text-left px-5 py-3 font-semibold">Contact</th>
+                    <th className="text-left px-5 py-3 font-semibold">Statut</th>
+                    <th className="text-left px-5 py-3 font-semibold">Clé attribuée</th>
                     <th className="text-left px-5 py-3 font-semibold">Inscrit</th>
                     <th className="text-right px-5 py-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {waitlist.map((entry, idx) => (
-                    <tr
-                      key={entry.id}
-                      className={`border-t border-border/40 transition-colors hover:bg-[var(--color-bg-secondary)]/60 ${
-                        idx % 2 === 1 ? 'bg-[var(--color-bg-secondary)]/20' : ''
-                      }`}
-                    >
-                      <td className="px-5 py-3 text-foreground font-medium">{entry.email}</td>
-                      <td className="px-5 py-3 text-xs text-muted-foreground max-w-md">
-                        {entry.motivation ? (
-                          <span className="line-clamp-2" title={entry.motivation}>
-                            « {entry.motivation} »
-                          </span>
-                        ) : (
-                          <span className="italic">aucune</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                        {formatRelativeDate(entry.created_at)}
-                      </td>
-                      <td className="px-5 py-3 text-right">
-                        <div className="inline-flex items-center gap-1">
-                          {/* Nicolas 2026-05-19 : action principale = inviter avec une clé.
-                              Ouvre la modal de picker → choix d'une clé disponible →
-                              attribution + mailto pré-rempli avec le code en clair. */}
-                          <button
-                            type="button"
-                            onClick={() => setInviteWaitlistEntry(entry)}
-                            aria-label={`Inviter ${entry.email} avec une clé`}
-                            title="Inviter avec une clé"
-                            disabled={availableKeys.length === 0}
-                            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
-                          >
-                            <Key className="size-3.5" aria-hidden="true" />
-                            Inviter
-                          </button>
-                          {/* Copier l'email (utile pour invitation manuelle hors flow) */}
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              try {
-                                await navigator.clipboard.writeText(entry.email)
-                                toast.success(`Email copié : ${entry.email}`)
-                              } catch {
-                                toast.error('Impossible de copier')
-                              }
-                            }}
-                            aria-label={`Copier l'email ${entry.email}`}
-                            title="Copier l'email"
-                            className="size-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-bg-secondary)] text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                          >
-                            <Copy className="size-4" aria-hidden="true" />
-                          </button>
-                          {/* Supprimer l'entrée de la waitlist (DELETE — utile pour doublons / spam) */}
-                          <button
-                            type="button"
-                            onClick={() => setWaitlistToDelete(entry)}
-                            aria-label={`Supprimer ${entry.email} de la waitlist`}
-                            title="Supprimer de la waitlist"
-                            className="size-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-error-bg)] text-muted-foreground hover:text-[var(--color-error)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)]"
-                          >
-                            <Trash2 className="size-4" aria-hidden="true" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {waitlist.map((entry, idx) => {
+                    // Statut dérivé de l'état réel (cf. helper waitlistStatus).
+                    const registered = registeredByEmail[entry.email.toLowerCase()]
+                    const status = waitlistStatus(entry, !!registered)
+                    const assignedKey = entry.invited_with_key_id
+                      ? keysById[entry.invited_with_key_id]
+                      : null
+                    const isInvited = !!entry.invited_at
+                    // Renvoi possible seulement si une clé valide est encore attribuée.
+                    const canResend = isInvited && !!assignedKey
+                    const isResending = resendingId === entry.id
+                    return (
+                      <tr
+                        key={entry.id}
+                        className={`border-t border-border/40 transition-colors hover:bg-[var(--color-bg-secondary)]/60 ${
+                          idx % 2 === 1 ? 'bg-[var(--color-bg-secondary)]/20' : ''
+                        }`}
+                      >
+                        {/* Contact : email + motivation en sous-ligne */}
+                        <td className="px-5 py-3 align-top">
+                          <div className="flex flex-col gap-0.5 max-w-xs">
+                            <span className="text-foreground font-medium break-all">
+                              {entry.email}
+                            </span>
+                            {entry.motivation && (
+                              <span
+                                className="text-xs text-muted-foreground italic line-clamp-1"
+                                title={entry.motivation}
+                              >
+                                « {entry.motivation} »
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        {/* Statut : badge dérivé + détail contextuel */}
+                        <td className="px-5 py-3 align-top">
+                          <div className="flex flex-col gap-1">
+                            <span
+                              className={`inline-flex w-fit items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${status.badgeClass}`}
+                            >
+                              {entry.email_status === 'failed' && !registered && (
+                                <AlertTriangle className="size-3" aria-hidden="true" />
+                              )}
+                              {status.label}
+                            </span>
+                            {registered ? (
+                              <span className="text-xs text-muted-foreground">
+                                Compte créé — visible dans Migrateurs
+                              </span>
+                            ) : entry.email_status === 'failed' ? (
+                              <span
+                                className="text-xs text-[var(--color-error)] line-clamp-2 max-w-xs"
+                                title={entry.email_error ?? undefined}
+                              >
+                                {entry.email_error ?? "L'email n'a pas pu être envoyé."}
+                              </span>
+                            ) : entry.invited_at ? (
+                              <span className="text-xs text-muted-foreground">
+                                Email envoyé {formatRelativeDate(entry.invited_at)}
+                                {entry.invite_count > 1 && ` · ${entry.invite_count} envois`}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                Pas encore invité
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        {/* Clé attribuée */}
+                        <td className="px-5 py-3 align-top font-mono text-xs">
+                          {assignedKey ? (
+                            <span className="text-foreground">{assignedKey.code}</span>
+                          ) : entry.invited_with_key_id ? (
+                            <span className="text-muted-foreground italic">clé retirée</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        {/* Date d'inscription waitlist */}
+                        <td className="px-5 py-3 align-top text-xs text-muted-foreground whitespace-nowrap">
+                          {formatRelativeDate(entry.created_at)}
+                        </td>
+                        {/* Actions — dépendent du statut */}
+                        <td className="px-5 py-3 text-right align-top">
+                          <div className="inline-flex items-center gap-1">
+                            {registered ? (
+                              /* Inscrit : accès direct à son profil de migrateur */
+                              <Link
+                                to={`/profile/${registered.username}`}
+                                title="Voir le profil du migrateur"
+                                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-[var(--color-success-bg)] text-[var(--color-success)] text-xs font-bold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-success)]"
+                              >
+                                Voir le profil
+                                <ExternalLink className="size-3.5" aria-hidden="true" />
+                              </Link>
+                            ) : canResend ? (
+                              /* Déjà invité : renvoi du code en 1 clic (réutilise la clé) */
+                              <button
+                                type="button"
+                                onClick={() => handleResendInvite(entry)}
+                                disabled={isResending}
+                                aria-label={`Renvoyer le code à ${entry.email}`}
+                                title="Renvoyer le code par email"
+                                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+                              >
+                                {isResending ? (
+                                  <Loader2
+                                    className="size-3.5 motion-safe:animate-spin"
+                                    aria-hidden="true"
+                                  />
+                                ) : (
+                                  <Send className="size-3.5" aria-hidden="true" />
+                                )}
+                                {isResending ? 'Envoi…' : 'Renvoyer'}
+                              </button>
+                            ) : (
+                              /* En attente (ou clé retirée) : (ré)inviter via le picker */
+                              <button
+                                type="button"
+                                onClick={() => setInviteWaitlistEntry(entry)}
+                                aria-label={`Inviter ${entry.email} avec une clé`}
+                                title="Inviter avec une clé"
+                                disabled={availableKeys.length === 0}
+                                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+                              >
+                                <Key className="size-3.5" aria-hidden="true" />
+                                Inviter
+                              </button>
+                            )}
+                            {/* Copier l'email (invitation manuelle de secours) */}
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  await navigator.clipboard.writeText(entry.email)
+                                  toast.success(`Email copié : ${entry.email}`)
+                                } catch {
+                                  toast.error('Impossible de copier')
+                                }
+                              }}
+                              aria-label={`Copier l'email ${entry.email}`}
+                              title="Copier l'email"
+                              className="size-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-bg-secondary)] text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                            >
+                              <Copy className="size-4" aria-hidden="true" />
+                            </button>
+                            {/* Supprimer l'entrée de la waitlist (doublons / spam) */}
+                            <button
+                              type="button"
+                              onClick={() => setWaitlistToDelete(entry)}
+                              aria-label={`Supprimer ${entry.email} de la waitlist`}
+                              title="Supprimer de la waitlist"
+                              className="size-8 inline-flex items-center justify-center rounded-full hover:bg-[var(--color-error-bg)] text-muted-foreground hover:text-[var(--color-error)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-error)]"
+                            >
+                              <Trash2 className="size-4" aria-hidden="true" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -935,8 +1151,9 @@ L'équipe Naturegraph`
         </section>
       )}
 
-      {/* Nicolas 2026-05-19 : modal "Inviter avec une clé" — picker des clés disponibles.
-          Workflow : sélection d'une clé → handleInviteWithKey → UPDATE DB + mailto auto.
+      {/* Nicolas 2026-05-20 : modal "Inviter avec une clé" — picker des clés disponibles.
+          Workflow : sélection d'une clé → handleInviteWithKey → Edge Function
+          send-beta-invite (envoi email réel + suivi DB).
           A11y : backdrop = button natif (close on click ou Enter/Espace).
           Esc géré via le bouton X au coin haut-droit du dialog. */}
       {inviteWaitlistEntry && (
@@ -961,7 +1178,8 @@ L'équipe Naturegraph`
                   Inviter {inviteWaitlistEntry.email}
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  Sélectionne une clé à attribuer — un mail sera ouvert avec le code pré-rempli.
+                  Sélectionne une clé — l&apos;email d&apos;invitation part automatiquement avec le
+                  code et un lien d&apos;activation.
                 </p>
               </div>
               <button
