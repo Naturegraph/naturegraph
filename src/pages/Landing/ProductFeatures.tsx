@@ -65,12 +65,9 @@ function PhoneDisplay({ activeIndex }: { activeIndex: number }) {
           transition={{ duration: 0.6, ease: 'easeInOut' }}
           className="absolute inset-0 w-full h-full"
         >
-          <img
-            src={img}
-            alt={`Feature ${index + 1}`}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
+          {/* alt="" : capture d'écran décorative — le titre + description
+              de la feature adjacents portent déjà l'information. */}
+          <img src={img} alt="" className="w-full h-full object-cover" loading="lazy" />
         </motion.div>
       ))}
     </PhoneFrame>
@@ -95,9 +92,10 @@ function MobileFeatureSlide({
       {/* Image phone */}
       <div className="relative h-[256px] bg-[var(--color-surface-cream-light)] overflow-hidden flex-shrink-0 flex items-end justify-center pt-8">
         <PhoneFrame size="sm">
+          {/* alt="" : capture décorative — contenu porté par le texte adjacent. */}
           <img
             src={FEATURE_IMAGES[imageIndex]}
-            alt={`Feature ${imageIndex + 1}`}
+            alt=""
             className="w-full h-full object-cover"
             loading="lazy"
           />
