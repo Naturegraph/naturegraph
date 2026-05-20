@@ -21,6 +21,7 @@ import { KeyRound, Mail, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { BetaAuthLayout } from '@/components/auth/BetaAuthLayout'
 import { useToast } from '@/contexts/ToastContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { useBetaAccess } from '@/hooks/useBetaAccess'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { checkBetaAccessKey, type BetaKeyReason } from '@/services/betaService'
@@ -79,6 +80,7 @@ export default function Welcome() {
   const [searchParams] = useSearchParams()
   const toast = useToast()
   const { hasAccess, grantAccess } = useBetaAccess()
+  const { isAuthenticated } = useAuth()
   usePageTitle(t('welcome.title', { defaultValue: 'Bienvenue' }))
 
   // Lien d'invitation /welcome?code=NG-XXXX-XXXX (présent dans l'email beta).
@@ -91,13 +93,16 @@ export default function Welcome() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Si l'user a deja un code valide en localStorage -> redirect immediat
+  // Redirection immédiate si l'accès est déjà acquis :
+  //   - clé beta valide en localStorage (hasAccess), OU
+  //   - session authentifiée (un invité qui a activé son compte est déjà
+  //     membre — il n'a rien à saisir sur cet écran).
   useEffect(() => {
-    if (hasAccess) {
+    if (hasAccess || isAuthenticated) {
       const from = (location.state as { from?: string } | null)?.from ?? '/'
       navigate(from === '/welcome' ? '/' : from, { replace: true })
     }
-  }, [hasAccess, location.state, navigate])
+  }, [hasAccess, isAuthenticated, location.state, navigate])
 
   // Auto-focus input quand on bascule sur la vue enter-code
   useEffect(() => {

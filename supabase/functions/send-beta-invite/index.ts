@@ -1,30 +1,30 @@
 /**
- * send-beta-invite — Envoi de l'email d'invitation beta (clé d'accès)
+ * send-beta-invite — Invitation beta via Supabase Auth
  *
- * Demande Nicolas 2026-05-20 : remplace le `mailto:` de l'admin (qui ouvrait le
- * client mail local, sans aucun suivi) par un VRAI envoi transactionnel. C'est
- * la seule façon de savoir si le mail est parti — et de prévenir l'admin quand
- * il ne part pas.
+ * Demande Nicolas 2026-05-20 : l'invitation doit partir par le MÊME canal que
+ * les emails d'authentification (le code de login). On utilise donc
+ * `auth.admin.inviteUserByEmail` : Supabase Auth crée le compte invité et
+ * envoie lui-même l'email d'invitation via son SMTP configuré. Aucune
+ * dépendance Resend / SMTP côté Edge Function — zéro config email à part.
  *
  * Flow :
  *   1. Vérifie que l'appelant est un admin actif (JWT → admin_users)
- *   2. Charge l'entrée waitlist + la clé d'accès choisie
- *   3. Vérifie la clé (active, non expirée, place disponible)
- *   4. Envoie un email HTML brandé via Resend : code + lien /welcome?code=...
- *   5. Met à jour beta_waitlist (invited_at, invited_with_key_id, invite_count,
- *      email_status, email_error) — y compris en cas d'échec, pour que l'admin
- *      voie le statut "Échec d'envoi"
- *   6. Retourne { ok, sent, reason? } au front
+ *   2. Charge l'entrée waitlist (email)
+ *   3. inviteUserByEmail → crée le compte + envoie l'email d'invitation
+ *      (template Supabase « Invite user », lien d'activation cliquable)
+ *   4. Met à jour beta_waitlist (invited_at, invite_count, email_status, email_error)
+ *   5. Retourne { ok, sent, reason? }
+ *
+ * Renvoi : si l'invité n'a pas encore activé son compte, on supprime le compte
+ * en attente puis on ré-invite — garantit un lien d'invitation frais.
+ *
+ * L'invité clique le lien de l'email → session créée → arrive sur /onboarding.
  *
  * verify_jwt : true — action admin authentifiée.
  *
- * Variables d'env (Supabase Dashboard → Edge Functions → Secrets) :
- *   - RESEND_API_KEY : requis pour l'envoi réel. Absent → sent:false /
- *     reason 'resend_not_configured' (l'admin le voit dans le statut).
- *   - RESEND_FROM    : optionnel, expéditeur (défaut Naturegraph <...>).
- *   - PUBLIC_APP_URL : optionnel, URL de repli si app_origin est invalide
- *     (ex. l'admin teste depuis localhost — le lien email doit rester public).
- *   - SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY : injectés.
+ * Variables d'env (injectées par Supabase) :
+ *   - SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY
+ *   - PUBLIC_APP_URL : optionnel, URL de repli si app_origin est invalide.
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
@@ -32,8 +32,6 @@ import { createClient } from 'jsr:@supabase/supabase-js@2'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? ''
-const RESEND_FROM = Deno.env.get('RESEND_FROM') ?? 'Naturegraph <naturegraph.fr@gmail.com>'
 const PUBLIC_APP_URL = Deno.env.get('PUBLIC_APP_URL') ?? ''
 
 const corsHeaders = {
@@ -45,9 +43,7 @@ const corsHeaders = {
 interface InviteRequest {
   /** UUID de l'entrée beta_waitlist à inviter. */
   waitlist_id?: string
-  /** UUID de la clé beta à attribuer / réutiliser (resend). */
-  key_id?: string
-  /** Origine de l'app appelante (window.location.origin) — base du lien email. */
+  /** Origine de l'app appelante (window.location.origin) — base du lien de retour. */
   app_origin?: string
 }
 
@@ -59,13 +55,11 @@ interface InviteResponse {
     | 'not_admin'
     | 'bad_request'
     | 'waitlist_not_found'
-    | 'key_not_found'
-    | 'key_invalid'
-    | 'resend_not_configured'
-    | 'resend_error'
+    | 'already_member'
+    | 'rate_limited'
+    | 'invite_error'
     | 'server_error'
-  detail?: string
-  /** Nombre total d'envois après cette tentative (resend inclus). */
+  /** Nombre total d'invitations envoyées après cette tentative. */
   invite_count?: number
 }
 
@@ -77,9 +71,8 @@ function json(body: InviteResponse, status = 200): Response {
 }
 
 /**
- * Détermine l'URL de base publique pour le lien email.
- * Un lien localhost serait inutile pour le testeur → on retombe sur
- * PUBLIC_APP_URL si l'origine fournie n'est pas une URL https publique.
+ * URL de base publique pour le lien de retour de l'invitation.
+ * Un lien localhost serait inutile pour le testeur → repli sur PUBLIC_APP_URL.
  */
 function resolveAppOrigin(origin: string | undefined): string {
   const isPublicHttps =
@@ -89,8 +82,19 @@ function resolveAppOrigin(origin: string | undefined): string {
     !origin.includes('127.0.0.1')
   if (isPublicHttps) return origin.replace(/\/$/, '')
   if (PUBLIC_APP_URL) return PUBLIC_APP_URL.replace(/\/$/, '')
-  // Dernier repli : on renvoie quand même l'origine fournie (mieux que rien).
   return (origin ?? '').replace(/\/$/, '')
+}
+
+/** Message court et lisible persisté dans beta_waitlist.email_error. */
+function reasonToMessage(reason: InviteResponse['reason']): string {
+  switch (reason) {
+    case 'rate_limited':
+      return "Trop d'envois en peu de temps — réessaie dans quelques minutes."
+    case 'invite_error':
+      return "Supabase n'a pas pu envoyer l'email d'invitation."
+    default:
+      return "L'invitation n'a pas pu être envoyée."
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -116,7 +120,7 @@ Deno.serve(async (req: Request) => {
     return json({ ok: false, sent: false, reason: 'not_admin' }, 401)
   }
 
-  // Client service_role : bypass RLS pour lire admin_users + écrire la waitlist.
+  // Client service_role : bypass RLS + accès à l'admin Auth API.
   const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
@@ -138,87 +142,71 @@ Deno.serve(async (req: Request) => {
   } catch {
     return json({ ok: false, sent: false, reason: 'bad_request' }, 400)
   }
-  const { waitlist_id, key_id } = body
-  if (!waitlist_id || !key_id) {
+  if (!body.waitlist_id) {
     return json({ ok: false, sent: false, reason: 'bad_request' }, 400)
   }
 
   try {
-    // ── 3. Charger l'entrée waitlist + la clé ────────────────────────────────
+    // ── 3. Charger l'entrée waitlist ─────────────────────────────────────────
     const { data: entry } = await admin
       .from('beta_waitlist')
       .select('id, email, invite_count')
-      .eq('id', waitlist_id)
+      .eq('id', body.waitlist_id)
       .maybeSingle()
     if (!entry) {
       return json({ ok: false, sent: false, reason: 'waitlist_not_found' }, 404)
     }
 
-    const { data: key } = await admin
-      .from('beta_access_keys')
-      .select('id, code, is_active, expires_at, current_uses, max_uses')
-      .eq('id', key_id)
-      .maybeSingle()
-    if (!key) {
-      return json({ ok: false, sent: false, reason: 'key_not_found' }, 404)
-    }
-
-    // La clé doit être utilisable : active, non expirée, place dispo.
-    const keyUsable =
-      key.is_active &&
-      key.current_uses < key.max_uses &&
-      new Date(key.expires_at).getTime() > Date.now()
-    if (!keyUsable) {
-      return json({ ok: false, sent: false, reason: 'key_invalid' }, 200)
-    }
-
     const appOrigin = resolveAppOrigin(body.app_origin)
-    const inviteLink = `${appOrigin}/welcome?code=${encodeURIComponent(key.code)}`
+    // Au clic du lien de l'email, l'invité est redirigé ici (session créée).
+    const redirectTo = `${appOrigin}/onboarding`
+    const inviteOptions = { redirectTo, data: { invited_via: 'beta_waitlist' } }
 
-    // ── 4. Envoi de l'email via Resend ───────────────────────────────────────
+    // ── 4. Invitation via Supabase Auth ──────────────────────────────────────
     let sent = false
-    let emailStatus: 'sent' | 'failed' = 'failed'
-    let emailError: string | null = null
-    let failReason: InviteResponse['reason']
+    let reason: InviteResponse['reason']
 
-    if (!RESEND_API_KEY) {
-      // Mode dégradé : pas de clé Resend → l'admin doit la configurer.
-      emailError = 'RESEND_API_KEY non configurée dans les secrets Supabase'
-      failReason = 'resend_not_configured'
+    const invite = await admin.auth.admin.inviteUserByEmail(entry.email, inviteOptions)
+    if (!invite.error) {
+      sent = true
     } else {
-      const resendResp = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: RESEND_FROM,
-          to: entry.email,
-          subject: 'Ton accès Naturegraph est prêt 🌿',
-          html: buildInviteHtml({ code: key.code, inviteLink }),
-        }),
-      })
-      if (resendResp.ok) {
-        sent = true
-        emailStatus = 'sent'
+      const msg = invite.error.message?.toLowerCase() ?? ''
+      if (msg.includes('rate') || invite.error.status === 429) {
+        reason = 'rate_limited'
+      } else if (msg.includes('already') || msg.includes('registered') || msg.includes('exist')) {
+        // Le compte existe déjà. Confirmé → déjà membre. Non confirmé → une
+        // invitation est en attente : on la régénère (suppression + ré-invite)
+        // pour garantir au testeur un lien d'activation frais et valide.
+        const list = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 })
+        const existing = list.data?.users.find(
+          (u) => u.email?.toLowerCase() === entry.email.toLowerCase(),
+        )
+        if (existing?.email_confirmed_at) {
+          // Déjà membre actif → rien à envoyer, on ne touche pas la waitlist.
+          return json({ ok: false, sent: false, reason: 'already_member' }, 200)
+        }
+        if (existing) {
+          await admin.auth.admin.deleteUser(existing.id)
+          const retry = await admin.auth.admin.inviteUserByEmail(entry.email, inviteOptions)
+          if (!retry.error) sent = true
+          else reason = 'invite_error'
+        } else {
+          reason = 'invite_error'
+        }
       } else {
-        emailError = `Resend ${resendResp.status} : ${(await resendResp.text()).slice(0, 300)}`
-        failReason = 'resend_error'
+        reason = 'invite_error'
       }
     }
 
-    // ── 5. Mise à jour de l'entrée waitlist (succès OU échec) ─────────────────
-    // invite_count ne s'incrémente que sur un envoi réellement réussi.
+    // ── 5. Suivi sur beta_waitlist (succès OU échec) ─────────────────────────
     const nextCount = (entry.invite_count ?? 0) + (sent ? 1 : 0)
     await admin
       .from('beta_waitlist')
       .update({
         invited_at: new Date().toISOString(),
-        invited_with_key_id: key.id,
         invite_count: nextCount,
-        email_status: emailStatus,
-        email_error: emailError,
+        email_status: sent ? 'sent' : 'failed',
+        email_error: sent ? null : reasonToMessage(reason),
       })
       .eq('id', entry.id)
 
@@ -226,51 +214,11 @@ Deno.serve(async (req: Request) => {
     if (sent) {
       return json({ ok: true, sent: true, invite_count: nextCount })
     }
-    return json(
-      { ok: false, sent: false, reason: failReason, detail: emailError ?? undefined },
-      failReason === 'resend_error' ? 502 : 200,
-    )
+    return json({ ok: false, sent: false, reason }, reason === 'rate_limited' ? 429 : 200)
   } catch (err) {
-    // L'erreur détaillée est journalisée côté serveur UNIQUEMENT. On ne renvoie
-    // pas son message au client : une stack trace / message brut exposerait des
-    // détails internes (table, requête, chemin) — cf. CodeQL « information
-    // exposure through a stack trace ». Le front affiche un message générique.
+    // Erreur journalisée côté serveur uniquement — on ne renvoie pas le détail
+    // au client (cf. CodeQL « information exposure through a stack trace »).
     console.error('[send-beta-invite] unexpected error:', err)
     return json({ ok: false, sent: false, reason: 'server_error' }, 500)
   }
 })
-
-/**
- * Construit l'email HTML d'invitation : design brandé Naturegraph (cohérent
- * avec send-waitlist-confirmation), code mis en avant + bouton CTA vers
- * /welcome?code=... qui pré-remplit la clé sur l'écran d'accueil.
- */
-function buildInviteHtml({ code, inviteLink }: { code: string; inviteLink: string }): string {
-  return `<!DOCTYPE html>
-<html lang="fr">
-<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>Ton accès Naturegraph</title></head>
-<body style="margin:0;padding:24px 12px;background-color:#f9f6ef;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1f1d36;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;">
-    <tr><td style="background:#ffffff;border-radius:24px 24px 0 0;padding:32px 32px 16px;text-align:center;border:1px solid #e9e6dc;border-bottom:none;">
-      <h1 style="margin:0 0 8px;font-size:28px;font-weight:700;color:#1f1d36;letter-spacing:-0.5px;">Naturegraph</h1>
-      <p style="margin:0;font-size:14px;color:#6b6982;font-style:italic;">Partageons nos émotions</p>
-    </td></tr>
-    <tr><td style="background:#ffffff;padding:28px 32px;border-left:1px solid #e9e6dc;border-right:1px solid #e9e6dc;text-align:center;">
-      <div style="font-size:48px;margin:0 0 16px;">🌿</div>
-      <h2 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1f1d36;">Ton accès beta est prêt !</h2>
-      <p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#4a4869;">Une place s'est libérée pour toi. Voici ta clé d'accès personnelle pour rejoindre la beta privée de Naturegraph.</p>
-      <div style="background:#f9f6ef;border:1.5px solid #5f5dd8;border-radius:20px;padding:24px 16px;margin:0 0 24px;">
-        <p style="margin:0 0 8px;font-size:11px;font-weight:600;letter-spacing:1.5px;color:#5f5dd8;text-transform:uppercase;">Ta clé d'accès</p>
-        <p style="margin:0;font-size:32px;font-weight:700;color:#1f1d36;font-family:'Courier New',monospace;letter-spacing:2px;">${code}</p>
-      </div>
-      <a href="${inviteLink}" style="display:inline-block;background:#5f5dd8;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:14px 32px;border-radius:14px;margin:0 0 16px;">Activer mon accès</a>
-      <p style="margin:0 0 4px;font-size:13px;color:#6b6982;line-height:1.55;">Le bouton t'amène sur l'écran d'accueil avec ta clé déjà pré-remplie.</p>
-      <p style="margin:0;font-size:12px;color:#8a8898;line-height:1.55;">Ou copie ce lien : <br/><span style="color:#5f5dd8;word-break:break-all;">${inviteLink}</span></p>
-    </td></tr>
-    <tr><td style="background:#f1eee4;padding:20px 32px;border-radius:0 0 24px 24px;text-align:center;border:1px solid #e9e6dc;border-top:none;">
-      <p style="margin:0 0 6px;font-size:13px;color:#4a4869;">Une question ? <a href="mailto:naturegraph.fr@gmail.com" style="color:#5f5dd8;text-decoration:none;font-weight:600;">naturegraph.fr@gmail.com</a></p>
-      <p style="margin:0;font-size:12px;color:#8a8898;">© 2026 Naturegraph — Plateforme citoyenne biodiversité</p>
-    </td></tr>
-  </table>
-</body></html>`
-}
