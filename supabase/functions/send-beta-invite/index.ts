@@ -231,16 +231,12 @@ Deno.serve(async (req: Request) => {
       failReason === 'resend_error' ? 502 : 200,
     )
   } catch (err) {
+    // L'erreur détaillée est journalisée côté serveur UNIQUEMENT. On ne renvoie
+    // pas son message au client : une stack trace / message brut exposerait des
+    // détails internes (table, requête, chemin) — cf. CodeQL « information
+    // exposure through a stack trace ». Le front affiche un message générique.
     console.error('[send-beta-invite] unexpected error:', err)
-    return json(
-      {
-        ok: false,
-        sent: false,
-        reason: 'server_error',
-        detail: err instanceof Error ? err.message : String(err),
-      },
-      500,
-    )
+    return json({ ok: false, sent: false, reason: 'server_error' }, 500)
   }
 })
 
