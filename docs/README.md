@@ -1,7 +1,7 @@
 # Documentation Naturegraph
 
 > Index master — chaque sujet a un et un seul document maître.
-> Mise à jour : 2026-05-15 (post cleanup cycle 3 / BATCH 112).
+> Mise à jour : 2026-05-20 (ajout audit sécurité & conformité).
 
 ---
 
@@ -59,6 +59,23 @@ Tous les Product Requirement Documents (naming uniformisé `PRD_*`) :
 | [`design-system/`](design-system/)   | Tokens, guidelines, composants Figma         |
 | [`security/`](security/)             | RLS, RGPD, sécurité médias                   |
 | [`devops/`](devops/)                 | Deployment, environments, monitoring         |
+
+---
+
+## 🔐 Audit sécurité & conformité (2026-05-20)
+
+Audit complet — 0 faille critique. Posture saine pour un MVP, durcissement priorisé.
+
+| Document                                                                             | Périmètre                                          |
+| ------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| [`security/SECURITY_AUDIT_GLOBAL.md`](security/SECURITY_AUDIT_GLOBAL.md)             | Frontend + synthèse exécutive                      |
+| [`security/SECURITY_SUPABASE.md`](security/SECURITY_SUPABASE.md)                     | RLS, fonctions, Auth, Storage, Edge Functions      |
+| [`security/SECURITY_GITHUB.md`](security/SECURITY_GITHUB.md)                         | Dépôt, branch protection, secrets, workflows       |
+| [`security/SECURITY_VERCEL.md`](security/SECURITY_VERCEL.md)                         | Headers HTTP, variables d'env, déploiements        |
+| [`security/PRIVACY_COMPLIANCE_AUDIT.md`](security/PRIVACY_COMPLIANCE_AUDIT.md)       | Conformité RGPD + Loi 25 (Québec)                  |
+| [`security/SECURITY_HARDENING_ROADMAP.md`](security/SECURITY_HARDENING_ROADMAP.md)   | Plan d'action priorisé (Vagues 0/1/2)              |
+| [`security/INCIDENT_RESPONSE_PLAN.md`](security/INCIDENT_RESPONSE_PLAN.md)           | Procédure + runbooks de réponse à incident         |
+| [`security/SECURITY_CHECKLIST_PRE_PROD.md`](security/SECURITY_CHECKLIST_PRE_PROD.md) | Checklist à cocher avant beta / ouverture publique |
 
 ---
 
