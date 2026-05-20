@@ -15,7 +15,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { KeyRound, Mail, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -76,12 +76,18 @@ export default function Welcome() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
   const toast = useToast()
   const { hasAccess, grantAccess } = useBetaAccess()
   usePageTitle(t('welcome.title', { defaultValue: 'Bienvenue' }))
 
-  const [view, setView] = useState<ViewState>('initial')
-  const [code, setCode] = useState('')
+  // Lien d'invitation /welcome?code=NG-XXXX-XXXX (présent dans l'email beta).
+  // On dérive l'état initial directement du paramètre d'URL : pré-remplissage
+  // du code + bascule sur l'écran de saisie, sans useEffect — donc sans render
+  // en cascade (cf. règle react-hooks/set-state-in-effect).
+  const codeFromUrl = searchParams.get('code')
+  const [view, setView] = useState<ViewState>(codeFromUrl ? 'enter-code' : 'initial')
+  const [code, setCode] = useState(() => (codeFromUrl ? formatBetaCode(codeFromUrl) : ''))
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
