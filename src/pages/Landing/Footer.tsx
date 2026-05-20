@@ -63,18 +63,23 @@ export function Footer({ onNavigate }: FooterProps) {
         <div className="px-6 md:px-12 lg:p-16 pt-12 md:pt-16 pb-8">
           {/* ── Contenu principal (responsive unique) ──────────────── */}
           <div className="flex flex-col lg:flex-row lg:justify-between gap-16">
-            {/* Col 1 : Logo + description + réseaux sociaux */}
+            {/* Col 1 : Logo + description + réseaux sociaux.
+                Logo et tagline groupés avec un gap serré (gap-2) — le logo SVG
+                a déjà du blanc interne, gap-6 créait un trou visuel. Le gap-6
+                extérieur ne sépare plus que ce groupe des réseaux sociaux. */}
             <div className="flex flex-col gap-6 lg:w-80 shrink-0">
-              <img
-                src={logoSimplified}
-                alt={t('common.appName')}
-                className="w-[204px] h-auto self-start -ml-5"
-                width={204}
-                height={40}
-              />
-              <p className="text-[var(--color-text-white)]/85 line-clamp-3">
-                {t('footer.tagline')}
-              </p>
+              <div className="flex flex-col gap-2">
+                <img
+                  src={logoSimplified}
+                  alt={t('common.appName')}
+                  className="w-[204px] h-auto self-start -ml-5"
+                  width={204}
+                  height={40}
+                />
+                <p className="text-[var(--color-text-white)]/85 line-clamp-3">
+                  {t('footer.tagline')}
+                </p>
+              </div>
               <div className="flex gap-6 items-center">
                 <SocialLink
                   href={socialLinks.instagram}
@@ -89,9 +94,9 @@ export function Footer({ onNavigate }: FooterProps) {
             <div className="flex gap-16">
               {/* Produit */}
               <div className="flex flex-col gap-4 text-[var(--color-text-white)]/85">
-                <h5 className="text-[var(--color-text-white)] font-bold">
+                <h3 className="text-[var(--color-text-white)] font-bold">
                   {t('footer.product.title')}
-                </h5>
+                </h3>
                 {productLinks.map((link) => (
                   <button
                     key={link.id}
@@ -105,9 +110,9 @@ export function Footer({ onNavigate }: FooterProps) {
 
               {/* À propos */}
               <div className="flex flex-col gap-4 text-[var(--color-text-white)]/85">
-                <h5 className="text-[var(--color-text-white)] font-bold">
+                <h3 className="text-[var(--color-text-white)] font-bold">
                   {t('footer.about.title')}
-                </h5>
+                </h3>
                 {aboutLinks.map((link) => (
                   <Link
                     key={link.to}
@@ -130,7 +135,7 @@ export function Footer({ onNavigate }: FooterProps) {
                   loading="lazy"
                 />
               </div>
-              <h4 className="text-[var(--color-text-white)]">{t('footer.cta.title')}</h4>
+              <h3 className="text-[var(--color-text-white)]">{t('footer.cta.title')}</h3>
               <Button to="/signup" size="sm" className="self-start">
                 {t('footer.cta.button')}
               </Button>
