@@ -18,6 +18,7 @@ import { Search, Trash2, Plus, Minus, HelpCircle, Filter, X, Check } from 'lucid
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
 import { searchSpecies, type SpeciesHit } from '@/services/searchService'
+import { highlightMatch } from '@/utils/highlightMatch'
 import { Button } from '@/components/ui/Button'
 import hermineImg from '@/assets/images/hermine-empty-state.png'
 
@@ -30,44 +31,6 @@ export interface ObservationEntry {
   /** true = espèce non déterminée (mystère) */
   isUnknown: boolean
   count: number
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Échappe les caractères spéciaux regex pour rendre une chaîne safe dans
- * un constructeur RegExp.
- */
-function escapeRegExp(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
-/**
- * Met en gras la portion d'un texte qui matche la requête utilisateur
- * (case-insensitive, multi-occurrence).
- *
- * Exemple : highlightMatch("Mésange charbonnière", "me") →
- *   <span>M</span><strong>é</strong>... non — en fait, on matche "Mé" si
- *   l'utilisateur tape "mé". Pour "me", on matche "Mé" si on ignore les
- *   accents — mais on garde strict (pas de normalisation Unicode pour le
- *   MVP, on relance la recherche côté DB avec ILIKE qui est déjà case-
- *   insensitive mais accent-sensitive).
- *
- * Retourne un tableau de nœuds React (<strong> + <span>).
- */
-function highlightMatch(text: string, query: string): React.ReactNode[] {
-  const q = query.trim()
-  if (!q) return [text]
-  const parts = text.split(new RegExp(`(${escapeRegExp(q)})`, 'gi'))
-  return parts.map((part, i) =>
-    part.toLowerCase() === q.toLowerCase() ? (
-      <strong key={i} className="font-bold text-foreground">
-        {part}
-      </strong>
-    ) : (
-      <span key={i}>{part}</span>
-    ),
-  )
 }
 
 // ─── Sous-composants ──────────────────────────────────────────────────────────
