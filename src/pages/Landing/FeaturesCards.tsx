@@ -35,7 +35,10 @@ function FeatureCard({
     >
       <IconCircle icon={icon} color="solid" size="lg" />
       <div className="flex flex-col gap-4">
-        <h4 className="text-[var(--color-text-primary)]">{title}</h4>
+        {/* h3 (et non h4) : la section parente est un h2 → respect de la
+            hiérarchie sémantique sans saut de niveau. Tailwind preflight
+            neutralise la taille par défaut, donc aucun changement visuel. */}
+        <h3 className="text-[var(--color-text-primary)]">{title}</h3>
         <p className="text-[var(--color-text-secondary)]">{description}</p>
       </div>
     </motion.div>

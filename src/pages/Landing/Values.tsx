@@ -36,7 +36,8 @@ function ValueItem({
         <div className="flex items-center justify-center size-12 rounded-full bg-[var(--color-bg-tertiary)] shrink-0">
           <span className="text-[var(--color-text-primary)] font-bold text-lg">{number}</span>
         </div>
-        <h4 className="text-[var(--color-text-primary)]">{title}</h4>
+        {/* h3 : section parente en h2 → pas de saut de niveau (h2→h4). */}
+        <h3 className="text-[var(--color-text-primary)]">{title}</h3>
       </div>
       <p className="text-[var(--color-text-secondary)]">{description}</p>
     </motion.div>
