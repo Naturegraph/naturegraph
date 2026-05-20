@@ -28,6 +28,12 @@ L'app Naturegraph utilise `supabase.auth.signInWithOtp()` qui attend que l'utili
 | ------------------ | --------------------- | ------------------------------------------------------ |
 | **Confirm signup** | `confirm-signup.html` | `Bienvenue sur Naturegraph — ton code de vérification` |
 | **Magic Link**     | `magic-link.html`     | `Ton code de connexion Naturegraph`                    |
+| **Invite user**    | `invite-user.html`    | `Ton invitation à la beta Naturegraph`                 |
+
+> **Invite user** : utilisé par l'invitation beta depuis l'admin (waitlist →
+> bouton « Inviter »). Variable `{{ .ConfirmationURL }}` = lien d'activation du
+> compte. Tant que ce template n'est pas appliqué, l'invité reçoit le template
+> Supabase par défaut (fonctionnel mais non brandé).
 
 ## Variables Supabase utilisées
 

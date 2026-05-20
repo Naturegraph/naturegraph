@@ -8,7 +8,7 @@
  *   - Liste cles : code, batch, status, used_by, expires_at, actions
  *   - Generation cles : modal "Generer X cles (vague N)" -> RPC generate_beta_keys
  *   - Waitlist : suivi complet de chaque inscrit (En attente → Invité →
- *     Inscrit), envoi/renvoi du code par email réel, statut d'envoi
+ *     Inscrit), invitation/renvoi via Supabase Auth, statut d'envoi
  *   - Stats signups : success/echec breakdown 7j
  */
 
@@ -61,9 +61,7 @@ interface BetaWaitlistEntry {
   motivation: string | null
   created_at: string
   invited_at: string | null
-  /** Clé attribuée lors de l'invitation (NULL tant que non invité). */
-  invited_with_key_id: string | null
-  /** Nombre d'emails d'invitation envoyés avec succès (resend inclus). */
+  /** Nombre d'invitations envoyées avec succès (renvois inclus). */
   invite_count: number
   /** Résultat du dernier envoi d'invitation. */
   email_status: 'sent' | 'failed' | null
@@ -154,25 +152,23 @@ function waitlistStatus(
 }
 
 /**
- * Traduit la raison d'échec d'un envoi d'invitation en message actionnable
- * pour le super admin (affiché dans le toast d'erreur).
+ * Traduit la raison d'échec d'une invitation en message actionnable pour le
+ * super admin (affiché dans le toast d'erreur).
  */
 function inviteErrorMessage(result: BetaInviteResult): string {
   switch (result.reason) {
-    case 'resend_not_configured':
-      return "L'envoi d'emails n'est pas configuré (secret RESEND_API_KEY manquant côté Supabase). Copie le code et transmets-le manuellement en attendant."
-    case 'resend_error':
-      return `Le service d'email a refusé l'envoi. ${result.detail ?? ''}`.trim()
-    case 'key_invalid':
-      return 'La clé attribuée est expirée ou déjà utilisée — attribue une autre clé.'
+    case 'already_member':
+      return 'Cette personne a déjà un compte actif sur Naturegraph.'
+    case 'rate_limited':
+      return "Trop d'envois en peu de temps — réessaie dans quelques minutes."
     case 'not_admin':
       return 'Droits admin insuffisants — reconnecte-toi.'
     case 'waitlist_not_found':
       return "L'entrée waitlist est introuvable (déjà supprimée ?)."
-    case 'key_not_found':
-      return 'Clé introuvable.'
+    case 'invite_error':
+      return "Supabase n'a pas pu envoyer l'email d'invitation. Réessaie dans un instant."
     default:
-      return result.detail ?? 'Erreur serveur inconnue. Réessaie dans un instant.'
+      return 'Erreur serveur inconnue. Réessaie dans un instant.'
   }
 }
 
@@ -198,15 +194,12 @@ export default function AdminBeta() {
   const [selectedKeyIds, setSelectedKeyIds] = useState<Set<string>>(new Set())
   const [bulkAction, setBulkAction] = useState<'deactivate' | 'delete' | null>(null)
   const [bulkProcessing, setBulkProcessing] = useState(false)
-  // Nicolas 2026-05-19 : flow "Inviter avec une clé" depuis la waitlist.
-  // - inviteWaitlistEntry : entrée waitlist sélectionnée → ouvre la modal de picker
-  // - waitlistToDelete : entrée waitlist à supprimer (ConfirmModal)
-  const [inviteWaitlistEntry, setInviteWaitlistEntry] = useState<BetaWaitlistEntry | null>(null)
+  // Nicolas 2026-05-20 : invitation / renvoi d'une entrée waitlist.
+  // - waitlistToDelete : entrée à supprimer (ConfirmModal)
+  // - processingId : id de l'entrée dont l'invitation part (spinner sur la
+  //   bonne ligne ; couvre l'invitation initiale ET le renvoi)
   const [waitlistToDelete, setWaitlistToDelete] = useState<BetaWaitlistEntry | null>(null)
-  const [invitingKeyId, setInvitingKeyId] = useState<string | null>(null)
-  // Nicolas 2026-05-20 : renvoi du code depuis une entrée déjà invitée
-  // (l'id de l'entrée en cours de renvoi → spinner sur la bonne ligne).
-  const [resendingId, setResendingId] = useState<string | null>(null)
+  const [processingId, setProcessingId] = useState<string | null>(null)
 
   // Quota
   const { data: quota } = useQuery<BetaQuota | null>({
@@ -293,7 +286,7 @@ export default function AdminBeta() {
       const { data } = await supabase
         .from('beta_waitlist')
         .select(
-          'id, email, motivation, created_at, invited_at, invited_with_key_id, invite_count, email_status, email_error',
+          'id, email, motivation, created_at, invited_at, invite_count, email_status, email_error',
         )
         .order('created_at', { ascending: true })
         .limit(100)
@@ -348,14 +341,6 @@ export default function AdminBeta() {
   const nextBatch = useMemo(() => {
     if (keys.length === 0) return 1
     return Math.max(...keys.map((k) => k.batch_number)) + 1
-  }, [keys])
-
-  // Index clé par id : permet d'afficher le code de la clé attribuée à une
-  // entrée waitlist (qui ne stocke que `invited_with_key_id`).
-  const keysById = useMemo(() => {
-    const map: Record<string, BetaAccessKey> = {}
-    for (const k of keys) map[k.id] = k
-    return map
   }, [keys])
 
   async function handleGenerateKeys() {
@@ -461,82 +446,40 @@ export default function AdminBeta() {
   }
 
   /**
-   * Nicolas 2026-05-20 : envoie une VRAIE invitation beta via l'Edge Function
-   * `send-beta-invite` (email transactionnel Resend), en remplacement du
-   * `mailto:` qui ouvrait le client mail local sans aucune garantie d'envoi.
+   * Nicolas 2026-05-20 : envoie (ou renvoie) l'invitation beta via l'Edge
+   * Function `send-beta-invite`. Côté serveur, Supabase Auth envoie lui-même
+   * l'email d'invitation — le même canal que les emails de login.
    *
-   * L'Edge Function : attribue la clé, envoie l'email (code + lien
-   * /welcome?code=…), et persiste le résultat sur `beta_waitlist`
-   * (email_status, email_error, invite_count). Le retour sent/échoué est
-   * remonté à Nicolas dans un toast explicite.
+   * Un seul handler pour l'invitation initiale et le renvoi : c'est la même
+   * opération (le serveur régénère l'invitation en attente si besoin). Le
+   * retour envoyé / échoué est remonté dans un toast explicite.
    */
-  async function handleInviteWithKey(entry: BetaWaitlistEntry, key: BetaAccessKey) {
-    if (invitingKeyId) return
-    setInvitingKeyId(key.id)
+  async function handleInvite(entry: BetaWaitlistEntry) {
+    if (processingId) return
+    setProcessingId(entry.id)
+    const isResend = !!entry.invited_at
     try {
-      const result = await sendBetaInvite(entry.id, key.id)
-
-      // Libère l'UI (ferme la modale) avant d'afficher le retour.
-      setInvitingKeyId(null)
-      setInviteWaitlistEntry(null)
+      const result = await sendBetaInvite(entry.id)
       queryClient.invalidateQueries({ queryKey: ['beta-waitlist'] })
-      queryClient.invalidateQueries({ queryKey: ['beta-keys'] })
 
       if (result.sent) {
         toast.success(
-          `Invitation envoyée à ${entry.email}`,
-          `Clé ${key.code} — email transmis avec le lien d'activation.`,
+          isResend ? `Invitation renvoyée à ${entry.email}` : `Invitation envoyée à ${entry.email}`,
+          "Supabase a transmis l'email d'invitation (lien d'activation).",
         )
       } else {
-        toast.error(`Email NON envoyé à ${entry.email}`, inviteErrorMessage(result))
+        toast.error(`Invitation non envoyée — ${entry.email}`, inviteErrorMessage(result))
       }
 
       // Audit log fire-and-forget (ne bloque pas l'UX).
       logAction({
-        action: 'beta.waitlist_invite',
-        targetType: 'beta_waitlist',
-        targetId: entry.id,
-        metadata: {
-          email: entry.email,
-          key_code: key.code,
-          key_id: key.id,
-          sent: result.sent,
-          reason: result.reason ?? null,
-        },
-      }).catch((e) => console.warn('[admin] audit log failed:', e))
-    } catch (err) {
-      toast.error("Erreur lors de l'invitation", err instanceof Error ? err.message : undefined)
-      setInvitingKeyId(null)
-    }
-  }
-
-  /**
-   * Nicolas 2026-05-20 : renvoie le code à une entrée déjà invitée, en
-   * réutilisant la clé déjà attribuée (`invited_with_key_id`). Un seul clic,
-   * sans modale — pour le cas courant « le testeur n'a pas reçu / a perdu
-   * l'email », ou pour réessayer après un échec d'envoi.
-   */
-  async function handleResendInvite(entry: BetaWaitlistEntry) {
-    if (resendingId || !entry.invited_with_key_id) return
-    setResendingId(entry.id)
-    try {
-      const result = await sendBetaInvite(entry.id, entry.invited_with_key_id)
-      queryClient.invalidateQueries({ queryKey: ['beta-waitlist'] })
-
-      if (result.sent) {
-        toast.success(`Code renvoyé à ${entry.email}`, "Un nouvel email d'invitation est parti.")
-      } else {
-        toast.error(`Renvoi échoué — ${entry.email}`, inviteErrorMessage(result))
-      }
-
-      logAction({
-        action: 'beta.waitlist_resend',
+        action: isResend ? 'beta.waitlist_resend' : 'beta.waitlist_invite',
         targetType: 'beta_waitlist',
         targetId: entry.id,
         metadata: { email: entry.email, sent: result.sent, reason: result.reason ?? null },
       }).catch((e) => console.warn('[admin] audit log failed:', e))
     } finally {
-      setResendingId(null)
+      setProcessingId(null)
     }
   }
 
@@ -564,15 +507,6 @@ export default function AdminBeta() {
       setWaitlistToDelete(null)
     }
   }
-
-  /** Clés disponibles pour invitation : actives, non utilisées, non expirées. */
-  const availableKeys = useMemo(
-    () =>
-      keys.filter(
-        (k) => k.is_active && k.current_uses < k.max_uses && new Date(k.expires_at) > new Date(),
-      ),
-    [keys],
-  )
 
   // ─── Multi-select bulk actions (BATCH 110) ──────────────────────────────
   /** Toggle sélection d'une clé. Ne fonctionne que pour les clés non utilisées. */
@@ -968,7 +902,7 @@ export default function AdminBeta() {
         <section className="bg-background border border-border rounded-lg overflow-hidden">
           {waitlist.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-muted-foreground">
-              Waitlist vide — personne n'attend de clé pour le moment.
+              Waitlist vide — personne n'attend d'invitation pour le moment.
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -977,7 +911,6 @@ export default function AdminBeta() {
                   <tr>
                     <th className="text-left px-5 py-3 font-semibold">Contact</th>
                     <th className="text-left px-5 py-3 font-semibold">Statut</th>
-                    <th className="text-left px-5 py-3 font-semibold">Clé attribuée</th>
                     <th className="text-left px-5 py-3 font-semibold">Inscrit</th>
                     <th className="text-right px-5 py-3 font-semibold">Actions</th>
                   </tr>
@@ -987,13 +920,8 @@ export default function AdminBeta() {
                     // Statut dérivé de l'état réel (cf. helper waitlistStatus).
                     const registered = registeredByEmail[entry.email.toLowerCase()]
                     const status = waitlistStatus(entry, !!registered)
-                    const assignedKey = entry.invited_with_key_id
-                      ? keysById[entry.invited_with_key_id]
-                      : null
                     const isInvited = !!entry.invited_at
-                    // Renvoi possible seulement si une clé valide est encore attribuée.
-                    const canResend = isInvited && !!assignedKey
-                    const isResending = resendingId === entry.id
+                    const isProcessing = processingId === entry.id
                     return (
                       <tr
                         key={entry.id}
@@ -1041,25 +969,15 @@ export default function AdminBeta() {
                               </span>
                             ) : entry.invited_at ? (
                               <span className="text-xs text-muted-foreground">
-                                Email envoyé {formatRelativeDate(entry.invited_at)}
+                                Invitation envoyée {formatRelativeDate(entry.invited_at)}
                                 {entry.invite_count > 1 && ` · ${entry.invite_count} envois`}
                               </span>
                             ) : (
                               <span className="text-xs text-muted-foreground">
-                                Pas encore invité
+                                Pas encore invité·e
                               </span>
                             )}
                           </div>
-                        </td>
-                        {/* Clé attribuée */}
-                        <td className="px-5 py-3 align-top font-mono text-xs">
-                          {assignedKey ? (
-                            <span className="text-foreground">{assignedKey.code}</span>
-                          ) : entry.invited_with_key_id ? (
-                            <span className="text-muted-foreground italic">clé retirée</span>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
                         </td>
                         {/* Date d'inscription waitlist */}
                         <td className="px-5 py-3 align-top text-xs text-muted-foreground whitespace-nowrap">
@@ -1078,17 +996,26 @@ export default function AdminBeta() {
                                 Voir le profil
                                 <ExternalLink className="size-3.5" aria-hidden="true" />
                               </Link>
-                            ) : canResend ? (
-                              /* Déjà invité : renvoi du code en 1 clic (réutilise la clé) */
+                            ) : (
+                              /* Inviter (1ʳᵉ fois) ou Renvoyer (déjà invité·e) — même
+                                 action : Supabase Auth (ré)envoie l'email d'invitation. */
                               <button
                                 type="button"
-                                onClick={() => handleResendInvite(entry)}
-                                disabled={isResending}
-                                aria-label={`Renvoyer le code à ${entry.email}`}
-                                title="Renvoyer le code par email"
+                                onClick={() => handleInvite(entry)}
+                                disabled={isProcessing}
+                                aria-label={
+                                  isInvited
+                                    ? `Renvoyer l'invitation à ${entry.email}`
+                                    : `Inviter ${entry.email}`
+                                }
+                                title={
+                                  isInvited
+                                    ? "Renvoyer l'email d'invitation"
+                                    : "Envoyer l'email d'invitation"
+                                }
                                 className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
                               >
-                                {isResending ? (
+                                {isProcessing ? (
                                   <Loader2
                                     className="size-3.5 motion-safe:animate-spin"
                                     aria-hidden="true"
@@ -1096,20 +1023,7 @@ export default function AdminBeta() {
                                 ) : (
                                   <Send className="size-3.5" aria-hidden="true" />
                                 )}
-                                {isResending ? 'Envoi…' : 'Renvoyer'}
-                              </button>
-                            ) : (
-                              /* En attente (ou clé retirée) : (ré)inviter via le picker */
-                              <button
-                                type="button"
-                                onClick={() => setInviteWaitlistEntry(entry)}
-                                aria-label={`Inviter ${entry.email} avec une clé`}
-                                title="Inviter avec une clé"
-                                disabled={availableKeys.length === 0}
-                                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
-                              >
-                                <Key className="size-3.5" aria-hidden="true" />
-                                Inviter
+                                {isProcessing ? 'Envoi…' : isInvited ? 'Renvoyer' : 'Inviter'}
                               </button>
                             )}
                             {/* Copier l'email (invitation manuelle de secours) */}
@@ -1149,100 +1063,6 @@ export default function AdminBeta() {
             </div>
           )}
         </section>
-      )}
-
-      {/* Nicolas 2026-05-20 : modal "Inviter avec une clé" — picker des clés disponibles.
-          Workflow : sélection d'une clé → handleInviteWithKey → Edge Function
-          send-beta-invite (envoi email réel + suivi DB).
-          A11y : backdrop = button natif (close on click ou Enter/Espace).
-          Esc géré via le bouton X au coin haut-droit du dialog. */}
-      {inviteWaitlistEntry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <button
-            type="button"
-            aria-label="Fermer la modale"
-            onClick={() => !invitingKeyId && setInviteWaitlistEntry(null)}
-            disabled={!!invitingKeyId}
-            className="absolute inset-0 bg-black/40 cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
-          />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label={`Inviter ${inviteWaitlistEntry.email}`}
-            className="relative bg-background rounded-lg border border-border max-w-lg w-full max-h-[80vh] flex flex-col shadow-xl"
-          >
-            {/* Header */}
-            <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-border">
-              <div className="flex flex-col gap-1 min-w-0">
-                <h2 className="text-base font-bold text-foreground">
-                  Inviter {inviteWaitlistEntry.email}
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Sélectionne une clé — l&apos;email d&apos;invitation part automatiquement avec le
-                  code et un lien d&apos;activation.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setInviteWaitlistEntry(null)}
-                aria-label="Fermer"
-                disabled={!!invitingKeyId}
-                className="size-8 shrink-0 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-[var(--color-bg-secondary)] transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                <X className="size-4" aria-hidden="true" />
-              </button>
-            </div>
-
-            {/* Liste des clés disponibles */}
-            <div className="flex-1 overflow-y-auto px-5 py-4">
-              {availableKeys.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-6">
-                  Aucune clé disponible. Génère de nouvelles clés depuis l&apos;onglet &quot;Clés
-                  d&apos;accès&quot;.
-                </p>
-              ) : (
-                <ul className="flex flex-col gap-2">
-                  {availableKeys.slice(0, 50).map((k) => (
-                    <li key={k.id}>
-                      <button
-                        type="button"
-                        onClick={() => handleInviteWithKey(inviteWaitlistEntry, k)}
-                        disabled={!!invitingKeyId}
-                        className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg border border-border hover:border-primary hover:bg-primary-light/20 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                      >
-                        <div className="flex flex-col gap-0.5 min-w-0">
-                          <span className="font-mono text-sm font-semibold text-foreground">
-                            {k.code}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            Batch #{k.batch_number} · expire {formatRelativeDate(k.expires_at)}
-                          </span>
-                        </div>
-                        {invitingKeyId === k.id ? (
-                          <Loader2
-                            className="size-4 motion-safe:animate-spin text-primary shrink-0"
-                            aria-hidden="true"
-                          />
-                        ) : (
-                          <span className="text-xs font-semibold text-primary shrink-0">
-                            Attribuer →
-                          </span>
-                        )}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            {/* Footer info */}
-            <div className="px-5 py-3 border-t border-border text-xs text-muted-foreground bg-[var(--color-bg-secondary)]/30 rounded-b-lg">
-              {availableKeys.length} clé{availableKeys.length > 1 ? 's' : ''} disponible
-              {availableKeys.length > 1 ? 's' : ''} sur {keys.length} totale
-              {keys.length > 1 ? 's' : ''}.
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Nicolas 2026-05-19 : confirmation suppression entrée waitlist (DELETE). */}
