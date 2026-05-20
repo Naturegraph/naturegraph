@@ -65,16 +65,40 @@ async function searchCitiesSupabase(query: string): Promise<CityResult[]> {
 }
 
 /**
- * Fonction de recherche avec fallback :
- * 1. API Adresse (data.gouv.fr) — RGPD, sans clé, performante
- * 2. Supabase RPC search_cities — si API Adresse indisponible
+ * Recherche de ville FR + QC — fusion de deux sources.
+ *
+ * 1. API Adresse (data.gouv.fr) — communes FRANÇAISES officielles, fraîches,
+ *    RGPD, sans clé. Mais FR-only : ne connaît pas le Québec.
+ * 2. Supabase RPC search_cities (table fr_cities) — contient les villes FR
+ *    ET les municipalités du QUÉBEC.
+ *
+ * Les deux sont interrogées en parallèle puis fusionnées. C'est indispensable
+ * pour le Québec : une recherche "Montréal" via l'API Adresse seule renvoie
+ * les villages français homonymes et ne montrerait JAMAIS Montréal (QC).
+ *
+ * Dédoublonnage par nom + département (l'API Adresse et fr_cities partagent
+ * les villes françaises). Les résultats API passent en premier (source FR de
+ * référence), les entrées DB uniques (= Québec + communes absentes de l'API)
+ * sont ajoutées ensuite. Cap à 8 suggestions.
  */
 async function searchWithFallback(query: string): Promise<CityResult[]> {
-  const results = await searchCities(query)
-  if (results.length > 0) return results
+  const [apiResults, dbResults] = await Promise.all([
+    searchCities(query).catch(() => [] as CityResult[]),
+    searchCitiesSupabase(query).catch(() => [] as CityResult[]),
+  ])
 
-  // Fallback : DB locale (fr_cities via Supabase RPC)
-  return searchCitiesSupabase(query)
+  const dedupeKey = (c: CityResult) =>
+    `${c.name.toLowerCase()}|${(c.departmentName ?? '').toLowerCase()}`
+
+  const seen = new Set(apiResults.map(dedupeKey))
+  const merged = [...apiResults]
+  for (const city of dbResults) {
+    if (!seen.has(dedupeKey(city))) {
+      seen.add(dedupeKey(city))
+      merged.push(city)
+    }
+  }
+  return merged.slice(0, 8)
 }
 
 // ─── Hook principal ──────────────────────────────────────────
