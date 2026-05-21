@@ -223,11 +223,11 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
     setIsSubmitting(true)
     setUploadError(null)
     let createdPostId: string | null = null
-    // Watchdog : si la soumission ne se termine pas en 60s, on libère le bouton
-    // et on affiche un message clair. Évite le « spinner infini » en cas de
-    // blocage Storage / quota Supabase saturé / réseau coupé.
+    // Watchdog raccourci à 45s (Nicolas 2026-05-21) : 60s laissait l'utilisateur
+    // bloqué trop longtemps si Storage / réseau coince. 45s = max raisonnable
+    // pour 4 photos compressées (~2 Mo chacune sur 4G médian).
     const watchdog = setTimeout(() => {
-      console.warn('[ContributeEncounterForm] watchdog : submission > 60s, force release')
+      console.warn('[ContributeEncounterForm] watchdog : submission > 45s, force release')
       setIsSubmitting(false)
       setUploadProgress(null)
       setUploadError(
@@ -235,7 +235,7 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
           defaultValue: 'La soumission prend trop de temps — vérifie ta connexion et réessaie.',
         }),
       )
-    }, 60_000)
+    }, 45_000)
     try {
       // 1. Premier observation identifiée → champs species_* du post
       const firstKnown = form.observations.find((o) => !o.isUnknown && o.species)
@@ -280,6 +280,9 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
         setUploadProgress({ current: i + 1, total: form.files.length })
 
         const rawFile = form.files[i]
+        console.info(
+          `[upload] photo ${i + 1}/${form.files.length} — ${rawFile.name} (${(rawFile.size / 1024 / 1024).toFixed(1)} Mo, ${rawFile.type})`,
+        )
 
         let dims: { width: number; height: number } | null = null
         try {
@@ -290,6 +293,9 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
 
         const compressed = await compressPhoto(rawFile)
         const fileToUpload = await stripExif(compressed)
+        console.info(
+          `[upload] compressed → ${(fileToUpload.size / 1024).toFixed(0)} Ko (${fileToUpload.type})`,
+        )
 
         await uploadPostMedia({
           file: fileToUpload,
