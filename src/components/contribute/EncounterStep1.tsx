@@ -26,7 +26,10 @@ import type { DisplayFormat } from '@/types/database'
 // ─── Validation ──────────────────────────────────────────────────────────────
 
 const MAX_FILES = 4
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024 // 10 Mo
+// Nicolas 2026-05-21 : garde-fou large (50 Mo) — la compression adaptative
+// dans `stripImageExif()` ramène l'upload réel sous 2 Mo. On n'impose plus
+// à l'utilisateur de compresser lui-même ses photos avant de partager.
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024 // 50 Mo (garde-fou mémoire navigateur)
 
 // Aspect ratios par format — alignés sur ceux du feed (FeedPost.ImageSlider)
 // pour que ce que voit l'utilisateur ici corresponde EXACTEMENT au rendu
@@ -57,7 +60,7 @@ function validateFile(file: File): string | null {
   }
   if (file.size > MAX_FILE_SIZE_BYTES) {
     const mb = (file.size / (1024 * 1024)).toFixed(1)
-    return `Fichier trop lourd : ${mb} Mo (max 10 Mo).`
+    return `Fichier trop lourd : ${mb} Mo (max 50 Mo — Naturegraph compresse automatiquement, mais ce fichier dépasse notre limite navigateur).`
   }
   return null
 }

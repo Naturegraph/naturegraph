@@ -90,14 +90,15 @@ async function fetchJson(url) {
 
 // ─── Construction des lignes FRANCE ──────────────────────────────────────────
 //
-// Etalab `communes.json` v4 ne contient plus de centroïde → on prend les
-// villes (avec coordonnées) sur le dataset GeoNames d'OpenDataSoft, et on
-// récupère les NOMS région/département depuis Etalab (regions.json /
-// departements.json — codes INSEE alignés sur les admin codes GeoNames).
+// Nicolas 2026-05-21 : on passe de GeoNames (pop > 1000 — ~9 000 villes FR
+// seulement) à `geo.api.gouv.fr/communes` qui expose les ~35 000 communes
+// officielles INSEE avec centroïde (`centre`), code département, code région
+// et population. Source primaire IGN/INSEE, licence ODbL.
 
 async function buildFranceRows() {
-  console.log('🇫🇷 Téléchargement noms région/département (Etalab) + villes (GeoNames)…')
+  console.log('🇫🇷 Téléchargement noms région/département + 35 000 communes (geo.api.gouv.fr)…')
 
+  // Noms région / département depuis Etalab (codes INSEE = ceux de geo.api.gouv.fr).
   const [regions, departements] = await Promise.all([
     fetchJson(`${ETALAB}/regions.json`),
     fetchJson(`${ETALAB}/departements.json`),
@@ -105,41 +106,30 @@ async function buildFranceRows() {
   const regionName = new Map(regions.map((r) => [r.code, r.nom]))
   const deptName = new Map(departements.map((d) => [d.code, d.nom]))
 
-  const rows = []
-  const limit = 100
-  for (let offset = 0; offset < 12000; offset += limit) {
-    const url =
-      `${ODS_GEONAMES}?where=country_code%3D%22FR%22` +
-      `&limit=${limit}&offset=${offset}&order_by=population%20DESC`
-    const data = await fetchJson(url)
-    const results = data.results ?? []
-    if (results.length === 0) break
+  // geo.api.gouv.fr ne paginate pas — un seul appel renvoie l'ensemble (~9 Mo JSON).
+  // `centre` = GeoJSON Point [lon, lat]. Inclut métropole + DROM-COM (codes 97*).
+  const url =
+    'https://geo.api.gouv.fr/communes?fields=nom,code,codeDepartement,codeRegion,population,centre&format=json&geometry=centre'
+  const data = await fetchJson(url)
 
-    results.forEach((r, i) => {
-      const coord = r.coordinates
-      if (!coord || !r.name) return
-      const idx = offset + i + 1
-      // admin1_code = code région INSEE, admin2_code = code département INSEE
-      // (alignés sur Etalab). Fallback chaîne vide si code inconnu (NOT NULL OK).
-      const regionCode = (r.admin1_code ?? '').slice(0, 2)
-      const deptCode = (r.admin2_code ?? '').slice(0, 3)
-      rows.push({
-        // Code synthétique F + index (ordre population stable → idempotent).
-        insee_code: `F${String(idx).padStart(4, '0')}`,
-        name: r.name,
-        name_normalized: normalize(r.name),
-        region_code: regionCode || 'FR',
-        region_name: regionName.get(regionCode) ?? '',
-        department_code: deptCode || 'FR',
-        department_name: deptName.get(deptCode) ?? '',
-        population: r.population ?? null,
-        centroid: `SRID=4326;POINT(${coord.lon} ${coord.lat})`,
-      })
+  const rows = []
+  for (const c of data) {
+    if (!c.centre?.coordinates || !c.nom || !c.code) continue
+    const [lon, lat] = c.centre.coordinates
+    rows.push({
+      // Code INSEE officiel (5 caractères, ex: '38185' = Grenoble).
+      insee_code: c.code,
+      name: c.nom,
+      name_normalized: normalize(c.nom),
+      region_code: c.codeRegion ?? 'FR',
+      region_name: regionName.get(c.codeRegion) ?? '',
+      department_code: c.codeDepartement ?? 'FR',
+      department_name: deptName.get(c.codeDepartement) ?? '',
+      population: c.population ?? null,
+      centroid: `SRID=4326;POINT(${lon} ${lat})`,
     })
-    if (results.length < limit) break
-    await sleep(200)
   }
-  console.log(`   ✓ ${rows.length} villes FR`)
+  console.log(`   ✓ ${rows.length} communes FR (INSEE officiel)`)
   return rows
 }
 

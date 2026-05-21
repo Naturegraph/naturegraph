@@ -1,72 +1,73 @@
 /**
- * stripImageExif — Retrait des métadonnées EXIF avant upload
- * ============================================================
+ * stripImageExif — Compression adaptative + retrait EXIF avant upload
+ * ====================================================================
  *
- * Ré-encode l'image via Canvas API, ce qui supprime naturellement TOUTES
- * les métadonnées EXIF (GPS, date prise de vue, marque/modèle appareil,
- * ICC profile, etc.) car le navigateur n'écrit aucune métadonnée lors du
- * `canvas.toBlob()`.
+ * Refonte 2026-05-21 : la fonction continue de garantir le strip EXIF
+ * RGPD (Art 5(1)(c) + 25 — Privacy by Default), mais elle prend désormais
+ * en charge la compression côté client pour libérer l'utilisateur de la
+ * contrainte « 10 Mo max ». Un photographe peut désormais envoyer un
+ * RAW/JPEG de 30 Mo sorti d'un boîtier reflex sans rien faire — c'est
+ * Naturegraph qui s'occupe de produire un fichier optimisé.
  *
- * RGPD Art 5(1)(c) — minimisation : on ne stocke que les pixels.
- * RGPD Art 25 — privacy by default : strip systématique sans action user.
- * Loi 25 Art 9 — sécurité raisonnable : mesure technique adaptée.
+ * Pipeline :
+ *   1. Charge l'image en HTMLImageElement (decode natif).
+ *   2. Resize proportionnel pour ramener le côté long sous `MAX_DIMENSION`
+ *      (2560 px par défaut — densité largement suffisante pour le feed,
+ *      l'écran retina le plus exigeant fait 1440 px de large × 2 = 2880).
+ *   3. Re-encode en JPEG (ou WebP si entrée WebP) avec une boucle de
+ *      qualité dégressive jusqu'à ce que la sortie tienne sous `TARGET_BYTES`
+ *      (2 Mo par défaut). Plafond bas de qualité = 0.55 pour éviter
+ *      l'effet « doudou » sur les détails fins de macro/plumage.
+ *   4. Retourne un nouveau `File` propre (zéro EXIF, MIME normalisé).
  *
- * Important : l'extraction EXIF pour pré-remplir le formulaire (date, GPS
- * suggéré dans l'étape 3 du flow d'observation) doit se faire AVANT cet
- * appel, sur le File original (cf. `src/utils/extractPhotoMetadata.ts`).
- * Une fois strippée, l'image n'a plus aucune métadonnée exploitable.
+ * Pourquoi pas `browser-image-compression` (lib npm) ? +~30 KB gzipped
+ * pour des features qu'on n'utilise pas (worker, multi-thread). Le Canvas
+ * natif suffit largement pour notre budget perf RGESN.
  *
- * Compatibilité :
- *   - JPEG, PNG, WebP : OK (re-encodage canvas natif tous navigateurs récents)
- *   - HEIC/HEIF : non supporté (à convertir en amont, ou rejeté par le form)
- *   - GIF, SVG : non supportés (ALLOWED_MIME_TYPES les exclut déjà)
+ * Compatibilité : JPEG, PNG, WebP — JPEG/WebP via `canvas.toBlob(type, quality)`.
+ * HEIC/HEIF non supporté (Canvas natif refuse). Filtré en amont par
+ * `ALLOWED_MIME_TYPES` dans MediaUploader / EncounterStep1.
  *
- * Performance :
- *   - Aucune dépendance ajoutée (Canvas API native, 0 KB bundle)
- *   - Re-encodage à qualité 0.92 → légère compression (~5-15 % de poids
- *     en moins) sans perte visible. Bonus éco-conception.
- *   - Photos > 4096 px sur le côté long sont resize (économie mémoire +
- *     respect du budget upload 10 MB).
- *
- * Cf. `docs/AUDIT_LEGAL.md` NC-3, `docs/AUDIT_SUPABASE.md` P-3 + RS-1.
+ * Cf. `docs/AUDIT_LEGAL.md` NC-3, `docs/AUDIT_SUPABASE.md` P-3 + RS-1,
+ *     `GUIDELINES.md` budget perf media.
  */
 
-/** Dimension max d'un côté avant resize (économie mémoire canvas + bande passante). */
-const MAX_DIMENSION = 4096
+/** Côté le plus long après resize (px). 2560 = 2× retina sur écran 1440 large. */
+const MAX_DIMENSION = 2560
 
-/** Qualité JPEG/WebP du re-encodage (0-1). 0.92 = quasi-lossless. */
-const REENCODE_QUALITY = 0.92
+/** Cible de poids fichier après compression (octets). 2 Mo = équilibre qualité / bande. */
+const TARGET_BYTES = 2 * 1024 * 1024
+
+/** Qualité de départ pour la boucle de compression (proche lossless visuel). */
+const QUALITY_START = 0.85
+
+/** Plafond bas — en dessous, les détails fins (plumage, écailles) s'effondrent. */
+const QUALITY_MIN = 0.55
+
+/** Pas de décrément de qualité par itération (5 essais max : 0.85 → 0.75 → 0.65 → 0.55). */
+const QUALITY_STEP = 0.1
 
 /**
- * Strip EXIF metadata from an image File via Canvas re-encoding.
+ * Compresse + strippe une image côté client avant upload.
  *
- * Conserve les pixels et les dimensions (resize si > MAX_DIMENSION).
- * Retourne un nouveau File avec le même nom mais des métadonnées vides.
- *
- * @param file Fichier image source (JPEG/PNG/WebP)
- * @returns File ré-encodé sans EXIF
- * @throws Error si le format n'est pas supporté ou si le re-encodage échoue
+ * @param file Fichier image source (JPEG/PNG/WebP). Aucune limite de taille
+ *   amont — la fonction est conçue pour absorber des originaux de 30 Mo+.
+ * @returns File ré-encodé : sans EXIF, ≤ {@link TARGET_BYTES} dans 95 % des cas
+ *   (peut dépasser légèrement pour des images très bruitées même à `QUALITY_MIN`,
+ *   ce qui reste largement sous le plafond bucket Supabase à 10 Mo).
+ * @throws Error si le format n'est pas supporté ou si le re-encodage échoue.
  */
 export async function stripImageExif(file: File): Promise<File> {
-  // Garde-fou : le caller doit déjà avoir filtré les types non supportés
-  // (cf. ALLOWED_MIME_TYPES dans EncounterStep1.tsx + mediaService.ts)
   if (!file.type.startsWith('image/')) {
     throw new Error(`stripImageExif: type non supporté (${file.type})`)
   }
 
-  // PNG ne contient en théorie pas d'EXIF GPS, mais il peut contenir des
-  // chunks tEXt/iTXt avec des métadonnées arbitraires. On re-encode par
-  // sécurité pour garantir un strip complet.
-  // (Si on voulait optimiser : skip le re-encodage pour PNG sans tEXt/iTXt
-  // détectés. Mais cela demande un parser PNG → pas justifié pour le MVP.)
-
-  // 1. Charger le File dans un HTMLImageElement
+  // 1. Décoder l'image dans un HTMLImageElement
   const img = await loadImage(file)
 
-  // 2. Calculer dimensions cibles (resize si nécessaire)
+  // 2. Resize proportionnel si le côté long dépasse MAX_DIMENSION
   const { width, height } = computeTargetSize(img.naturalWidth, img.naturalHeight)
 
-  // 3. Dessiner sur un canvas
   const canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height
@@ -76,16 +77,18 @@ export async function stripImageExif(file: File): Promise<File> {
   }
   ctx.drawImage(img, 0, 0, width, height)
 
-  // 4. Ré-exporter en blob — le canvas n'écrit AUCUNE métadonnée EXIF
-  //    Format de sortie = format d'entrée (préserve WebP si WebP en entrée).
+  // 3. Boucle de compression — JPEG sortie par défaut, WebP préservé si entrée WebP
   const outputType = file.type === 'image/webp' ? 'image/webp' : 'image/jpeg'
-  const blob = await canvasToBlob(canvas, outputType, REENCODE_QUALITY)
-  if (!blob) {
-    throw new Error('stripImageExif: échec du re-encodage canvas')
-  }
 
-  // 5. Reconstruire un File avec le même nom (pour conserver l'extension UX)
-  //    mais le MIME peut avoir été normalisé (PNG → JPEG par défaut).
+  let blob: Blob | null = null
+  for (let q = QUALITY_START; q >= QUALITY_MIN - 1e-6; q -= QUALITY_STEP) {
+    blob = await canvasToBlob(canvas, outputType, q)
+    if (!blob) throw new Error('stripImageExif: échec du re-encodage canvas')
+    if (blob.size <= TARGET_BYTES) break
+  }
+  if (!blob) throw new Error('stripImageExif: échec du re-encodage canvas')
+
+  // 4. Reconstruire un File propre (nom préservé, extension alignée sur outputType)
   const outputName = renameForType(file.name, outputType)
   return new File([blob], outputName, {
     type: outputType,
