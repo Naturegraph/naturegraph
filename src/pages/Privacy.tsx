@@ -35,6 +35,7 @@ import { ArrowLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { BetaInfoLayout } from '@/components/auth/BetaInfoLayout'
 import { HighlightedText } from '@/components/ui/HighlightedText'
+import { BetaStatusCallout } from '@/components/ui/BetaStatusCallout'
 
 export default function Privacy() {
   const { t } = useTranslation()
@@ -62,10 +63,14 @@ export default function Privacy() {
           </h1>
           <p className="text-sm text-[var(--color-text-secondary)]">
             {t('legal.privacy.lastUpdated', {
-              defaultValue: 'Dernière mise à jour : 02 mai 2026',
+              defaultValue: 'Dernière mise à jour : 21 mai 2026',
             })}
           </p>
         </header>
+
+        {/* Statut beta privée — placé avant les sections numérotées pour
+            informer immédiatement l'utilisateur du contexte expérimental. */}
+        <BetaStatusCallout i18nNamespace="legal.privacy" id="privacy-beta-status" />
 
         <div className="flex flex-col gap-8">
           {sections.map((section, index) => (

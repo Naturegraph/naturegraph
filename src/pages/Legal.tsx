@@ -24,6 +24,7 @@ import { ArrowLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { BetaInfoLayout } from '@/components/auth/BetaInfoLayout'
 import { HighlightedText } from '@/components/ui/HighlightedText'
+import { BetaStatusCallout } from '@/components/ui/BetaStatusCallout'
 
 export default function Legal() {
   const { t } = useTranslation()
@@ -51,10 +52,13 @@ export default function Legal() {
           </h1>
           <p className="text-sm text-[var(--color-text-secondary)]">
             {t('legal.terms.lastUpdated', {
-              defaultValue: 'Dernière mise à jour : 02 mai 2026',
+              defaultValue: 'Dernière mise à jour : 21 mai 2026',
             })}
           </p>
         </header>
+
+        {/* Statut beta privée — affiché avant les sections numérotées. */}
+        <BetaStatusCallout i18nNamespace="legal.terms" id="legal-beta-status" />
 
         <div className="flex flex-col gap-8">
           {sections.map((section, index) => (
