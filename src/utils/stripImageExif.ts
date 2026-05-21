@@ -62,6 +62,17 @@ export async function stripImageExif(file: File): Promise<File> {
     throw new Error(`stripImageExif: type non supporté (${file.type})`)
   }
 
+  // Nicolas 2026-05-21 : raccourci pour les flows qui ont déjà compressé/strippé
+  // en amont (ex : ContributeEncounterForm pipeline `compressPhoto` → `stripExif`).
+  // Si le fichier arrive en AVIF/WebP ET sous le budget cible, on évite une
+  // 3ᵉ passe canvas redondante — gain de 1 à 4 secondes par photo sur mobile.
+  // Les formats AVIF/WebP émis par canvas natif n'embarquent jamais d'EXIF,
+  // donc on est safe RGPD sans re-encoder.
+  const lightCompressedFormats = file.type === 'image/avif' || file.type === 'image/webp'
+  if (lightCompressedFormats && file.size <= TARGET_BYTES) {
+    return file
+  }
+
   // 1. Décoder l'image dans un HTMLImageElement
   const img = await loadImage(file)
 
