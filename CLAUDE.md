@@ -126,8 +126,9 @@ feat/xxx  →  develop  →  staging  →  main
 
 **URLs cibles :**
 
-- `naturegraph.fr` → main (production)
-- `staging.naturegraph.fr` → staging (beta testers — URL stable)
+- `naturegraph.ca` → main (production publique — Hostinger DNS + Vercel + Supabase prod)
+- `staging-naturegraph-git-staging-*.vercel.app` → staging (URL Vercel auto, preview)
+- `naturegraph-eight.vercel.app` → URL Vercel auto pour les autres preview branches
 - Preview Vercel auto → feature branches (URL changeante, pour review interne uniquement)
 
 ## Legacy project
