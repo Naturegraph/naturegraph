@@ -1,3 +1,9 @@
+<!--
+  Template Supabase Auth — « Confirm signup »
+  À coller dans : Dashboard Supabase → Authentication → Emails → Confirm signup.
+  Subject conseillé : Bienvenue sur Naturegraph — ton code de vérification
+  Variable Supabase : {{ .Token }} — code OTP à 6 chiffres.
+-->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -7,35 +13,33 @@
 </head>
 <body style="margin:0;padding:0;background-color:#fffaf0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#13131a;">
 
-  <!-- Wrapper -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fffaf0;padding:40px 20px;">
     <tr>
       <td align="center">
 
-        <!-- Card -->
         <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;background-color:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(60,67,128,0.08);">
 
-          <!-- Brand header -->
+          <!-- Brand header — fond violet UNI, hermine (GitHub raw URL pour fiabilité email) -->
           <tr>
-            <td align="center" style="padding:40px 40px 16px 40px;background:linear-gradient(135deg,#5f5dd8 0%,#3c4380 100%);">
+            <td align="center" style="padding:36px 40px 28px 40px;background-color:#5f5dd8;">
+              <img src="https://raw.githubusercontent.com/Naturegraph/naturegraph/main/public/hermine-icon.png" alt="" width="56" height="56" style="display:block;margin:0 auto 12px auto;border:0;outline:none;text-decoration:none;border-radius:50%;background-color:#ffffff;padding:4px;">
               <div style="font-size:28px;font-weight:700;letter-spacing:-0.5px;color:#ffffff;font-family:'Quicksand',-apple-system,sans-serif;">
                 Naturegraph
               </div>
-              <div style="font-size:13px;color:#ced3f0;margin-top:6px;letter-spacing:0.3px;">
-                Explore · Partage · Connecte-toi à la nature
+              <div style="font-size:13px;color:#ced3f0;margin-top:6px;letter-spacing:0.3px;font-style:italic;">
+                Partageons nos émotions
               </div>
             </td>
           </tr>
 
-          <!-- Hero -->
+          <!-- Hero — phrase courte, équilibrée si elle wrap -->
           <tr>
             <td style="padding:48px 48px 24px 48px;" align="center">
               <h1 style="margin:0 0 12px 0;font-size:26px;font-weight:700;color:#13131a;font-family:'Quicksand',-apple-system,sans-serif;line-height:1.3;">
                 Bienvenue parmi les migrateurs !
               </h1>
               <p style="margin:0;font-size:15px;line-height:1.6;color:#565666;">
-                Merci de rejoindre Naturegraph. Pour finaliser la création de ton compte,<br>
-                entre le code de vérification ci-dessous dans l'application.
+                Entre le code ci-dessous dans l'application<br>pour finaliser ton inscription.
               </p>
             </td>
           </tr>
@@ -57,16 +61,28 @@
             </td>
           </tr>
 
-          <!-- Security notice -->
+          <!-- Security notice — design 2 colonnes : icône dans cercle blanc + contenu aligné gauche -->
           <tr>
             <td style="padding:0 48px 32px 48px;">
-              <div style="background-color:#e5f7f7;border-left:4px solid #006666;border-radius:8px;padding:16px 20px;">
-                <div style="font-size:13px;color:#003f3f;line-height:1.6;">
-                  <strong style="color:#006666;">🔒 Sécurité</strong><br>
-                  Ne partage jamais ce code. L'équipe Naturegraph ne te le demandera jamais.
-                  Si tu n'es pas à l'origine de cette inscription, ignore simplement cet email.
-                </div>
-              </div>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#d3eeec;border-radius:12px;">
+                <tr>
+                  <td style="padding:18px 20px;" valign="top">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="left">
+                      <tr>
+                        <td valign="top" width="44" style="padding-right:14px;">
+                          <div style="background-color:#ffffff;border-radius:50%;width:36px;height:36px;line-height:36px;text-align:center;font-size:18px;">🔒</div>
+                        </td>
+                        <td valign="top" align="left" style="text-align:left;">
+                          <div style="font-size:14px;font-weight:700;color:#006666;margin:0 0 4px 0;">Sécurité</div>
+                          <div style="font-size:13px;color:#003f3f;line-height:1.55;">
+                            Ne partage jamais ce code.<br>Si tu n'es pas à l'origine, ignore cet email.
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
@@ -85,10 +101,10 @@
             <td style="padding:24px 48px;background-color:#f3f4fb;border-top:1px solid #e7e9f7;" align="center">
               <p style="margin:0 0 8px 0;font-size:12px;color:#7e7e8f;">
                 Besoin d'aide ? Contacte-nous à
-                <a href="mailto:contact@naturegraph.fr" style="color:#5f5dd8;text-decoration:none;font-weight:600;">contact@naturegraph.fr</a>
+                <a href="mailto:naturegraph.fr@gmail.com" style="color:#5f5dd8;text-decoration:none;font-weight:600;">naturegraph.fr@gmail.com</a>
               </p>
               <p style="margin:0;font-size:11px;color:#adadb8;">
-                © 2026 Naturegraph · Plateforme citoyenne biodiversité
+                © 2026 Naturegraph · Partageons nos émotions
               </p>
             </td>
           </tr>

@@ -10,10 +10,15 @@
  * Flow :
  *   1. Vérifie que l'appelant est un admin actif (JWT → admin_users)
  *   2. Charge l'entrée waitlist (email)
- *   3. inviteUserByEmail → crée le compte + envoie l'email d'invitation
+ *   3. Génère une clé beta personnelle (batch 99, max_uses=1, exp 365j) et
+ *      l'INSERT dans beta_access_keys. Le code est passé via data.beta_code
+ *      pour affichage dans le template ({{ .Data.beta_code }}) — l'invité peut
+ *      le conserver pour reentrer dans la beta si sa session est perdue.
+ *   4. inviteUserByEmail → crée le compte + envoie l'email d'invitation
  *      (template Supabase « Invite user », lien d'activation cliquable)
- *   4. Met à jour beta_waitlist (invited_at, invite_count, email_status, email_error)
- *   5. Retourne { ok, sent, reason? }
+ *      Rollback de la clé si l'envoi échoue ou si le user est déjà membre.
+ *   5. Met à jour beta_waitlist (invited_at, invite_count, email_status, email_error)
+ *   6. Retourne { ok, sent, reason? }
  *
  * Renvoi : si l'invité n'a pas encore activé son compte, on supprime le compte
  * en attente puis on ré-invite — garantit un lien d'invitation frais.
@@ -97,6 +102,30 @@ function reasonToMessage(reason: InviteResponse['reason']): string {
   }
 }
 
+/**
+ * Génère un code beta de la forme NG-XXXX-XXXX (8 chars alphanumériques,
+ * majuscules + chiffres, séparés par un tiret). Format aligné sur les codes
+ * générés par la RPC `generate_beta_keys` côté SQL.
+ *
+ * Note : la collision sur `beta_access_keys.code` (UNIQUE) est extrêmement
+ * improbable (~36^8 = 2,8e12 combinaisons). L'INSERT remontera l'erreur si
+ * collision et le caller peut retry — non géré ici pour la simplicité.
+ */
+function generateBetaCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  const random = (len: number): string => {
+    const bytes = new Uint8Array(len)
+    crypto.getRandomValues(bytes)
+    return Array.from(bytes, (b) => chars[b % chars.length]).join('')
+  }
+  return `NG-${random(4)}-${random(4)}`
+}
+
+/** Batch dédié aux invitations individuelles waitlist (vs vagues admin manuelles). */
+const WAITLIST_INVITE_BATCH = 99
+/** Durée de validité de la clé personnelle d'invitation (1 an — beta longue). */
+const INVITE_KEY_EXPIRES_DAYS = 365
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: corsHeaders })
@@ -160,9 +189,38 @@ Deno.serve(async (req: Request) => {
     const appOrigin = resolveAppOrigin(body.app_origin)
     // Au clic du lien de l'email, l'invité est redirigé ici (session créée).
     const redirectTo = `${appOrigin}/onboarding`
-    const inviteOptions = { redirectTo, data: { invited_via: 'beta_waitlist' } }
 
-    // ── 4. Invitation via Supabase Auth ──────────────────────────────────────
+    // ── 4. Génère une clé beta personnelle pour cet invité ───────────────────
+    // Demande Nicolas 2026-05-20 : chaque invité doit recevoir SA clé beta dans
+    // l'email, pour qu'il puisse re-rentrer dans la beta s'il perd sa session
+    // (le BetaAccessGuard demanderait alors une clé via l'écran /welcome).
+    // INSERT direct (vs RPC generate_beta_keys qui crée en batch).
+    const inviteeBetaCode = generateBetaCode()
+    const { error: keyErr } = await admin.from('beta_access_keys').insert({
+      code: inviteeBetaCode,
+      batch_number: WAITLIST_INVITE_BATCH,
+      max_uses: 1,
+      expires_at: new Date(Date.now() + INVITE_KEY_EXPIRES_DAYS * 86_400_000).toISOString(),
+      notes: `Invitation waitlist: ${entry.email}`,
+    })
+    if (keyErr) {
+      // Très improbable (collision UNIQUE sur code) — on log et on bascule
+      // l'invitation sans code (l'email partira mais sans {{ .Data.beta_code }}).
+      // Le user pourra toujours reentrer via login OTP — fail soft.
+      console.error('[send-beta-invite] beta key insert failed:', keyErr.message)
+    }
+
+    const inviteOptions = {
+      redirectTo,
+      data: {
+        invited_via: 'beta_waitlist',
+        // beta_code consommé par le template Supabase via {{ .Data.beta_code }}
+        // (cf. supabase/email-templates/invite-user.html). Vide si keyErr.
+        beta_code: keyErr ? '' : inviteeBetaCode,
+      },
+    }
+
+    // ── 5. Invitation via Supabase Auth ──────────────────────────────────────
     let sent = false
     let reason: InviteResponse['reason']
 
@@ -183,6 +241,10 @@ Deno.serve(async (req: Request) => {
         )
         if (existing?.email_confirmed_at) {
           // Déjà membre actif → rien à envoyer, on ne touche pas la waitlist.
+          // On supprime la clé qu'on venait de créer (orpheline).
+          if (!keyErr) {
+            await admin.from('beta_access_keys').delete().eq('code', inviteeBetaCode)
+          }
           return json({ ok: false, sent: false, reason: 'already_member' }, 200)
         }
         if (existing) {
@@ -198,7 +260,12 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // ── 5. Suivi sur beta_waitlist (succès OU échec) ─────────────────────────
+    // Si l'envoi a échoué : on supprime la clé créée pour rien.
+    if (!sent && !keyErr) {
+      await admin.from('beta_access_keys').delete().eq('code', inviteeBetaCode)
+    }
+
+    // ── 6. Suivi sur beta_waitlist (succès OU échec) ─────────────────────────
     const nextCount = (entry.invite_count ?? 0) + (sent ? 1 : 0)
     await admin
       .from('beta_waitlist')
@@ -210,7 +277,7 @@ Deno.serve(async (req: Request) => {
       })
       .eq('id', entry.id)
 
-    // ── 6. Réponse ───────────────────────────────────────────────────────────
+    // ── 7. Réponse ───────────────────────────────────────────────────────────
     if (sent) {
       return json({ ok: true, sent: true, invite_count: nextCount })
     }
