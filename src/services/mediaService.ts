@@ -22,7 +22,11 @@ import { stripImageExif } from '@/utils/stripImageExif'
 
 const ACCEPTED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024 // 2 MB
-const MAX_POST_MEDIA_BYTES = 10 * 1024 * 1024 // 10 MB
+// Garde-fou aligné sur la limite bucket Supabase Storage (10 Mo). Le fichier
+// arrivant ici est DÉJÀ passé par `stripImageExif()` qui vise ≤ 2 Mo en sortie ;
+// ce check n'est qu'un filet de sécurité au cas où la compression ne se déclenche
+// pas (cas exotique non-image). Nicolas 2026-05-21.
+const MAX_POST_MEDIA_BYTES = 10 * 1024 * 1024 // 10 MB (= plafond bucket Supabase)
 
 function ext(file: File): string {
   const fromName = file.name.split('.').pop()?.toLowerCase()
@@ -58,13 +62,17 @@ export async function uploadAvatar(file: File, userId: string): Promise<string> 
   if (!ACCEPTED_IMAGE_MIME.includes(file.type)) {
     throw new Error('Format non supporte (jpeg, png, webp)')
   }
-  if (file.size > MAX_AVATAR_BYTES) throw new Error('Fichier trop lourd (max 2 Mo)')
 
-  // Strip EXIF AVANT upload — RGPD Art 5(1)(c) minimisation. Le re-encodage
-  // canvas génère un nouveau File sans aucune métadonnée (GPS, date prise,
-  // marque appareil, etc.). L'extension peut changer (PNG → JPG) — sans
-  // impact car le path est déterministe via `ext(stripped)`.
+  // Strip EXIF + compression AVANT contrôle de taille (Nicolas 2026-05-21) :
+  // un selfie iPhone moderne fait ~3-5 Mo en HEIC→JPEG, donc on doit compresser
+  // avant de mesurer. La passe canvas ramène l'avatar largement sous 2 Mo
+  // grâce au resize 2560 px (un avatar s'affiche à 80 px max dans l'UI).
   const stripped = await stripImageExif(file)
+  if (stripped.size > MAX_AVATAR_BYTES) {
+    throw new Error(
+      'Avatar trop lourd après optimisation (max 2 Mo). Essaie une photo plus simple.',
+    )
+  }
 
   const path = `${userId}/avatar.${ext(stripped)}`
   const { error } = await supabase.storage.from('avatars').upload(path, stripped, {
@@ -128,19 +136,27 @@ export async function uploadPostMedia(params: {
   if (!ACCEPTED_IMAGE_MIME.includes(file.type)) {
     throw new Error('Format non supporte (jpeg, png, webp)')
   }
-  if (file.size > MAX_POST_MEDIA_BYTES) throw new Error('Fichier trop lourd (max 10 Mo)')
 
-  // Strip EXIF AVANT upload — RGPD Art 5(1)(c) minimisation. Le re-encodage
-  // canvas retire systématiquement coordonnées GPS, date de prise de vue,
-  // marque/modèle appareil, ICC profile, etc. Sans cela, un visiteur qui
-  // télécharge la photo via le bucket public peut extraire les coordonnées
-  // GPS exactes même si l'utilisateur a coché "Région masquée" — risque
-  // RGPD majeur + risque écologique pour les espèces sensibles.
+  // Strip EXIF + compression adaptative AVANT upload (Nicolas 2026-05-21).
+  // `stripImageExif()` resize ≤ 2560 px côté long puis ré-encode en JPEG/WebP
+  // avec une boucle de qualité dégressive ciblant ≤ 2 Mo. Effets cumulés :
+  //   - RGPD Art 5(1)(c) minimisation : retire GPS, date prise, modèle appareil.
+  //   - RGESN éco-conception : -80 à -95 % de poids vs original boîtier reflex.
+  //   - UX : libère l'utilisateur de la contrainte « 10 Mo max ».
   //
-  // L'extraction EXIF pour pré-remplir l'étape 3 du formulaire a été faite
-  // en amont (cf. `extractPhotoMetadata.ts` côté EncounterStep1), sur les
-  // Files originaux. Ici on strippe uniquement avant le stockage.
+  // L'extraction EXIF utile (date/GPS pour pré-remplir l'étape 3) est faite
+  // EN AMONT (`extractPhotoMetadata.ts` côté EncounterStep1) sur les Files
+  // originaux. Ici on ne fait que stripper + compresser avant stockage.
   const stripped = await stripImageExif(file)
+
+  // Filet de sécurité : la compression devrait toujours produire ≤ 2 Mo, mais
+  // pour des images bruitées extrêmes même à qualité min on peut dépasser.
+  // On bloque à 10 Mo (= plafond bucket Supabase) avec un message explicite.
+  if (stripped.size > MAX_POST_MEDIA_BYTES) {
+    throw new Error(
+      'Photo trop complexe à compresser (>10 Mo après optimisation). Essaie de réduire la résolution.',
+    )
+  }
 
   const path = `${userId}/${postId}/${uuid()}.${ext(stripped)}`
 
