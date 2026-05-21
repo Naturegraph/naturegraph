@@ -56,7 +56,7 @@
 
 ### 🔴 Bloquant launch public
 
-- **Pas de domaine custom Vercel pour l'app React.** `naturegraph.fr` sert WordPress. L'app vit sur `naturegraph-XXX.vercel.app` (password-protected). À configurer : `app.naturegraph.fr` ou `beta.naturegraph.fr` (DNS Hostinger + Vercel Settings → Domains).
+- ✅ ~~Pas de domaine custom~~ — résolu 2026-05-21 : `naturegraph.ca` configuré (Hostinger DNS + Vercel + Supabase Auth Site URL).
 
 ### 🟡 Hardening Supabase (Dashboard manuel)
 
@@ -83,7 +83,7 @@
 
 ## 5. Actions prioritaires suivantes
 
-1. 🔴 **Configurer domaine custom Vercel** pour l'app React (`app.naturegraph.fr` ou `beta.naturegraph.fr`) — DNS Hostinger CNAME → `cname.vercel-dns.com` + Vercel Settings → Domains → Add
+1. ✅ ~~Configurer domaine custom Vercel~~ — fait 2026-05-21 (`naturegraph.ca`)
 2. 🟡 **Supabase Dashboard hardening** (5 min) :
    - Auth → Settings → activer HaveIBeenPwned protection
    - Auth → Email OTP → expiry 600 → 120s

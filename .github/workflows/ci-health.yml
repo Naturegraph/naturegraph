@@ -8,8 +8,8 @@
 #   SUPABASE_ANON_KEY  — clé anon publique (safe à exposer, mais préférable en secret)
 #
 # Variables repository (facultatives, sinon les defaults du script sont utilisés) :
-#   STAGING_URL        — URL du staging (défaut: https://staging.naturegraph.fr)
-#   PROD_URL           — URL de la prod   (défaut: https://naturegraph.fr)
+#   STAGING_URL        — URL du staging (défaut: preview Vercel branch staging)
+#   PROD_URL           — URL de la prod   (défaut: https://naturegraph.ca)
 
 name: CI Health
 

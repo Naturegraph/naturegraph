@@ -5,8 +5,8 @@
 | Env | Branche Git | Supabase | Hébergement | URL | Public |
 |---|---|---|---|---|---|
 | **local** | `feat/*`, `develop` | `naturegraph-dev` | `npm run dev` | http://localhost:5173 | dev seul |
-| **staging** | `staging` | `naturegraph-dev` | Vercel preview stable | https://staging.naturegraph.fr | beta testers |
-| **production** | `main` | `naturegraph-prod` | Vercel production | https://naturegraph.fr | tout le monde |
+| **staging** | `staging` | `naturegraph-dev` | Vercel preview (branche staging) | preview Vercel auto | beta testers |
+| **production** | `main` | `naturegraph-prod` | Vercel production | https://naturegraph.ca | tout le monde |
 
 > **Pourquoi staging partage la DB de dev** — Phase MVP : on évite la facturation d'un 2e projet Supabase et on garde des données ephemères. Quand on lance la beta publique, on isole staging dans son propre projet.
 

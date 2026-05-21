@@ -44,7 +44,7 @@
 ### État actuel
 
 - 🟢 **Production live** : https://naturegraph-eight.vercel.app
-- 🟡 **Domain `naturegraph.fr`** : en transfert Hostinger (~7 jours)
+- 🟡 **Domain `naturegraph.ca`** : en transfert Hostinger (~7 jours)
 - 🟢 **Tag release** : `v0.1.0-beta.1` (GitHub Release publiée)
 - 🟢 **CI/CD** : green sur 3 workflows (CI, CodeQL, ci-health 4h)
 - 🟢 **Beta closed access** : strategy **TOTAL GATE** (voir Section 4)
@@ -96,7 +96,7 @@
 | **Vercel**   | 9 env vars configurées (production + preview)                      | ✅                  |
 | **Vercel**   | DSN Sentry actif                                                   | ✅                  |
 | **Vercel**   | App live `naturegraph-eight.vercel.app`                            | ✅                  |
-| **Vercel**   | 4 domaines attachés (naturegraph.fr / www / beta / vercel default) | ✅ (DNS en attente) |
+| **Vercel**   | 4 domaines attachés (naturegraph.ca / www / beta / vercel default) | ✅ (DNS en attente) |
 | **Supabase** | RPC `check_beta_access_key_validity` (readonly)                    | ✅ Appliquée DEV    |
 | **Supabase** | Cron RGPD `anonymize_beta_signup_log` J+30                         | ✅ Active           |
 | **Supabase** | Fix RLS recursion `admin_users` (BATCH 37)                         | ✅ Appliqué         |
@@ -236,7 +236,7 @@ Préfixer par `BATCH N` quand applicable pour traçabilité.
 ### Déploiement
 
 - **Vercel auto-deploy** : push sur main/staging/develop → preview ou production
-- **Production** : main → `naturegraph-eight.vercel.app` (futur `naturegraph.fr`)
+- **Production** : main → `naturegraph-eight.vercel.app` (futur `naturegraph.ca`)
 - **Preview** : staging + develop → URLs Vercel `*-naturegraph-9868s-projects.vercel.app`
 - **CSP source unique** : `vercel.json` (BATCH 39 — pas dans index.html)
 - **Bundle budget** : 420 KB gzip (sum all chunks)
@@ -283,7 +283,7 @@ Préfixer par `BATCH N` quand applicable pour traçabilité.
 - PWA icons multi-tailles
 - Rate limit Redis pour `validate-beta-key` (si > 1000 req/jour)
 - OG image adaptée beta
-- Domain `naturegraph.fr` (en attente transfert Hostinger)
+- Domain `naturegraph.ca` (en attente transfert Hostinger)
 
 ### Zones fragiles à surveiller
 
@@ -301,7 +301,7 @@ Préfixer par `BATCH N` quand applicable pour traçabilité.
 
 - [ ] **Action 8 (en cours)** : Aller sur `/admin/beta` (https://naturegraph-eight.vercel.app/admin/beta) → générer 10 clés vague 1 → préparer liste 10 testeurs → envoyer 10 emails (template dans `docs/BETA_LAUNCH_RUNBOOK.md` Section E)
 - [ ] **Action 4 (HIBP)** : reportée — Pro Plan Supabase requis ($25/mois). Décision : activer plus tard si besoin
-- [ ] **Action 6 (DNS)** : reportée — domaine `naturegraph.fr` en transfert Hostinger. Quand transfert fini (~7j) : ajouter 3 DNS records (CNAME beta, A apex, CNAME www → `cname.vercel-dns.com`)
+- [ ] **Action 6 (DNS)** : reportée — domaine `naturegraph.ca` en transfert Hostinger. Quand transfert fini (~7j) : ajouter 3 DNS records (CNAME beta, A apex, CNAME www → `cname.vercel-dns.com`)
 
 ### 🟠 Haute (décisions produit)
 
@@ -367,10 +367,9 @@ Préfixer par `BATCH N` quand applicable pour traçabilité.
 - **Team** : `team_zzrON9ArhdDDL36NJsGppVwN` (naturegraph-9868)
 - **Project** : `prj_64Yk2OP2DNadcDG8AXCMNJ9dDioW` (`naturegraph`)
 - **Production URL** : https://naturegraph-eight.vercel.app
-- **Custom domains** (DNS en attente) :
-  - `naturegraph.fr` (apex)
-  - `www.naturegraph.fr`
-  - `beta.naturegraph.fr`
+- **Custom domains** :
+  - `naturegraph.ca` (apex) — production
+  - `www.naturegraph.ca` → redirect 308 vers `naturegraph.ca`
 - **Env vars Production (9)** :
   - `VITE_SUPABASE_URL`
   - `VITE_SUPABASE_ANON_KEY`
@@ -388,7 +387,7 @@ Préfixer par `BATCH N` quand applicable pour traçabilité.
 
 ### Hostinger
 
-- Statut : transfert domaine `naturegraph.fr` en cours depuis KEY-SYSTEMS GmbH
+- Statut : transfert domaine `naturegraph.ca` en cours depuis KEY-SYSTEMS GmbH
 - ETA : jusqu'à 7 jours
 - Action post-transfert : configurer 3 DNS records (instructions dans `BETA_LAUNCH_RUNBOOK.md`)
 
@@ -411,7 +410,7 @@ Préfixer par `BATCH N` quand applicable pour traçabilité.
 
 - Statut : ❌ Non installé (stratégie écrite dans `docs/STORYBOOK_STRATEGY.md`)
 - Phase 2 backlog T-052
-- Subdomain prévu : `storybook.naturegraph.fr`
+- Subdomain prévu : `storybook.naturegraph.ca`
 
 ### Variables d'env récap
 
