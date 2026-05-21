@@ -2,29 +2,25 @@
  * contact — Constantes de contact Naturegraph
  * ════════════════════════════════════════════════════════════════════════════
  *
- * ⚠️ ATTENTION — EMAIL DE CONTACT UNIQUE (Nicolas BATCH 53, 2026-05-15)
- * ─────────────────────────────────────────────────────────────────────
- * Pour la beta privée et toutes les mentions légales / RGPD / contact,
- * l'unique email de référence est `naturegraph.fr@gmail.com`.
+ * ⚠️ ATTENTION — EMAIL DE CONTACT UNIQUE
+ * ─────────────────────────────────────────
+ * Pour la beta et toutes les mentions légales / RGPD / contact, l'unique
+ * email de référence est `naturegraph.fr@gmail.com` (boîte Gmail).
  *
- * NE PAS REMPLACER PAR :
- *   - privacy@naturegraph.fr (ancien, pas encore actif)
- *   - contact@naturegraph.fr (ancien, pas encore actif)
- *   - staff@naturegraph.fr (ancien, pas encore actif)
- *   - hello@naturegraph.fr (jamais utilisé)
+ * Le nom du compte Gmail reflète l'identité historique « naturegraph.fr » —
+ * indépendant du domaine du site web (`naturegraph.ca` depuis 2026-05-21,
+ * migration Hostinger). On garde cette adresse Gmail pendant toute la beta
+ * pour ne pas casser les liens mailto déjà partagés / templates email envoyés.
  *
- * Tant que le domaine `naturegraph.fr` n'est pas configuré côté Hostinger
- * (en attente du transfert, ~7 jours au 2026-05-14), TOUTES les communications
- * doivent passer par l'adresse Gmail `naturegraph.fr@gmail.com`.
- *
- * Au moment de la transition vers les adresses pro `@naturegraph.fr` :
- *   1. Migrer cette constante vers les bonnes adresses spécialisées
- *      (contact@, privacy@, staff@)
- *   2. Mettre à jour les fichiers i18n fr.json + en.json (legal/privacy keys)
- *   3. Tester que chaque adresse reçoit bien les emails
- *   4. Documenter le changement dans MASTER_TODO + commit dédié
- *
- * Refs : décision Nicolas 2026-05-15 — beta pré-domain transfer.
+ * Migration future vers `@naturegraph.ca` :
+ *   1. Créer les boîtes pro sur l'hébergeur (`contact@naturegraph.ca`,
+ *      `privacy@naturegraph.ca`, etc.)
+ *   2. Migrer cette constante + ajouter d'éventuelles spécialisations
+ *   3. Mettre à jour i18n fr.json + en.json (clés legal/privacy/contact)
+ *   4. Configurer SPF/DKIM/DMARC sur naturegraph.ca pour la délivrabilité
+ *   5. Mettre à jour le SMTP custom Supabase si bascule vers une boîte pro
+ *   6. Conserver naturegraph.fr@gmail.com en alias / forwarding ~6 mois
+ *      pour ne pas perdre les réponses aux anciens emails
  */
 
 /**

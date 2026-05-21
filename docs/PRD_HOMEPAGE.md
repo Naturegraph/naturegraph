@@ -1263,7 +1263,7 @@ Modale centree (desktop) / bottom sheet (mobile).
 │ [Messenger] [Gmail]          │  ← 4 icones cercles + label
 │                              │
 │ Copier le lien :             │
-│ [https://naturegraph.fr/...] │  ← input readonly + icone copie
+│ [https://naturegraph.ca/...] │  ← input readonly + icone copie
 │            [📋]              │
 └──────────────────────────────┘
 ```

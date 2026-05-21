@@ -3,8 +3,8 @@
 ## Stratégie de branches
 
 ```
-main           ← Production (naturegraph.fr)         | Supabase PROD
-  └─ staging   ← Beta testers (staging.naturegraph.fr) | Supabase DEV (ephemere)
+main           ← Production (naturegraph.ca)         | Supabase PROD
+  └─ staging   ← Beta testers (naturegraph.ca) | Supabase DEV (ephemere)
        └─ develop  ← Dev interne                    | Supabase DEV
               ├─ feat/nom-feature    ← Nouvelles fonctionnalités
               ├─ fix/nom-bug         ← Corrections de bugs

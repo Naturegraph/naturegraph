@@ -142,9 +142,9 @@ Vercel Dashboard > Deployments > [dernier deploy main] > "..." > "Redeploy"
 
 Verifier apres deploy :
 
-- `https://naturegraph.fr/signup` affiche le BetaKeyGate (input "NG-XXXX-XXXX")
-- `https://naturegraph.fr/waitlist` affiche le formulaire
-- `https://naturegraph.fr/admin` redirige vers `/login` si non authentifie
+- `https://naturegraph.ca/signup` affiche le BetaKeyGate (input "NG-XXXX-XXXX")
+- `https://naturegraph.ca/waitlist` affiche le formulaire
+- `https://naturegraph.ca/admin` redirige vers `/login` si non authentifie
 
 ---
 
@@ -184,8 +184,8 @@ WHERE u.email = 'tralorui@gmail.com';
 
 ### C.4 Tester l'acces
 
-1. Se connecter sur `https://naturegraph.fr/login` avec le compte Nicolas
-2. Aller sur `https://naturegraph.fr/admin`
+1. Se connecter sur `https://naturegraph.ca/login` avec le compte Nicolas
+2. Aller sur `https://naturegraph.ca/admin`
 3. Verifier : badge "super_admin" dans le header, 5 modules visibles (Dashboard / Users / Moderation / Beta / Audit)
 
 > Si redirection vers `/home` : verifier que `admin_users.is_active=true` et que la session est rafraichie (F5).
@@ -196,7 +196,7 @@ WHERE u.email = 'tralorui@gmail.com';
 
 ### D.1 Via l'interface /admin/beta
 
-1. Aller sur `https://naturegraph.fr/admin/beta`
+1. Aller sur `https://naturegraph.ca/admin/beta`
 2. Cliquer "Generer 10 cles (vague 1)"
 3. Confirmer
 
@@ -246,7 +246,7 @@ Tu fais partie des 50 premiers testeurs de Naturegraph, la plateforme
 citoyenne pour partager tes observations de biodiversite ! 🌱
 
 Pour creer ton compte :
-1. Va sur https://naturegraph.fr/signup
+1. Va sur https://naturegraph.ca/signup
 2. Entre ta cle d'acces : **NG-XXXX-XXXX**
 3. Complete l'inscription (~3 min)
 4. Onboarding en 4 etapes pour personnaliser ton profil
@@ -292,7 +292,7 @@ FROM beta_quota_config WHERE id = 1;
 
 Si users sans cle s'inscrivent sur la waitlist :
 
-1. Aller sur `https://naturegraph.fr/admin/beta`
+1. Aller sur `https://naturegraph.ca/admin/beta`
 2. Section "Waitlist" : voir les emails en attente
 3. Quand quota libere (revoke / desactivation), generer nouvelles cles et envoyer aux waitlist
 
@@ -302,7 +302,7 @@ Si users sans cle s'inscrivent sur la waitlist :
 
 ### F.1 Daily check (5 min/jour)
 
-Chaque matin, aller sur `https://naturegraph.fr/admin` et verifier :
+Chaque matin, aller sur `https://naturegraph.ca/admin` et verifier :
 
 | Module    | Quoi regarder              | Seuil alerte                        |
 | --------- | -------------------------- | ----------------------------------- |

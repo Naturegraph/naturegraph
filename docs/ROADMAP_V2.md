@@ -38,7 +38,7 @@
 
 ### Infra
 
-- **Domaine custom Vercel** : `app.naturegraph.fr` ou `beta.naturegraph.fr` (action manuelle Nicolas)
+- **Domaine custom Vercel** : `naturegraph.ca` ou `naturegraph.ca` (action manuelle Nicolas)
 - **HaveIBeenPwned protection** activée dans Supabase Auth
 - **OTP expiry** : 600s → 120s
 - **SMTP custom** : Gmail ou Resend au lieu du SMTP Supabase
