@@ -20,7 +20,38 @@ import type { TaxonomicGroup } from '@/types/database'
 import { searchSpecies, type SpeciesHit } from '@/services/searchService'
 import { highlightMatch } from '@/utils/highlightMatch'
 import { Button } from '@/components/ui/Button'
+import { TAXONOMIC_GROUP_CONFIG } from '@/constants/commonSpecies'
 import hermineImg from '@/assets/images/hermine-empty-state.png'
+
+/**
+ * Emoji + libellé FR d'un groupe taxonomique — strictement aligné sur le
+ * rendu de `SearchPanel` côté Home (cohérence design produit demandée par
+ * Nicolas 2026-05-21). Source de vérité unique : `TAXONOMIC_GROUP_CONFIG`.
+ *
+ * Fallback "Autre" (✨) si le groupe est null ou inconnu — évite l'emoji 🌍
+ * générique des anciennes maps locales.
+ */
+function groupConfig(group: string | null): { emoji: string; label: string } {
+  const key = (group ?? 'other').toLowerCase()
+  return TAXONOMIC_GROUP_CONFIG[key] ?? TAXONOMIC_GROUP_CONFIG.other
+}
+
+/**
+ * Icône catégorie espèce — emoji du groupe dans un cercle violet clair.
+ * Composant local pour rester DRY avec `SearchPanel.SpeciesCategoryIcon`
+ * (même dimensions, même tokens DS — pas de duplication visuelle entre
+ * la recherche globale et le partage d'observation).
+ */
+function SpeciesCategoryIcon({ group }: { group: string | null }) {
+  return (
+    <div
+      className="size-10 rounded-full bg-primary-light flex items-center justify-center shrink-0 text-lg leading-none"
+      aria-hidden="true"
+    >
+      {groupConfig(group).emoji}
+    </div>
+  )
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -178,30 +209,40 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
           </div>
 
           {/* Résultats autocomplete (species_master via searchService).
-              La portion qui matche la requête est rendue en gras pour
-              aider l'utilisateur à comprendre pourquoi le résultat remonte. */}
+              Layout strictement aligné sur `SearchPanel` (Nicolas 2026-05-21) :
+              icône catégorie (emoji groupe) + nom commun en gras + nom
+              scientifique en italique + libellé FR du groupe à droite.
+              La portion qui matche la requête est mise en gras via
+              `highlightMatch` pour aider l'utilisateur à comprendre pourquoi
+              le résultat remonte. */}
           {open && results.length > 0 && (
             <ul
               id={listId}
               role="listbox"
               className="absolute z-20 w-full mt-1 rounded-2xl border border-border bg-background shadow-lg overflow-hidden"
             >
-              {results.map((hit) => {
+              {results.map((hit, i) => {
                 const commonName = hit.common_name ?? hit.scientific_name
                 return (
                   <li key={hit.taxref_id} role="option" aria-selected={false}>
+                    {i > 0 && <div className="mx-5 h-px bg-border" aria-hidden="true" />}
                     <button
                       type="button"
                       onMouseDown={() => handleSelect(hit)}
-                      className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-primary-light/30 transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-5 py-3 hover:bg-primary-light/20 transition-colors focus-visible:outline-none focus-visible:bg-primary-light/20 text-left"
                     >
-                      <span>
-                        <span className="text-sm font-medium text-foreground block">
+                      <SpeciesCategoryIcon group={hit.group_label} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">
                           {highlightMatch(commonName, query)}
-                        </span>
-                        <span className="text-xs text-muted-foreground italic">
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate italic">
                           {highlightMatch(hit.scientific_name, query)}
-                        </span>
+                        </p>
+                      </div>
+                      {/* Libellé FR du groupe taxonomique, muted, aligné à droite. */}
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        · {groupConfig(hit.group_label).label}
                       </span>
                     </button>
                   </li>
@@ -394,15 +435,16 @@ function ObservationRow({
 
   return (
     <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-cream-lighter">
-      {/* Icône espèce */}
+      {/* Icône espèce — emoji du groupe taxonomique pour cohérence avec le
+          dropdown de recherche et SearchPanel (Nicolas 2026-05-21). */}
       <div
-        className="size-9 rounded-full bg-primary-light/40 flex items-center justify-center shrink-0"
+        className="size-9 rounded-full bg-primary-light flex items-center justify-center shrink-0 text-base leading-none"
         aria-hidden="true"
       >
         {entry.isUnknown ? (
           <HelpCircle className="size-4 text-primary" />
         ) : (
-          <span className="text-sm">🐾</span>
+          <span>{groupConfig(entry.species?.group ?? null).emoji}</span>
         )}
       </div>
 
