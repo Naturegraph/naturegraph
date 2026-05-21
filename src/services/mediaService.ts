@@ -20,7 +20,13 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { stripImageExif } from '@/utils/stripImageExif'
 
-const ACCEPTED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp']
+// Nicolas 2026-05-21 : ajout AVIF — `compressPhoto` produit de l'AVIF sur Chrome
+// (meilleur ratio qualité/poids), donc le mediaService DOIT accepter ce mime sortant.
+// Sans AVIF dans la liste, l'upload échouait silencieusement avec « Format non
+// supporté » après compression, et le bouton « Partager » restait en spinner
+// jusqu'au watchdog 60s. Tous les navigateurs cibles (Chrome 85+, Safari 16+,
+// Firefox 113+) supportent AVIF en décodage natif côté serveur d'images Supabase.
+const ACCEPTED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/avif']
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024 // 2 MB
 // Garde-fou aligné sur la limite bucket Supabase Storage (10 Mo). Le fichier
 // arrivant ici est DÉJÀ passé par `stripImageExif()` qui vise ≤ 2 Mo en sortie ;
