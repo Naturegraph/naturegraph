@@ -19,11 +19,15 @@ import { useTranslation } from 'react-i18next'
 
 // ─── Contraintes de sécurité sur les uploads ──────────────────────────────────
 //
-// Ces valeurs doivent correspondre aux règles configurées côté Supabase Storage.
-// TODO [BACKEND] — Vérifier que les bucket policies Supabase respectent ces limites.
+// Nicolas 2026-05-21 : on lève la contrainte stricte 10 Mo côté UI. Le pipeline
+// `stripImageExif()` resize + ré-encode chaque photo pour viser ≤ 2 Mo en sortie,
+// donc l'utilisateur peut envoyer un original lourd (boîtier reflex, RAW exporté)
+// sans avoir à compresser lui-même. On garde un garde-fou très haut (50 Mo) pour
+// bloquer les fichiers manifestement invalides (vidéo accidentelle, image 8K
+// non-photographique) et protéger la mémoire navigateur lors du décodage canvas.
 
-/** Taille max par fichier : 10 Mo (valeur Supabase recommandée pour les images) */
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
+/** Garde-fou taille max par fichier : 50 Mo (protection mémoire + erreurs UX). */
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024
 
 /**
  * Types MIME autorisés.
@@ -49,7 +53,7 @@ function validateFile(file: File): string | null {
   }
   if (file.size > MAX_FILE_SIZE_BYTES) {
     const mb = (file.size / (1024 * 1024)).toFixed(1)
-    return `Fichier trop lourd : ${mb} Mo (max 10 Mo).`
+    return `Fichier trop lourd : ${mb} Mo (max 50 Mo — Naturegraph compresse automatiquement, mais ce fichier dépasse notre limite navigateur).`
   }
   return null
 }
