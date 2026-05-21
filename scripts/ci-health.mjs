@@ -34,9 +34,14 @@ const TIMEOUT_MS = 10_000
 const LOG_DIR = 'logs'
 
 /** URLs à pinger (HEAD) — configurable via env pour les workflows CI */
+// staging n'a pas de domaine custom — on cible la preview Vercel de la branche
+// `staging` (URL stable basée sur le slug Vercel). Override via STAGING_URL si
+// un domaine custom est branché plus tard.
 const URLS = {
-  staging: process.env.STAGING_URL ?? 'https://staging.naturegraph.fr',
-  prod: process.env.PROD_URL ?? 'https://naturegraph.fr',
+  staging:
+    process.env.STAGING_URL ??
+    'https://naturegraph-git-staging-naturegraph-9868s-projects.vercel.app',
+  prod: process.env.PROD_URL ?? 'https://naturegraph.ca',
 }
 
 /** Tables Supabase dont on vérifie qu'elles répondent — représentatives du schéma */

@@ -607,8 +607,8 @@ Le projet maintient **trois environnements séparés** pour garantir que la vers
 | Environnement              | Branche   | URL                    | Rôle                                                           |
 | -------------------------- | --------- | ---------------------- | -------------------------------------------------------------- |
 | **Développement**          | `develop` | localhost              | Travail quotidien, nouvelles features, expérimentation libre   |
-| **Staging / Démo interne** | `staging` | staging.naturegraph.fr | Tests équipe, validation avant mise en ligne, démo partenaires |
-| **Production**             | `main`    | naturegraph.fr         | Version publique — **jamais touchée directement**              |
+| **Staging / Démo interne** | `staging` | naturegraph.ca | Tests équipe, validation avant mise en ligne, démo partenaires |
+| **Production**             | `main`    | naturegraph.ca         | Version publique — **jamais touchée directement**              |
 
 #### Flux de déploiement
 

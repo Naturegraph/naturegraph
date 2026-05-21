@@ -178,7 +178,7 @@
 ### Actions manuelles à finaliser (hors scope CLI)
 
 - 🟡 Supabase Dashboard : HaveIBeenPwned, OTP 600s→120s, SMTP custom
-- 🟡 Vercel : configurer domaine custom (app.naturegraph.fr ou beta.naturegraph.fr)
+- 🟡 Vercel : configurer domaine custom (naturegraph.ca ou naturegraph.ca)
 - 🟡 Edge Functions secrets en prod : RESEND_API_KEY, RESEND_FROM, CRON_SECRET
 
 ---

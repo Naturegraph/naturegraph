@@ -121,4 +121,4 @@ const AuthContext = createContext<{
 - [x] **CAPTCHA hCaptcha** : à activer en V1 sur signup public (option Supabase Auth)
 - [ ] **2FA TOTP** : V1.5 (Supabase l'expose nativement)
 - [x] **Session storage** : `localStorage` (persistence offline) ; cookies `httpOnly` non utilisables car SPA pure
-- [x] **CORS** : restreint aux domaines `localhost:5173`, `staging.naturegraph.fr`, `naturegraph.fr`
+- [x] **CORS** : restreint aux domaines `localhost:5173`, preview Vercel staging, `naturegraph.ca`
