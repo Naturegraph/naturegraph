@@ -276,6 +276,105 @@ export default function AdminBeta() {
     staleTime: STALE_TIMES.MEDIUM,
   })
 
+  // Nicolas 2026-05-21 : pré-association clé ↔ destinataire AVANT consommation.
+  // Beaucoup de clés sont créées pour une personne précise (invitation waitlist,
+  // clé admin perpétuelle) mais ne sont pas encore consommées (`used_by_user_id`
+  // est NULL). Le super admin doit voir à qui chaque clé est destinée pour le
+  // suivi support — sinon la colonne reste vide en attendant la 1ʳᵉ connexion.
+  //
+  // Sources de vérité (par ordre de priorité) :
+  //   1. used_by_user_id présent  → profil consommateur (keyUsersMap)
+  //   2. notes "Invitation waitlist: <email>" → invité (cherche le profil si déjà
+  //      inscrit, sinon affiche l'email seul + statut "en attente")
+  //   3. notes contient "admin perpétuelle" ou "super admin" → super admin
+  //      (lookup via super_admin role dans admin_users si dispo, sinon affiche
+  //      le label "Admin permanent")
+  //   4. sinon : clé de batch générique → "—"
+  //
+  // Le parsing du `notes` est volontairement simple (regex sur le texte écrit
+  // par `send-beta-invite` et la doc admin). On accepte un peu de fragilité ici
+  // pour éviter d'ajouter une colonne `assigned_to_email` à la table beta_access_keys.
+
+  /** Extrait l'email d'un `notes` de type "Invitation waitlist: foo@bar.com". */
+  function parseInviteEmail(notes: string | null): string | null {
+    if (!notes) return null
+    const m = notes.match(/Invitation waitlist:\s*([^\s,]+)/i)
+    return m ? m[1].toLowerCase() : null
+  }
+
+  /** Heuristique : la clé est-elle marquée comme admin perpétuel dans `notes` ? */
+  function isAdminPerpetualNote(notes: string | null): boolean {
+    if (!notes) return false
+    return /admin\s+perp[eé]tuelle|super\s+admin|admin\s+permanent/i.test(notes)
+  }
+
+  // Map email (lowercased) → profil minimal — utilisé pour résoudre les invités
+  // déjà inscrits ET le profil de l'admin perpétuel.
+  const { data: emailToProfile = {} } = useQuery<
+    Record<string, { id: string; username: string; first_name: string; last_name: string }>
+  >({
+    queryKey: ['beta-keys-assigned-emails', keys.map((k) => k.notes ?? '').sort()],
+    queryFn: async () => {
+      const emails = Array.from(
+        new Set(keys.map((k) => parseInviteEmail(k.notes)).filter((e): e is string => !!e)),
+      )
+      if (!supabase || emails.length === 0) return {}
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, username, first_name, last_name, email')
+        .in('email', emails)
+      const map: Record<
+        string,
+        { id: string; username: string; first_name: string; last_name: string }
+      > = {}
+      for (const p of data ?? []) {
+        if (p.email) {
+          map[p.email.toLowerCase()] = {
+            id: p.id,
+            username: p.username,
+            first_name: p.first_name,
+            last_name: p.last_name,
+          }
+        }
+      }
+      return map
+    },
+    enabled: keys.length > 0,
+    staleTime: STALE_TIMES.MEDIUM,
+  })
+
+  // Profil du super admin courant (Nicolas) — utilisé pour afficher l'auteur
+  // sur la clé admin perpétuelle quand `notes` la désigne.
+  const { data: superAdminProfile = null } = useQuery<{
+    id: string
+    username: string
+    first_name: string
+    last_name: string
+    email: string | null
+  } | null>({
+    queryKey: ['beta-super-admin-profile'],
+    queryFn: async () => {
+      if (!supabase) return null
+      const { data: auth } = await supabase.auth.getUser()
+      if (!auth?.user?.id) return null
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, username, first_name, last_name, email')
+        .eq('id', auth.user.id)
+        .maybeSingle()
+      return (
+        (data as {
+          id: string
+          username: string
+          first_name: string
+          last_name: string
+          email: string | null
+        } | null) ?? null
+      )
+    },
+    staleTime: STALE_TIMES.LONG,
+  })
+
   // Waitlist — TOUTES les entrées (Nicolas 2026-05-20 : ne plus masquer les
   // invités via `.is('invited_at', null)`). Le statut de suivi est dérivé au
   // rendu (cf. helper `waitlistStatus`), l'entrée reste visible de bout en bout.
@@ -764,6 +863,10 @@ export default function AdminBeta() {
                     const usedBy = k.used_by_user_id ? keyUsersMap[k.used_by_user_id] : null
                     const isUsed = k.current_uses >= k.max_uses
                     const isSelected = selectedKeyIds.has(k.id)
+                    // Pré-association clé ↔ destinataire (cf. logique au-dessus).
+                    const inviteEmail = parseInviteEmail(k.notes)
+                    const inviteProfile = inviteEmail ? emailToProfile[inviteEmail] : null
+                    const isAdminPerp = isAdminPerpetualNote(k.notes)
                     return (
                       <tr
                         key={k.id}
@@ -810,6 +913,7 @@ export default function AdminBeta() {
                             une nouvelle clé. */}
                         <td className="px-5 py-3 text-xs">
                           {usedBy ? (
+                            // Cas 1 : clé déjà consommée → profil complet du consommateur
                             <div className="flex flex-col gap-0.5">
                               <Link
                                 to={`/profile/${usedBy.username}`}
@@ -843,7 +947,66 @@ export default function AdminBeta() {
                             <span className="text-muted-foreground italic">
                               utilisateur supprimé
                             </span>
+                          ) : isAdminPerp && superAdminProfile ? (
+                            // Cas 2 : clé admin perpétuelle → super admin courant (Nicolas)
+                            <div className="flex flex-col gap-0.5">
+                              <Link
+                                to={`/profile/${superAdminProfile.username}`}
+                                className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+                                title="Super admin"
+                              >
+                                @{superAdminProfile.username}
+                                <ExternalLink className="size-3 opacity-60" aria-hidden="true" />
+                              </Link>
+                              <span className="text-muted-foreground inline-flex items-center gap-1">
+                                <span className="px-1.5 py-0.5 rounded bg-primary-light text-primary text-[10px] font-bold uppercase tracking-wide">
+                                  Super admin
+                                </span>
+                              </span>
+                              {superAdminProfile.email && (
+                                <span className="text-muted-foreground">
+                                  {superAdminProfile.email}
+                                </span>
+                              )}
+                            </div>
+                          ) : inviteProfile ? (
+                            // Cas 3a : clé d'invitation → invité déjà inscrit (profil existant)
+                            <div className="flex flex-col gap-0.5">
+                              <Link
+                                to={`/profile/${inviteProfile.username}`}
+                                className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+                                title="Invité·e (compte créé)"
+                              >
+                                @{inviteProfile.username}
+                                <ExternalLink className="size-3 opacity-60" aria-hidden="true" />
+                              </Link>
+                              <a
+                                href={`mailto:${inviteEmail}`}
+                                className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary hover:underline"
+                                title="Contacter par email"
+                              >
+                                <Mail className="size-3 shrink-0 opacity-70" aria-hidden="true" />
+                                {inviteEmail}
+                              </a>
+                            </div>
+                          ) : inviteEmail ? (
+                            // Cas 3b : clé d'invitation → invité PAS encore inscrit
+                            // (email parsé du `notes`, profil pas encore créé en DB)
+                            <div className="flex flex-col gap-0.5">
+                              <a
+                                href={`mailto:${inviteEmail}`}
+                                className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary hover:underline font-medium"
+                                title="Destinataire de l'invitation (compte non créé)"
+                              >
+                                <Mail className="size-3 shrink-0 opacity-70" aria-hidden="true" />
+                                {inviteEmail}
+                              </a>
+                              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                                Invité·e — en attente
+                              </span>
+                            </div>
                           ) : (
+                            // Cas 4 : clé de batch générique (pas de destinataire pré-assigné)
                             <span className="text-muted-foreground">—</span>
                           )}
                         </td>
