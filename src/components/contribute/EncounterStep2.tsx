@@ -14,7 +14,7 @@
  */
 
 import { useState, useId, useEffect, useMemo } from 'react'
-import { Search, Trash2, Plus, Minus, HelpCircle, Filter, X, Check } from 'lucide-react'
+import { Search, Trash2, Plus, Minus, HelpCircle, Filter, X, Check, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
 import { searchSpecies, type SpeciesHit } from '@/services/searchService'
@@ -99,11 +99,13 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
   const { t } = useTranslation()
   const listId = useId()
   const [query, setQuery] = useState('')
-  const [open, setOpen] = useState(false)
   // Filtres par groupe taxonomique — Set vide = tous les groupes acceptés.
   const [groupFilters, setGroupFilters] = useState<Set<TaxonomicGroup>>(new Set())
   const [filterOpen, setFilterOpen] = useState(false)
   const [results, setResults] = useState<SpeciesHit[]>([])
+  // Nicolas 2026-05-22 : loader visible pendant le fetch + état d'erreur explicite
+  // si l'espèce n'est pas trouvée, plutôt que de laisser le user sans feedback.
+  const [isLoading, setIsLoading] = useState(false)
 
   function toggleGroup(g: TaxonomicGroup) {
     setGroupFilters((prev) => {
@@ -122,16 +124,16 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
   )
 
   /**
-   * Met à jour la query et reset l'autocomplete si trop court.
-   * Le clear est dans le handler (pas dans useEffect) pour respecter la
-   * règle react-hooks/set-state-in-effect (pas de setState synchrone
-   * dans le body d'un effet — sinon cascading renders).
+   * Met à jour la query et reset les résultats si vide.
+   * Nicolas 2026-05-22 : seuil abaissé à 1 lettre (vs 2 avant). La table
+   * species_master a des indexes trigram (gin_trgm_ops) → recherche rapide
+   * même sur 1 caractère, et user vient pour du feedback immédiat.
    */
   function handleQueryChange(value: string) {
     setQuery(value)
-    setOpen(true)
-    if (value.trim().length < 2) {
+    if (value.trim().length === 0) {
       setResults([])
+      setIsLoading(false)
     }
   }
 
@@ -141,11 +143,12 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
   // dans le body de l'effet (cf. react-hooks/set-state-in-effect).
   useEffect(() => {
     const trimmed = query.trim()
-    if (trimmed.length < 2) return
+    if (trimmed.length < 1) return
 
     let cancelled = false
     const timer = setTimeout(() => {
       if (cancelled) return
+      setIsLoading(true)
       searchSpecies(trimmed, 8, singleGroup)
         .then((hits) => {
           if (cancelled) return
@@ -155,12 +158,14 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
               ? hits.filter((h) => groupFilters.has((h.group_label ?? '') as TaxonomicGroup))
               : hits
           setResults(filtered.slice(0, 6))
+          setIsLoading(false)
         })
         .catch(() => {
           if (cancelled) return
           setResults([])
+          setIsLoading(false)
         })
-    }, 250)
+    }, 200)
     return () => {
       cancelled = true
       clearTimeout(timer)
@@ -180,8 +185,14 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
   function handleSelect(hit: SpeciesHit) {
     onAdd(hitToSpecies(hit))
     setQuery('')
-    setOpen(false)
+    setResults([])
   }
+
+  // Helper rendu : true quand l'utilisateur a tapé quelque chose. Les états
+  // « pas encore tapé » / « en cours de recherche » / « aucun résultat » sont
+  // distingués pour donner un feedback clair sur ce qu'il se passe.
+  const hasQuery = query.trim().length >= 1
+  const showEmpty = hasQuery && !isLoading && results.length === 0
 
   return (
     // `relative` sur le container racine permet au panel filtres d'être
@@ -196,60 +207,23 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
               type="search"
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
-              onFocus={() => setOpen(true)}
-              onBlur={() => setTimeout(() => setOpen(false), 150)}
               placeholder={t('contribute.panel.searchSpecies')}
               role="combobox"
-              aria-expanded={open && results.length > 0}
+              aria-expanded={hasQuery}
               aria-autocomplete="list"
               aria-controls={listId}
               autoComplete="off"
               className="flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
             />
+            {/* Spinner inline pendant le fetch — feedback immédiat à l'user
+                qu'on cherche dans la base. */}
+            {isLoading && (
+              <Loader2
+                className="size-4 text-primary motion-safe:animate-spin shrink-0"
+                aria-label={t('common.loading')}
+              />
+            )}
           </div>
-
-          {/* Résultats autocomplete (species_master via searchService).
-              Layout strictement aligné sur `SearchPanel` (Nicolas 2026-05-21) :
-              icône catégorie (emoji groupe) + nom commun en gras + nom
-              scientifique en italique + libellé FR du groupe à droite.
-              La portion qui matche la requête est mise en gras via
-              `highlightMatch` pour aider l'utilisateur à comprendre pourquoi
-              le résultat remonte. */}
-          {open && results.length > 0 && (
-            <ul
-              id={listId}
-              role="listbox"
-              className="absolute z-20 w-full mt-1 rounded-2xl border border-border bg-background shadow-lg overflow-hidden"
-            >
-              {results.map((hit, i) => {
-                const commonName = hit.common_name ?? hit.scientific_name
-                return (
-                  <li key={hit.taxref_id} role="option" aria-selected={false}>
-                    {i > 0 && <div className="mx-5 h-px bg-border" aria-hidden="true" />}
-                    <button
-                      type="button"
-                      onMouseDown={() => handleSelect(hit)}
-                      className="w-full flex items-center gap-3 px-5 py-3 hover:bg-primary-light/20 transition-colors focus-visible:outline-none focus-visible:bg-primary-light/20 text-left"
-                    >
-                      <SpeciesCategoryIcon group={hit.group_label} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">
-                          {highlightMatch(commonName, query)}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate italic">
-                          {highlightMatch(hit.scientific_name, query)}
-                        </p>
-                      </div>
-                      {/* Libellé FR du groupe taxonomique, muted, aligné à droite. */}
-                      <span className="text-xs text-muted-foreground shrink-0">
-                        · {groupConfig(hit.group_label).label}
-                      </span>
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
         </div>
 
         {/* Bouton filtre — BATCH 99 : border ajoutée pour cohérence avec autres icon buttons */}
@@ -281,6 +255,82 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
           )}
         </button>
       </div>
+
+      {/* ── Résultats de recherche INLINE — Nicolas 2026-05-22 ──────────────
+          Avant : dropdown `absolute` au-dessus de la searchbar (caché par
+          d'autres éléments en mobile et confusant car user n'avait aucun
+          feedback). Maintenant : bloc inline qui pousse le contenu en
+          dessous, toujours visible. Trois états :
+            - Loading (delegé au spinner dans l'input) + skeleton de 3 lignes
+            - Résultats > 0 : liste empilée
+            - Résultats = 0 + fetch terminé : message « Aucune espèce trouvée »
+              avec hint pour signaler une espèce manquante. */}
+      {hasQuery && (
+        <div
+          id={listId}
+          role="listbox"
+          className="rounded-2xl border border-border bg-background overflow-hidden"
+        >
+          {isLoading && results.length === 0 && (
+            <div className="px-5 py-6 flex items-center justify-center gap-3 text-sm text-muted-foreground">
+              <Loader2
+                className="size-4 text-primary motion-safe:animate-spin"
+                aria-hidden="true"
+              />
+              <span>
+                {t('contribute.panel.searchLoading', {
+                  defaultValue: 'Recherche en cours…',
+                })}
+              </span>
+            </div>
+          )}
+
+          {results.length > 0 &&
+            results.map((hit, i) => {
+              const commonName = hit.common_name ?? hit.scientific_name
+              return (
+                <div key={hit.taxref_id} role="option" aria-selected={false}>
+                  {i > 0 && <div className="mx-5 h-px bg-border" aria-hidden="true" />}
+                  <button
+                    type="button"
+                    onClick={() => handleSelect(hit)}
+                    className="w-full flex items-center gap-3 px-5 py-3 hover:bg-primary-light/20 transition-colors focus-visible:outline-none focus-visible:bg-primary-light/20 text-left"
+                  >
+                    <SpeciesCategoryIcon group={hit.group_label} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {highlightMatch(commonName, query)}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate italic">
+                        {highlightMatch(hit.scientific_name, query)}
+                      </p>
+                    </div>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      · {groupConfig(hit.group_label).label}
+                    </span>
+                  </button>
+                </div>
+              )
+            })}
+
+          {showEmpty && (
+            <div className="px-5 py-6 flex flex-col items-center gap-2 text-center">
+              <p className="text-sm font-semibold text-foreground">
+                {t('contribute.panel.noSpeciesFound', {
+                  query,
+                  defaultValue: 'Aucune espèce trouvée pour « {{query}} »',
+                })}
+              </p>
+              <p className="text-xs text-muted-foreground max-w-xs">
+                {t('contribute.panel.noSpeciesHint', {
+                  defaultValue:
+                    'Vérifie l\'orthographe ou utilise « Je ne connais pas l\'espèce » en bas pour partager quand même.',
+                })}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Panel filtres — structuré comme FeedFilterPanel :
           - Header avec titre + close
