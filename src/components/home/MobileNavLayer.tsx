@@ -23,6 +23,7 @@ import { MobileBottomNav } from './MobileBottomNav'
 import { SearchPanel } from './SearchPanel'
 import { ProfileMenu } from './ProfileMenu'
 import { MobileNavDrawer } from './MobileNavDrawer'
+import { LocationModal } from './LocationModal'
 
 // SettingsPanel est lazy car volumineux (settings forms + sous-vues CGU/Privacy).
 // On ne charge le chunk que si l'utilisateur ouvre les paramètres.
@@ -42,6 +43,9 @@ export function MobileNavLayer({ onContributeClick }: MobileNavLayerProps) {
   const [showDrawer, setShowDrawer] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  // Nicolas 2026-05-22 : LocationModal exposée depuis le bouton dédié de
+  // la bottom nav (qui remplace l'ancien Home).
+  const [showLocation, setShowLocation] = useState(false)
 
   return (
     <>
@@ -49,6 +53,7 @@ export function MobileNavLayer({ onContributeClick }: MobileNavLayerProps) {
         onContributeClick={onContributeClick}
         onSearchClick={() => setShowSearch(true)}
         onMenuClick={() => setShowDrawer(true)}
+        onLocationClick={() => setShowLocation(true)}
         // onProfileClick seulement si authentifié — la MobileBottomNav navigue
         // d'elle-même vers /login en mode invité.
         onProfileClick={isAuthenticated ? () => setShowProfile(true) : undefined}
@@ -57,6 +62,8 @@ export function MobileNavLayer({ onContributeClick }: MobileNavLayerProps) {
       {showSearch && <SearchPanel onClose={() => setShowSearch(false)} />}
 
       {showDrawer && <MobileNavDrawer onClose={() => setShowDrawer(false)} />}
+
+      {showLocation && <LocationModal onClose={() => setShowLocation(false)} />}
 
       {showProfile && (
         <ProfileMenu
