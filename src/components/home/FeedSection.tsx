@@ -203,29 +203,20 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
       width: m.width ?? undefined,
       height: m.height ?? undefined,
     })),
-    // Répartition par type — MVP : on isole la réaction de l'utilisateur courant
-    // dans son propre bucket pour qu'elle s'affiche correctement (badge + couleur).
-    // Le reste des likes est consolidé dans 'love' jusqu'à ce qu'un agrégat SQL
-    // par type soit ajouté (post-MVP — vue matérialisée reactions_by_type).
-    //
-    // Bug fix (second-agent/10) : si userType === 'love', on ne doit PAS écraser
-    // le compteur après l'avoir incrémenté de 1 — sinon il devient (total - 1)
-    // ce qui peut donner 0 quand l'user est le seul à avoir liké.
+    // Répartition réelle par type — agrégée serveur (Nicolas 2026-05-22).
+    // Avant : approximation côté client qui dumpait tout dans `love` →
+    // affichage incohérent (« ❤️ 3 » au lieu de « ❤️ 2 / 😱 1 »).
+    // Maintenant : compteurs réels depuis la table `reactions`, calculés
+    // dans `getReactionsBreakdown()` puis injectés par `useFeed`.
     reactions: (() => {
-      const total = item.likes_count
-      const userType = item.user_reaction ?? null
-      const buckets = { love: 0, admire: 0, fire: 0, wow: 0, curious: 0 }
-      if (!userType || total === 0) {
-        buckets.love = total
-      } else if (userType === 'love') {
-        // L'user a réagi avec love : tous les likes restent dans le bucket love
-        buckets.love = total
-      } else {
-        // L'user a réagi avec un autre type : 1 dans son bucket, le reste dans love
-        buckets[userType] = 1
-        buckets.love = Math.max(0, total - 1)
+      const bd = item.reactions_breakdown
+      return {
+        love: bd?.love ?? 0,
+        admire: bd?.admire ?? 0,
+        fire: bd?.fire ?? 0,
+        wow: bd?.wow ?? 0,
+        curious: bd?.curious ?? 0,
       }
-      return buckets
     })(),
     userReaction: item.user_reaction ?? null,
     totalReactions: item.likes_count,
