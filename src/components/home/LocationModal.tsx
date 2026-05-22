@@ -235,7 +235,6 @@ export function LocationModal({ onClose }: LocationModalProps) {
   const selectHistoryItem = useCallback((item: LocationHistoryItem) => {
     setQuery(item.label)
     setTempCoords({ lat: item.lat, lon: item.lon })
-    setSuggestions([])
     setShowSuggestions(false)
   }, [])
 
