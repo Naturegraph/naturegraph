@@ -10,12 +10,10 @@
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LayoutList, LayoutGrid, Filter } from 'lucide-react'
+import { LayoutList, LayoutGrid } from 'lucide-react'
 import { FeedPost } from '@/components/home/FeedPost'
 import type { MockPost } from '@/components/home/FeedPost'
 import { FeedGallery } from '@/components/home/FeedGallery'
-import { FeedFilterPanel, DEFAULT_FILTERS } from '@/components/home/FeedFilterPanel'
-import type { FeedFilters } from '@/components/home/FeedFilterPanel'
 import { ProfileEmptyState } from '../ProfileEmptyState'
 
 // View toggle types
@@ -43,9 +41,6 @@ export function ProfileFeed({ userPosts, isOwnProfile }: ProfileFeedProps) {
   const [sort, setSort] = useState<SortMode>('recent')
   // Vue : liste (FeedPost en cards) ou grille (FeedGallery comme la home).
   const [viewMode, setViewMode] = useState<ViewMode>('list')
-  // Panneau de filtres — réutilise FeedFilterPanel du feed home.
-  const [showFilters, setShowFilters] = useState(false)
-  const [filters, setFilters] = useState<FeedFilters>({ ...DEFAULT_FILTERS })
 
   /** Tri côté client sur les données mock */
   const sortedPosts =
@@ -89,10 +84,15 @@ export function ProfileFeed({ userPosts, isOwnProfile }: ProfileFeedProps) {
           ))}
         </div>
 
-        {/* View toggle (list / grid) + séparateur + Filter — Figma 6385:74541.
-            DESKTOP UNIQUEMENT : sur mobile la HomeNavbar (top) propose déjà
-            les contrôles vue+filtres → pas de duplication (Nicolas 2026-05-01). */}
-        <div className="hidden md:inline-flex items-center rounded-full border border-border bg-cream-lighter p-1 gap-1">
+        {/* View toggle (list / grid) — visible mobile + desktop.
+            Nicolas 2026-05-22 : ancienne version `hidden md:inline-flex` partait
+            du principe que la HomeNavbar exposait ces contrôles aussi sur le
+            profil, mais elle ne le fait que sur la home. Résultat : un user
+            mobile ne pouvait pas basculer en galerie sur un profil.
+            Le filtre a été retiré : peu utile sur un profil déjà filtré par
+            user, et il restait non fonctionnel. À réintroduire si demande
+            forte (catégorie / période). */}
+        <div className="inline-flex items-center rounded-full border border-border bg-cream-lighter p-1 gap-1">
           <button
             type="button"
             onClick={() => setViewMode('list')}
@@ -118,16 +118,6 @@ export function ProfileFeed({ userPosts, isOwnProfile }: ProfileFeedProps) {
             }`}
           >
             <LayoutGrid className="size-4" aria-hidden="true" />
-          </button>
-          <span aria-hidden="true" className="h-5 w-px bg-border mx-1" />
-          <button
-            type="button"
-            onClick={() => setShowFilters(true)}
-            aria-label={t('profile.journal.filter', { defaultValue: 'Filtrer' })}
-            aria-expanded={showFilters}
-            className="size-8 rounded-full flex items-center justify-center text-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <Filter className="size-4" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -170,22 +160,6 @@ export function ProfileFeed({ userPosts, isOwnProfile }: ProfileFeedProps) {
         />
       )}
 
-      {/* Panneau de filtres — réutilise FeedFilterPanel du feed home pour
-          cohérence visuelle (mêmes filtres : catégorie, période, etc.). */}
-      {showFilters && (
-        <FeedFilterPanel
-          filters={filters}
-          onApply={(next) => {
-            setFilters(next)
-            setShowFilters(false)
-          }}
-          onClose={() => setShowFilters(false)}
-          activeTab="recent"
-          onTabChange={() => {
-            /* tab-change non utilisé sur le profil (pas de tabs Pour vous/Récent ici) */
-          }}
-        />
-      )}
     </div>
   )
 }
