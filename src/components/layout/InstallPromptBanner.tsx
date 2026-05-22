@@ -99,15 +99,16 @@ export function InstallPromptBanner() {
   const { t } = useTranslation()
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [showBanner, setShowBanner] = useState(false)
-  const [isIos, setIsIos] = useState(false)
+  // Lazy initializer : calcul une fois au mount, évite setState dans useEffect
+  // (lint react-hooks/set-state-in-effect).
+  const [isIos] = useState(() => isIosSafari())
 
   useEffect(() => {
     // Court-circuits : déjà installée ou déjà refusée récemment
     if (isAlreadyInstalled() || isRecentlyDismissed()) return
 
     // iOS Safari : pas d'event beforeinstallprompt, on montre le guide manuel
-    if (isIosSafari()) {
-      setIsIos(true)
+    if (isIos) {
       // Délai pour ne pas être agressif dès la 1ʳᵉ seconde — laisse la
       // première impression au contenu, propose l'installation après 3 s.
       const timer = setTimeout(() => setShowBanner(true), 3000)
@@ -123,7 +124,7 @@ export function InstallPromptBanner() {
     }
     window.addEventListener('beforeinstallprompt', handler)
     return () => window.removeEventListener('beforeinstallprompt', handler)
-  }, [])
+  }, [isIos])
 
   async function handleInstall() {
     if (!deferredPrompt) return
@@ -170,7 +171,7 @@ export function InstallPromptBanner() {
           {isIos ? (
             <p className="text-xs leading-snug mt-0.5 opacity-90">
               {t('pwa.installIosHint', {
-                defaultValue: 'Appuie sur Partager puis « Sur l\'écran d\'accueil ».',
+                defaultValue: "Appuie sur Partager puis « Sur l'écran d'accueil ».",
               })}
             </p>
           ) : (
