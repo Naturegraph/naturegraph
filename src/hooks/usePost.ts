@@ -111,7 +111,6 @@ export function useToggleReaction(userId: string | undefined) {
                 fire: 0,
                 wow: 0,
                 curious: 0,
-                disappointed: 0,
                 ...(post.reactions_breakdown ?? {}),
               }
 
