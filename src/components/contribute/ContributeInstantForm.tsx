@@ -27,6 +27,7 @@ import { FEED_QUERY_KEY } from '@/hooks/useFeed'
 import { uploadPostMedia } from '@/services/mediaService'
 import { supabase } from '@/lib/supabase'
 import { useQueryClient } from '@tanstack/react-query'
+import { useToast } from '@/contexts/ToastContext'
 
 // ─── État du formulaire ───────────────────────────────────────────────────────
 
@@ -56,6 +57,7 @@ export function ContributeInstantForm() {
   const { user } = useAuth()
   const createPost = useCreatePost(user?.id ?? '')
   const queryClient = useQueryClient()
+  const toast = useToast()
 
   const [form, setForm] = useState<InstantFormData>({
     files: [],
@@ -145,6 +147,12 @@ export function ContributeInstantForm() {
       // Invalider le feed APRÈS l'upload media pour que le post apparaisse avec sa photo
       queryClient.invalidateQueries({ queryKey: FEED_QUERY_KEY({}) })
 
+      // Confirmation publication — utile sur mobile où le scroll trompe.
+      toast.success(
+        t('contribute.publishSuccess', {
+          defaultValue: 'Observation publiée ✨',
+        }),
+      )
       navigate('/home')
     } catch (err) {
       // Rollback : supprimer le post orphelin si l'upload des médias a échoué.
