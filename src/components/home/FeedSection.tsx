@@ -181,8 +181,7 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
     // Nicolas 2026-05-22 : `posts.individuals_count` désormais en DB → on le
     // mappe directement (avant : toujours undefined faute de colonne). FeedPost
     // affiche un suffixe « (N) » sur le chip espèce quand > 1.
-    individualsCount:
-      (item as { individuals_count?: number }).individuals_count ?? undefined,
+    individualsCount: (item as { individuals_count?: number }).individuals_count ?? undefined,
     scientific_name: item.scientific_name ?? null,
     taxref_id: item.taxref_id ?? null,
     taxonomic_group: item.taxonomic_group ?? null,
@@ -290,7 +289,13 @@ export function FeedSection({
   const { isAuthenticated, user } = useAuth()
   // updateLocation retiré avec la LocationPermissionModal (Phase 1) — n'est
   // plus déclenché qu'au signup/onboarding et via les Settings.
-  const { locationCoords } = useLocation()
+  // Nicolas 2026-05-22 : quand l'utilisateur est localisé, on applique
+  // AUTOMATIQUEMENT son rayon de filtrage (sans qu'il doive ouvrir le panel
+  // filtres). C'est le comportement attendu : « je suis localisé donc je
+  // vois ce qui est autour de moi ». `locationDistance` (75-250 km) prend
+  // le pas sur `filters.radius` (0 par défaut) si l'utilisateur est localisé.
+  const { locationCoords, locationLabel, locationDistance } = useLocation()
+  const isLocalized = !!(locationLabel && locationCoords)
   // Species Context Layer — filtre global activé depuis la recherche (PRD §3.4 / §6.1)
   const { activeSpecies, clearActiveSpecies } = useSpecies()
   const [activeTab, setActiveTab] = useState<FeedTab>('recent')
@@ -324,13 +329,19 @@ export function FeedSection({
   // Construction du payload filtres → params backend
   // On omet shareTypes si les deux sont cochés (par défaut = tous types) pour
   // éviter des requêtes inutiles et une clé de cache qui change inutilement.
+  // Si l'utilisateur est localisé, on force le rayon à `locationDistance`
+  // (75-250 km défini dans LocationModal) — sauf si l'utilisateur a déjà
+  // choisi un rayon plus restrictif dans le panel filtres. Sans localisation
+  // active, on retombe sur `filters.radius` (0 = pas de filtre géographique).
+  const effectiveRadius = isLocalized && filters.radius === 0 ? locationDistance : filters.radius
+
   const feedFilters = {
     categories: filters.categories,
     helpOnly: filters.helpOnly,
     shareTypes:
       filters.shareTypes.encounter && filters.shareTypes.instant ? undefined : filters.shareTypes,
     period: filters.period,
-    radiusKm: filters.radius,
+    radiusKm: effectiveRadius,
   }
 
   // useFeed — données Supabase via React Query, avec filtres appliqués
@@ -608,9 +619,22 @@ export function FeedSection({
           <div className="flex flex-col items-center gap-5 px-6 py-12 text-center">
             <img src={hermineEmptyState} alt="" className="w-48 opacity-80" aria-hidden="true" />
             <div className="flex flex-col gap-2 max-w-sm">
-              <p className="text-lg font-bold text-foreground">{t('home.feed.emptyTitle')}</p>
+              <p className="text-lg font-bold text-foreground">
+                {isLocalized
+                  ? t('home.feed.emptyLocationTitle', {
+                      defaultValue: 'Aucune observation dans ce rayon',
+                    })
+                  : t('home.feed.emptyTitle')}
+              </p>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                {t('home.feed.emptyDesc')}
+                {isLocalized
+                  ? t('home.feed.emptyLocationDesc', {
+                      defaultValue:
+                        'Aucune observation publique trouvée dans un rayon de {{km}} km autour de {{city}}. Élargis ton rayon ou contribue pour démarrer la dynamique locale.',
+                      km: effectiveRadius,
+                      city: locationLabel,
+                    })
+                  : t('home.feed.emptyDesc')}
               </p>
             </div>
             <div className="flex flex-wrap gap-3 justify-center">
