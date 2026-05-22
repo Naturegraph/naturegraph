@@ -33,6 +33,18 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
+// ─── Extraction UUID depuis un segment slug-uuid ─────────────────────────────
+// Le segment route `:postId` peut contenir un slug humain devant l'UUID
+// (« grand-duc-amerique-{uuid} »). On extrait l'UUID via regex pour
+// rester rétro-compatible avec les anciens liens `/post/{uuid}`.
+const UUID_REGEX = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+
+function extractUuid(raw: string | undefined): string | null {
+  if (!raw) return null
+  const m = raw.match(UUID_REGEX)
+  return m ? m[0] : null
+}
+
 // ─── Detection crawlers OG ─────────────────────────────────────────────────────
 
 /**
@@ -118,12 +130,22 @@ async function fetchPostForOg(postId: string): Promise<OgPost | null> {
       row.media.find((m) => m.is_cover) ??
       row.media.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))[0]
     const username = row.user?.username ?? 'naturegraph'
+    // Passe par le render/resize Supabase pour servir une image 1200×630
+    // < 200 KB. WhatsApp/iMessage timeout silencieusement sur des images
+    // > 500 KB en data mobile → preview vide. Le `/render/image/public/`
+    // endpoint Supabase resize + compresse à la volée.
+    const rawUrl = cover?.url ?? null
+    const imageUrl = rawUrl
+      ? rawUrl.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') +
+        (rawUrl.includes('?') ? '&' : '?') +
+        'width=1200&height=630&resize=cover&quality=80'
+      : null
     return {
       title: row.title ?? row.species_name ?? 'Une observation Naturegraph',
       description:
         row.description ??
         `Découvre cette observation nature partagée par @${username} sur Naturegraph.`,
-      imageUrl: cover?.url ?? null,
+      imageUrl,
       authorUsername: username,
       species: row.species_name,
     }
@@ -241,10 +263,14 @@ function buildFallbackHtml(postUrl: string): string {
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const userAgent = req.headers['user-agent']
-  const postId = (req.query.postId ?? req.query.id) as string | undefined
+  // Le param de route peut être un UUID nu ou un slug-uuid. On extrait
+  // toujours l'UUID pour la requête DB, mais on garde le slug d'origine
+  // dans l'URL canonique pour préserver le SEO du lien partagé.
+  const rawParam = (req.query.postId ?? req.query.id) as string | undefined
+  const postId = extractUuid(rawParam)
   const host = req.headers.host ?? 'naturegraph.ca'
   const proto = (req.headers['x-forwarded-proto'] as string | undefined) ?? 'https'
-  const postUrl = `${proto}://${host}/post/${postId ?? ''}`
+  const postUrl = `${proto}://${host}/post/${rawParam ?? ''}`
 
   // Navigateur humain → on délègue à la SPA (Vercel servira index.html).
   // On set un statut 200 et on renvoie un rewrite implicite via le SPA :

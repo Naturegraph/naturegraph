@@ -531,7 +531,14 @@ export function FeedPost({
             const taxonomicCfg = taxonomic_group ? TAXONOMIC_GROUP_CONFIG[taxonomic_group] : null
             const categoryLabel = taxonomicCfg?.label ?? null
 
-            const hasIdentifiedSpecies = !!(species && taxref_id)
+            // Espèce identifiée = on a au moins le nom commun OU scientifique.
+            // `taxref_id` est uniquement requis pour le filtrage cliquable —
+            // s'il manque (anciens posts pré-migration 2026-05-22), on affiche
+            // quand même le nom de l'espèce en chip passif plutôt que de
+            // tomber sur « Espèce non déterminée ».
+            const speciesName = species || scientific_name || null
+            const hasIdentifiedSpecies = !!speciesName
+            const isSpeciesClickable = !!(speciesName && taxref_id)
             const unknownLabel = t('home.post.unknownSpecies', {
               defaultValue: 'Espèce non déterminée',
             })
@@ -554,28 +561,40 @@ export function FeedPost({
             ) : null
 
             // ─── Cas 1 : catégorie + espèce identifiée → 2 chips séparés ───
+            // Si taxref_id présent → chip cliquable (filtre). Sinon → chip
+            // passif qui affiche quand même le nom (anciens posts).
             if (hasIdentifiedSpecies) {
               return (
                 <>
                   {categoryChip}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setActiveSpecies({
-                        taxref_id: taxref_id!,
-                        scientific_name: scientific_name ?? species!,
-                        common_name: species !== scientific_name ? (species ?? null) : null,
-                        group_label: taxonomic_group ?? null,
-                      })
-                    }
-                    aria-label={t('home.post.filterBySpecies', { species: species ?? '' })}
-                    className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}
-                  >
-                    <span>
-                      {species}
-                      {multipleSuffix}
+                  {isSpeciesClickable ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setActiveSpecies({
+                          taxref_id: taxref_id!,
+                          scientific_name: scientific_name ?? speciesName!,
+                          common_name:
+                            speciesName !== scientific_name ? (speciesName ?? null) : null,
+                          group_label: taxonomic_group ?? null,
+                        })
+                      }
+                      aria-label={t('home.post.filterBySpecies', { species: speciesName ?? '' })}
+                      className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}
+                    >
+                      <span>
+                        {speciesName}
+                        {multipleSuffix}
+                      </span>
+                    </button>
+                  ) : (
+                    <span className={CHIP_BASE_CLASS}>
+                      <span>
+                        {speciesName}
+                        {multipleSuffix}
+                      </span>
                     </span>
-                  </button>
+                  )}
                 </>
               )
             }
@@ -797,7 +816,12 @@ export function FeedPost({
               <Share2 className="size-4 text-foreground" aria-hidden="true" />
             </button>
             {showShare && (
-              <SharePopover postId={id} title={title} onClose={() => setShowShare(false)} />
+              <SharePopover
+                postId={id}
+                title={title}
+                species={species ?? scientific_name ?? null}
+                onClose={() => setShowShare(false)}
+              />
             )}
           </div>
         </div>
