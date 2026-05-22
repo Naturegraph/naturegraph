@@ -89,8 +89,12 @@ export default function Home() {
        */}
       <div className="flex flex-1 w-full">
         <div className="w-full xl:max-w-[1440px] mx-auto flex md:gap-6 gap-0 md:px-6 px-0 md:py-6 pb-20 md:pb-6">
-          {/* Colonne gauche — visible uniquement XL desktop */}
-          <aside className="hidden xl:block w-[320px] shrink-0">
+          {/* Colonne gauche — visible dès LG (≥1024px, Nicolas 2026-05-22).
+              Contient les stats user perso (observations, espèces, streak,
+              objectif semaine) qui sont l'info la plus engageante. Avant
+              elle n'apparaissait qu'à xl et un user sur iPad Air (1180px)
+              perdait l'accès à ses propres stats. */}
+          <aside className="hidden lg:block w-[320px] shrink-0">
             {isAuthenticated ? <ProfileSidebar /> : <GuestSidebar />}
           </aside>
 
@@ -108,8 +112,10 @@ export default function Home() {
             />
           </main>
 
-          {/* Colonne droite — Stats & Tendances — visible uniquement XL desktop.
-              Lazy-loaded : ne charge le chunk que si l'ecran est >=1280px (QW-I2). */}
+          {/* Colonne droite — Stats & Tendances — visible uniquement XL desktop
+              (≥1280px). Sur lg (1024-1279px) on garde main + sidebar gauche
+              seule pour ne pas écraser la largeur du feed (photos nature).
+              Lazy-loaded : ne charge le chunk que si l'écran est >=1280px. */}
           <aside className="hidden xl:block w-[320px] shrink-0">
             <Suspense fallback={<div className="w-[320px] h-96 bg-muted/20 rounded-lg" />}>
               <StatsSidebar />
