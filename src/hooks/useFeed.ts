@@ -22,7 +22,7 @@ import {
   type FeedResult,
 } from '@/services/postService'
 import { useAuth } from '@/contexts/AuthContext'
-import type { PostFeedItem } from '@/types/database'
+import type { PostFeedItem, ReactionType } from '@/types/database'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -120,8 +120,9 @@ export function useFeed(
       // « tout dans love » qui mentait à l'utilisateur).
       if (feedResult.data.length > 0) {
         const postIds = feedResult.data.map((p) => p.id)
+        const emptyReactions: Record<string, ReactionType> = {}
         const [userReactions, breakdown] = await Promise.all([
-          userId ? getUserReactions(userId, postIds) : Promise.resolve({}),
+          userId ? getUserReactions(userId, postIds) : Promise.resolve(emptyReactions),
           getReactionsBreakdown(postIds),
         ])
         feedResult.data = feedResult.data.map((post) => ({

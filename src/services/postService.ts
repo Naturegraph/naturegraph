@@ -363,7 +363,7 @@ export async function getReactionsBreakdown(
     const pid = row.post_id
     const type = row.type as ReactionType
     if (!breakdown[pid]) {
-      breakdown[pid] = { love: 0, admire: 0, fire: 0, wow: 0, curious: 0, disappointed: 0 }
+      breakdown[pid] = { love: 0, admire: 0, fire: 0, wow: 0, curious: 0 }
     }
     breakdown[pid][type] = (breakdown[pid][type] ?? 0) + 1
   }
