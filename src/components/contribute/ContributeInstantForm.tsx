@@ -105,6 +105,16 @@ export function ContributeInstantForm() {
     setIsSubmitting(true)
     let createdPostId: string | null = null
     try {
+      // Décompose le label « Ville, Région » pour persister `city` distinct
+      // de `location_name` — sans ça FeedPost n'affiche pas la ville à droite
+      // de la date (cf. ContributeEncounterForm pour le même fix).
+      const locSegments = form.locationName
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      const cityFromInput = locSegments[0] || undefined
+      const regionFromInput = locSegments[locSegments.length - 1] || undefined
+
       // 1. Créer le post (sans médias)
       const post = await createPost.mutateAsync({
         type: 'nature_instant',
@@ -113,6 +123,8 @@ export function ContributeInstantForm() {
         encounter_date: form.encounterDate,
         time_of_day: form.timeOfDay || undefined,
         location_name: form.locationName || undefined,
+        city: cityFromInput,
+        region: regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : undefined,
         location_hidden: form.locationHidden,
         tags: form.tags,
       })
