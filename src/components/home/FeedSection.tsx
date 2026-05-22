@@ -178,8 +178,11 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
     // Pas de fallback hardcodé : si null, FeedPost gère via i18n
     // (second-agent/06 — règle catégorie + espèce unifiée).
     species: item.species_name ?? null,
-    // multipleObservations supprimé (deprecated 2026-05-02). Désormais on lit
-    // uniquement `posts.individuals_count` quand le backend l'expose.
+    // Nicolas 2026-05-22 : `posts.individuals_count` désormais en DB → on le
+    // mappe directement (avant : toujours undefined faute de colonne). FeedPost
+    // affiche un suffixe « (N) » sur le chip espèce quand > 1.
+    individualsCount:
+      (item as { individuals_count?: number }).individuals_count ?? undefined,
     scientific_name: item.scientific_name ?? null,
     taxref_id: item.taxref_id ?? null,
     taxonomic_group: item.taxonomic_group ?? null,
