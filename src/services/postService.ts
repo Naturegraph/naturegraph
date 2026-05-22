@@ -83,6 +83,9 @@ export interface CreatePostPayload {
   scientific_name?: string
   taxonomic_group?: Post['taxonomic_group']
   taxref_id?: string
+  /** Nombre d'individus observés (1+). Nicolas 2026-05-22 : ajout de
+   *  posts.individuals_count en DB pour afficher « (N) » sur le chip espèce. */
+  individuals_count?: number
   tags?: string[]
   /** Format d'affichage choisi par l'utilisateur (Figma 6385:47324).
    *  Default DB = '16:9' si non fourni. */
