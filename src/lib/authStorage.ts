@@ -20,9 +20,12 @@
  *   edge function) émettant des cookies côté serveur. Ici on utilise le
  *   meilleur compromis possible en Vite SPA.
  *
- * Le flag "remember" est lui-même stocké dans sessionStorage : il est posé
- * avant l'envoi de l'OTP (signInWithOtp) et consommé au moment de la
- * vérification (verifyOtp), quand Supabase écrit la session via setItem().
+ * Le flag "remember" est stocké dans localStorage (Nicolas 2026-05-22) :
+ * il doit survivre à la fermeture du navigateur pour que les rotations
+ * automatiques du refresh token (déclenchées au retour de l'utilisateur)
+ * continuent d'écrire la session en localStorage. Stocké en sessionStorage
+ * il était perdu à chaque fermeture, et l'utilisateur finissait par devoir
+ * redemander un OTP même avec "Se souvenir de moi" coché.
  */
 
 const REMEMBER_KEY = 'naturegraph-auth-remember'
@@ -87,12 +90,20 @@ function safeSessionRemove(key: string): void {
 /**
  * Pose le choix "Se souvenir de moi" AVANT que Supabase écrive la session.
  * À appeler juste avant `signInWithOtp` (envoi du code).
+ *
+ * Stocké en localStorage pour survivre à la fermeture du navigateur. Sinon
+ * les rotations de refresh token au retour de l'utilisateur reverraient
+ * la session vers sessionStorage et l'auth serait éphémère malgré le check.
  */
 export function setRememberMe(remember: boolean): void {
   if (typeof window === 'undefined') return
   if (remember) {
-    safeSessionSet(REMEMBER_KEY, '1')
+    safeLocalSet(REMEMBER_KEY, '1')
+    // Nettoie l'ancien emplacement (sessionStorage) au cas où un utilisateur
+    // ait une session héritée d'avant ce fix.
+    safeSessionRemove(REMEMBER_KEY)
   } else {
+    safeLocalRemove(REMEMBER_KEY)
     safeSessionRemove(REMEMBER_KEY)
   }
 }
@@ -100,7 +111,9 @@ export function setRememberMe(remember: boolean): void {
 /** Retourne l'état courant du flag "remember me" */
 export function isRememberMeActive(): boolean {
   if (typeof window === 'undefined') return false
-  return safeSessionGet(REMEMBER_KEY) === '1'
+  // Lecture prioritaire localStorage (nouveau standard) + fallback session
+  // pour ne pas casser les sessions actives migrées d'avant ce fix.
+  return safeLocalGet(REMEMBER_KEY) === '1' || safeSessionGet(REMEMBER_KEY) === '1'
 }
 
 /**
