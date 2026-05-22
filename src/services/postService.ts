@@ -399,9 +399,14 @@ export async function toggleReaction(
       await supabase.from('reactions').delete().eq('post_id', postId).eq('user_id', userId)
       return { added: false, activeType: null }
     } else {
-      // Type différent → remplacer (delete + insert pour déclencher les triggers)
-      await supabase.from('reactions').delete().eq('post_id', postId).eq('user_id', userId)
-      await supabase.from('reactions').insert({ post_id: postId, user_id: userId, type })
+      // Type différent → UPDATE atomique (Nicolas 2026-05-22).
+      // Avant : DELETE + INSERT déclenchait `trg_notify_on_reaction` sur
+      // chaque swap → l'auteur du post recevait une nouvelle notif chaque
+      // fois que l'utilisateur changeait d'emoji. UPDATE n'active ni le
+      // trigger notif (INSERT-only) ni `update_posts_likes_count`
+      // (INSERT/DELETE-only), donc le compteur reste juste et l'auteur
+      // n'est pas spammé.
+      await supabase.from('reactions').update({ type }).eq('post_id', postId).eq('user_id', userId)
       return { added: true, activeType: type }
     }
   } else {

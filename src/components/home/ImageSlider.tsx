@@ -300,7 +300,11 @@ export function ImageSlider({
                   src={img.url}
                   alt={img.alt}
                   className="absolute inset-0 size-full object-cover pointer-events-none"
-                  loading={i === 0 ? 'eager' : 'lazy'}
+                  // Nicolas 2026-05-22 : eager pour les 2 premières slides
+                  // (la slide 1 visible, la slide 2 = swipe le plus probable).
+                  // Évite le blanc-flash sur connexion lente quand l'user
+                  // swipe vers la photo suivante.
+                  loading={i <= 1 ? 'eager' : 'lazy'}
                   decoding="async"
                   draggable={false}
                 />
