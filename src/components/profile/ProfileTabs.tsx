@@ -14,7 +14,7 @@
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { UserRound, Camera, Bookmark, Users, BarChart2 } from 'lucide-react'
+import { UserRound, Camera, Bookmark, Users } from 'lucide-react'
 import type { ProfileDisplayData } from './ProfileHeader'
 import type { MockPost } from '@/components/home/FeedPost'
 import { ProfileAboutCard } from './ProfileAboutCard'
@@ -70,7 +70,11 @@ const TABS: TabDef[] = [
     getBadge: ({ savedPosts }) => savedPosts.length,
   },
   { id: 'community', labelKey: 'profile.tabs.community', icon: Users },
-  { id: 'stats', labelKey: 'profile.tabs.stats', icon: BarChart2, soonBadge: true },
+  // Nicolas 2026-05-22 : onglet « Statistiques » retiré du listing tant que
+  // la page dédiée n'est pas livrée. Tant qu'elle est en « Bientôt », autant
+  // ne pas afficher l'item pour ne pas créer d'attente côté utilisateur.
+  // À réactiver quand la vue Stats sera prête (cf. ProfileStats.tsx).
+  // { id: 'stats', labelKey: 'profile.tabs.stats', icon: BarChart2, soonBadge: true },
 ]
 
 // ─── Composant ────────────────────────────────────────────────────────────────
