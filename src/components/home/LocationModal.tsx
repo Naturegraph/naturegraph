@@ -182,9 +182,9 @@ export function LocationModal({ onClose }: LocationModalProps) {
    */
   const panelRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
+  // Nicolas 2026-05-22 : on n'auto-focus PLUS l'input à l'ouverture — quand
+  // l'utilisateur ré-ouvre la modal il veut souvent juste revalider le rayon
+  // sans déclencher le clavier mobile. L'input reste accessible au tap.
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
