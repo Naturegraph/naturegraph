@@ -133,13 +133,19 @@ function buildCrawlerHtml(profile: OgProfile, profileUrl: string): string {
   const safeUsername = escapeHtml(profile.username)
   const safeBio = escapeHtml(
     truncate(
-      profile.bio ??
-        `Découvre les observations nature de @${profile.username} sur Naturegraph.`,
+      profile.bio ?? `Découvre les observations nature de @${profile.username} sur Naturegraph.`,
     ),
   )
   // Préférence banner > avatar pour og:image (la bannière est en 1500×500
   // ratio quasi-OG ; l'avatar est carré et moins flatteur en preview).
-  const ogImage = profile.bannerUrl ?? profile.avatarUrl ?? ''
+  // Resize via Supabase render endpoint pour < 200 KB (WhatsApp/iMessage
+  // timeout sur les images lourdes en data mobile).
+  const rawOgImage = profile.bannerUrl ?? profile.avatarUrl ?? ''
+  const ogImage = rawOgImage
+    ? rawOgImage.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') +
+      (rawOgImage.includes('?') ? '&' : '?') +
+      'width=1200&height=630&resize=cover&quality=80'
+    : ''
   const safeImage = ogImage ? escapeHtml(ogImage) : ''
   const safeUrl = escapeHtml(profileUrl)
 

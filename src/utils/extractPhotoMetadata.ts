@@ -98,26 +98,40 @@ export async function extractPhotoMetadata(file: File): Promise<PhotoMetadata> {
       pick: ['DateTimeOriginal', 'CreateDate', 'latitude', 'longitude'],
     })
 
-    if (!exif) return {}
-
     const result: PhotoMetadata = {}
 
-    // Date/heure — DateTimeOriginal prioritaire, sinon CreateDate
-    const raw = exif.DateTimeOriginal ?? exif.CreateDate
-    if (raw instanceof Date && !isNaN(raw.getTime())) {
-      result.capturedAt = raw
+    // Date/heure — priorité :
+    //   1. EXIF DateTimeOriginal (capture caméra réelle)
+    //   2. EXIF CreateDate (fallback)
+    //   3. file.lastModified (cas iPhone HEIC mal parsé, screenshots, etc.) —
+    //      mieux que la date du jour quand l'EXIF est absent.
+    let captureSource: Date | null = null
+    const exifRaw = exif?.DateTimeOriginal ?? exif?.CreateDate
+    if (exifRaw instanceof Date && !isNaN(exifRaw.getTime())) {
+      captureSource = exifRaw
+    } else if (file.lastModified && file.lastModified > 0) {
+      // file.lastModified = timestamp Unix ms du fichier sur disque. Pour
+      // une photo importée depuis la galerie, c'est généralement la date
+      // de prise de vue (ou très proche). Pas idéal mais meilleur fallback.
+      captureSource = new Date(file.lastModified)
+    }
+
+    if (captureSource && !isNaN(captureSource.getTime())) {
+      result.capturedAt = captureSource
       // Format ISO YYYY-MM-DD (local — évite le décalage UTC qui basculerait
       // une photo prise à 23h en jour suivant)
-      const y = raw.getFullYear()
-      const m = String(raw.getMonth() + 1).padStart(2, '0')
-      const d = String(raw.getDate()).padStart(2, '0')
+      const y = captureSource.getFullYear()
+      const m = String(captureSource.getMonth() + 1).padStart(2, '0')
+      const d = String(captureSource.getDate()).padStart(2, '0')
       result.date = `${y}-${m}-${d}`
 
-      const h = String(raw.getHours()).padStart(2, '0')
-      const min = String(raw.getMinutes()).padStart(2, '0')
+      const h = String(captureSource.getHours()).padStart(2, '0')
+      const min = String(captureSource.getMinutes()).padStart(2, '0')
       result.time = `${h}:${min}`
-      result.timeOfDay = inferTimeOfDay(raw.getHours())
+      result.timeOfDay = inferTimeOfDay(captureSource.getHours())
     }
+
+    if (!exif) return result
 
     // GPS — vérifie que les valeurs sont des nombres finis valides
     if (typeof exif.latitude === 'number' && Number.isFinite(exif.latitude)) {

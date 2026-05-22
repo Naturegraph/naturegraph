@@ -101,19 +101,42 @@ export function useToggleReaction(userId: string | undefined) {
             data: old.data.map((post: PostFeedItem) => {
               if (post.id !== postId) return post
 
+              // Snapshot du breakdown actuel (immutable) — on incrémente/
+              // décrémente uniquement les buckets concernés pour que
+              // l'affichage des badges reflète immédiatement le changement
+              // sans attendre l'invalidation serveur.
+              const bd: Record<ReactionType, number> = {
+                love: 0,
+                admire: 0,
+                fire: 0,
+                wow: 0,
+                curious: 0,
+                ...(post.reactions_breakdown ?? {}),
+              }
+
               if (currentReaction === null) {
                 // Cas 1 : ajout d'une nouvelle réaction
-                return { ...post, likes_count: post.likes_count + 1, user_reaction: type }
+                bd[type] = (bd[type] ?? 0) + 1
+                return {
+                  ...post,
+                  likes_count: post.likes_count + 1,
+                  user_reaction: type,
+                  reactions_breakdown: bd,
+                }
               } else if (currentReaction === type) {
                 // Cas 2 : toggle off (même type)
+                bd[type] = Math.max(0, (bd[type] ?? 0) - 1)
                 return {
                   ...post,
                   likes_count: Math.max(0, post.likes_count - 1),
                   user_reaction: null,
+                  reactions_breakdown: bd,
                 }
               } else {
-                // Cas 3 : changement de type (count inchangé, triggers font delete+insert)
-                return { ...post, user_reaction: type }
+                // Cas 3 : changement de type (total inchangé, swap buckets)
+                bd[currentReaction] = Math.max(0, (bd[currentReaction] ?? 0) - 1)
+                bd[type] = (bd[type] ?? 0) + 1
+                return { ...post, user_reaction: type, reactions_breakdown: bd }
               }
             }),
           }

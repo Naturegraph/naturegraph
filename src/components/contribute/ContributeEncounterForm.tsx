@@ -260,37 +260,52 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
       // time-of-day : valeur saisie > fallback EXIF (ex : photo du matin)
       const timeOfDay = form.timeOfDay || form.photoMetadata.timeOfDay || undefined
 
+      // Décompose le label « Ville, Département, Région » en composants
+      // distincts pour persister `city` et `region` séparément. Sans ça,
+      // FeedPost n'affichait jamais la ville à droite de la date (cf.
+      // postFeedItemToMockPost qui lit `item.city`).
+      const locSegments = form.locationName
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      const cityFromInput = locSegments[0] || undefined
+      const regionFromInput = locSegments[locSegments.length - 1] || undefined
+
       // createPost : timeout 10s (insert SQL léger, devrait être instantané).
       const post = await withTimeout(
         createPost.mutateAsync({
-        type: 'nature_encounter',
-        title: form.title.trim() || undefined,
-        description: form.description.trim(),
-        // Visibilité par défaut 'public' — plus de sélecteur dans l'UI Figma v3.
-        // La granularité GPS est pilotée séparément via `location_hidden`.
-        visibility: 'public',
-        encounter_date: form.encounterDate,
-        time_of_day: timeOfDay,
-        weather: form.weather || undefined,
-        habitat: form.habitat || undefined,
-        location_name: form.locationName || undefined,
-        latitude: form.locationLat ?? undefined,
-        longitude: form.locationLng ?? undefined,
-        location_hidden: form.locationHidden,
-        species_name: firstKnown?.species?.commonName ?? undefined,
-        scientific_name: firstKnown?.species?.scientificName ?? undefined,
-        taxonomic_group: firstKnown?.species?.group ?? undefined,
-        // Nicolas 2026-05-22 : taxref_id manquait → FeedPost considérait
-        // l'espèce comme « non déterminée » même après sélection (la condition
-        // `hasIdentifiedSpecies = species && taxref_id` retournait false).
-        // `firstKnown.species.id` correspond à l'identifiant species_master
-        // (gbif_id ou UUID interne) qu'on a stocké dans `hitToSpecies()`.
-        taxref_id: firstKnown?.species?.id ?? undefined,
-        // Nombre d'individus observés (compteur du carnet EncounterStep2) —
-        // affiché en suffixe « (N) » sur le chip espèce dans FeedPost.
-        individuals_count: firstKnown?.count && firstKnown.count > 0 ? firstKnown.count : undefined,
-        // Format d'affichage Figma — repris par FeedSection pour le rendu post.
-        display_format: form.displayFormat,
+          type: 'nature_encounter',
+          title: form.title.trim() || undefined,
+          description: form.description.trim(),
+          // Visibilité par défaut 'public' — plus de sélecteur dans l'UI Figma v3.
+          // La granularité GPS est pilotée séparément via `location_hidden`.
+          visibility: 'public',
+          encounter_date: form.encounterDate,
+          time_of_day: timeOfDay,
+          weather: form.weather || undefined,
+          habitat: form.habitat || undefined,
+          location_name: form.locationName || undefined,
+          city: cityFromInput,
+          region:
+            regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : undefined,
+          latitude: form.locationLat ?? undefined,
+          longitude: form.locationLng ?? undefined,
+          location_hidden: form.locationHidden,
+          species_name: firstKnown?.species?.commonName ?? undefined,
+          scientific_name: firstKnown?.species?.scientificName ?? undefined,
+          taxonomic_group: firstKnown?.species?.group ?? undefined,
+          // Nicolas 2026-05-22 : taxref_id manquait → FeedPost considérait
+          // l'espèce comme « non déterminée » même après sélection (la condition
+          // `hasIdentifiedSpecies = species && taxref_id` retournait false).
+          // `firstKnown.species.id` correspond à l'identifiant species_master
+          // (gbif_id ou UUID interne) qu'on a stocké dans `hitToSpecies()`.
+          taxref_id: firstKnown?.species?.id ?? undefined,
+          // Nombre d'individus observés (compteur du carnet EncounterStep2) —
+          // affiché en suffixe « (N) » sur le chip espèce dans FeedPost.
+          individuals_count:
+            firstKnown?.count && firstKnown.count > 0 ? firstKnown.count : undefined,
+          // Format d'affichage Figma — repris par FeedSection pour le rendu post.
+          display_format: form.displayFormat,
         }),
         10_000,
         'création du post',

@@ -15,9 +15,11 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { LocateFixed, Loader2, X, Search, Clock } from 'lucide-react'
+import { LocateFixed, Loader2, X, Clock, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useLocation, type LocationCoords } from '@/contexts/LocationContext'
+import { useLocationAutocomplete } from '@/hooks/useLocationAutocomplete'
+import type { CityResult } from '@/types/location'
 
 // ─── Historique des recherches (localStorage) ─────────────────────────────────
 
@@ -80,48 +82,15 @@ function toLabel(p: NominatimResult): string {
 }
 
 /**
- * Pays ciblés pour le MVP : France métropolitaine, Belgique, Suisse, Canada
- * + territoires et collectivités d'outremer francophones (codes ISO 3166-1 alpha-2).
- * Liste complète pour Nominatim countrycodes parameter.
+ * Nicolas 2026-05-22 : la recherche est désormais déléguée au hook
+ * `useLocationAutocomplete` (API Adresse data.gouv + Supabase RPC fr_cities
+ * pour le Québec) — même source que le picker du formulaire de partage
+ * observation. Cela garantit que l'utilisateur voit EXACTEMENT les mêmes
+ * villes proposées partout dans l'app.
+ *
+ * Le format d'affichage est aligné sur le composant `CityAutocomplete` :
+ *   « Lévis » + en sous-ligne « QC · Québec ».
  */
-const ALLOWED_COUNTRY_CODES = [
-  'fr', // France métropolitaine
-  'be', // Belgique
-  'ch', // Suisse
-  'ca', // Canada
-  'gp', // Guadeloupe
-  'mq', // Martinique
-  'gf', // Guyane française
-  're', // La Réunion
-  'yt', // Mayotte
-  'pm', // Saint-Pierre-et-Miquelon
-  'nc', // Nouvelle-Calédonie
-  'pf', // Polynésie française
-  'wf', // Wallis-et-Futuna
-  'tf', // Terres australes et antarctiques françaises
-  'mf', // Saint-Martin
-  'bl', // Saint-Barthélemy
-].join(',')
-
-/** Recherche de lieux via Nominatim search (min 2 caractères) */
-async function searchPlaces(query: string): Promise<NominatimResult[]> {
-  if (query.trim().length < 2) return []
-  const url = new URL('https://nominatim.openstreetmap.org/search')
-  url.searchParams.set('q', query.trim())
-  url.searchParams.set('format', 'json')
-  url.searchParams.set('limit', '5')
-  url.searchParams.set('accept-language', 'fr')
-  url.searchParams.set('addressdetails', '1')
-  // Restreindre aux pays francophones ciblés (MVP)
-  url.searchParams.set('countrycodes', ALLOWED_COUNTRY_CODES)
-  try {
-    const res = await fetch(url.toString(), { headers: { 'Accept-Language': 'fr' } })
-    if (!res.ok) return []
-    return (await res.json()) as NominatimResult[]
-  } catch {
-    return []
-  }
-}
 
 /** Reverse geocoding : coordonnées → libellé ville/région */
 async function reverseGeocode(lat: number, lon: number): Promise<string> {
@@ -156,9 +125,11 @@ export function LocationModal({ onClose }: LocationModalProps) {
   const [query, setQuery] = useState(locationLabel)
   // S'assurer que la valeur initiale respecte le minimum de 75 km
   const [distance, setDistLocal] = useState(Math.max(MIN_DISTANCE, locationDistance))
-  const [suggestions, setSuggestions] = useState<NominatimResult[]>([])
+  // Recherche centralisée via le même hook que le picker observation
+  // (cohérence demandée par Nicolas 2026-05-22). Debounce + cache 24h gérés
+  // dans `useLocationAutocomplete`.
+  const { suggestions, isLoading: isSearching } = useLocationAutocomplete(query)
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [isSearching, setIsSearching] = useState(false)
   const [isGps, setIsGps] = useState(false)
   const [tempCoords, setTempCoords] = useState<LocationCoords | null>(null)
   // BATCH 92 : historique des recherches précédentes (max 5, persistance localStorage)
@@ -174,7 +145,6 @@ export function LocationModal({ onClose }: LocationModalProps) {
    */
   const [gpsState, setGpsState] = useState<'idle' | 'confirm' | 'denied'>('idle')
 
-  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   /**
    * Ref partagée entre les deux blocs de rendu (mobile / desktop).
@@ -182,9 +152,9 @@ export function LocationModal({ onClose }: LocationModalProps) {
    */
   const panelRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
+  // Nicolas 2026-05-22 : on n'auto-focus PLUS l'input à l'ouverture — quand
+  // l'utilisateur ré-ouvre la modal il veut souvent juste revalider le rayon
+  // sans déclencher le clavier mobile. L'input reste accessible au tap.
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
@@ -208,21 +178,11 @@ export function LocationModal({ onClose }: LocationModalProps) {
 
   function handleQueryChange(val: string) {
     setQuery(val)
-    setSuggestions([])
-    setShowSuggestions(false)
     setTempCoords(null)
-    if (searchTimeout.current) clearTimeout(searchTimeout.current)
-    if (val.trim().length >= 2) {
-      setIsSearching(true)
-      searchTimeout.current = setTimeout(async () => {
-        const results = await searchPlaces(val)
-        setSuggestions(results)
-        setShowSuggestions(results.length > 0)
-        setIsSearching(false)
-      }, 300)
-    } else {
-      setIsSearching(false)
-    }
+    // Le hook `useLocationAutocomplete` gère le debounce + cache + état
+    // suggestions/isLoading. Ici on contrôle simplement la visibilité du
+    // dropdown : visible dès qu'on a 2+ caractères, masqué sinon.
+    setShowSuggestions(val.trim().length >= 2)
   }
 
   /** Étape 1 : montrer la bannière de confirmation avant la popup navigateur */
@@ -255,15 +215,17 @@ export function LocationModal({ onClose }: LocationModalProps) {
   /** Annuler la confirmation GPS */
   const handleGpsCancel = useCallback(() => setGpsState('idle'), [])
 
-  // BATCH 92 : useCallback pour eviter l'erreur ESLint react-hooks/purity
-  // (Date.now() considere impur si declare en fonction simple dans le body).
-  const selectSuggestion = useCallback((place: NominatimResult) => {
-    const label = toLabel(place)
-    const lat = parseFloat(place.lat)
-    const lon = parseFloat(place.lon)
+  /**
+   * Sélection d'une suggestion CityResult (API Adresse + Supabase RPC).
+   * Format label aligné avec EncounterStep3 : « Ville, Département, Région ».
+   */
+  const selectSuggestion = useCallback((city: CityResult) => {
+    const parts = [city.name, city.departmentName, city.regionName].filter(Boolean)
+    const label = parts.join(', ')
+    const lat = city.centroidLat
+    const lon = city.centroidLng
     setQuery(label)
     setTempCoords({ lat, lon })
-    setSuggestions([])
     setShowSuggestions(false)
     pushHistory({ label, lat, lon, ts: Date.now() })
     setHistory(readHistory())
@@ -273,7 +235,6 @@ export function LocationModal({ onClose }: LocationModalProps) {
   const selectHistoryItem = useCallback((item: LocationHistoryItem) => {
     setQuery(item.label)
     setTempCoords({ lat: item.lat, lon: item.lon })
-    setSuggestions([])
     setShowSuggestions(false)
   }, [])
 
@@ -388,30 +349,30 @@ export function LocationModal({ onClose }: LocationModalProps) {
           </p>
         )}
 
-        {/* Suggestions Nominatim — BATCH 92 : rounded-lg (8px) au lieu de xl (12px) */}
-        {showSuggestions && (
+        {/* Suggestions CityResult — même format que le picker observation
+            (Nicolas 2026-05-22) : ville en gras + dept code · région en
+            sous-ligne. Cohérence visuelle garantie partout dans l'app. */}
+        {showSuggestions && (suggestions.length > 0 || isSearching) && (
           <ul
             id="location-suggestions"
             role="listbox"
             aria-label="Suggestions de localisation"
             className="absolute top-[calc(100%+4px)] left-0 right-0 bg-cream-lighter border border-border rounded-lg shadow-lg z-10 overflow-hidden"
           >
-            {suggestions.map((p) => (
-              <li key={p.place_id} role="option" aria-selected={false}>
+            {suggestions.map((city) => (
+              <li key={`${city.inseeCode}-${city.name}`} role="option" aria-selected={false}>
                 <button
                   type="button"
-                  onClick={() => selectSuggestion(p)}
-                  className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-primary-light/40 transition-colors"
+                  onClick={() => selectSuggestion(city)}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-primary-light/40 transition-colors"
                 >
-                  <Search className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
-                  <span className="text-sm text-foreground flex-1 min-w-0 truncate">
-                    {toLabel(p)}
-                  </span>
-                  {p.address?.country && (
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {p.address.country}
-                    </span>
-                  )}
+                  <MapPin className="size-4 text-primary shrink-0" aria-hidden="true" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{city.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {[city.departmentCode, city.regionName].filter(Boolean).join(' · ')}
+                    </p>
+                  </div>
                 </button>
               </li>
             ))}

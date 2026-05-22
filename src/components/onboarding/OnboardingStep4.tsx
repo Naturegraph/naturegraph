@@ -26,11 +26,13 @@ import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { BackButton } from '@/components/ui/BackButton'
 import { OnboardingHeader } from './OnboardingHeader'
+import {
+  validateUsernameFormat,
+  USERNAME_MIN_LENGTH,
+  USERNAME_MAX_LENGTH,
+} from '@/lib/usernameValidation'
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
-
-const MIN_LENGTH = 3
-const MAX_LENGTH = 25
 
 /**
  * Liste complète des mots bannis côté client — 434 entrées.
@@ -459,11 +461,10 @@ interface OnboardingStep4Props {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function validateFormat(username: string): UsernameError {
-  if (username.length < MIN_LENGTH) return 'tooShort'
-  if (username.length > MAX_LENGTH) return 'tooLong'
-  if (!/^[a-zA-Z0-9._]+$/.test(username)) return 'invalidFormat'
-  if (/^[._]|[._]$/.test(username)) return 'invalidFormat'
-  if (/[._]{2,}/.test(username)) return 'invalidFormat'
+  // Format de base délégué au util partagé — source de vérité unique
+  // (lib/usernameValidation.ts) utilisée aussi par EditInfoTab.
+  const baseError = validateUsernameFormat(username)
+  if (baseError) return baseError
   // Vérification mots bannis côté client (normalisation anti-contournement)
   if (BANNED_USERNAMES.includes(normalizeForBannedCheck(username))) return 'bannedWord'
   return null
@@ -545,11 +546,11 @@ export function OnboardingStep4({
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
     const val = e.target.value
     if (!hasTyped) setHasTyped(true)
-    if (val.length <= MAX_LENGTH) setUsername(val)
+    if (val.length <= USERNAME_MAX_LENGTH) setUsername(val)
   }
 
   const error: UsernameError = formatError ?? serverError
-  const isValid = username.length >= MIN_LENGTH && error === null && !isChecking
+  const isValid = username.length >= USERNAME_MIN_LENGTH && error === null && !isChecking
 
   const borderClass = () => {
     if (!hasTyped || username.length === 0) return 'border-[var(--color-border)]'
@@ -626,7 +627,7 @@ export function OnboardingStep4({
                       </p>
                     ) : (
                       <p className="text-[var(--color-text-secondary)] opacity-[0.64]">
-                        {MAX_LENGTH - username.length}
+                        {USERNAME_MAX_LENGTH - username.length}
                       </p>
                     )}
                   </div>

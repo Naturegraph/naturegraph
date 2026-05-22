@@ -339,6 +339,38 @@ export async function updatePost(
 }
 
 /**
+ * Récupère le détail des réactions par type pour chaque post — compteur réel
+ * agrégé depuis la table `reactions`. Remplace l'approximation client qui
+ * mettait toutes les réactions dans le bucket `love`.
+ *
+ * Coût : 1 SELECT non-paginé (filtre `post_id IN (...)`). Pour 20 posts avec
+ * ~5 réactions chacun, < 200 lignes — pas besoin d'agrégat SQL côté serveur.
+ */
+export async function getReactionsBreakdown(
+  postIds: string[],
+): Promise<Record<string, Record<ReactionType, number>>> {
+  if (!supabase || postIds.length === 0) return {}
+
+  const { data, error } = await supabase
+    .from('reactions')
+    .select('post_id, type')
+    .in('post_id', postIds)
+
+  if (error || !data) return {}
+
+  const breakdown: Record<string, Record<ReactionType, number>> = {}
+  for (const row of data as Array<{ post_id: string; type: string }>) {
+    const pid = row.post_id
+    const type = row.type as ReactionType
+    if (!breakdown[pid]) {
+      breakdown[pid] = { love: 0, admire: 0, fire: 0, wow: 0, curious: 0 }
+    }
+    breakdown[pid][type] = (breakdown[pid][type] ?? 0) + 1
+  }
+  return breakdown
+}
+
+/**
  * Récupère les réactions de l'utilisateur connecté pour une liste de posts.
  * Retourne un Map<postId, ReactionType> pour lookup O(1) dans le feed.
  */
