@@ -274,7 +274,12 @@ export function ImageSlider({
             className={[
               'flex gap-1 overflow-x-auto',
               'snap-x snap-mandatory scroll-smooth',
-              'cursor-grab select-none touch-pan-y',
+              // Nicolas 2026-05-22 : `touch-pan-x touch-pan-y` autorise le
+              // swipe horizontal (carousel) ET le scroll vertical (page).
+              // Avant on avait juste `touch-pan-y` qui BLOQUAIT le swipe
+              // tactile sur mobile/tablette — d'où l'impossibilité de
+              // passer aux photos suivantes au doigt.
+              'cursor-grab select-none touch-pan-x touch-pan-y',
               '[&::-webkit-scrollbar]:hidden [scrollbar-width:none]',
             ].join(' ')}
           >

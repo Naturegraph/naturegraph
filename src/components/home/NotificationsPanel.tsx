@@ -427,7 +427,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
     <>
       {/* Backdrop mobile uniquement */}
       <div
-        className="md:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40"
+        className="md:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-[55]"
         aria-hidden="true"
         onClick={onClose}
       />
@@ -453,9 +453,13 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
         role="dialog"
         aria-modal="true"
         aria-label={t('home.notifications.title')}
-        className="md:hidden fixed inset-x-0 z-[60] bg-cream-lighter border-t border-border rounded-t-xl shadow-xl overflow-hidden max-h-[85vh] flex flex-col"
+        className="md:hidden fixed inset-x-0 bottom-0 z-[60] bg-cream-lighter border-t border-border rounded-t-xl shadow-xl overflow-hidden max-h-[85vh] flex flex-col"
         style={{
-          bottom: 'calc(3.5rem + env(safe-area-inset-bottom))',
+          // Nicolas 2026-05-22 : la modal recouvre désormais TOUT (y compris
+          // la bottom nav qui était visible au-dessus avant). Padding interne
+          // pour respecter la safe-area iPhone — la zone home indicator ne
+          // mange pas le dernier item.
+          paddingBottom: 'env(safe-area-inset-bottom)',
         }}
       >
         <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
