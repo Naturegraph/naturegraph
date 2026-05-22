@@ -403,114 +403,122 @@ export function FeedPost({
           </div>
         </div>
 
-        {/* Contenu */}
-        <div className="flex flex-col gap-2">
-          {/* Figma : Headings/Subheading = Quicksand Bold 18px leading-1.2. */}
-          <h3 className="text-lg font-bold leading-[1.2] text-foreground">{title}</h3>
-
-          {/*
-           * Description : line-clamp-2 + bouton "Voir plus" affiché UNIQUEMENT
-           * si le texte déborde réellement après mesure DOM (Nicolas 2026-05-01).
-           * Évite "Voir plus" sur des textes qui tiennent en 2 lignes naturellement.
-           */}
-          <div className="flex flex-col gap-1">
-            <p
-              ref={contentRef}
-              className={`text-sm text-foreground leading-relaxed whitespace-pre-line ${
-                isExpanded
-                  ? ''
-                  : 'overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]'
-              }`}
-            >
-              {content}
-            </p>
-            {isOverflowing && !isExpanded && (
-              <button
-                type="button"
-                onClick={() => setIsExpanded(true)}
-                className="self-start text-sm text-primary underline decoration-solid focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-              >
-                {t('home.post.seeMore')}
-              </button>
+        {/* Contenu — titre & description rendus UNIQUEMENT si non vides
+            (Nicolas 2026-05-22 : éviter un bloc blanc quand l'utilisateur
+            n'a renseigné ni titre ni description, le post collapse alors
+            naturellement vers les meta/chips/image sous le pseudo). */}
+        {(title?.trim() || content?.trim()) && (
+          <div className="flex flex-col gap-2">
+            {title?.trim() && (
+              <h3 className="text-lg font-bold leading-[1.2] text-foreground">{title}</h3>
             )}
-            {isExpanded && (
-              <button
-                type="button"
-                onClick={() => setIsExpanded(false)}
-                className="self-start text-sm text-primary underline decoration-solid focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-              >
-                {t('home.post.seeLess')}
-              </button>
+
+            {/*
+             * Description : line-clamp-2 + bouton "Voir plus" affiché UNIQUEMENT
+             * si le texte déborde réellement après mesure DOM (Nicolas 2026-05-01).
+             * Évite "Voir plus" sur des textes qui tiennent en 2 lignes naturellement.
+             */}
+            {content?.trim() && (
+              <div className="flex flex-col gap-1">
+                <p
+                  ref={contentRef}
+                  className={`text-sm text-foreground leading-relaxed whitespace-pre-line ${
+                    isExpanded
+                      ? ''
+                      : 'overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]'
+                  }`}
+                >
+                  {content}
+                </p>
+                {isOverflowing && !isExpanded && (
+                  <button
+                    type="button"
+                    onClick={() => setIsExpanded(true)}
+                    className="self-start text-sm text-primary underline decoration-solid focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                  >
+                    {t('home.post.seeMore')}
+                  </button>
+                )}
+                {isExpanded && (
+                  <button
+                    type="button"
+                    onClick={() => setIsExpanded(false)}
+                    className="self-start text-sm text-primary underline decoration-solid focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                  >
+                    {t('home.post.seeLess')}
+                  </button>
+                )}
+              </div>
             )}
           </div>
+        )}
 
-          {/* Habitat / météo / moment — ordre demandé Nicolas 2026-05-04 :
-              1. Habitat (en premier si renseigné)
-              2. Météo (avec emoji)
-              3. Moment de la journée
-              Selon ce que l'utilisateur a complété, on peut avoir 1, 2 ou 3 segments.
-              Cf. Figma 6385:55806 + second-agent/05. */}
-          {(() => {
-            const labelHabitat = habitat
-              ? t(`contribute.habitat.${habitat}`, { defaultValue: habitat })
-              : null
-            const emojiHabitat = habitat ? HABITAT_EMOJI[habitat] : null
+        {/* Habitat / météo / moment — ordre demandé Nicolas 2026-05-04 :
+            1. Habitat (en premier si renseigné)
+            2. Météo (avec emoji)
+            3. Moment de la journée
+            Bloc séparé du titre/description : reste affiché même si l'utilisateur
+            n'a pas renseigné de titre/description (collapse propre du bloc texte). */}
+        {(() => {
+          const labelHabitat = habitat
+            ? t(`contribute.habitat.${habitat}`, { defaultValue: habitat })
+            : null
+          const emojiHabitat = habitat ? HABITAT_EMOJI[habitat] : null
 
-            const labelWeather = weather
-              ? t(`contribute.weather.${weather}`, { defaultValue: weather })
-              : null
-            const emojiWeather = weather ? WEATHER_EMOJI[weather] : null
+          const labelWeather = weather
+            ? t(`contribute.weather.${weather}`, { defaultValue: weather })
+            : null
+          const emojiWeather = weather ? WEATHER_EMOJI[weather] : null
 
-            const labelTimeOfDay = timeOfDay
-              ? t(`contribute.date.${timeOfDay}`, { defaultValue: timeOfDay })
-              : null
+          const labelTimeOfDay = timeOfDay
+            ? t(`contribute.date.${timeOfDay}`, { defaultValue: timeOfDay })
+            : null
 
-            const labelClouds = clouds || null
+          const labelClouds = clouds || null
 
-            // Construire le pipeline de segments dans l'ordre demandé
-            const segments: React.ReactNode[] = []
-            if (labelHabitat) {
-              segments.push(
-                <span key="habitat" className="inline-flex items-center gap-1">
-                  {emojiHabitat && <span aria-hidden="true">{emojiHabitat}</span>}
-                  {labelHabitat}
-                </span>,
-              )
-            }
-            if (labelWeather) {
-              segments.push(
-                <span key="weather" className="inline-flex items-center gap-1">
-                  {emojiWeather && <span aria-hidden="true">{emojiWeather}</span>}
-                  {labelWeather}
-                </span>,
-              )
-            }
-            if (labelClouds) {
-              segments.push(<span key="clouds">{labelClouds}</span>)
-            }
-            if (labelTimeOfDay) {
-              segments.push(<span key="time">{labelTimeOfDay}</span>)
-            }
-
-            if (segments.length === 0) return null
-
-            // Joindre avec separateur " • " entre chaque segment
-            return (
-              <div className="flex gap-2 items-center flex-wrap text-sm text-foreground">
-                {segments.map((seg, i) => (
-                  <React.Fragment key={i}>
-                    {i > 0 && (
-                      <span aria-hidden="true" className="text-xs">
-                        •
-                      </span>
-                    )}
-                    {seg}
-                  </React.Fragment>
-                ))}
-              </div>
+          // Construire le pipeline de segments dans l'ordre demandé
+          const segments: React.ReactNode[] = []
+          if (labelHabitat) {
+            segments.push(
+              <span key="habitat" className="inline-flex items-center gap-1">
+                {emojiHabitat && <span aria-hidden="true">{emojiHabitat}</span>}
+                {labelHabitat}
+              </span>,
             )
-          })()}
-        </div>
+          }
+          if (labelWeather) {
+            segments.push(
+              <span key="weather" className="inline-flex items-center gap-1">
+                {emojiWeather && <span aria-hidden="true">{emojiWeather}</span>}
+                {labelWeather}
+              </span>,
+            )
+          }
+          if (labelClouds) {
+            segments.push(<span key="clouds">{labelClouds}</span>)
+          }
+          if (labelTimeOfDay) {
+            segments.push(<span key="time">{labelTimeOfDay}</span>)
+          }
+
+          if (segments.length === 0) return null
+
+          // Joindre avec separateur " • " entre chaque segment
+          return (
+            <div className="flex gap-2 items-center flex-wrap text-sm text-foreground">
+              {segments.map((seg, i) => (
+                <React.Fragment key={i}>
+                  {i > 0 && (
+                    <span aria-hidden="true" className="text-xs">
+                      •
+                    </span>
+                  )}
+                  {seg}
+                </React.Fragment>
+              ))}
+            </div>
+          )
+        })()}
 
         {/*
          * Chips catégorie + espèce — règle Nicolas 2026-05-01 :
