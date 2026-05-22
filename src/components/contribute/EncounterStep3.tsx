@@ -19,7 +19,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Calendar, Info, MapPin, Minus, Plus, X } from 'lucide-react'
+import { Calendar, Info, MapPin, X } from 'lucide-react'
 import type { TimeOfDay, WeatherCondition, HabitatType } from '@/types/database'
 import { useLocationAutocomplete } from '@/hooks/useLocationAutocomplete'
 import type { CityResult } from '@/types/location'
@@ -166,7 +166,9 @@ export function EncounterStep3({
 
   // Options avancées dépliées par défaut si au moins une option est pré-remplie
   // (ex : EXIF a détecté un moment de la journée). Sinon fermé.
-  const [advancedOpen, setAdvancedOpen] = useState<boolean>(!!(timeOfDay || weather || habitat))
+  // Nicolas 2026-05-22 : champs habitat / météo / moment sont désormais
+  // toujours visibles (cf. plus bas). Le state advancedOpen et son toggle
+  // ont été retirés — peu de users dépliaient le bloc → posts incomplets.
 
   // ─── Popover "info localisation" ────────────────────────────────────────
   // Affiche les règles de confidentialité au clic sur l'icône (i).
@@ -476,24 +478,14 @@ export function EncounterStep3({
         </label>
       </div>
 
-      {/* ── 5. Options avancées (collapsible) ──────────────────────────── */}
+      {/* ── 5. Habitat + conditions + moment — toujours visibles ──────────
+          Nicolas 2026-05-22 : retrait du collapsible « Options avancées ».
+          Les retours users beta montraient que peu d'utilisateurs cliquaient
+          sur le bouton pour le déplier → champs jamais saisis → posts moins
+          riches. On les expose désormais directement pour augmenter la
+          complétude des observations partagées. */}
       <div className="flex flex-col gap-4 pt-1">
-        <button
-          type="button"
-          onClick={() => setAdvancedOpen((o) => !o)}
-          aria-expanded={advancedOpen}
-          className="self-start inline-flex items-center gap-2 text-primary text-sm font-semibold underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-        >
-          <span>{t('contribute.panel.advancedOptions', { defaultValue: 'Options avancées' })}</span>
-          {advancedOpen ? (
-            <Minus className="size-4" aria-hidden="true" />
-          ) : (
-            <Plus className="size-4" aria-hidden="true" />
-          )}
-        </button>
-
-        {advancedOpen && (
-          <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-5">
             {/* Habitat */}
             <div className="flex flex-col gap-2">
               <span className="text-sm text-foreground">
@@ -566,8 +558,7 @@ export function EncounterStep3({
                 ))}
               </div>
             </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   )
