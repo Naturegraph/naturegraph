@@ -63,13 +63,20 @@ export async function stripImageExif(file: File): Promise<File> {
   }
 
   // Nicolas 2026-05-21 : raccourci pour les flows qui ont déjà compressé/strippé
-  // en amont (ex : ContributeEncounterForm pipeline `compressPhoto` → `stripExif`).
-  // Si le fichier arrive en AVIF/WebP ET sous le budget cible, on évite une
-  // 3ᵉ passe canvas redondante — gain de 1 à 4 secondes par photo sur mobile.
-  // Les formats AVIF/WebP émis par canvas natif n'embarquent jamais d'EXIF,
-  // donc on est safe RGPD sans re-encoder.
+  // en amont. Si le fichier arrive en AVIF/WebP ET sous le budget cible, on
+  // évite une 3ᵉ passe canvas redondante.
   const lightCompressedFormats = file.type === 'image/avif' || file.type === 'image/webp'
   if (lightCompressedFormats && file.size <= TARGET_BYTES) {
+    return file
+  }
+
+  // Nicolas 2026-05-22 : Canvas natif ne sait pas décoder HEIC/HEIF (iPhone
+  // par défaut). Si l'utilisateur arrive avec ce format malgré `accept="image/*"`
+  // côté input (iOS Safari ne convertit pas toujours en sélection multiple),
+  // on renvoie le fichier tel quel plutôt que de planter le pipeline upload.
+  // Le HEIC voyagera brut vers Supabase Storage (acceptable, pas idéal côté
+  // EXIF mais ça ne casse pas le partage). Phase 2 : ajouter libheif-wasm.
+  if (file.type === 'image/heic' || file.type === 'image/heif') {
     return file
   }
 

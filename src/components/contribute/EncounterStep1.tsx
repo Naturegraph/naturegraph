@@ -52,11 +52,25 @@ const FORMAT_LABELS: Record<DisplayFormat, { main: string; ratio: string }> = {
   '1:1': { main: 'Carré', ratio: '(1:1)' },
 }
 
-const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'])
+// Nicolas 2026-05-22 : ajout HEIC / HEIF (iPhone par défaut). Sans ça, en
+// sélection multiple iOS Safari laissait parfois passer la 2ᵉ photo en HEIC
+// sans la convertir → rejetée silencieusement, l'utilisateur voyait une slot
+// vide pour la 2ᵉ photo. Avec un MIME vide (cas Android exotique), on
+// accepte par défaut et on laisse le pipeline aval gérer.
+const ALLOWED_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+  'image/avif',
+])
 
 function validateFile(file: File): string | null {
-  if (!ALLOWED_MIME_TYPES.has(file.type)) {
-    return `Format non supporté : ${file.type || 'inconnu'}. Utilise JPEG, PNG ou WebP.`
+  // MIME vide tolérée (Android Chrome ancienne version) — on tente l'upload.
+  if (file.type && !ALLOWED_MIME_TYPES.has(file.type)) {
+    return `Format non supporté : ${file.type}. Utilise JPEG, PNG, HEIC ou WebP.`
   }
   if (file.size > MAX_FILE_SIZE_BYTES) {
     const mb = (file.size / (1024 * 1024)).toFixed(1)
@@ -425,10 +439,15 @@ export function EncounterStep1({
         </div>
       </fieldset>
 
+      {/* Nicolas 2026-05-22 : `accept="image/*"` laisse iOS Safari convertir
+          automatiquement les HEIC en JPEG lors de la sélection (au lieu de
+          filtrer côté navigateur, ce qui parfois bloquait la 2ᵉ photo).
+          Le validateFile et le pipeline aval (mediaService) acceptent désormais
+          HEIC en fallback. */}
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/*"
         multiple
         className="sr-only"
         aria-hidden="true"
