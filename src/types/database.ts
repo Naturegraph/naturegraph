@@ -594,6 +594,12 @@ export interface PostWithAuthor extends Post {
 export interface PostFeedItem extends PostWithAuthor {
   media: Media[]
   user_reaction: ReactionType | null
+  /**
+   * Compteurs réels par type de réaction (agrégés depuis la table `reactions`).
+   * Enrichi par `useFeed` après le fetch ; absent si pas encore chargé.
+   * Cf. `getReactionsBreakdown()` dans postService.
+   */
+  reactions_breakdown?: Record<ReactionType, number> | null
 }
 
 /** Profile with follow status for display */
