@@ -14,7 +14,13 @@
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getFeed, getUserReactions, type FeedParams, type FeedResult } from '@/services/postService'
+import {
+  getFeed,
+  getUserReactions,
+  getReactionsBreakdown,
+  type FeedParams,
+  type FeedResult,
+} from '@/services/postService'
 import { useAuth } from '@/contexts/AuthContext'
 import type { PostFeedItem } from '@/types/database'
 
@@ -107,13 +113,21 @@ export function useFeed(
         }
       }
 
-      // ── Enrichissement réactions utilisateur connecté ────────────────
-      if (userId && feedResult.data.length > 0) {
+      // ── Enrichissement réactions ─────────────────────────────────────
+      // Deux requêtes parallèles : la réaction de l'utilisateur courant
+      // (pour griser le bon emoji) ET les compteurs réels par type (pour
+      // afficher la vraie répartition des badges, plus l'approximation
+      // « tout dans love » qui mentait à l'utilisateur).
+      if (feedResult.data.length > 0) {
         const postIds = feedResult.data.map((p) => p.id)
-        const reactions = await getUserReactions(userId, postIds)
+        const [userReactions, breakdown] = await Promise.all([
+          userId ? getUserReactions(userId, postIds) : Promise.resolve({}),
+          getReactionsBreakdown(postIds),
+        ])
         feedResult.data = feedResult.data.map((post) => ({
           ...post,
-          user_reaction: reactions[post.id] ?? null,
+          user_reaction: userReactions[post.id] ?? null,
+          reactions_breakdown: breakdown[post.id] ?? null,
         }))
       }
 
