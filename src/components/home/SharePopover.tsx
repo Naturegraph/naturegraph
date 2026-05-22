@@ -26,18 +26,22 @@ import whatsappLogo from '@/assets/images/social/whatsapp.png'
 import instagramLogo from '@/assets/images/social/instagram.png'
 import messengerLogo from '@/assets/images/social/messenger.png'
 import gmailLogo from '@/assets/images/social/gmail.png'
+import { buildPostPath } from '@/lib/postSlug'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SharePopoverProps {
   /** ID du post — si fourni (et que `shareUrl` ne l'est pas), construit
-   *  l'URL canonique `/post/{postId}`. Optionnel si `shareUrl` est fourni. */
+   *  l'URL canonique `/post/{slug}-{postId}`. Optionnel si `shareUrl` est fourni. */
   postId?: string
   /** URL custom à partager. Override `postId`. Utilisé pour partager
    *  d'autres entités (profil utilisateur, etc.). */
   shareUrl?: string
-  /** Titre/objet — utilisé dans subject email & body de partage */
+  /** Titre/objet — utilisé dans subject email & body de partage,
+   *  ET comme base du slug URL si `species` est absent. */
   title: string
+  /** Nom de l'espèce — fallback pour construire le slug URL si pas de titre. */
+  species?: string | null
   /** Callback de fermeture */
   onClose: () => void
 }
@@ -88,14 +92,19 @@ function SocialIcon({ label, href, iconNode }: SocialIconProps) {
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 
-export function SharePopover({ postId, shareUrl, title, onClose }: SharePopoverProps) {
+export function SharePopover({ postId, shareUrl, title, species, onClose }: SharePopoverProps) {
   const { t } = useTranslation()
   const [linkCopied, setLinkCopied] = useState(false)
   const closeBtnRef = useRef<HTMLButtonElement>(null)
 
-  // Priorité : shareUrl explicite > URL canonique post si postId fourni > origin
+  // Priorité : shareUrl explicite > URL canonique post avec slug > origin.
+  // buildPostPath() préfixe l'UUID d'un slug humain pour les URLs partagées
+  // (cf. src/lib/postSlug.ts) — rétro-compatible (l'UUID reste à la fin).
   const url =
-    shareUrl ?? (postId ? `${window.location.origin}/post/${postId}` : window.location.origin)
+    shareUrl ??
+    (postId
+      ? `${window.location.origin}${buildPostPath(postId, { title, species })}`
+      : window.location.origin)
   const encodedUrl = encodeURIComponent(url)
   const encodedTitle = encodeURIComponent(title)
 
