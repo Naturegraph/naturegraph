@@ -9,6 +9,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Forcer light mode : empêche Gmail / Outlook / iOS d'auto-darken et de
+     casser le design (l'hermine sur fond violet devenait illisible sur
+     certains clients qui inversaient les couleurs en dark mode). -->
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
 <title>Bienvenue sur Naturegraph</title>
 </head>
 <body style="margin:0;padding:0;background-color:#fffaf0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#13131a;">
@@ -19,7 +24,9 @@
 
         <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;background-color:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(60,67,128,0.08);">
 
-          <!-- Brand header — fond violet UNI, hermine (GitHub raw URL pour fiabilité email) -->
+          <!-- Brand header — fond violet UNI, hermine sur cercle blanc forcé
+               (background-color + padding inline = reste visible même si un
+               client mail tente de basculer le fond en sombre). -->
           <tr>
             <td align="center" style="padding:36px 40px 28px 40px;background-color:#5f5dd8;">
               <img src="https://raw.githubusercontent.com/Naturegraph/naturegraph/main/public/hermine-icon.png" alt="" width="56" height="56" style="display:block;margin:0 auto 12px auto;border:0;outline:none;text-decoration:none;border-radius:50%;background-color:#ffffff;padding:4px;">
@@ -32,14 +39,14 @@
             </td>
           </tr>
 
-          <!-- Hero — phrase courte, équilibrée si elle wrap -->
+          <!-- Hero — phrase équilibrée, line break naturel sur tous formats -->
           <tr>
             <td style="padding:48px 48px 24px 48px;" align="center">
               <h1 style="margin:0 0 12px 0;font-size:26px;font-weight:700;color:#13131a;font-family:'Quicksand',-apple-system,sans-serif;line-height:1.3;">
                 Bienvenue parmi les migrateurs !
               </h1>
               <p style="margin:0;font-size:15px;line-height:1.6;color:#565666;">
-                Entre le code ci-dessous dans l'application<br>pour finaliser ton inscription.
+                Entre le code ci-dessous pour finaliser ton inscription.
               </p>
             </td>
           </tr>
@@ -55,55 +62,48 @@
                   {{ .Token }}
                 </div>
               </div>
-              <p style="margin:16px 0 0 0;font-size:13px;color:#7e7e8f;">
+              <p style="margin:16px 0 0 0;font-size:13px;color:#565666;">
                 Ce code expire dans <strong style="color:#13131a;">2 minutes</strong>.
               </p>
             </td>
           </tr>
 
-          <!-- Security notice — design 2 colonnes : icône dans cercle blanc + contenu aligné gauche -->
+          <!-- Security notice — sans icône (retrait Nicolas 2026-05-22 : visuel
+               plus net en responsive, le titre "Sécurité" suffit à signaler le
+               contexte). Texte centré pour cohérence avec le reste de l'email. -->
           <tr>
             <td style="padding:0 48px 32px 48px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#d3eeec;border-radius:12px;">
                 <tr>
-                  <td style="padding:18px 20px;" valign="top">
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="left">
-                      <tr>
-                        <td valign="top" width="44" style="padding-right:14px;">
-                          <div style="background-color:#ffffff;border-radius:50%;width:36px;height:36px;line-height:36px;text-align:center;font-size:18px;">🔒</div>
-                        </td>
-                        <td valign="top" align="left" style="text-align:left;">
-                          <div style="font-size:14px;font-weight:700;color:#006666;margin:0 0 4px 0;">Sécurité</div>
-                          <div style="font-size:13px;color:#003f3f;line-height:1.55;">
-                            Ne partage jamais ce code.<br>Si tu n'es pas à l'origine, ignore cet email.
-                          </div>
-                        </td>
-                      </tr>
-                    </table>
+                  <td style="padding:18px 24px;" align="center">
+                    <div style="font-size:14px;font-weight:700;color:#004d4d;margin:0 0 4px 0;">Sécurité</div>
+                    <div style="font-size:13px;color:#003333;line-height:1.55;">
+                      Ne partage jamais ce code. Si tu n'es pas à l'origine, ignore cet email.
+                    </div>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
 
-          <!-- Values footer -->
+          <!-- Values footer (texte foncé pour WCAG AA sur fond crème) -->
           <tr>
             <td style="padding:0 48px 40px 48px;" align="center">
-              <p style="margin:0;font-size:13px;color:#7e7e8f;line-height:1.7;">
+              <p style="margin:0;font-size:13px;color:#4a4869;line-height:1.7;">
                 Naturegraph est un espace pour observer, partager et célébrer la biodiversité.<br>
                 Chaque sortie devient un souvenir. Chaque observation, une histoire.
               </p>
             </td>
           </tr>
 
-          <!-- Bottom bar -->
+          <!-- Bottom bar — couleurs foncées pour WCAG AA (4.5:1 sur fond #f3f4fb) -->
           <tr>
             <td style="padding:24px 48px;background-color:#f3f4fb;border-top:1px solid #e7e9f7;" align="center">
-              <p style="margin:0 0 8px 0;font-size:12px;color:#7e7e8f;">
+              <p style="margin:0 0 8px 0;font-size:12px;color:#4a4869;">
                 Besoin d'aide ? Contacte-nous à
                 <a href="mailto:naturegraph.fr@gmail.com" style="color:#5f5dd8;text-decoration:none;font-weight:600;">naturegraph.fr@gmail.com</a>
               </p>
-              <p style="margin:0;font-size:11px;color:#adadb8;">
+              <p style="margin:0;font-size:11px;color:#6b6981;">
                 © 2026 Naturegraph · Partageons nos émotions
               </p>
             </td>
