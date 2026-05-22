@@ -183,9 +183,11 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
   // ── Queries ───────────────────────────────────────────────────────────────
 
   const trimmed = query.trim()
-  const hasQuery = trimmed.length >= 2
-  const debouncedQuery = useDebounced(trimmed, 300)
-  const enabled = debouncedQuery.length >= 2
+  // Nicolas 2026-05-22 : seuil 1 lettre (avant 2). species_master + profiles
+  // ont des indexes trigram → recherche rapide même sur 1 caractère.
+  const hasQuery = trimmed.length >= 1
+  const debouncedQuery = useDebounced(trimmed, 250)
+  const enabled = debouncedQuery.length >= 1
 
   const speciesQuery = useQuery({
     queryKey: ['search', 'species', debouncedQuery],
