@@ -39,7 +39,17 @@ const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024
  * Canvas API qui ne supporte pas HEIC nativement → upload échouait sur iOS
  * (~50% des testeurs). iOS génère du JPEG quand l'app cible le refuse.
  */
-const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'])
+// Nicolas 2026-05-22 : ajout HEIC / HEIF (iPhone par défaut). Sans ça, la 2ᵉ
+// photo iOS arrivait parfois en HEIC et était rejetée silencieusement.
+const ALLOWED_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+  'image/avif',
+])
 
 /**
  * Valide un fichier avant ajout à la liste.
@@ -48,8 +58,9 @@ const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'ima
  * côté serveur — le MIME type client peut être falsifié.
  */
 function validateFile(file: File): string | null {
-  if (!ALLOWED_MIME_TYPES.has(file.type)) {
-    return `Format non supporté : ${file.type || 'inconnu'}. Utilise JPEG, PNG ou WebP.`
+  // MIME vide tolérée (Android Chrome ancienne version) — on tente l'upload.
+  if (file.type && !ALLOWED_MIME_TYPES.has(file.type)) {
+    return `Format non supporté : ${file.type}. Utilise JPEG, PNG, HEIC ou WebP.`
   }
   if (file.size > MAX_FILE_SIZE_BYTES) {
     const mb = (file.size / (1024 * 1024)).toFixed(1)
@@ -168,10 +179,13 @@ export function MediaUploader({ files, onChange, maxFiles = 4, error }: MediaUpl
       )}
 
       {/* Input fichier caché — déclenché par le bouton visible */}
+      {/* Nicolas 2026-05-22 : `accept="image/*"` pour laisser iOS Safari
+          convertir HEIC en JPEG automatiquement (sinon 2ᵉ photo iPhone
+          parfois bloquée silencieusement). */}
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/*"
         multiple
         className="sr-only"
         aria-hidden="true"
