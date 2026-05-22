@@ -7,7 +7,7 @@
  *   - Entête       : avatar 56px + border + username + @handle
  *   - Principal    : Mon profil (bientôt) | Paramètres (bientôt)
  *   - Thème        : Apparence (bientôt)
- *   - Accessibilité: Taille (row → valeur courante + expand) | Contraste renforcé (toggle 40×20px)
+ *   - Accessibilité: Taille (row → valeur courante + expand)
  *   - Déconnexion  : ouvre LogoutModal saisonnière
  *   - Version      : "App version X.X.X" (caption, aligné gauche)
  *
@@ -37,7 +37,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { User, Settings, LogOut, Palette, Eye, ChevronRight, Type, ShieldCheck } from 'lucide-react'
+import { User, Settings, LogOut, Palette, ChevronRight, Type, ShieldCheck } from 'lucide-react'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAccessibility, type TextSize } from '@/contexts/AccessibilityContext'
@@ -252,49 +252,10 @@ function TextSizeRow({ value, onChange }: { value: TextSize; onChange: (v: TextS
   )
 }
 
-/**
- * Row "Contraste renforcé" — toggle switch.
- * Dimensions Figma : container 40×20px, thumb 16px.
- */
-function ContrastToggleRow({
-  checked,
-  onChange,
-}: {
-  checked: boolean
-  onChange: (v: boolean) => void
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="w-full flex items-center gap-2 px-3 h-12 rounded-md text-left hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
-    >
-      <IconWrap>
-        <Eye className="size-5" />
-      </IconWrap>
-      <span className="flex-1 text-sm font-medium text-foreground">Contraste renforcé</span>
-
-      {/* Toggle visuel — 40×20px, thumb 16px (Figma spec) */}
-      <div
-        aria-hidden="true"
-        className={[
-          'relative shrink-0 rounded-full transition-colors duration-200',
-          checked ? 'bg-primary' : 'bg-border',
-        ].join(' ')}
-        style={{ width: '40px', height: '20px' }}
-      >
-        <div
-          className={[
-            'absolute top-[2px] size-4 rounded-full bg-white shadow transition-transform duration-200',
-            checked ? 'translate-x-[21px]' : 'translate-x-[2px]',
-          ].join(' ')}
-        />
-      </div>
-    </button>
-  )
-}
+// Nicolas 2026-05-22 : Row "Contraste renforcé" retirée. Pas suffisamment
+// testée pour exposer aux users beta. Le hook `useAccessibility().highContrast`
+// reste disponible côté contexte au cas où on voudrait réintroduire la feature
+// plus tard (CSS et logique conservées en background).
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 
@@ -312,7 +273,7 @@ interface ProfileMenuProps {
 export function ProfileMenu({ onClose, onOpenSettings }: ProfileMenuProps) {
   const { profile, signOut } = useAuth()
   const navigate = useNavigate()
-  const { textSize, setTextSize, highContrast, setHighContrast } = useAccessibility()
+  const { textSize, setTextSize } = useAccessibility()
   // BATCH 85 : lien direct vers /admin pour les comptes admin (super_admin/moderator/support).
   // Lecture cachée 5 min via React Query, donc pas de re-fetch a chaque ouverture du menu.
   const { isAdmin, role } = useIsAdmin()
@@ -464,8 +425,7 @@ export function ProfileMenu({ onClose, onOpenSettings }: ProfileMenuProps) {
           <div>
             {/* Taille du texte — FONCTIONNEL : row expandable */}
             <TextSizeRow value={textSize} onChange={setTextSize} />
-            {/* Contraste renforcé — FONCTIONNEL : toggle */}
-            <ContrastToggleRow checked={highContrast} onChange={setHighContrast} />
+            {/* Nicolas 2026-05-22 : ContrastToggleRow retirée (pas prête beta). */}
           </div>
         </div>
       </div>
