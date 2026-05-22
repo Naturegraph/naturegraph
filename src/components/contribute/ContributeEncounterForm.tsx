@@ -223,19 +223,36 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
     setIsSubmitting(true)
     setUploadError(null)
     let createdPostId: string | null = null
-    // Watchdog raccourci à 45s (Nicolas 2026-05-21) : 60s laissait l'utilisateur
-    // bloqué trop longtemps si Storage / réseau coince. 45s = max raisonnable
-    // pour 4 photos compressées (~2 Mo chacune sur 4G médian).
+    // Watchdog 30s (Nicolas 2026-05-22) : raccourci de 45s pour ne pas laisser
+    // un utilisateur bloqué trop longtemps en cas de hang complet. Les
+    // timeouts par étape ci-dessous (Promise.race) déclenchent normalement
+    // une erreur claire avant ce watchdog global, qui sert de filet de sécurité.
     const watchdog = setTimeout(() => {
-      console.warn('[ContributeEncounterForm] watchdog : submission > 45s, force release')
+      console.warn('[ContributeEncounterForm] watchdog : submission > 30s, force release')
       setIsSubmitting(false)
       setUploadProgress(null)
       setUploadError(
         t('contribute.media.uploadError', {
-          defaultValue: 'La soumission prend trop de temps — vérifie ta connexion et réessaie.',
+          defaultValue:
+            'La soumission prend trop de temps. Vérifie ta connexion internet et réessaie.',
         }),
       )
-    }, 45_000)
+    }, 30_000)
+
+    /**
+     * Wrap un Promise avec un timeout. Si la promesse n'a pas résolu dans le
+     * délai imparti, on rejette avec un message explicite (vs hang silencieux).
+     * Nicolas 2026-05-22 : sans ça, un hang réseau Supabase laissait le
+     * spinner tourner jusqu'au watchdog global 30s sans aucun feedback.
+     */
+    function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+      return Promise.race([
+        p,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error(`Timeout ${label} après ${ms / 1000}s`)), ms),
+        ),
+      ])
+    }
     try {
       // 1. Premier observation identifiée → champs species_* du post
       const firstKnown = form.observations.find((o) => !o.isUnknown && o.species)
@@ -243,7 +260,9 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
       // time-of-day : valeur saisie > fallback EXIF (ex : photo du matin)
       const timeOfDay = form.timeOfDay || form.photoMetadata.timeOfDay || undefined
 
-      const post = await createPost.mutateAsync({
+      // createPost : timeout 10s (insert SQL léger, devrait être instantané).
+      const post = await withTimeout(
+        createPost.mutateAsync({
         type: 'nature_encounter',
         title: form.title.trim() || undefined,
         description: form.description.trim(),
@@ -263,7 +282,10 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
         taxonomic_group: firstKnown?.species?.group ?? undefined,
         // Format d'affichage Figma — repris par FeedSection pour le rendu post.
         display_format: form.displayFormat,
-      })
+        }),
+        10_000,
+        'création du post',
+      )
       createdPostId = post.id
 
       // 2. Upload des médias — pipeline simple :
@@ -297,16 +319,23 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
           `[upload] compressed → ${(fileToUpload.size / 1024).toFixed(0)} Ko (${fileToUpload.type})`,
         )
 
-        await uploadPostMedia({
-          file: fileToUpload,
-          postId: post.id,
-          userId: user.id,
-          copyrightNotice: '',
-          displayOrder: i,
-          isCover: i === 0,
-          width: dims?.width,
-          height: dims?.height,
-        })
+        // Timeout 20s par photo : upload Supabase Storage + insert media
+        // doit normalement prendre 2-5s sur 4G. 20s = marge confortable même
+        // sur connexion faible avant de signaler une erreur explicite.
+        await withTimeout(
+          uploadPostMedia({
+            file: fileToUpload,
+            postId: post.id,
+            userId: user.id,
+            copyrightNotice: '',
+            displayOrder: i,
+            isCover: i === 0,
+            width: dims?.width,
+            height: dims?.height,
+          }),
+          20_000,
+          `upload photo ${i + 1}/${form.files.length}`,
+        )
       }
 
       // 3. Si demande d'aide à l'identification : crée une proposition vide
