@@ -114,8 +114,11 @@ export function AuthForm({
   const [value, setValue] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  // Non cochée par défaut — session éphémère = comportement le plus sûr
-  const [remember, setRemember] = useState(false)
+  // Cochée par défaut (Nicolas 2026-05-22) : l'attente d'une app moderne est
+  // une session persistante. Sans ça, l'utilisateur doit redemander un OTP à
+  // chaque fermeture de navigateur, expérience trop frustrante pour une beta.
+  // L'opt-out reste accessible via la case visible sous le champ email.
+  const [remember, setRemember] = useState(true)
 
   // ── Submit ─────────────────────────────────────────────────────────────────
 
