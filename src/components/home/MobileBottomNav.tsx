@@ -1,18 +1,26 @@
 /**
  * MobileBottomNav — Barre de navigation mobile fixée en bas de l'écran
  *
- * Affiche 5 éléments : Accueil | Explorer | [FAB Contribuer] | Recherche | Profil.
- * Le bouton Contribuer est un FAB surélevé, masqué en mode invité (spacer vide).
- * Masqué sur écrans md+ (desktop/tablette ont la HomeNavbar).
+ * Affiche 5 éléments : Menu | Localisation | [FAB Contribuer] | Recherche | Profil.
+ *
+ * Nicolas 2026-05-22 : ancien bouton « Home » remplacé par « Localisation ».
+ * Le logo Naturegraph dans le header du haut sert déjà de retour Accueil,
+ * donc le Home en bas faisait doublon. La localisation est l'action mobile
+ * la plus critique pour un feed geo-aware. L'avatar est passé à 40px
+ * (size-10) pour la lisibilité (avant size-6 = 24px, peu cliquable).
+ *
+ * Le bouton Contribuer est un FAB surélevé, masqué sur écrans md+
+ * (desktop/tablette ont la HomeNavbar).
  *
  * Accessibilité : aria-labels traduits, aria-current sur l'onglet actif,
  * safe-area padding pour iPhone (encoche / barre Home).
  */
 
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation as useRouterLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { House, Menu, Plus, Search, User } from 'lucide-react'
+import { MapPin, Locate, Menu, Plus, Search, User } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLocation } from '@/contexts/LocationContext'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 
 /** Props du composant MobileBottomNav */
@@ -23,6 +31,12 @@ interface MobileBottomNavProps {
   onSearchClick?: () => void
   /** Callback pour ouvrir le menu de navigation mobile (hamburger) */
   onMenuClick?: () => void
+  /**
+   * Callback pour ouvrir la LocationModal. Le bouton remplace l'ancien Home
+   * (qui faisait doublon avec le logo du header). La localisation est
+   * l'action mobile la plus critique pour un feed geo-aware.
+   */
+  onLocationClick?: () => void
   /**
    * Callback pour ouvrir le menu profil (bottom sheet) en mode authentifié.
    * Cohérence desktop : on ouvre d'abord le menu (Mon profil / Paramètres / Thème),
@@ -41,16 +55,20 @@ export function MobileBottomNav({
   onContributeClick,
   onSearchClick,
   onMenuClick,
+  onLocationClick,
   onProfileClick,
 }: MobileBottomNavProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const location = useLocation()
+  const routerLocation = useRouterLocation()
   const { isAuthenticated, profile } = useAuth()
+  // Label de ville pour le bouton Localisation (icône remplie + couleur active
+  // si une ville est configurée, outline gris sinon).
+  const { locationLabel } = useLocation()
 
   /** Détermine si un chemin correspond à l'onglet actif */
   function isActive(path: string): boolean {
-    return location.pathname === path || location.pathname.startsWith(path + '/')
+    return routerLocation.pathname === path || routerLocation.pathname.startsWith(path + '/')
   }
 
   /** Classes CSS pour un item de navigation (actif vs inactif).
@@ -83,19 +101,28 @@ export function MobileBottomNav({
           <Menu className={iconSize} strokeWidth={2} aria-hidden="true" />
         </button>
 
-        {/* ── Accueil ──────────────────────────────────────────────────────── */}
+        {/* ── Localisation ─────────────────────────────────────────────────
+            Remplace l'ancien bouton Home (Nicolas 2026-05-22) qui faisait
+            doublon avec le logo du header. Icône `MapPin` remplie + couleur
+            primary si une ville est configurée, `Locate` outline gris sinon
+            (incite au tap). Si pas de handler fourni (cas legacy), fallback
+            silencieux — le bouton reste cliquable mais ne fait rien. */}
         <button
           type="button"
-          onClick={() => navigate('/home')}
-          className={itemClasses(isActive('/home'))}
-          aria-label={t('nav.home')}
-          aria-current={isActive('/home') ? 'page' : undefined}
+          onClick={onLocationClick}
+          className={itemClasses(!!locationLabel)}
+          aria-label={
+            locationLabel
+              ? t('home.navbar.changeLocation', { defaultValue: 'Changer la localisation' })
+              : t('home.navbar.setLocation', { defaultValue: 'Définir la localisation' })
+          }
+          aria-haspopup="dialog"
         >
-          <House
-            className={iconSize}
-            strokeWidth={isActive('/home') ? 2.5 : 2}
-            aria-hidden="true"
-          />
+          {locationLabel ? (
+            <MapPin className={iconSize} strokeWidth={2.5} aria-hidden="true" />
+          ) : (
+            <Locate className={iconSize} strokeWidth={2} aria-hidden="true" />
+          )}
         </button>
 
         {/* ── Contribuer (FAB) — toujours visible ──────────────────────────────
@@ -154,10 +181,13 @@ export function MobileBottomNav({
           aria-haspopup={isAuthenticated && onProfileClick ? 'dialog' : undefined}
         >
           {isAuthenticated ? (
+            /* Avatar 40 px (size-10) — Nicolas 2026-05-22 : agrandi depuis
+               size-6 (24 px) pour une meilleure lisibilité et un hit target
+               plus confortable sur mobile (WCAG 2.5.5). */
             <img
               src={profile?.avatar_url ?? hermineIcon}
               alt={profile?.username ?? t('nav.profile')}
-              className={`${iconSize} rounded-full object-cover border ${isActive('/profile') ? 'border-primary' : 'border-border'}`}
+              className={`size-10 rounded-full object-cover border-2 ${isActive('/profile') ? 'border-primary' : 'border-border'}`}
             />
           ) : (
             <User
