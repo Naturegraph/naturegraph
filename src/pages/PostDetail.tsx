@@ -38,6 +38,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { getPostById } from '@/services/postService'
 import { postFeedItemToMockPost } from '@/components/home/FeedSection'
+import { extractPostId } from '@/lib/postSlug'
 import { HomeNavbar } from '@/components/home/HomeNavbar'
 import { MobileNavLayer } from '@/components/home/MobileNavLayer'
 import { GuestSidebar } from '@/components/home/GuestSidebar'
@@ -71,12 +72,10 @@ function PostSkeleton() {
 function PostNotFound({ backLabel }: { backLabel: string }) {
   return (
     <div className="rounded-card bg-background border-[0.5px] border-border p-8 flex flex-col items-center gap-4 text-center">
-      <h1 className="font-title font-bold text-xl text-foreground">
-        Ce post n&apos;existe plus
-      </h1>
+      <h1 className="font-title font-bold text-xl text-foreground">Ce post n&apos;existe plus</h1>
       <p className="text-sm text-muted-foreground max-w-md">
-        Le post que tu cherches a peut-être été supprimé par son auteur, ou il
-        est en visibilité restreinte.
+        Le post que tu cherches a peut-être été supprimé par son auteur, ou il est en visibilité
+        restreinte.
       </p>
       <Link
         to="/home"
@@ -93,8 +92,14 @@ function PostNotFound({ backLabel }: { backLabel: string }) {
 
 export default function PostDetail() {
   const { t } = useTranslation()
-  const { postId } = useParams<{ postId: string }>()
+  const { postId: routeParam } = useParams<{ postId: string }>()
   const { isAuthenticated, profile } = useAuth()
+
+  // Le segment `:postId` peut être :
+  //   - un UUID nu (anciens liens) → on l'utilise tel quel
+  //   - un slug-uuid (« grand-duc-amerique-{uuid} ») → on extrait l'UUID en fin
+  // extractPostId() gère les deux cas via regex.
+  const postId = extractPostId(routeParam)
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['post', postId],
@@ -130,9 +135,7 @@ export default function PostDetail() {
             <div aria-live="polite">
               {isLoading && <PostSkeleton />}
               {!isLoading && (isError || !post) && (
-                <PostNotFound
-                  backLabel={t('post.backToFeed', { defaultValue: 'Retour au fil' })}
-                />
+                <PostNotFound backLabel={t('post.backToFeed', { defaultValue: 'Retour au fil' })} />
               )}
               {!isLoading && post && (
                 <Suspense fallback={<PostSkeleton />}>
