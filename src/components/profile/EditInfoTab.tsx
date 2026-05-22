@@ -20,6 +20,11 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ProfileDisplayData } from './ProfileHeader'
+import {
+  validateUsernameFormat,
+  USERNAME_MIN_LENGTH,
+  USERNAME_MAX_LENGTH,
+} from '@/lib/usernameValidation'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -54,9 +59,16 @@ export function EditInfoTab({ profile, onSave, onClose }: EditInfoTabProps) {
   const [bio, setBio] = useState(profile.bio ?? '')
   const [weekGoal, setWeekGoal] = useState(profile.weekProgress?.goal ?? 5)
 
+  // Validation format du pseudo — mêmes règles qu'à l'onboarding via
+  // lib/usernameValidation. Affiché en aria-live + bloque le submit.
+  const trimmedUsername = username.trim()
+  const formatError = trimmedUsername ? validateUsernameFormat(trimmedUsername) : null
+  const isUsernameValid = !formatError && trimmedUsername.length >= USERNAME_MIN_LENGTH
+
   function handleSave() {
+    if (!isUsernameValid) return
     onSave({
-      username,
+      username: trimmedUsername,
       bio: bio || null,
       weekProgress: { current: profile.weekProgress?.current ?? 0, goal: weekGoal },
     })
@@ -92,8 +104,37 @@ export function EditInfoTab({ profile, onSave, onClose }: EditInfoTabProps) {
           required
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          minLength={USERNAME_MIN_LENGTH}
+          maxLength={USERNAME_MAX_LENGTH}
+          aria-invalid={formatError !== null}
+          aria-describedby={formatError ? 'edit-username-error' : undefined}
           className={INPUT_PILL_CLASS}
         />
+        {/* Helper règles + erreur de format — même langage que l'onboarding */}
+        {formatError ? (
+          <p id="edit-username-error" role="alert" className="text-xs text-[var(--color-error)]">
+            {formatError === 'tooShort'
+              ? t('profile.edit.usernameTooShort', {
+                  defaultValue: 'Pseudo trop court (min {{min}} caractères)',
+                  min: USERNAME_MIN_LENGTH,
+                })
+              : formatError === 'tooLong'
+                ? t('profile.edit.usernameTooLong', {
+                    defaultValue: 'Pseudo trop long (max {{max}} caractères)',
+                    max: USERNAME_MAX_LENGTH,
+                  })
+                : t('profile.edit.usernameInvalid', {
+                    defaultValue:
+                      'Lettres, chiffres, « . » ou « _ » uniquement. Pas de doublons « .. » ou « __ ».',
+                  })}
+          </p>
+        ) : (
+          <p className="text-xs italic text-muted-foreground">
+            {t('profile.edit.usernameHelper', {
+              defaultValue: 'Lettres, chiffres, « . » et « _ » autorisés.',
+            })}
+          </p>
+        )}
       </div>
 
       {/* ── Bio / Présentation ── */}
