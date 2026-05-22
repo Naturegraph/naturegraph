@@ -20,7 +20,6 @@
  * vers le titre du callout pour annonce correcte.
  */
 
-import { AlertTriangle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 interface BetaStatusCalloutProps {
@@ -34,30 +33,23 @@ export function BetaStatusCallout({ i18nNamespace, id }: BetaStatusCalloutProps)
   const { t } = useTranslation()
   const titleId = `${id}-title`
 
+  // Nicolas 2026-05-21 : pas d'icône AlertTriangle séparée — le titre embarque
+  // déjà l'emoji ⚠️ et l'icône ronde grise rendait le bloc moins lisible en
+  // responsive (largeur réduite côté mobile).
   return (
     <div
       role="note"
       aria-labelledby={titleId}
       className="mb-8 rounded-2xl border-2 border-[var(--color-warning,#d97706)]/40 bg-[var(--color-warning-bg,#fef3c7)]/50 p-5 md:p-6"
     >
-      <div className="flex items-start gap-3">
-        <div
-          className="shrink-0 size-10 rounded-full bg-[var(--color-warning,#d97706)]/15 text-[var(--color-warning,#d97706)] flex items-center justify-center"
-          aria-hidden="true"
-        >
-          <AlertTriangle className="size-5" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h2
-            id={titleId}
-            className="text-base md:text-lg font-bold font-[var(--font-heading)] text-[var(--color-text-primary)] mb-2"
-          >
-            {t(`${i18nNamespace}.section0Title`, { defaultValue: '' })}
-          </h2>
-          <div className="text-sm text-[var(--color-text-primary)] whitespace-pre-line leading-relaxed">
-            {t(`${i18nNamespace}.section0Content`, { defaultValue: '' })}
-          </div>
-        </div>
+      <h2
+        id={titleId}
+        className="text-base md:text-lg font-bold font-[var(--font-heading)] text-[var(--color-text-primary)] mb-2"
+      >
+        {t(`${i18nNamespace}.section0Title`, { defaultValue: '' })}
+      </h2>
+      <div className="text-sm text-[var(--color-text-primary)] whitespace-pre-line leading-relaxed">
+        {t(`${i18nNamespace}.section0Content`, { defaultValue: '' })}
       </div>
     </div>
   )
