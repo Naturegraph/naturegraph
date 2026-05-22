@@ -35,6 +35,7 @@ import {
   LayoutGrid,
   Filter,
   Flame,
+  BarChart3,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import hermineIcon from '@/assets/images/hermine-icon.png'
@@ -46,6 +47,7 @@ import { NotificationsPanel } from './NotificationsPanel'
 import { ContributeModal } from './ContributeModal'
 import { LocationModal } from './LocationModal'
 import { ProfileMenu } from './ProfileMenu'
+import { StatsSheet } from './StatsSheet'
 import { SettingsPanel } from '@/components/settings/SettingsPanel'
 import logoColor from '@/assets/logos/logo-wordmark-color.svg'
 
@@ -114,6 +116,9 @@ export function HomeNavbar({
   // fermeture du ProfileMenu : on ferme le menu profil ET on ouvre les
   // paramètres en parallèle, sans superposition visuelle.
   const [showSettingsPanel, setShowSettingsPanel] = useState(false)
+  // Nicolas 2026-05-22 : sheet "Tendances & communauté" exposé sur lg
+  // (1024-1279 px) où la sidebar droite n'est pas affichée en permanence.
+  const [showStatsSheet, setShowStatsSheet] = useState(false)
 
   // Refs pour ancrer les dropdowns
   const notifBtnRef = useRef<HTMLButtonElement>(null)
@@ -309,6 +314,25 @@ export function HomeNavbar({
                   </div>
                 )}
 
+                {/* ── Stats sheet — visible uniquement entre lg et xl ────
+                    Sur lg la sidebar droite (tendances + communauté) n'est
+                    pas affichée pour préserver la largeur du feed. Ce bouton
+                    expose la même info via un tiroir latéral droit. */}
+                <div className="relative hidden lg:flex xl:hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowStatsSheet((v) => !v)}
+                    className={btnIcon}
+                    aria-label={t('home.navbar.statsSheet', {
+                      defaultValue: 'Tendances & communauté',
+                    })}
+                    aria-expanded={showStatsSheet}
+                    aria-haspopup="dialog"
+                  >
+                    <BarChart3 className="size-5 text-foreground" aria-hidden="true" />
+                  </button>
+                </div>
+
                 {/* ── Contribuer ───────────────────────────────────────── */}
                 <div className="relative">
                   {/* XL Desktop : label + icône */}
@@ -420,6 +444,9 @@ export function HomeNavbar({
       {/* Settings panel global — ouvert depuis le ProfileMenu (item Paramètres),
           accessible depuis n'importe quelle page via la navbar. */}
       {showSettingsPanel && <SettingsPanel onClose={() => setShowSettingsPanel(false)} />}
+
+      {/* Stats sheet global — ouvert depuis le bouton Stats sur lg. */}
+      {showStatsSheet && <StatsSheet onClose={() => setShowStatsSheet(false)} />}
     </>
   )
 }
