@@ -12,6 +12,10 @@
       "destination": "/api/post-og?postId=:postId"
     },
     {
+      "source": "/profile/:username",
+      "destination": "/api/profile-og?username=:username"
+    },
+    {
       "source": "/((?!assets/|api/|.*\\..*).*)",
       "destination": "/index.html"
     }
