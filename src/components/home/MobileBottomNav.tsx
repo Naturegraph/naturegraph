@@ -18,7 +18,7 @@
 
 import { useLocation as useRouterLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { MapPin, Locate, Menu, Plus, Search, User } from 'lucide-react'
+import { Locate, Menu, Plus, Search, User } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLocation } from '@/contexts/LocationContext'
 import hermineIcon from '@/assets/images/hermine-icon.png'
@@ -102,11 +102,11 @@ export function MobileBottomNav({
         </button>
 
         {/* ── Localisation ─────────────────────────────────────────────────
-            Remplace l'ancien bouton Home (Nicolas 2026-05-22) qui faisait
-            doublon avec le logo du header. Icône `MapPin` remplie + couleur
-            primary si une ville est configurée, `Locate` outline gris sinon
-            (incite au tap). Si pas de handler fourni (cas legacy), fallback
-            silencieux — le bouton reste cliquable mais ne fait rien. */}
+            Nicolas 2026-05-22 : on garde TOUJOURS la même icône `Locate`
+            pour la cohérence visuelle — seul le style change quand
+            l'utilisateur est localisé (couleur primary via itemClasses +
+            strokeWidth plus épais pour effet « solid violet »). Plus de
+            switch MapPin/Locate qui cassait la mémoire visuelle. */}
         <button
           type="button"
           onClick={onLocationClick}
@@ -118,11 +118,7 @@ export function MobileBottomNav({
           }
           aria-haspopup="dialog"
         >
-          {locationLabel ? (
-            <MapPin className={iconSize} strokeWidth={2.5} aria-hidden="true" />
-          ) : (
-            <Locate className={iconSize} strokeWidth={2} aria-hidden="true" />
-          )}
+          <Locate className={iconSize} strokeWidth={locationLabel ? 3 : 2} aria-hidden="true" />
         </button>
 
         {/* ── Contribuer (FAB) — toujours visible ──────────────────────────────

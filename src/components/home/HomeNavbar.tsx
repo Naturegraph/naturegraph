@@ -27,7 +27,6 @@ import {
   Search,
   Bell,
   Plus,
-  MapPin,
   Locate,
   ChevronDown,
   User,
@@ -100,7 +99,9 @@ export function HomeNavbar({
   const { data: streakDays } = useUserStreak(profile?.id)
 
   // Localisation partagée via LocationContext (pas de géoloc locale ici)
-  const { locationLabel } = useLocation()
+  // `locationDistance` alimente la pastille « 200 km » affichée à droite du
+  // nom de ville pour rappeler à l'utilisateur quel rayon est actif sur le feed.
+  const { locationLabel, locationDistance } = useLocation()
 
   // Compteur de notifications non lues — alimente le badge
   const { data: unreadCount } = useUnreadCount(profile?.id)
@@ -251,16 +252,36 @@ export function HomeNavbar({
                     }
                     className={btnPill}
                   >
-                    {locationLabel ? (
-                      <MapPin className="size-5 text-foreground shrink-0" aria-hidden="true" />
-                    ) : (
-                      <Locate className="size-5 text-foreground shrink-0" aria-hidden="true" />
-                    )}
+                    {/* Cohérence avec la bottom-nav mobile (Nicolas 2026-05-22) :
+                        on garde l'icône Locate dans les deux états, plus épaisse
+                        quand l'utilisateur est localisé pour effet « solid ». */}
+                    <Locate
+                      className={[
+                        'size-5 shrink-0',
+                        locationLabel ? 'text-primary' : 'text-foreground',
+                      ].join(' ')}
+                      strokeWidth={locationLabel ? 3 : 2}
+                      aria-hidden="true"
+                    />
                     <span className="text-foreground text-sm truncate max-w-[140px] md:max-w-[200px]">
                       {/* ?? ne couvre pas '' (string vide) — || est nécessaire ici.
                           BATCH 114 : truncate au lieu de text-nowrap pour éviter overflow navbar. */}
                       {locationLabel || t('home.navbar.setLocation')}
                     </span>
+                    {/* Pastille rayon — rappelle à l'utilisateur la portée de
+                        son filtre pour comprendre pourquoi le feed est vide
+                        ou réduit (Nicolas 2026-05-22). */}
+                    {locationLabel && (
+                      <span
+                        className="shrink-0 text-[11px] font-bold leading-none px-2 py-1 rounded-full bg-primary-light text-primary"
+                        aria-label={t('home.navbar.radiusKm', {
+                          defaultValue: 'Rayon {{km}} km',
+                          km: locationDistance,
+                        })}
+                      >
+                        {locationDistance} km
+                      </span>
+                    )}
                   </button>
 
                   {showLocationModal && (
