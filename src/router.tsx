@@ -60,6 +60,7 @@ const Settings = lazy(() => import('./pages/Settings'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const Waitlist = lazy(() => import('./pages/Waitlist'))
+const PostDetail = lazy(() => import('./pages/PostDetail'))
 
 // Admin (BATCH 31-32) — chunks separes (eco-conception : code admin lazy)
 const AdminLayout = lazy(() => import('./pages/Admin/AdminLayout'))
@@ -292,6 +293,25 @@ export const router = createBrowserRouter([
               <LazyPage>
                 <OnboardingGuard>
                   <Profile />
+                </OnboardingGuard>
+              </LazyPage>
+            ),
+          },
+
+          // Deep-link post — accessible aux utilisateurs ayant passé le beta
+          // gate (route sous BetaGatedLayout). OnboardingGuard plutôt que
+          // ProtectedRoute pour rester cohérent avec /profile/:username : un
+          // visiteur invité ayant validé sa clé d'accès peut consulter un
+          // post sans avoir un compte complet (TODO Phase 2 : ouvrir aux non
+          // authentifiés une fois le mode "visite sans compte" en place).
+          // Nicolas 2026-05-22 : avant cette route, le bouton « Copier le
+          // lien » du SharePopover générait une URL en 404.
+          {
+            path: 'post/:postId',
+            element: (
+              <LazyPage>
+                <OnboardingGuard>
+                  <PostDetail />
                 </OnboardingGuard>
               </LazyPage>
             ),

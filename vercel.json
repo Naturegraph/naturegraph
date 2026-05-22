@@ -8,7 +8,11 @@
   "installCommand": "npm install",
   "rewrites": [
     {
-      "source": "/((?!assets/|.*\\..*).*)",
+      "source": "/post/:postId",
+      "destination": "/api/post-og?postId=:postId"
+    },
+    {
+      "source": "/((?!assets/|api/|.*\\..*).*)",
       "destination": "/index.html"
     }
   ],
