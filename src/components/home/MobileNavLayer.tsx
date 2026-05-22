@@ -24,6 +24,7 @@ import { SearchPanel } from './SearchPanel'
 import { ProfileMenu } from './ProfileMenu'
 import { MobileNavDrawer } from './MobileNavDrawer'
 import { LocationModal } from './LocationModal'
+import { ContributeModal } from './ContributeModal'
 
 // SettingsPanel est lazy car volumineux (settings forms + sous-vues CGU/Privacy).
 // On ne charge le chunk que si l'utilisateur ouvre les paramètres.
@@ -32,7 +33,12 @@ const SettingsPanel = lazy(() =>
 )
 
 interface MobileNavLayerProps {
-  /** Callback contribution — délégué à la page (Home ouvre ContributeModal). */
+  /**
+   * Callback contribution — délégué à la page hôte. Si non fourni, le bouton +
+   * ouvre la `ContributeModal` interne (cohérence Home / Profile / etc.).
+   * La Home le câble pour ouvrir directement un panel inline ; les autres
+   * pages laissent le défaut (modale).
+   */
   onContributeClick?: () => void
 }
 
@@ -46,11 +52,19 @@ export function MobileNavLayer({ onContributeClick }: MobileNavLayerProps) {
   // Nicolas 2026-05-22 : LocationModal exposée depuis le bouton dédié de
   // la bottom nav (qui remplace l'ancien Home).
   const [showLocation, setShowLocation] = useState(false)
+  // Nicolas 2026-05-22 : ContributeModal interne — fallback quand la page
+  // hôte ne passe pas `onContributeClick`. Avant ce fix, le bouton + était
+  // mort sur Profile (et toute page sans Home).
+  const [showContribute, setShowContribute] = useState(false)
+
+  // Si la page fournit un callback, on l'utilise. Sinon on ouvre la modale
+  // interne — c'est le cas par défaut hors Home.
+  const handleContribute = onContributeClick ?? (() => setShowContribute(true))
 
   return (
     <>
       <MobileBottomNav
-        onContributeClick={onContributeClick}
+        onContributeClick={handleContribute}
         onSearchClick={() => setShowSearch(true)}
         onMenuClick={() => setShowDrawer(true)}
         onLocationClick={() => setShowLocation(true)}
@@ -64,6 +78,8 @@ export function MobileNavLayer({ onContributeClick }: MobileNavLayerProps) {
       {showDrawer && <MobileNavDrawer onClose={() => setShowDrawer(false)} />}
 
       {showLocation && <LocationModal onClose={() => setShowLocation(false)} />}
+
+      {showContribute && <ContributeModal onClose={() => setShowContribute(false)} />}
 
       {showProfile && (
         <ProfileMenu
