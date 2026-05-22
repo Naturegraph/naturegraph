@@ -1,0 +1,27 @@
+/* ============================================================
+ * Animations utilitaires partagées
+ * ============================================================
+ * Keyframes + classes utilitaires Tailwind-compatibles pour les
+ * micro-animations transverses (banners, toasts, modals, etc.).
+ *
+ * Toutes les animations respectent prefers-reduced-motion via
+ * la classe `motion-safe:` de Tailwind (qui suspend l'animation
+ * automatiquement quand l'utilisateur a réglé reduce-motion à l'OS).
+ */
+
+/* Slide-in depuis le haut — utilisé par InstallPromptBanner.
+   200 ms ease-out — assez court pour ne pas paraître intrusif. */
+@keyframes slide-in-top {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-top {
+  animation: slide-in-top 200ms ease-out;
+}
