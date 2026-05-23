@@ -13,7 +13,8 @@
  * TODO [BACKEND] — Phase 2 : `useUpdateProfile()` mutation invalide la query.
  */
 
-import { useState } from 'react'
+import { forwardRef, useImperativeHandle, useState } from 'react'
+import type { EditTabHandle } from './EditInfoTab'
 import { useTranslation } from 'react-i18next'
 import { CATEGORY_EMOJIS } from '@/utils/badgeHelpers'
 import type { ProfileDisplayData } from './ProfileHeader'
@@ -124,7 +125,10 @@ function InterestTile({ emoji, label, isSelected, selectionIndex, onClick }: Int
 // ─── Composant principal ──────────────────────────────────────────────────────
 
 /** Sélecteur de centres d'intérêt — max 3 */
-export function EditPrefsTab({ profile, onSave, onClose }: EditPrefsTabProps) {
+export const EditPrefsTab = forwardRef<EditTabHandle, EditPrefsTabProps>(function EditPrefsTab(
+  { profile, onSave, onClose },
+  ref,
+) {
   const { t } = useTranslation()
 
   const [selectedInterests, setSelectedInterests] = useState<InterestId[]>(
@@ -140,28 +144,27 @@ export function EditPrefsTab({ profile, onSave, onClose }: EditPrefsTabProps) {
     })
   }
 
-  function handleSave() {
-    onSave({
-      interests: selectedInterests.map((id, i) => ({
-        id,
-        // Répartition approximative : 50% / 35% / 15%
-        percent: i === 0 ? 50 : i === 1 ? 35 : 15,
-      })),
-    })
-    onClose()
-  }
+  // Expose save() au parent via ref forwardée — même pattern que EditInfoTab.
+  useImperativeHandle(
+    ref,
+    () => ({
+      save() {
+        onSave({
+          interests: selectedInterests.map((id, i) => ({
+            id,
+            // Répartition approximative : 50% / 35% / 15%
+            percent: i === 0 ? 50 : i === 1 ? 35 : 15,
+          })),
+        })
+        onClose()
+        return true
+      },
+    }),
+    [selectedInterests, onSave, onClose],
+  )
 
   return (
-    // Form HTML5 lié au bouton "Sauvegarder" du footer fixe (EditProfilePanel)
-    // via `form="edit-prefs-form"`.
-    <form
-      id="edit-prefs-form"
-      onSubmit={(e) => {
-        e.preventDefault()
-        handleSave()
-      }}
-      className="flex flex-col gap-4 px-5 py-5"
-    >
+    <div className="flex flex-col gap-4 px-5 py-5">
       {/* ── Titre + sous-titre ── Figma 6385:75887.
           Titre Quicksand bold 18px (text-lg), sous-titre muted text-sm. */}
       <div className="flex flex-col gap-1.5">
@@ -204,6 +207,6 @@ export function EditPrefsTab({ profile, onSave, onClose }: EditPrefsTabProps) {
         })}
       </div>
       {/* Bouton Sauvegarder rendu dans le footer du panel. */}
-    </form>
+    </div>
   )
-}
+})

@@ -453,6 +453,19 @@ export function LocationModal({ onClose }: LocationModalProps) {
               </ul>
             </div>
           )}
+
+        {/* Lien reset sous l'input (Nicolas 2026-05-22 : déplacé depuis le
+            bas de la modal qui était trop caché). Visible uniquement quand
+            l'utilisateur est actuellement localisé. */}
+        {locationLabel && (
+          <button
+            type="button"
+            onClick={handleReset}
+            className="self-start text-xs text-primary underline decoration-solid mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+          >
+            Supprimer ma localisation
+          </button>
+        )}
       </div>
 
       <div className="h-px bg-border" aria-hidden="true" />
@@ -507,18 +520,8 @@ export function LocationModal({ onClose }: LocationModalProps) {
 
       <div className="h-px bg-border" aria-hidden="true" />
 
-      {/* Lien reset — n'apparaît que si l'utilisateur est actuellement
-          localisé. Permet de retirer complètement la localisation pour
-          revenir à un état vide (feed sans filtre rayon). */}
-      {locationLabel && (
-        <button
-          type="button"
-          onClick={handleReset}
-          className="self-start text-sm text-primary underline decoration-solid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-        >
-          Supprimer ma localisation
-        </button>
-      )}
+      {/* Lien reset déplacé sous l'input pour plus de visibilité
+          (Nicolas 2026-05-22 — il était trop caché ici en bas). */}
 
       {/* Actions */}
       <div className="flex gap-3">

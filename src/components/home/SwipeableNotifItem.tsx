@@ -88,27 +88,36 @@ export function SwipeableNotifItem({
     startXRef.current = null
   }
 
-  function handleDelete(e: React.MouseEvent) {
+  function handleDelete(e: React.MouseEvent | React.PointerEvent) {
     e.stopPropagation()
+    e.preventDefault()
     onDelete()
   }
 
   return (
     <div className="relative overflow-hidden">
       {/* Bouton supprimer en arrière-plan — révélé par le swipe.
-          Hauteur 100% pour matcher l'item. */}
+          z-index 0 par défaut, z-10 quand révélé pour bien capturer le tap.
+          Nicolas 2026-05-22 : on utilise onPointerUp (plus fiable que onClick
+          sur mobile, surtout après une séquence touch). */}
       <button
         type="button"
         onClick={handleDelete}
+        onPointerUp={handleDelete}
         aria-label={deleteLabel}
-        className="absolute inset-y-0 right-0 flex items-center justify-center bg-[var(--color-error)] text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
+        className={[
+          'absolute inset-y-0 right-0 flex items-center justify-center bg-[var(--color-error)] text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white',
+          isRevealed ? 'z-10' : 'z-0',
+        ].join(' ')}
         style={{ width: revealWidth }}
         tabIndex={isRevealed ? 0 : -1}
       >
-        <Trash2 className="size-5" aria-hidden="true" />
+        <Trash2 className="size-5 pointer-events-none" aria-hidden="true" />
       </button>
 
-      {/* Item swipeable — translate pour révéler/cacher le bouton */}
+      {/* Item swipeable — translate pour révéler/cacher le bouton.
+          pointer-events: none sur la zone révélée pour que les taps
+          atteignent le bouton de suppression dessous (Nicolas 2026-05-22). */}
       <div
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}

@@ -260,12 +260,16 @@ export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
 export async function getPostById(postId: string): Promise<PostFeedItem | null> {
   if (!supabase) throw new Error('Supabase non configuré')
 
+  // Détecte un short ID (8 hex chars sans tirets) vs UUID complet (36 chars).
+  // La colonne `short_id` est une generated column indexée — requête O(1).
+  const isShortId = postId.length === 8 && /^[0-9a-f]{8}$/i.test(postId)
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
-    .from(POSTS_READ_SOURCE)
-    .select(POST_FEED_SELECT)
-    .eq('id', postId)
-    .single()
+  const baseQuery = (supabase as any).from(POSTS_READ_SOURCE).select(POST_FEED_SELECT)
+
+  const { data, error } = isShortId
+    ? await baseQuery.eq('short_id', postId).maybeSingle()
+    : await baseQuery.eq('id', postId).single()
 
   if (error) {
     // code PGRST116 = 0 rows — post non trouvé ou non accessible (RLS)
