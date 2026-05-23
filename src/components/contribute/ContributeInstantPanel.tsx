@@ -21,7 +21,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, ArrowRight, X, Calendar, Info, MapPin, Loader2 } from 'lucide-react'
+import { ArrowLeft, X, Calendar, Info, MapPin, Loader2 } from 'lucide-react'
 import type { TimeOfDay, WeatherCondition, DisplayFormat } from '@/types/database'
 import { EncounterStep1 } from './EncounterStep1'
 import { compressPhoto } from '@/utils/compressPhoto'
@@ -464,7 +464,16 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
           </div>
         )}
 
-        {/* Footer sticky — boutons cohérents avec Encounter (flèche + primary) */}
+        {/* Helper text — visible uniquement step 1, photos optionnelles. */}
+        {step === 1 && (
+          <p className="shrink-0 px-5 pb-2 text-xs text-muted-foreground text-center bg-background">
+            {t('contribute.instant.photoOptionalHint', {
+              defaultValue: 'Tu peux aussi poursuivre sans ajouter de photo.',
+            })}
+          </p>
+        )}
+
+        {/* Footer sticky */}
         <div className="shrink-0 border-t border-border px-5 py-4 bg-background pb-[calc(1rem+env(safe-area-inset-bottom))] md:pb-4 flex gap-3 items-center">
           <button
             type="button"
@@ -496,10 +505,7 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
                   : t('common.loading')}
               </>
             ) : step < TOTAL_STEPS ? (
-              <>
-                {t('common.next', { defaultValue: 'Suivant' })}
-                <ArrowRight className="size-4" aria-hidden="true" />
-              </>
+              t('common.next', { defaultValue: 'Suivant' })
             ) : (
               t('contribute.publish', { defaultValue: 'Publier' })
             )}
