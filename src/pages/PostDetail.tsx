@@ -139,7 +139,12 @@ export default function PostDetail() {
               )}
               {!isLoading && post && (
                 <Suspense fallback={<PostSkeleton />}>
-                  <FeedPost {...post} canInteract={isAuthenticated} isOwnPost={isOwnPost} />
+                  <FeedPost
+                    {...post}
+                    canInteract={isAuthenticated}
+                    isOwnPost={isOwnPost}
+                    hideEndBorder
+                  />
                 </Suspense>
               )}
             </div>

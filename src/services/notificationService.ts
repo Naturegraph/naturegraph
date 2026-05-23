@@ -36,8 +36,11 @@ export interface Notification {
   actor_avatar_url: string | null
 }
 
-/** Liste les N dernieres notifications du user courant (vue enrichie avec actor). */
-export async function listNotifications(userId: string, limit = 30): Promise<Notification[]> {
+/** Liste les N dernieres notifications du user courant (vue enrichie avec actor).
+ *  Nicolas 2026-05-22 : cap par défaut à 10 (panel mobile + desktop) pour
+ *  garder la liste digeste — l'historique long reste accessible via
+ *  /notifications (pagination par curseur via listNotificationsPage). */
+export async function listNotifications(userId: string, limit = 10): Promise<Notification[]> {
   if (!isSupabaseConfigured || !supabase) return []
 
   const { data, error } = await supabase
@@ -49,6 +52,17 @@ export async function listNotifications(userId: string, limit = 30): Promise<Not
 
   if (error) throw new Error(error.message)
   return (data ?? []) as unknown as Notification[]
+}
+
+/**
+ * Supprime une notification définitivement (hard delete).
+ * Utilisé par le swipe-to-delete du NotificationsPanel.
+ * RLS scope : un user ne peut delete que ses propres notifs.
+ */
+export async function deleteNotification(notificationId: string): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return
+  const { error } = await supabase.from('notifications').delete().eq('id', notificationId)
+  if (error) throw new Error(error.message)
 }
 
 /**

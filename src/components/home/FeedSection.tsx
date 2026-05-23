@@ -668,13 +668,16 @@ export function FeedSection({
             <FeedGallery posts={posts} />
           ) : (
             <div className="flex flex-col md:gap-4 gap-0">
-              {posts.map((post) => (
+              {posts.map((post, idx) => (
                 <FeedPost
                   key={post.id}
                   {...post}
                   canInteract={isAuthenticated}
                   isOwnPost={!!user?.id && post.authorId === user.id}
                   onReact={handleReact}
+                  /* Dernier item du feed : on retire la bordure de fin pour
+                     éviter une barre orpheline en bas de liste. */
+                  hideEndBorder={idx === posts.length - 1}
                 />
               ))}
             </div>
