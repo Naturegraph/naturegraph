@@ -247,6 +247,21 @@ export function LocationModal({ onClose }: LocationModalProps) {
     onClose()
   }, [query, locationLabel, tempCoords, distance, setLocation, setLocationDistance, onClose])
 
+  /**
+   * Reset complet de la localisation — l'utilisateur revient à un état
+   * « non localisé ». Le feed retombe sur tous les posts publics (plus
+   * de filtre rayon auto), l'icône Locate de la nav redevient outline.
+   * Nicolas 2026-05-22 : demande explicite pour permettre de « désactiver »
+   * la localisation sans devoir vider l'input et appliquer.
+   */
+  const handleReset = useCallback(() => {
+    setLocation('', null)
+    setQuery('')
+    setTempCoords(null)
+    setShowSuggestions(false)
+    onClose()
+  }, [setLocation, onClose])
+
   // Position tooltip : centre du thumb en fonction du % de la valeur dans la plage [75, 500]
   const fillPct = ((distance - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE)) * 100
   const tooltipLeft = `calc(${fillPct}% + ${9 * (1 - fillPct / 50)}px)`
@@ -353,30 +368,41 @@ export function LocationModal({ onClose }: LocationModalProps) {
             (Nicolas 2026-05-22) : ville en gras + dept code · région en
             sous-ligne. Cohérence visuelle garantie partout dans l'app. */}
         {showSuggestions && (suggestions.length > 0 || isSearching) && (
-          <ul
+          <div
             id="location-suggestions"
-            role="listbox"
-            aria-label="Suggestions de localisation"
             className="absolute top-[calc(100%+4px)] left-0 right-0 bg-cream-lighter border border-border rounded-lg shadow-lg z-10 overflow-hidden"
           >
-            {suggestions.map((city) => (
-              <li key={`${city.inseeCode}-${city.name}`} role="option" aria-selected={false}>
-                <button
-                  type="button"
-                  onClick={() => selectSuggestion(city)}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-primary-light/40 transition-colors"
-                >
-                  <MapPin className="size-4 text-primary shrink-0" aria-hidden="true" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{city.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {[city.departmentCode, city.regionName].filter(Boolean).join(' · ')}
-                    </p>
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
+            {/* Loader inline pendant la recherche — sans ça, le dropdown
+                paraissait « tourner en rond » (vide visible) pendant que
+                le hook fetch les villes. Nicolas 2026-05-22. */}
+            {isSearching && suggestions.length === 0 && (
+              <div className="flex items-center gap-3 px-4 py-3 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin shrink-0" aria-hidden="true" />
+                <span>Recherche en cours…</span>
+              </div>
+            )}
+            {suggestions.length > 0 && (
+              <ul role="listbox" aria-label="Suggestions de localisation">
+                {suggestions.map((city) => (
+                  <li key={`${city.inseeCode}-${city.name}`} role="option" aria-selected={false}>
+                    <button
+                      type="button"
+                      onClick={() => selectSuggestion(city)}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-primary-light/40 transition-colors"
+                    >
+                      <MapPin className="size-4 text-primary shrink-0" aria-hidden="true" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{city.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {[city.departmentCode, city.regionName].filter(Boolean).join(' · ')}
+                        </p>
+                      </div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
 
         {/*
@@ -461,6 +487,19 @@ export function LocationModal({ onClose }: LocationModalProps) {
       </div>
 
       <div className="h-px bg-border" aria-hidden="true" />
+
+      {/* Lien reset — n'apparaît que si l'utilisateur est actuellement
+          localisé. Permet de retirer complètement la localisation pour
+          revenir à un état vide (feed sans filtre rayon). */}
+      {locationLabel && (
+        <button
+          type="button"
+          onClick={handleReset}
+          className="self-start text-sm text-primary underline decoration-solid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+        >
+          Supprimer ma localisation
+        </button>
+      )}
 
       {/* Actions */}
       <div className="flex gap-3">

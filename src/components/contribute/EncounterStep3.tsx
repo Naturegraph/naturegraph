@@ -478,6 +478,10 @@ export function EncounterStep3({
         </label>
       </div>
 
+      {/* Séparateur entre Localisation et Habitat — délimite visuellement
+          la section « contexte » du formulaire (Nicolas 2026-05-22). */}
+      <hr className="border-0 border-t border-border my-2" aria-hidden="true" />
+
       {/* ── 5. Habitat + conditions + moment — toujours visibles ──────────
           Nicolas 2026-05-22 : retrait du collapsible « Options avancées ».
           Les retours users beta montraient que peu d'utilisateurs cliquaient
@@ -486,78 +490,78 @@ export function EncounterStep3({
           complétude des observations partagées. */}
       <div className="flex flex-col gap-4 pt-1">
         <div className="flex flex-col gap-5">
-            {/* Habitat */}
-            <div className="flex flex-col gap-2">
-              <span className="text-sm text-foreground">
-                {t('contribute.habitat.label', {
-                  defaultValue: "Type d'habitat lors de l'observation ?",
-                })}
-              </span>
-              <div
-                className="flex flex-wrap gap-2"
-                role="group"
-                aria-label={t('contribute.habitat.label', {
-                  defaultValue: "Type d'habitat",
-                })}
-              >
-                {HABITAT_OPTIONS.map((opt) => (
-                  <Chip
-                    key={opt}
-                    label={t(`contribute.habitat.${opt}`)}
-                    emoji={HABITAT_EMOJI[opt]}
-                    active={habitat === opt}
-                    onClick={() => onHabitatChange(habitat === opt ? '' : opt)}
-                  />
-                ))}
-              </div>
+          {/* Habitat */}
+          <div className="flex flex-col gap-2">
+            <span className="text-sm text-foreground">
+              {t('contribute.habitat.label', {
+                defaultValue: "Type d'habitat lors de l'observation ?",
+              })}
+            </span>
+            <div
+              className="flex flex-wrap gap-2"
+              role="group"
+              aria-label={t('contribute.habitat.label', {
+                defaultValue: "Type d'habitat",
+              })}
+            >
+              {HABITAT_OPTIONS.map((opt) => (
+                <Chip
+                  key={opt}
+                  label={t(`contribute.habitat.${opt}`)}
+                  emoji={HABITAT_EMOJI[opt]}
+                  active={habitat === opt}
+                  onClick={() => onHabitatChange(habitat === opt ? '' : opt)}
+                />
+              ))}
             </div>
+          </div>
 
-            {/* Conditions météo */}
-            <div className="flex flex-col gap-2">
-              <span className="text-sm text-foreground">
-                {t('contribute.weather.label', { defaultValue: 'Conditions de prise de vue' })}
-              </span>
-              <div
-                className="flex flex-wrap gap-2"
-                role="group"
-                aria-label={t('contribute.weather.label', {
-                  defaultValue: 'Conditions météo',
-                })}
-              >
-                {WEATHER_OPTIONS.map((opt) => (
-                  <Chip
-                    key={opt}
-                    label={t(`contribute.weather.${opt}`)}
-                    emoji={WEATHER_EMOJI[opt]}
-                    active={weather === opt}
-                    onClick={() => onWeatherChange(weather === opt ? '' : opt)}
-                  />
-                ))}
-              </div>
+          {/* Conditions météo */}
+          <div className="flex flex-col gap-2">
+            <span className="text-sm text-foreground">
+              {t('contribute.weather.label', { defaultValue: 'Conditions de prise de vue' })}
+            </span>
+            <div
+              className="flex flex-wrap gap-2"
+              role="group"
+              aria-label={t('contribute.weather.label', {
+                defaultValue: 'Conditions météo',
+              })}
+            >
+              {WEATHER_OPTIONS.map((opt) => (
+                <Chip
+                  key={opt}
+                  label={t(`contribute.weather.${opt}`)}
+                  emoji={WEATHER_EMOJI[opt]}
+                  active={weather === opt}
+                  onClick={() => onWeatherChange(weather === opt ? '' : opt)}
+                />
+              ))}
             </div>
+          </div>
 
-            {/* Moment de la journée */}
-            <div className="flex flex-col gap-2">
-              <span className="text-sm text-foreground">
-                {t('contribute.date.timeLabel', { defaultValue: 'Moment de la journée' })}
-              </span>
-              <div
-                className="flex flex-wrap gap-2"
-                role="group"
-                aria-label={t('contribute.date.timeLabel', {
-                  defaultValue: 'Moment de la journée',
-                })}
-              >
-                {TIME_OPTIONS.map((opt) => (
-                  <Chip
-                    key={opt}
-                    label={t(`contribute.date.${opt}`)}
-                    active={timeOfDay === opt}
-                    onClick={() => onTimeChange(timeOfDay === opt ? '' : opt)}
-                  />
-                ))}
-              </div>
+          {/* Moment de la journée */}
+          <div className="flex flex-col gap-2">
+            <span className="text-sm text-foreground">
+              {t('contribute.date.timeLabel', { defaultValue: 'Moment de la journée' })}
+            </span>
+            <div
+              className="flex flex-wrap gap-2"
+              role="group"
+              aria-label={t('contribute.date.timeLabel', {
+                defaultValue: 'Moment de la journée',
+              })}
+            >
+              {TIME_OPTIONS.map((opt) => (
+                <Chip
+                  key={opt}
+                  label={t(`contribute.date.${opt}`)}
+                  active={timeOfDay === opt}
+                  onClick={() => onTimeChange(timeOfDay === opt ? '' : opt)}
+                />
+              ))}
             </div>
+          </div>
         </div>
       </div>
     </div>
