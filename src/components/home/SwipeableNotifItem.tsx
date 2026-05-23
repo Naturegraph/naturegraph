@@ -95,11 +95,9 @@ export function SwipeableNotifItem({
   }
 
   return (
-    <div className="relative overflow-hidden">
-      {/* Bouton supprimer en arrière-plan — révélé par le swipe.
-          z-index 0 par défaut, z-10 quand révélé pour bien capturer le tap.
-          Nicolas 2026-05-22 : on utilise onPointerUp (plus fiable que onClick
-          sur mobile, surtout après une séquence touch). */}
+    <div className="group/swipe relative overflow-hidden">
+      {/* Bouton supprimer principal — révélé par le swipe sur mobile,
+          ou caché sous le contenu sinon. */}
       <button
         type="button"
         onClick={handleDelete}
@@ -115,9 +113,7 @@ export function SwipeableNotifItem({
         <Trash2 className="size-5 pointer-events-none" aria-hidden="true" />
       </button>
 
-      {/* Item swipeable — translate pour révéler/cacher le bouton.
-          pointer-events: none sur la zone révélée pour que les taps
-          atteignent le bouton de suppression dessous (Nicolas 2026-05-22). */}
+      {/* Item swipeable — translate pour révéler/cacher le bouton mobile. */}
       <div
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -127,6 +123,20 @@ export function SwipeableNotifItem({
         style={{ transform: `translateX(${translateX}px)` }}
       >
         {children}
+
+        {/* Bouton corbeille desktop — visible au hover (pas de swipe à la
+            souris sur desktop / tablette stylet). Tap-target 32px à droite,
+            absolute pour ne pas perturber le layout du content (Nicolas
+            2026-05-22 : retour beta — swipe ne fonctionne qu'au tactile). */}
+        <button
+          type="button"
+          onClick={handleDelete}
+          onPointerUp={handleDelete}
+          aria-label={deleteLabel}
+          className="hidden md:flex absolute top-1/2 right-3 -translate-y-1/2 size-8 items-center justify-center rounded-full bg-cream-lighter/95 text-muted-foreground border border-border opacity-0 group-hover/swipe:opacity-100 hover:text-[var(--color-error)] hover:border-[var(--color-error)] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-opacity"
+        >
+          <Trash2 className="size-4 pointer-events-none" aria-hidden="true" />
+        </button>
       </div>
     </div>
   )
