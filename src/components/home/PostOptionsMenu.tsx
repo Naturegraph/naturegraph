@@ -45,12 +45,18 @@ import { useToggleSavedPost, useSavedPostIds } from '@/hooks/useSavedPosts'
 import { useIsFollowing, useToggleFollow } from '@/hooks/useFollow'
 import { useHidePost } from '@/hooks/useHiddenPosts'
 import { useDeletePost } from '@/hooks/usePost'
+import { buildPostPath } from '@/lib/postSlug'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface PostOptionsMenuProps {
   /** ID du post — pour construire l'URL de partage et les requêtes API */
   postId: string
+  /** Titre du post — utilisé comme base du slug URL partagé (rétro-compat
+   *  si absent : URL = `/post/{uuid}` brut). */
+  postTitle?: string
+  /** Nom d'espèce — fallback slug si pas de titre. */
+  postSpecies?: string | null
   /** Nom d'utilisateur de l'auteur (pour "Ne plus migrer avec @username") */
   authorUsername: string
   /** ID de l'auteur (uuid) — utilisé par follow/block (cible des actions) */
@@ -130,6 +136,8 @@ function MenuItem({
 
 export function PostOptionsMenu({
   postId,
+  postTitle,
+  postSpecies,
   authorUsername,
   authorId,
   isOwnPost,
@@ -194,7 +202,12 @@ export function PostOptionsMenu({
 
   /** Copie l'URL du post dans le presse-papier et affiche un feedback 2s */
   function handleCopyLink() {
-    const url = `${window.location.origin}/post/${postId}`
+    // Cohérence avec SharePopover : URL avec slug humain
+    // « /post/grand-duc-amerique-{uuid} » au lieu de l'UUID brut.
+    const url = `${window.location.origin}${buildPostPath(postId, {
+      title: postTitle,
+      species: postSpecies,
+    })}`
     navigator.clipboard.writeText(url).catch(() => {
       // Fallback pour navigateurs sans Clipboard API
       const el = document.createElement('textarea')

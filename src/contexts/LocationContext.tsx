@@ -111,11 +111,40 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient()
 
   // ─── État local (rétrocompatibilité) ─────────────────────────
-  // Fallback quand l'utilisateur n'est pas connecté ou en mode démo
+  // Fallback quand l'utilisateur n'est pas connecté ou en mode démo.
+  //
+  // Nicolas 2026-05-22 : persistance localStorage des coords + label pour
+  // que le filtre rayon du feed survive au reload de page. Avant ce fix,
+  // l'utilisateur devait ré-ouvrir la modal et ré-appliquer à chaque
+  // chargement pour que le rayon Haversine s'applique.
+  const COORDS_KEY = 'naturegraph-location-coords'
+  const LABEL_KEY = 'naturegraph-location-label'
 
-  const [localLabel, setLocalLabel] = useState('')
+  function readPersistedCoords(): LocationCoords | null {
+    if (typeof window === 'undefined') return null
+    try {
+      const raw = localStorage.getItem(COORDS_KEY)
+      if (!raw) return null
+      const parsed = JSON.parse(raw) as LocationCoords
+      if (typeof parsed.lat === 'number' && typeof parsed.lon === 'number') return parsed
+      return null
+    } catch {
+      return null
+    }
+  }
+
+  function readPersistedLabel(): string {
+    if (typeof window === 'undefined') return ''
+    try {
+      return localStorage.getItem(LABEL_KEY) ?? ''
+    } catch {
+      return ''
+    }
+  }
+
+  const [localLabel, setLocalLabel] = useState(() => readPersistedLabel())
   const [locationDistance, setDistLocal] = useState<number>(DEFAULT_RADIUS)
-  const [locationCoords, setCoords] = useState<LocationCoords | null>(null)
+  const [locationCoords, setCoords] = useState<LocationCoords | null>(() => readPersistedCoords())
 
   // ─── Lecture depuis Supabase ──────────────────────────────────
 
@@ -213,6 +242,25 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const setLocation = useCallback((label: string, coords?: LocationCoords | null) => {
     setLocalLabel(label)
     if (coords !== undefined) setCoords(coords ?? null)
+    // Persistance localStorage — pour que le filtre rayon survive au
+    // reload de page (sinon locationCoords retombe à null et le feed
+    // affiche tous les posts au lieu du rayon).
+    try {
+      if (typeof window !== 'undefined') {
+        if (label) {
+          localStorage.setItem(LABEL_KEY, label)
+        } else {
+          localStorage.removeItem(LABEL_KEY)
+        }
+        if (coords) {
+          localStorage.setItem(COORDS_KEY, JSON.stringify(coords))
+        } else if (coords === null) {
+          localStorage.removeItem(COORDS_KEY)
+        }
+      }
+    } catch {
+      /* private mode / quota — ignorer silencieusement */
+    }
   }, [])
 
   const setLocationDistance = useCallback((d: number) => {
