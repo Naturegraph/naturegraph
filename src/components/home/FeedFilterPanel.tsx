@@ -193,7 +193,10 @@ export function FeedFilterPanel({
   const showRadiusFilter = isLocalized
   const helpOnlyComingSoon = true
 
-  // État local — édition avant validation via "Sauvegarder"
+  // État local — édition avant validation via "Sauvegarder". Initialisé
+  // une seule fois au mount (panel unmount sur close → ré-initialisation
+  // automatique à la ré-ouverture). Pas de useEffect sync ici (lint
+  // react-hooks/set-state-in-effect).
   const [local, setLocal] = useState<FeedFilters>({ ...filters })
 
   /** Toggle d'une catégorie dans la sélection multiple */
