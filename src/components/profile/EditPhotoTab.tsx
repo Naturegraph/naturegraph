@@ -175,8 +175,8 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validation côté client (MIME + taille).
-    if (!file.type.startsWith('image/')) {
+    // Validation MIME — accepte tous les types image/* (HEIC, JPEG, PNG, WebP).
+    if (!file.type.startsWith('image/') && !/\.(heic|heif)$/i.test(file.name)) {
       toast.error(
         t('profile.edit.errorImageType', {
           defaultValue: 'Fichier non supporté — image attendue.',
@@ -184,12 +184,17 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
       )
       return
     }
-    const maxBytes = kind === 'avatar' ? 1_048_576 : 2_097_152 // 1 / 2 MB
-    if (file.size > maxBytes) {
+
+    // Nicolas 2026-05-22 : SUPPRESSION de la limite stricte 1/2 MB pré-compression.
+    // Avant ce fix, les photos iPhone HEIC (5-8 MB) étaient refusées d'office
+    // et l'utilisateur ne pouvait pas customiser son profil. Maintenant on
+    // accepte jusqu'à 50 MB (garde-fou mémoire navigateur) et la compression
+    // ci-dessous ramène à < 500 KB pour avatar / < 1 MB pour banner.
+    const HARD_MAX = 50 * 1_048_576 // 50 MB
+    if (file.size > HARD_MAX) {
       toast.error(
         t('profile.edit.errorImageSize', {
-          defaultValue: `Fichier trop volumineux (max ${maxBytes / 1e6} MB).`,
-          maxMb: maxBytes / 1e6,
+          defaultValue: 'Fichier trop volumineux (50 MB max).',
         }),
       )
       return
