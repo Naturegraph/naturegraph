@@ -199,6 +199,13 @@ interface FeedPostProps extends MockPost {
   isOwnPost?: boolean
   /** Callback pour réagir à un post (emoji picker → type) */
   onReact?: (postId: string, type: ReactionType) => void
+  /**
+   * Masque la bordure de fin de carte (Nicolas 2026-05-22) :
+   *   - true sur PostDetail (post seul, la bordure flottait dans le vide)
+   *   - true sur le dernier post du feed (cohérence visuelle, pas de
+   *     bordure orpheline en bas de liste).
+   */
+  hideEndBorder?: boolean
 }
 
 export function FeedPost({
@@ -231,6 +238,7 @@ export function FeedPost({
   canInteract = true,
   isOwnPost = false,
   onReact,
+  hideEndBorder = false,
 }: FeedPostProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -306,10 +314,16 @@ export function FeedPost({
     // Centré (mx-auto) pour s'aligner dans la zone feed quel que soit son parent.
     // Sur mobile : pleine largeur (rounded-none, le cap ne joue pas).
     <article className="bg-background relative md:rounded-card rounded-none md:max-w-[704px] md:mx-auto w-full">
-      {/* Bordure */}
+      {/* Bordure de la carte — quand hideEndBorder=true on retire la
+          bordure inférieure mobile (border-b-4) qui flotte dans le vide
+          sur PostDetail ou en dernier item de feed. La border-[0.5px]
+          desktop reste : c'est un cadre complet, pas une coupure visuelle. */}
       <div
         aria-hidden="true"
-        className="absolute md:border-border md:border-[0.5px] border-border border-b-4 inset-0 pointer-events-none md:rounded-card"
+        className={[
+          'absolute md:border-border md:border-[0.5px] border-border inset-0 pointer-events-none md:rounded-card',
+          hideEndBorder ? '' : 'border-b-4',
+        ].join(' ')}
       />
 
       <div className="flex flex-col gap-5 md:p-6 px-5 py-8">

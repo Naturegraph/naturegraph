@@ -42,7 +42,13 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
-import { useNotifications, useMarkManyAsRead, useMarkAllAsRead } from '@/hooks/useNotifications'
+import {
+  useNotifications,
+  useMarkManyAsRead,
+  useMarkAllAsRead,
+  useDeleteNotification,
+} from '@/hooks/useNotifications'
+import { SwipeableNotifItem } from './SwipeableNotifItem'
 import type { NotificationType } from '@/services/notificationService'
 import {
   groupNotifications,
@@ -248,6 +254,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
   const { data: rawNotifs = [], isLoading } = useNotifications(user?.id)
   const markManyAsRead = useMarkManyAsRead(user?.id)
   const markAllAsRead = useMarkAllAsRead(user?.id)
+  const deleteNotif = useDeleteNotification(user?.id)
   // Regroupe les notifs identiques < 24h (ex : "Alice & Bob ont réagi à ton post")
   const notifs = groupNotifications(rawNotifs)
   const groups = groupByDate(notifs)
@@ -352,50 +359,62 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
               <div key={notif.id}>
                 {i > 0 && <div className="h-px bg-border mx-5" aria-hidden="true" />}
 
-                <button
-                  type="button"
-                  onClick={() => handleClick(notif)}
-                  className="w-full text-left flex items-start gap-3 px-5 py-3 hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                <SwipeableNotifItem
+                  onDelete={() => {
+                    // Supprime tous les IDs du groupe (notif peut être groupée :
+                    // ex « ClaireD & Papidou ont réagi à ton post » → 2 IDs).
+                    const ids = notif.group_ids ?? [notif.id]
+                    ids.forEach((id) => deleteNotif.mutate(id))
+                  }}
+                  deleteLabel={t('home.notifications.delete', {
+                    defaultValue: 'Supprimer cette notification',
+                  })}
                 >
-                  {/* Avatar + icône type en surcouche */}
-                  <div className="relative shrink-0 mt-0.5">
-                    <Avatar
-                      url={notif.actor_avatar_url}
-                      fallback={notif.actor_username ?? notif.title ?? '?'}
-                    />
-                    <NotifIcon type={notif.type} />
-                  </div>
-
-                  {/* Contenu */}
-                  <div className="flex-1 min-w-0">
-                    <div className="mb-1">
-                      <NotifChip type={notif.type} />
+                  <button
+                    type="button"
+                    onClick={() => handleClick(notif)}
+                    className="w-full text-left flex items-start gap-3 px-5 py-3 hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    {/* Avatar + icône type en surcouche */}
+                    <div className="relative shrink-0 mt-0.5">
+                      <Avatar
+                        url={notif.actor_avatar_url}
+                        fallback={notif.actor_username ?? notif.title ?? '?'}
+                      />
+                      <NotifIcon type={notif.type} />
                     </div>
-                    <p className="text-sm text-foreground leading-snug">
-                      <span className="font-bold">
-                        {formatGroupedActors(notif, (n) =>
-                          n === 1
-                            ? t('home.notifications.othersOne')
-                            : t('home.notifications.othersMany', { count: n }),
-                        ) ??
-                          notif.actor_username ??
-                          notif.title ??
-                          ''}
-                      </span>{' '}
-                      <span className="text-muted-foreground">{getMessage(notif.type, t)}</span>
-                    </p>
-                  </div>
 
-                  {/* Heure + point non-lu */}
-                  <div className="flex flex-col items-end gap-2 shrink-0 ml-1">
-                    <span className="text-xs text-muted-foreground">
-                      {formatTime(notif.created_at)}
-                    </span>
-                    {!notif.read && (
-                      <div className="size-2.5 rounded-full bg-primary" aria-label="Non lu" />
-                    )}
-                  </div>
-                </button>
+                    {/* Contenu */}
+                    <div className="flex-1 min-w-0">
+                      <div className="mb-1">
+                        <NotifChip type={notif.type} />
+                      </div>
+                      <p className="text-sm text-foreground leading-snug">
+                        <span className="font-bold">
+                          {formatGroupedActors(notif, (n) =>
+                            n === 1
+                              ? t('home.notifications.othersOne')
+                              : t('home.notifications.othersMany', { count: n }),
+                          ) ??
+                            notif.actor_username ??
+                            notif.title ??
+                            ''}
+                        </span>{' '}
+                        <span className="text-muted-foreground">{getMessage(notif.type, t)}</span>
+                      </p>
+                    </div>
+
+                    {/* Heure + point non-lu */}
+                    <div className="flex flex-col items-end gap-2 shrink-0 ml-1">
+                      <span className="text-xs text-muted-foreground">
+                        {formatTime(notif.created_at)}
+                      </span>
+                      {!notif.read && (
+                        <div className="size-2.5 rounded-full bg-primary" aria-label="Non lu" />
+                      )}
+                    </div>
+                  </button>
+                </SwipeableNotifItem>
               </div>
             ))}
           </div>
