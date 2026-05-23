@@ -639,7 +639,7 @@ function InstantStep2({
           value={title}
           onChange={(e) => onTitleChange(e.target.value.slice(0, MAX_TITLE))}
           maxLength={MAX_TITLE}
-          className="w-full h-11 px-4 rounded-full border border-border bg-cream-lighter text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+          className="w-full h-11 px-4 rounded-full border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
         />
       </div>
 
@@ -659,7 +659,7 @@ function InstantStep2({
               defaultValue: 'Décris ce moment de nature…',
             })}
             aria-invalid={!!(submitAttempted && errors.description)}
-            className="w-full px-4 py-3 pb-7 rounded-2xl border border-border bg-cream-lighter text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
+            className="w-full px-4 py-3 pb-7 rounded-2xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
           />
           <span
             aria-live="polite"
@@ -690,7 +690,7 @@ function InstantStep2({
             value={encounterDate}
             max={today}
             onChange={(e) => onDateChange(e.target.value)}
-            className="date-input-clean w-full h-11 pl-4 pr-10 rounded-full border border-border bg-cream-lighter text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+            className="date-input-clean w-full h-11 pl-4 pr-10 rounded-full border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
           />
           <Calendar
             className="absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-primary pointer-events-none"
@@ -784,7 +784,7 @@ function InstantStep2({
             aria-controls={`${locId}-listbox`}
             aria-autocomplete="list"
             autoComplete="off"
-            className="w-full h-11 pl-10 pr-4 rounded-full border border-border bg-cream-lighter text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+            className="w-full h-11 pl-10 pr-4 rounded-full border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
           />
 
           {locSuggestionsOpen && (suggestions.length > 0 || locLoading) && (
@@ -882,7 +882,7 @@ function InstantStep2({
                   'inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                   active
                     ? 'border-primary bg-primary-light text-foreground'
-                    : 'border-border bg-cream-lighter text-foreground hover:border-primary/50',
+                    : 'border-border bg-background text-foreground hover:border-primary/50',
                 ].join(' ')}
               >
                 <span aria-hidden="true">{opt.emoji}</span>
@@ -911,7 +911,7 @@ function InstantStep2({
                   'inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                   active
                     ? 'border-primary bg-primary-light text-foreground'
-                    : 'border-border bg-cream-lighter text-foreground hover:border-primary/50',
+                    : 'border-border bg-background text-foreground hover:border-primary/50',
                 ].join(' ')}
               >
                 <span aria-hidden="true">{WEATHER_EMOJI[opt]}</span>
@@ -940,7 +940,7 @@ function InstantStep2({
                   'inline-flex items-center h-9 px-3 rounded-full text-sm border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                   active
                     ? 'border-primary bg-primary-light text-foreground'
-                    : 'border-border bg-cream-lighter text-foreground hover:border-primary/50',
+                    : 'border-border bg-background text-foreground hover:border-primary/50',
                 ].join(' ')}
               >
                 {t(`contribute.date.${opt}`)}
