@@ -168,12 +168,31 @@ export function SettingsNotificationsView() {
     })
   }
 
-  // En attente du premier load — on rend tout de même les contrôles avec leurs
-  // valeurs par défaut pour éviter le layout shift. Les toggles sont disabled.
-  const disabled = isLoading || !user?.id
+  // Nicolas 2026-05-22 : la livraison réelle des notifications (email cron,
+  // digest hebdo) n'est pas encore wired backend → on bloque tous les toggles
+  // pour éviter que l'utilisateur croie avoir activé un canal qui ne
+  // déclenchera rien. Banner « Bientôt » en haut de la vue + disabled global.
+  const SOON_FEATURE = true
+  const disabled = SOON_FEATURE || isLoading || !user?.id
 
   return (
     <div className="flex flex-col">
+      {SOON_FEATURE && (
+        <div
+          role="status"
+          className="mx-6 mt-2 mb-1 rounded-xl border border-primary/20 bg-primary-light/50 px-4 py-3"
+        >
+          <p className="text-sm font-bold text-primary mb-1">
+            {t('settings.notifications.soonTitle', { defaultValue: 'Bientôt disponible' })}
+          </p>
+          <p className="text-xs text-foreground/80 leading-snug">
+            {t('settings.notifications.soonHint', {
+              defaultValue:
+                "La gestion fine des notifications (courriel, digest hebdo) arrivera dans une prochaine mise à jour. En attendant, tu reçois les notifications essentielles dans l'app.",
+            })}
+          </p>
+        </div>
+      )}
       {/* ── Section 1 : Méthodes de notification ───────────────────────── */}
       <section className="flex flex-col gap-4 px-6 pt-2 pb-6">
         <h3 className="font-title font-bold text-lg text-foreground leading-tight">

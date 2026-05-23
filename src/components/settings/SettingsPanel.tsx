@@ -259,7 +259,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               isExporting={dataExportMutation.isPending}
             />
           ) : (
-            <SettingsSubView section={section} />
+            <SettingsSubView section={section} onSectionChange={setSection} />
           )}
         </div>
 
@@ -541,6 +541,7 @@ const SECTION_TITLES: Record<SettingsSection, (t: SimpleT) => string> = {
 
 interface SettingsSubViewProps {
   section: SettingsSection
+  onSectionChange?: (s: SettingsSection) => void
 }
 
 /**
@@ -550,7 +551,7 @@ interface SettingsSubViewProps {
  *   - 'help'          → form contact (Tu as une question ?)
  *   - 'license'       → texte légal sur droits d'auteur et sources tierces
  */
-function SettingsSubView({ section }: SettingsSubViewProps) {
+function SettingsSubView({ section, onSectionChange }: SettingsSubViewProps) {
   if (section === 'security') {
     return <SettingsSecurityView />
   }
@@ -564,7 +565,7 @@ function SettingsSubView({ section }: SettingsSubViewProps) {
   }
 
   if (section === 'license') {
-    return <SettingsLicenseView />
+    return <SettingsLicenseView onOpenTerms={() => onSectionChange?.('terms')} />
   }
 
   // BATCH 97 : sous-vues CGU + Politique de confidentialité — réutilisent le
@@ -644,7 +645,7 @@ function SettingsLegalDocView({ kind }: { kind: 'terms' | 'privacy' }) {
  *
  * Le contenu est en clés i18n avec defaultValue (à intégrer dans fr.json/en.json).
  */
-function SettingsLicenseView() {
+function SettingsLicenseView({ onOpenTerms }: { onOpenTerms?: () => void }) {
   const { t } = useTranslation()
 
   // Sources de données ouvertes utilisées en Phase 1.
@@ -788,13 +789,13 @@ function SettingsLicenseView() {
             defaultValue:
               "Un doute sur l'utilisation de vos photos ou des données ? Consultez nos ",
           })}
-          {/* Lien vers CGU — disabled pour l'instant (cf. footer du panel,
-              le contenu juridique sera ajouté Phase 3). */}
+          {/* Lien actif vers la sous-vue CGU du SettingsPanel — ouvre la
+              section 'terms' avec le contenu i18n partagé avec /legal
+              (Nicolas 2026-05-22). */}
           <button
             type="button"
-            disabled
-            aria-disabled="true"
-            className="font-bold underline text-[var(--color-action-default)] cursor-not-allowed disabled:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+            onClick={() => onOpenTerms?.()}
+            className="font-bold underline text-[var(--color-action-default)] hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
           >
             {t('settings.license.moreCguLink', {
               defaultValue: "Conditions générales d'utilisation",
