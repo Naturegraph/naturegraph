@@ -65,6 +65,13 @@ function profileToDisplayData(profile: Profile): ProfileDisplayData {
       species: 0,
       streak: 0,
     },
+    // Objectif observations hebdomadaire — colonne week_goal de la DB
+    // (Nicolas 2026-05-22). `current` = 0 jusqu'à ce que le statsService
+    // calcule l'avancement réel cette semaine.
+    weekProgress: {
+      current: 0,
+      goal: (profile as Profile & { week_goal?: number | null }).week_goal ?? 5,
+    },
   }
 }
 
