@@ -13,6 +13,7 @@ import {
   markAsRead,
   markManyAsRead,
   markAllAsRead,
+  deleteNotification,
   type Notification,
 } from '@/services/notificationService'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
@@ -89,6 +90,22 @@ export function useMarkManyAsRead(userId: string | undefined) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (notificationIds: string[]) => markManyAsRead(notificationIds),
+    onSuccess: () => {
+      if (!userId) return
+      qc.invalidateQueries({ queryKey: notificationsQueryKey(userId) })
+      qc.invalidateQueries({ queryKey: unreadCountQueryKey(userId) })
+    },
+  })
+}
+
+/**
+ * Supprime une notification — invalide la liste pour refresh immédiat.
+ * Utilisé par le swipe-to-delete du NotificationsPanel.
+ */
+export function useDeleteNotification(userId: string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (notificationId: string) => deleteNotification(notificationId),
     onSuccess: () => {
       if (!userId) return
       qc.invalidateQueries({ queryKey: notificationsQueryKey(userId) })

@@ -140,9 +140,13 @@ export function ProfileFeed({ userPosts, isOwnProfile }: ProfileFeedProps) {
                 - chaque card en break-inside:avoid pour eviter les coupures
                 Decision Nicolas 2026-05-04 : layout Pinterest-style, vide
                 blanc elimine, decalage horizontal accepte. */}
-            {sortedPosts.map((post) => (
+            {sortedPosts.map((post, idx) => (
               <div key={post.id} className="break-inside-avoid mb-0 md:mb-6">
-                <FeedPost {...post} isOwnPost={isOwnProfile} />
+                <FeedPost
+                  {...post}
+                  isOwnPost={isOwnProfile}
+                  hideEndBorder={idx === sortedPosts.length - 1}
+                />
               </div>
             ))}
           </div>
@@ -159,7 +163,6 @@ export function ProfileFeed({ userPosts, isOwnProfile }: ProfileFeedProps) {
           })}
         />
       )}
-
     </div>
   )
 }
