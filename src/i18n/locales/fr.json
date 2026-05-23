@@ -803,7 +803,7 @@
     },
     "location": {
       "label": "Localisation",
-      "placeholder": "Ville, forêt, lieu-dit...",
+      "placeholder": "Rechercher une ville…",
       "hide": "Masquer la localisation précise",
       "hideDesc": "Si désactivé, seule la région est visible. Active pour partager le lieu précis.",
       "makePublic": "Activer pour rendre la localisation publique"

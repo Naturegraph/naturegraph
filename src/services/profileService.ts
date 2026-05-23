@@ -46,8 +46,11 @@ export interface UpdateProfilePayload {
   twitter?: string
   website?: string
   is_public?: boolean
-  avatar_url?: string
-  banner_url?: string
+  avatar_url?: string | null
+  banner_url?: string | null
+  /** Objectif d'observations hebdomadaire (1-50) — colonne ajoutée
+   *  Nicolas 2026-05-22. Saisi via EditInfoTab. */
+  week_goal?: number
 }
 
 /**

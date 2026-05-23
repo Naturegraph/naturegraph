@@ -274,7 +274,7 @@ export function EncounterStep3({
               description.length > MAX_DESC ? 'text-[var(--color-error)]' : 'text-muted-foreground',
             ].join(' ')}
           >
-            {MAX_DESC} max
+            {description.length}/{MAX_DESC}
           </span>
         </div>
         {/* Erreur affichée UNIQUEMENT après une tentative de soumission ratée
@@ -334,7 +334,11 @@ export function EncounterStep3({
             <div
               role="dialog"
               aria-label={t('contribute.location.label', { defaultValue: 'Localisation' })}
-              className="absolute left-0 top-full mt-2 z-30 w-[min(420px,calc(100vw-2rem))] rounded-2xl border-[0.5px] border-border bg-background p-5 shadow-xl flex flex-col gap-3"
+              // Popover ne déborde plus du panneau contribute (sidebar
+              // étroite sur desktop) — on cape à 100% de la largeur du
+              // parent + un padding interne plus compact. Shadow allégée
+              // (md au lieu de xl) pour rester subtil (Nicolas 2026-05-22).
+              className="absolute left-0 right-0 top-full mt-2 z-30 max-w-full rounded-2xl border-[0.5px] border-border bg-background p-4 shadow-md flex flex-col gap-3"
             >
               <div className="flex items-center justify-between">
                 <h4 className="font-title font-bold text-base text-foreground">
