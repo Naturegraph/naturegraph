@@ -556,13 +556,11 @@ export function FeedPost({
             const categoryLabel = taxonomicCfg?.label ?? null
 
             // Espèce identifiée = on a au moins le nom commun OU scientifique.
-            // `taxref_id` est uniquement requis pour le filtrage cliquable —
-            // s'il manque (anciens posts pré-migration 2026-05-22), on affiche
-            // quand même le nom de l'espèce en chip passif plutôt que de
-            // tomber sur « Espèce non déterminée ».
+            // Nicolas 2026-05-22 : chip espèce TOUJOURS passif (plus de filtre
+            // par click) — pas d'action sur le chip pour le moment.
             const speciesName = species || scientific_name || null
             const hasIdentifiedSpecies = !!speciesName
-            const isSpeciesClickable = !!(speciesName && taxref_id)
+            const isSpeciesClickable = false
             const unknownLabel = t('home.post.unknownSpecies', {
               defaultValue: 'Espèce non déterminée',
             })
