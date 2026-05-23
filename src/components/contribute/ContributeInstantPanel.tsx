@@ -464,52 +464,59 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
           </div>
         )}
 
-        {/* Helper text — visible uniquement step 1, photos optionnelles. */}
-        {step === 1 && (
-          <p className="shrink-0 px-5 pb-2 text-xs text-muted-foreground text-center bg-background">
-            {t('contribute.instant.photoOptionalHint', {
-              defaultValue: 'Tu peux aussi poursuivre sans ajouter de photo.',
-            })}
-          </p>
-        )}
+        {/* Footer sticky — boutons + hint « sans photo » en dessous (cohérent Encounter) */}
+        <div className="shrink-0 border-t border-border bg-background px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] md:pb-4 flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleBack}
+              aria-label={
+                step === 1
+                  ? t('common.cancel', { defaultValue: 'Annuler' })
+                  : t('common.back', { defaultValue: 'Précédent' })
+              }
+              className="shrink-0 size-12 rounded-full border border-border bg-background flex items-center justify-center text-foreground hover:bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <ArrowLeft className="size-5" aria-hidden="true" />
+            </button>
 
-        {/* Footer sticky */}
-        <div className="shrink-0 border-t border-border px-5 py-4 bg-background pb-[calc(1rem+env(safe-area-inset-bottom))] md:pb-4 flex gap-3 items-center">
-          <button
-            type="button"
-            onClick={handleBack}
-            aria-label={
-              step === 1
-                ? t('common.cancel', { defaultValue: 'Annuler' })
-                : t('common.back', { defaultValue: 'Précédent' })
-            }
-            className="shrink-0 size-12 rounded-full border border-border bg-background flex items-center justify-center text-foreground hover:bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <ArrowLeft className="size-5" aria-hidden="true" />
-          </button>
+            <Button
+              type="button"
+              size="md"
+              className="flex-1"
+              disabled={isSubmitting}
+              onClick={(e) =>
+                step < TOTAL_STEPS ? handleNext(e) : handleSubmit(e as React.FormEvent)
+              }
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
+                  {uploadProgress
+                    ? `${uploadProgress.current}/${uploadProgress.total}`
+                    : t('common.loading')}
+                </>
+              ) : step < TOTAL_STEPS ? (
+                t('common.next', { defaultValue: 'Suivant' })
+              ) : (
+                t('contribute.publish', { defaultValue: 'Publier' })
+              )}
+            </Button>
+          </div>
 
-          <Button
-            type="button"
-            size="md"
-            className="flex-1"
-            disabled={isSubmitting}
-            onClick={(e) =>
-              step < TOTAL_STEPS ? handleNext(e) : handleSubmit(e as React.FormEvent)
-            }
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
-                {uploadProgress
-                  ? `${uploadProgress.current}/${uploadProgress.total}`
-                  : t('common.loading')}
-              </>
-            ) : step < TOTAL_STEPS ? (
-              t('common.next', { defaultValue: 'Suivant' })
-            ) : (
-              t('contribute.publish', { defaultValue: 'Publier' })
-            )}
-          </Button>
+          {/* Lien « continuer sans photo » — étape 1 uniquement, sous les
+              boutons (même pattern que Encounter). Clic = avance step. */}
+          {step === 1 && (
+            <button
+              type="button"
+              onClick={handleNext}
+              className="text-xs text-muted-foreground hover:text-foreground text-center transition-colors focus-visible:outline-none focus-visible:underline"
+            >
+              {t('contribute.instant.photoOptionalHint', {
+                defaultValue: 'Tu peux aussi poursuivre sans ajouter de photo.',
+              })}
+            </button>
+          )}
         </div>
       </div>
     </>
