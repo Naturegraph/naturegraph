@@ -316,7 +316,7 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
   }
 
   const stepTitles: Record<number, string> = {
-    1: t('contribute.panel.captureInstant', { defaultValue: 'Capture ton instant nature' }),
+    1: t('contribute.panel.immortaliseInstant', { defaultValue: 'Immortalise ta rencontre !' }),
     2: t('contribute.panel.moreDetails', { defaultValue: 'Plus de détails' }),
   }
 
@@ -390,7 +390,7 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
             noValidate
             className="px-5 pt-5 pb-4 flex flex-col gap-1"
           >
-            <h2 className="font-title font-bold text-lg text-foreground mb-4">
+            <h2 className="font-title font-bold text-lg text-foreground mb-1">
               {stepTitles[step]}
             </h2>
 
