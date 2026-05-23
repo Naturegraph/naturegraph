@@ -168,40 +168,50 @@ export function HomeNavbar({
                   (search, contribute et profil sont dans MobileBottomNav)
                   ════════════════════════════════════════════════════════ */}
               <div className="flex md:hidden items-center gap-2">
-                {/* Vue liste/grille */}
-                <button
-                  type="button"
-                  onClick={onToggleFeedView}
-                  className={btnIcon}
-                  aria-label={
-                    feedViewMode === 'list' ? t('home.feed.gridView') : t('home.feed.listView')
-                  }
-                  aria-pressed={feedViewMode === 'grid'}
-                >
-                  {feedViewMode === 'list' ? (
-                    <LayoutGrid className="size-5 text-foreground" aria-hidden="true" />
-                  ) : (
-                    <LayoutList className="size-5 text-foreground" aria-hidden="true" />
-                  )}
-                </button>
-
-                {/* Filtres — badge rouge si filtres actifs */}
-                <div className="relative">
+                {/* Vue liste/grille — masqué quand la page hôte ne câble pas
+                    `onToggleFeedView` (Profile a son propre toggle, Home
+                    expose ce callback). Évite un bouton mort sur les pages
+                    sans contrôle de vue. */}
+                {onToggleFeedView && (
                   <button
                     type="button"
-                    onClick={onOpenFeedFilters}
+                    onClick={onToggleFeedView}
                     className={btnIcon}
-                    aria-label={t('home.feed.filterObs')}
+                    aria-label={
+                      feedViewMode === 'list' ? t('home.feed.gridView') : t('home.feed.listView')
+                    }
+                    aria-pressed={feedViewMode === 'grid'}
                   >
-                    <Filter className="size-5 text-foreground" aria-hidden="true" />
+                    {feedViewMode === 'list' ? (
+                      <LayoutGrid className="size-5 text-foreground" aria-hidden="true" />
+                    ) : (
+                      <LayoutList className="size-5 text-foreground" aria-hidden="true" />
+                    )}
                   </button>
-                  {feedHasActiveFilters && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute top-2 right-2 size-2 rounded-full bg-primary pointer-events-none"
-                    />
-                  )}
-                </div>
+                )}
+
+                {/* Filtres — affichés UNIQUEMENT quand la page hôte expose
+                    un callback `onOpenFeedFilters` (= la Home). Sur Profile
+                    ou autres pages sans filtres, le bouton est masqué pour
+                    éviter une icône morte (Nicolas 2026-05-22). */}
+                {onOpenFeedFilters && (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={onOpenFeedFilters}
+                      className={btnIcon}
+                      aria-label={t('home.feed.filterObs')}
+                    >
+                      <Filter className="size-5 text-foreground" aria-hidden="true" />
+                    </button>
+                    {feedHasActiveFilters && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute top-2 right-2 size-2 rounded-full bg-primary pointer-events-none"
+                      />
+                    )}
+                  </div>
+                )}
 
                 {/* Bell — connecté seulement */}
                 {isAuthenticated && (

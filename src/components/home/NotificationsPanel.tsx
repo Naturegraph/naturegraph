@@ -26,6 +26,7 @@
  */
 
 import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -423,15 +424,38 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
     </>
   )
 
+  // Mobile bottom sheet via React Portal — sans portal, le sticky parent
+  // (HomeNavbar z-40) créait un stacking context qui contenait notre z-60.
+  // Résultat : la bottom nav (z-50 dans body) restait visible au-dessus.
+  // Le portal place le sheet DIRECTEMENT dans body → notre z-[60] gagne.
+  const mobileSheet =
+    typeof document !== 'undefined'
+      ? createPortal(
+          <>
+            <div
+              className="md:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-[60]"
+              aria-hidden="true"
+              onClick={onClose}
+            />
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={t('home.notifications.title')}
+              className="md:hidden fixed inset-x-0 bottom-0 z-[61] bg-cream-lighter border-t border-border rounded-t-xl shadow-xl overflow-hidden max-h-[85vh] flex flex-col"
+              style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+            >
+              <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
+                <div className="w-10 h-1 bg-border rounded-full" />
+              </div>
+              {panelContent}
+            </div>
+          </>,
+          document.body,
+        )
+      : null
+
   return (
     <>
-      {/* Backdrop mobile uniquement */}
-      <div
-        className="md:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40"
-        aria-hidden="true"
-        onClick={onClose}
-      />
-
       {/* Desktop : dropdown absolue (positionnée par le parent relative) */}
       <div
         ref={panelRef}
@@ -443,26 +467,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
         {panelContent}
       </div>
 
-      {/* Mobile : bottom sheet ancré AU-DESSUS de la MobileBottomNav.
-          Nicolas 2026-05-22 : avant `bottom-0` ce qui masquait le footer
-          "Tout marquer comme lu" derrière la nav (h-14 + safe-area). Maintenant
-          on ouvre le sheet à `bottom-14 + safe-area` et on cape la hauteur à
-          85vh pour qu'il reste de la place pour voir le contexte du feed.
-          La liste interne (max-h-[60vh]) scrolle sur de longues notifications. */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={t('home.notifications.title')}
-        className="md:hidden fixed inset-x-0 z-[60] bg-cream-lighter border-t border-border rounded-t-xl shadow-xl overflow-hidden max-h-[85vh] flex flex-col"
-        style={{
-          bottom: 'calc(3.5rem + env(safe-area-inset-bottom))',
-        }}
-      >
-        <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
-          <div className="w-10 h-1 bg-border rounded-full" />
-        </div>
-        {panelContent}
-      </div>
+      {mobileSheet}
     </>
   )
 }

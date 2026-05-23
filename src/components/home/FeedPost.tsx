@@ -394,6 +394,8 @@ export function FeedPost({
             {showOptions && (
               <PostOptionsMenu
                 postId={id}
+                postTitle={title}
+                postSpecies={species ?? scientific_name ?? null}
                 authorUsername={author.name}
                 authorId={authorId}
                 isOwnPost={isOwnPost}
