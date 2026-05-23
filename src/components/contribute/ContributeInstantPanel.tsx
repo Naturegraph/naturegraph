@@ -151,12 +151,8 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
 
   function handleNext(e?: React.MouseEvent | React.SyntheticEvent) {
     e?.preventDefault?.()
-    if (step === 1) {
-      if (form.files.length === 0) {
-        setErrors({ files: t('contribute.errors.mediaRequired') })
-        return
-      }
-    }
+    // Photos optionnelles (cohérent Encounter) — un user peut juste
+    // raconter un moment de nature sans photo (Nicolas 2026-05-23).
     setErrors({})
     setSubmitAttempted(false)
     setStep((s) => Math.min(s + 1, TOTAL_STEPS))
