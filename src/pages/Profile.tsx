@@ -174,10 +174,14 @@ export default function Profile() {
         region: data.region ?? undefined,
         instagram: data.instagram ?? undefined,
         website: data.website ?? undefined,
-        avatar_url: data.avatar_url ?? undefined,
-        banner_url: data.banner_url ?? undefined,
+        // `null` autorisé pour supprimer la photo (cas EditPhotoTab Supprimer).
+        avatar_url: data.avatar_url === undefined ? undefined : data.avatar_url,
+        banner_url: data.banner_url === undefined ? undefined : data.banner_url,
         // `interests` peut venir de EditPrefsTab (sélection des centres d'intérêt)
         interests: data.interests?.map((i) => i.id),
+        // Objectif hebdo — propagé depuis EditInfoTab.weekProgress.goal
+        // (la colonne DB s'appelle `week_goal`, pas `weekProgress`).
+        week_goal: data.weekProgress?.goal,
       })
       toast.success(t('profile.edit.saveSuccess', { defaultValue: 'Profil mis à jour' }))
     } catch (err) {

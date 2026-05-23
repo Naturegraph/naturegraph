@@ -164,9 +164,19 @@ export function EditProfilePanel({ profile, onClose, onSave }: EditProfilePanelP
             bouton de validation explicite (Nicolas 2026-05-02). */}
         {activeTab !== 'photo' && (
           <div className="shrink-0 border-t border-border px-5 py-4 bg-cream-lighter pb-[calc(1rem+env(safe-area-inset-bottom))] md:pb-4">
+            {/* Nicolas 2026-05-22 : fix critique — l'attribut HTML5 `form`
+                permettait de connecter le bouton externe au formulaire interne,
+                mais ne fonctionnait pas en prod (probable Safari iOS + structure
+                imbriquée). On déclenche désormais le submit via requestSubmit()
+                sur le formulaire ciblé par son id — méthode standard et fiable. */}
             <button
-              type="submit"
-              form={`edit-${activeTab}-form`}
+              type="button"
+              onClick={() => {
+                const formEl = document.getElementById(
+                  `edit-${activeTab}-form`,
+                ) as HTMLFormElement | null
+                formEl?.requestSubmit()
+              }}
               className="w-full h-12 rounded-full bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               {t('profile.edit.save', { defaultValue: 'Sauvegarder les modifications' })}
