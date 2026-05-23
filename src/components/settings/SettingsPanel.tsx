@@ -259,7 +259,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               isExporting={dataExportMutation.isPending}
             />
           ) : (
-            <SettingsSubView section={section} />
+            <SettingsSubView section={section} onSectionChange={setSection} />
           )}
         </div>
 
@@ -541,6 +541,7 @@ const SECTION_TITLES: Record<SettingsSection, (t: SimpleT) => string> = {
 
 interface SettingsSubViewProps {
   section: SettingsSection
+  onSectionChange?: (s: SettingsSection) => void
 }
 
 /**
@@ -550,7 +551,7 @@ interface SettingsSubViewProps {
  *   - 'help'          → form contact (Tu as une question ?)
  *   - 'license'       → texte légal sur droits d'auteur et sources tierces
  */
-function SettingsSubView({ section }: SettingsSubViewProps) {
+function SettingsSubView({ section, onSectionChange }: SettingsSubViewProps) {
   if (section === 'security') {
     return <SettingsSecurityView />
   }
@@ -564,7 +565,7 @@ function SettingsSubView({ section }: SettingsSubViewProps) {
   }
 
   if (section === 'license') {
-    return <SettingsLicenseView onOpenTerms={() => setSection('terms')} />
+    return <SettingsLicenseView onOpenTerms={() => onSectionChange?.('terms')} />
   }
 
   // BATCH 97 : sous-vues CGU + Politique de confidentialité — réutilisent le
