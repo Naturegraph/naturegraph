@@ -48,10 +48,16 @@ export async function uploadImage(bucket: StorageBucket, file: File): Promise<Up
     throw new Error('Authentification requise pour uploader une image')
   }
 
-  // Limite de taille côté client (l'Edge / le bucket re-vérifient côté serveur).
-  const maxBytes = bucket === 'avatars' ? 1_048_576 : 2_097_152
-  if (file.size > maxBytes) {
-    throw new Error(`Fichier trop volumineux (max ${maxBytes / 1e6} MB pour ${bucket})`)
+  // Limite de taille SOFT — la photo est compressée AVANT l'appel
+  // (cf. compressPhoto dans EditPhotoTab) donc on accepte jusqu'à 10 MB
+  // côté input (largement au-dessus du résultat compressé typique de 300 KB
+  // pour avatar / 800 KB pour banner). Évite que les photos iPhone HEIC
+  // 5-8 MB soient refusées avant même l'upload (Nicolas 2026-05-22).
+  const HARD_MAX = 10 * 1_048_576
+  if (file.size > HARD_MAX) {
+    throw new Error(
+      `Fichier trop volumineux (${(file.size / 1e6).toFixed(1)} MB, max ${HARD_MAX / 1e6} MB après compression)`,
+    )
   }
 
   // Strip EXIF avant upload (RGPD Art 5(1)(c) + Art 25).

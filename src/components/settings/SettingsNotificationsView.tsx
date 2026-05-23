@@ -178,19 +178,13 @@ export function SettingsNotificationsView() {
   return (
     <div className="flex flex-col">
       {SOON_FEATURE && (
-        <div
-          role="status"
-          className="mx-6 mt-2 mb-1 rounded-xl border border-primary/20 bg-primary-light/50 px-4 py-3"
-        >
-          <p className="text-sm font-bold text-primary mb-1">
-            {t('settings.notifications.soonTitle', { defaultValue: 'Bientôt disponible' })}
-          </p>
-          <p className="text-xs text-foreground/80 leading-snug">
-            {t('settings.notifications.soonHint', {
-              defaultValue:
-                "La gestion fine des notifications (courriel, digest hebdo) arrivera dans une prochaine mise à jour. En attendant, tu reçois les notifications essentielles dans l'app.",
-            })}
-          </p>
+        <div className="px-6 pt-2">
+          {/* Tag « Bientôt » aligné sur le style utilisé partout dans le
+              produit (FeedFilterPanel, ProfileTabs). Pas de texte d'explication
+              additionnel — cohérence DS. */}
+          <span className="inline-block text-[10px] font-bold uppercase tracking-wide text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+            Bientôt
+          </span>
         </div>
       )}
       {/* ── Section 1 : Méthodes de notification ───────────────────────── */}

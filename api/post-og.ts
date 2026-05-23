@@ -38,11 +38,20 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 // (« grand-duc-amerique-{uuid} »). On extrait l'UUID via regex pour
 // rester rétro-compatible avec les anciens liens `/post/{uuid}`.
 const UUID_REGEX = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+const SHORT_ID_REGEX = /-([0-9a-f]{8})$/i
 
+/**
+ * Retourne soit l'UUID complet trouvé dans le segment, soit le short ID
+ * (8 hex chars) si seul un préfixe court est présent. Le caller distingue
+ * via la longueur.
+ */
 function extractUuid(raw: string | undefined): string | null {
   if (!raw) return null
-  const m = raw.match(UUID_REGEX)
-  return m ? m[0] : null
+  const fullMatch = raw.match(UUID_REGEX)
+  if (fullMatch) return fullMatch[0]
+  const shortMatch = raw.match(SHORT_ID_REGEX)
+  if (shortMatch) return shortMatch[1]
+  return null
 }
 
 // ─── Detection crawlers OG ─────────────────────────────────────────────────────
@@ -97,13 +106,13 @@ async function fetchPostForOg(postId: string): Promise<OgPost | null> {
     return null
   }
 
-  // On utilise la vue publique `posts_public` (RLS-safe : ne contient que
-  // les posts visibles publiquement) + jointures PostgREST embedded sur
-  // profiles (username) et media (cover_url).
+  // Query par short_id (8 hex chars) ou par UUID complet selon le format reçu.
+  const isShort = postId.length === 8 && /^[0-9a-f]{8}$/i.test(postId)
+  const filterKey = isShort ? 'short_id' : 'id'
   const url =
     `${supabaseUrl}/rest/v1/posts_public` +
     `?select=id,title,description,species_name,user:profiles!user_id(username),media(url,is_cover,display_order)` +
-    `&id=eq.${encodeURIComponent(postId)}` +
+    `&${filterKey}=eq.${encodeURIComponent(postId)}` +
     `&limit=1`
 
   try {

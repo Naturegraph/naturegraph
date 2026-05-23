@@ -25,7 +25,7 @@ import type { ObservationEntry } from './EncounterStep2'
 import { compressPhoto } from '@/utils/compressPhoto'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import { useAuth } from '@/contexts/AuthContext'
-import { useToast } from '@/contexts/ToastContext'
+// useToast retiré (Nicolas 2026-05-22) — plus de toast publication.
 import { useCreatePost } from '@/hooks/usePost'
 // Note : on n'utilise plus FEED_QUERY_KEY ici, on invalide via prefix ['feed']
 // pour matcher toutes les variantes (tab/filters/page/user).
@@ -84,7 +84,6 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
   const { user } = useAuth()
   const createPost = useCreatePost(user?.id ?? '')
   const queryClient = useQueryClient()
-  const toast = useToast()
 
   const [step, setStep] = useState(1)
   // Toast d'erreur upload (Figma 6385:56334) — message + auto-hide après 5s.
@@ -381,13 +380,8 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
       // l'utilisateur a des filtres ou est connecté → cache jamais rafraîchi.
       queryClient.invalidateQueries({ queryKey: ['feed'] })
 
-      // Toast confirmation publication — utile sur mobile où le scroll peut
-      // tromper et faire douter que le post est bien partagé.
-      toast.success(
-        t('contribute.publishSuccess', {
-          defaultValue: 'Observation publiée ✨',
-        }),
-      )
+      // Toast publication retiré (Nicolas 2026-05-22) — le post apparaît
+      // déjà dans le feed après onClose, confirmation visuelle suffisante.
       onClose()
     } catch (err) {
       // Rollback : supprimer le post orphelin si l'upload des médias a échoué.
