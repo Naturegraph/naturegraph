@@ -16,7 +16,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import type { ProfileDisplayData } from './ProfileHeader'
-import { EditInfoTab } from './EditInfoTab'
+import { EditInfoTab, type EditTabHandle } from './EditInfoTab'
 import { EditPrefsTab } from './EditPrefsTab'
 import { EditPhotoTab } from './EditPhotoTab'
 
@@ -42,6 +42,10 @@ type EditTab = 'info' | 'prefs' | 'photo'
 export function EditProfilePanel({ profile, onClose, onSave }: EditProfilePanelProps) {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<EditTab>('info')
+  // Refs vers les tabs — utilisées par le footer Sauvegarder pour appeler
+  // save() directement (cf. useImperativeHandle dans EditInfoTab / EditPrefsTab).
+  const infoRef = useRef<EditTabHandle>(null)
+  const prefsRef = useRef<EditTabHandle>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
   // Bloquer le scroll body pendant l'ouverture
@@ -147,10 +151,10 @@ export function EditProfilePanel({ profile, onClose, onSave }: EditProfilePanelP
           className="flex-1 overflow-y-auto"
         >
           {activeTab === 'info' && (
-            <EditInfoTab profile={profile} onSave={onSave} onClose={onClose} />
+            <EditInfoTab ref={infoRef} profile={profile} onSave={onSave} onClose={onClose} />
           )}
           {activeTab === 'prefs' && (
-            <EditPrefsTab profile={profile} onSave={onSave} onClose={onClose} />
+            <EditPrefsTab ref={prefsRef} profile={profile} onSave={onSave} onClose={onClose} />
           )}
           {activeTab === 'photo' && (
             <EditPhotoTab profile={profile} onSave={onSave} onClose={onClose} />
@@ -164,18 +168,15 @@ export function EditProfilePanel({ profile, onClose, onSave }: EditProfilePanelP
             bouton de validation explicite (Nicolas 2026-05-02). */}
         {activeTab !== 'photo' && (
           <div className="shrink-0 border-t border-border px-5 py-4 bg-cream-lighter pb-[calc(1rem+env(safe-area-inset-bottom))] md:pb-4">
-            {/* Nicolas 2026-05-22 : fix critique — l'attribut HTML5 `form`
-                permettait de connecter le bouton externe au formulaire interne,
-                mais ne fonctionnait pas en prod (probable Safari iOS + structure
-                imbriquée). On déclenche désormais le submit via requestSubmit()
-                sur le formulaire ciblé par son id — méthode standard et fiable. */}
+            {/* Nicolas 2026-05-22 : on appelle directement save() exposé
+                par chaque tab via useImperativeHandle — bien plus fiable
+                que requestSubmit() (qui échouait en prod sur certains
+                navigateurs). */}
             <button
               type="button"
               onClick={() => {
-                const formEl = document.getElementById(
-                  `edit-${activeTab}-form`,
-                ) as HTMLFormElement | null
-                formEl?.requestSubmit()
+                if (activeTab === 'info') infoRef.current?.save()
+                else if (activeTab === 'prefs') prefsRef.current?.save()
               }}
               className="w-full h-12 rounded-full bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
