@@ -30,6 +30,7 @@ import type { MockPost } from './FeedPost'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLocation } from '@/contexts/LocationContext'
 import { useSpecies } from '@/contexts/SpeciesContext'
+import { useQueryClient } from '@tanstack/react-query'
 import { useFeed, FEED_QUERY_KEY } from '@/hooks/useFeed'
 import { useHiddenPostIds } from '@/hooks/useHiddenPosts'
 import { useToggleReaction } from '@/hooks/usePost'
@@ -287,6 +288,7 @@ export function FeedSection({
   // le pas sur `filters.radius` (0 par défaut) si l'utilisateur est localisé.
   const { locationCoords, locationLabel, locationDistance } = useLocation()
   const isLocalized = !!(locationLabel && locationCoords)
+  const queryClient = useQueryClient()
   // Species Context Layer — filtre global activé depuis la recherche (PRD §3.4 / §6.1)
   const { activeSpecies, clearActiveSpecies } = useSpecies()
   const [activeTab, setActiveTab] = useState<FeedTab>('recent')
@@ -714,7 +716,13 @@ export function FeedSection({
       {showFilters && (
         <FeedFilterPanel
           filters={filters}
-          onApply={setFilters}
+          onApply={(next) => {
+            setFilters(next)
+            // Force invalidation TOUT le cache 'feed' — défensif au cas où
+            // React Query reste sur des données stale après changement de
+            // filtres (Nicolas 2026-05-22 : retour beta « rien ne change »).
+            queryClient.invalidateQueries({ queryKey: ['feed'] })
+          }}
           onClose={() => onShowFiltersChange(false)}
           activeTab={activeTab}
           onTabChange={setActiveTab}

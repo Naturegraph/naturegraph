@@ -130,6 +130,10 @@ export function LocationModal({ onClose }: LocationModalProps) {
   // dans `useLocationAutocomplete`.
   const { suggestions, isLoading: isSearching } = useLocationAutocomplete(query)
   const [showSuggestions, setShowSuggestions] = useState(false)
+  // L'historique des recherches récentes ne s'affiche que lorsque l'input
+  // a le focus — sinon il polluait visuellement la modal au repos (Nicolas
+  // 2026-05-22).
+  const [inputFocused, setInputFocused] = useState(false)
   const [isGps, setIsGps] = useState(false)
   const [tempCoords, setTempCoords] = useState<LocationCoords | null>(null)
   // BATCH 92 : historique des recherches précédentes (max 5, persistance localStorage)
@@ -298,8 +302,16 @@ export function LocationModal({ onClose }: LocationModalProps) {
             type="text"
             value={query}
             onChange={(e) => handleQueryChange(e.target.value)}
-            onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-            placeholder="Ville, région, lieu..."
+            onFocus={() => {
+              setInputFocused(true)
+              if (suggestions.length > 0) setShowSuggestions(true)
+            }}
+            onBlur={() => {
+              // Délai pour que le clic sur un item de l'historique ait le
+              // temps de fire avant que le panneau ne se cache.
+              setTimeout(() => setInputFocused(false), 200)
+            }}
+            placeholder="Rechercher une ville…"
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             role="combobox"
             aria-label="Rechercher une localisation"
@@ -411,29 +423,36 @@ export function LocationModal({ onClose }: LocationModalProps) {
           - Pas de suggestions en cours d'affichage
           - On a des items en historique
         */}
-        {!showSuggestions && !isSearching && query.trim().length < 2 && history.length > 0 && (
-          <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-cream-lighter border border-border rounded-lg shadow-lg z-10 overflow-hidden">
-            <p className="px-4 pt-3 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-              Recherches récentes
-            </p>
-            <ul role="listbox" aria-label="Recherches récentes">
-              {history.map((item) => (
-                <li key={`${item.label}-${item.ts}`} role="option" aria-selected={false}>
-                  <button
-                    type="button"
-                    onClick={() => selectHistoryItem(item)}
-                    className="w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-primary-light/40 transition-colors"
-                  >
-                    <Clock className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
-                    <span className="text-sm text-foreground flex-1 min-w-0 truncate">
-                      {item.label}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        {inputFocused &&
+          !showSuggestions &&
+          !isSearching &&
+          query.trim().length < 2 &&
+          history.length > 0 && (
+            <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-cream-lighter border border-border rounded-lg shadow-lg z-10 overflow-hidden">
+              <p className="px-4 pt-3 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                Recherches récentes
+              </p>
+              <ul role="listbox" aria-label="Recherches récentes">
+                {history.map((item) => (
+                  <li key={`${item.label}-${item.ts}`} role="option" aria-selected={false}>
+                    <button
+                      type="button"
+                      onClick={() => selectHistoryItem(item)}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-primary-light/40 transition-colors"
+                    >
+                      <Clock
+                        className="size-3.5 text-muted-foreground shrink-0"
+                        aria-hidden="true"
+                      />
+                      <span className="text-sm text-foreground flex-1 min-w-0 truncate">
+                        {item.label}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
       </div>
 
       <div className="h-px bg-border" aria-hidden="true" />
