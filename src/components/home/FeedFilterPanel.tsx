@@ -349,12 +349,19 @@ export function FeedFilterPanel({
             </span>
           </div>
 
-          {/* Instant nature — désactivé avec badge "Bientôt" */}
-          <div
-            className="flex items-center gap-4 select-none opacity-60 cursor-not-allowed"
-            aria-disabled="true"
-          >
-            <FilterCheckbox checked={false} onChange={() => {}} ariaLabel="" />
+          {/* Instant nature — activé (Nicolas 2026-05-23 : preview branche) */}
+          <label htmlFor="filter-instant" className="flex items-center gap-4 cursor-pointer">
+            <FilterCheckbox
+              id="filter-instant"
+              checked={local.shareTypes.instant}
+              onChange={(checked) =>
+                setLocal((prev) => ({
+                  ...prev,
+                  shareTypes: { ...prev.shareTypes, instant: checked },
+                }))
+              }
+              ariaLabel={t('home.filters.instantNature')}
+            />
             <span className="flex items-center gap-2.5 flex-1 min-w-0">
               <span
                 aria-hidden="true"
@@ -365,11 +372,8 @@ export function FeedFilterPanel({
               <span className="font-body text-base text-foreground">
                 {t('home.filters.instantNature')}
               </span>
-              <span className="ml-auto inline-flex items-center h-6 px-2 rounded-full bg-primary-light text-primary text-[11px] font-bold leading-none uppercase tracking-wide">
-                {t('home.filters.comingSoon')}
-              </span>
             </span>
-          </div>
+          </label>
         </div>
       </div>
 

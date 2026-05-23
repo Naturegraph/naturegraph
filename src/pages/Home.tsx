@@ -34,6 +34,12 @@ const ContributeEncounterForm = lazy(() =>
   })),
 )
 
+const ContributeInstantPanel = lazy(() =>
+  import('@/components/contribute/ContributeInstantPanel').then((m) => ({
+    default: m.ContributeInstantPanel,
+  })),
+)
+
 // StatsSidebar lazy (QW-I2 / T-082) — affichée uniquement xl:block (>=1280px).
 // Avant : 311 lignes chargees dans le bundle initial meme sur mobile/tablet.
 // Apres : chunk separe, telecharge uniquement quand l'utilisateur a un ecran XL.
@@ -140,6 +146,13 @@ export default function Home() {
       {activePanelType === 'nature_encounter' && (
         <Suspense fallback={null}>
           <ContributeEncounterForm onClose={() => setActivePanelType(null)} />
+        </Suspense>
+      )}
+
+      {/* Panneau Instant Nature — même architecture, 2 étapes (photos + détails) */}
+      {activePanelType === 'nature_instant' && (
+        <Suspense fallback={null}>
+          <ContributeInstantPanel onClose={() => setActivePanelType(null)} />
         </Suspense>
       )}
     </div>

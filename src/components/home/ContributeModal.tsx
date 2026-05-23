@@ -73,7 +73,8 @@ const CONTRIBUTION_TYPES: ContributionType[] = [
     /** Amber brand primary — token CSS (BATCH 42 — _light/_dark theme). */
     iconBg: 'var(--color-amber-primary)',
     Icon: MountainSnow,
-    disabled: true,
+    // Nicolas 2026-05-23 : activé en preview, branche feat/instant-nature-preview.
+    disabled: false,
   },
 ]
 
