@@ -24,11 +24,10 @@ import {
   Eye,
   Leaf,
   TrendingUp,
-  Clock,
   Award,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { Avatar } from '@/components/ui/Avatar'
+import hermineIcon from '@/assets/images/hermine-icon.png'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -57,11 +56,16 @@ interface RecentReport {
   created_at: string
 }
 
-interface RecentAdminAction {
-  id: string
-  action: string
-  target_type: string | null
-  created_at: string
+/**
+ * Top espèces observées sur le produit — agrégation simple sur posts.species_name.
+ * Remplace l'ancien widget "Actions admin récentes" qui n'avait pas
+ * d'intérêt produit (Nicolas 2026-05-24).
+ */
+interface TopSpecies {
+  name: string
+  scientific: string | null
+  group: string | null
+  count: number
 }
 
 interface TopContributor {
@@ -122,7 +126,10 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     totalUsers: users.count ?? 0,
     postsLast7d: posts.count ?? 0,
     openReports: reports.count ?? 0,
-    betaUsers: quota.data?.current_user_count ?? 0,
+    // Bug fix (Nicolas 2026-05-24) : `beta_quota_config.current_user_count`
+    // n'est plus maintenu à jour par aucun trigger → affichait toujours 0.
+    // On utilise le vrai compteur de profils (idempotent + toujours juste).
+    betaUsers: users.count ?? 0,
     betaMaxUsers: quota.data?.max_users_total ?? 50,
     betaAcceptingSignups: quota.data?.accepting_new_signups ?? false,
     observationsLast7d: observations.count ?? 0,
@@ -166,14 +173,43 @@ async function fetchRecentReports(): Promise<RecentReport[]> {
   return (data ?? []) as unknown as RecentReport[]
 }
 
-async function fetchRecentAdminActions(): Promise<RecentAdminAction[]> {
+/**
+ * Top 5 espèces les plus observées (par nombre de posts). Agrège côté client
+ * sur les 200 posts les plus récents — volume MVP raisonnable.
+ */
+async function fetchTopSpecies(): Promise<TopSpecies[]> {
   if (!supabase) return []
   const { data } = await supabase
-    .from('admin_audit_logs')
-    .select('id, action, target_type, created_at')
+    .from('posts')
+    .select('species_name, scientific_name, taxonomic_group')
+    .not('species_name', 'is', null)
     .order('created_at', { ascending: false })
-    .limit(5)
-  return (data ?? []) as unknown as RecentAdminAction[]
+    .limit(200)
+  if (!data) return []
+
+  const counts = new Map<string, TopSpecies>()
+  for (const row of data as Array<{
+    species_name: string | null
+    scientific_name: string | null
+    taxonomic_group: string | null
+  }>) {
+    if (!row.species_name) continue
+    const key = row.species_name
+    const existing = counts.get(key)
+    if (existing) {
+      existing.count += 1
+    } else {
+      counts.set(key, {
+        name: row.species_name,
+        scientific: row.scientific_name,
+        group: row.taxonomic_group,
+        count: 1,
+      })
+    }
+  }
+  return Array.from(counts.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
 }
 
 async function fetchTopContributors(): Promise<TopContributor[]> {
@@ -225,10 +261,10 @@ export default function AdminDashboard() {
     staleTime: 60 * 1000,
   })
 
-  const { data: recentActions = [] } = useQuery({
-    queryKey: ['admin-dashboard-recent-actions'],
-    queryFn: fetchRecentAdminActions,
-    staleTime: 60 * 1000,
+  const { data: topSpecies = [] } = useQuery({
+    queryKey: ['admin-dashboard-top-species'],
+    queryFn: fetchTopSpecies,
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: topContributors = [] } = useQuery({
@@ -267,11 +303,11 @@ export default function AdminDashboard() {
               ? '1 ouverte'
               : 'fermée'} · {stats.betaUsers}/{stats.betaMaxUsers} users ({betaPct}%)
           </p>
-          {/* Lien rapide vers la page Analytics dédiée — Nicolas 2026-05-24 :
-              le dashboard reste un aperçu, /admin/analytics approfondit. */}
+          {/* CTA Analytics détaillée — bouton primary pour rendre la page
+              dédiée bien visible (Nicolas 2026-05-24). */}
           <Link
             to="/admin/analytics"
-            className="text-sm font-medium text-[var(--color-action-default)] hover:underline inline-flex items-center gap-1"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--color-action-default)] text-[var(--color-text-white)] text-sm font-bold transition-all hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] focus-visible:ring-offset-2"
           >
             Analytics détaillée
             <ArrowRight className="size-3.5" aria-hidden="true" />
@@ -377,40 +413,47 @@ export default function AdminDashboard() {
           )}
         </section>
 
-        {/* Actions admin récentes */}
+        {/* Top espèces observées — Nicolas 2026-05-24 : remplace l'ancien
+            « Actions admin récentes » par un widget produit-utile qui montre
+            ce que la communauté observe en ce moment (top 5 species_name). */}
         <section className="bg-background border border-border rounded-lg flex flex-col">
           <header className="flex items-center justify-between px-5 py-3 border-b border-border">
             <h2 className="text-sm font-semibold text-foreground inline-flex items-center gap-2">
-              <Clock className="size-4" aria-hidden="true" />
-              Actions admin récentes
+              <Leaf className="size-4" aria-hidden="true" />
+              Top espèces observées
             </h2>
             <Link
-              to="/admin/audit"
+              to="/admin/analytics"
               className="text-xs text-primary inline-flex items-center gap-0.5 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
             >
-              Tout voir <ArrowRight className="size-3" aria-hidden="true" />
+              Analytics <ArrowRight className="size-3" aria-hidden="true" />
             </Link>
           </header>
-          {recentActions.length === 0 ? (
+          {topSpecies.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-muted-foreground">
-              Aucune action récente
+              Aucune observation identifiée
             </p>
           ) : (
-            <ul className="divide-y divide-border">
-              {recentActions.map((a) => (
-                <li key={a.id} className="px-5 py-3 flex items-center justify-between gap-3">
+            <ol className="divide-y divide-border">
+              {topSpecies.map((s, idx) => (
+                <li key={s.name} className="px-5 py-3 flex items-center gap-3">
+                  <span className="text-base font-bold text-muted-foreground tabular-nums w-6">
+                    #{idx + 1}
+                  </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-mono text-foreground">{a.action}</p>
-                    {a.target_type && (
-                      <p className="text-xs text-muted-foreground">{a.target_type}</p>
+                    <p className="text-sm font-medium text-foreground truncate">{s.name}</p>
+                    {s.scientific && (
+                      <p className="text-xs italic text-muted-foreground truncate">
+                        {s.scientific}
+                      </p>
                     )}
                   </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {formatRelative(a.created_at)}
+                  <span className="text-sm font-bold text-foreground tabular-nums">
+                    {s.count} <span className="text-xs font-normal text-muted-foreground">obs</span>
                   </span>
                 </li>
               ))}
-            </ul>
+            </ol>
           )}
         </section>
       </div>
@@ -436,11 +479,14 @@ export default function AdminDashboard() {
                 <span className="text-base font-bold text-muted-foreground tabular-nums w-6">
                   #{idx + 1}
                 </span>
-                <Avatar
-                  src={c.avatar_url ?? undefined}
-                  alt={c.username}
-                  fallback={c.first_name?.[0] ?? c.username?.[0] ?? '?'}
-                  size="sm"
+                {/* Nicolas 2026-05-24 : photo de profil de l'user, fallback
+                    hermine (cohérent avec le reste de l'app — onboarding,
+                    feed, sidebar, etc.) au lieu des initiales auto. */}
+                <img
+                  src={c.avatar_url ?? hermineIcon}
+                  alt={c.username ?? 'Avatar'}
+                  className="size-8 rounded-full object-cover shrink-0 bg-[var(--color-bg-secondary)]"
+                  loading="lazy"
                 />
                 <div className="flex-1 min-w-0">
                   <Link
@@ -542,8 +588,15 @@ function Sparkline({ data }: { data: ActivityPoint[] }) {
             title={`${dateLabel} : ${d.posts} post${d.posts > 1 ? 's' : ''}`}
           >
             <div
-              className="w-full bg-primary/20 hover:bg-primary/40 rounded-t transition-colors min-h-[2px]"
-              style={{ height: `${Math.max(pct, 2)}%` }}
+              // Nicolas 2026-05-24 : bars trop pâles auparavant (primary/20)
+              // → on passe à primary/60 + min-height 8px pour qu'on voit
+              // vraiment chaque jour, même les jours à 0 (barre fantôme).
+              className={
+                d.posts > 0
+                  ? 'w-full bg-primary/70 hover:bg-primary rounded-t transition-colors'
+                  : 'w-full bg-primary/15 rounded-t'
+              }
+              style={{ height: `${Math.max(pct, d.posts > 0 ? 12 : 4)}%` }}
               role="presentation"
             />
             <span className="text-[8px] sm:text-[9px] text-muted-foreground tabular-nums truncate w-full text-center">
