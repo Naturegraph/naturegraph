@@ -86,10 +86,31 @@ async function searchCitiesSupabase(query: string): Promise<CityResult[]> {
  * sont ajoutées ensuite. Cap à 8 suggestions.
  */
 async function searchWithFallback(query: string): Promise<CityResult[]> {
-  const [apiResults, dbResults] = await Promise.all([
-    searchCities(query).catch(() => [] as CityResult[]),
-    searchCitiesSupabase(query).catch(() => [] as CityResult[]),
-  ])
+  // Nicolas 2026-05-24 (urgence prod) : avant on faisait Promise.all qui
+  // attendait LES DEUX sources. Si l'API Adresse hangeait (souvent sur
+  // mobile lent), l'user voyait l'icône tourner 8s même si Supabase avait
+  // déjà répondu. Désormais on race : on retourne ce qu'on a dès que
+  // suffisamment de résultats arrivent, et on enrichit en arrière-plan.
+  const apiPromise = searchCities(query).catch(() => [] as CityResult[])
+  const dbPromise = searchCitiesSupabase(query).catch(() => [] as CityResult[])
+
+  // On tente d'attendre les deux avec un budget de 3.5s total. Si l'une
+  // des deux n'a pas répondu d'ici là, on continue avec ce qu'on a.
+  const timeout = new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), 3500))
+  const both = Promise.all([apiPromise, dbPromise])
+  const winner = await Promise.race([both, timeout])
+
+  let apiResults: CityResult[] = []
+  let dbResults: CityResult[] = []
+  if (winner === 'timeout') {
+    // Au moins une source a dépassé le budget — on prend les résultats
+    // disponibles individuellement (Promise.race ne consomme PAS les
+    // promises lentes, on peut encore les await sans risque).
+    apiResults = await Promise.race([apiPromise, Promise.resolve([] as CityResult[])])
+    dbResults = await Promise.race([dbPromise, Promise.resolve([] as CityResult[])])
+  } else {
+    ;[apiResults, dbResults] = winner
+  }
 
   const dedupeKey = (c: CityResult) =>
     `${c.name.toLowerCase()}|${(c.departmentName ?? '').toLowerCase()}`

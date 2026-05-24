@@ -23,7 +23,10 @@ import type { AdresseFeature, AdresseSearchResponse, CityResult } from '@/types/
 
 const API_BASE = 'https://api-adresse.data.gouv.fr'
 const DEFAULT_LIMIT = 5
-const FETCH_TIMEOUT_MS = 8000
+// Timeout réduit à 4s — Nicolas 2026-05-24 : sur réseau mobile lent ou
+// API Adresse lente, l'user voyait l'icône tourner 8s sans retour. À 4s
+// on tombe vite sur le fallback Supabase qui répond en <200ms en local.
+const FETCH_TIMEOUT_MS = 4000
 
 // ─── Helpers ──────────────────────────────────────────────────
 

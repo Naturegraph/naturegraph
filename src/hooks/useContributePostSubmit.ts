@@ -124,9 +124,13 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
       setUploadError(null)
       let createdPostId: string | null = null
 
-      // Watchdog 30 s — filet de sécurité ultime si tout hang silencieusement.
+      // Watchdog 60 s — Nicolas 2026-05-24 : sur réseau mobile lent (3G/4G
+      // rurale Québec) avec photo 2 Mo, le watchdog 30s déclenchait avant
+      // que l'upload finisse → user voyait « délai dépassé » alors qu'on
+      // était à 80% de l'upload. 60s laisse de la marge pour un mobile
+      // moyen tout en gardant un garde-fou contre les vrais hangs.
       const watchdog = setTimeout(() => {
-        console.warn(`[${formLabel}] watchdog : submission > 30s, force release`)
+        console.warn(`[${formLabel}] watchdog : submission > 60s, force release`)
         setIsSubmitting(false)
         setUploadProgress(null)
         setUploadError(
@@ -135,7 +139,7 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
               'La soumission prend trop de temps. Vérifie ta connexion internet et réessaie.',
           }),
         )
-      }, 30_000)
+      }, 60_000)
 
       try {
         // 1. Création OU mise à jour du post (timeout 10 s — opération SQL légère).
@@ -197,7 +201,10 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
                 width: dims?.width,
                 height: dims?.height,
               }),
-              20_000,
+              // Timeout upload : 45s par photo (avant 20s) — l'upload d'une
+              // photo 2 Mo sur 4G lente peut prendre 30s+ et 20s déclenchait
+              // un faux échec (Nicolas 2026-05-24).
+              45_000,
               `upload photo ${i + 1}/${files.length}`,
             )
           }
