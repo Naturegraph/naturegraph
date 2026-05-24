@@ -67,7 +67,7 @@ export function TagInput({ tags, onTagsChange, maxTags = 10 }: TagInputProps) {
       </label>
 
       {/* Conteneur unifié : chips + input dans le même "champ" */}
-      <div className="min-h-[48px] flex flex-wrap gap-2 items-center px-3 py-2 rounded-xl border border-border bg-cream-lighter focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-shadow">
+      <div className="min-h-[48px] flex flex-wrap gap-2 items-center px-3 py-2 rounded-xl border border-border bg-background focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-shadow">
         {tags.map((tag) => (
           <span
             key={tag}
