@@ -1,5 +1,5 @@
 /**
- * AuthContext — Gestion de l'authentification Naturegraph
+ * AuthContext, Gestion de l'authentification Naturegraph
  *
  * Méthodes exposées :
  *  - signUp(emailOrPhone)        → Magic link OTP (signup + login unifié)
@@ -95,7 +95,7 @@ function DemoAuthProvider({ children }: { children: React.ReactNode }) {
   // ── verifyOtp : valide le code et crée un utilisateur démo en mémoire ───
   async function verifyOtp(email: string, token: string) {
     if (!validateOtp(email, token)) {
-      return { error: new Error('Code invalide — vérifiez la console de votre navigateur') }
+      return { error: new Error('Code invalide, vérifiez la console de votre navigateur') }
     }
 
     // Utilisateur démo : shape identique à supabase.auth.User
@@ -159,7 +159,7 @@ function DemoAuthProvider({ children }: { children: React.ReactNode }) {
         posts_count: 0,
         followers_count: 0,
         following_count: 0,
-        // Champs premium (migration 20260501) — défaut free tier
+        // Champs premium (migration 20260501), défaut free tier
         subscription_tier: 'free',
         subscription_expires_at: null,
         created_at: now,
@@ -178,7 +178,7 @@ function DemoAuthProvider({ children }: { children: React.ReactNode }) {
 
   // ── refreshProfile : no-op en démo ──────────────────────────────────────
   async function refreshProfile() {
-    // Profil géré localement — pas d'appel réseau en mode démo
+    // Profil géré localement, pas d'appel réseau en mode démo
   }
 
   return (
@@ -242,7 +242,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // on force isLoading=false après 5s pour ne pas figer l'app sur le spinner.
     const bootTimeout = setTimeout(() => {
       setState((prev) => (prev.isLoading ? { ...prev, isLoading: false } : prev))
-      console.warn('[Auth] getSession() timeout (5s) — reset loading state')
+      console.warn('[Auth] getSession() timeout (5s), reset loading state')
     }, 5000)
 
     /**
@@ -457,7 +457,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   // ─── OAuth social (stub) ─────────────────────────────────────────────────
-  // TODO [BACKEND] — Implémenter avec supabase.auth.signInWithOAuth() :
+  // TODO [BACKEND], Implémenter avec supabase.auth.signInWithOAuth() :
   //   const { error } = await supabase.auth.signInWithOAuth({
   //     provider,  // 'google' | 'apple' (Facebook = 'facebook', vérifier support Supabase)
   //     options: { redirectTo: `${window.location.origin}/auth/callback` }
@@ -468,7 +468,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function signInWithSocial(
     _provider: 'google' | 'apple' | 'facebook',
   ): Promise<SocialResult> {
-    // TODO [BACKEND] — Remplacer par supabase.auth.signInWithOAuth (voir commentaire ci-dessus)
+    // TODO [BACKEND], Remplacer par supabase.auth.signInWithOAuth (voir commentaire ci-dessus)
     return { success: false, error: 'Connexion sociale bientôt disponible' }
   }
 

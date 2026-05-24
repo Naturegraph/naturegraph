@@ -241,7 +241,7 @@
       "noCode": "Tu n'as pas reçu le code ?",
       "resend": "Renvoyer le code",
       "timer": "Code valide pendant {{time}}",
-      "demoCode": "Mode démo — Ton code OTP : {{code}}"
+      "demoCode": "Mode démo, ton code OTP : {{code}}"
     },
     "beta": {
       "title": "Beta fermée",
@@ -444,7 +444,7 @@
       "noResults": "Aucune ville trouvée"
     },
     "navbar": {
-      "backToHome": "Naturegraph — Retour à l'accueil",
+      "backToHome": "Naturegraph, retour à l'accueil",
       "changeLocation": "Changer de localisation",
       "activateLocation": "Activer ma zone",
       "setLocation": "Localisation",

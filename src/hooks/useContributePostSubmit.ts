@@ -307,7 +307,7 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
             if (!succeeded && lastError) {
               const reason =
                 lastError.kind === 'auth'
-                  ? 'Session expirée — reconnecte-toi.'
+                  ? 'Session expirée, reconnecte-toi.'
                   : lastError.kind === 'network'
                     ? "Coupure réseau pendant l'upload."
                     : lastError.kind === 'timeout'

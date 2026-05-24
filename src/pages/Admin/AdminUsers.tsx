@@ -1,10 +1,10 @@
 /**
- * AdminUsers — Module 2 : Gestion utilisateurs (MVP)
+ * AdminUsers, Module 2 : Gestion utilisateurs (MVP)
  *
  * Refs : ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md v2.0 Module 2 + BATCH 33
  *
  * Fonctionnalites livrees :
- *   - Liste profils paginee (20 par page) — pagination obligatoire (eco-conception)
+ *   - Liste profils paginee (20 par page), pagination obligatoire (eco-conception)
  *   - Recherche par username / email / first/last name (debounced 300ms)
  *   - Filtre par statut admin (admin / regular / all)
  *   - Actions par utilisateur (menu) :
@@ -94,7 +94,7 @@ const PAGE_SIZE = PAGE_SIZES.ADMIN_DEFAULT
 
 /**
  * Format date courte localisée FR : 03/04/2026
- * Utilisée pour "Inscrit le" — pas besoin d'heure, juste un repère temporel.
+ * Utilisée pour "Inscrit le", pas besoin d'heure, juste un repère temporel.
  */
 function formatShortDate(iso: string | null): string {
   if (!iso) return '—'
@@ -111,7 +111,7 @@ function formatShortDate(iso: string | null): string {
 
 /**
  * Format relatif : "il y a 5 min", "il y a 2j", "il y a 3 mois" ou date absolue si > 1 an.
- * Utilisé pour "Dernière activité" — donne une lecture rapide de l'engagement.
+ * Utilisé pour "Dernière activité", donne une lecture rapide de l'engagement.
  */
 function formatRelativeTime(iso: string | null): string {
   if (!iso) return 'Jamais'
@@ -163,7 +163,7 @@ export default function AdminUsers() {
   const [pending, setPending] = useState<PendingAction>({ type: null, user: null })
   const [reason, setReason] = useState('')
 
-  // Debounce search (300ms) — eviter spam queries (BATCH 41 : hook DRY)
+  // Debounce search (300ms), eviter spam queries (BATCH 41 : hook DRY)
   const debouncedSearch = useDebouncedValue(search.trim(), 300)
 
   // Reset page quand le terme de recherche change
@@ -561,7 +561,7 @@ export default function AdminUsers() {
                     <td className="px-4 py-2">
                       <div className="flex items-center gap-2">
                         {/* Photo de profil avec fallback hermine (cohérent
-                            avec le reste de l'app — Nicolas 2026-05-24 : on
+                            avec le reste de l'app, Nicolas 2026-05-24 : on
                             ne veut plus de cercles violets avec lettre). */}
                         <img
                           src={u.avatar_url ?? hermineIcon}
@@ -684,7 +684,7 @@ export default function AdminUsers() {
         </nav>
       )}
 
-      {/* BATCH 104 : Modale "Ajouter un utilisateur" — stub MVP.
+      {/* BATCH 104 : Modale "Ajouter un utilisateur", stub MVP.
           Pour l'instant ouvre la doc d'invitation. Phase 2 : form direct + RPC. */}
       {showAddUser && (
         <ConfirmModal
@@ -719,7 +719,7 @@ export default function AdminUsers() {
                 : pending.type === 'suspend'
                   ? 'Suspension de 7 jours. Reversible. Loggue dans admin_actions.'
                   : pending.type === 'delete'
-                    ? "⚠️ SUPPRESSION TOTALE — IRRÉVERSIBLE.\nLe compte, le profil, les posts, les carnets, les médias et toutes les données associées seront définitivement supprimés. Cette action est conforme RGPD (droit à l'oubli)."
+                    ? "⚠️ SUPPRESSION TOTALE, IRRÉVERSIBLE.\nLe compte, le profil, les posts, les carnets, les médias et toutes les données associées seront définitivement supprimés. Cette action est conforme RGPD (droit à l'oubli)."
                     : '⚠️ BAN PERMANENT. Action IRREVERSIBLE. Loggue dans admin_actions.'
           }
           confirmLabel={
@@ -748,7 +748,7 @@ export default function AdminUsers() {
           {(pending.type === 'suspend' || pending.type === 'ban' || pending.type === 'delete') && (
             <div className="flex flex-col gap-1">
               <label htmlFor="action-reason" className="text-xs font-medium text-foreground">
-                Raison (10 caracteres min — affichee dans l'audit log)
+                Raison (10 caracteres min, affichee dans l'audit log)
               </label>
               <textarea
                 id="action-reason"

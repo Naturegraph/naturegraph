@@ -1,5 +1,5 @@
 /**
- * CTABanner — Bandeau d'appel à l'action
+ * CTABanner, Bandeau d'appel à l'action
  * ========================================
  * Fond teal, icône hermine, titre + description + bouton.
  * Image à droite sur desktop (placeholder).
@@ -49,11 +49,11 @@ export function CTABanner() {
           </Button>
         </div>
 
-        {/* Image — Desktop uniquement */}
+        {/* Image, Desktop uniquement */}
         <div className="hidden lg:block relative w-[512px] shrink-0 overflow-hidden">
           <img
             src={ctaKingfisher}
-            alt="Martin-pêcheur — Naturegraph"
+            alt="Martin-pêcheur, Naturegraph"
             className="absolute inset-0 w-full h-full object-cover"
             loading="lazy"
           />

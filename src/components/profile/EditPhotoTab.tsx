@@ -1,10 +1,10 @@
 /**
- * EditPhotoTab — Onglet "Photo de profil" du panneau d'édition
+ * EditPhotoTab, Onglet "Photo de profil" du panneau d'édition
  *
  * Pixel-perfect Figma 6385:76303 (desktop) / 6385:73995 (mobile, état "défaut").
  *
  * Comportement AUTO-SAVE (Nicolas 2026-05-02) :
- *   Pas de bouton "Sauvegarder les modifications" sur cet onglet — chaque
+ *   Pas de bouton "Sauvegarder les modifications" sur cet onglet, chaque
  *   action Changer / Supprimer est persistée immédiatement.
  *   → Pas de form HTML5 (pas de submit), pas de footer.
  *   → EditProfilePanel masque son footer quand activeTab === 'photo'.
@@ -20,7 +20,7 @@
  *   - Avatar : hermine icon dans cercle border-primary + bg-primary-light
  *   - Banner : box vide bg-primary-light (lavande) sans image
  *
- * TODO [BACKEND] Phase 2 — voir second-agent/03-profil-backend-notes.md §8
+ * TODO [BACKEND] Phase 2, voir second-agent/03-profil-backend-notes.md §8
  *   1. Créer 2 buckets Storage Supabase :
  *      - `avatars` (public read, owner write, max 1MB, MIME image/*)
  *      - `banners` (public read, owner write, max 2MB, MIME image/*)
@@ -66,7 +66,7 @@ interface ButtonProps {
 }
 
 /**
- * Bouton "Changer" — primary, icône Pencil. Pleine largeur de la colonne.
+ * Bouton "Changer", primary, icône Pencil. Pleine largeur de la colonne.
  * Au clic, déclenche un input file caché géré par le parent.
  *
  * BATCH 9 / T-023 : prop `uploading` affiche Loader2 a la place de Pencil
@@ -92,7 +92,7 @@ function ChangeButton({ label, onClick, uploading = false }: ButtonProps) {
 }
 
 /**
- * Bouton "Supprimer" — outlined, icône Trash. Disabled si pas de photo
+ * Bouton "Supprimer", outlined, icône Trash. Disabled si pas de photo
  * custom à supprimer (pour éviter de "supprimer le défaut").
  */
 function DeleteButton({ label, onClick, disabled }: ButtonProps) {
@@ -116,12 +116,12 @@ function DeleteButton({ label, onClick, disabled }: ButtonProps) {
 export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
   const { t } = useTranslation()
   const toast = useToast()
-  // `isUploading` — desormais consomme visuellement (BATCH 9 / T-023) :
+  // `isUploading`, desormais consomme visuellement (BATCH 9 / T-023) :
   // les boutons "Changer" affichent un Loader2 motion-safe pendant l'upload,
   // sont disabled pour empecher le double-clic, et exposent aria-busy.
   const [isUploading, setIsUploading] = useState<'avatar' | 'banner' | null>(null)
 
-  // État local des previews — synchronisé avec le profil entrant. Quand
+  // État local des previews, synchronisé avec le profil entrant. Quand
   // l'utilisateur change/supprime, on update ce state ET on call onSave
   // immédiatement (auto-save). Le parent persiste via React Query.
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatar_url)
@@ -131,7 +131,7 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const bannerInputRef = useRef<HTMLInputElement>(null)
 
-  // Refs miroir des URLs — synchronisés via un effect (et non pendant le render
+  // Refs miroir des URLs, synchronisés via un effect (et non pendant le render
   // pour respecter React 19 strict mode). Permet au cleanup unmount d'accéder
   // à la valeur la plus récente sans relancer l'effect à chaque changement
   // (ce qui révoquerait l'URL active).
@@ -175,11 +175,11 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validation MIME — accepte tous les types image/* (HEIC, JPEG, PNG, WebP).
+    // Validation MIME, accepte tous les types image/* (HEIC, JPEG, PNG, WebP).
     if (!file.type.startsWith('image/') && !/\.(heic|heif)$/i.test(file.name)) {
       toast.error(
         t('profile.edit.errorImageType', {
-          defaultValue: 'Fichier non supporté — image attendue.',
+          defaultValue: 'Fichier non supporté, image attendue.',
         }),
       )
       return
@@ -200,7 +200,7 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
       return
     }
 
-    // Preview locale immédiate via Blob URL — UX réactive.
+    // Preview locale immédiate via Blob URL, UX réactive.
     const localUrl = URL.createObjectURL(file)
     if (kind === 'avatar') {
       if (avatarUrl?.startsWith('blob:')) URL.revokeObjectURL(avatarUrl)
@@ -271,10 +271,10 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
   const hasCustomBanner = !!bannerUrl
 
   return (
-    // Pas de form ici — l'onglet auto-save chaque action sans validation
+    // Pas de form ici, l'onglet auto-save chaque action sans validation
     // explicite (pas de bouton Sauvegarder dans le footer pour ce tab).
     <div className="flex flex-col gap-6 px-5 py-5">
-      {/* Inputs file cachés — déclenchés par les boutons Changer. */}
+      {/* Inputs file cachés, déclenchés par les boutons Changer. */}
       <input
         ref={avatarInputRef}
         type="file"
@@ -297,7 +297,7 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
         </h3>
 
         <div className="flex items-center justify-between gap-4">
-          {/* Avatar 112×112 — l'image (hermine par défaut ou photo custom) remplit
+          {/* Avatar 112×112, l'image (hermine par défaut ou photo custom) remplit
               entièrement le cercle (size-full object-cover) pour un rendu cohérent
               avec ProfileHeader et plus visuel (Nicolas 2026-05-19 : pas de padding
               autour de la hermine dans l'éditeur, cela rendait l'aperçu petit). */}
@@ -337,7 +337,7 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
         </p>
       </section>
 
-      {/* Séparateur de section — 4px solid border edge-to-edge.
+      {/* Séparateur de section, 4px solid border edge-to-edge.
           Reproduit exactement le séparateur entre 2 FeedPost sur mobile
           (cf. FeedPost.tsx ligne 293 : `border-b-4 border-border`). */}
       <div className="-mx-5 h-1 bg-border" aria-hidden="true" />

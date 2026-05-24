@@ -241,7 +241,7 @@
       "noCode": "Didn't receive the code?",
       "resend": "Resend code",
       "timer": "Code valid for {{time}}",
-      "demoCode": "Demo mode — Your OTP code: {{code}}"
+      "demoCode": "Demo mode, your OTP code: {{code}}"
     },
     "beta": {
       "title": "Closed beta",
@@ -444,7 +444,7 @@
       "noResults": "No city found"
     },
     "navbar": {
-      "backToHome": "Naturegraph — Back to home",
+      "backToHome": "Naturegraph, back to home",
       "changeLocation": "Change location",
       "activateLocation": "Activate my area",
       "setLocation": "Location",

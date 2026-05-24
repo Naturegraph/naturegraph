@@ -1,9 +1,9 @@
 /**
- * statsService — Statistiques plateforme + utilisateur
+ * statsService, Statistiques plateforme + utilisateur
  *
  * Sources :
- *  - profiles (posts_count, followers_count, following_count) — compteurs dénormalisés
- *  - posts (DISTINCT taxref_id) — espèces uniques observées
+ *  - profiles (posts_count, followers_count, following_count), compteurs dénormalisés
+ *  - posts (DISTINCT taxref_id), espèces uniques observées
  *  - count(*) global pour la plateforme
  *
  * Fonctions :
@@ -58,7 +58,7 @@ export interface TrendingSpecies {
 
 function ensureClient() {
   if (!isSupabaseConfigured || !supabase) {
-    throw new Error('Supabase non configuré — statsService indisponible')
+    throw new Error('Supabase non configuré, statsService indisponible')
   }
   return supabase
 }
@@ -122,14 +122,14 @@ export async function getImpactStats(period: StatsPeriod = 'month'): Promise<Imp
 
   // Requêtes en parallèle : observations courante + précédente, migrateurs courant + précédent
   const [obsCurrent, obsPrevious, migCurrent, migPrevious] = await Promise.all([
-    // Observations (posts publiés) — période courante
+    // Observations (posts publiés), période courante
     c
       .from('posts')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'published')
       .gte('created_at', current),
 
-    // Observations — période précédente
+    // Observations, période précédente
     c
       .from('posts')
       .select('id', { count: 'exact', head: true })
@@ -137,10 +137,10 @@ export async function getImpactStats(period: StatsPeriod = 'month'): Promise<Imp
       .gte('created_at', oldest)
       .lt('created_at', current),
 
-    // Migrateurs (comptes créés) — période courante
+    // Migrateurs (comptes créés), période courante
     c.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', current),
 
-    // Migrateurs — période précédente
+    // Migrateurs, période précédente
     c
       .from('profiles')
       .select('id', { count: 'exact', head: true })
@@ -166,7 +166,7 @@ export async function getImpactStats(period: StatsPeriod = 'month'): Promise<Imp
 /**
  * Top 3 espèces les plus observées sur la période.
  *
- * Stratégie de fallback (PRD — Tendances) :
+ * Stratégie de fallback (PRD, Tendances) :
  *   1. Si `region` est fourni et qu'on y trouve ≥ 3 espèces → retour local.
  *   2. Sinon → fallback global plateforme.
  *
@@ -292,7 +292,7 @@ export interface WeekProgress {
 
 /**
  * Calcule le streak de jours consécutifs avec au moins un post publié.
- * Compte à rebours depuis aujourd'hui — s'arrête dès qu'un jour sans post est trouvé.
+ * Compte à rebours depuis aujourd'hui, s'arrête dès qu'un jour sans post est trouvé.
  */
 export async function getUserStreak(userId: string): Promise<number> {
   const c = ensureClient()
@@ -332,7 +332,7 @@ export async function getUserStreak(userId: string): Promise<number> {
 /**
  * Progression hebdomadaire : nombre de posts cette semaine (lundi → maintenant).
  *
- * L'objectif est lu depuis `profiles.week_goal` (source de vérité — c'est ce
+ * L'objectif est lu depuis `profiles.week_goal` (source de vérité, c'est ce
  * que l'user édite dans son profil). Nicolas 2026-05-24 : avant on lisait
  * `user_settings.weekly_goal` qui n'est jamais alimenté → fallback 5 alors
  * que l'user avait défini 12 dans son profil. Désormais une seule source.

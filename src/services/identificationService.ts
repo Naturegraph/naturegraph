@@ -1,5 +1,5 @@
 /**
- * identificationService — Propositions d'identification collaborative
+ * identificationService, Propositions d'identification collaborative
  *
  * Table : identification_proposals
  *   (id, post_id, author_id, species_name, scientific_name, taxref_id,
@@ -33,7 +33,7 @@ export interface CreateProposalPayload {
 
 function ensureClient() {
   if (!isSupabaseConfigured || !supabase) {
-    throw new Error('Supabase non configuré — identificationService indisponible')
+    throw new Error('Supabase non configuré, identificationService indisponible')
   }
   return supabase
 }
@@ -56,7 +56,7 @@ export async function createProposal(
   payload: CreateProposalPayload,
 ): Promise<IdentificationProposal> {
   const c = ensureClient()
-  // confidence est stocké en TEXT dans la DB — conversion number → string
+  // confidence est stocké en TEXT dans la DB, conversion number → string
   const { data, error } = await c
     .from('identification_proposals')
     .insert({

@@ -1,12 +1,12 @@
 /**
- * DeleteConfirmModal — Confirmation de suppression d'une publication
+ * DeleteConfirmModal, Confirmation de suppression d'une publication
  *
  * Affiche un avertissement irréversible avec Annuler / Confirmer (rouge).
  * Après confirmation : callback onConfirm puis fermeture.
  *
  * Design : modal centré sur desktop, bottom sheet sur mobile.
  *
- * TODO [BACKEND] — onConfirm → DELETE /posts/:id
+ * TODO [BACKEND], onConfirm → DELETE /posts/:id
  *   via postService.deletePost(postId)
  *   puis invalider le cache TanStack Query ['feed']
  */
@@ -22,7 +22,7 @@ interface DeleteConfirmModalProps {
   onClose: () => void
   /**
    * Appelé quand l'utilisateur confirme la suppression.
-   * Peut être async — si la promesse rejette, l'erreur est affichée et
+   * Peut être async, si la promesse rejette, l'erreur est affichée et
    * la modale reste ouverte pour permettre une nouvelle tentative.
    */
   onConfirm: () => void | Promise<void>
@@ -46,7 +46,7 @@ export function DeleteConfirmModal({ onClose, onConfirm }: DeleteConfirmModalPro
       // Conserve la modale ouverte pour réessayer + affiche le message brut
       // (utile en debug RLS / FK ; en prod on pourra filtrer si besoin).
       const msg = err instanceof Error ? err.message : String(err)
-      setDeleteError(msg || 'Suppression impossible — réessaye dans un instant.')
+      setDeleteError(msg || 'Suppression impossible, réessaye dans un instant.')
       setIsDeleting(false)
     }
   }
@@ -87,7 +87,7 @@ export function DeleteConfirmModal({ onClose, onConfirm }: DeleteConfirmModalPro
       </p>
 
       {/*
-        Actions — BATCH 87 : style DS aligne sur LogoutModal et le reste de l'app.
+        Actions, BATCH 87 : style DS aligne sur LogoutModal et le reste de l'app.
         Annuler : secondary (btn-press) / Confirmer : destructive flat avec --color-error-action
       */}
       {deleteError && (

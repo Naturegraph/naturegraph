@@ -1,5 +1,5 @@
 /**
- * AdminBeta — Module 4 : Gestion beta fermee
+ * AdminBeta, Module 4 : Gestion beta fermee
  *
  * Refs : ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md v2.0 Module 4 + BATCH 32
  *
@@ -160,9 +160,9 @@ function inviteErrorMessage(result: BetaInviteResult): string {
     case 'already_member':
       return 'Cette personne a déjà un compte actif sur Naturegraph.'
     case 'rate_limited':
-      return "Trop d'envois en peu de temps — réessaie dans quelques minutes."
+      return "Trop d'envois en peu de temps, réessaie dans quelques minutes."
     case 'not_admin':
-      return 'Droits admin insuffisants — reconnecte-toi.'
+      return 'Droits admin insuffisants, reconnecte-toi.'
     case 'waitlist_not_found':
       return "L'entrée waitlist est introuvable (déjà supprimée ?)."
     case 'invite_error':
@@ -201,7 +201,7 @@ export default function AdminBeta() {
   const [waitlistToDelete, setWaitlistToDelete] = useState<BetaWaitlistEntry | null>(null)
   const [processingId, setProcessingId] = useState<string | null>(null)
 
-  // Quota — Nicolas 2026-05-24 : `current_user_count` stale en DB (pas
+  // Quota, Nicolas 2026-05-24 : `current_user_count` stale en DB (pas
   // de trigger pour le maintenir à jour) → on récupère le vrai compteur
   // de profils en parallèle et on l'utilise comme source de vérité.
   const { data: quota } = useQuery<BetaQuota | null>({
@@ -289,7 +289,7 @@ export default function AdminBeta() {
   // Beaucoup de clés sont créées pour une personne précise (invitation waitlist,
   // clé admin perpétuelle) mais ne sont pas encore consommées (`used_by_user_id`
   // est NULL). Le super admin doit voir à qui chaque clé est destinée pour le
-  // suivi support — sinon la colonne reste vide en attendant la 1ʳᵉ connexion.
+  // suivi support, sinon la colonne reste vide en attendant la 1ʳᵉ connexion.
   //
   // Sources de vérité (par ordre de priorité) :
   //   1. used_by_user_id présent  → profil consommateur (keyUsersMap)
@@ -317,7 +317,7 @@ export default function AdminBeta() {
     return /admin\s+perp[eé]tuelle|super\s+admin|admin\s+permanent/i.test(notes)
   }
 
-  // Map email (lowercased) → profil minimal — utilisé pour résoudre les invités
+  // Map email (lowercased) → profil minimal, utilisé pour résoudre les invités
   // déjà inscrits ET le profil de l'admin perpétuel.
   const { data: emailToProfile = {} } = useQuery<
     Record<string, { id: string; username: string; first_name: string; last_name: string }>
@@ -352,7 +352,7 @@ export default function AdminBeta() {
     staleTime: STALE_TIMES.MEDIUM,
   })
 
-  // Profil du super admin courant (Nicolas) — utilisé pour afficher l'auteur
+  // Profil du super admin courant (Nicolas), utilisé pour afficher l'auteur
   // sur la clé admin perpétuelle quand `notes` la désigne.
   const { data: superAdminProfile = null } = useQuery<{
     id: string
@@ -384,7 +384,7 @@ export default function AdminBeta() {
     staleTime: STALE_TIMES.LONG,
   })
 
-  // Waitlist — TOUTES les entrées (Nicolas 2026-05-20 : ne plus masquer les
+  // Waitlist, TOUTES les entrées (Nicolas 2026-05-20 : ne plus masquer les
   // invités via `.is('invited_at', null)`). Le statut de suivi est dérivé au
   // rendu (cf. helper `waitlistStatus`), l'entrée reste visible de bout en bout.
   const { data: waitlist = [] } = useQuery<BetaWaitlistEntry[]>({
@@ -404,7 +404,7 @@ export default function AdminBeta() {
   })
 
   // Détection des inscrits : un email de la waitlist qui possède un profil =
-  // la personne a créé son compte. Jointure par email — source de vérité
+  // la personne a créé son compte. Jointure par email, source de vérité
   // unique, pas de colonne de suivi à maintenir. Map clé = email en minuscule.
   const { data: registeredByEmail = {} } = useQuery<Record<string, RegisteredProfile>>({
     queryKey: ['beta-waitlist-registered', waitlist.map((w) => w.email).sort()],
@@ -462,7 +462,7 @@ export default function AdminBeta() {
         p_count: 10,
         p_max_uses: 1,
         p_expires_days: 365,
-        p_notes: `Vague ${nextBatch} — ${new Date().toISOString().slice(0, 10)}`,
+        p_notes: `Vague ${nextBatch}, ${new Date().toISOString().slice(0, 10)}`,
       })
       if (error) throw error
       toast.success(
@@ -477,7 +477,7 @@ export default function AdminBeta() {
         targetType: 'batch',
         metadata: { batch_number: nextBatch, count: 10 },
       })
-      // Données loggées dans admin_audit_logs (action: beta.key_gen) — pas besoin de console
+      // Données loggées dans admin_audit_logs (action: beta.key_gen), pas besoin de console
       void data
     } catch (err) {
       toast.error(
@@ -556,7 +556,7 @@ export default function AdminBeta() {
   /**
    * Nicolas 2026-05-20 : envoie (ou renvoie) l'invitation beta via l'Edge
    * Function `send-beta-invite`. Côté serveur, Supabase Auth envoie lui-même
-   * l'email d'invitation — le même canal que les emails de login.
+   * l'email d'invitation, le même canal que les emails de login.
    *
    * Un seul handler pour l'invitation initiale et le renvoi : c'est la même
    * opération (le serveur régénère l'invitation en attente si besoin). Le
@@ -576,7 +576,7 @@ export default function AdminBeta() {
           "Supabase a transmis l'email d'invitation (lien d'activation).",
         )
       } else {
-        toast.error(`Invitation non envoyée — ${entry.email}`, inviteErrorMessage(result))
+        toast.error(`Invitation non envoyée, ${entry.email}`, inviteErrorMessage(result))
       }
 
       // Audit log fire-and-forget (ne bloque pas l'UX).
@@ -600,7 +600,7 @@ export default function AdminBeta() {
     const target = waitlistToDelete
     try {
       // .select() après .delete() permet de récupérer les rows supprimées et
-      // de détecter un échec silencieux (RLS qui bloque sans throw — bug
+      // de détecter un échec silencieux (RLS qui bloque sans throw, bug
       // Nicolas 2026-05-24 où l'entrée réapparaissait dans le tableau).
       const { data, error } = await supabase
         .from('beta_waitlist')
@@ -609,7 +609,7 @@ export default function AdminBeta() {
         .select()
       if (error) throw error
       if (!data || data.length === 0) {
-        // Échec silencieux RLS — surfacer le problème explicitement.
+        // Échec silencieux RLS, surfacer le problème explicitement.
         throw new Error(
           "Suppression refusée par la base de données (politique d'accès). " +
             'Vérifie que tu es admin et que la migration RLS DELETE est appliquée.',
@@ -744,7 +744,7 @@ export default function AdminBeta() {
             size="md"
             onClick={() => {
               revokeAccess()
-              toast.success("Accès beta réinitialisé — redirection vers l'écran d'accueil…")
+              toast.success("Accès beta réinitialisé, redirection vers l'écran d'accueil…")
               setTimeout(() => navigate('/welcome'), 500)
             }}
             icon={<Eye className="size-4" aria-hidden="true" />}
@@ -914,7 +914,7 @@ export default function AdminBeta() {
                           ) : (
                             <span
                               className="text-muted-foreground"
-                              title="Clé utilisée — non sélectionnable"
+                              title="Clé utilisée, non sélectionnable"
                             >
                               —
                             </span>
@@ -954,7 +954,7 @@ export default function AdminBeta() {
                               {usedBy.email && (
                                 <a
                                   href={`mailto:${usedBy.email}?subject=${encodeURIComponent(
-                                    'Naturegraph — à propos de ta clé d’accès',
+                                    'Naturegraph, à propos de ta clé d’accès',
                                   )}&body=${encodeURIComponent(
                                     `Bonjour ${usedBy.first_name ?? usedBy.username},\n\nJe te recontacte au sujet de ta clé d'accès Naturegraph (${k.code}).\n\n[ton message]\n\nÀ très vite,\nNicolas\nNaturegraph`,
                                   )}`}
@@ -1025,7 +1025,7 @@ export default function AdminBeta() {
                                 {inviteEmail}
                               </a>
                               <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                                Invité·e — en attente
+                                Invité·e, en attente
                               </span>
                             </div>
                           ) : (
@@ -1082,13 +1082,13 @@ export default function AdminBeta() {
         </section>
       )}
 
-      {/* ── Tab : Waitlist — Nicolas 2026-05-20 : suivi complet. L'entrée reste
+      {/* ── Tab : Waitlist, Nicolas 2026-05-20 : suivi complet. L'entrée reste
           visible de l'inscription à la création de compte (statut dérivé). ── */}
       {activeTab === 'waitlist' && (
         <section className="bg-background border border-border rounded-lg overflow-hidden">
           {waitlist.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-muted-foreground">
-              Waitlist vide — personne n'attend d'invitation pour le moment.
+              Waitlist vide, personne n'attend d'invitation pour le moment.
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -1144,7 +1144,7 @@ export default function AdminBeta() {
                             </span>
                             {registered ? (
                               <span className="text-xs text-muted-foreground">
-                                Compte créé — visible dans Migrateurs
+                                Compte créé, visible dans Migrateurs
                               </span>
                             ) : entry.email_status === 'failed' ? (
                               <span
@@ -1169,7 +1169,7 @@ export default function AdminBeta() {
                         <td className="px-5 py-3 align-top text-xs text-muted-foreground whitespace-nowrap">
                           {formatRelativeDate(entry.created_at)}
                         </td>
-                        {/* Actions — dépendent du statut */}
+                        {/* Actions, dépendent du statut */}
                         <td className="px-5 py-3 text-right align-top">
                           <div className="inline-flex items-center gap-1">
                             {registered ? (
@@ -1183,7 +1183,7 @@ export default function AdminBeta() {
                                 <ExternalLink className="size-3.5" aria-hidden="true" />
                               </Link>
                             ) : (
-                              /* Inviter (1ʳᵉ fois) ou Renvoyer (déjà invité·e) — même
+                              /* Inviter (1ʳᵉ fois) ou Renvoyer (déjà invité·e), même
                                  action : Supabase Auth (ré)envoie l'email d'invitation. */
                               <button
                                 type="button"
