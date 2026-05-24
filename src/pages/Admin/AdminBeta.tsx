@@ -599,8 +599,22 @@ export default function AdminBeta() {
     if (!supabase || !waitlistToDelete) return
     const target = waitlistToDelete
     try {
-      const { error } = await supabase.from('beta_waitlist').delete().eq('id', target.id)
+      // .select() après .delete() permet de récupérer les rows supprimées et
+      // de détecter un échec silencieux (RLS qui bloque sans throw — bug
+      // Nicolas 2026-05-24 où l'entrée réapparaissait dans le tableau).
+      const { data, error } = await supabase
+        .from('beta_waitlist')
+        .delete()
+        .eq('id', target.id)
+        .select()
       if (error) throw error
+      if (!data || data.length === 0) {
+        // Échec silencieux RLS — surfacer le problème explicitement.
+        throw new Error(
+          "Suppression refusée par la base de données (politique d'accès). " +
+            'Vérifie que tu es admin et que la migration RLS DELETE est appliquée.',
+        )
+      }
       toast.success(`Entrée ${target.email} supprimée de la waitlist`)
       await logAction({
         action: 'beta.waitlist_delete',
