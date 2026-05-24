@@ -551,8 +551,33 @@ function StatTile({
   )
 }
 
+/**
+ * Échelle de chaleur **absolue** par seuils — pas de normalisation locale.
+ *
+ * Nicolas 2026-05-24 : auparavant on normalisait `count / max`, ce qui rendait
+ * 1 obs = violet foncé quand max = 1. Visuellement trompeur (laissait croire
+ * que c'était « beaucoup »). Désormais l'échelle est fixe :
+ *
+ *   0       → quasi invisible (état au repos)
+ *   1-2     → pâle (« peu »)
+ *   3-5     → moyen
+ *   6-10    → fort
+ *   11-20   → très fort
+ *   21+     → max (« beaucoup »)
+ *
+ * Les seuils sont calibrés pour la beta (~50 users) — quand la prod scalera,
+ * on relèvera les paliers (cf. TODO Phase 2 dans AUDIT_ADMIN).
+ */
+function heatIntensity(count: number): number {
+  if (count === 0) return 0.06
+  if (count <= 2) return 0.22
+  if (count <= 5) return 0.4
+  if (count <= 10) return 0.6
+  if (count <= 20) return 0.8
+  return 1
+}
+
 function HourlyHeatmap({ data, label }: { data: HourlyPoint[]; label: string }) {
-  const max = Math.max(1, ...data.map((d) => d.count))
   const total = data.reduce((s, d) => s + d.count, 0)
   return (
     <div className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-4">
@@ -565,16 +590,11 @@ function HourlyHeatmap({ data, label }: { data: HourlyPoint[]; label: string }) 
           {total} total
         </span>
       </div>
-      {/* Système de chaleur : violet pâle (peu) → violet foncé (beaucoup).
-          Cellules carrées arrondies type heatmap GitHub. Nicolas 2026-05-24 :
-          contraste renforcé (0.06 → 1.0) pour vraiment voir les pics. */}
+      {/* Chaleur absolue : 1-2 events = pâle, 21+ = max. Permet de voir une
+          activité émergente sans tromper sur le volume. */}
       <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(24, 1fr)' }}>
         {data.map((d) => {
-          const intensity = d.count / max
-          const bg =
-            d.count === 0
-              ? 'rgba(99, 102, 241, 0.06)'
-              : `rgba(99, 102, 241, ${0.25 + intensity * 0.75})`
+          const bg = `rgba(99, 102, 241, ${heatIntensity(d.count)})`
           return (
             <div
               key={d.hour}
@@ -593,18 +613,40 @@ function HourlyHeatmap({ data, label }: { data: HourlyPoint[]; label: string }) 
         <span>18h</span>
         <span>23h</span>
       </div>
-      {/* Légende de chaleur (peu → beaucoup) */}
+      {/* Légende avec les vrais seuils en tooltip — alignée sur heatIntensity(). */}
       <div className="flex items-center justify-end gap-1.5 mt-3 text-[10px] text-[var(--color-text-secondary)]">
-        <span>Peu</span>
-        {[0.25, 0.5, 0.75, 1].map((a) => (
-          <span
-            key={a}
-            className="size-3 rounded-sm"
-            style={{ background: `rgba(99,102,241,${a})` }}
-            aria-hidden="true"
-          />
-        ))}
-        <span>Beaucoup</span>
+        <span title="0 événement">Peu</span>
+        <span
+          className="size-3 rounded-sm"
+          style={{ background: 'rgba(99,102,241,0.22)' }}
+          title="1-2"
+          aria-hidden="true"
+        />
+        <span
+          className="size-3 rounded-sm"
+          style={{ background: 'rgba(99,102,241,0.4)' }}
+          title="3-5"
+          aria-hidden="true"
+        />
+        <span
+          className="size-3 rounded-sm"
+          style={{ background: 'rgba(99,102,241,0.6)' }}
+          title="6-10"
+          aria-hidden="true"
+        />
+        <span
+          className="size-3 rounded-sm"
+          style={{ background: 'rgba(99,102,241,0.8)' }}
+          title="11-20"
+          aria-hidden="true"
+        />
+        <span
+          className="size-3 rounded-sm"
+          style={{ background: 'rgba(99,102,241,1)' }}
+          title="21+"
+          aria-hidden="true"
+        />
+        <span title="21+ événements">Beaucoup</span>
       </div>
     </div>
   )
