@@ -16,8 +16,7 @@
  *   - Labels de section : sans uppercase, tracking-[0.04em], poids normal
  *   - Items : h-12 (48px), gap-2 (8px), icône dans conteneur 33.6px rounded-full
  *   - Item actif → bg-primary/10 rounded-lg (lavande #E7E9F7)
- *   - Taille : row "Taille → Petite/Moyenne/Grande >" expandable inline
- *   - Toggle contraste : 40×20px, thumb 16px (Figma spec)
+ *   - Taille : row "Taille, Petite/Moyenne/Grande >" expandable inline
  *   - Thème section déplacée avant Accessibilité
  *   - Divider uniquement avant Déconnexion
  *   - Version : texte caption simple sans icône cadenas
@@ -32,7 +31,7 @@
  *   - Escape pour fermer, clic backdrop ferme
  *   - aria-disabled sur les items inactifs, aria-checked sur les radios/switch
  *
- * TODO [BACKEND] — synchroniser textSize / highContrast avec profiles.preferences
+ * TODO [BACKEND] : synchroniser textSize avec profiles.preferences (highContrast retiré pour la beta).
  */
 
 import { useEffect, useRef, useState } from 'react'
