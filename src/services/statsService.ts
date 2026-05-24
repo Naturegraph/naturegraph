@@ -331,7 +331,11 @@ export async function getUserStreak(userId: string): Promise<number> {
 
 /**
  * Progression hebdomadaire : nombre de posts cette semaine (lundi → maintenant).
- * L'objectif est lu depuis user_settings.weekly_goal (défaut 5).
+ *
+ * L'objectif est lu depuis `profiles.week_goal` (source de vérité — c'est ce
+ * que l'user édite dans son profil). Nicolas 2026-05-24 : avant on lisait
+ * `user_settings.weekly_goal` qui n'est jamais alimenté → fallback 5 alors
+ * que l'user avait défini 12 dans son profil. Désormais une seule source.
  */
 export async function getWeekProgress(userId: string): Promise<WeekProgress> {
   const c = ensureClient()
@@ -343,21 +347,21 @@ export async function getWeekProgress(userId: string): Promise<WeekProgress> {
   const monday = new Date(now.getTime() - mondayOffset * 86_400_000)
   monday.setHours(0, 0, 0, 0)
 
-  // Requêtes en parallèle : posts cette semaine + objectif personnalisé
-  const [postsResult, settingsResult] = await Promise.all([
+  // Requêtes en parallèle : posts cette semaine + objectif depuis profiles
+  const [postsResult, profileResult] = await Promise.all([
     c
       .from('posts')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('status', 'published')
       .gte('created_at', monday.toISOString()),
-    c.from('user_settings').select('weekly_goal').eq('user_id', userId).maybeSingle(),
+    c.from('profiles').select('week_goal').eq('id', userId).maybeSingle(),
   ])
 
   if (postsResult.error) throw new Error(postsResult.error.message)
 
   return {
     current: postsResult.count ?? 0,
-    goal: (settingsResult.data as { weekly_goal?: number } | null)?.weekly_goal ?? 5,
+    goal: (profileResult.data as { week_goal?: number | null } | null)?.week_goal ?? 5,
   }
 }
