@@ -201,17 +201,26 @@ export default function AdminBeta() {
   const [waitlistToDelete, setWaitlistToDelete] = useState<BetaWaitlistEntry | null>(null)
   const [processingId, setProcessingId] = useState<string | null>(null)
 
-  // Quota
+  // Quota — Nicolas 2026-05-24 : `current_user_count` stale en DB (pas
+  // de trigger pour le maintenir à jour) → on récupère le vrai compteur
+  // de profils en parallèle et on l'utilise comme source de vérité.
   const { data: quota } = useQuery<BetaQuota | null>({
     queryKey: ['beta-quota'],
     queryFn: async () => {
       if (!supabase) return null
-      const { data } = await supabase
-        .from('beta_quota_config')
-        .select('current_phase, max_users_total, current_user_count, accepting_new_signups')
-        .eq('id', 1)
-        .maybeSingle()
-      return (data as BetaQuota | null) ?? null
+      const [{ data: config }, { count: realUserCount }] = await Promise.all([
+        supabase
+          .from('beta_quota_config')
+          .select('current_phase, max_users_total, accepting_new_signups')
+          .eq('id', 1)
+          .maybeSingle(),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }),
+      ])
+      if (!config) return null
+      return {
+        ...(config as Omit<BetaQuota, 'current_user_count'>),
+        current_user_count: realUserCount ?? 0,
+      } as BetaQuota
     },
     staleTime: STALE_TIMES.MEDIUM,
   })
