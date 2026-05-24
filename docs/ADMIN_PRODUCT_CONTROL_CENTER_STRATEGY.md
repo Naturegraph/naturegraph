@@ -733,6 +733,14 @@ A la fin BATCH 40 :
 
 # 📜 Historique versions
 
+- **v2.1** (2026-05-24) — Livraison complète veille beta. État final :
+  - ✅ 5 modules MVP livrés (Dashboard / Users / Modération / Beta / Audit)
+  - ✅ Bonus **Module 6 Analytics** (hors runbook) : heatmaps horaires, top intérêts, distribution observations + photos par post, géographie, tabs Phase 1/2 KPIs
+  - ✅ Fixes critiques : Beta quota 0/50 → vrai count, avatars hermine, policy RLS DELETE waitlist, compteurs Dashboard (observations + identifications)
+  - ✅ Polish UX : CTA Analytics primary, sparkline visible, top espèces (vs actions admin), drawer preview signalement (BATCH 106/110)
+  - ✅ Vercel Web Analytics activé (gratuit, RGPD/Loi 25 compliant)
+  - 🟢 **Statut : prêt pour beta fermée lundi**
+  - 🟡 Reste pour Phase 2 : tracking client (PostHog), 2FA TOTP, bulk actions users/reports, workflow tickets, dédoublonnage waitlist auto
 - **v2.0** (2026-05-13) — Refondu post cycle 1. **MVP simple en 5 modules** (vs 10 en v1.0). Effort divise par 3 (3-4j vs 11j). Route `/admin` integree (pas de sous-domaine). Reuse DS. 4 tables DB (vs 8). Pas de 2FA / Tremor / TanStack Table. Roadmap Phase 2-4 clair pour iteration future.
 - **v1.0** (2026-05-04) — Version strategique complete (10 modules, app separee, 26 jours dev, 8 tables). Trop ambitieux pour MVP — refondu.
 
