@@ -324,7 +324,7 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
               <p className="text-xs text-muted-foreground max-w-xs">
                 {t('contribute.panel.noSpeciesHint', {
                   defaultValue:
-                    'Vérifie l\'orthographe ou utilise « Je ne connais pas l\'espèce » en bas pour partager quand même.',
+                    "Vérifie l'orthographe ou utilise « Je ne connais pas l'espèce » en bas pour partager quand même.",
                 })}
               </p>
             </div>
@@ -484,7 +484,7 @@ function ObservationRow({
   const { t } = useTranslation()
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-cream-lighter">
+    <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-background">
       {/* Icône espèce — emoji du groupe taxonomique pour cohérence avec le
           dropdown de recherche et SearchPanel (Nicolas 2026-05-21). */}
       <div
@@ -646,7 +646,7 @@ export function EncounterStep2({
           ci-dessous : il suffira de le ré-introduire le jour venu.
 
           @example
-          <label htmlFor={toggleId} className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-border bg-cream-lighter cursor-pointer">
+          <label htmlFor={toggleId} className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-border bg-background cursor-pointer">
             <span className="text-sm font-medium text-foreground">
               {t('contribute.panel.helpIdentification')}
             </span>

@@ -21,16 +21,11 @@
 
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, X, Calendar, Info, MapPin, Loader2 } from 'lucide-react'
+import { ArrowLeft, X, Calendar, Info, MapPin, Loader2, ImageUp } from 'lucide-react'
 import type { TimeOfDay, WeatherCondition, DisplayFormat } from '@/types/database'
 import { EncounterStep1 } from './EncounterStep1'
-import { compressPhoto } from '@/utils/compressPhoto'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
-import { useAuth } from '@/contexts/AuthContext'
-import { useCreatePost } from '@/hooks/usePost'
-import { uploadPostMedia } from '@/services/mediaService'
-import { supabase } from '@/lib/supabase'
-import { useQueryClient } from '@tanstack/react-query'
+import { useContributePostSubmit } from '@/hooks/useContributePostSubmit'
 import { Button } from '@/components/ui/Button'
 import { useLocationAutocomplete } from '@/hooks/useLocationAutocomplete'
 import type { CityResult } from '@/types/location'
@@ -88,12 +83,14 @@ interface ContributeInstantPanelProps {
 
 export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps) {
   const { t } = useTranslation()
-  const { user } = useAuth()
-  const createPost = useCreatePost(user?.id ?? '')
-  const queryClient = useQueryClient()
+
+  // Pipeline submit factorisé (cf. useContributePostSubmit) — identique
+  // à ContributeEncounterForm pour garantir le même comportement watchdog
+  // + compression + upload média + rollback.
+  const { submit, isSubmitting, uploadProgress, uploadError, clearError } =
+    useContributePostSubmit('ContributeInstantPanel')
 
   const [step, setStep] = useState(1)
-  const [uploadError, setUploadError] = useState<string | null>(null)
   const [form, setForm] = useState<InstantFormData>({
     files: [],
     displayFormat: '16:9',
@@ -111,10 +108,6 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitAttempted, setSubmitAttempted] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(
-    null,
-  )
 
   // Escape ferme le panneau
   useEffect(() => {
@@ -169,7 +162,7 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
     setStep((s) => s - 1)
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent | React.SyntheticEvent) {
     e.preventDefault()
     if (step < TOTAL_STEPS) {
       handleNext()
@@ -181,138 +174,45 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
       setErrors(errs)
       return
     }
-    if (!user?.id) {
-      setErrors({
-        description: t('contribute.errors.notAuthenticated', 'Connecte-toi pour publier'),
-      })
-      return
-    }
 
-    setIsSubmitting(true)
-    setUploadError(null)
-    let createdPostId: string | null = null
+    // Décompose le label localisation → city / region pour FeedPost.
+    const locSegments = form.locationName
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    const cityFromInput = locSegments[0] || undefined
+    const regionFromInput = locSegments[locSegments.length - 1] || undefined
 
-    const watchdog = setTimeout(() => {
-      console.warn('[ContributeInstantPanel] watchdog : submission > 30s, force release')
-      setIsSubmitting(false)
-      setUploadProgress(null)
-      setUploadError(
-        t('contribute.media.uploadError', {
-          defaultValue:
-            'La soumission prend trop de temps. Vérifie ta connexion internet et réessaie.',
-        }),
-      )
-    }, 30_000)
+    // Phenomenon stocké en tags (la colonne posts.phenomenon existe en DB
+    // mais l'UI feed ne l'expose pas encore — tag = workaround simple).
+    const phenomenonLabel = form.phenomenon
+      ? PHENOMENON_OPTIONS.find((o) => o.id === form.phenomenon)?.label
+      : undefined
 
-    function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
-      return Promise.race([
-        p,
-        new Promise<T>((_, reject) =>
-          setTimeout(() => reject(new Error(`Timeout ${label} après ${ms / 1000}s`)), ms),
-        ),
-      ])
-    }
+    // time-of-day : valeur saisie > fallback EXIF de la photo.
+    const timeOfDay = form.timeOfDay || form.photoMetadata.timeOfDay || undefined
 
-    try {
-      const timeOfDay = form.timeOfDay || form.photoMetadata.timeOfDay || undefined
-
-      const locSegments = form.locationName
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-      const cityFromInput = locSegments[0] || undefined
-      const regionFromInput = locSegments[locSegments.length - 1] || undefined
-
-      const phenomenonLabel = form.phenomenon
-        ? PHENOMENON_OPTIONS.find((o) => o.id === form.phenomenon)?.label
-        : undefined
-
-      const post = await withTimeout(
-        createPost.mutateAsync({
-          type: 'nature_instant',
-          title: form.title.trim() || undefined,
-          description: form.description.trim(),
-          visibility: 'public',
-          encounter_date: form.encounterDate,
-          time_of_day: timeOfDay,
-          weather: form.weather || undefined,
-          location_name: form.locationName || undefined,
-          city: cityFromInput,
-          region:
-            regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : undefined,
-          latitude: form.locationLat ?? undefined,
-          longitude: form.locationLng ?? undefined,
-          location_hidden: form.locationHidden,
-          // Phenomenon stocké en tags (la colonne posts.phenomenon existe en
-          // DB mais l'UI feed ne l'expose pas encore — tag = workaround simple).
-          tags: phenomenonLabel ? [phenomenonLabel] : [],
-          display_format: form.displayFormat,
-        }),
-        10_000,
-        'création du post',
-      )
-      createdPostId = post.id
-
-      const [{ detectPhotoFormat }, { stripExif }] = await Promise.all([
-        import('@/utils/detectPhotoFormat'),
-        import('@/utils/stripExif'),
-      ])
-
-      for (let i = 0; i < form.files.length; i++) {
-        setUploadProgress({ current: i + 1, total: form.files.length })
-        const rawFile = form.files[i]
-
-        let dims: { width: number; height: number } | null = null
-        try {
-          dims = await detectPhotoFormat(rawFile)
-        } catch {
-          /* fallback */
-        }
-
-        const compressed = await compressPhoto(rawFile)
-        const fileToUpload = await stripExif(compressed)
-
-        await withTimeout(
-          uploadPostMedia({
-            file: fileToUpload,
-            postId: post.id,
-            userId: user.id,
-            copyrightNotice: '',
-            displayOrder: i,
-            isCover: i === 0,
-            width: dims?.width,
-            height: dims?.height,
-          }),
-          20_000,
-          `upload photo ${i + 1}/${form.files.length}`,
-        )
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['feed'] })
-      onClose()
-    } catch (err) {
-      if (createdPostId && supabase) {
-        try {
-          await supabase.from('posts').delete().eq('id', createdPostId)
-        } catch {
-          /* rollback best-effort */
-        }
-      }
-      const rawMessage = err instanceof Error ? err.message : ''
-      const friendlyMessage =
-        rawMessage && !/violates|constraint|relation|null value|duplicate key/i.test(rawMessage)
-          ? rawMessage
-          : t('contribute.media.uploadError', {
-              defaultValue:
-                'Vérifie ta connexion ou réessaye un peu plus tard pour importer tes photos.',
-            })
-      setUploadError(friendlyMessage)
-      console.error('[ContributeInstantPanel] submit failed:', err)
-    } finally {
-      clearTimeout(watchdog)
-      setIsSubmitting(false)
-      setUploadProgress(null)
-    }
+    await submit({
+      payload: {
+        type: 'nature_instant',
+        title: form.title.trim() || undefined,
+        description: form.description.trim(),
+        visibility: 'public',
+        encounter_date: form.encounterDate,
+        time_of_day: timeOfDay,
+        weather: form.weather || undefined,
+        location_name: form.locationName || undefined,
+        city: cityFromInput,
+        region: regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : undefined,
+        latitude: form.locationLat ?? undefined,
+        longitude: form.locationLng ?? undefined,
+        location_hidden: form.locationHidden,
+        tags: phenomenonLabel ? [phenomenonLabel] : [],
+        display_format: form.displayFormat,
+      },
+      files: form.files,
+      onSuccess: onClose,
+    })
   }
 
   const stepTitles: Record<number, string> = {
@@ -454,12 +354,58 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
               <p className="text-sm text-foreground flex-1">{uploadError}</p>
               <button
                 type="button"
-                onClick={() => setUploadError(null)}
+                onClick={clearError}
                 aria-label={t('common.close')}
                 className="size-6 shrink-0 rounded-full hover:bg-muted/50 flex items-center justify-center text-muted-foreground transition-colors"
               >
                 <X className="size-4" aria-hidden="true" />
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Toast progression upload (même pattern que Encounter — informe sur
+            connexion lente). Affiché uniquement durant le submit. */}
+        {uploadProgress && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="shrink-0 mx-5 mb-3 rounded-card bg-background border border-border shadow-md overflow-hidden"
+          >
+            <div className="flex items-start gap-3 p-4">
+              <div className="size-10 shrink-0 rounded-full bg-primary-light/40 text-primary flex items-center justify-center">
+                <ImageUp className="size-5" aria-hidden="true" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="text-sm font-bold text-foreground">
+                    {t('contribute.media.uploadingTitle', {
+                      defaultValue: 'Importation en cours !',
+                    })}
+                  </p>
+                  <span className="text-xs text-muted-foreground tabular-nums shrink-0">
+                    {uploadProgress.current}/{uploadProgress.total}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t('contribute.media.uploadingHint', {
+                    defaultValue: 'Nous importons tes photos. Cela peut prendre quelques secondes…',
+                  })}
+                </p>
+              </div>
+            </div>
+            <div className="px-4 pb-3 flex items-center gap-2">
+              <div className="flex-1 h-1 rounded-full bg-border overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{
+                    width: `${Math.round((uploadProgress.current / uploadProgress.total) * 100)}%`,
+                  }}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {Math.round((uploadProgress.current / uploadProgress.total) * 100)} %
+              </span>
             </div>
           </div>
         )}
@@ -490,12 +436,14 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
               }
             >
               {isSubmitting ? (
-                <>
-                  <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
-                  {uploadProgress
-                    ? `${uploadProgress.current}/${uploadProgress.total}`
-                    : t('common.loading')}
-                </>
+                <span className="inline-flex items-center gap-2">
+                  <Loader2
+                    className="size-4 motion-safe:animate-spin"
+                    aria-hidden="true"
+                    strokeWidth={2.5}
+                  />
+                  {t('common.loading')}
+                </span>
               ) : step < TOTAL_STEPS ? (
                 t('common.next', { defaultValue: 'Suivant' })
               ) : (

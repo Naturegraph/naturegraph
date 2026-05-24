@@ -498,11 +498,12 @@ export function PostOptionsMenu({
             setShowDeleteConfirm(false)
             onClose()
           }}
-          onConfirm={() => {
+          onConfirm={async () => {
             // Suppression réelle via Supabase (RLS user-scoped → seul le
-            // propriétaire peut delete). Le hook invalide automatiquement
-            // le cache feed pour faire disparaître le post.
-            deletePostMutation.mutate(postId)
+            // propriétaire peut delete). On await pour propager l'erreur
+            // au lieu d'un fire-and-forget silencieux. Le hook invalide
+            // automatiquement le cache feed pour faire disparaître le post.
+            await deletePostMutation.mutateAsync(postId)
           }}
         />
       )}
