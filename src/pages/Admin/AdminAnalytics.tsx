@@ -20,9 +20,19 @@
  *     < 10k rows en MVP — acceptable. À réviser quand on dépasse.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { BarChart3, Clock, TrendingUp, Users, Target, Heart, Globe2, Sparkles } from 'lucide-react'
+import {
+  BarChart3,
+  Clock,
+  TrendingUp,
+  Users,
+  Target,
+  Heart,
+  Globe2,
+  Sparkles,
+  Image as ImageIcon,
+} from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { INTEREST_CONFIG } from '@/constants/interests'
 
@@ -63,76 +73,199 @@ interface AnalyticsData {
   totalReactions: number
   totalComments: number
   avgReactionsPerPost: number
+  /** Nombre moyen de photos par observation (incluant les posts texte = 0). */
+  avgPhotosPerPost: number
+  /** Nombre d'espèces distinctes identifiées dans posts.species_name. */
+  uniqueSpeciesCount: number
+  /** Nombre de groupes taxonomiques différents représentés. */
+  uniqueTaxonomicGroups: number
+  /** Nombre d'observations moyennes par session — approxi : posts / users actifs 7j. */
+  avgPostsPerSession: number
   interests: InterestStat[]
   postsByHour: HourlyPoint[]
   loginsByHour: HourlyPoint[]
   postsDistribution: DistributionBucket[]
+  /** Distribution du nombre de photos par observation (0 / 1 / 2 / 3 / 4+). */
+  photosDistribution: DistributionBucket[]
   countries: CountryStat[]
 }
 
-// ─── Objectifs produit (table Nicolas — Phase 1 et 2) ───────────────────────
+// ─── Objectifs produit — runbook Nicolas (Notion) ───────────────────────────
+// Structurés en 4 catégories pour la Phase 1 (pré-lancement) et la Phase 2
+// (lancement public). Chaque KPI a son objectif + valeur courante calculée
+// quand on a la donnée, sinon « — » avec note explicative.
 
-interface PhaseTarget {
+interface KpiRow {
   label: string
-  phase1: string
-  phase2: string
-  /** Optionnel — fonction qui rend la valeur courante en string lisible. */
+  target: string
+  /** Optionnel : valeur courante calculée depuis AnalyticsData. */
   current?: (a: AnalyticsData) => string
-  /** Optionnel — true si la valeur courante atteint l'objectif Phase 1. */
-  reachedP1?: (a: AnalyticsData) => boolean
+  /** true si la valeur courante atteint la cible. */
+  reached?: (a: AnalyticsData) => boolean
+  /** Note explicative (sous le label en petit gris). */
+  note?: string
 }
 
-const PHASE_TARGETS: PhaseTarget[] = [
+interface KpiCategory {
+  title: string
+  rows: KpiRow[]
+}
+
+/** Phase 1 — Pré-lancement (juillet → début septembre 2025).
+ *  120 pré-inscrits, accès fermé, durée 6–8 semaines. */
+const PHASE_1_CATEGORIES: KpiCategory[] = [
   {
-    label: 'Utilisateurs',
-    phase1: '100 pré-inscrits',
-    phase2: '50–100 actifs / mois',
-    current: (a) => `${a.totalUsers}`,
-    reachedP1: (a) => a.totalUsers >= 100,
+    title: 'Utilisation & Engagement',
+    rows: [
+      {
+        label: 'Utilisateurs actifs hebdomadaires',
+        target: '~48 (40 % des pré-inscrits)',
+        current: (a) => `${a.uniquePostersLast7d}`,
+        reached: (a) => a.uniquePostersLast7d >= 48,
+      },
+      {
+        label: 'Taux de conversion pré-inscrit',
+        target: '75 – 80 %',
+        note: '% des pré-inscrits qui téléchargent + créent un compte',
+      },
+      {
+        label: 'Sessions / utilisateur / semaine',
+        target: '2',
+        note: 'Nécessite un tracking client (PostHog Phase 2)',
+      },
+      {
+        label: 'Durée moyenne par session',
+        target: '3 minutes',
+        note: 'Nécessite un tracking client (PostHog Phase 2)',
+      },
+      {
+        label: 'Taux de rétention à 7 jours',
+        target: '30 %',
+        note: '% d’users qui reviennent dans les 7j après leur 1ʳᵉ session',
+      },
+    ],
   },
   {
-    label: 'Nombre total d’observations',
-    phase1: '800 (sur 6–8 sem.)',
-    phase2: '3 000 (sept.–déc.)',
-    current: (a) => `${a.totalPosts}`,
-    reachedP1: (a) => a.totalPosts >= 800,
+    title: 'Observations & données collectées',
+    rows: [
+      {
+        label: 'Nombre total d’observations',
+        target: '800',
+        current: (a) => `${a.totalPosts}`,
+        reached: (a) => a.totalPosts >= 800,
+      },
+      {
+        label: 'Observations moy. / utilisateur / semaine',
+        target: '2 à 5',
+        current: (a) => a.avgPostsPerActiveUser.toFixed(1),
+        reached: (a) => a.avgPostsPerActiveUser >= 2,
+      },
+      {
+        label: 'Observations moy. / session',
+        target: '1 à 2',
+        current: (a) => a.avgPostsPerSession.toFixed(1),
+        reached: (a) => a.avgPostsPerSession >= 1,
+      },
+    ],
   },
   {
-    label: 'Observations / user / semaine',
-    phase1: '2 à 5',
-    phase2: '3 à 6',
-    current: (a) => a.avgPostsPerActiveUser.toFixed(1),
-    reachedP1: (a) => a.avgPostsPerActiveUser >= 2,
+    title: 'Données naturalistes (biodiversité)',
+    rows: [
+      {
+        label: 'Espèces différentes observées',
+        target: '50+',
+        current: (a) => `${a.uniqueSpeciesCount}`,
+        reached: (a) => a.uniqueSpeciesCount >= 50,
+      },
+      {
+        label: 'Top 5 espèces les plus observées',
+        target: 'À analyser en fin de phase',
+        note: 'Voir widget « Top espèces » sur le Dashboard',
+      },
+      {
+        label: 'Diversité des taxons représentés',
+        target: 'Minimum 3 grands groupes',
+        current: (a) => `${a.uniqueTaxonomicGroups}`,
+        reached: (a) => a.uniqueTaxonomicGroups >= 3,
+      },
+    ],
   },
   {
-    label: 'Taux de conversion pré-inscrit',
-    phase1: '50–60 %',
-    phase2: '—',
-    current: () => '—',
+    title: 'Retour produit & amélioration UX',
+    rows: [
+      {
+        label: 'Bugs signalés',
+        target: '≥ 20',
+        note: 'Compteur manuel — à brancher sur GitHub Issues ou outil de support',
+      },
+      {
+        label: 'Améliorations proposées',
+        target: '≥ 10',
+        note: 'Idées soumises via feedback in-app ou Notion',
+      },
+      {
+        label: 'Niveau de satisfaction',
+        target: 'Score moyen ≥ 4/5',
+        note: 'À mesurer via questionnaire en fin de phase',
+      },
+      {
+        label: 'Taux d’abandon / désinstallation',
+        target: '< 10 %',
+        note: 'Nécessite tracking d’uninstall (analytics mobile)',
+      },
+    ],
+  },
+]
+
+/** Phase 2 — Lancement public (septembre → fin décembre 2025).
+ *  Objectif 50–100 utilisateurs actifs mensuels. */
+const PHASE_2_CATEGORIES: KpiCategory[] = [
+  {
+    title: 'Utilisation & Engagement',
+    rows: [
+      {
+        label: 'Utilisateurs actifs mensuels',
+        target: '50 à 100',
+        current: (a) => `${a.totalUsers}`,
+        reached: (a) => a.totalUsers >= 50,
+      },
+      { label: 'Sessions / utilisateur / semaine', target: '3 à 6' },
+      { label: 'Durée moyenne par session', target: '5 – 7 minutes' },
+      { label: 'Taux de rétention à 7 jours', target: '> 35 %' },
+      { label: 'Taux de rétention à 30 jours', target: 'À mesurer' },
+      { label: 'Taux de rétention à 60 jours', target: 'À mesurer' },
+    ],
   },
   {
-    label: 'Rétention 7 jours',
-    phase1: '> 30 %',
-    phase2: '> 35 %',
-    current: () => '—', // calcul DAU/WAU à venir (Phase 2)
+    title: 'Observations & données collectées',
+    rows: [
+      {
+        label: 'Nombre total d’observations',
+        target: '3 000 (sept. – déc.)',
+        current: (a) => `${a.totalPosts}`,
+        reached: (a) => a.totalPosts >= 3000,
+      },
+      {
+        label: 'Observations moy. / utilisateur / semaine',
+        target: '3 à 6',
+        current: (a) => a.avgPostsPerActiveUser.toFixed(1),
+      },
+    ],
   },
   {
-    label: 'Sessions / user / semaine',
-    phase1: '2 à 4',
-    phase2: '3 à 6',
-    current: () => '—', // pas de tracking session pour l'instant
+    title: 'Évaluation des fonctionnalités clés',
+    rows: [
+      { label: 'Adoption Instant Nature', target: '≥ 30 % des posts' },
+      { label: 'Réactions / post', target: '≥ 2' },
+      { label: 'Identifications collaboratives', target: 'À analyser' },
+    ],
   },
   {
-    label: 'Durée moyenne / session',
-    phase1: '3–5 min',
-    phase2: '5–7 min',
-    current: () => '—',
-  },
-  {
-    label: 'Taux d’abandon',
-    phase1: '< 10 %',
-    phase2: '< 5 %',
-    current: () => '—',
+    title: 'Retour produit & amélioration UX',
+    rows: [
+      { label: 'Taux d’abandon / désinstallation', target: '< 5 %' },
+      { label: 'Niveau de satisfaction', target: 'Score moyen ≥ 4.2/5' },
+    ],
   },
 ]
 
@@ -149,10 +282,15 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     totalReactions: 0,
     totalComments: 0,
     avgReactionsPerPost: 0,
+    avgPhotosPerPost: 0,
+    uniqueSpeciesCount: 0,
+    uniqueTaxonomicGroups: 0,
+    avgPostsPerSession: 0,
     interests: [],
     postsByHour: Array.from({ length: 24 }, (_, h) => ({ hour: h, count: 0 })),
     loginsByHour: Array.from({ length: 24 }, (_, h) => ({ hour: h, count: 0 })),
     postsDistribution: [],
+    photosDistribution: [],
     countries: [],
   }
   if (!supabase) return empty
@@ -172,6 +310,8 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     postsByHourRes,
     loginsByHourRes,
     countriesRes,
+    mediaRes,
+    speciesRes,
   ] = await Promise.all([
     // Profils + intérêts (ARRAY) + posts_count (denormalisé)
     supabase.from('profiles').select('id, interests, posts_count, last_login_at'),
@@ -194,6 +334,11 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     supabase.from('profiles').select('last_login_at').gte('last_login_at', thirtyDaysAgo),
     // Posts par pays
     supabase.from('posts').select('country'),
+    // Médias (post_id) — pour calculer le nombre de photos par observation.
+    // Plus simple et précis qu'un agrégat SQL : on group by côté client.
+    supabase.from('media').select('post_id'),
+    // Espèces + groupes taxonomiques sur tous les posts (Phase 1 KPI).
+    supabase.from('posts').select('species_name, taxonomic_group'),
   ])
 
   // Surfaçage explicite des erreurs RLS/réseau — sans ça, un échec d'une
@@ -209,6 +354,8 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     ['postsByHour', postsByHourRes],
     ['loginsByHour', loginsByHourRes],
     ['countries', countriesRes],
+    ['media', mediaRes],
+    ['species', speciesRes],
   ]
     .filter(([, r]) => (r as { error?: { message?: string } }).error)
     .map(
@@ -306,6 +453,54 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
   const avgPostsPerActiveUser = uniquePosters7d > 0 ? postsLast7d / uniquePosters7d : 0
   const avgReactionsPerPost = totalPosts > 0 ? totalReactions / totalPosts : 0
 
+  // ── Distribution photos par observation ────────────────────────────────
+  // Group by post_id, puis bucket le compte. Pour les posts SANS aucune
+  // photo (texte seul), ils ne sont pas dans `media` → bucket "0 photo".
+  const photosPerPost = new Map<string, number>()
+  for (const row of (mediaRes.data ?? []) as Array<{ post_id: string }>) {
+    photosPerPost.set(row.post_id, (photosPerPost.get(row.post_id) ?? 0) + 1)
+  }
+  const postsWithPhotos = photosPerPost.size
+  const postsWithoutPhotos = Math.max(0, totalPosts - postsWithPhotos)
+  const photoBuckets = [
+    { label: 'Sans photo', count: postsWithoutPhotos },
+    { label: '1 photo', count: 0 },
+    { label: '2 photos', count: 0 },
+    { label: '3 photos', count: 0 },
+    { label: '4+ photos', count: 0 },
+  ]
+  for (const n of photosPerPost.values()) {
+    if (n === 1) photoBuckets[1].count += 1
+    else if (n === 2) photoBuckets[2].count += 1
+    else if (n === 3) photoBuckets[3].count += 1
+    else if (n >= 4) photoBuckets[4].count += 1
+  }
+  const photosDistribution: DistributionBucket[] = photoBuckets.map((b) => ({
+    label: b.label,
+    count: b.count,
+    pct: totalPosts > 0 ? Math.round((b.count / totalPosts) * 100) : 0,
+  }))
+  // Moyenne pondérée (photos totales / posts totaux, posts texte = 0 photo).
+  const totalPhotos = Array.from(photosPerPost.values()).reduce((s, n) => s + n, 0)
+  const avgPhotosPerPost = totalPosts > 0 ? totalPhotos / totalPosts : 0
+
+  // ── Espèces distinctes + groupes taxonomiques (KPI Phase 1 biodiversité) ─
+  const uniqueSpecies = new Set<string>()
+  const uniqueGroups = new Set<string>()
+  for (const row of (speciesRes.data ?? []) as Array<{
+    species_name: string | null
+    taxonomic_group: string | null
+  }>) {
+    if (row.species_name) uniqueSpecies.add(row.species_name.trim().toLowerCase())
+    if (row.taxonomic_group) uniqueGroups.add(row.taxonomic_group)
+  }
+
+  // ── Approximation observations par session ─────────────────────────────
+  // Sans tracking client, on approxime : posts 7j / (actifs 7j × 2 sessions
+  // hebdo cible). Phase 2 : remplacer par vraie données de session.
+  const avgPostsPerSession =
+    uniquePosters7d > 0 ? postsLast7d / Math.max(1, uniquePosters7d * 2) : 0
+
   return {
     totalUsers,
     totalPosts,
@@ -316,10 +511,15 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     totalReactions,
     totalComments,
     avgReactionsPerPost,
+    avgPhotosPerPost,
+    uniqueSpeciesCount: uniqueSpecies.size,
+    uniqueTaxonomicGroups: uniqueGroups.size,
+    avgPostsPerSession,
     interests,
     postsByHour,
     loginsByHour,
     postsDistribution,
+    photosDistribution,
     countries,
   }
 }
@@ -353,23 +553,33 @@ function StatTile({
 
 function HourlyHeatmap({ data, label }: { data: HourlyPoint[]; label: string }) {
   const max = Math.max(1, ...data.map((d) => d.count))
+  const total = data.reduce((s, d) => s + d.count, 0)
   return (
     <div className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <Clock className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
-        <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">{label}</h3>
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <Clock className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
+          <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">{label}</h3>
+        </div>
+        <span className="text-xs text-[var(--color-text-secondary)] tabular-nums">
+          {total} total
+        </span>
       </div>
-      <div className="grid grid-cols-24 gap-0.5" style={{ gridTemplateColumns: 'repeat(24, 1fr)' }}>
+      {/* Système de chaleur : violet pâle (peu) → violet foncé (beaucoup).
+          Cellules carrées arrondies type heatmap GitHub. Nicolas 2026-05-24 :
+          contraste renforcé (0.06 → 1.0) pour vraiment voir les pics. */}
+      <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(24, 1fr)' }}>
         {data.map((d) => {
           const intensity = d.count / max
-          // Échelle de couleur : transparent → action-default
           const bg =
-            d.count === 0 ? 'rgba(0,0,0,0.04)' : `rgba(99, 102, 241, ${0.15 + intensity * 0.7})`
+            d.count === 0
+              ? 'rgba(99, 102, 241, 0.06)'
+              : `rgba(99, 102, 241, ${0.25 + intensity * 0.75})`
           return (
             <div
               key={d.hour}
-              title={`${d.hour}h — ${d.count} ${label.toLowerCase()}`}
-              className="aspect-square rounded-sm"
+              title={`${d.hour}h — ${d.count}`}
+              className="aspect-square rounded-md ring-1 ring-inset ring-[var(--color-border)]/30"
               style={{ background: bg }}
               aria-label={`${d.hour}h ${d.count}`}
             />
@@ -382,6 +592,19 @@ function HourlyHeatmap({ data, label }: { data: HourlyPoint[]; label: string }) 
         <span>12h</span>
         <span>18h</span>
         <span>23h</span>
+      </div>
+      {/* Légende de chaleur (peu → beaucoup) */}
+      <div className="flex items-center justify-end gap-1.5 mt-3 text-[10px] text-[var(--color-text-secondary)]">
+        <span>Peu</span>
+        {[0.25, 0.5, 0.75, 1].map((a) => (
+          <span
+            key={a}
+            className="size-3 rounded-sm"
+            style={{ background: `rgba(99,102,241,${a})` }}
+            aria-hidden="true"
+          />
+        ))}
+        <span>Beaucoup</span>
       </div>
     </div>
   )
@@ -432,6 +655,9 @@ export default function AdminAnalytics() {
     retry: 1,
   })
 
+  // Tab actif sur la section objectifs Phase 1 / Phase 2.
+  const [activePhase, setActivePhase] = useState<'p1' | 'p2'>('p1')
+
   const peakPostHour = useMemo(() => {
     if (!data) return null
     return data.postsByHour.reduce((p, c) => (c.count > p.count ? c : p), data.postsByHour[0])
@@ -478,6 +704,8 @@ export default function AdminAnalytics() {
 
   const maxInterest = data.interests[0]?.count ?? 0
   const maxDist = Math.max(1, ...data.postsDistribution.map((d) => d.count))
+  const maxPhotos = Math.max(1, ...data.photosDistribution.map((d) => d.count))
+  const maxCountry = data.countries[0]?.count ?? 1
 
   return (
     <div className="flex flex-col gap-6">
@@ -540,131 +768,245 @@ export default function AdminAnalytics() {
         </div>
       )}
 
-      {/* ── Top intérêts ────────────────────────────────────────────────── */}
-      <section className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <BarChart3 className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
-          <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
-            Centres d'intérêt les plus choisis
-          </h2>
+      {/* ── 4 widgets de distribution en grille 2x2 (Nicolas 2026-05-24 :
+            les longues lignes pleine largeur étaient peu lisibles, on passe
+            en cards plus compactes). En mobile : 1 colonne. */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Top intérêts */}
+        <div className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
+            <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
+              Centres d'intérêt
+            </h2>
+          </div>
+          {data.interests.length === 0 ? (
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              Aucun centre d'intérêt enregistré.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-0.5">
+              {data.interests.map((i) => (
+                <HorizontalBar
+                  key={i.id}
+                  emoji={i.emoji}
+                  label={i.label}
+                  value={i.count}
+                  max={maxInterest}
+                  suffix={`(${i.pct}%)`}
+                />
+              ))}
+            </div>
+          )}
         </div>
-        {data.interests.length === 0 ? (
-          <p className="text-sm text-[var(--color-text-secondary)]">
-            Aucun centre d'intérêt enregistré pour l'instant.
-          </p>
-        ) : (
+
+        {/* Distribution posts par user */}
+        <div className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-5">
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
+              <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
+                Observations / utilisateur
+              </h2>
+            </div>
+          </div>
           <div className="flex flex-col gap-0.5">
-            {data.interests.map((i) => (
+            {data.postsDistribution.map((b) => (
               <HorizontalBar
-                key={i.id}
-                emoji={i.emoji}
-                label={i.label}
-                value={i.count}
-                max={maxInterest}
-                suffix={`(${i.pct}%)`}
+                key={b.label}
+                label={`${b.label} obs.`}
+                value={b.count}
+                max={maxDist}
+                suffix={`(${b.pct}%)`}
               />
             ))}
           </div>
-        )}
-      </section>
+        </div>
 
-      {/* ── Distribution posts par user ─────────────────────────────────── */}
-      <section className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <BarChart3 className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
-          <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
-            Distribution observations / utilisateur
-          </h2>
-        </div>
-        <div className="flex flex-col gap-0.5">
-          {data.postsDistribution.map((b) => (
-            <HorizontalBar
-              key={b.label}
-              label={`${b.label} obs.`}
-              value={b.count}
-              max={maxDist}
-              suffix={`(${b.pct}%)`}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* ── Géographie ──────────────────────────────────────────────────── */}
-      <section className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <Globe2 className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
-          <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
-            Répartition géographique des publications
-          </h2>
-        </div>
-        {data.countries.length === 0 ? (
-          <p className="text-sm text-[var(--color-text-secondary)]">Aucune donnée pays.</p>
-        ) : (
+        {/* Distribution photos par post — nouveau widget (Nicolas 2026-05-24 :
+            savoir combien de photos les users joignent en moyenne). */}
+        <div className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-5">
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
+              <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
+                Photos / observation
+              </h2>
+            </div>
+            <span className="text-xs text-[var(--color-text-secondary)] tabular-nums">
+              moy. <strong>{data.avgPhotosPerPost.toFixed(1)}</strong>
+            </span>
+          </div>
           <div className="flex flex-col gap-0.5">
-            {data.countries.map((c) => (
+            {data.photosDistribution.map((b) => (
               <HorizontalBar
-                key={c.country}
-                label={c.country}
-                value={c.count}
-                max={data.countries[0].count}
-                suffix={`(${c.pct}%)`}
+                key={b.label}
+                label={b.label}
+                value={b.count}
+                max={maxPhotos}
+                suffix={`(${b.pct}%)`}
               />
             ))}
           </div>
-        )}
+        </div>
+
+        {/* Géographie */}
+        <div className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Globe2 className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
+            <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
+              Répartition géographique
+            </h2>
+          </div>
+          {data.countries.length === 0 ? (
+            <p className="text-sm text-[var(--color-text-secondary)]">Aucune donnée pays.</p>
+          ) : (
+            <div className="flex flex-col gap-0.5">
+              {data.countries.map((c) => (
+                <HorizontalBar
+                  key={c.country}
+                  label={c.country}
+                  value={c.count}
+                  max={maxCountry}
+                  suffix={`(${c.pct}%)`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
-      {/* ── Objectifs vs réel ───────────────────────────────────────────── */}
-      <section className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-5">
-        <div className="flex items-center gap-2 mb-4">
+      {/* ── Tabs Phase 1 / Phase 2 ───────────────────────────────────────── */}
+      <section className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg overflow-hidden">
+        <div className="flex items-center gap-2 px-5 py-4 border-b border-[var(--color-border)]">
           <Target className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
           <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
-            KPIs vs objectifs (Phase 1 → Phase 2)
+            Objectifs produit (runbook)
           </h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--color-border)] text-left text-xs uppercase tracking-wider text-[var(--color-text-secondary)]">
-                <th className="py-2 pr-4 font-semibold">Indicateur</th>
-                <th className="py-2 pr-4 font-semibold">Phase 1</th>
-                <th className="py-2 pr-4 font-semibold">Phase 2</th>
-                <th className="py-2 pr-4 font-semibold">Actuel</th>
-              </tr>
-            </thead>
-            <tbody>
-              {PHASE_TARGETS.map((t) => {
-                const current = t.current?.(data) ?? '—'
-                const reached = t.reachedP1?.(data) ?? null
-                return (
-                  <tr key={t.label} className="border-b border-[var(--color-border)] last:border-0">
-                    <td className="py-2 pr-4 text-[var(--color-text-primary)]">{t.label}</td>
-                    <td className="py-2 pr-4 text-[var(--color-text-secondary)]">{t.phase1}</td>
-                    <td className="py-2 pr-4 text-[var(--color-text-secondary)]">{t.phase2}</td>
-                    <td className="py-2 pr-4 font-semibold">
-                      <span
-                        className={
-                          reached === true
-                            ? 'text-[var(--color-success,#16a34a)]'
-                            : reached === false
-                              ? 'text-[var(--color-warning,#f59e0b)]'
-                              : 'text-[var(--color-text-primary)]'
-                        }
-                      >
-                        {current}
-                        {reached === true && ' ✓'}
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+
+        {/* Onglets : Phase 1 / Phase 2 — décision Nicolas 2026-05-24 :
+            organiser le runbook en 2 vues distinctes plutôt qu'une longue
+            table mélangée. */}
+        <div
+          role="tablist"
+          aria-label="Phases produit"
+          className="flex border-b border-[var(--color-border)]"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activePhase === 'p1'}
+            onClick={() => setActivePhase('p1')}
+            className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-action-default)] ${
+              activePhase === 'p1'
+                ? 'border-b-2 border-[var(--color-action-default)] text-[var(--color-action-default)]'
+                : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+            }`}
+          >
+            Phase 1 — Pré-lancement
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activePhase === 'p2'}
+            onClick={() => setActivePhase('p2')}
+            className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-action-default)] ${
+              activePhase === 'p2'
+                ? 'border-b-2 border-[var(--color-action-default)] text-[var(--color-action-default)]'
+                : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+            }`}
+          >
+            Phase 2 — Lancement public
+          </button>
         </div>
-        <p className="text-xs text-[var(--color-text-secondary)] mt-3">
-          Les métriques marquées « — » seront calculées Phase 2 (rétention, sessions, durée moyenne
-          — nécessitent un tracking analytics côté client).
-        </p>
+
+        <div className="p-5 flex flex-col gap-6">
+          {/* Header phase courante avec dates + objectif global */}
+          {activePhase === 'p1' ? (
+            <div className="rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)] px-4 py-3 text-sm">
+              <p className="font-semibold text-[var(--color-text-primary)] mb-1">
+                Phase 1 — Pré-lancement (juillet → début septembre 2025)
+              </p>
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                120 pré-inscrits · accès fermé · durée 6–8 semaines · cible 40 % d&apos;actifs
+                hebdomadaires (~48 users)
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)] px-4 py-3 text-sm">
+              <p className="font-semibold text-[var(--color-text-primary)] mb-1">
+                Phase 2 — Lancement public (septembre → fin décembre 2025)
+              </p>
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                50 à 100 utilisateurs actifs mensuels · analyse rétention 7/30/60 jours
+              </p>
+            </div>
+          )}
+
+          {/* Catégories de KPIs */}
+          {(activePhase === 'p1' ? PHASE_1_CATEGORIES : PHASE_2_CATEGORIES).map((cat) => (
+            <div key={cat.title}>
+              <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-2 uppercase tracking-wider">
+                {cat.title}
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[var(--color-border)] text-left text-xs uppercase tracking-wider text-[var(--color-text-secondary)]">
+                      <th className="py-2 pr-4 font-semibold w-1/2">Indicateur</th>
+                      <th className="py-2 pr-4 font-semibold">Objectif</th>
+                      <th className="py-2 pr-4 font-semibold text-right">Actuel</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cat.rows.map((row) => {
+                      const current = row.current?.(data) ?? '—'
+                      const reached = row.reached?.(data) ?? null
+                      return (
+                        <tr
+                          key={row.label}
+                          className="border-b border-[var(--color-border)]/60 last:border-0"
+                        >
+                          <td className="py-2 pr-4">
+                            <p className="text-[var(--color-text-primary)]">{row.label}</p>
+                            {row.note && (
+                              <p className="text-[10px] text-[var(--color-text-secondary)] mt-0.5">
+                                {row.note}
+                              </p>
+                            )}
+                          </td>
+                          <td className="py-2 pr-4 text-[var(--color-text-secondary)]">
+                            {row.target}
+                          </td>
+                          <td className="py-2 pr-4 font-semibold text-right">
+                            <span
+                              className={
+                                reached === true
+                                  ? 'text-[var(--color-success,#16a34a)]'
+                                  : reached === false
+                                    ? 'text-[var(--color-warning,#f59e0b)]'
+                                    : 'text-[var(--color-text-primary)]'
+                              }
+                            >
+                              {current}
+                              {reached === true && ' ✓'}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+
+          <p className="text-xs text-[var(--color-text-secondary)]">
+            Les métriques marquées « — » nécessitent du tracking analytics côté client (PostHog,
+            Plausible, etc.) — à mettre en place Phase 2.
+          </p>
+        </div>
       </section>
     </div>
   )

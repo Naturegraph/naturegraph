@@ -55,7 +55,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
-import { Avatar } from '@/components/ui/Avatar'
+import hermineIcon from '@/assets/images/hermine-icon.png'
 import { useToast } from '@/contexts/ToastContext'
 import { useIsAdmin } from '@/hooks/useIsAdmin'
 import { useAdminAction } from '@/hooks/useAdminAction'
@@ -560,11 +560,14 @@ export default function AdminUsers() {
                   >
                     <td className="px-4 py-2">
                       <div className="flex items-center gap-2">
-                        <Avatar
-                          src={u.avatar_url ?? undefined}
-                          alt={u.username}
-                          fallback={u.first_name?.[0] ?? u.username?.[0] ?? '?'}
-                          size="sm"
+                        {/* Photo de profil avec fallback hermine (cohérent
+                            avec le reste de l'app — Nicolas 2026-05-24 : on
+                            ne veut plus de cercles violets avec lettre). */}
+                        <img
+                          src={u.avatar_url ?? hermineIcon}
+                          alt={u.username ?? 'Avatar'}
+                          className="size-8 rounded-full object-cover shrink-0 bg-[var(--color-bg-secondary)]"
+                          loading="lazy"
                         />
                         <div className="flex flex-col min-w-0">
                           <Link
