@@ -512,6 +512,8 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
                 </span>
               ) : step < TOTAL_STEPS ? (
                 t('common.next', { defaultValue: 'Suivant' })
+              ) : editingPostId ? (
+                t('contribute.panel.updateBtn', { defaultValue: 'Mettre à jour' })
               ) : (
                 t('contribute.publish', { defaultValue: 'Publier' })
               )}
