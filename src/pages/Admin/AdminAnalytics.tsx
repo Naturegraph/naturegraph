@@ -20,7 +20,7 @@
  *     < 10k rows en MVP — acceptable. À réviser quand on dépasse.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   BarChart3,
@@ -75,6 +75,12 @@ interface AnalyticsData {
   avgReactionsPerPost: number
   /** Nombre moyen de photos par observation (incluant les posts texte = 0). */
   avgPhotosPerPost: number
+  /** Nombre d'espèces distinctes identifiées dans posts.species_name. */
+  uniqueSpeciesCount: number
+  /** Nombre de groupes taxonomiques différents représentés. */
+  uniqueTaxonomicGroups: number
+  /** Nombre d'observations moyennes par session — approxi : posts / users actifs 7j. */
+  avgPostsPerSession: number
   interests: InterestStat[]
   postsByHour: HourlyPoint[]
   loginsByHour: HourlyPoint[]
@@ -84,69 +90,182 @@ interface AnalyticsData {
   countries: CountryStat[]
 }
 
-// ─── Objectifs produit (table Nicolas — Phase 1 et 2) ───────────────────────
+// ─── Objectifs produit — runbook Nicolas (Notion) ───────────────────────────
+// Structurés en 4 catégories pour la Phase 1 (pré-lancement) et la Phase 2
+// (lancement public). Chaque KPI a son objectif + valeur courante calculée
+// quand on a la donnée, sinon « — » avec note explicative.
 
-interface PhaseTarget {
+interface KpiRow {
   label: string
-  phase1: string
-  phase2: string
-  /** Optionnel — fonction qui rend la valeur courante en string lisible. */
+  target: string
+  /** Optionnel : valeur courante calculée depuis AnalyticsData. */
   current?: (a: AnalyticsData) => string
-  /** Optionnel — true si la valeur courante atteint l'objectif Phase 1. */
-  reachedP1?: (a: AnalyticsData) => boolean
+  /** true si la valeur courante atteint la cible. */
+  reached?: (a: AnalyticsData) => boolean
+  /** Note explicative (sous le label en petit gris). */
+  note?: string
 }
 
-const PHASE_TARGETS: PhaseTarget[] = [
+interface KpiCategory {
+  title: string
+  rows: KpiRow[]
+}
+
+/** Phase 1 — Pré-lancement (juillet → début septembre 2025).
+ *  120 pré-inscrits, accès fermé, durée 6–8 semaines. */
+const PHASE_1_CATEGORIES: KpiCategory[] = [
   {
-    label: 'Utilisateurs',
-    phase1: '100 pré-inscrits',
-    phase2: '50–100 actifs / mois',
-    current: (a) => `${a.totalUsers}`,
-    reachedP1: (a) => a.totalUsers >= 100,
+    title: 'Utilisation & Engagement',
+    rows: [
+      {
+        label: 'Utilisateurs actifs hebdomadaires',
+        target: '~48 (40 % des pré-inscrits)',
+        current: (a) => `${a.uniquePostersLast7d}`,
+        reached: (a) => a.uniquePostersLast7d >= 48,
+      },
+      {
+        label: 'Taux de conversion pré-inscrit',
+        target: '75 – 80 %',
+        note: '% des pré-inscrits qui téléchargent + créent un compte',
+      },
+      {
+        label: 'Sessions / utilisateur / semaine',
+        target: '2',
+        note: 'Nécessite un tracking client (PostHog Phase 2)',
+      },
+      {
+        label: 'Durée moyenne par session',
+        target: '3 minutes',
+        note: 'Nécessite un tracking client (PostHog Phase 2)',
+      },
+      {
+        label: 'Taux de rétention à 7 jours',
+        target: '30 %',
+        note: '% d’users qui reviennent dans les 7j après leur 1ʳᵉ session',
+      },
+    ],
   },
   {
-    label: 'Nombre total d’observations',
-    phase1: '800 (sur 6–8 sem.)',
-    phase2: '3 000 (sept.–déc.)',
-    current: (a) => `${a.totalPosts}`,
-    reachedP1: (a) => a.totalPosts >= 800,
+    title: 'Observations & données collectées',
+    rows: [
+      {
+        label: 'Nombre total d’observations',
+        target: '800',
+        current: (a) => `${a.totalPosts}`,
+        reached: (a) => a.totalPosts >= 800,
+      },
+      {
+        label: 'Observations moy. / utilisateur / semaine',
+        target: '2 à 5',
+        current: (a) => a.avgPostsPerActiveUser.toFixed(1),
+        reached: (a) => a.avgPostsPerActiveUser >= 2,
+      },
+      {
+        label: 'Observations moy. / session',
+        target: '1 à 2',
+        current: (a) => a.avgPostsPerSession.toFixed(1),
+        reached: (a) => a.avgPostsPerSession >= 1,
+      },
+    ],
   },
   {
-    label: 'Observations / user / semaine',
-    phase1: '2 à 5',
-    phase2: '3 à 6',
-    current: (a) => a.avgPostsPerActiveUser.toFixed(1),
-    reachedP1: (a) => a.avgPostsPerActiveUser >= 2,
+    title: 'Données naturalistes (biodiversité)',
+    rows: [
+      {
+        label: 'Espèces différentes observées',
+        target: '50+',
+        current: (a) => `${a.uniqueSpeciesCount}`,
+        reached: (a) => a.uniqueSpeciesCount >= 50,
+      },
+      {
+        label: 'Top 5 espèces les plus observées',
+        target: 'À analyser en fin de phase',
+        note: 'Voir widget « Top espèces » sur le Dashboard',
+      },
+      {
+        label: 'Diversité des taxons représentés',
+        target: 'Minimum 3 grands groupes',
+        current: (a) => `${a.uniqueTaxonomicGroups}`,
+        reached: (a) => a.uniqueTaxonomicGroups >= 3,
+      },
+    ],
   },
   {
-    label: 'Taux de conversion pré-inscrit',
-    phase1: '50–60 %',
-    phase2: '—',
-    current: () => '—',
+    title: 'Retour produit & amélioration UX',
+    rows: [
+      {
+        label: 'Bugs signalés',
+        target: '≥ 20',
+        note: 'Compteur manuel — à brancher sur GitHub Issues ou outil de support',
+      },
+      {
+        label: 'Améliorations proposées',
+        target: '≥ 10',
+        note: 'Idées soumises via feedback in-app ou Notion',
+      },
+      {
+        label: 'Niveau de satisfaction',
+        target: 'Score moyen ≥ 4/5',
+        note: 'À mesurer via questionnaire en fin de phase',
+      },
+      {
+        label: 'Taux d’abandon / désinstallation',
+        target: '< 10 %',
+        note: 'Nécessite tracking d’uninstall (analytics mobile)',
+      },
+    ],
+  },
+]
+
+/** Phase 2 — Lancement public (septembre → fin décembre 2025).
+ *  Objectif 50–100 utilisateurs actifs mensuels. */
+const PHASE_2_CATEGORIES: KpiCategory[] = [
+  {
+    title: 'Utilisation & Engagement',
+    rows: [
+      {
+        label: 'Utilisateurs actifs mensuels',
+        target: '50 à 100',
+        current: (a) => `${a.totalUsers}`,
+        reached: (a) => a.totalUsers >= 50,
+      },
+      { label: 'Sessions / utilisateur / semaine', target: '3 à 6' },
+      { label: 'Durée moyenne par session', target: '5 – 7 minutes' },
+      { label: 'Taux de rétention à 7 jours', target: '> 35 %' },
+      { label: 'Taux de rétention à 30 jours', target: 'À mesurer' },
+      { label: 'Taux de rétention à 60 jours', target: 'À mesurer' },
+    ],
   },
   {
-    label: 'Rétention 7 jours',
-    phase1: '> 30 %',
-    phase2: '> 35 %',
-    current: () => '—', // calcul DAU/WAU à venir (Phase 2)
+    title: 'Observations & données collectées',
+    rows: [
+      {
+        label: 'Nombre total d’observations',
+        target: '3 000 (sept. – déc.)',
+        current: (a) => `${a.totalPosts}`,
+        reached: (a) => a.totalPosts >= 3000,
+      },
+      {
+        label: 'Observations moy. / utilisateur / semaine',
+        target: '3 à 6',
+        current: (a) => a.avgPostsPerActiveUser.toFixed(1),
+      },
+    ],
   },
   {
-    label: 'Sessions / user / semaine',
-    phase1: '2 à 4',
-    phase2: '3 à 6',
-    current: () => '—', // pas de tracking session pour l'instant
+    title: 'Évaluation des fonctionnalités clés',
+    rows: [
+      { label: 'Adoption Instant Nature', target: '≥ 30 % des posts' },
+      { label: 'Réactions / post', target: '≥ 2' },
+      { label: 'Identifications collaboratives', target: 'À analyser' },
+    ],
   },
   {
-    label: 'Durée moyenne / session',
-    phase1: '3–5 min',
-    phase2: '5–7 min',
-    current: () => '—',
-  },
-  {
-    label: 'Taux d’abandon',
-    phase1: '< 10 %',
-    phase2: '< 5 %',
-    current: () => '—',
+    title: 'Retour produit & amélioration UX',
+    rows: [
+      { label: 'Taux d’abandon / désinstallation', target: '< 5 %' },
+      { label: 'Niveau de satisfaction', target: 'Score moyen ≥ 4.2/5' },
+    ],
   },
 ]
 
@@ -164,6 +283,9 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     totalComments: 0,
     avgReactionsPerPost: 0,
     avgPhotosPerPost: 0,
+    uniqueSpeciesCount: 0,
+    uniqueTaxonomicGroups: 0,
+    avgPostsPerSession: 0,
     interests: [],
     postsByHour: Array.from({ length: 24 }, (_, h) => ({ hour: h, count: 0 })),
     loginsByHour: Array.from({ length: 24 }, (_, h) => ({ hour: h, count: 0 })),
@@ -189,6 +311,7 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     loginsByHourRes,
     countriesRes,
     mediaRes,
+    speciesRes,
   ] = await Promise.all([
     // Profils + intérêts (ARRAY) + posts_count (denormalisé)
     supabase.from('profiles').select('id, interests, posts_count, last_login_at'),
@@ -214,6 +337,8 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     // Médias (post_id) — pour calculer le nombre de photos par observation.
     // Plus simple et précis qu'un agrégat SQL : on group by côté client.
     supabase.from('media').select('post_id'),
+    // Espèces + groupes taxonomiques sur tous les posts (Phase 1 KPI).
+    supabase.from('posts').select('species_name, taxonomic_group'),
   ])
 
   // Surfaçage explicite des erreurs RLS/réseau — sans ça, un échec d'une
@@ -230,6 +355,7 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     ['loginsByHour', loginsByHourRes],
     ['countries', countriesRes],
     ['media', mediaRes],
+    ['species', speciesRes],
   ]
     .filter(([, r]) => (r as { error?: { message?: string } }).error)
     .map(
@@ -358,6 +484,23 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
   const totalPhotos = Array.from(photosPerPost.values()).reduce((s, n) => s + n, 0)
   const avgPhotosPerPost = totalPosts > 0 ? totalPhotos / totalPosts : 0
 
+  // ── Espèces distinctes + groupes taxonomiques (KPI Phase 1 biodiversité) ─
+  const uniqueSpecies = new Set<string>()
+  const uniqueGroups = new Set<string>()
+  for (const row of (speciesRes.data ?? []) as Array<{
+    species_name: string | null
+    taxonomic_group: string | null
+  }>) {
+    if (row.species_name) uniqueSpecies.add(row.species_name.trim().toLowerCase())
+    if (row.taxonomic_group) uniqueGroups.add(row.taxonomic_group)
+  }
+
+  // ── Approximation observations par session ─────────────────────────────
+  // Sans tracking client, on approxime : posts 7j / (actifs 7j × 2 sessions
+  // hebdo cible). Phase 2 : remplacer par vraie données de session.
+  const avgPostsPerSession =
+    uniquePosters7d > 0 ? postsLast7d / Math.max(1, uniquePosters7d * 2) : 0
+
   return {
     totalUsers,
     totalPosts,
@@ -369,6 +512,9 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     totalComments,
     avgReactionsPerPost,
     avgPhotosPerPost,
+    uniqueSpeciesCount: uniqueSpecies.size,
+    uniqueTaxonomicGroups: uniqueGroups.size,
+    avgPostsPerSession,
     interests,
     postsByHour,
     loginsByHour,
@@ -508,6 +654,9 @@ export default function AdminAnalytics() {
     // Une seule retry — au-delà c'est un vrai problème qu'on veut surfacer.
     retry: 1,
   })
+
+  // Tab actif sur la section objectifs Phase 1 / Phase 2.
+  const [activePhase, setActivePhase] = useState<'p1' | 'p2'>('p1')
 
   const peakPostHour = useMemo(() => {
     if (!data) return null
@@ -727,57 +876,137 @@ export default function AdminAnalytics() {
         </div>
       </section>
 
-      {/* ── Objectifs vs réel ───────────────────────────────────────────── */}
-      <section className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-5">
-        <div className="flex items-center gap-2 mb-4">
+      {/* ── Tabs Phase 1 / Phase 2 ───────────────────────────────────────── */}
+      <section className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg overflow-hidden">
+        <div className="flex items-center gap-2 px-5 py-4 border-b border-[var(--color-border)]">
           <Target className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
           <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
-            KPIs vs objectifs (Phase 1 → Phase 2)
+            Objectifs produit (runbook)
           </h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--color-border)] text-left text-xs uppercase tracking-wider text-[var(--color-text-secondary)]">
-                <th className="py-2 pr-4 font-semibold">Indicateur</th>
-                <th className="py-2 pr-4 font-semibold">Phase 1</th>
-                <th className="py-2 pr-4 font-semibold">Phase 2</th>
-                <th className="py-2 pr-4 font-semibold">Actuel</th>
-              </tr>
-            </thead>
-            <tbody>
-              {PHASE_TARGETS.map((t) => {
-                const current = t.current?.(data) ?? '—'
-                const reached = t.reachedP1?.(data) ?? null
-                return (
-                  <tr key={t.label} className="border-b border-[var(--color-border)] last:border-0">
-                    <td className="py-2 pr-4 text-[var(--color-text-primary)]">{t.label}</td>
-                    <td className="py-2 pr-4 text-[var(--color-text-secondary)]">{t.phase1}</td>
-                    <td className="py-2 pr-4 text-[var(--color-text-secondary)]">{t.phase2}</td>
-                    <td className="py-2 pr-4 font-semibold">
-                      <span
-                        className={
-                          reached === true
-                            ? 'text-[var(--color-success,#16a34a)]'
-                            : reached === false
-                              ? 'text-[var(--color-warning,#f59e0b)]'
-                              : 'text-[var(--color-text-primary)]'
-                        }
-                      >
-                        {current}
-                        {reached === true && ' ✓'}
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+
+        {/* Onglets : Phase 1 / Phase 2 — décision Nicolas 2026-05-24 :
+            organiser le runbook en 2 vues distinctes plutôt qu'une longue
+            table mélangée. */}
+        <div
+          role="tablist"
+          aria-label="Phases produit"
+          className="flex border-b border-[var(--color-border)]"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activePhase === 'p1'}
+            onClick={() => setActivePhase('p1')}
+            className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-action-default)] ${
+              activePhase === 'p1'
+                ? 'border-b-2 border-[var(--color-action-default)] text-[var(--color-action-default)]'
+                : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+            }`}
+          >
+            Phase 1 — Pré-lancement
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activePhase === 'p2'}
+            onClick={() => setActivePhase('p2')}
+            className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-action-default)] ${
+              activePhase === 'p2'
+                ? 'border-b-2 border-[var(--color-action-default)] text-[var(--color-action-default)]'
+                : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+            }`}
+          >
+            Phase 2 — Lancement public
+          </button>
         </div>
-        <p className="text-xs text-[var(--color-text-secondary)] mt-3">
-          Les métriques marquées « — » seront calculées Phase 2 (rétention, sessions, durée moyenne
-          — nécessitent un tracking analytics côté client).
-        </p>
+
+        <div className="p-5 flex flex-col gap-6">
+          {/* Header phase courante avec dates + objectif global */}
+          {activePhase === 'p1' ? (
+            <div className="rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)] px-4 py-3 text-sm">
+              <p className="font-semibold text-[var(--color-text-primary)] mb-1">
+                Phase 1 — Pré-lancement (juillet → début septembre 2025)
+              </p>
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                120 pré-inscrits · accès fermé · durée 6–8 semaines · cible 40 % d&apos;actifs
+                hebdomadaires (~48 users)
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)] px-4 py-3 text-sm">
+              <p className="font-semibold text-[var(--color-text-primary)] mb-1">
+                Phase 2 — Lancement public (septembre → fin décembre 2025)
+              </p>
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                50 à 100 utilisateurs actifs mensuels · analyse rétention 7/30/60 jours
+              </p>
+            </div>
+          )}
+
+          {/* Catégories de KPIs */}
+          {(activePhase === 'p1' ? PHASE_1_CATEGORIES : PHASE_2_CATEGORIES).map((cat) => (
+            <div key={cat.title}>
+              <h3 className="text-sm font-bold text-[var(--color-text-primary)] mb-2 uppercase tracking-wider">
+                {cat.title}
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[var(--color-border)] text-left text-xs uppercase tracking-wider text-[var(--color-text-secondary)]">
+                      <th className="py-2 pr-4 font-semibold w-1/2">Indicateur</th>
+                      <th className="py-2 pr-4 font-semibold">Objectif</th>
+                      <th className="py-2 pr-4 font-semibold text-right">Actuel</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cat.rows.map((row) => {
+                      const current = row.current?.(data) ?? '—'
+                      const reached = row.reached?.(data) ?? null
+                      return (
+                        <tr
+                          key={row.label}
+                          className="border-b border-[var(--color-border)]/60 last:border-0"
+                        >
+                          <td className="py-2 pr-4">
+                            <p className="text-[var(--color-text-primary)]">{row.label}</p>
+                            {row.note && (
+                              <p className="text-[10px] text-[var(--color-text-secondary)] mt-0.5">
+                                {row.note}
+                              </p>
+                            )}
+                          </td>
+                          <td className="py-2 pr-4 text-[var(--color-text-secondary)]">
+                            {row.target}
+                          </td>
+                          <td className="py-2 pr-4 font-semibold text-right">
+                            <span
+                              className={
+                                reached === true
+                                  ? 'text-[var(--color-success,#16a34a)]'
+                                  : reached === false
+                                    ? 'text-[var(--color-warning,#f59e0b)]'
+                                    : 'text-[var(--color-text-primary)]'
+                              }
+                            >
+                              {current}
+                              {reached === true && ' ✓'}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+
+          <p className="text-xs text-[var(--color-text-secondary)]">
+            Les métriques marquées « — » nécessitent du tracking analytics côté client (PostHog,
+            Plausible, etc.) — à mettre en place Phase 2.
+          </p>
+        </div>
       </section>
     </div>
   )
