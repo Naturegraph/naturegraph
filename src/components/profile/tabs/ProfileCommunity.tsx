@@ -77,8 +77,10 @@ function UserCard({ user }: UserCardProps) {
 
   return (
     <article className="flex flex-col rounded-md border-[0.5px] border-border bg-background overflow-hidden">
-      {/* ── Banner cover ── */}
-      <div className="aspect-[5/2] w-full overflow-hidden bg-cream relative">
+      {/* ── Banner cover ── (Nicolas 2026-05-24 : fallback bg-action-light
+          au lieu de bg-cream pour que le bloc paraisse intentionnel quand
+          l'user n'a pas encore uploadé de bannière, plutôt qu'un trou gris). */}
+      <div className="aspect-[5/2] w-full overflow-hidden bg-[var(--color-action-light)] relative">
         {user.banner_url ? (
           <img
             src={user.banner_url}

@@ -124,7 +124,12 @@ interface EncounterStep3Props {
    *  fr_cities QC). Persisté avec le post pour afficher au moins le pays
    *  même quand la localisation est en mode privé. Optionnel : l'utilisateur
    *  peut taper du texte libre sans choisir de suggestion. */
-  onLocationCoordsChange?: (lat: number | null, lng: number | null, country?: string | null) => void
+  onLocationCoordsChange?: (
+    lat: number | null,
+    lng: number | null,
+    country?: string | null,
+    region?: string | null,
+  ) => void
   /** true = localisation précise masquée. Le switch Figma est inversé :
    *  switch ON ⇒ « rendre public » ⇒ locationHidden = false. */
   locationHidden: boolean
@@ -217,7 +222,7 @@ export function EncounterStep3({
 
   function handlePickCity(city: CityResult) {
     onLocationChange(city.name)
-    onLocationCoordsChange?.(city.centroidLat, city.centroidLng, city.country)
+    onLocationCoordsChange?.(city.centroidLat, city.centroidLng, city.country, city.regionName)
     setLocSuggestionsOpen(false)
   }
 

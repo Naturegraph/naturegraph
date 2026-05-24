@@ -66,6 +66,9 @@ interface EncounterFormData {
   /** Pays déduit de la source autocomplete (« France » / « Canada »).
    *  Persisté avec le post pour afficher au moins le pays en mode privé. */
   locationCountry: string | null
+  /** Région / province issue de l'autocomplete (ex « Québec », « Pays de la
+   *  Loire »). Sert au format « Ville, Région, Pays » en mode public. */
+  locationRegion: string | null
   /** true = lat/lng masquées publiquement (seule la région est visible). */
   locationHidden: boolean
 }
@@ -104,6 +107,7 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
     locationLat: null,
     locationLng: null,
     locationCountry: null,
+    locationRegion: null,
     // Par défaut la localisation précise est masquée (sobriété privacy) ;
     // l'utilisateur peut activer le switch « rendre public » à l'étape 3.
     locationHidden: true,
@@ -247,7 +251,11 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
         habitat: form.habitat || undefined,
         location_name: form.locationName || undefined,
         city: cityFromInput,
-        region: regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : undefined,
+        // Priorité à la région issue de l'autocomplete (info fiable) ;
+        // fallback sur le dernier segment du libellé saisi en texte libre.
+        region:
+          form.locationRegion ??
+          (regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : undefined),
         latitude: form.locationLat ?? undefined,
         longitude: form.locationLng ?? undefined,
         country: form.locationCountry ?? undefined,
@@ -426,14 +434,15 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
                 onHabitatChange={(v) => set('habitat', v)}
                 locationName={form.locationName}
                 onLocationChange={(v) => set('locationName', v)}
-                onLocationCoordsChange={(lat, lng, country) => {
+                onLocationCoordsChange={(lat, lng, country, region) => {
                   setForm((prev) => ({
                     ...prev,
                     locationLat: lat,
                     locationLng: lng,
-                    // Conserve le pays existant si le caller ne le précise pas
-                    // (cas du reset coords). Cohérent avec la sémantique form.
+                    // Conserve le pays/région existants si le caller ne les
+                    // précise pas (cas du reset coords).
                     locationCountry: country ?? prev.locationCountry,
+                    locationRegion: region ?? prev.locationRegion,
                   }))
                 }}
                 locationHidden={form.locationHidden}

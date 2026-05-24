@@ -160,13 +160,16 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
       ),
     },
     date: formatPostDate(item.created_at),
-    // Règle de confidentialité (Nicolas 2026-05-23 — assoupli) :
-    //  - Si `location_hidden = true` → on n'expose JAMAIS la ville ni la
-    //    région, mais on affiche au minimum le **pays** (« France », « Canada »)
-    //    pour que les autres users puissent se faire une idée de la
-    //    biogéographie de l'observation sans compromettre la vie privée.
-    //  - Sinon → ville prioritaire, fallback pays si la ville est absente.
-    location: item.location_hidden ? (item.country ?? '') : (item.city ?? item.country ?? ''),
+    // Règle de confidentialité (Nicolas 2026-05-24 — affinée) :
+    //  - location_hidden = true → on n'expose que le **pays** (FR / CA / autre)
+    //    pour donner un repère biogéographique sans compromettre la vie privée.
+    //  - location_hidden = false → format complet « Ville, Région, Pays »
+    //    (ex « Lévis, Québec, Canada ») pour rendre l'observation plus
+    //    parlante qu'un simple nom de ville isolé.
+    //  Les segments vides ou dupliqués (ex : city == region) sont filtrés.
+    location: item.location_hidden
+      ? (item.country ?? '')
+      : Array.from(new Set([item.city, item.region, item.country].filter(Boolean))).join(', '),
     title,
     content: item.description,
     weather: item.weather ?? undefined,
