@@ -67,10 +67,11 @@ console.log(
 // `keys` = clés GBIF Backbone (vérifiées via /species/match 2026-05-20).
 // `quota` = nombre cible d'espèces FR-nommées pour ce groupe.
 //
-// V2 (Nicolas 2026-05-24) : étendu à ~10 000 espèces avec ajout de plants,
-// fish, arachnids, mollusks pour couvrir tous les groupes du type
-// `TaxonomicGroup`. Boost régional Canada via fetchRegional() qui ajoute
-// jusqu'à 500 espèces additionnelles par groupe observées au Canada.
+// V2 (Nicolas 2026-05-24) : on RESTE sur les 5 catégories actuelles de la
+// beta — pas de nouveaux groupes pour l'instant (plants/fish/arachnids/
+// mollusks ne sont pas exposés dans les filtres produit). On enrichit
+// uniquement ce qui est déjà filtrable + boost régional Canada pour les
+// users du Québec qui ne trouvent pas leurs espèces locales.
 
 const GROUPS = [
   { group: 'birds', label: 'Oiseaux', keys: [212], quota: 2000 },
@@ -87,18 +88,6 @@ const GROUPS = [
   { group: 'amphibians', label: 'Amphibiens', keys: [131], quota: 500 },
   // Reptiles : Squamata (lézards + serpents) + Testudines (tortues).
   { group: 'reptiles', label: 'Reptiles', keys: [11592253, 11418114], quota: 500 },
-  // ── V2 — nouveaux groupes ────────────────────────────────────────────────
-  // Plantes : Plantae racine. Quota ambitieux car couverture FR très large
-  // (flore métropolitaine + nord-américaine bien documentée).
-  { group: 'plants', label: 'Plantes', keys: [6], quota: 2500 },
-  // Poissons : Actinopterygii (poissons à nageoires rayonnées, ~99% des
-  // poissons modernes). On exclut Chondrichthyes (requins) — moins
-  // d'observations citoyennes terrestres.
-  { group: 'fish', label: 'Poissons', keys: [204], quota: 800 },
-  // Arachnides : Arachnida (araignées, scorpions, opilions, acariens).
-  { group: 'arachnids', label: 'Arachnides', keys: [367], quota: 300 },
-  // Mollusques : Mollusca (escargots, limaces, bivalves).
-  { group: 'mollusks', label: 'Mollusques', keys: [52], quota: 300 },
 ]
 
 // Boost régional — pour chaque groupe, on récupère jusqu'à N espèces

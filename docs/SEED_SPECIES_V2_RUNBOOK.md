@@ -9,23 +9,27 @@
 
 ## 🎯 Cibles V2
 
-| Groupe       | Avant | Cible       | Source                                    |
-| ------------ | ----- | ----------- | ----------------------------------------- |
-| `birds`      | 1 647 | 2 000       | GBIF principal + boost CA                 |
-| `mammals`    | 1 025 | 1 200       | GBIF principal + boost CA                 |
-| `insects`    | 1 351 | 2 000       | GBIF principal (ordres ciblés) + boost CA |
-| `amphibians` | 406   | 500         | GBIF principal + boost CA                 |
-| `reptiles`   | 406   | 500         | GBIF principal + boost CA                 |
-| `plants`     | **0** | **2 500**   | NOUVEAU — Plantae racine + boost CA       |
-| `fish`       | **0** | **800**     | NOUVEAU — Actinopterygii + boost CA       |
-| `arachnids`  | **0** | **300**     | NOUVEAU — Arachnida + boost CA            |
-| `mollusks`   | **0** | **300**     | NOUVEAU — Mollusca + boost CA             |
-| **Total**    | 4 835 | **~10 100** |                                           |
+> **Nicolas 2026-05-24 (correction)** : on reste sur les **5 catégories
+> actuellement exposées dans la beta** (filtres FeedFilterPanel +
+> EncounterStep2). Les autres groupes (plants / fish / arachnids /
+> mollusks) seront ajoutés plus tard quand leurs filtres seront activés.
+
+| Groupe       | Avant | Cible base      | Boost CA (max)                    |
+| ------------ | ----- | --------------- | --------------------------------- |
+| `birds`      | 1 647 | 2 000           | +500                              |
+| `mammals`    | 1 025 | 1 200           | +500                              |
+| `insects`    | 1 351 | 2 000           | +500                              |
+| `amphibians` | 406   | 500             | +500                              |
+| `reptiles`   | 406   | 500             | +500                              |
+| **Total**    | 4 835 | **~6 200 base** | **+ ~2 000 boost CA ≈ 8 000 max** |
+
+Dans la pratique on aura probablement 6 500 – 7 500 espèces (boost CA limité
+par le nombre de taxons effectivement nommés en français pour chaque groupe).
 
 **Estimation taille DB** :
 
-- ~1.8 KB / espèce → ~18 MB
-- DB actuelle : 43 MB → après V2 : ~52 MB
+- ~1.8 KB / espèce → ~13 MB
+- DB actuelle : 43 MB → après V2 : ~47 MB
 - Limite Supabase Free : 500 MB → **OK, 10 % de la quota**
 
 ---
