@@ -14,23 +14,28 @@
 > EncounterStep2). Les autres groupes (plants / fish / arachnids /
 > mollusks) seront ajoutés plus tard quand leurs filtres seront activés.
 
-| Groupe       | Avant | Cible base      | Boost CA (max)                    |
-| ------------ | ----- | --------------- | --------------------------------- |
-| `birds`      | 1 647 | 2 000           | +500                              |
-| `mammals`    | 1 025 | 1 200           | +500                              |
-| `insects`    | 1 351 | 2 000           | +500                              |
-| `amphibians` | 406   | 500             | +500                              |
-| `reptiles`   | 406   | 500             | +500                              |
-| **Total**    | 4 835 | **~6 200 base** | **+ ~2 000 boost CA ≈ 8 000 max** |
+| Groupe       | Avant | Cible base       | Boost CA (max)                   | Boost FR (max) |
+| ------------ | ----- | ---------------- | -------------------------------- | -------------- |
+| `birds`      | 1 647 | 3 000            | +1 000                           | +1 000         |
+| `mammals`    | 1 025 | 1 800            | +1 000                           | +1 000         |
+| `insects`    | 1 351 | 4 000            | +1 000                           | +1 000         |
+| `amphibians` | 406   | 800              | +1 000                           | +1 000         |
+| `reptiles`   | 406   | 1 000            | +1 000                           | +1 000         |
+| **Total**    | 4 835 | **~10 600 base** | **+ ~10 000 boost régional max** |                |
 
-Dans la pratique on aura probablement 6 500 – 7 500 espèces (boost CA limité
-par le nombre de taxons effectivement nommés en français pour chaque groupe).
+**Réaliste : 8 000 – 11 000 espèces** (boost régional limité par le nombre
+de taxons effectivement nommés en FR ; chaque groupe atteint son palier
+selon la couverture vernaculaire GBIF).
+
+Le boost régional fait **2 passes** (Canada + France) pour couvrir les
+2 territoires beta — un user du Québec retrouve l'érable rouge, un user
+de France retrouve la mésange charbonnière, etc.
 
 **Estimation taille DB** :
 
-- ~1.8 KB / espèce → ~13 MB
-- DB actuelle : 43 MB → après V2 : ~47 MB
-- Limite Supabase Free : 500 MB → **OK, 10 % de la quota**
+- ~1.8 KB / espèce → ~18-20 MB
+- DB actuelle : 43 MB → après V2 : ~63 MB
+- Limite Supabase Free : 500 MB → **OK, 12 % de la quota**
 
 ---
 
