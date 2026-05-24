@@ -180,8 +180,17 @@ export function useDeletePost() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (postId: string) => deletePost(postId),
-    onSuccess: () => {
+    onSuccess: (_data, postId) => {
+      // Invalider toutes les variantes du feed + le profil (galerie user).
       queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['profile-posts'] })
+      queryClient.invalidateQueries({ queryKey: postQueryKey.byId(postId) })
+    },
+    onError: (err) => {
+      // Surfaçage explicite — sans ce log, un échec RLS / trigger / FK
+      // restait totalement silencieux (Nicolas 2026-05-23 : delete instant
+      // ne fonctionnait pas, aucune trace visible).
+      console.error('[useDeletePost] échec suppression :', err)
     },
   })
 }

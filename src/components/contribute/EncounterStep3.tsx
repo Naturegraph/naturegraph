@@ -84,7 +84,7 @@ function Chip({ label, emoji, active, onClick }: ChipProps) {
         'border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
         active
           ? 'border-primary bg-primary-light text-foreground'
-          : 'border-border bg-cream-lighter text-foreground hover:border-primary/50',
+          : 'border-border bg-background text-foreground hover:border-primary/50',
       ].join(' ')}
     >
       {emoji && (
@@ -243,7 +243,7 @@ export function EncounterStep3({
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
           placeholder={t('contribute.panel.obsTitlePlaceholder', { defaultValue: '' })}
-          className="w-full h-11 px-4 rounded-full border border-border bg-cream-lighter text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+          className="w-full h-11 px-4 rounded-full border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
         />
       </div>
 
@@ -264,7 +264,7 @@ export function EncounterStep3({
             // Phase test : description non obligatoire (second-agent/30).
             aria-invalid={!!(submitAttempted && errors.description)}
             aria-describedby={submitAttempted && errors.description ? `${descId}-error` : undefined}
-            className="w-full px-4 py-3 pb-7 rounded-2xl border border-border bg-cream-lighter text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
+            className="w-full px-4 py-3 pb-7 rounded-2xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
           />
           {/* Compteur ancré en bas à droite du textarea (Figma) */}
           <span
@@ -302,7 +302,7 @@ export function EncounterStep3({
             // `date-input-clean` cache l'icône native (Webkit/Edge) — l'icône
             // visible est notre <Calendar> custom, alignée avec le design system.
             // Le clic sur l'input ouvre toujours le picker natif.
-            className="date-input-clean w-full h-11 pl-4 pr-10 rounded-full border border-border bg-cream-lighter text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+            className="date-input-clean w-full h-11 pl-4 pr-10 rounded-full border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
           />
           <Calendar
             className="absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-primary pointer-events-none"
@@ -403,7 +403,7 @@ export function EncounterStep3({
             aria-controls={`${locId}-listbox`}
             aria-autocomplete="list"
             autoComplete="off"
-            className="w-full h-11 pl-10 pr-4 rounded-full border border-border bg-cream-lighter text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+            className="w-full h-11 pl-10 pr-4 rounded-full border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
           />
 
           {/* Dropdown suggestions API Adresse */}

@@ -50,7 +50,7 @@ export function LocationPicker({
           value={value}
           onChange={(e) => onValueChange(e.target.value)}
           placeholder={t('contribute.location.placeholder')}
-          className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-cream-lighter text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+          className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
         />
       </div>
 
@@ -65,7 +65,7 @@ export function LocationPicker({
             onChange={(e) => onHiddenChange(e.target.checked)}
             className="sr-only peer"
           />
-          <div className="size-5 rounded border border-border bg-cream-lighter peer-checked:bg-primary peer-checked:border-primary transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-1 flex items-center justify-center">
+          <div className="size-5 rounded border border-border bg-background peer-checked:bg-primary peer-checked:border-primary transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-1 flex items-center justify-center">
             {hidden && (
               <svg
                 className="size-3 text-primary-foreground"

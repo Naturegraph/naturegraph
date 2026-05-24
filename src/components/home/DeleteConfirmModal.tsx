@@ -11,7 +11,7 @@
  *   puis invalider le cache TanStack Query ['feed']
  */
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 
@@ -22,9 +22,10 @@ interface DeleteConfirmModalProps {
   onClose: () => void
   /**
    * Appelé quand l'utilisateur confirme la suppression.
-   * TODO [BACKEND] — connecter à postService.deletePost(postId)
+   * Peut être async — si la promesse rejette, l'erreur est affichée et
+   * la modale reste ouverte pour permettre une nouvelle tentative.
    */
-  onConfirm: () => void
+  onConfirm: () => void | Promise<void>
 }
 
 // ─── Composant ────────────────────────────────────────────────────────────────
@@ -32,6 +33,23 @@ interface DeleteConfirmModalProps {
 export function DeleteConfirmModal({ onClose, onConfirm }: DeleteConfirmModalProps) {
   const { t } = useTranslation()
   const closeBtnRef = useRef<HTMLButtonElement>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  async function handleConfirm() {
+    setDeleteError(null)
+    setIsDeleting(true)
+    try {
+      await onConfirm()
+      onClose()
+    } catch (err) {
+      // Conserve la modale ouverte pour réessayer + affiche le message brut
+      // (utile en debug RLS / FK ; en prod on pourra filtrer si besoin).
+      const msg = err instanceof Error ? err.message : String(err)
+      setDeleteError(msg || 'Suppression impossible — réessaye dans un instant.')
+      setIsDeleting(false)
+    }
+  }
 
   // Focus sur le bouton fermer à l'ouverture
   useEffect(() => {
@@ -72,28 +90,40 @@ export function DeleteConfirmModal({ onClose, onConfirm }: DeleteConfirmModalPro
         Actions — BATCH 87 : style DS aligne sur LogoutModal et le reste de l'app.
         Annuler : secondary (btn-press) / Confirmer : destructive flat avec --color-error-action
       */}
+      {deleteError && (
+        <div
+          role="alert"
+          className="mt-4 rounded-card border border-[var(--color-error)]/30 bg-[var(--color-error)]/10 px-3 py-2 text-xs text-[var(--color-error)]"
+        >
+          {deleteError}
+        </div>
+      )}
+
       <div className="flex flex-col gap-2.5 mt-6">
         <button
           type="button"
-          onClick={() => {
-            onConfirm()
-            onClose()
-          }}
+          onClick={handleConfirm}
+          disabled={isDeleting}
+          aria-busy={isDeleting}
           className="
             w-full h-12 px-6 rounded-full
             bg-[var(--color-error-action)] text-[var(--color-text-white)]
             font-bold text-base
             transition-all
             hover:opacity-90 active:scale-[0.98]
+            disabled:opacity-60 disabled:cursor-not-allowed
             focus-visible:outline-none focus-visible:ring-2
             focus-visible:ring-[var(--color-error-action)] focus-visible:ring-offset-2
           "
         >
-          {t('home.post.deleteModal.confirm')}
+          {isDeleting
+            ? t('common.loading', { defaultValue: 'Chargement…' })
+            : t('home.post.deleteModal.confirm')}
         </button>
         <button
           type="button"
           onClick={onClose}
+          disabled={isDeleting}
           className="
             w-full h-12 px-6 rounded-full
             btn-press btn-press-secondary

@@ -550,99 +550,105 @@ export function FeedPost({
          *   3. Rien d'identifié
          *      → 1 chip simple "Espèce non déterminée" (passive)
          */}
-        <div className="flex flex-wrap gap-2">
-          {(() => {
-            const taxonomicCfg = taxonomic_group ? TAXONOMIC_GROUP_CONFIG[taxonomic_group] : null
-            const categoryLabel = taxonomicCfg?.label ?? null
+        {/* Pour les posts nature_instant : pas de chips espèce/catégorie
+            — un instant nature ne décrit pas une observation d'espèce
+            (Nicolas 2026-05-23). On masque toute la rangée pour éviter
+            le « Espèce non déterminée » qui n'a pas de sens ici. */}
+        {postType !== 'nature_instant' && (
+          <div className="flex flex-wrap gap-2">
+            {(() => {
+              const taxonomicCfg = taxonomic_group ? TAXONOMIC_GROUP_CONFIG[taxonomic_group] : null
+              const categoryLabel = taxonomicCfg?.label ?? null
 
-            // Espèce identifiée = on a au moins le nom commun OU scientifique.
-            // Nicolas 2026-05-22 : chip espèce TOUJOURS passif (plus de filtre
-            // par click) — pas d'action sur le chip pour le moment.
-            const speciesName = species || scientific_name || null
-            const hasIdentifiedSpecies = !!speciesName
-            const isSpeciesClickable = false
-            const unknownLabel = t('home.post.unknownSpecies', {
-              defaultValue: 'Espèce non déterminée',
-            })
+              // Espèce identifiée = on a au moins le nom commun OU scientifique.
+              // Nicolas 2026-05-22 : chip espèce TOUJOURS passif (plus de filtre
+              // par click) — pas d'action sur le chip pour le moment.
+              const speciesName = species || scientific_name || null
+              const hasIdentifiedSpecies = !!speciesName
+              const isSpeciesClickable = false
+              const unknownLabel = t('home.post.unknownSpecies', {
+                defaultValue: 'Espèce non déterminée',
+              })
 
-            // Suffixe "({count})" SEULEMENT si on a un nombre exact > 1.
-            // Pas de "(plusieurs)" — toujours un chiffre exact (Nicolas
-            // 2026-05-01) ou rien.
-            // TODO Phase 2 backend : exposer `posts.individuals_count` pour
-            // que le compteur soit toujours disponible.
-            const multipleSuffix =
-              individualsCount && individualsCount > 1 ? ` (${individualsCount})` : ''
+              // Suffixe "({count})" SEULEMENT si on a un nombre exact > 1.
+              // Pas de "(plusieurs)" — toujours un chiffre exact (Nicolas
+              // 2026-05-01) ou rien.
+              // TODO Phase 2 backend : exposer `posts.individuals_count` pour
+              // que le compteur soit toujours disponible.
+              const multipleSuffix =
+                individualsCount && individualsCount > 1 ? ` (${individualsCount})` : ''
 
-            // Chip catégorie — texte uniquement, pas d'emoji (règle DS Nicolas
-            // 2026-05-02 : alléger le design, jamais d'emoji dans les chips
-            // pour garder la cohérence visuelle avec le reste du produit).
-            const categoryChip = categoryLabel ? (
-              <span className={CHIP_BASE_CLASS}>
-                <span>{categoryLabel}</span>
-              </span>
-            ) : null
+              // Chip catégorie — texte uniquement, pas d'emoji (règle DS Nicolas
+              // 2026-05-02 : alléger le design, jamais d'emoji dans les chips
+              // pour garder la cohérence visuelle avec le reste du produit).
+              const categoryChip = categoryLabel ? (
+                <span className={CHIP_BASE_CLASS}>
+                  <span>{categoryLabel}</span>
+                </span>
+              ) : null
 
-            // ─── Cas 1 : catégorie + espèce identifiée → 2 chips séparés ───
-            // Si taxref_id présent → chip cliquable (filtre). Sinon → chip
-            // passif qui affiche quand même le nom (anciens posts).
-            if (hasIdentifiedSpecies) {
-              return (
-                <>
-                  {categoryChip}
-                  {isSpeciesClickable ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setActiveSpecies({
-                          taxref_id: taxref_id!,
-                          scientific_name: scientific_name ?? speciesName!,
-                          common_name:
-                            speciesName !== scientific_name ? (speciesName ?? null) : null,
-                          group_label: taxonomic_group ?? null,
-                        })
-                      }
-                      aria-label={t('home.post.filterBySpecies', { species: speciesName ?? '' })}
-                      className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}
-                    >
-                      <span>
-                        {speciesName}
-                        {multipleSuffix}
+              // ─── Cas 1 : catégorie + espèce identifiée → 2 chips séparés ───
+              // Si taxref_id présent → chip cliquable (filtre). Sinon → chip
+              // passif qui affiche quand même le nom (anciens posts).
+              if (hasIdentifiedSpecies) {
+                return (
+                  <>
+                    {categoryChip}
+                    {isSpeciesClickable ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setActiveSpecies({
+                            taxref_id: taxref_id!,
+                            scientific_name: scientific_name ?? speciesName!,
+                            common_name:
+                              speciesName !== scientific_name ? (speciesName ?? null) : null,
+                            group_label: taxonomic_group ?? null,
+                          })
+                        }
+                        aria-label={t('home.post.filterBySpecies', { species: speciesName ?? '' })}
+                        className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}
+                      >
+                        <span>
+                          {speciesName}
+                          {multipleSuffix}
+                        </span>
+                      </button>
+                    ) : (
+                      <span className={CHIP_BASE_CLASS}>
+                        <span>
+                          {speciesName}
+                          {multipleSuffix}
+                        </span>
                       </span>
-                    </button>
-                  ) : (
-                    <span className={CHIP_BASE_CLASS}>
-                      <span>
-                        {speciesName}
-                        {multipleSuffix}
-                      </span>
+                    )}
+                  </>
+                )
+              }
+
+              // ─── Cas 2 : catégorie connue + espèce non identifiée → 2 chips ──
+              if (categoryLabel) {
+                return (
+                  <>
+                    {categoryChip}
+                    <span className={CHIP_PASSIVE_CLASS}>
+                      {unknownLabel}
+                      {multipleSuffix}
                     </span>
-                  )}
-                </>
-              )
-            }
+                  </>
+                )
+              }
 
-            // ─── Cas 2 : catégorie connue + espèce non identifiée → 2 chips ──
-            if (categoryLabel) {
+              // ─── Cas 3 : rien d'identifié → 1 chip neutre (non cliquable) ───
               return (
-                <>
-                  {categoryChip}
-                  <span className={CHIP_PASSIVE_CLASS}>
-                    {unknownLabel}
-                    {multipleSuffix}
-                  </span>
-                </>
+                <span className={CHIP_PASSIVE_CLASS}>
+                  {unknownLabel}
+                  {multipleSuffix}
+                </span>
               )
-            }
-
-            // ─── Cas 3 : rien d'identifié → 1 chip neutre (non cliquable) ───
-            return (
-              <span className={CHIP_PASSIVE_CLASS}>
-                {unknownLabel}
-                {multipleSuffix}
-              </span>
-            )
-          })()}
-        </div>
+            })()}
+          </div>
+        )}
 
         {/* Images — clic ouvre la lightbox plein écran */}
         <ImageSlider

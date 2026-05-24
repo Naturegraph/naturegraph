@@ -22,17 +22,14 @@ import { EncounterStep1 } from './EncounterStep1'
 import { EncounterStep2 } from './EncounterStep2'
 import { EncounterStep3 } from './EncounterStep3'
 import type { ObservationEntry } from './EncounterStep2'
-import { compressPhoto } from '@/utils/compressPhoto'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import { useAuth } from '@/contexts/AuthContext'
-// useToast retiré (Nicolas 2026-05-22) — plus de toast publication.
-import { useCreatePost } from '@/hooks/usePost'
-// Note : on n'utilise plus FEED_QUERY_KEY ici, on invalide via prefix ['feed']
-// pour matcher toutes les variantes (tab/filters/page/user).
-import { uploadPostMedia } from '@/services/mediaService'
+// Pipeline submit factorisé — partagé avec ContributeInstantPanel pour
+// garantir que les deux flows restent strictement alignés (Nicolas
+// 2026-05-23 audit final : single source of truth pour compression,
+// upload, watchdog, rollback).
+import { useContributePostSubmit } from '@/hooks/useContributePostSubmit'
 import { createProposal } from '@/services/identificationService'
-import { supabase } from '@/lib/supabase'
-import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/Button'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -82,13 +79,12 @@ interface ContributeEncounterFormProps {
 export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProps) {
   const { t } = useTranslation()
   const { user } = useAuth()
-  const createPost = useCreatePost(user?.id ?? '')
-  const queryClient = useQueryClient()
+
+  // Pipeline submit factorisé — identique à ContributeInstantPanel.
+  const { submit, isSubmitting, uploadProgress, uploadError, clearError } =
+    useContributePostSubmit('ContributeEncounterForm')
 
   const [step, setStep] = useState(1)
-  // Toast d'erreur upload (Figma 6385:56334) — message + auto-hide après 5s.
-  // Pas de toast de succès : l'utilisateur voit le post apparaître dans le feed.
-  const [uploadError, setUploadError] = useState<string | null>(null)
   const [form, setForm] = useState<EncounterFormData>({
     files: [],
     displayFormat: '16:9',
@@ -112,12 +108,6 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
   // Gate l'affichage des erreurs inline (second-agent/30) — passe à true au
   // premier handleSubmit ; remis à false sur navigation entre étapes.
   const [submitAttempted, setSubmitAttempted] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  // Progression upload par photo — alimentée par la boucle d'upload, lue par
-  // le footer du panneau pour informer l'utilisateur en temps réel.
-  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(
-    null,
-  )
 
   // Fermer sur Escape
   useEffect(() => {
@@ -199,7 +189,7 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
     setStep((s) => s - 1)
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent | React.SyntheticEvent) {
     e.preventDefault()
     // Garde-fou : la soumission ne doit JAMAIS partir avant l'étape finale.
     // Si l'utilisateur appuie sur Entrée dans un input à l'étape 1 ou 2 (ce
@@ -221,200 +211,69 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
       })
       return
     }
-    setIsSubmitting(true)
-    setUploadError(null)
-    let createdPostId: string | null = null
-    // Watchdog 30s (Nicolas 2026-05-22) : raccourci de 45s pour ne pas laisser
-    // un utilisateur bloqué trop longtemps en cas de hang complet. Les
-    // timeouts par étape ci-dessous (Promise.race) déclenchent normalement
-    // une erreur claire avant ce watchdog global, qui sert de filet de sécurité.
-    const watchdog = setTimeout(() => {
-      console.warn('[ContributeEncounterForm] watchdog : submission > 30s, force release')
-      setIsSubmitting(false)
-      setUploadProgress(null)
-      setUploadError(
-        t('contribute.media.uploadError', {
-          defaultValue:
-            'La soumission prend trop de temps. Vérifie ta connexion internet et réessaie.',
-        }),
-      )
-    }, 30_000)
 
-    /**
-     * Wrap un Promise avec un timeout. Si la promesse n'a pas résolu dans le
-     * délai imparti, on rejette avec un message explicite (vs hang silencieux).
-     * Nicolas 2026-05-22 : sans ça, un hang réseau Supabase laissait le
-     * spinner tourner jusqu'au watchdog global 30s sans aucun feedback.
-     */
-    function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
-      return Promise.race([
-        p,
-        new Promise<T>((_, reject) =>
-          setTimeout(() => reject(new Error(`Timeout ${label} après ${ms / 1000}s`)), ms),
-        ),
-      ])
-    }
-    try {
-      // 1. Premier observation identifiée → champs species_* du post
-      const firstKnown = form.observations.find((o) => !o.isUnknown && o.species)
+    // Premier observation identifiée → champs species_* du post.
+    const firstKnown = form.observations.find((o) => !o.isUnknown && o.species)
 
-      // time-of-day : valeur saisie > fallback EXIF (ex : photo du matin)
-      const timeOfDay = form.timeOfDay || form.photoMetadata.timeOfDay || undefined
+    // time-of-day : valeur saisie > fallback EXIF (ex : photo du matin).
+    const timeOfDay = form.timeOfDay || form.photoMetadata.timeOfDay || undefined
 
-      // Décompose le label « Ville, Département, Région » en composants
-      // distincts pour persister `city` et `region` séparément. Sans ça,
-      // FeedPost n'affichait jamais la ville à droite de la date (cf.
-      // postFeedItemToMockPost qui lit `item.city`).
-      const locSegments = form.locationName
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-      const cityFromInput = locSegments[0] || undefined
-      const regionFromInput = locSegments[locSegments.length - 1] || undefined
+    // Décompose le label « Ville, Département, Région » en composants distincts
+    // pour persister `city` et `region` séparément (FeedPost lit `city`).
+    const locSegments = form.locationName
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    const cityFromInput = locSegments[0] || undefined
+    const regionFromInput = locSegments[locSegments.length - 1] || undefined
 
-      // createPost : timeout 10s (insert SQL léger, devrait être instantané).
-      const post = await withTimeout(
-        createPost.mutateAsync({
-          type: 'nature_encounter',
-          title: form.title.trim() || undefined,
-          description: form.description.trim(),
-          // Visibilité par défaut 'public' — plus de sélecteur dans l'UI Figma v3.
-          // La granularité GPS est pilotée séparément via `location_hidden`.
-          visibility: 'public',
-          encounter_date: form.encounterDate,
-          time_of_day: timeOfDay,
-          weather: form.weather || undefined,
-          habitat: form.habitat || undefined,
-          location_name: form.locationName || undefined,
-          city: cityFromInput,
-          region:
-            regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : undefined,
-          latitude: form.locationLat ?? undefined,
-          longitude: form.locationLng ?? undefined,
-          location_hidden: form.locationHidden,
-          species_name: firstKnown?.species?.commonName ?? undefined,
-          scientific_name: firstKnown?.species?.scientificName ?? undefined,
-          taxonomic_group: firstKnown?.species?.group ?? undefined,
-          // Nicolas 2026-05-22 : taxref_id manquait → FeedPost considérait
-          // l'espèce comme « non déterminée » même après sélection (la condition
-          // `hasIdentifiedSpecies = species && taxref_id` retournait false).
-          // `firstKnown.species.id` correspond à l'identifiant species_master
-          // (gbif_id ou UUID interne) qu'on a stocké dans `hitToSpecies()`.
-          taxref_id: firstKnown?.species?.id ?? undefined,
-          // Nombre d'individus observés (compteur du carnet EncounterStep2) —
-          // affiché en suffixe « (N) » sur le chip espèce dans FeedPost.
-          individuals_count:
-            firstKnown?.count && firstKnown.count > 0 ? firstKnown.count : undefined,
-          // Format d'affichage Figma — repris par FeedSection pour le rendu post.
-          display_format: form.displayFormat,
-        }),
-        10_000,
-        'création du post',
-      )
-      createdPostId = post.id
-
-      // 2. Upload des médias — pipeline simple :
-      //   · Compression client (WebP q=82, max 2560px) pour économiser
-      //     stockage + bande passante tout en préservant la qualité visuelle.
-      //   · Strip EXIF du fichier final (protection GPS espèces sensibles).
-      //   · Première photo = cover du post.
-      const [{ detectPhotoFormat }, { stripExif }] = await Promise.all([
-        import('@/utils/detectPhotoFormat'),
-        import('@/utils/stripExif'),
-      ])
-
-      for (let i = 0; i < form.files.length; i++) {
-        setUploadProgress({ current: i + 1, total: form.files.length })
-
-        const rawFile = form.files[i]
-        console.info(
-          `[upload] photo ${i + 1}/${form.files.length} — ${rawFile.name} (${(rawFile.size / 1024 / 1024).toFixed(1)} Mo, ${rawFile.type})`,
-        )
-
-        let dims: { width: number; height: number } | null = null
-        try {
-          dims = await detectPhotoFormat(rawFile)
-        } catch {
-          // fallback silencieux
-        }
-
-        const compressed = await compressPhoto(rawFile)
-        const fileToUpload = await stripExif(compressed)
-        console.info(
-          `[upload] compressed → ${(fileToUpload.size / 1024).toFixed(0)} Ko (${fileToUpload.type})`,
-        )
-
-        // Timeout 20s par photo : upload Supabase Storage + insert media
-        // doit normalement prendre 2-5s sur 4G. 20s = marge confortable même
-        // sur connexion faible avant de signaler une erreur explicite.
-        await withTimeout(
-          uploadPostMedia({
-            file: fileToUpload,
-            postId: post.id,
-            userId: user.id,
-            copyrightNotice: '',
-            displayOrder: i,
-            isCover: i === 0,
-            width: dims?.width,
-            height: dims?.height,
-          }),
-          20_000,
-          `upload photo ${i + 1}/${form.files.length}`,
-        )
-      }
-
-      // 3. Si demande d'aide à l'identification : crée une proposition vide
-      //    pour signaler que le post attend une identification collaborative
-      if (form.helpIdentification && !firstKnown) {
-        await createProposal(user.id, {
-          post_id: post.id,
-          species_name: '?',
-          notes: "Aide à l'identification demandée par l'auteur",
-        })
-      }
-
-      // Invalider TOUTES les variantes du feed (tab/filters/user/page) pour que
-      // le nouveau post apparaisse, peu importe le contexte de la home.
-      // Bug avant : on passait FEED_QUERY_KEY({}) qui produit une clé spécifique
-      // ['feed','recent',1,20,'{}',''] qui ne match aucune query active si
-      // l'utilisateur a des filtres ou est connecté → cache jamais rafraîchi.
-      queryClient.invalidateQueries({ queryKey: ['feed'] })
-
-      // Toast publication retiré (Nicolas 2026-05-22) — le post apparaît
-      // déjà dans le feed après onClose, confirmation visuelle suffisante.
-      onClose()
-    } catch (err) {
-      // Rollback : supprimer le post orphelin si l'upload des médias a échoué.
-      // Le rollback est best-effort — on ignore une éventuelle erreur de suppression.
-      if (createdPostId && supabase) {
-        try {
-          await supabase.from('posts').delete().eq('id', createdPostId)
-        } catch {
-          /* swallow rollback error */
-        }
-      }
-      // Toast d'erreur upload (Figma 6385:56334) — message court, l'utilisateur
-      // peut réessayer. Pas de toast en cas de succès : la photo apparaît dans
-      // le feed → confirmation visuelle suffisante.
-      //
-      // Important (second-agent/32) : on ne pousse PAS le message brut côté
-      // `errors.description` pour éviter d'afficher une erreur SQL Postgres
-      // technique inline dans le champ. Le toast suffit.
-      const rawMessage = err instanceof Error ? err.message : ''
-      const friendlyMessage =
-        rawMessage && !/violates|constraint|relation|null value|duplicate key/i.test(rawMessage)
-          ? rawMessage
-          : t('contribute.media.uploadError', {
-              defaultValue:
-                'Vérifie ta connexion ou réessaye un peu plus tard pour importer tes photos.',
+    // Délégation au hook factorisé — gère watchdog, timeouts, compression,
+    // strip EXIF, upload, rollback, invalidation feed. La proposition
+    // d'identification collaborative est lancée dans onSuccess avec le
+    // post.id retourné par le hook.
+    await submit({
+      payload: {
+        type: 'nature_encounter',
+        title: form.title.trim() || undefined,
+        description: form.description.trim(),
+        visibility: 'public',
+        encounter_date: form.encounterDate,
+        time_of_day: timeOfDay,
+        weather: form.weather || undefined,
+        habitat: form.habitat || undefined,
+        location_name: form.locationName || undefined,
+        city: cityFromInput,
+        region: regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : undefined,
+        latitude: form.locationLat ?? undefined,
+        longitude: form.locationLng ?? undefined,
+        location_hidden: form.locationHidden,
+        species_name: firstKnown?.species?.commonName ?? undefined,
+        scientific_name: firstKnown?.species?.scientificName ?? undefined,
+        taxonomic_group: firstKnown?.species?.group ?? undefined,
+        taxref_id: firstKnown?.species?.id ?? undefined,
+        individuals_count: firstKnown?.count && firstKnown.count > 0 ? firstKnown.count : undefined,
+        display_format: form.displayFormat,
+      },
+      files: form.files,
+      onSuccess: async (post) => {
+        // Aide à l'identification : crée une proposition vide pour signaler
+        // que le post attend une identification collaborative.
+        if (form.helpIdentification && !firstKnown && user?.id) {
+          try {
+            await createProposal(user.id, {
+              post_id: post.id,
+              species_name: '?',
+              notes: "Aide à l'identification demandée par l'auteur",
             })
-      setUploadError(friendlyMessage)
-      console.error('[ContributeEncounterForm] submit failed:', err)
-    } finally {
-      clearTimeout(watchdog)
-      setIsSubmitting(false)
-      setUploadProgress(null)
-    }
+          } catch (err) {
+            // Best-effort — l'utilisateur pourra renouveler la demande
+            // depuis le post si la proposition n'a pas été créée.
+            console.warn('[ContributeEncounterForm] createProposal failed:', err)
+          }
+        }
+        onClose()
+      },
+    })
   }
 
   // ── Titres par étape ─────────────────────────────────────────────────────
@@ -443,7 +302,7 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
         role="dialog"
         aria-modal="true"
         aria-label={t('contribute.encounterTitle')}
-        className="fixed inset-y-0 right-0 z-[60] w-full md:w-[440px] bg-cream-lighter flex flex-col shadow-2xl"
+        className="fixed inset-y-0 right-0 z-[60] w-full md:w-[440px] bg-background flex flex-col shadow-2xl"
       >
         {/* ── Header sticky ──────────────────────────────────────────────────
             Figma : gap 12px entre la row top et la progress bar, padding 24/16px,
@@ -595,7 +454,7 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
               </div>
               <button
                 type="button"
-                onClick={() => setUploadError(null)}
+                onClick={clearError}
                 aria-label={t('common.dismiss', { defaultValue: 'Fermer' })}
                 className="size-8 shrink-0 rounded-full hover:bg-muted/50 flex items-center justify-center text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
@@ -656,7 +515,7 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
         )}
 
         {/* ── Footer sticky ──────────────────────────────────────────────── */}
-        <div className="shrink-0 border-t border-border bg-cream-lighter px-5 py-4 flex flex-col gap-2">
+        <div className="shrink-0 border-t border-border bg-background px-5 py-4 flex flex-col gap-2">
           <div className="flex items-center gap-3">
             {/* Bouton retour — BATCH 99 : style btn-press-secondary (cohérence DS) */}
             <button
