@@ -1,5 +1,5 @@
 /**
- * AuthHeroPhoto — Colonne photo héro partagée entre les formulaires d'authentification
+ * AuthHeroPhoto, Colonne photo héro partagée entre les formulaires d'authentification
  *
  * Source de vérité : table `community_photos` dans Supabase.
  * Règles :
@@ -45,7 +45,7 @@ function InstagramIcon() {
 export function AuthHeroPhoto() {
   const [imgError, setImgError] = useState(false)
 
-  // Fetch depuis Supabase — staleTime long car la photo change rarement
+  // Fetch depuis Supabase, staleTime long car la photo change rarement
   const { data: communityPhoto } = useQuery({
     queryKey: ['communityHeroPhoto'],
     queryFn: getCommunityHeroPhoto,
@@ -56,7 +56,7 @@ export function AuthHeroPhoto() {
   // Fallback : asset local si pas de photo en base ou src vide
   const src = !imgError && communityPhoto?.src ? communityPhoto.src : heroPhotoFallback
 
-  const alt = communityPhoto?.alt ?? 'Martin-pêcheur — Naturegraph'
+  const alt = communityPhoto?.alt ?? 'Martin-pêcheur, Naturegraph'
   const tagline = communityPhoto?.tagline ?? 'Partageons nos émotions'
   const photographerName = communityPhoto?.photographerName ?? null
   const instagramUrl = communityPhoto?.instagramUrl ?? null

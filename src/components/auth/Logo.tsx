@@ -1,5 +1,5 @@
 /**
- * Logo — Naturegraph wordmark cliquable
+ * Logo, Naturegraph wordmark cliquable
  * Navigue vers la landing page au clic si onNavigateToLanding est fourni.
  */
 
@@ -17,7 +17,7 @@ export function Logo({ onNavigateToLanding }: LogoProps) {
         type="button"
         onClick={onNavigateToLanding}
         className="focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-primary)] rounded"
-        aria-label="Naturegraph — Retour à l'accueil"
+        aria-label="Naturegraph, Retour à l'accueil"
       >
         <img src={logoColor} alt="Naturegraph" className="h-8 w-auto" />
       </button>

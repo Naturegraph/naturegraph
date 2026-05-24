@@ -1,5 +1,5 @@
 /**
- * ProfileCommunity — Onglet "Communauté" du profil
+ * ProfileCommunity, Onglet "Communauté" du profil
  *
  * Toggle pills : Migrateurs (followers) | Migrations (following).
  * Liste de cartes utilisateurs avec :
@@ -49,7 +49,7 @@ interface UserCardProps {
 }
 
 /**
- * Carte d'un utilisateur de la communauté — Figma 6385:76903.
+ * Carte d'un utilisateur de la communauté, Figma 6385:76903.
  *   - Banner haut (cover, ratio ≈ 5:2)
  *   - Bottom : avatar + username + count, bouton Migrer à droite
  *   - Bordure 0.5px + rounded-md, fond background
@@ -94,7 +94,7 @@ function UserCard({ user }: UserCardProps) {
 
       {/* ── Bottom row : avatar + username + count + bouton Migrer ── */}
       <div className="flex items-center gap-3 p-3">
-        {/* Avatar circulaire — pas de débord, juste à côté du texte */}
+        {/* Avatar circulaire, pas de débord, juste à côté du texte */}
         <img
           src={user.avatar_url || hermineIcon}
           alt={user.username}
@@ -115,7 +115,7 @@ function UserCard({ user }: UserCardProps) {
           </span>
         </div>
 
-        {/* Bouton Migrer / Migrating — circulaire, icône TreeDeciduous (cohérent
+        {/* Bouton Migrer / Migrating, circulaire, icône TreeDeciduous (cohérent
             avec le bouton Migrer du ProfileHeader). */}
         <button
           type="button"
@@ -133,7 +133,7 @@ function UserCard({ user }: UserCardProps) {
               : 'bg-background text-foreground border-border hover:text-primary hover:border-primary'
           }`}
         >
-          {/* Même icône arbre dans les deux états — pleine quand on suit
+          {/* Même icône arbre dans les deux états, pleine quand on suit
               (fill currentColor), creuse sinon. Communique visuellement
               "tu fais partie de la migration". */}
           <TreeDeciduous
@@ -157,7 +157,7 @@ export function ProfileCommunity({
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<CommunityTab>('migrateurs')
 
-  // BATCH 16 / T-079 : lazy load — charge UNIQUEMENT la liste de l'onglet
+  // BATCH 16 / T-079 : lazy load, charge UNIQUEMENT la liste de l'onglet
   // actif. Avant : 2 requetes en parallele toujours. Apres : 1 requete au
   // mount + 1 supplementaire au premier switch d'onglet (puis cache).
   const { data: followers, isLoading: loadingFollowers } = useFollowers(
@@ -176,13 +176,13 @@ export function ProfileCommunity({
 
   return (
     // Pas de padding latéral ici : le parent (Profile.tsx → md:px-12) gère
-    // l'alignement avec les cards et l'avatar — éviter le double padding.
+    // l'alignement avec les cards et l'avatar, éviter le double padding.
     <div className="flex flex-col gap-6 pb-4 pt-2">
       {/* ── Toggle pills "Migrateurs / Migrations" ──
           Figma 6385:76904 :
             - active   : pill primary-light + texte primary + count primary
             - inactive : pill bordered cream + texte foreground + count muted
-          Pills indépendantes (pas de container groupé) — espace 12px. */}
+          Pills indépendantes (pas de container groupé), espace 12px. */}
       <div
         className="flex items-center gap-3 flex-wrap"
         role="group"
@@ -224,7 +224,7 @@ export function ProfileCommunity({
                 })
               : t('profile.community.noMigrationsSubtitle', {
                   defaultValue:
-                    "Ce profil n'a encore rejoint la migration de personne — reviens plus tard pour découvrir ses inspirations.",
+                    "Ce profil n'a encore rejoint la migration de personne, reviens plus tard pour découvrir ses inspirations.",
                 })
           }
         />
@@ -259,7 +259,7 @@ interface PillToggleProps {
 }
 
 /**
- * Pill toggle individuelle — Figma 6385:77009.
+ * Pill toggle individuelle, Figma 6385:77009.
  *
  * Style léger : count inline (pas de badge), typo medium (pas bold), pill
  * compacte. La couleur du compteur suit celle du label.
@@ -279,7 +279,7 @@ function PillToggle({ active, onClick, label, count }: PillToggleProps) {
       }`}
     >
       <span>{label}</span>
-      {/* Count : violet primary quand actif, muted sinon — Figma 6385:77009.
+      {/* Count : violet primary quand actif, muted sinon, Figma 6385:77009.
           Le label reste foreground dans les 2 cas. */}
       <span
         aria-hidden="true"

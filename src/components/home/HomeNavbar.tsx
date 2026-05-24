@@ -1,5 +1,5 @@
 /**
- * HomeNavbar — Barre de navigation de la page Home
+ * HomeNavbar, Barre de navigation de la page Home
  *
  * Comportements :
  *   - Logo            → /home
@@ -12,7 +12,7 @@
  * Responsive :
  *   - XL Desktop (≥1280px) : localisation + recherche + bell + contribuer (label) + avatar + username + streak + chevron
  *   - Desktop/Tablet (≥768px) : localisation + recherche + bell + contribuer (icône) + avatar
- *   - Mobile (<768px) : logo + vue grille + filtre + bell — le reste est dans MobileBottomNav
+ *   - Mobile (<768px) : logo + vue grille + filtre + bell, le reste est dans MobileBottomNav
  *
  * Style boutons :
  *   - Icônes seules et pills secondaires → btn-press btn-press-secondary rounded-full
@@ -53,7 +53,7 @@ import logoColor from '@/assets/logos/logo-wordmark-color.svg'
 // ─── Props ───────────────────────────────────────────────────────────────────
 
 interface HomeNavbarProps {
-  /** Vue liste/grille du feed — contrôlée depuis Home.tsx, affichée sur mobile */
+  /** Vue liste/grille du feed, contrôlée depuis Home.tsx, affichée sur mobile */
   feedViewMode?: 'list' | 'grid'
   /** Toggle vue liste ↔ grille depuis la navbar mobile */
   onToggleFeedView?: () => void
@@ -70,15 +70,15 @@ interface HomeNavbarProps {
 
 // ─── Classes réutilisables ────────────────────────────────────────────────────
 
-/** Bouton icône seule (48×48) — style secondaire avec effet 3D press */
+/** Bouton icône seule (48×48), style secondaire avec effet 3D press */
 const btnIcon =
   'btn-press btn-press-secondary flex items-center justify-center size-12 rounded-full'
 
-/** Bouton pill avec label (h-48) — style secondaire avec effet 3D press */
+/** Bouton pill avec label (h-48), style secondaire avec effet 3D press */
 const btnPill =
   'btn-press btn-press-secondary flex gap-3 h-12 items-center justify-center px-6 rounded-full'
 
-/** Bouton CTA primaire (h-48) — style primaire avec effet 3D press */
+/** Bouton CTA primaire (h-48), style primaire avec effet 3D press */
 const btnPrimary =
   'btn-press btn-press-primary bg-primary flex items-center justify-center gap-3 h-12 rounded-full text-primary-foreground'
 
@@ -95,7 +95,7 @@ export function HomeNavbar({
   const navigate = useNavigate()
   const { isAuthenticated, profile } = useAuth()
 
-  // Streak consécutif (jours d'observation) — calculé depuis Supabase
+  // Streak consécutif (jours d'observation), calculé depuis Supabase
   const { data: streakDays } = useUserStreak(profile?.id)
 
   // Localisation partagée via LocationContext (pas de géoloc locale ici)
@@ -103,7 +103,7 @@ export function HomeNavbar({
   // nom de ville pour rappeler à l'utilisateur quel rayon est actif sur le feed.
   const { locationLabel, locationDistance } = useLocation()
 
-  // Compteur de notifications non lues — alimente le badge
+  // Compteur de notifications non lues, alimente le badge
   const { data: unreadCount } = useUnreadCount(profile?.id)
 
   // ── États des panels / modals ─────────────────────────────────────────────
@@ -112,7 +112,7 @@ export function HomeNavbar({
   const [showContribute, setShowContribute] = useState(false)
   const [showLocationModal, setShowLocationModal] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
-  // SettingsPanel ouvert depuis le ProfileMenu (item "Paramètres") — son
+  // SettingsPanel ouvert depuis le ProfileMenu (item "Paramètres"), son
   // state vit dans HomeNavbar (et non ProfileMenu) pour survivre à la
   // fermeture du ProfileMenu : on ferme le menu profil ET on ouvre les
   // paramètres en parallèle, sans superposition visuelle.
@@ -154,22 +154,22 @@ export function HomeNavbar({
             {/* Logo → /home */}
             <Link
               to="/home"
-              aria-label="Naturegraph — Retour au fil d'actualité"
+              aria-label="Naturegraph, Retour au fil d'actualité"
               className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
             >
               {/* Mobile : h-6 (24px) pour laisser de la place aux boutons d'action.
-                  Desktop md+ : h-8 (32px) — taille de base inchangée. */}
+                  Desktop md+ : h-8 (32px), taille de base inchangée. */}
               <img src={logoColor} alt="Naturegraph" className="h-6 md:h-8 w-auto" />
             </Link>
 
             {/* Actions droite */}
             <div className="flex md:gap-4 gap-3 items-center">
               {/* ════════════════════════════════════════════════════════
-                  MOBILE (<768px) — contrôles du feed + bell
+                  MOBILE (<768px), contrôles du feed + bell
                   (search, contribute et profil sont dans MobileBottomNav)
                   ════════════════════════════════════════════════════════ */}
               <div className="flex md:hidden items-center gap-2">
-                {/* Vue liste/grille — masqué quand la page hôte ne câble pas
+                {/* Vue liste/grille, masqué quand la page hôte ne câble pas
                     `onToggleFeedView` (Profile a son propre toggle, Home
                     expose ce callback). Évite un bouton mort sur les pages
                     sans contrôle de vue. */}
@@ -191,7 +191,7 @@ export function HomeNavbar({
                   </button>
                 )}
 
-                {/* Filtres — affichés UNIQUEMENT quand la page hôte expose
+                {/* Filtres, affichés UNIQUEMENT quand la page hôte expose
                     un callback `onOpenFeedFilters` (= la Home). Sur Profile
                     ou autres pages sans filtres, le bouton est masqué pour
                     éviter une icône morte (Nicolas 2026-05-22). */}
@@ -214,7 +214,7 @@ export function HomeNavbar({
                   </div>
                 )}
 
-                {/* Bell — connecté seulement */}
+                {/* Bell, connecté seulement */}
                 {isAuthenticated && (
                   <div className="relative">
                     <button
@@ -250,7 +250,7 @@ export function HomeNavbar({
                   TABLET + DESKTOP (≥768px)
                   ════════════════════════════════════════════════════════ */}
               <div className="hidden md:flex items-center md:gap-4 gap-3">
-                {/* ── Localisation — pill avec label de ville ou invite ── */}
+                {/* ── Localisation, pill avec label de ville ou invite ── */}
                 <div className="relative">
                   <button
                     type="button"
@@ -274,11 +274,11 @@ export function HomeNavbar({
                       aria-hidden="true"
                     />
                     <span className="text-foreground text-sm truncate max-w-[140px] md:max-w-[200px]">
-                      {/* ?? ne couvre pas '' (string vide) — || est nécessaire ici.
+                      {/* ?? ne couvre pas '' (string vide), || est nécessaire ici.
                           BATCH 114 : truncate au lieu de text-nowrap pour éviter overflow navbar. */}
                       {locationLabel || t('home.navbar.setLocation')}
                     </span>
-                    {/* Pastille rayon — rappelle à l'utilisateur la portée de
+                    {/* Pastille rayon, rappelle à l'utilisateur la portée de
                         son filtre pour comprendre pourquoi le feed est vide
                         ou réduit (Nicolas 2026-05-22). */}
                     {locationLabel && (
@@ -314,7 +314,7 @@ export function HomeNavbar({
                   {showSearch && <SearchPanel onClose={() => setShowSearch(false)} />}
                 </div>
 
-                {/* ── Notifications — connecté seulement ───────────────── */}
+                {/* ── Notifications, connecté seulement ───────────────── */}
                 {isAuthenticated && (
                   <div className="relative">
                     <button
@@ -345,7 +345,7 @@ export function HomeNavbar({
                   </div>
                 )}
 
-                {/* ── Stats sheet — visible uniquement entre lg et xl ────
+                {/* ── Stats sheet, visible uniquement entre lg et xl ────
                     Sur lg la sidebar droite (tendances + communauté) n'est
                     pas affichée pour préserver la largeur du feed. Ce bouton
                     expose la même info via un tiroir latéral droit. */}
@@ -426,12 +426,12 @@ export function HomeNavbar({
                         )}
                       </div>
 
-                      {/* Username + streak — XL Desktop uniquement */}
+                      {/* Username + streak, XL Desktop uniquement */}
                       <div className="hidden xl:flex flex-col gap-0.5 items-start">
                         <span className="text-foreground text-sm text-nowrap leading-tight font-bold">
                           {profile?.username}
                         </span>
-                        {/* Streak — affiché même à 0 pour inciter à l'engagement quotidien */}
+                        {/* Streak, affiché même à 0 pour inciter à l'engagement quotidien */}
                         <span className="text-xs text-nowrap leading-tight flex items-center gap-0.5 text-[var(--color-warning)]">
                           <Flame className="size-3 shrink-0" aria-hidden="true" />
                           {streakDays ?? 0} {t('home.profile.days')}
@@ -460,7 +460,7 @@ export function HomeNavbar({
                     )}
                   </div>
                 ) : (
-                  /* Lien "Se connecter" — style secondaire pill */
+                  /* Lien "Se connecter", style secondaire pill */
                   <Link to="/login" className={[btnPill, 'text-foreground text-sm'].join(' ')}>
                     <User className="size-5 shrink-0" aria-hidden="true" />
                     <span>{t('home.navbar.login')}</span>
@@ -472,11 +472,11 @@ export function HomeNavbar({
         </div>
       </header>
 
-      {/* Settings panel global — ouvert depuis le ProfileMenu (item Paramètres),
+      {/* Settings panel global, ouvert depuis le ProfileMenu (item Paramètres),
           accessible depuis n'importe quelle page via la navbar. */}
       {showSettingsPanel && <SettingsPanel onClose={() => setShowSettingsPanel(false)} />}
 
-      {/* Stats sheet global — ouvert depuis le bouton Stats sur lg. */}
+      {/* Stats sheet global, ouvert depuis le bouton Stats sur lg. */}
       {showStatsSheet && <StatsSheet onClose={() => setShowStatsSheet(false)} />}
     </>
   )

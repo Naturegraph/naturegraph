@@ -57,6 +57,13 @@ Plateforme web citoyenne biodiversite. React 19 + TypeScript + Vite + Tailwind +
 - Mock data : profils fictifs uniquement (src/data/mock/)
 - Ne pas reutiliser les acces/credentials du legacy project sans autorisation
 
+### Style d ecriture (regle permanente)
+
+- INTERDIT d utiliser les em-dash (—) et en-dash (–) dans tout contenu : code, commentaires, JSDoc, strings UI, messages d erreur, commit messages, docs, reponses dans le chat.
+- Remplacer par virgule, deux-points, parentheses, ou point selon le contexte.
+- Cette regle vaut pour Nicolas (lassitude des marques IA) et pour la coherence FR (l em-dash est anglosaxon).
+- Si tu trouves des em-dash dans le code existant, les corriger au passage.
+
 ## Apres chaque implementation
 
 Auditer eco-conception et accessibilite selon les checklists de `GUIDELINES.md`.

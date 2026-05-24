@@ -97,9 +97,14 @@ export async function searchSpecies(
 
   const pattern = `%${q}%`
 
+  // Timeout client 6s — Nicolas 2026-05-24 : sans ce timeout, sur réseau
+  // mobile lent la requête restait pending indéfiniment et l'user voyait
+  // l'icône tourner sans fin. 6s est large pour un ILIKE sur 5k espèces.
+  const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
+    setTimeout(() => resolve({ data: null, error: new Error('species search timeout 6s') }), 6000),
+  )
+
   try {
-    // pg_trgm accélère les ILIKE % grâce aux indexes GIN. La recherche
-    // est tolérante aux fautes de frappe légères et insensible à la casse.
     let qb = db
       .from('species_master')
       .select(SPECIES_MASTER_SELECT)
@@ -116,17 +121,20 @@ export async function searchSpecies(
       qb = qb.eq('taxonomic_group', group)
     }
 
-    const { data, error } = await qb
+    const result = await Promise.race([qb, timeoutPromise])
+    const { data, error } = result as { data: unknown; error: unknown }
 
     if (error) {
-      console.warn('[searchService] species_master search failed:', error.message)
+      console.warn(
+        '[searchService] species_master search failed:',
+        (error as Error).message ?? error,
+      )
       return []
     }
 
     return ((data ?? []) as Record<string, unknown>[]).map(toSpeciesHit)
-  } catch {
-    // Supabase totalement indisponible : on retourne vide (l'UI propose
-    // le fallback "Ajouter à valider par la communauté").
+  } catch (err) {
+    console.warn('[searchService] species search exception:', err)
     return []
   }
 }

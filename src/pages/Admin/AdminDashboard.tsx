@@ -571,40 +571,53 @@ function Sparkline({ data }: { data: ActivityPoint[] }) {
   const max = Math.max(...data.map((d) => d.posts), 1)
   // BATCH 114 : sparkline plus haute sur mobile pour lisibilité
   return (
-    <div
-      className="flex items-end gap-0.5 sm:gap-1 h-32 sm:h-24"
-      aria-label="Activité des 14 derniers jours"
-    >
-      {data.map((d) => {
-        const pct = (d.posts / max) * 100
-        const dateLabel = new Date(d.date).toLocaleDateString('fr-FR', {
-          day: '2-digit',
-          month: '2-digit',
-        })
-        return (
-          <div
-            key={d.date}
-            className="flex-1 flex flex-col items-center gap-1 group min-w-0"
-            title={`${dateLabel} : ${d.posts} post${d.posts > 1 ? 's' : ''}`}
-          >
+    <div className="w-full" aria-label="Activité des 14 derniers jours">
+      {/* Nicolas 2026-05-24 (fix v2) : bar et label étaient dans le même
+          flex-col → le label bouffait l'espace vertical réservé à la
+          barre, qui restait visuellement invisible. Désormais row bars +
+          row labels séparées avec hauteur fixe absolue. */}
+      <div className="flex items-end gap-0.5 sm:gap-1 h-28 w-full">
+        {data.map((d) => {
+          const pct = (d.posts / max) * 100
+          const dateLabel = new Date(d.date).toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+          })
+          return (
             <div
-              // Nicolas 2026-05-24 : bars trop pâles auparavant (primary/20)
-              // → on passe à primary/60 + min-height 8px pour qu'on voit
-              // vraiment chaque jour, même les jours à 0 (barre fantôme).
+              key={d.date}
               className={
                 d.posts > 0
-                  ? 'w-full bg-primary/70 hover:bg-primary rounded-t transition-colors'
-                  : 'w-full bg-primary/15 rounded-t'
+                  ? 'flex-1 min-w-0 bg-primary rounded-t cursor-help'
+                  : 'flex-1 min-w-0 bg-primary/15 rounded-t'
               }
-              style={{ height: `${Math.max(pct, d.posts > 0 ? 12 : 4)}%` }}
+              style={{
+                // height en % du parent h-28, avec min absolu 6px sur les
+                // jours non-vides pour garantir la visibilité.
+                height: d.posts > 0 ? `max(${pct}%, 8px)` : '4px',
+              }}
+              title={`${dateLabel} : ${d.posts} post${d.posts > 1 ? 's' : ''}`}
               role="presentation"
             />
-            <span className="text-[8px] sm:text-[9px] text-muted-foreground tabular-nums truncate w-full text-center">
-              {dateLabel.slice(0, 5)}
+          )
+        })}
+      </div>
+      <div className="flex gap-0.5 sm:gap-1 mt-1.5 w-full">
+        {data.map((d) => {
+          const dateLabel = new Date(d.date).toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+          })
+          return (
+            <span
+              key={`label-${d.date}`}
+              className="flex-1 min-w-0 text-[9px] text-muted-foreground tabular-nums truncate text-center"
+            >
+              {dateLabel}
             </span>
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
 }

@@ -1,9 +1,9 @@
 /**
- * notebookService — Carnets d'observations partagés
+ * notebookService, Carnets d'observations partagés
  *
  * Tables :
  *  - notebooks (id, author_id, title, description, visibility, cover_image_url, ...)
- *  - notebook_observations (notebook_id, observation_id, added_at) — table de jointure
+ *  - notebook_observations (notebook_id, observation_id, added_at), table de jointure
  */
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
@@ -28,7 +28,7 @@ export interface CreateNotebookPayload {
 
 function ensureClient() {
   if (!isSupabaseConfigured || !supabase) {
-    throw new Error('Supabase non configuré — notebookService indisponible')
+    throw new Error('Supabase non configuré, notebookService indisponible')
   }
   return supabase
 }

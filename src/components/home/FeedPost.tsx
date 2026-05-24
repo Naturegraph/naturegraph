@@ -10,7 +10,7 @@
  * - "Voir plus / Voir moins" annonce le changement d'état
  */
 
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import React, { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import {
@@ -282,24 +282,17 @@ export function FeedPost({
     function measure() {
       const el = contentRef.current
       if (!el) return
-      // En mode clampé, scrollHeight = hauteur naturelle, clientHeight = clampée.
-      // Si différence > 1px (tolérance subpixel), le texte déborde.
+      // Bug fix Nicolas 2026-05-24 : on NE mesure QUE quand le texte est
+      // clampé (isExpanded=false). Sinon, en mode expanded, scrollHeight ===
+      // clientHeight → setIsOverflowing(false) → l'effet ci-dessous resettait
+      // isExpanded → boucle → clic « Voir plus » sans effet sur mobile.
+      if (isExpanded) return
       setIsOverflowing(el.scrollHeight - el.clientHeight > 1)
     }
     measure()
-    // Re-mesurer si la fenêtre redimensionne (responsive)
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
   }, [content, isExpanded])
-
-  // Reset isExpanded si le texte ne déborde plus (ex: viewport élargi).
-  // queueMicrotask évite l'erreur React 19 "setState synchrone dans un effect"
-  // tout en restant immédiat (pas de flash visuel).
-  useEffect(() => {
-    if (!isOverflowing && isExpanded) {
-      queueMicrotask(() => setIsExpanded(false))
-    }
-  }, [isOverflowing, isExpanded])
 
   // Configuration de la réaction active de l'utilisateur (null si aucune).
   // Permet de remplacer dynamiquement l'emoji + le label "Réagir" par celui de
