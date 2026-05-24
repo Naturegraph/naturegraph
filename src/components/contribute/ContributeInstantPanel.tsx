@@ -26,6 +26,7 @@ import type { TimeOfDay, WeatherCondition, DisplayFormat } from '@/types/databas
 import { EncounterStep1 } from './EncounterStep1'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import { useContributePostSubmit } from '@/hooks/useContributePostSubmit'
+import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { useLocationAutocomplete } from '@/hooks/useLocationAutocomplete'
 import type { CityResult } from '@/types/location'
@@ -83,9 +84,15 @@ const WEATHER_EMOJI: Record<WeatherCondition, string> = {
 
 interface ContributeInstantPanelProps {
   onClose: () => void
+  /**
+   * Si défini : panneau en mode ÉDITION du post Instant existant. Les champs
+   * sont pré-remplis depuis la base au mount, et le submit appelle
+   * updatePost() au lieu de createPost() (Nicolas 2026-05-24).
+   */
+  editingPostId?: string
 }
 
-export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps) {
+export function ContributeInstantPanel({ onClose, editingPostId }: ContributeInstantPanelProps) {
   const { t } = useTranslation()
 
   // Pipeline submit factorisé (cf. useContributePostSubmit) — identique
@@ -114,6 +121,49 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitAttempted, setSubmitAttempted] = useState(false)
+
+  // ── Pré-remplissage en mode édition ─────────────────────────────────────
+  // Fetch les valeurs du post Instant au mount et init le form. On saute
+  // directement à l'étape 2 (détails) car les photos existantes restent
+  // attachées au post.
+  useEffect(() => {
+    if (!editingPostId || !supabase) return
+    let cancelled = false
+    ;(async () => {
+      const { data: post, error } = await supabase
+        .from('posts')
+        .select(
+          'title, description, encounter_date, time_of_day, weather, location_name, latitude, longitude, country, region, location_hidden, tags, display_format',
+        )
+        .eq('id', editingPostId)
+        .maybeSingle()
+      if (cancelled || error || !post) return
+      // Reconstruit la sélection de phénomène depuis tags[0] (le label).
+      const tagLabel = (post.tags as string[] | null)?.[0]
+      const phenomenonId =
+        (PHENOMENON_OPTIONS.find((o) => o.label === tagLabel)?.id as PhenomenonId | undefined) ?? ''
+      setForm((prev) => ({
+        ...prev,
+        title: post.title ?? '',
+        description: post.description ?? '',
+        encounterDate: post.encounter_date ?? prev.encounterDate,
+        timeOfDay: (post.time_of_day ?? '') as InstantFormData['timeOfDay'],
+        weather: (post.weather ?? '') as InstantFormData['weather'],
+        phenomenon: phenomenonId,
+        locationName: post.location_name ?? '',
+        locationLat: post.latitude ?? null,
+        locationLng: post.longitude ?? null,
+        locationCountry: post.country ?? null,
+        locationRegion: post.region ?? null,
+        locationHidden: post.location_hidden ?? true,
+        displayFormat: (post.display_format ?? '16:9') as DisplayFormat,
+      }))
+      setStep(2)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [editingPostId])
 
   // Escape ferme le panneau
   useEffect(() => {
@@ -220,6 +270,7 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
         display_format: form.displayFormat,
       },
       files: form.files,
+      editingPostId,
       onSuccess: onClose,
     })
   }

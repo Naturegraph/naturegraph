@@ -62,6 +62,14 @@ export default function Home() {
     'nature_encounter' | 'nature_instant' | null
   >(null)
 
+  /**
+   * ID du post en cours d'édition — quand non-null, le panel correspondant
+   * (Encounter ou Instant selon activePanelType) s'ouvre en mode update
+   * avec pré-remplissage. À la fermeture / soumission, repasse à null
+   * (Nicolas 2026-05-24 : possibilité de corriger ses observations).
+   */
+  const [editingPostId, setEditingPostId] = useState<string | null>(null)
+
   // État partagé feed — contrôlable depuis la navbar mobile ET le header desktop
   const [feedViewMode, setFeedViewMode] = useState<'list' | 'grid'>('list')
   const [feedShowFilters, setFeedShowFilters] = useState(false)
@@ -70,9 +78,22 @@ export default function Home() {
   /** Appelé depuis ContributeModal (desktop via navbar et mobile via FAB) */
   function handleContributeTypeSelect(type: string) {
     setShowContributeModal(false)
+    setEditingPostId(null) // Sécurité : crée toujours un NOUVEAU post (pas un edit).
     if (type === 'nature_encounter' || type === 'nature_instant') {
       setActivePanelType(type)
     }
+  }
+
+  /** Appelé depuis le menu PostOptionsMenu (FeedSection → FeedPost → onEditPost). */
+  function handleEditPost(postId: string, postType: 'nature_encounter' | 'nature_instant') {
+    setEditingPostId(postId)
+    setActivePanelType(postType)
+  }
+
+  /** Reset complet quand on ferme un panel (crée ou édite). */
+  function handleClosePanel() {
+    setActivePanelType(null)
+    setEditingPostId(null)
   }
 
   return (
@@ -115,6 +136,7 @@ export default function Home() {
               // Empty state CTA "Partager une observation" → ouvre directement
               // le panel Rencontre Nature (même flow que la navbar).
               onContributeClick={() => setActivePanelType('nature_encounter')}
+              onEditPost={handleEditPost}
             />
           </main>
 
@@ -142,17 +164,24 @@ export default function Home() {
         />
       )}
 
-      {/* Panneau Rencontre Nature — overlay latéral droit */}
+      {/* Panneau Rencontre Nature — overlay latéral droit.
+          Si editingPostId est set : ouvre en mode édition (pré-rempli). */}
       {activePanelType === 'nature_encounter' && (
         <Suspense fallback={null}>
-          <ContributeEncounterForm onClose={() => setActivePanelType(null)} />
+          <ContributeEncounterForm
+            onClose={handleClosePanel}
+            editingPostId={editingPostId ?? undefined}
+          />
         </Suspense>
       )}
 
       {/* Panneau Instant Nature — même architecture, 2 étapes (photos + détails) */}
       {activePanelType === 'nature_instant' && (
         <Suspense fallback={null}>
-          <ContributeInstantPanel onClose={() => setActivePanelType(null)} />
+          <ContributeInstantPanel
+            onClose={handleClosePanel}
+            editingPostId={editingPostId ?? undefined}
+          />
         </Suspense>
       )}
     </div>

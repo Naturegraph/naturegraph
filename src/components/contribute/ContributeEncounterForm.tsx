@@ -24,6 +24,7 @@ import { EncounterStep3 } from './EncounterStep3'
 import type { ObservationEntry } from './EncounterStep2'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/supabase'
 // Pipeline submit factorisé — partagé avec ContributeInstantPanel pour
 // garantir que les deux flows restent strictement alignés (Nicolas
 // 2026-05-23 audit final : single source of truth pour compression,
@@ -80,15 +81,23 @@ const TOTAL_STEPS = 3
 interface ContributeEncounterFormProps {
   /** Ferme le panneau (retour au feed) */
   onClose: () => void
+  /**
+   * Si défini : panneau en mode ÉDITION du post existant. Les champs sont
+   * pré-remplis depuis la base au mount, et le submit appelle updatePost()
+   * au lieu de createPost() (Nicolas 2026-05-24).
+   */
+  editingPostId?: string
 }
 
-export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProps) {
+export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEncounterFormProps) {
   const { t } = useTranslation()
   const { user } = useAuth()
 
   // Pipeline submit factorisé — identique à ContributeInstantPanel.
   const { submit, isSubmitting, uploadProgress, uploadError, clearError } =
     useContributePostSubmit('ContributeEncounterForm')
+
+  const isEditing = !!editingPostId
 
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<EncounterFormData>({
@@ -116,6 +125,81 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
   // Gate l'affichage des erreurs inline (second-agent/30) — passe à true au
   // premier handleSubmit ; remis à false sur navigation entre étapes.
   const [submitAttempted, setSubmitAttempted] = useState(false)
+
+  // ── Pré-remplissage en mode édition ─────────────────────────────────────
+  // Quand editingPostId est défini au mount, on fetch les valeurs courantes
+  // du post + sa première observation (species) et on initialise le form
+  // pour que l'utilisateur retrouve son contenu et puisse corriger.
+  // Les photos existantes ne sont PAS re-injectées dans `files` (on ne sait
+  // pas reconstruire un File depuis une URL distante facilement) — les
+  // nouvelles photos uploadées seront ajoutées en append.
+  useEffect(() => {
+    if (!editingPostId || !supabase) return
+    let cancelled = false
+    ;(async () => {
+      // Cast `any` car les types supabase générés sont en retard sur
+      // certaines colonnes (individuals_count, display_format) — runtime OK.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: postRaw, error } = await (supabase as any)
+        .from('posts')
+        .select(
+          'title, description, encounter_date, time_of_day, weather, habitat, location_name, latitude, longitude, country, region, city, location_hidden, species_name, scientific_name, taxonomic_group, taxref_id, individuals_count, display_format',
+        )
+        .eq('id', editingPostId)
+        .maybeSingle()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const post = postRaw as any
+      if (cancelled || error || !post) return
+      // Reconstruit la première observation à partir des species_* du post
+      // (si l'espèce était identifiée). Sinon on injecte une observation
+      // « inconnue » pour rester cohérent avec le carnet.
+      const initialObs: ObservationEntry[] = post.species_name
+        ? [
+            {
+              id: `obs-edit-${editingPostId}`,
+              species: post.taxref_id
+                ? {
+                    id: post.taxref_id,
+                    commonName: post.species_name,
+                    scientificName: post.scientific_name ?? '',
+                    group: (post.taxonomic_group ??
+                      'other') as ObservationEntry['species'] extends infer S
+                      ? S extends { group: infer G }
+                        ? G
+                        : never
+                      : never,
+                  }
+                : null,
+              isUnknown: !post.taxref_id,
+              count: post.individuals_count ?? 1,
+            },
+          ]
+        : []
+      setForm((prev) => ({
+        ...prev,
+        title: post.title ?? '',
+        description: post.description ?? '',
+        encounterDate: post.encounter_date ?? prev.encounterDate,
+        timeOfDay: (post.time_of_day ?? '') as EncounterFormData['timeOfDay'],
+        weather: (post.weather ?? '') as EncounterFormData['weather'],
+        habitat: (post.habitat ?? '') as EncounterFormData['habitat'],
+        locationName: post.location_name ?? '',
+        locationLat: post.latitude ?? null,
+        locationLng: post.longitude ?? null,
+        locationCountry: post.country ?? null,
+        locationRegion: post.region ?? null,
+        locationHidden: post.location_hidden ?? true,
+        displayFormat: (post.display_format ?? '16:9') as DisplayFormat,
+        observations: initialObs,
+      }))
+      // En édition on saute directement à l'étape 3 (les détails), car les
+      // photos existantes restent et le carnet est pré-rempli.
+      setStep(3)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [editingPostId])
 
   // Fermer sur Escape
   useEffect(() => {
@@ -268,6 +352,7 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
         display_format: form.displayFormat,
       },
       files: form.files,
+      editingPostId,
       onSuccess: async (post) => {
         // Aide à l'identification : crée une proposition vide pour signaler
         // que le post attend une identification collaborative.
@@ -617,6 +702,8 @@ export function ContributeEncounterForm({ onClose }: ContributeEncounterFormProp
                     />
                     {t('common.loading')}
                   </span>
+                ) : isEditing ? (
+                  t('contribute.panel.updateBtn', { defaultValue: 'Mettre à jour' })
                 ) : (
                   t('contribute.panel.publishBtn')
                 )}

@@ -158,6 +158,35 @@ export default function Profile() {
   const { data: userPostsRaw } = useUserPosts(profileId)
   const userPosts: MockPost[] = (userPostsRaw ?? []).map((p, i) => postFeedItemToMockPost(p, i))
 
+  // ── Calcul ADN d'observateur ──────────────────────────────────────────────
+  // Pourcentages calculés côté client depuis les posts réels (taxonomic_group)
+  // — Nicolas 2026-05-24 : sans ça, la card ADN affichait toujours « Aucune
+  // observation » car les `percent` étaient hardcodés à 0. Désormais la
+  // première observation déclenche l'apparition d'une barre.
+  if (profileData && userPostsRaw && userPostsRaw.length > 0) {
+    const counts = new Map<string, number>()
+    for (const p of userPostsRaw) {
+      const g = p.taxonomic_group ?? 'other'
+      counts.set(g, (counts.get(g) ?? 0) + 1)
+    }
+    const total = userPostsRaw.length
+    // On garde les intérêts déclarés à l'onboarding ET on ajoute les groupes
+    // observés effectivement mais non déclarés (utile : un user peut observer
+    // des oiseaux sans l'avoir coché à l'onboarding). Tri par % décroissant
+    // côté ProfileDNACard.
+    const declared = new Set(profileData.interests.map((i) => i.id))
+    const merged: typeof profileData.interests = profileData.interests.map((i) => ({
+      id: i.id,
+      percent: Math.round(((counts.get(i.id) ?? 0) / total) * 100),
+    }))
+    for (const [id, count] of counts) {
+      if (!declared.has(id)) {
+        merged.push({ id, percent: Math.round((count / total) * 100) })
+      }
+    }
+    profileData = { ...profileData, interests: merged }
+  }
+
   // ── Posts sauvegardés (onglet "Collection") ───────────────────────────────
   // Visible uniquement sur le propre profil (RLS saved_posts owner-only).
   // Pour un visiteur on retourne tableau vide → ProfileTabs masque l'onglet.

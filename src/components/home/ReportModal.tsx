@@ -11,7 +11,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, ChevronDown, ChevronUp, CheckCircle } from 'lucide-react'
+import { X, CheckCircle } from 'lucide-react'
 import { createReport } from '@/services/reportService'
 import type { ReportReason } from '@/types/database'
 
@@ -39,11 +39,7 @@ export function ReportModal({ postId, onClose }: ReportModalProps) {
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [dropdownOpen, setDropdownOpen] = useState(false)
   const closeBtnRef = useRef<HTMLButtonElement>(null)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-
-  const selectedLabel = reason ? t(REASON_OPTIONS.find((o) => o.value === reason)!.labelKey) : ''
 
   // Focus sur le bouton fermer à l'ouverture
   useEffect(() => {
@@ -67,21 +63,6 @@ export function ReportModal({ postId, onClose }: ReportModalProps) {
       document.body.style.overflow = prev
     }
   }, [])
-
-  // Click extérieur ferme le dropdown des raisons
-  useEffect(() => {
-    if (!dropdownOpen) return
-    const fn = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false)
-      }
-    }
-    const id = setTimeout(() => document.addEventListener('mousedown', fn), 50)
-    return () => {
-      clearTimeout(id)
-      document.removeEventListener('mousedown', fn)
-    }
-  }, [dropdownOpen])
 
   /**
    * Soumission du signalement vers la table `reports` (Supabase).
@@ -134,70 +115,54 @@ export function ReportModal({ postId, onClose }: ReportModalProps) {
       </p>
 
       {/*
-        Dropdown custom (second-agent/15) — Figma mobile 6385:91998 :
-        liste s'ouvre AU-DESSUS du toggle, fond bg-primary-light/40 quand sélectionné,
-        item actif dans la liste avec bg-primary-light + text-primary.
-        Le <select> natif ne supporte pas ce styling — d'où le custom.
+        Liste de radios visible inline (Nicolas 2026-05-24) — remplace l'ancien
+        dropdown custom dont le click-outside provoquait une race condition
+        mobile qui empêchait la sélection. Les radio cards sont toujours
+        visibles, plus fiables et plus accessibles.
       */}
-      <div className="relative mt-4" ref={dropdownRef}>
-        {/* Liste — overlay au-dessus */}
-        {dropdownOpen && (
-          <div
-            role="listbox"
-            aria-label={t('home.post.reportModal.placeholder')}
-            className="absolute bottom-full left-0 right-0 mb-2 bg-background border border-border rounded-2xl shadow-lg overflow-hidden z-10"
-          >
-            {REASON_OPTIONS.map((opt) => {
-              const isSelected = opt.value === reason
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  role="option"
-                  aria-selected={isSelected}
-                  onClick={() => {
-                    setReason(opt.value)
-                    setDropdownOpen(false)
-                  }}
-                  className={[
-                    'w-full text-left px-4 py-3 text-sm transition-colors',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
-                    isSelected
-                      ? 'bg-primary-light text-primary font-semibold'
-                      : 'text-foreground hover:bg-muted/40',
-                  ].join(' ')}
-                >
-                  {t(opt.labelKey)}
-                </button>
-              )
-            })}
-          </div>
-        )}
-
-        {/* Toggle button */}
-        <button
-          type="button"
-          onClick={() => setDropdownOpen((o) => !o)}
-          aria-haspopup="listbox"
-          aria-expanded={dropdownOpen}
-          className={[
-            'w-full h-12 flex items-center justify-between gap-2 pl-4 pr-3 rounded-full border transition-colors',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-            reason
-              ? 'bg-primary-light/40 border-primary/30 text-foreground'
-              : 'bg-background border-border text-muted-foreground hover:bg-muted/30',
-          ].join(' ')}
-        >
-          <span className="truncate text-sm">
-            {selectedLabel || t('home.post.reportModal.placeholder')}
-          </span>
-          {dropdownOpen ? (
-            <ChevronUp className="size-4 text-muted-foreground shrink-0" aria-hidden="true" />
-          ) : (
-            <ChevronDown className="size-4 text-muted-foreground shrink-0" aria-hidden="true" />
-          )}
-        </button>
-      </div>
+      <fieldset
+        className="mt-4 flex flex-col gap-2"
+        aria-label={t('home.post.reportModal.placeholder')}
+      >
+        {REASON_OPTIONS.map((opt) => {
+          const isSelected = opt.value === reason
+          const id = `report-reason-${opt.value}`
+          return (
+            <label
+              key={opt.value}
+              htmlFor={id}
+              className={[
+                'flex items-center gap-3 px-4 py-3 rounded-2xl border cursor-pointer transition-colors',
+                'focus-within:ring-2 focus-within:ring-primary',
+                isSelected
+                  ? 'bg-primary-light/60 border-primary text-foreground font-semibold'
+                  : 'bg-background border-border text-foreground hover:bg-muted/30',
+              ].join(' ')}
+            >
+              <input
+                id={id}
+                type="radio"
+                name="report-reason"
+                value={opt.value}
+                checked={isSelected}
+                onChange={() => setReason(opt.value)}
+                className="sr-only"
+              />
+              {/* Indicateur radio personnalisé — cohérent avec le DS */}
+              <span
+                aria-hidden="true"
+                className={[
+                  'size-5 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors',
+                  isSelected ? 'border-primary' : 'border-border',
+                ].join(' ')}
+              >
+                {isSelected && <span className="size-2.5 rounded-full bg-primary" />}
+              </span>
+              <span className="text-sm flex-1">{t(opt.labelKey)}</span>
+            </label>
+          )
+        })}
+      </fieldset>
 
       {errorMsg && (
         <p role="alert" className="text-xs text-red-600 mt-3">

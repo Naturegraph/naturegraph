@@ -49,7 +49,15 @@ export interface MockPost {
    * Voir second-agent/04-feedpost-icon-color-by-type.md.
    */
   postType: 'nature_encounter' | 'nature_instant'
-  author: { name: string; avatar: string; badge?: string }
+  /**
+   * Auteur du post :
+   * - `name`    : nom affiché (« first_name last_name » ou fallback username)
+   * - `username`: pseudo officiel — TOUJOURS utilisé pour les liens /profile/:username
+   *               (sinon les liens cassent quand un user change son pseudo).
+   * - `avatar`  : URL avatar, fallback hermine côté composant
+   * - `badge`   : emoji du centre d'intérêt #1 (décoratif)
+   */
+  author: { name: string; username: string; avatar: string; badge?: string }
   date: string
   location: string
   title: string
@@ -206,6 +214,12 @@ interface FeedPostProps extends MockPost {
    *     bordure orpheline en bas de liste).
    */
   hideEndBorder?: boolean
+  /**
+   * Callback édition post — remonté jusqu'à Home pour rouvrir le panel de
+   * création (Encounter/Instant) pré-rempli. Affiche le bouton « Modifier »
+   * dans le PostOptionsMenu uniquement si défini ET si isOwnPost.
+   */
+  onEditPost?: (postId: string, postType: MockPost['postType']) => void
 }
 
 export function FeedPost({
@@ -239,6 +253,7 @@ export function FeedPost({
   isOwnPost = false,
   onReact,
   hideEndBorder = false,
+  onEditPost,
 }: FeedPostProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -333,7 +348,7 @@ export function FeedPost({
             {/* Avatar — Figma 48px, badge 24px (Background/Neutral/Secondary).
                 Wrapped Link → navigation vers le profil de l'auteur. */}
             <Link
-              to={`/profile/${author.name}`}
+              to={`/profile/${author.username}`}
               aria-label={`Voir le profil de ${author.name}`}
               className="relative size-12 shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
@@ -362,7 +377,7 @@ export function FeedPost({
                 Nom cliquable → profil (cohérence avec l'avatar). */}
             <div className="flex flex-col gap-1 min-w-0">
               <Link
-                to={`/profile/${author.name}`}
+                to={`/profile/${author.username}`}
                 className="text-lg leading-[1.2] text-foreground font-bold truncate hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
               >
                 {author.name}
@@ -410,10 +425,11 @@ export function FeedPost({
                 postId={id}
                 postTitle={title}
                 postSpecies={species ?? scientific_name ?? null}
-                authorUsername={author.name}
+                authorUsername={author.username}
                 authorId={authorId}
                 isOwnPost={isOwnPost}
                 onClose={() => setShowOptions(false)}
+                onEdit={isOwnPost && onEditPost ? () => onEditPost(id, postType) : undefined}
               />
             )}
           </div>

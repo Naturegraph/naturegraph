@@ -26,7 +26,7 @@ import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/AuthContext'
-import { useCreatePost } from '@/hooks/usePost'
+import { useCreatePost, useUpdatePost } from '@/hooks/usePost'
 import { compressPhoto } from '@/utils/compressPhoto'
 import { uploadPostMedia } from '@/services/mediaService'
 import { supabase } from '@/lib/supabase'
@@ -62,9 +62,15 @@ export interface ContributeSubmitParams {
   /** Fichiers photos à uploader (peut être vide — post texte uniquement). */
   files: File[]
   /**
-   * Callback succès — reçoit le post créé pour permettre des actions
-   * dépendantes (ex : createProposal pour helpIdentification dans Encounter).
-   * Appelé APRÈS l'invalidation du cache feed.
+   * Si défini, MODE ÉDITION : appelle updatePost(editingPostId, payload)
+   * au lieu de createPost(). Les nouveaux fichiers (s'il y en a) sont
+   * ajoutés au post existant — on n'efface PAS les photos existantes
+   * (l'user peut le faire à part via le menu PostOptionsMenu).
+   */
+  editingPostId?: string
+  /**
+   * Callback succès — reçoit le post créé/mis à jour pour permettre des
+   * actions dépendantes. Appelé APRÈS l'invalidation du cache feed.
    */
   onSuccess: (post: { id: string }) => void | Promise<void>
 }
@@ -93,6 +99,7 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
   const { t } = useTranslation()
   const { user } = useAuth()
   const createPost = useCreatePost(user?.id ?? '')
+  const updatePost = useUpdatePost()
   const queryClient = useQueryClient()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -104,7 +111,7 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
   const clearError = useCallback(() => setUploadError(null), [])
 
   const submit = useCallback(
-    async ({ payload, files, onSuccess }: ContributeSubmitParams) => {
+    async ({ payload, files, editingPostId, onSuccess }: ContributeSubmitParams) => {
       if (!user?.id) {
         setUploadError(
           t('contribute.errors.notAuthenticated', { defaultValue: 'Connecte-toi pour publier' }),
@@ -112,6 +119,7 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         return
       }
 
+      const isEditing = !!editingPostId
       setIsSubmitting(true)
       setUploadError(null)
       let createdPostId: string | null = null
@@ -130,9 +138,19 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
       }, 30_000)
 
       try {
-        // 1. Création du post (timeout 10 s — INSERT SQL doit être instantané).
-        const post = await withTimeout(createPost.mutateAsync(payload), 10_000, 'création du post')
-        createdPostId = post.id
+        // 1. Création OU mise à jour du post (timeout 10 s — opération SQL légère).
+        //    En mode édition on appelle updatePost(id, payload) ; aucune
+        //    nouvelle row n'est créée donc pas de rollback nécessaire.
+        const post = isEditing
+          ? await withTimeout(
+              updatePost.mutateAsync({ postId: editingPostId!, payload }),
+              10_000,
+              'mise à jour du post',
+            )
+          : await withTimeout(createPost.mutateAsync(payload), 10_000, 'création du post')
+        // createdPostId reste null en mode édition → pas de rollback sur erreur
+        // d'upload (on garde le post existant tel quel).
+        if (!isEditing) createdPostId = post.id
 
         // 2. Upload des médias (si fournis) — pipeline compression + strip EXIF.
         if (files.length > 0) {
@@ -162,14 +180,20 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
               `[${formLabel}] compressed → ${(fileToUpload.size / 1024).toFixed(0)} Ko (${fileToUpload.type})`,
             )
 
+            // En mode édition : on APPEND les nouvelles photos derrière
+            // les médias existants (displayOrder offset par timestamp pour
+            // éviter les collisions ; isCover = false pour ne pas écraser
+            // la cover déjà choisie).
+            const displayOrder = isEditing ? Date.now() + i : i
+            const isCover = !isEditing && i === 0
             await withTimeout(
               uploadPostMedia({
                 file: fileToUpload,
                 postId: post.id,
                 userId: user.id,
                 copyrightNotice: '',
-                displayOrder: i,
-                isCover: i === 0,
+                displayOrder,
+                isCover,
                 width: dims?.width,
                 height: dims?.height,
               }),
@@ -181,8 +205,11 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
 
         // 3. Invalide TOUTES les variantes du feed (peu importe le contexte
         //    actif — tabs, filtres, page, currentUserId). Le post apparaît
-        //    immédiatement dans la liste.
+        //    immédiatement dans la liste. On invalide aussi les posts du
+        //    profil pour que l'ADN d'observateur + journal nature se
+        //    rafraîchissent dès la première observation (Nicolas 2026-05-24).
         queryClient.invalidateQueries({ queryKey: ['feed'] })
+        queryClient.invalidateQueries({ queryKey: ['posts', 'by-user'] })
 
         await onSuccess(post)
       } catch (err) {
