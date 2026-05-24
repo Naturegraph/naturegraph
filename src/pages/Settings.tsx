@@ -346,6 +346,10 @@ export default function Settings() {
                     population: null,
                     centroidLat: 0,
                     centroidLng: 0,
+                    // Settings : on n'a pas l'info source ici. Vide = inconnu,
+                    // le post ne portera pas de fallback pays — acceptable
+                    // car ce CityResult ne sert qu'au pré-remplissage UI.
+                    country: '',
                   }
                 : undefined
             }

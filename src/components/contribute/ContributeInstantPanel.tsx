@@ -60,6 +60,8 @@ interface InstantFormData {
   locationName: string
   locationLat: number | null
   locationLng: number | null
+  /** Pays déduit de la source autocomplete (FR / CA). */
+  locationCountry: string | null
   locationHidden: boolean
 }
 
@@ -104,6 +106,7 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
     locationName: '',
     locationLat: null,
     locationLng: null,
+    locationCountry: null,
     locationHidden: true,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -206,6 +209,7 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
         region: regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : undefined,
         latitude: form.locationLat ?? undefined,
         longitude: form.locationLng ?? undefined,
+        country: form.locationCountry ?? undefined,
         location_hidden: form.locationHidden,
         tags: phenomenonLabel ? [phenomenonLabel] : [],
         display_format: form.displayFormat,
@@ -328,8 +332,13 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
                 onPhenomenonChange={(v) => set('phenomenon', v)}
                 locationName={form.locationName}
                 onLocationChange={(v) => set('locationName', v)}
-                onLocationCoordsChange={(lat, lng) => {
-                  setForm((prev) => ({ ...prev, locationLat: lat, locationLng: lng }))
+                onLocationCoordsChange={(lat, lng, country) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    locationLat: lat,
+                    locationLng: lng,
+                    locationCountry: country ?? prev.locationCountry,
+                  }))
                 }}
                 locationHidden={form.locationHidden}
                 onLocationHiddenChange={(v) => set('locationHidden', v)}
@@ -488,7 +497,7 @@ interface InstantStep2Props {
   onPhenomenonChange: (v: PhenomenonId | '') => void
   locationName: string
   onLocationChange: (v: string) => void
-  onLocationCoordsChange?: (lat: number | null, lng: number | null) => void
+  onLocationCoordsChange?: (lat: number | null, lng: number | null, country?: string | null) => void
   locationHidden: boolean
   onLocationHiddenChange: (v: boolean) => void
   errors: Record<string, string>
@@ -564,7 +573,7 @@ function InstantStep2({
   function handlePickCity(city: CityResult) {
     const parts = [city.name, city.departmentName, city.regionName].filter(Boolean)
     onLocationChange(parts.join(', '))
-    onLocationCoordsChange?.(city.centroidLat, city.centroidLng)
+    onLocationCoordsChange?.(city.centroidLat, city.centroidLng, city.country)
     setLocSuggestionsOpen(false)
   }
 

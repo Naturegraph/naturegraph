@@ -52,6 +52,15 @@ export interface CityResult {
   /** Centroïde — envoyé au serveur pour update_user_location, jamais affiché */
   centroidLat: number
   centroidLng: number
+  /**
+   * Pays (déduit de la source autocomplete) — « France » pour API Adresse
+   * data.gouv.fr, « Canada » pour les villes québécoises remontées par
+   * search_cities. Persisté avec le post pour qu'on puisse afficher « France »
+   * ou « Canada » en fallback quand la localisation est privée
+   * (Nicolas 2026-05-23 : un user qui cache la ville doit quand même voir
+   * d'où vient l'observation au pays près).
+   */
+  country: string
 }
 
 /**

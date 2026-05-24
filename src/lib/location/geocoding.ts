@@ -61,6 +61,8 @@ function featureToCityResult(feature: AdresseFeature): CityResult {
     population: feature.properties.population ?? null,
     centroidLat: lat,
     centroidLng: lng,
+    // API Adresse data.gouv.fr → communes françaises uniquement.
+    country: 'France',
   }
 }
 
