@@ -54,6 +54,62 @@ function friendlyError(rawMessage: string, fallback: string): string {
   return rawMessage
 }
 
+/**
+ * Sleep utilitaire pour backoff exponentiel entre retries.
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/**
+ * Catégorise une erreur d'upload pour décider si on retry et avec quel
+ * message remonter au user.
+ *
+ *  - 'network'  : connexion qui saute, fetch failed, navigator offline.
+ *                 RETRY automatique (l'erreur est probablement transitoire).
+ *  - 'timeout'  : la requête a dépassé le délai côté client.
+ *                 RETRY 1 fois (peut-être un coup de bourre temporaire).
+ *  - 'auth'     : session expirée ou RLS qui bloque.
+ *                 PAS de retry (problème de droits, faut se reconnecter).
+ *  - 'server'   : 5xx Supabase.
+ *                 RETRY automatique (probable instabilité serveur).
+ *  - 'client'   : 4xx (sauf 401/403) ou validation locale.
+ *                 PAS de retry (problème de payload).
+ *  - 'unknown'  : erreur sans pattern reconnu.
+ *                 RETRY 1 fois prudemment.
+ */
+type UploadErrorKind = 'network' | 'timeout' | 'auth' | 'server' | 'client' | 'unknown'
+function classifyError(err: unknown): { kind: UploadErrorKind; message: string } {
+  const message = err instanceof Error ? err.message : String(err)
+  const lower = message.toLowerCase()
+  if (lower.includes('timeout') || lower.includes('aborted')) {
+    return { kind: 'timeout', message }
+  }
+  if (
+    lower.includes('failed to fetch') ||
+    lower.includes('networkerror') ||
+    lower.includes('network request failed') ||
+    !navigator.onLine
+  ) {
+    return { kind: 'network', message }
+  }
+  if (lower.includes('401') || lower.includes('403') || lower.includes('jwt')) {
+    return { kind: 'auth', message }
+  }
+  if (/(5\d\d)/.test(lower)) {
+    return { kind: 'server', message }
+  }
+  if (/(4\d\d)/.test(lower)) {
+    return { kind: 'client', message }
+  }
+  return { kind: 'unknown', message }
+}
+
+/** True si la classification autorise un retry automatique. */
+function shouldRetry(kind: UploadErrorKind): boolean {
+  return kind === 'network' || kind === 'server' || kind === 'timeout' || kind === 'unknown'
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ContributeSubmitParams {
@@ -156,7 +212,13 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         // d'upload (on garde le post existant tel quel).
         if (!isEditing) createdPostId = post.id
 
-        // 2. Upload des médias (si fournis) — pipeline compression + strip EXIF.
+        // 2. Upload des médias (si fournis) — pipeline robuste avec retry
+        //    exponentiel + tolérance aux échecs partiels.
+        //    Nicolas 2026-05-24 (urgence prod) : avant un seul échec
+        //    d'upload faisait tout planter. Désormais on retry 2x par
+        //    photo sur erreurs transitoires (network/timeout/5xx) et on
+        //    continue les photos suivantes même si une échoue.
+        const failedUploads: Array<{ name: string; reason: string }> = []
         if (files.length > 0) {
           const [{ detectPhotoFormat }, { stripExif }] = await Promise.all([
             import('@/utils/detectPhotoFormat'),
@@ -167,8 +229,9 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
             setUploadProgress({ current: i + 1, total: files.length })
 
             const rawFile = files[i]
+            const sizeMo = rawFile.size / 1024 / 1024
             console.info(
-              `[${formLabel}] upload photo ${i + 1}/${files.length} — ${rawFile.name} (${(rawFile.size / 1024 / 1024).toFixed(1)} Mo, ${rawFile.type})`,
+              `[${formLabel}] upload photo ${i + 1}/${files.length} — ${rawFile.name} (${sizeMo.toFixed(1)} Mo, ${rawFile.type})`,
             )
 
             let dims: { width: number; height: number } | null = null
@@ -178,36 +241,112 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
               /* fallback silencieux */
             }
 
-            const compressed = await compressPhoto(rawFile)
-            const fileToUpload = await stripExif(compressed)
-            console.info(
-              `[${formLabel}] compressed → ${(fileToUpload.size / 1024).toFixed(0)} Ko (${fileToUpload.type})`,
-            )
+            // Compression + strip EXIF — étape locale, peut échouer si
+            // photo corrompue ou format exotique. On capture l'erreur et
+            // on skip cette photo plutôt que de tout faire planter.
+            let fileToUpload: File
+            try {
+              const compressed = await compressPhoto(rawFile)
+              fileToUpload = await stripExif(compressed)
+              console.info(
+                `[${formLabel}] compressed → ${(fileToUpload.size / 1024).toFixed(0)} Ko (${fileToUpload.type})`,
+              )
+            } catch (err) {
+              console.error(`[${formLabel}] compression failed for ${rawFile.name}:`, err)
+              failedUploads.push({
+                name: rawFile.name,
+                reason: 'Format non supporté ou photo corrompue.',
+              })
+              continue
+            }
 
-            // En mode édition : on APPEND les nouvelles photos derrière
-            // les médias existants (displayOrder offset par timestamp pour
-            // éviter les collisions ; isCover = false pour ne pas écraser
-            // la cover déjà choisie).
+            // En mode édition : APPEND derrière les médias existants
+            // (displayOrder timestamp + isCover=false).
             const displayOrder = isEditing ? Date.now() + i : i
             const isCover = !isEditing && i === 0
-            await withTimeout(
-              uploadPostMedia({
-                file: fileToUpload,
-                postId: post.id,
-                userId: user.id,
-                copyrightNotice: '',
-                displayOrder,
-                isCover,
-                width: dims?.width,
-                height: dims?.height,
-              }),
-              // Timeout upload : 45s par photo (avant 20s) — l'upload d'une
-              // photo 2 Mo sur 4G lente peut prendre 30s+ et 20s déclenchait
-              // un faux échec (Nicolas 2026-05-24).
-              45_000,
-              `upload photo ${i + 1}/${files.length}`,
-            )
+
+            // Retry avec backoff exponentiel — 3 tentatives au total
+            // (initial + 2 retries). Délai 1s, 2s entre les retries.
+            const MAX_ATTEMPTS = 3
+            let succeeded = false
+            let lastError: { kind: UploadErrorKind; message: string } | null = null
+            for (let attempt = 1; attempt <= MAX_ATTEMPTS && !succeeded; attempt++) {
+              try {
+                await withTimeout(
+                  uploadPostMedia({
+                    file: fileToUpload,
+                    postId: post.id,
+                    userId: user.id,
+                    copyrightNotice: '',
+                    displayOrder,
+                    isCover,
+                    width: dims?.width,
+                    height: dims?.height,
+                  }),
+                  45_000,
+                  `upload photo ${i + 1}/${files.length} (tentative ${attempt})`,
+                )
+                succeeded = true
+                if (attempt > 1) {
+                  console.info(`[${formLabel}] photo ${i + 1} OK après ${attempt} tentatives`)
+                }
+              } catch (err) {
+                lastError = classifyError(err)
+                console.warn(
+                  `[${formLabel}] photo ${i + 1} échec tentative ${attempt}/${MAX_ATTEMPTS} (${lastError.kind}):`,
+                  lastError.message,
+                )
+                if (!shouldRetry(lastError.kind) || attempt === MAX_ATTEMPTS) {
+                  break
+                }
+                // Backoff exponentiel : 1s, 2s
+                await sleep(1000 * attempt)
+              }
+            }
+
+            if (!succeeded && lastError) {
+              const reason =
+                lastError.kind === 'auth'
+                  ? 'Session expirée — reconnecte-toi.'
+                  : lastError.kind === 'network'
+                    ? "Coupure réseau pendant l'upload."
+                    : lastError.kind === 'timeout'
+                      ? "L'upload prenait trop de temps (réseau lent)."
+                      : lastError.kind === 'server'
+                        ? 'Le serveur Supabase a rencontré une erreur.'
+                        : friendlyError(lastError.message, 'Erreur inconnue.')
+              failedUploads.push({ name: rawFile.name, reason })
+            }
           }
+        }
+
+        // Si toutes les photos ont échoué ET qu'on était en mode CRÉATION,
+        // on rollback le post orphelin pour ne pas laisser un post vide.
+        // En édition on garde le post existant (les anciennes photos sont
+        // toujours là).
+        if (!isEditing && files.length > 0 && failedUploads.length === files.length) {
+          throw new Error(
+            failedUploads.length === 1
+              ? failedUploads[0].reason
+              : `Aucune des ${files.length} photos n'a pu être uploadée. ${failedUploads[0].reason}`,
+          )
+        }
+
+        // Si SEULEMENT certaines photos ont échoué, on continue (le post
+        // est créé avec les photos qui ont réussi) mais on remonte un
+        // warning user-friendly au lieu d'une erreur bloquante.
+        if (failedUploads.length > 0 && failedUploads.length < files.length) {
+          console.warn(
+            `[${formLabel}] ${failedUploads.length}/${files.length} photos n'ont pas pu être uploadées :`,
+            failedUploads,
+          )
+          // Toast warning non-bloquant — l'user voit le post publié mais
+          // sait qu'il manque des photos. Il peut les rajouter via Modifier.
+          setUploadError(
+            t('contribute.media.partialUploadError', {
+              defaultValue: `${failedUploads.length} photo(s) sur ${files.length} n'ont pas pu être ajoutées. Tu peux les rajouter via « Modifier mon observation ».`,
+            }),
+          )
         }
 
         // 3. Invalide TOUTES les variantes du feed (peu importe le contexte
