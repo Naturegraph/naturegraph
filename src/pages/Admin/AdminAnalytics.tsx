@@ -196,6 +196,29 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     supabase.from('posts').select('country'),
   ])
 
+  // Surfaçage explicite des erreurs RLS/réseau — sans ça, un échec d'une
+  // des 10 queries produit une page vide silencieuse.
+  const queryErrors = [
+    ['profiles', profilesRes],
+    ['postsCount', postsRes],
+    ['posts7d', posts7dRes],
+    ['posts30d', posts30dRes],
+    ['reactions', reactionsRes],
+    ['comments', commentsRes],
+    ['posters7d', last7dPostersRes],
+    ['postsByHour', postsByHourRes],
+    ['loginsByHour', loginsByHourRes],
+    ['countries', countriesRes],
+  ]
+    .filter(([, r]) => (r as { error?: { message?: string } }).error)
+    .map(
+      ([name, r]) =>
+        `${name as string}: ${(r as { error?: { message?: string } }).error?.message ?? 'unknown error'}`,
+    )
+  if (queryErrors.length > 0) {
+    console.error('[AdminAnalytics] query errors:', queryErrors)
+  }
+
   const profiles = (profilesRes.data ?? []) as Array<{
     id: string
     interests: string[] | null
@@ -401,10 +424,12 @@ function HorizontalBar({
 // ─── Page ───────────────────────────────────────────────────────────────────
 
 export default function AdminAnalytics() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['admin-analytics'],
     queryFn: fetchAnalytics,
     staleTime: 5 * 60 * 1000,
+    // Une seule retry — au-delà c'est un vrai problème qu'on veut surfacer.
+    retry: 1,
   })
 
   const peakPostHour = useMemo(() => {
@@ -416,6 +441,27 @@ export default function AdminAnalytics() {
     if (!data) return null
     return data.loginsByHour.reduce((p, c) => (c.count > p.count ? c : p), data.loginsByHour[0])
   }, [data])
+
+  if (error) {
+    return (
+      <div className="flex flex-col gap-4">
+        <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
+        <div
+          role="alert"
+          className="rounded-lg border border-[var(--color-error)]/40 bg-[var(--color-error)]/10 p-4 text-sm text-[var(--color-text-primary)]"
+        >
+          <p className="font-semibold mb-1">Impossible de charger les analytics.</p>
+          <p className="text-xs text-[var(--color-text-secondary)]">
+            {(error as Error).message ?? 'Erreur inconnue. Vérifie la console navigateur.'}
+          </p>
+          <p className="text-xs text-[var(--color-text-secondary)] mt-2">
+            Cause probable : politique RLS sur une des tables (profiles / posts / reactions /
+            comments). Ouvre la console (F12) pour le détail.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   if (isLoading || !data) {
     return (
