@@ -22,7 +22,17 @@
 
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { BarChart3, Clock, TrendingUp, Users, Target, Heart, Globe2, Sparkles } from 'lucide-react'
+import {
+  BarChart3,
+  Clock,
+  TrendingUp,
+  Users,
+  Target,
+  Heart,
+  Globe2,
+  Sparkles,
+  Image as ImageIcon,
+} from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { INTEREST_CONFIG } from '@/constants/interests'
 
@@ -63,10 +73,14 @@ interface AnalyticsData {
   totalReactions: number
   totalComments: number
   avgReactionsPerPost: number
+  /** Nombre moyen de photos par observation (incluant les posts texte = 0). */
+  avgPhotosPerPost: number
   interests: InterestStat[]
   postsByHour: HourlyPoint[]
   loginsByHour: HourlyPoint[]
   postsDistribution: DistributionBucket[]
+  /** Distribution du nombre de photos par observation (0 / 1 / 2 / 3 / 4+). */
+  photosDistribution: DistributionBucket[]
   countries: CountryStat[]
 }
 
@@ -149,10 +163,12 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     totalReactions: 0,
     totalComments: 0,
     avgReactionsPerPost: 0,
+    avgPhotosPerPost: 0,
     interests: [],
     postsByHour: Array.from({ length: 24 }, (_, h) => ({ hour: h, count: 0 })),
     loginsByHour: Array.from({ length: 24 }, (_, h) => ({ hour: h, count: 0 })),
     postsDistribution: [],
+    photosDistribution: [],
     countries: [],
   }
   if (!supabase) return empty
@@ -172,6 +188,7 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     postsByHourRes,
     loginsByHourRes,
     countriesRes,
+    mediaRes,
   ] = await Promise.all([
     // Profils + intérêts (ARRAY) + posts_count (denormalisé)
     supabase.from('profiles').select('id, interests, posts_count, last_login_at'),
@@ -194,6 +211,9 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     supabase.from('profiles').select('last_login_at').gte('last_login_at', thirtyDaysAgo),
     // Posts par pays
     supabase.from('posts').select('country'),
+    // Médias (post_id) — pour calculer le nombre de photos par observation.
+    // Plus simple et précis qu'un agrégat SQL : on group by côté client.
+    supabase.from('media').select('post_id'),
   ])
 
   // Surfaçage explicite des erreurs RLS/réseau — sans ça, un échec d'une
@@ -209,6 +229,7 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     ['postsByHour', postsByHourRes],
     ['loginsByHour', loginsByHourRes],
     ['countries', countriesRes],
+    ['media', mediaRes],
   ]
     .filter(([, r]) => (r as { error?: { message?: string } }).error)
     .map(
@@ -306,6 +327,37 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
   const avgPostsPerActiveUser = uniquePosters7d > 0 ? postsLast7d / uniquePosters7d : 0
   const avgReactionsPerPost = totalPosts > 0 ? totalReactions / totalPosts : 0
 
+  // ── Distribution photos par observation ────────────────────────────────
+  // Group by post_id, puis bucket le compte. Pour les posts SANS aucune
+  // photo (texte seul), ils ne sont pas dans `media` → bucket "0 photo".
+  const photosPerPost = new Map<string, number>()
+  for (const row of (mediaRes.data ?? []) as Array<{ post_id: string }>) {
+    photosPerPost.set(row.post_id, (photosPerPost.get(row.post_id) ?? 0) + 1)
+  }
+  const postsWithPhotos = photosPerPost.size
+  const postsWithoutPhotos = Math.max(0, totalPosts - postsWithPhotos)
+  const photoBuckets = [
+    { label: 'Sans photo', count: postsWithoutPhotos },
+    { label: '1 photo', count: 0 },
+    { label: '2 photos', count: 0 },
+    { label: '3 photos', count: 0 },
+    { label: '4+ photos', count: 0 },
+  ]
+  for (const n of photosPerPost.values()) {
+    if (n === 1) photoBuckets[1].count += 1
+    else if (n === 2) photoBuckets[2].count += 1
+    else if (n === 3) photoBuckets[3].count += 1
+    else if (n >= 4) photoBuckets[4].count += 1
+  }
+  const photosDistribution: DistributionBucket[] = photoBuckets.map((b) => ({
+    label: b.label,
+    count: b.count,
+    pct: totalPosts > 0 ? Math.round((b.count / totalPosts) * 100) : 0,
+  }))
+  // Moyenne pondérée (photos totales / posts totaux, posts texte = 0 photo).
+  const totalPhotos = Array.from(photosPerPost.values()).reduce((s, n) => s + n, 0)
+  const avgPhotosPerPost = totalPosts > 0 ? totalPhotos / totalPosts : 0
+
   return {
     totalUsers,
     totalPosts,
@@ -316,10 +368,12 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     totalReactions,
     totalComments,
     avgReactionsPerPost,
+    avgPhotosPerPost,
     interests,
     postsByHour,
     loginsByHour,
     postsDistribution,
+    photosDistribution,
     countries,
   }
 }
@@ -353,23 +407,33 @@ function StatTile({
 
 function HourlyHeatmap({ data, label }: { data: HourlyPoint[]; label: string }) {
   const max = Math.max(1, ...data.map((d) => d.count))
+  const total = data.reduce((s, d) => s + d.count, 0)
   return (
     <div className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <Clock className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
-        <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">{label}</h3>
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <Clock className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
+          <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">{label}</h3>
+        </div>
+        <span className="text-xs text-[var(--color-text-secondary)] tabular-nums">
+          {total} total
+        </span>
       </div>
-      <div className="grid grid-cols-24 gap-0.5" style={{ gridTemplateColumns: 'repeat(24, 1fr)' }}>
+      {/* Système de chaleur : violet pâle (peu) → violet foncé (beaucoup).
+          Cellules carrées arrondies type heatmap GitHub. Nicolas 2026-05-24 :
+          contraste renforcé (0.06 → 1.0) pour vraiment voir les pics. */}
+      <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(24, 1fr)' }}>
         {data.map((d) => {
           const intensity = d.count / max
-          // Échelle de couleur : transparent → action-default
           const bg =
-            d.count === 0 ? 'rgba(0,0,0,0.04)' : `rgba(99, 102, 241, ${0.15 + intensity * 0.7})`
+            d.count === 0
+              ? 'rgba(99, 102, 241, 0.06)'
+              : `rgba(99, 102, 241, ${0.25 + intensity * 0.75})`
           return (
             <div
               key={d.hour}
-              title={`${d.hour}h — ${d.count} ${label.toLowerCase()}`}
-              className="aspect-square rounded-sm"
+              title={`${d.hour}h — ${d.count}`}
+              className="aspect-square rounded-md ring-1 ring-inset ring-[var(--color-border)]/30"
               style={{ background: bg }}
               aria-label={`${d.hour}h ${d.count}`}
             />
@@ -382,6 +446,19 @@ function HourlyHeatmap({ data, label }: { data: HourlyPoint[]; label: string }) 
         <span>12h</span>
         <span>18h</span>
         <span>23h</span>
+      </div>
+      {/* Légende de chaleur (peu → beaucoup) */}
+      <div className="flex items-center justify-end gap-1.5 mt-3 text-[10px] text-[var(--color-text-secondary)]">
+        <span>Peu</span>
+        {[0.25, 0.5, 0.75, 1].map((a) => (
+          <span
+            key={a}
+            className="size-3 rounded-sm"
+            style={{ background: `rgba(99,102,241,${a})` }}
+            aria-hidden="true"
+          />
+        ))}
+        <span>Beaucoup</span>
       </div>
     </div>
   )
@@ -478,6 +555,8 @@ export default function AdminAnalytics() {
 
   const maxInterest = data.interests[0]?.count ?? 0
   const maxDist = Math.max(1, ...data.postsDistribution.map((d) => d.count))
+  const maxPhotos = Math.max(1, ...data.photosDistribution.map((d) => d.count))
+  const maxCountry = data.countries[0]?.count ?? 1
 
   return (
     <div className="flex flex-col gap-6">
@@ -540,78 +619,112 @@ export default function AdminAnalytics() {
         </div>
       )}
 
-      {/* ── Top intérêts ────────────────────────────────────────────────── */}
-      <section className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <BarChart3 className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
-          <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
-            Centres d'intérêt les plus choisis
-          </h2>
+      {/* ── 4 widgets de distribution en grille 2x2 (Nicolas 2026-05-24 :
+            les longues lignes pleine largeur étaient peu lisibles, on passe
+            en cards plus compactes). En mobile : 1 colonne. */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Top intérêts */}
+        <div className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
+            <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
+              Centres d'intérêt
+            </h2>
+          </div>
+          {data.interests.length === 0 ? (
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              Aucun centre d'intérêt enregistré.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-0.5">
+              {data.interests.map((i) => (
+                <HorizontalBar
+                  key={i.id}
+                  emoji={i.emoji}
+                  label={i.label}
+                  value={i.count}
+                  max={maxInterest}
+                  suffix={`(${i.pct}%)`}
+                />
+              ))}
+            </div>
+          )}
         </div>
-        {data.interests.length === 0 ? (
-          <p className="text-sm text-[var(--color-text-secondary)]">
-            Aucun centre d'intérêt enregistré pour l'instant.
-          </p>
-        ) : (
+
+        {/* Distribution posts par user */}
+        <div className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-5">
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
+              <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
+                Observations / utilisateur
+              </h2>
+            </div>
+          </div>
           <div className="flex flex-col gap-0.5">
-            {data.interests.map((i) => (
+            {data.postsDistribution.map((b) => (
               <HorizontalBar
-                key={i.id}
-                emoji={i.emoji}
-                label={i.label}
-                value={i.count}
-                max={maxInterest}
-                suffix={`(${i.pct}%)`}
+                key={b.label}
+                label={`${b.label} obs.`}
+                value={b.count}
+                max={maxDist}
+                suffix={`(${b.pct}%)`}
               />
             ))}
           </div>
-        )}
-      </section>
+        </div>
 
-      {/* ── Distribution posts par user ─────────────────────────────────── */}
-      <section className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <BarChart3 className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
-          <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
-            Distribution observations / utilisateur
-          </h2>
-        </div>
-        <div className="flex flex-col gap-0.5">
-          {data.postsDistribution.map((b) => (
-            <HorizontalBar
-              key={b.label}
-              label={`${b.label} obs.`}
-              value={b.count}
-              max={maxDist}
-              suffix={`(${b.pct}%)`}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* ── Géographie ──────────────────────────────────────────────────── */}
-      <section className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <Globe2 className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
-          <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
-            Répartition géographique des publications
-          </h2>
-        </div>
-        {data.countries.length === 0 ? (
-          <p className="text-sm text-[var(--color-text-secondary)]">Aucune donnée pays.</p>
-        ) : (
+        {/* Distribution photos par post — nouveau widget (Nicolas 2026-05-24 :
+            savoir combien de photos les users joignent en moyenne). */}
+        <div className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-5">
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
+              <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
+                Photos / observation
+              </h2>
+            </div>
+            <span className="text-xs text-[var(--color-text-secondary)] tabular-nums">
+              moy. <strong>{data.avgPhotosPerPost.toFixed(1)}</strong>
+            </span>
+          </div>
           <div className="flex flex-col gap-0.5">
-            {data.countries.map((c) => (
+            {data.photosDistribution.map((b) => (
               <HorizontalBar
-                key={c.country}
-                label={c.country}
-                value={c.count}
-                max={data.countries[0].count}
-                suffix={`(${c.pct}%)`}
+                key={b.label}
+                label={b.label}
+                value={b.count}
+                max={maxPhotos}
+                suffix={`(${b.pct}%)`}
               />
             ))}
           </div>
-        )}
+        </div>
+
+        {/* Géographie */}
+        <div className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Globe2 className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
+            <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
+              Répartition géographique
+            </h2>
+          </div>
+          {data.countries.length === 0 ? (
+            <p className="text-sm text-[var(--color-text-secondary)]">Aucune donnée pays.</p>
+          ) : (
+            <div className="flex flex-col gap-0.5">
+              {data.countries.map((c) => (
+                <HorizontalBar
+                  key={c.country}
+                  label={c.country}
+                  value={c.count}
+                  max={maxCountry}
+                  suffix={`(${c.pct}%)`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* ── Objectifs vs réel ───────────────────────────────────────────── */}
