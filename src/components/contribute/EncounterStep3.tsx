@@ -119,10 +119,12 @@ interface EncounterStep3Props {
   onHabitatChange: (v: HabitatType | '') => void
   locationName: string
   onLocationChange: (v: string) => void
-  /** Reçoit lat/lng de la ville sélectionnée via l'autocomplete API Adresse —
-   *  sert au reverse-geocoding serveur pour remplir `posts.city`. Optionnel :
-   *  l'utilisateur peut taper du texte libre sans choisir de suggestion. */
-  onLocationCoordsChange?: (lat: number | null, lng: number | null) => void
+  /** Reçoit lat/lng + country de la ville sélectionnée via l'autocomplete.
+   *  `country` est déduit de la source (« France » API Adresse, « Canada »
+   *  fr_cities QC). Persisté avec le post pour afficher au moins le pays
+   *  même quand la localisation est en mode privé. Optionnel : l'utilisateur
+   *  peut taper du texte libre sans choisir de suggestion. */
+  onLocationCoordsChange?: (lat: number | null, lng: number | null, country?: string | null) => void
   /** true = localisation précise masquée. Le switch Figma est inversé :
    *  switch ON ⇒ « rendre public » ⇒ locationHidden = false. */
   locationHidden: boolean
@@ -215,7 +217,7 @@ export function EncounterStep3({
 
   function handlePickCity(city: CityResult) {
     onLocationChange(city.name)
-    onLocationCoordsChange?.(city.centroidLat, city.centroidLng)
+    onLocationCoordsChange?.(city.centroidLat, city.centroidLng, city.country)
     setLocSuggestionsOpen(false)
   }
 

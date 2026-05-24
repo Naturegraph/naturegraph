@@ -160,13 +160,13 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
       ),
     },
     date: formatPostDate(item.created_at),
-    // Règle de confidentialité (second-agent/29) :
-    //  - Si `location_hidden = true` (défaut) → AUCUNE info location (pas même
-    //    la région ou le pays). Le post n'affiche alors que la date.
-    //  - Sinon → uniquement la **ville** (jamais l'adresse / lieu-dit / région /
-    //    pays). La table `posts` stocke `city` calculée par reverse-geocoding
-    //    serveur ; si elle est null on retombe sur rien (pas de fallback texte).
-    location: item.location_hidden ? '' : (item.city ?? ''),
+    // Règle de confidentialité (Nicolas 2026-05-23 — assoupli) :
+    //  - Si `location_hidden = true` → on n'expose JAMAIS la ville ni la
+    //    région, mais on affiche au minimum le **pays** (« France », « Canada »)
+    //    pour que les autres users puissent se faire une idée de la
+    //    biogéographie de l'observation sans compromettre la vie privée.
+    //  - Sinon → ville prioritaire, fallback pays si la ville est absente.
+    location: item.location_hidden ? (item.country ?? '') : (item.city ?? item.country ?? ''),
     title,
     content: item.description,
     weather: item.weather ?? undefined,

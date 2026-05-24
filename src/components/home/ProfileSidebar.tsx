@@ -118,8 +118,15 @@ export function ProfileSidebar() {
     <div className="flex flex-col gap-4">
       {/* ─── Carte profil ─────────────────────────────────────────────────── */}
       <div className="bg-cream-lighter border-[0.5px] border-border rounded-card overflow-hidden">
-        {/* Bannière + avatar avec badge d'intérêt principal */}
-        <div className="h-20 bg-[var(--color-action-light)] relative">
+        {/* Bannière + avatar avec badge d'intérêt principal.
+            Affiche `profile.banner_url` si l'utilisateur en a uploadé une,
+            sinon fallback sur le bleu violet doux du DS (Nicolas 2026-05-23). */}
+        <div
+          className="h-20 bg-[var(--color-action-light)] relative bg-cover bg-center"
+          style={
+            profile?.banner_url ? { backgroundImage: `url(${profile.banner_url})` } : undefined
+          }
+        >
           <div className="absolute left-6 bottom-[-32px]">
             <div className="relative">
               <div className="size-16 rounded-full border-4 border-cream-lighter overflow-hidden bg-primary-light">

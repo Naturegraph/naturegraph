@@ -61,6 +61,10 @@ async function searchCitiesSupabase(query: string): Promise<CityResult[]> {
     population: row.population,
     centroidLat: row.centroid_lat,
     centroidLng: row.centroid_lng,
+    // fr_cities contient FR + QC. On distingue par le département_code :
+    // les communes québécoises ont un code département non-numérique préfixé
+    // « QC » (ex: QC-24) tandis que les FR ont 2-3 chiffres.
+    country: /^QC/i.test(row.department_code) ? 'Canada' : 'France',
   }))
 }
 
