@@ -62,6 +62,8 @@ interface InstantFormData {
   locationLng: number | null
   /** Pays déduit de la source autocomplete (FR / CA). */
   locationCountry: string | null
+  /** Région issue de l'autocomplete (ex « Québec », « Pays de la Loire »). */
+  locationRegion: string | null
   locationHidden: boolean
 }
 
@@ -107,6 +109,7 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
     locationLat: null,
     locationLng: null,
     locationCountry: null,
+    locationRegion: null,
     locationHidden: true,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -206,7 +209,9 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
         weather: form.weather || undefined,
         location_name: form.locationName || undefined,
         city: cityFromInput,
-        region: regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : undefined,
+        region:
+          form.locationRegion ??
+          (regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : undefined),
         latitude: form.locationLat ?? undefined,
         longitude: form.locationLng ?? undefined,
         country: form.locationCountry ?? undefined,
@@ -332,12 +337,13 @@ export function ContributeInstantPanel({ onClose }: ContributeInstantPanelProps)
                 onPhenomenonChange={(v) => set('phenomenon', v)}
                 locationName={form.locationName}
                 onLocationChange={(v) => set('locationName', v)}
-                onLocationCoordsChange={(lat, lng, country) => {
+                onLocationCoordsChange={(lat, lng, country, region) => {
                   setForm((prev) => ({
                     ...prev,
                     locationLat: lat,
                     locationLng: lng,
                     locationCountry: country ?? prev.locationCountry,
+                    locationRegion: region ?? prev.locationRegion,
                   }))
                 }}
                 locationHidden={form.locationHidden}
@@ -497,7 +503,12 @@ interface InstantStep2Props {
   onPhenomenonChange: (v: PhenomenonId | '') => void
   locationName: string
   onLocationChange: (v: string) => void
-  onLocationCoordsChange?: (lat: number | null, lng: number | null, country?: string | null) => void
+  onLocationCoordsChange?: (
+    lat: number | null,
+    lng: number | null,
+    country?: string | null,
+    region?: string | null,
+  ) => void
   locationHidden: boolean
   onLocationHiddenChange: (v: boolean) => void
   errors: Record<string, string>
@@ -573,7 +584,7 @@ function InstantStep2({
   function handlePickCity(city: CityResult) {
     const parts = [city.name, city.departmentName, city.regionName].filter(Boolean)
     onLocationChange(parts.join(', '))
-    onLocationCoordsChange?.(city.centroidLat, city.centroidLng, city.country)
+    onLocationCoordsChange?.(city.centroidLat, city.centroidLng, city.country, city.regionName)
     setLocSuggestionsOpen(false)
   }
 

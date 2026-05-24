@@ -11,13 +11,22 @@
 
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { LayoutDashboard, Users, ShieldAlert, Key, FileText, ArrowLeft } from 'lucide-react'
+import {
+  LayoutDashboard,
+  Users,
+  ShieldAlert,
+  Key,
+  FileText,
+  ArrowLeft,
+  BarChart3,
+} from 'lucide-react'
 import { useIsAdmin } from '@/hooks/useIsAdmin'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 
 const NAV_ITEMS = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/admin/analytics', label: 'Analytics', icon: BarChart3, end: false },
   { to: '/admin/users', label: 'Utilisateurs', icon: Users, end: false },
   { to: '/admin/moderation', label: 'Modération', icon: ShieldAlert, end: false },
   { to: '/admin/beta', label: 'Beta', icon: Key, end: false },
