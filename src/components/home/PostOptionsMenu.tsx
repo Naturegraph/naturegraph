@@ -37,6 +37,7 @@ import {
   Flag,
   Trash2,
   Check,
+  Pencil,
 } from 'lucide-react'
 import { ReportModal } from './ReportModal'
 import { DeleteConfirmModal } from './DeleteConfirmModal'
@@ -64,15 +65,15 @@ interface PostOptionsMenuProps {
   /** true = post de l'utilisateur connecté */
   isOwnPost: boolean
   onClose: () => void
-  /**
-   * Callback suppression — connecté à postService.deletePost via useDeletePost.
-   *
-   * Note Phase 2 : un callback `onEdit` était prévu mais l'implémentation
-   * frontend (ContributeEditForm + ?edit param dans Contribute/index.tsx)
-   * est repoussée. Le service backend `updatePost` est déjà prêt
-   * (cf. postService.ts:323).
-   */
+  /** Callback suppression — connecté à postService.deletePost via useDeletePost. */
   onDelete?: () => void
+  /**
+   * Callback édition — Nicolas 2026-05-24 : permet de rouvrir le panel de
+   * création (Encounter ou Instant) pré-rempli avec les valeurs du post pour
+   * que l'auteur puisse corriger ses observations (photos, détails, espèces).
+   * Si absent, le bouton « Modifier » est masqué.
+   */
+  onEdit?: () => void
 }
 
 // ─── Sous-composants ──────────────────────────────────────────────────────────
@@ -143,6 +144,7 @@ export function PostOptionsMenu({
   isOwnPost,
   onClose,
   onDelete,
+  onEdit,
 }: PostOptionsMenuProps) {
   const { t } = useTranslation()
   const firstItemRef = useRef<HTMLButtonElement>(null)
@@ -305,6 +307,25 @@ export function PostOptionsMenu({
         description={t('home.post.options.copyLinkDesc')}
         onClick={handleCopyLink}
       />
+      {/* Modifier mon observation — affiché uniquement si le parent a câblé
+          le callback onEdit (Home → FeedSection → FeedPost). Nicolas
+          2026-05-24 : permet de corriger une erreur (espèce, photo, etc.). */}
+      {onEdit && (
+        <>
+          <div className="h-px bg-border mx-5" aria-hidden="true" />
+          <MenuItem
+            icon={<Pencil className="size-5" />}
+            label={t('home.post.options.edit', { defaultValue: 'Modifier mon observation' })}
+            description={t('home.post.options.editDesc', {
+              defaultValue: 'Corrige les détails, ajoute des photos…',
+            })}
+            onClick={() => {
+              onClose()
+              onEdit()
+            }}
+          />
+        </>
+      )}
       <div className="h-px bg-border mx-5" aria-hidden="true" />
       <MenuItem
         icon={<Trash2 className="size-5" />}

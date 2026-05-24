@@ -123,9 +123,16 @@ function formatPostDate(isoDate: string): string {
  * logique de mapping (titre, location, format, reactions, etc.).
  */
 export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost {
-  const authorName = item.author
-    ? `${item.author.first_name} ${item.author.last_name}`.trim() || item.author.username
-    : 'Utilisateur'
+  // Le pseudo (username) est la source de vérité pour l'affichage du nom
+  // d'auteur — il suit instantanément les changements de pseudo via la
+  // jointure DB profiles!user_id. On a abandonné la concat
+  // « first_name + last_name » qui restait figée à l'ancienne valeur quand
+  // le pseudo changeait (Nicolas 2026-05-24 : « pas logique »).
+  // Si pour une raison rare le username est vide, fallback first/last.
+  const authorName =
+    item.author?.username?.trim() ||
+    `${item.author?.first_name ?? ''} ${item.author?.last_name ?? ''}`.trim() ||
+    'Utilisateur'
 
   // Titre : on PRIORISE le titre DB s'il existe (saisie utilisateur explicite).
   // Fallback : si pas de titre, premiere phrase de la description (max 80 chars).
@@ -152,6 +159,11 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
     postType: item.type === 'nature_instant' ? 'nature_instant' : 'nature_encounter',
     author: {
       name: authorName,
+      // `username` est la SOURCE DE VÉRITÉ pour les liens /profile/:username.
+      // Récupéré via la jointure profiles!user_id donc toujours à jour — un
+      // user qui change son pseudo voit instantanément ses anciens posts
+      // pointer vers le bon nouveau profil (Nicolas 2026-05-24 bug fix).
+      username: item.author?.username ?? '',
       avatar: item.author?.avatar_url ?? '',
       // Badge "préférence #1" — emoji du premier centre d'intérêt de l'auteur
       // (second-agent/08). Affiché en bas-droite de l'avatar dans FeedPost.
@@ -160,16 +172,18 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
       ),
     },
     date: formatPostDate(item.created_at),
-    // Règle de confidentialité (Nicolas 2026-05-24 — affinée) :
-    //  - location_hidden = true → on n'expose que le **pays** (FR / CA / autre)
+    // Règle de confidentialité (Nicolas 2026-05-24 — v3 mobile-friendly) :
+    //  - location_hidden = true → uniquement le **pays** (« France », « Canada »)
     //    pour donner un repère biogéographique sans compromettre la vie privée.
-    //  - location_hidden = false → format complet « Ville, Région, Pays »
-    //    (ex « Lévis, Québec, Canada ») pour rendre l'observation plus
-    //    parlante qu'un simple nom de ville isolé.
-    //  Les segments vides ou dupliqués (ex : city == region) sont filtrés.
+    //  - location_hidden = false → « Ville, Région » (sans pays) pour tenir
+    //    sur une ligne en mobile. Ex « Lévis, Québec » ou « Couëron, Pays de
+    //    la Loire ». Si la région manque on retombe sur la ville seule, puis
+    //    sur le pays en dernier recours.
+    //  - Aucune donnée → chaîne vide → le bullet « date • lieu » disparaît.
     location: item.location_hidden
       ? (item.country ?? '')
-      : Array.from(new Set([item.city, item.region, item.country].filter(Boolean))).join(', '),
+      : Array.from(new Set([item.city, item.region].filter(Boolean))).join(', ') ||
+        (item.country ?? ''),
     title,
     content: item.description,
     weather: item.weather ?? undefined,
@@ -267,6 +281,12 @@ interface FeedSectionProps {
   /** Callback pour ouvrir le panel "Rencontre Nature" depuis le CTA empty state.
    *  Géré au niveau Home (qui contrôle activePanelType). */
   onContributeClick?: () => void
+  /**
+   * Callback édition post — remonté à Home pour ouvrir le panel
+   * Encounter/Instant pré-rempli avec les données du post existant
+   * (Nicolas 2026-05-24 : permet aux users de corriger leurs obs).
+   */
+  onEditPost?: (postId: string, postType: 'nature_encounter' | 'nature_instant') => void
 }
 
 // ─── Composant ───────────────────────────────────────────────────────────────
@@ -278,6 +298,7 @@ export function FeedSection({
   onShowFiltersChange,
   onHasActiveFiltersChange,
   onContributeClick,
+  onEditPost,
 }: FeedSectionProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -680,6 +701,7 @@ export function FeedSection({
                   canInteract={isAuthenticated}
                   isOwnPost={!!user?.id && post.authorId === user.id}
                   onReact={handleReact}
+                  onEditPost={onEditPost}
                   /* Dernier item du feed : on retire la bordure de fin pour
                      éviter une barre orpheline en bas de liste. */
                   hideEndBorder={idx === posts.length - 1}
