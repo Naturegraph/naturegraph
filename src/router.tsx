@@ -69,6 +69,7 @@ const AdminBeta = lazy(() => import('./pages/Admin/AdminBeta'))
 const AdminUsers = lazy(() => import('./pages/Admin/AdminUsers'))
 const AdminModeration = lazy(() => import('./pages/Admin/AdminModeration'))
 const AdminAuditLogs = lazy(() => import('./pages/Admin/AdminAuditLogs'))
+const AdminAnalytics = lazy(() => import('./pages/Admin/AdminAnalytics'))
 
 /**
  * Wrapper Suspense pour les pages lazy-loaded.
@@ -191,6 +192,14 @@ export const router = createBrowserRouter([
             element: (
               <LazyPage>
                 <AdminAuditLogs />
+              </LazyPage>
+            ),
+          },
+          {
+            path: 'analytics',
+            element: (
+              <LazyPage>
+                <AdminAnalytics />
               </LazyPage>
             ),
           },

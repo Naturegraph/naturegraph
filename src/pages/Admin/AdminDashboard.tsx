@@ -102,17 +102,19 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'new'),
     supabase.from('beta_quota_config').select('*').eq('id', 1).maybeSingle(),
-    // Observations : posts de type 'observation'
+    // Observations 7j : posts type='nature_encounter' (Rencontre Nature).
+    // Bug fix (Nicolas 2026-05-24) : avant on cherchait type='observation'
+    // qui n'existe pas dans le schéma → compteur toujours à 0.
     supabase
       .from('posts')
       .select('*', { count: 'exact', head: true })
-      .eq('type', 'observation')
+      .eq('type', 'nature_encounter')
       .gte('created_at', sevenDaysAgo),
-    // Identifications : posts de type 'identification' (collaboration espèce)
+    // Identifications collaboratives 7j : entrées dans identification_proposals
+    // (les users qui proposent une espèce sur un post d'autrui). Pas un type de post.
     supabase
-      .from('posts')
+      .from('identification_proposals')
       .select('*', { count: 'exact', head: true })
-      .eq('type', 'identification')
       .gte('created_at', sevenDaysAgo),
   ])
 
@@ -258,11 +260,23 @@ export default function AdminDashboard() {
         <h1 className="text-2xl font-bold text-foreground">
           {t('admin.dashboard.title', { defaultValue: 'Dashboard' })}
         </h1>
-        <p className="text-sm text-muted-foreground inline-flex items-center gap-1.5">
-          <span className="size-2 rounded-full bg-[var(--color-success)]" aria-hidden="true" />
-          Système opérationnel · Phase {stats.betaAcceptingSignups ? '1 ouverte' : 'fermée'} ·{' '}
-          {stats.betaUsers}/{stats.betaMaxUsers} users ({betaPct}%)
-        </p>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <p className="text-sm text-muted-foreground inline-flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-[var(--color-success)]" aria-hidden="true" />
+            Système opérationnel · Phase {stats.betaAcceptingSignups
+              ? '1 ouverte'
+              : 'fermée'} · {stats.betaUsers}/{stats.betaMaxUsers} users ({betaPct}%)
+          </p>
+          {/* Lien rapide vers la page Analytics dédiée — Nicolas 2026-05-24 :
+              le dashboard reste un aperçu, /admin/analytics approfondit. */}
+          <Link
+            to="/admin/analytics"
+            className="text-sm font-medium text-[var(--color-action-default)] hover:underline inline-flex items-center gap-1"
+          >
+            Analytics détaillée
+            <ArrowRight className="size-3.5" aria-hidden="true" />
+          </Link>
+        </div>
       </div>
 
       {/* KPI grid : 6 cards (2 cols mobile, 3 tablet, 6 desktop) */}
