@@ -57,6 +57,8 @@ const Privacy = lazy(() => import('./pages/Privacy'))
 const Legal = lazy(() => import('./pages/Legal'))
 const Contribute = lazy(() => import('./pages/Contribute'))
 const Settings = lazy(() => import('./pages/Settings'))
+const SettingsHidden = lazy(() => import('./pages/SettingsHidden'))
+const SettingsBlocked = lazy(() => import('./pages/SettingsBlocked'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const Waitlist = lazy(() => import('./pages/Waitlist'))
@@ -345,6 +347,29 @@ export const router = createBrowserRouter([
               <LazyPage>
                 <ProtectedRoute>
                   <Settings />
+                </ProtectedRoute>
+              </LazyPage>
+            ),
+          },
+          // Confidentialite, sous-pages dediees (Nicolas 2026-05-24)
+          // Gestion user-side des publications masquees et comptes bloques,
+          // action inverse de "Masquer ce post" / "Bloquer cet utilisateur".
+          {
+            path: 'settings/hidden',
+            element: (
+              <LazyPage>
+                <ProtectedRoute>
+                  <SettingsHidden />
+                </ProtectedRoute>
+              </LazyPage>
+            ),
+          },
+          {
+            path: 'settings/blocked',
+            element: (
+              <LazyPage>
+                <ProtectedRoute>
+                  <SettingsBlocked />
                 </ProtectedRoute>
               </LazyPage>
             ),

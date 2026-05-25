@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { X, ChevronLeft, ChevronRight, Share2 } from 'lucide-react'
 import { SharePopover } from './SharePopover'
+import { ImagePresets } from '@/lib/supabaseImage'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -107,8 +108,15 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
 
   if (!current) return null
 
-  /** URL haute qualité : remplace `w=` Unsplash par une valeur plus grande */
-  const hqSrc = current.hqUrl ?? current.url.replace(/w=\d+/, 'w=1920')
+  /**
+   * URL haute qualité pour le zoom plein écran.
+   *   - Si hqUrl explicite fourni (cas Unsplash, GBIF media), on l utilise tel quel
+   *   - Sinon Supabase Pro Image Transformations en preset fullSize (2000px, quality 90)
+   *     qui retourne l URL d origine intacte si non-Supabase
+   *
+   * Le fichier source en base reste intact, c est juste la livraison qui est optimisee.
+   */
+  const hqSrc = current.hqUrl ?? ImagePresets.fullSize(current.url)
 
   return (
     <div
