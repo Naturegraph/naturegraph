@@ -19,8 +19,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link2, Flag, Ban, Pencil, Check } from 'lucide-react'
+import { useBlock } from '@/hooks/useBlocks'
+import { useToast } from '@/contexts/ToastContext'
 
 interface ProfileOptionsMenuProps {
+  /** UUID du profil cible, requis pour le block (visiteur uniquement). */
+  userId?: string
   /** Username du profil pour construire l'URL canonique */
   username: string
   /** true = profil de l'utilisateur connecté (actions différentes) */
@@ -32,6 +36,7 @@ interface ProfileOptionsMenuProps {
 }
 
 export function ProfileOptionsMenu({
+  userId,
   username,
   isOwnProfile,
   onEditProfile,
@@ -41,6 +46,8 @@ export function ProfileOptionsMenu({
   const [linkCopied, setLinkCopied] = useState(false)
   const [actionedItem, setActionedItem] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const blockMutation = useBlock()
+  const toast = useToast()
 
   // Fermeture clic dehors + Escape
   useEffect(() => {
@@ -76,9 +83,32 @@ export function ProfileOptionsMenu({
     setTimeout(() => onClose(), 1200)
   }
 
-  /** Action générique avec feedback visuel puis fermeture */
-  function handleAction(id: string) {
+  /**
+   * Action generique avec feedback visuel puis fermeture.
+   * Pour 'block' : declenche useBlock() qui ecrit en BDD + invalide les
+   * caches feed + blocked-users (Settings to Comptes bloques se met a jour
+   * immediatement).
+   * Pour 'report' : feedback visuel uniquement, le report sera traite
+   * Phase 2 via ReportModal.
+   */
+  async function handleAction(id: string) {
     setActionedItem(id)
+    if (id === 'block' && userId) {
+      try {
+        await blockMutation.mutateAsync(userId)
+        toast.success(
+          t('profile.blockSuccess', {
+            username,
+            defaultValue: `@${username} a été bloqué. Tu peux le débloquer depuis tes paramètres.`,
+          }),
+        )
+      } catch (err) {
+        toast.error(
+          t('profile.blockError', { defaultValue: 'Impossible de bloquer ce compte.' }),
+          err instanceof Error ? err.message : String(err),
+        )
+      }
+    }
     setTimeout(() => onClose(), 1200)
   }
 

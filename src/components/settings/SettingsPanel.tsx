@@ -39,11 +39,15 @@ import {
   LogOut,
   Trash2,
   ArrowLeft,
+  ShieldOff,
+  EyeOff,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { useDeleteAccount } from '@/hooks/useAccountDeletion'
 import { useDataExport } from '@/hooks/useDataExport'
+import { useHiddenPostIds } from '@/hooks/useHiddenPosts'
+import { useBlockedUsers } from '@/hooks/useBlocks'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { DeleteAccountModal } from './DeleteAccountModal'
 import { SettingsSecurityView } from './SettingsSecurityView'
@@ -53,7 +57,14 @@ import { SettingsHelpView } from './SettingsHelpView'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /** ID des sous-vues — chaque section ouvre une sous-vue interne au panel. */
-type SettingsSection = 'security' | 'notifications' | 'help' | 'license' | 'terms' | 'privacy'
+type SettingsSection =
+  | 'security'
+  | 'blocking'
+  | 'notifications'
+  | 'help'
+  | 'license'
+  | 'terms'
+  | 'privacy'
 
 interface SettingsPanelProps {
   /** Ferme le panel (revient au profil) */
@@ -370,6 +381,16 @@ function SettingsList({
         label={t('settings.items.security', { defaultValue: 'Sécurité' })}
         onClick={() => onOpenSection('security')}
       />
+      {/*
+        Nicolas 2026-05-24 : Blocages placee juste sous Securite, au-dessus
+        de Notifications. Action de controle prioritaire. Permet de gerer
+        masquages (publications) + blocages (comptes) sans passer par l admin.
+      */}
+      <SettingsItem
+        icon={<ShieldOff className="size-5" aria-hidden="true" />}
+        label={t('settings.items.blocking', { defaultValue: 'Blocages' })}
+        onClick={() => onOpenSection('blocking')}
+      />
       <SettingsItem
         icon={<Bell className="size-5" aria-hidden="true" />}
         label={t('settings.items.notifications', { defaultValue: 'Notifications' })}
@@ -445,6 +466,11 @@ interface SettingsItemProps {
   danger?: boolean
   /** Si true, item désactivé (en cours d'opération asynchrone — ex: export RGPD). */
   disabled?: boolean
+  /**
+   * Compteur affiche en pill avant le chevron (Confidentialite).
+   * 0 ou undefined : masque. Affiche bg-primary-light + text-primary.
+   */
+  badge?: number
 }
 
 function SettingsItem({
@@ -456,6 +482,7 @@ function SettingsItem({
   noTrailing,
   danger,
   disabled,
+  badge,
 }: SettingsItemProps) {
   // Figma Frame 4707 : item h-14 (56px), gap 32px entre contenu gauche
   // (icon+label) et trailing icon. Gap 16px entre icon et label. Séparateur
@@ -480,6 +507,15 @@ function SettingsItem({
         {/* Label : Quicksand bold 16px line-height 24px (Title/Button token). */}
         <span className="font-title font-bold text-base leading-6 truncate">{label}</span>
       </div>
+      {/* Badge compteur, optionnel, affiche avant le chevron quand > 0 */}
+      {badge !== undefined && badge > 0 && (
+        <span
+          aria-label={`${badge}`}
+          className="shrink-0 text-xs font-bold tabular-nums bg-primary-light text-primary px-2 py-0.5 rounded-full"
+        >
+          {badge}
+        </span>
+      )}
       {!noTrailing && (
         // Pas de classe text- ici : on hérite de currentColor du parent
         // pour que le hover violet propage au chevron / external-link.
@@ -532,6 +568,7 @@ type SimpleT = (key: string, options: { defaultValue: string }) => string
 
 const SECTION_TITLES: Record<SettingsSection, (t: SimpleT) => string> = {
   security: (t) => t('settings.items.security', { defaultValue: 'Sécurité' }),
+  blocking: (t) => t('settings.items.blocking', { defaultValue: 'Blocages' }),
   notifications: (t) => t('settings.items.notifications', { defaultValue: 'Notifications' }),
   help: (t) => t('settings.items.help', { defaultValue: "Besoin d'aide ?" }),
   license: (t) => t('settings.items.license', { defaultValue: "Licence et droits d'auteur" }),
@@ -554,6 +591,10 @@ interface SettingsSubViewProps {
 function SettingsSubView({ section, onSectionChange }: SettingsSubViewProps) {
   if (section === 'security') {
     return <SettingsSecurityView />
+  }
+
+  if (section === 'blocking') {
+    return <SettingsBlockingView />
   }
 
   if (section === 'notifications') {
@@ -624,6 +665,47 @@ function SettingsLegalDocView({ kind }: { kind: 'terms' | 'privacy' }) {
         ))}
       </div>
     </article>
+  )
+}
+
+// ─── Sous-vue : Blocages ─────────────────────────────────────────────────────
+
+/**
+ * Sous-vue Blocages, Nicolas 2026-05-24.
+ *
+ * Liste 2 nav rows vers les pages dediees :
+ *   - Publications masquees, action inverse de Masquer cette publication
+ *   - Comptes bloques, action inverse de Bloquer cet utilisateur
+ *
+ * Badge count temps reel via useHiddenPostIds + useBlockedUsers.
+ *
+ * On utilise navigate vers /settings/hidden et /settings/blocked (pages
+ * dediees plein ecran) plutot que des sous-vues internes au panel. La
+ * raison : les listes peuvent etre longues et meritent un layout pleine
+ * largeur. Le panel sera ferme par la navigation et l user reviendra
+ * dans le panel via le back du navigateur ou en re-cliquant Parametres.
+ */
+function SettingsBlockingView() {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { data: hiddenIds } = useHiddenPostIds()
+  const { data: blockedUsers } = useBlockedUsers()
+
+  return (
+    <ul className="flex flex-col px-6">
+      <SettingsItem
+        icon={<EyeOff className="size-5" aria-hidden="true" />}
+        label={t('settings.hidden.title', { defaultValue: 'Publications masquées' })}
+        onClick={() => navigate('/settings/hidden')}
+        badge={hiddenIds?.length ?? 0}
+      />
+      <SettingsItem
+        icon={<ShieldOff className="size-5" aria-hidden="true" />}
+        label={t('settings.blocked.title', { defaultValue: 'Comptes bloqués' })}
+        onClick={() => navigate('/settings/blocked')}
+        badge={blockedUsers?.length ?? 0}
+      />
+    </ul>
   )
 }
 

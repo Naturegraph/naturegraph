@@ -45,6 +45,7 @@ import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
 
 function profileToDisplayData(profile: Profile): ProfileDisplayData {
   return {
+    id: profile.id,
     username: profile.username,
     bio: profile.bio,
     avatar_url: profile.avatar_url,
