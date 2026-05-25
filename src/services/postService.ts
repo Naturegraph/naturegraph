@@ -153,6 +153,14 @@ export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
     }
   }
 
+  // Pre-fetch les ids des comptes is_internal (admin Nicolas, tests internes)
+  // pour les exclure du feed public et des compteurs (decision Nicolas 2026-05-25).
+  const { data: internalProfiles } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('is_internal', true)
+  const internalIds = (internalProfiles ?? []).map((p) => p.id as string)
+
   // Lecture via la vue `posts_public` qui masque latitude/longitude/city/etc.
   // pour les viewers qui ne sont pas l'auteur, quand `location_hidden=true`.
   // Cf. migration `20260503_posts_public_view.sql` et Fix #2.
@@ -164,6 +172,11 @@ export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
     .select(POST_FEED_SELECT, { count: 'exact' })
     .eq('status', 'published')
     .eq('visibility', 'public')
+
+  // Exclut les posts des comptes is_internal du feed public
+  if (internalIds.length > 0) {
+    query = query.not('user_id', 'in', `(${internalIds.map((id: string) => `"${id}"`).join(',')})`)
+  }
 
   // Tab "Pour vous" : restreindre aux posts des utilisateurs suivis
   if (tab === 'for_you' && followingIds && followingIds.length > 0) {

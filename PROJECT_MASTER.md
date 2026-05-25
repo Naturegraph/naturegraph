@@ -161,7 +161,9 @@ docs/
 ├── design-system/       Tokens, components, guidelines
 ├── AUTH_ROADMAP.md      Plan reduction OTP (refresh 90j, Google OAuth)
 ├── SUPABASE_PRO_ROADMAP.md  Phases A-D Pro plan exploitation
-└── SEED_SPECIES_V2_RUNBOOK.md  Procedure seed especes
+├── SEED_SPECIES_V2_RUNBOOK.md  Procedure seed especes
+├── USER_STORIES.md      Parcours user, source de verite produit
+└── PRD_*.md             Product Requirements (12 specs feature, conservees comme source de verite)
 
 supabase/
 └── migrations/          SQL versionnees YYYYMMDD_description.sql

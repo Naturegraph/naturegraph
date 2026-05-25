@@ -53,6 +53,22 @@
 - [`SUPABASE_PRO_ROADMAP.md`](SUPABASE_PRO_ROADMAP.md), exploitation Pro plan (Phases A-D)
 - [`SEED_SPECIES_V2_RUNBOOK.md`](SEED_SPECIES_V2_RUNBOOK.md), procedure seed especes + plan V1.2.0
 
+### PRD (source de verite produit, conservees pour les futures evolutions)
+
+- [`USER_STORIES.md`](USER_STORIES.md), parcours user et histoires produit
+- [`PRD_HOMEPAGE.md`](PRD_HOMEPAGE.md), specs feed + composants home
+- [`PRD_PROFILE.md`](PRD_PROFILE.md), specs profil owner + visiteur
+- [`PRD_ONBOARDING.md`](PRD_ONBOARDING.md), parcours onboarding 4 etapes
+- [`PRD_LANDING.md`](PRD_LANDING.md), specs landing page publique
+- [`PRD_FOLLOW_SYSTEM.md`](PRD_FOLLOW_SYSTEM.md), specs follow + migrateurs
+- [`PRD_NOTIFICATIONS.md`](PRD_NOTIFICATIONS.md), specs notifications system
+- [`PRD_POST_FORMATS.md`](PRD_POST_FORMATS.md), specs Rencontre + Instant Nature
+- [`PRD_PHOTO_MANAGEMENT.md`](PRD_PHOTO_MANAGEMENT.md), specs upload + compression photos
+- [`PRD_UPLOAD_STORAGE_BACKEND.md`](PRD_UPLOAD_STORAGE_BACKEND.md), specs storage Supabase
+- [`PRD_LOCALIZATION.md`](PRD_LOCALIZATION.md), specs localisation + autocomplete villes
+- [`PRD_SPECIES_DATABASE.md`](PRD_SPECIES_DATABASE.md), specs base especes + taxonomie
+- [`PRD_IDENTIFICATIONS_COLLABORATIVE.md`](PRD_IDENTIFICATIONS_COLLABORATIVE.md), specs identification collaborative
+
 ---
 
 Cf. **[`../PROJECT_MASTER.md`](../PROJECT_MASTER.md)** pour la vue d ensemble.
