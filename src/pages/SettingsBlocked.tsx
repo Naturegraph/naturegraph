@@ -67,13 +67,13 @@ export default function SettingsBlocked() {
         <div className="max-w-2xl mx-auto flex items-center gap-3 px-4 md:px-6 h-14">
           <button
             type="button"
-            onClick={() => navigate('/settings')}
+            onClick={() => navigate(-1)}
             aria-label={t('common.back', { defaultValue: 'Retour' })}
             className="size-8 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <ArrowLeft className="size-5 text-foreground" aria-hidden="true" />
           </button>
-          <h1 className="font-bold text-foreground">
+          <h1 className="font-bold text-foreground text-base truncate">
             {t('settings.blocked.title', { defaultValue: 'Comptes bloques' })}
           </h1>
         </div>
