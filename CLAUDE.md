@@ -1,8 +1,13 @@
-# Naturegraph — Instructions Claude Code
+# Naturegraph, Instructions Claude Code
 
 ## Projet
 
 Plateforme web citoyenne biodiversite. React 19 + TypeScript + Vite + Tailwind + SCSS.
+
+**Version actuelle** : V1.0.0 (stabilisee 2026-05-25).
+
+> **Document central** : `PROJECT_MASTER.md` au root du repo, a lire en premier
+> pour comprendre l etat du projet, sa roadmap, sa TODO, son workflow.
 
 ## Regles obligatoires
 
@@ -83,41 +88,42 @@ src/
   types/             Types TypeScript
   data/mock/         Mock data pour dev (25 users, 125+ posts)
 docs/
-  README.md                          Index master de la doc
-  PROJECT_STRUCTURE.md               Carte vivante du repo
-  USER_STORIES.md, PLAN_ACTION.md    Vision + roadmap
-  PRD_*.md, EPIC_*.md                Specs produit par feature
-  AUDIT_*.md, SYNTHESE_*.md          Audits + causes racines
-  backend/                           Architecture DB + relations + schema.sql
+  README.md                          Index docs technique
+  AUTH_ROADMAP.md                    Plan reduction OTP
+  SUPABASE_PRO_ROADMAP.md            Phases A-D Pro plan
+  SEED_SPECIES_V2_RUNBOOK.md         Procedure seed especes
+  backend/                           Architecture DB + relations
   api-connection/                    Setup Supabase + endpoints + auth flow
   design-system/                     Tokens + composants Figma
-  security/                          RLS + RGPD + media
-  devops/                            Environments + deployment + monitoring
-  archive/sessions/                  Notes session passees (memoire historique)
+  security/                          RLS + RGPD + audits
+  devops/                            Release process + force-logout + deployment
 supabase/
   migrations/        Migrations SQL PostgreSQL + PostGIS
 ```
 
-## Strategie de branches Git
+## Strategie 3 environnements (norme officielle V1.0.0+)
 
 ```
-main      →  production publique  (Supabase PROD)
-staging   →  beta testers / UAT   (Supabase DEV — donnees ephemeres)
-develop   →  dev interne           (Supabase DEV)
+PROD       main      naturegraph.ca         public, ultra stable
+BETA       staging   beta.naturegraph.ca    testeurs autorises, instable OK
+DEV        develop   preview Vercel         Nicolas, tres instable
 ```
 
-**Flux de promotion (sens unique) :**
+**Flux obligatoire** : `develop` → `staging` → `main` (sans raccourci).
+**Hotfix urgent** : `hotfix/xxx` depuis `main` → merge main → remonter dans staging + develop.
 
-```
-feat/xxx  →  develop  →  staging  →  main
-```
+Cf. `docs/devops/environments.md` pour le detail complet.
 
-**Regles :**
+### Release process (regle permanente)
 
-- `develop` : push direct OK pour petits changements, PR recommandee pour features
-- `staging` : PR obligatoire depuis develop (jamais depuis une feature branch)
-- `main` : PR obligatoire depuis staging — JAMAIS de push direct
-- Hotfix urgents : `hotfix/xxx` depuis `main` → merger dans `main` → remonter dans `staging` → `develop`
+- **JAMAIS de push prod systematique**. On accumule plusieurs fixes/ameliorations puis on release groupé.
+- Avant tout merge `staging → main` :
+  1. Rediger 2 release notes (technique + user-friendly, template `docs/devops/RELEASE_PROCESS.md`)
+  2. Soumettre a Nicolas pour validation (date, heure, tests, force-logout, notif)
+  3. Attendre son OK explicite avant de merger
+- Cycle ideal : 1 release par jour ou par grappe coherente de 3-5 changements, pas par bug isole.
+- Force-logout des users seulement de temps en temps (refonte auth, schema casse), pas par defaut.
+- Notification in-app systeme : redaction + validation Nicolas avant insertion.
 
 **Supabase (Phase 1 MVP) :**
 

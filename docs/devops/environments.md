@@ -1,85 +1,251 @@
-# Environnements
+# Environnements Naturegraph, Norme officielle V1.0.0+
 
-## Stratégie 3 environnements
+> Strategie de separation production / beta / dev, decision Nicolas 2026-05-25.
+> S applique a partir de la stabilisation officielle V1.0.0.
 
-| Env | Branche Git | Supabase | Hébergement | URL | Public |
-|---|---|---|---|---|---|
-| **local** | `feat/*`, `develop` | `naturegraph-dev` | `npm run dev` | http://localhost:5173 | dev seul |
-| **staging** | `staging` | `naturegraph-dev` | Vercel preview (branche staging) | preview Vercel auto | beta testers |
-| **production** | `main` | `naturegraph-prod` | Vercel production | https://naturegraph.ca | tout le monde |
+---
 
-> **Pourquoi staging partage la DB de dev** — Phase MVP : on évite la facturation d'un 2e projet Supabase et on garde des données ephemères. Quand on lance la beta publique, on isole staging dans son propre projet.
-
-## Variables d'environnement
-
-### Vercel — Production (branche `main`)
-
-| Variable | Valeur |
-|---|---|
-| `VITE_SUPABASE_URL` | `https://<prod>.supabase.co` |
-| `VITE_SUPABASE_ANON_KEY` | publishable key prod |
-| `VITE_APP_ENV` | `production` |
-| `VITE_SENTRY_DSN` | DSN Sentry prod |
-
-### Vercel — Preview (branches `staging`, `develop`, features)
-
-| Variable | Valeur |
-|---|---|
-| `VITE_SUPABASE_URL` | `https://hrxgduvworofnrjmgpcj.supabase.co` |
-| `VITE_SUPABASE_ANON_KEY` | publishable key dev |
-| `VITE_APP_ENV` | `staging` |
-
-### Local
-
-`.env.local` (gitignored) — voir `api-connection/supabase-setup.md`.
-
-## Migrations SQL — workflow
+## Vue d ensemble
 
 ```
-feat/xxx ──▶ développement local, migration créée dans supabase/migrations/
-   │
-   │ PR vers develop
-   ▼
-develop ──▶ DBA applique manuellement la migration sur naturegraph-dev
-   │         (ou via mcp__supabase__apply_migration)
-   │
-   │ PR vers staging
-   ▼
-staging ──▶ aucune action (même DB que develop)
-   │
-   │ PR vers main
-   ▼
-main ──▶ DBA applique la migration sur naturegraph-prod, dans la même PR
-         que celle qui livre le code dépendant
+                 PROD                    BETA (privee)            DEV (interne)
+                 ════                    ═════════════            ══════════════
+
+Branche Git      main                    staging                  develop
+Domaine          naturegraph.ca          beta.naturegraph.ca      preview Vercel
+Audience         public                  testeurs autorises       Nicolas + collab
+Stabilite        ULTRA stable            instable OK              tres instable
+Validation       QA complete obligatoire QA UX requise            aucune
+Donnees          prod reelles            prod reelles ou copie    prod reelles
+Features         seulement stables       experimentales OK        toutes
+Deploy           apres validation Nicolas auto sur push staging   auto sur push develop
 ```
 
-**Règle d'or** : une migration est appliquée **avant** que le code qui en dépend ne soit déployé. Sinon downtime garanti.
+---
 
-## Conventions de nommage migrations
+## 1. PROD, Production stable
+
+### Identite
+
+- **Branche** : `main`
+- **Domaine** : `naturegraph.ca`
+- **Vercel deploy** : automatique sur merge to main
+- **Supabase project** : `naturegraph-prod` (id hrxgduvworofnrjmgpcj)
+
+### Public
+
+- Tous les users (beta privee ouverte au Quebec + France)
+- Doit etre fiable, rapide, sans bug
+
+### Regles strictes
+
+✅ DOIT :
+
+- Etre stable et fiable
+- Recevoir seulement du code valide (QA + responsive + cross-browser + Supabase + Vercel OK)
+- Etre taggee proprement (v1.X.Y)
+- Avoir une release note technique + user-friendly
+
+❌ NE DOIT JAMAIS :
+
+- Servir de terrain de test
+- Contenir des features incompletes
+- Contenir du debug ou des console.log
+- Recevoir des hotfixes sauvages
+- Contenir de la fake data
+- Avoir des feature flags oublies
+- Recevoir du code non valide par Nicolas
+
+### Process deploiement
+
+1. Code valide en beta (cf section 2)
+2. PR `staging -> main` avec release note (template `RELEASE_PROCESS.md`)
+3. Validation Nicolas (date, heure, tests, force-logout, notif)
+4. Merge admin + Vercel deploy
+5. Tag git `v[X.Y.Z]`
+6. Surveillance 30-60 min post-deploy
+7. Archive release notes dans `releases/`
+
+---
+
+## 2. BETA, Beta privee
+
+### Identite
+
+- **Branche** : `staging`
+- **Domaine** : `beta.naturegraph.ca` (a configurer cote Hostinger DNS + Vercel)
+- **Vercel deploy** : automatique sur push staging
+- **Supabase project** : meme que prod (`naturegraph-prod`) en Phase 1, project separe `naturegraph-beta` en Phase 2 si besoin
+
+### Public
+
+- Beta testeurs autorises uniquement
+- Acces controle via allowlist email + beta gate existant
+- Pas indexe par Google (robots.txt + meta noindex sur beta domain)
+
+### Regles
+
+✅ DOIT :
+
+- Etre la passerelle obligatoire entre dev et prod
+- Recevoir toutes les nouvelles features avant prod
+- Permettre validation UX en conditions reelles
+- Conserver des donnees reelles (ou snapshot prod)
+
+⚠️ PEUT :
+
+- Etre instable temporairement
+- Contenir des features experimentales derriere feature flags
+
+❌ NE DOIT PAS :
+
+- Etre publique
+- Etre indexee par les moteurs de recherche
+- Servir de prod (les vrais users restent sur naturegraph.ca)
+
+### Process
+
+1. Feature finie sur `develop`
+2. PR `develop -> staging`
+3. Tests beta privee par Nicolas + collaborateurs autorises sur `beta.naturegraph.ca`
+4. Iteration UX, fixes
+5. Quand stable : PR `staging -> main` (process release stable cf section 1)
+
+---
+
+## 3. DEV, Developpement interne
+
+### Identite
+
+- **Branche** : `develop`
+- **Domaine** : preview Vercel auto (`naturegraph-eight.vercel.app` ou equivalent)
+- **Vercel deploy** : automatique sur push develop
+- **Supabase project** : `naturegraph-prod` (Phase 1, pas de dev DB separee pour eviter friction)
+
+### Public
+
+- Nicolas + collaborateurs eventuels uniquement
+- Acces possible via preview Vercel, lien partage manuel
+
+### Regles
+
+✅ DOIT :
+
+- Etre l environnement de travail principal
+- Recevoir tous les commits intermediaires
+- Permettre experimentation totale
+
+⚠️ PEUT :
+
+- Etre tres instable
+- Contenir du debug
+- Avoir des features cassees
+- Avoir des fake data temporaires
+
+❌ NE DOIT PAS :
+
+- Etre partage publiquement
+- Etre confondu avec la prod
+
+---
+
+## Feature flags
+
+Pour isoler les features experimentales :
+
+```ts
+// src/lib/featureFlags.ts (a creer)
+export const FEATURES = {
+  GOOGLE_OAUTH: import.meta.env.VITE_FEATURE_GOOGLE_OAUTH === 'true',
+  PWA_PROMPT: import.meta.env.VITE_FEATURE_PWA_PROMPT === 'true',
+  // etc.
+}
+```
+
+Config Vercel par environnement :
+
+- Prod : `VITE_FEATURE_GOOGLE_OAUTH=false`
+- Beta : `VITE_FEATURE_GOOGLE_OAUTH=true` (testeurs voient la feature)
+- Dev : `VITE_FEATURE_GOOGLE_OAUTH=true`
+
+---
+
+## Securite et separation
+
+### Variables d environnement
+
+Phase 1 (actuel) :
+
+| Variable               | Prod                             | Beta                   | Dev  |
+| ---------------------- | -------------------------------- | ---------------------- | ---- |
+| VITE_SUPABASE_URL      | hrxgduvworofnrjmgpcj.supabase.co | meme                   | meme |
+| VITE_SUPABASE_ANON_KEY | prod                             | meme                   | meme |
+| VITE*FEATURE*\*        | false (sauf si validee)          | true pour les en-cours | true |
+
+Phase 2 (long terme) : projects Supabase separes prod / beta pour isoler les donnees, eviter qu un test casse les vrais users.
+
+### Cles API et callbacks
+
+- Auth callbacks distincts par domaine (Supabase Dashboard, Auth, URL Configuration)
+  - `https://naturegraph.ca/auth/callback` (prod)
+  - `https://beta.naturegraph.ca/auth/callback` (beta)
+  - `https://naturegraph-eight.vercel.app/auth/callback` (dev)
+
+### Analytics
+
+- Vercel Web Analytics : isolation par domaine deja en place
+- PostHog (futur) : projet separe par environnement
+
+---
+
+## Etat actuel vs objectif
+
+### Existe
+
+- `main` branche + naturegraph.ca + Supabase prod : ✅ en place
+- `develop` branche + preview Vercel : ✅ en place
+- Beta gate (clé NG-XXXX-XXXX) sur naturegraph.ca : ✅ en place
+- CI build / lint / TypeScript / bundle budget : ✅ en place
+
+### A mettre en place
+
+- [ ] Reset `staging` branch depuis `main` (actuellement desynchronisee de 177 commits)
+- [ ] Configurer domaine `beta.naturegraph.ca` cote Hostinger DNS + Vercel
+- [ ] Setup robots.txt + meta noindex sur le domaine beta
+- [ ] Allowlist beta : utiliser beta keys existantes ou ajouter logique allowlist email
+- [ ] Documenter le workflow develop -> staging -> main dans CONTRIBUTING.md
+- [ ] Mettre en place feature flags (`src/lib/featureFlags.ts`) si besoin de cacher des features incompletes sur prod
+
+### Long terme (V1.X+)
+
+- Project Supabase separe pour beta (`naturegraph-beta`) avec snapshot regulier de prod
+- Github Actions deploy specifique par environnement
+- Database branching Supabase Pro pour les feature branches lourdes
+
+---
+
+## Workflow officiel
 
 ```
-supabase/migrations/YYYYMMDD_<scope>_<description>.sql
+                 develop                    staging                main
+                 ━━━━━━━                    ━━━━━━━                ━━━━
+                 push libre  →→→ PR validee →→→ release note + Nicolas → tag git v1.X.Y
 ```
 
-Exemples :
-- `20260320_initial_schema.sql`
-- `20260403_security_hardening.sql`
-- `20260403_fix_reaction_types.sql`
+### Quand merger ou ?
 
-Le timestamp donne l'ordre d'application. Une fois mergée dans `main`, **une migration est immuable** : tout correctif passe par une nouvelle migration.
+| Action                      | Branche cible                                                           |
+| --------------------------- | ----------------------------------------------------------------------- |
+| Fix bug rapide non bloquant | develop, puis staging plus tard                                         |
+| Bug critique (prod cassee)  | hotfix/x depuis main → main, remonter vers staging + develop            |
+| Nouvelle feature            | develop → staging quand prete → main quand validee                      |
+| Refactor / cleanup          | develop → staging → main (pas de raccourci)                             |
+| Hotfix urgent               | `hotfix/x` depuis `main` → merge main → remonter dans staging + develop |
 
-## Secrets
+---
 
-- **Vercel** : variables d'env, accès limité aux owners
-- **Supabase** : `service_role` jamais exporté hors des Edge Functions
-- **GitHub Actions** : secrets injectés via `secrets.*`
-- **Local** : `.env.local` gitignored, jamais commité (CI vérifie via gitleaks)
+## Reference
 
-## Outils
-
-| Outil | Usage |
-|---|---|
-| Vercel CLI | preview deploys, env vars |
-| Supabase CLI | migrations, gen types, dump DB |
-| GitHub CLI (`gh`) | PRs, releases |
-| Sentry CLI | source maps upload |
+- Process de release : `RELEASE_PROCESS.md`
+- Force-logout users : `FORCE_LOGOUT_RUNBOOK.md`
+- Document central : `../../PROJECT_MASTER.md`

@@ -8,6 +8,22 @@ Application web permettant aux naturalistes et passionnés de nature de document
 
 ---
 
+## 📖 Documentation principale
+
+Le document central du projet est **[`PROJECT_MASTER.md`](PROJECT_MASTER.md)**. À lire en premier.
+
+| Document                                 | Quand le lire                                                    |
+| ---------------------------------------- | ---------------------------------------------------------------- |
+| [`PROJECT_MASTER.md`](PROJECT_MASTER.md) | **Vue d ensemble**, vision, état V1.0.0, roadmap, TODO, workflow |
+| [`CLAUDE.md`](CLAUDE.md)                 | Instructions Claude Code + règles permanentes                    |
+| [`GUIDELINES.md`](GUIDELINES.md)         | Budgets eco-conception + accessibilité WCAG AA                   |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md)     | Comment contribuer                                               |
+| [`docs/README.md`](docs/README.md)       | Index des docs techniques détaillées                             |
+
+**Version actuelle** : V1.0.0 (2026-05-25)
+
+---
+
 ## Stack technique
 
 | Couche     | Technologie                              |

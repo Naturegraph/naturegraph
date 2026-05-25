@@ -91,14 +91,56 @@ function trendPercent(current: number, previous: number): number {
   return Math.round(((current - previous) / previous) * 100)
 }
 
+/**
+ * Recupere les ids des comptes marques is_internal (Nicolas admin, comptes
+ * de test interne). Sert a exclure ces comptes des stats publiques pour ne
+ * pas polluer les compteurs reels affiches aux users (Nicolas 2026-05-25).
+ *
+ * Cache de fait : la liste change rarement (1 entree actuellement), donc
+ * acceptable de la requeter a chaque appel stats.
+ */
+async function getInternalUserIds(): Promise<string[]> {
+  const c = ensureClient()
+  const { data } = await c.from('profiles').select('id').eq('is_internal', true)
+  return (data ?? []).map((r) => r.id)
+}
+
+/**
+ * Construit la clause not-in pour PostgREST. Renvoie une chaine vide si
+ * pas d ids a exclure (le caller doit alors NE PAS appliquer le filtre).
+ */
+function notInClause(ids: string[]): string {
+  if (ids.length === 0) return ''
+  return `(${ids.map((id) => `"${id}"`).join(',')})`
+}
+
 // ─── Stats globales ─────────────────────────────────────────────────────────
 
-/** Stats globales plateforme (totaux bruts). */
+/**
+ * Stats globales plateforme (totaux bruts).
+ * Exclut les comptes is_internal=true (admin Nicolas + tests internes)
+ * pour ne pas polluer les compteurs publics.
+ */
 export async function getPlatformStats(): Promise<PlatformStats> {
   const c = ensureClient()
+  const internalIds = await getInternalUserIds()
+  const internalClause = notInClause(internalIds)
+
+  const usersQuery = c
+    .from('profiles')
+    .select('id', { count: 'exact', head: true })
+    .eq('is_internal', false)
+  let postsQuery = c
+    .from('posts')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'published')
+  if (internalClause) {
+    postsQuery = postsQuery.not('user_id', 'in', internalClause)
+  }
+
   const [users, posts, species] = await Promise.all([
-    c.from('profiles').select('id', { count: 'exact', head: true }),
-    c.from('posts').select('id', { count: 'exact', head: true }).eq('status', 'published'),
+    usersQuery,
+    postsQuery,
     c.from('taxref_cache').select('taxref_id', { count: 'exact', head: true }),
   ])
   return {
@@ -119,31 +161,46 @@ export async function getPlatformStats(): Promise<PlatformStats> {
 export async function getImpactStats(period: StatsPeriod = 'month'): Promise<ImpactStats> {
   const c = ensureClient()
   const { current, oldest } = getPeriodBounds(period)
+  const internalIds = await getInternalUserIds()
+  const internalClause = notInClause(internalIds)
+
+  // Helper pour appliquer le filtre is_internal sur les requetes posts
+  const filterPosts = <T extends { not: (col: string, op: string, val: string) => T }>(q: T) =>
+    internalClause ? q.not('user_id', 'in', internalClause) : q
 
   // Requêtes en parallèle : observations courante + précédente, migrateurs courant + précédent
   const [obsCurrent, obsPrevious, migCurrent, migPrevious] = await Promise.all([
-    // Observations (posts publiés), période courante
-    c
-      .from('posts')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'published')
-      .gte('created_at', current),
+    // Observations (posts publiés), période courante, exclut les is_internal
+    filterPosts(
+      c
+        .from('posts')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'published')
+        .gte('created_at', current),
+    ),
 
     // Observations, période précédente
-    c
-      .from('posts')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'published')
-      .gte('created_at', oldest)
-      .lt('created_at', current),
+    filterPosts(
+      c
+        .from('posts')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'published')
+        .gte('created_at', oldest)
+        .lt('created_at', current),
+    ),
 
-    // Migrateurs (comptes créés), période courante
-    c.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', current),
+    // Migrateurs (comptes créés), période courante, exclut les is_internal
+    c
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_internal', false)
+      .gte('created_at', current),
 
     // Migrateurs, période précédente
     c
       .from('profiles')
       .select('id', { count: 'exact', head: true })
+      .eq('is_internal', false)
       .gte('created_at', oldest)
       .lt('created_at', current),
   ])
