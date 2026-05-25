@@ -101,32 +101,24 @@ supabase/
   migrations/        Migrations SQL PostgreSQL + PostGIS
 ```
 
-## Strategie de branches Git
+## Strategie 3 environnements (norme officielle V1.0.0+)
 
 ```
-main      →  production publique  (Supabase PROD)
-staging   →  beta testers / UAT   (Supabase DEV — donnees ephemeres)
-develop   →  dev interne           (Supabase DEV)
+PROD       main      naturegraph.ca         public, ultra stable
+BETA       staging   beta.naturegraph.ca    testeurs autorises, instable OK
+DEV        develop   preview Vercel         Nicolas, tres instable
 ```
 
-**Flux de promotion (sens unique) :**
+**Flux obligatoire** : `develop` → `staging` → `main` (sans raccourci).
+**Hotfix urgent** : `hotfix/xxx` depuis `main` → merge main → remonter dans staging + develop.
 
-```
-feat/xxx  →  develop  →  staging  →  main
-```
+Cf. `docs/devops/environments.md` pour le detail complet.
 
-**Regles :**
-
-- `develop` : push direct OK pour petits changements, PR recommandee pour features
-- `staging` : PR obligatoire depuis develop (jamais depuis une feature branch)
-- `main` : PR obligatoire depuis develop + **release note validee par Nicolas**
-- Hotfix urgents : `hotfix/xxx` depuis `main` → merger dans `main` → remonter dans `develop`
-
-### Release process (regle permanente, Nicolas 2026-05-25)
+### Release process (regle permanente)
 
 - **JAMAIS de push prod systematique**. On accumule plusieurs fixes/ameliorations puis on release groupé.
-- Avant tout merge `develop → main` :
-  1. Rediger une release note (template `docs/devops/RELEASE_PROCESS.md`)
+- Avant tout merge `staging → main` :
+  1. Rediger 2 release notes (technique + user-friendly, template `docs/devops/RELEASE_PROCESS.md`)
   2. Soumettre a Nicolas pour validation (date, heure, tests, force-logout, notif)
   3. Attendre son OK explicite avant de merger
 - Cycle ideal : 1 release par jour ou par grappe coherente de 3-5 changements, pas par bug isole.

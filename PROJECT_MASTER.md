@@ -315,15 +315,22 @@ git push origin v1.0.0
 
 ## 7. Workflow projet
 
-### Branches Git
+### Strategie 3 environnements (norme officielle V1.0.0+)
 
 ```
-main      →  production publique  (Supabase PROD, naturegraph.ca)
-develop   →  dev interne          (push libre)
-hotfix/x  →  fix urgent           (depuis main, remonte ensuite vers develop)
+                 PROD                    BETA (privee)            DEV (interne)
+                 ════                    ═════════════            ══════════════
+Branche Git      main                    staging                  develop
+Domaine          naturegraph.ca          beta.naturegraph.ca      preview Vercel
+Audience         public                  testeurs autorises       Nicolas + collab
+Stabilite        ULTRA stable            instable OK              tres instable
+Validation       QA complete obligatoire QA UX requise            aucune
 ```
 
-`staging` retirée du workflow (jamais utilisée concrètement, simplification).
+**Flux obligatoire** : `develop` → `staging` → `main` (sans raccourci).
+**Hotfix urgent** : `hotfix/x` depuis `main` → merge main → remonter dans staging + develop.
+
+Cf. `docs/devops/environments.md` pour le detail complet (regles, securite, feature flags).
 
 ### Règle de release (depuis 2026-05-25)
 
