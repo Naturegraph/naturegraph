@@ -8,16 +8,16 @@ Les notes user-friendly sont dans `docs/devops/releases/V[X.Y.Z]_USER.md`.
 
 ---
 
-## [V1.0.1] - 2026-05-25, fix admin
+## [V1.0.1] - 2026-05-25, fix admin + securite route post
 
 ### Admin (interne)
 
 - AdminBeta : message de motivation des inscrits waitlist visible en entier (etait tronque a 1 ligne)
 - Lien manuel du code NG-HMW8-D9U6 au compte de Claire (action DB, bug claim atomique a auditer)
 
-### Aucun impact user
+### Securite
 
-Cette release ne modifie aucune fonctionnalite cote utilisateur public.
+- Route `/post/:postId` desormais protegee : un visiteur non authentifie est redirige vers /welcome au lieu d acceder librement a la page detail d un post
 
 ---
 
