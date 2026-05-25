@@ -30,6 +30,7 @@ import { useCreatePost, useUpdatePost } from '@/hooks/usePost'
 import { compressPhoto } from '@/utils/compressPhoto'
 import { uploadPostMedia } from '@/services/mediaService'
 import { supabase } from '@/lib/supabase'
+import { assertActiveSession, SessionExpiredError } from '@/lib/authGuard'
 import type { CreatePostPayload } from '@/services/postService'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -173,6 +174,20 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
           t('contribute.errors.notAuthenticated', { defaultValue: 'Connecte-toi pour publier' }),
         )
         return
+      }
+
+      // Nicolas 2026-05-25 : verifie que la session est vraiment vivante cote
+      // serveur avant de lancer le pipeline upload (cas Flo.d, JWT expire
+      // localement alors que React state montre user authentifie). Si invalide,
+      // assertActiveSession redirige vers /welcome avec un toast clair.
+      try {
+        await assertActiveSession()
+      } catch (err) {
+        if (err instanceof SessionExpiredError) {
+          // La redirection a deja ete declenchee, on stoppe ici proprement
+          return
+        }
+        // Autre erreur (reseau), on continue, le watchdog gerera
       }
 
       const isEditing = !!editingPostId

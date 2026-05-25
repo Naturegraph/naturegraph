@@ -78,9 +78,14 @@ jobs:
           #     • Users + Moderation (~9 KB — pagination + filters + actions)
           # Le first-paint reel reste ~200 KB gzip (index + vendor + supabase + i18n)
           # car TOUT le code admin/beta est split en chunks separes (lazy-loaded).
-          # Si on depasse 420, audit les chunks vendor d'abord, bump en dernier recours.
-          if [ "$JS_KB" -gt 420 ]; then
-            echo "::error::JS bundle exceeds 420KB gzip budget (${JS_KB}KB)"
+          # Bumped 420->480 le 2026-05-25 (Nicolas) suite a :
+          #   - SettingsHidden + SettingsBlocked + useBlocks hook
+          #   - Image transforms helper + OptimizedImage component
+          #   - authGuard recovery global pour sessions mortes (Flo.d case)
+          #   - Section Blocages dans SettingsPanel + sous-vues dediees
+          # Si on depasse 480, audit les chunks vendor d'abord, bump en dernier recours.
+          if [ "$JS_KB" -gt 480 ]; then
+            echo "::error::JS bundle exceeds 480KB gzip budget (${JS_KB}KB)"
             exit 1
           fi
-          echo "✓ Bundle within eco-conception budget (${JS_KB}/420 KB)"
+          echo "✓ Bundle within eco-conception budget (${JS_KB}/480 KB)"
