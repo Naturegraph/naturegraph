@@ -8,6 +8,14 @@ Les notes user-friendly sont dans `docs/devops/releases/V[X.Y.Z]_USER.md`.
 
 ---
 
+## [V1.0.2] - 2026-05-25, fix navigation mobile
+
+### Securite / UX navigation
+
+- Route `/` Landing protegee par `PublicRoute` : un utilisateur authentifie qui presse le bouton retour mobile reste dans l app (sur /home) au lieu de retomber sur la landing publique. Plus de friction de reconnexion intempestive.
+
+---
+
 ## [V1.0.1] - 2026-05-25, fix admin + securite route post
 
 ### Admin (interne)

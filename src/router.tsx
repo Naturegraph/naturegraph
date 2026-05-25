@@ -218,11 +218,19 @@ export const router = createBrowserRouter([
         element: <BetaGatedLayout />,
         children: [
           // Landing page (BATCH 45)
+          // Nicolas 2026-05-25 : PublicRoute ajoute pour eviter qu un user
+          // authentifie tombe sur la landing en pressant back depuis /home
+          // (sort de son contexte app, friction UX mobile). Avec PublicRoute,
+          // un user auth est immediatement redirige vers /home (ou /onboarding
+          // si pas encore complete) en mode replace, donc le back button
+          // ne revient pas sur la landing.
           {
             path: '/',
             element: (
               <LazyPage>
-                <Landing />
+                <PublicRoute>
+                  <Landing />
+                </PublicRoute>
               </LazyPage>
             ),
           },
