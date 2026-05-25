@@ -8,9 +8,29 @@
 ## Principes
 
 1. **Pas de push prod systematique** : on accumule plusieurs fixes / ameliorations puis on release groupé.
-2. **Release note obligatoire** : Nicolas valide chaque MAJ avant merge sur main.
+2. **Double release note obligatoire** : technique + user-friendly. Nicolas valide les deux avant merge sur main.
 3. **Force-logout users seulement de temps en temps**, pas a chaque release.
 4. **Cycle ideal** : 1 release par jour ou par grappe de 3-5 changements coherents (pas par bug isole).
+
+## Deux niveaux de release note
+
+Chaque release produit DEUX documents :
+
+### 1. Note technique (archive interne)
+
+- Fichier : `docs/devops/releases/V[X.Y.Z]_TECHNICAL.md`
+- Public : interne (toi + collaborateurs futurs)
+- Contenu : changements complets, PRs, risques, rollback, tests internes
+- But : tracabilite, audit, debug si bug remonte
+
+### 2. Note user-friendly (communication)
+
+- Fichier : `docs/devops/releases/V[X.Y.Z]_USER.md`
+- Public : users de la beta (notif in-app, Discord, mail)
+- Contenu : ce qui change pour l user, ton chaleureux, sans jargon
+- But : informer les users qu une MAJ est sortie + les remercier
+
+Les deux fichiers vivent dans `docs/devops/releases/` qui devient l archive officielle des versions.
 
 ---
 
