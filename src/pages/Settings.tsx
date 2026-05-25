@@ -527,6 +527,42 @@ export default function Settings() {
           </div>
         </SettingsCard>
 
+        {/* ── Section Confidentialite ─────────────────────────────────────── */}
+        {/*
+          Nicolas 2026-05-24 : placee AVANT Notifications car action prioritaire
+          quand on debarque dans les Settings (gestion privee du feed).
+          Permet aux users de gerer leurs masquages et blocages sans passer par
+          l admin. Action inverse de "Masquer ce post" et "Bloquer cet user".
+        */}
+        <SettingsCard title={t('settings.privacySection', { defaultValue: 'Confidentialite' })}>
+          <p className="text-xs text-muted-foreground -mt-2">
+            {t('settings.privacyHint', {
+              defaultValue:
+                'Gere les publications et les comptes que tu as choisi d ecarter de ton feed.',
+            })}
+          </p>
+
+          <PrivacyNavRow
+            icon={<EyeOff className="size-4" aria-hidden="true" />}
+            label={t('settings.hidden.title', { defaultValue: 'Publications masquees' })}
+            description={t('settings.hidden.navDescription', {
+              defaultValue: 'Reaffiche les publications retirees de ton feed.',
+            })}
+            badge={hiddenIds?.length ?? 0}
+            onClick={() => navigate('/settings/hidden')}
+          />
+
+          <PrivacyNavRow
+            icon={<ShieldOff className="size-4" aria-hidden="true" />}
+            label={t('settings.blocked.title', { defaultValue: 'Comptes bloques' })}
+            description={t('settings.blocked.navDescription', {
+              defaultValue: 'Debloque les comptes pour les revoir dans ton feed.',
+            })}
+            badge={blockedUsers?.length ?? 0}
+            onClick={() => navigate('/settings/blocked')}
+          />
+        </SettingsCard>
+
         {/* ── Section Notifications ───────────────────────────────────────── */}
         <SettingsCard title={t('settings.notificationsSection')}>
           <div className="flex items-center gap-2 mb-2 text-muted-foreground">
@@ -584,41 +620,6 @@ export default function Settings() {
               />
             ))}
           </div>
-        </SettingsCard>
-
-        {/* ── Section Confidentialite ─────────────────────────────────────── */}
-        {/*
-          Nicolas 2026-05-24 : permet aux users de gerer leurs masquages et
-          blocages sans passer par l admin. Action inverse de "Masquer ce
-          post" et "Bloquer cet utilisateur".
-        */}
-        <SettingsCard title={t('settings.privacySection', { defaultValue: 'Confidentialite' })}>
-          <p className="text-xs text-muted-foreground -mt-2">
-            {t('settings.privacyHint', {
-              defaultValue:
-                'Gere les publications et les comptes que tu as choisi d ecarter de ton feed.',
-            })}
-          </p>
-
-          <PrivacyNavRow
-            icon={<EyeOff className="size-4" aria-hidden="true" />}
-            label={t('settings.hidden.title', { defaultValue: 'Publications masquees' })}
-            description={t('settings.hidden.navDescription', {
-              defaultValue: 'Reaffiche les publications retirees de ton feed.',
-            })}
-            badge={hiddenIds?.length ?? 0}
-            onClick={() => navigate('/settings/hidden')}
-          />
-
-          <PrivacyNavRow
-            icon={<ShieldOff className="size-4" aria-hidden="true" />}
-            label={t('settings.blocked.title', { defaultValue: 'Comptes bloques' })}
-            description={t('settings.blocked.navDescription', {
-              defaultValue: 'Debloque les comptes pour les revoir dans ton feed.',
-            })}
-            badge={blockedUsers?.length ?? 0}
-            onClick={() => navigate('/settings/blocked')}
-          />
         </SettingsCard>
 
         {/* ── Zone de danger ──────────────────────────────────────────────── */}
