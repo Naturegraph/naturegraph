@@ -224,7 +224,8 @@ Nicolas relit et valide :
 
 ### Etape 3, envoi SQL
 
-Apres validation, exec via MCP Supabase :
+Apres validation, choisir le template adapte dans `NOTIFICATION_TEMPLATES.md`
+et copier-coller son SQL pret a l emploi, OU adapter ce SQL de base :
 
 ```sql
 INSERT INTO notifications (user_id, type, title, body, read)
