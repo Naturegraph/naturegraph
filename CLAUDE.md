@@ -1,8 +1,13 @@
-# Naturegraph — Instructions Claude Code
+# Naturegraph, Instructions Claude Code
 
 ## Projet
 
 Plateforme web citoyenne biodiversite. React 19 + TypeScript + Vite + Tailwind + SCSS.
+
+**Version actuelle** : V1.0.0 (stabilisee 2026-05-25).
+
+> **Document central** : `PROJECT_MASTER.md` au root du repo, a lire en premier
+> pour comprendre l etat du projet, sa roadmap, sa TODO, son workflow.
 
 ## Regles obligatoires
 
@@ -83,17 +88,15 @@ src/
   types/             Types TypeScript
   data/mock/         Mock data pour dev (25 users, 125+ posts)
 docs/
-  README.md                          Index master de la doc
-  PROJECT_STRUCTURE.md               Carte vivante du repo
-  USER_STORIES.md, PLAN_ACTION.md    Vision + roadmap
-  PRD_*.md, EPIC_*.md                Specs produit par feature
-  AUDIT_*.md, SYNTHESE_*.md          Audits + causes racines
-  backend/                           Architecture DB + relations + schema.sql
+  README.md                          Index docs technique
+  AUTH_ROADMAP.md                    Plan reduction OTP
+  SUPABASE_PRO_ROADMAP.md            Phases A-D Pro plan
+  SEED_SPECIES_V2_RUNBOOK.md         Procedure seed especes
+  backend/                           Architecture DB + relations
   api-connection/                    Setup Supabase + endpoints + auth flow
   design-system/                     Tokens + composants Figma
-  security/                          RLS + RGPD + media
-  devops/                            Environments + deployment + monitoring
-  archive/sessions/                  Notes session passees (memoire historique)
+  security/                          RLS + RGPD + audits
+  devops/                            Release process + force-logout + deployment
 supabase/
   migrations/        Migrations SQL PostgreSQL + PostGIS
 ```
