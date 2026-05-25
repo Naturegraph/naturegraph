@@ -103,7 +103,7 @@ export async function getHiddenPostsWithData(limit = 50): Promise<HiddenPostRow[
     .select(
       `
       post_id,
-      created_at,
+      hidden_at,
       post:posts!hidden_posts_post_id_fkey(
         description,
         author:profiles!posts_user_id_fkey(username, avatar_url),
@@ -112,14 +112,14 @@ export async function getHiddenPostsWithData(limit = 50): Promise<HiddenPostRow[
     `,
     )
     .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
+    .order('hidden_at', { ascending: false })
     .limit(limit)
 
   if (error || !data) return []
 
   type RawRow = {
     post_id: string
-    created_at: string
+    hidden_at: string
     post: {
       description: string | null
       author: { username: string; avatar_url: string | null } | null
@@ -135,7 +135,7 @@ export async function getHiddenPostsWithData(limit = 50): Promise<HiddenPostRow[
       const preview = description.length > 80 ? `${description.slice(0, 80).trim()}…` : description
       return {
         post_id: row.post_id,
-        hidden_at: row.created_at,
+        hidden_at: row.hidden_at,
         preview: preview || 'Publication sans description',
         cover_url: cover?.media_url ?? null,
         author_username: row.post!.author?.username ?? 'utilisateur',

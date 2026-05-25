@@ -56,7 +56,8 @@ const Contact = lazy(() => import('./pages/Contact'))
 const Privacy = lazy(() => import('./pages/Privacy'))
 const Legal = lazy(() => import('./pages/Legal'))
 const Contribute = lazy(() => import('./pages/Contribute'))
-const Settings = lazy(() => import('./pages/Settings'))
+// Settings.tsx (legacy page form) supprimee, le vrai Paramètres est le
+// SettingsPanel slide-over ouvert depuis le profil.
 const SettingsHidden = lazy(() => import('./pages/SettingsHidden'))
 const SettingsBlocked = lazy(() => import('./pages/SettingsBlocked'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
@@ -340,17 +341,10 @@ export const router = createBrowserRouter([
             ),
           },
 
-          // Parametres — authentification requise, layout autonome
-          {
-            path: 'settings',
-            element: (
-              <LazyPage>
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              </LazyPage>
-            ),
-          },
+          // Le vrai Parametres est le SettingsPanel slide-over ouvert depuis
+          // le ProfileHeader. Plus de route /settings dediee (la page form
+          // legacy ayant ete supprimee, Nicolas 2026-05-24).
+
           // Confidentialite, sous-pages dediees (Nicolas 2026-05-24)
           // Gestion user-side des publications masquees et comptes bloques,
           // action inverse de "Masquer ce post" / "Bloquer cet utilisateur".
