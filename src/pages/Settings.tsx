@@ -15,17 +15,7 @@ import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
-import {
-  ArrowLeft,
-  Globe,
-  LogOut,
-  Trash2,
-  Bell,
-  Check,
-  EyeOff,
-  ShieldOff,
-  ChevronRight,
-} from 'lucide-react'
+import { ArrowLeft, Globe, LogOut, Trash2, Bell, Check } from 'lucide-react'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLocation } from '@/contexts/LocationContext'
@@ -34,8 +24,6 @@ import { INTEREST_LABELS } from '@/constants/interests'
 import { useUpdateProfile } from '@/hooks/useProfile'
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings'
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences'
-import { useHiddenPostIds } from '@/hooks/useHiddenPosts'
-import { useBlockedUsers } from '@/hooks/useBlocks'
 import type { NotificationType } from '@/services/notificationService'
 import { trackNotifEvent } from '@/utils/notificationAnalytics'
 import { LocationPickerSection } from '@/components/location/LocationPickerSection'
@@ -76,9 +64,6 @@ export default function Settings() {
   const { data: userSettings } = useSettings(profile?.id)
   const updateSettings = useUpdateSettings(profile?.id)
   const notifPrefs = useNotificationPreferences(profile?.id)
-  // Compteurs pour la section Confidentialite (badges sur les nav rows)
-  const { data: hiddenIds } = useHiddenPostIds()
-  const { data: blockedUsers } = useBlockedUsers()
 
   // Types exposés dans l'UI (ordre d'affichage)
   const NOTIF_TYPES: NotificationType[] = [
@@ -527,42 +512,6 @@ export default function Settings() {
           </div>
         </SettingsCard>
 
-        {/* ── Section Confidentialite ─────────────────────────────────────── */}
-        {/*
-          Nicolas 2026-05-24 : placee AVANT Notifications car action prioritaire
-          quand on debarque dans les Settings (gestion privee du feed).
-          Permet aux users de gerer leurs masquages et blocages sans passer par
-          l admin. Action inverse de "Masquer ce post" et "Bloquer cet user".
-        */}
-        <SettingsCard title={t('settings.privacySection', { defaultValue: 'Confidentialite' })}>
-          <p className="text-xs text-muted-foreground -mt-2">
-            {t('settings.privacyHint', {
-              defaultValue:
-                'Gere les publications et les comptes que tu as choisi d ecarter de ton feed.',
-            })}
-          </p>
-
-          <PrivacyNavRow
-            icon={<EyeOff className="size-4" aria-hidden="true" />}
-            label={t('settings.hidden.title', { defaultValue: 'Publications masquees' })}
-            description={t('settings.hidden.navDescription', {
-              defaultValue: 'Reaffiche les publications retirees de ton feed.',
-            })}
-            badge={hiddenIds?.length ?? 0}
-            onClick={() => navigate('/settings/hidden')}
-          />
-
-          <PrivacyNavRow
-            icon={<ShieldOff className="size-4" aria-hidden="true" />}
-            label={t('settings.blocked.title', { defaultValue: 'Comptes bloques' })}
-            description={t('settings.blocked.navDescription', {
-              defaultValue: 'Debloque les comptes pour les revoir dans ton feed.',
-            })}
-            badge={blockedUsers?.length ?? 0}
-            onClick={() => navigate('/settings/blocked')}
-          />
-        </SettingsCard>
-
         {/* ── Section Notifications ───────────────────────────────────────── */}
         <SettingsCard title={t('settings.notificationsSection')}>
           <div className="flex items-center gap-2 mb-2 text-muted-foreground">
@@ -687,48 +636,6 @@ function ToggleRow({
         />
       </button>
     </div>
-  )
-}
-
-/**
- * Ligne de navigation pour la section Confidentialite, icone + label +
- * description + badge count + chevron a droite. Sert d entree vers les
- * sous-pages /settings/hidden et /settings/blocked.
- */
-function PrivacyNavRow({
-  icon,
-  label,
-  description,
-  badge,
-  onClick,
-}: {
-  icon: React.ReactNode
-  label: string
-  description: string
-  badge: number
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border text-foreground hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary text-left"
-    >
-      <span className="text-muted-foreground shrink-0">{icon}</span>
-      <span className="flex-1 min-w-0 flex flex-col">
-        <span className="text-sm font-medium text-foreground">{label}</span>
-        <span className="text-xs text-muted-foreground truncate">{description}</span>
-      </span>
-      {badge > 0 && (
-        <span
-          aria-label={`${badge} elements`}
-          className="text-xs font-bold tabular-nums bg-primary-light text-primary px-2 py-0.5 rounded-full"
-        >
-          {badge}
-        </span>
-      )}
-      <ChevronRight className="size-4 text-muted-foreground shrink-0" aria-hidden="true" />
-    </button>
   )
 }
 
