@@ -402,6 +402,17 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
                         </span>{' '}
                         <span className="text-muted-foreground">{getMessage(notif.type, t)}</span>
                       </p>
+                      {/*
+                        Corps de la notification, affiche sur plusieurs lignes quand present
+                        (Nicolas 2026-05-25). Utilise principalement par les notifs type=system
+                        ou l administrateur ecrit un message libre. whitespace-pre-line preserve
+                        les retours a la ligne du texte stocke en base.
+                      */}
+                      {notif.body && (
+                        <p className="mt-1 text-sm text-muted-foreground leading-snug whitespace-pre-line">
+                          {notif.body}
+                        </p>
+                      )}
                     </div>
 
                     {/* Heure + point non-lu */}

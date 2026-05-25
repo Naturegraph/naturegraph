@@ -248,8 +248,15 @@ export default function NotificationsPage() {
                       </span>{' '}
                       <span className="text-muted-foreground">{getMessage(n.type, t)}</span>
                     </p>
+                    {/*
+                      Body sur plusieurs lignes (whitespace-pre-line preserve les \n).
+                      Plus de line-clamp pour laisser respirer les notifs system longues.
+                      Nicolas 2026-05-25.
+                    */}
                     {n.body && (
-                      <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{n.body}</p>
+                      <p className="mt-1 text-sm text-muted-foreground leading-snug whitespace-pre-line">
+                        {n.body}
+                      </p>
                     )}
                   </div>
 
