@@ -1115,17 +1115,16 @@ export default function AdminBeta() {
                           idx % 2 === 1 ? 'bg-[var(--color-bg-secondary)]/20' : ''
                         }`}
                       >
-                        {/* Contact : email + motivation en sous-ligne */}
+                        {/* Contact : email + motivation complete (Nicolas 2026-05-25 :
+                            retire line-clamp-1 pour afficher le message complet en admin,
+                            elargissement max-w pour laisser respirer le texte). */}
                         <td className="px-5 py-3 align-top">
-                          <div className="flex flex-col gap-0.5 max-w-xs">
+                          <div className="flex flex-col gap-0.5 max-w-md">
                             <span className="text-foreground font-medium break-all">
                               {entry.email}
                             </span>
                             {entry.motivation && (
-                              <span
-                                className="text-xs text-muted-foreground italic line-clamp-1"
-                                title={entry.motivation}
-                              >
+                              <span className="text-xs text-muted-foreground italic whitespace-pre-line">
                                 « {entry.motivation} »
                               </span>
                             )}
