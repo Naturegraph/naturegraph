@@ -22,6 +22,7 @@ import { Locate, Menu, Plus, Search, User } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLocation } from '@/contexts/LocationContext'
 import hermineIcon from '@/assets/images/hermine-icon.png'
+import { ImagePresets } from '@/lib/supabaseImage'
 
 /** Props du composant MobileBottomNav */
 interface MobileBottomNavProps {
@@ -181,8 +182,10 @@ export function MobileBottomNav({
                size-6 (24 px) pour une meilleure lisibilité et un hit target
                plus confortable sur mobile (WCAG 2.5.5). */
             <img
-              src={profile?.avatar_url ?? hermineIcon}
+              src={profile?.avatar_url ? ImagePresets.avatarSmall(profile.avatar_url) : hermineIcon}
               alt={profile?.username ?? t('nav.profile')}
+              loading="lazy"
+              decoding="async"
               className={`size-10 rounded-full object-cover border-2 ${isActive('/profile') ? 'border-primary' : 'border-border'}`}
             />
           ) : (

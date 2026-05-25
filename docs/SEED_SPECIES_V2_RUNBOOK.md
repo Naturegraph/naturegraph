@@ -14,16 +14,18 @@
 > EncounterStep2). Les autres groupes (plants / fish / arachnids /
 > mollusks) seront ajoutés plus tard quand leurs filtres seront activés.
 
+### V3 (Nicolas 2026-05-24), objectif 15k espèces
+
 | Groupe       | Avant | Cible base       | Boost CA (max)                   | Boost FR (max) |
 | ------------ | ----- | ---------------- | -------------------------------- | -------------- |
-| `birds`      | 1 647 | 3 000            | +1 000                           | +1 000         |
-| `mammals`    | 1 025 | 1 800            | +1 000                           | +1 000         |
-| `insects`    | 1 351 | 4 000            | +1 000                           | +1 000         |
-| `amphibians` | 406   | 800              | +1 000                           | +1 000         |
-| `reptiles`   | 406   | 1 000            | +1 000                           | +1 000         |
-| **Total**    | 4 835 | **~10 600 base** | **+ ~10 000 boost régional max** |                |
+| `birds`      | 1 647 | 4 500            | +1 500                           | +1 500         |
+| `mammals`    | 1 025 | 2 500            | +1 500                           | +1 500         |
+| `insects`    | 1 351 | 5 500            | +1 500                           | +1 500         |
+| `amphibians` | 406   | 1 200            | +1 500                           | +1 500         |
+| `reptiles`   | 406   | 1 500            | +1 500                           | +1 500         |
+| **Total**    | 4 835 | **~15 200 base** | **+ ~15 000 boost régional max** |                |
 
-**Réaliste : 8 000 – 11 000 espèces** (boost régional limité par le nombre
+**Réaliste : 13 000 – 16 000 espèces** (boost régional limité par le nombre
 de taxons effectivement nommés en FR ; chaque groupe atteint son palier
 selon la couverture vernaculaire GBIF).
 

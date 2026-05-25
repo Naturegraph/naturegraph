@@ -27,6 +27,7 @@ import { useSavedPostIds, useToggleSavedPost } from '@/hooks/useSavedPosts'
 import { PostOptionsMenu } from './PostOptionsMenu'
 import { ImageSlider } from './ImageSlider'
 import hermineIcon from '@/assets/images/hermine-icon.png'
+import { ImagePresets } from '@/lib/supabaseImage'
 import type { ReactionType } from '@/types/database'
 import { useSpecies } from '@/contexts/SpeciesContext'
 import { TAXONOMIC_GROUP_CONFIG } from '@/constants/commonSpecies'
@@ -347,8 +348,10 @@ export function FeedPost({
             >
               <div className="size-full rounded-full overflow-hidden">
                 <img
-                  src={author.avatar || hermineIcon}
+                  src={author.avatar ? ImagePresets.avatarSmall(author.avatar) : hermineIcon}
                   alt={author.name}
+                  loading="lazy"
+                  decoding="async"
                   className="size-full object-cover"
                 />
                 <div
