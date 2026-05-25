@@ -9,6 +9,7 @@ Process complet dans `../RELEASE_PROCESS.md`.
 
 ## Versions
 
-| Version                       | Date       | Type  | Resume                                                            |
-| ----------------------------- | ---------- | ----- | ----------------------------------------------------------------- |
-| [V1.0.0](V1.0.0_TECHNICAL.md) | 2026-05-25 | MAJOR | Premiere version officielle stable, cleanup documentation complet |
+| Version                       | Date       | Type  | Resume                                                               |
+| ----------------------------- | ---------- | ----- | -------------------------------------------------------------------- |
+| [V1.0.1](V1.0.1_TECHNICAL.md) | 2026-05-25 | PATCH | Admin only, motivation waitlist visible en entier + lien code Claire |
+| [V1.0.0](V1.0.0_TECHNICAL.md) | 2026-05-25 | MAJOR | Premiere version officielle stable, cleanup documentation complet    |
