@@ -59,7 +59,7 @@ import { SettingsHelpView } from './SettingsHelpView'
 /** ID des sous-vues — chaque section ouvre une sous-vue interne au panel. */
 type SettingsSection =
   | 'security'
-  | 'confidentiality'
+  | 'blocking'
   | 'notifications'
   | 'help'
   | 'license'
@@ -382,14 +382,14 @@ function SettingsList({
         onClick={() => onOpenSection('security')}
       />
       {/*
-        Nicolas 2026-05-24 : Confidentialite placee juste sous Securite,
-        au-dessus de Notifications, car action de controle prioritaire.
-        Permet de gerer masquages + blocages sans passer par l admin.
+        Nicolas 2026-05-24 : Blocages placee juste sous Securite, au-dessus
+        de Notifications. Action de controle prioritaire. Permet de gerer
+        masquages (publications) + blocages (comptes) sans passer par l admin.
       */}
       <SettingsItem
         icon={<ShieldOff className="size-5" aria-hidden="true" />}
-        label={t('settings.items.confidentiality', { defaultValue: 'Confidentialité' })}
-        onClick={() => onOpenSection('confidentiality')}
+        label={t('settings.items.blocking', { defaultValue: 'Blocages' })}
+        onClick={() => onOpenSection('blocking')}
       />
       <SettingsItem
         icon={<Bell className="size-5" aria-hidden="true" />}
@@ -568,7 +568,7 @@ type SimpleT = (key: string, options: { defaultValue: string }) => string
 
 const SECTION_TITLES: Record<SettingsSection, (t: SimpleT) => string> = {
   security: (t) => t('settings.items.security', { defaultValue: 'Sécurité' }),
-  confidentiality: (t) => t('settings.items.confidentiality', { defaultValue: 'Confidentialité' }),
+  blocking: (t) => t('settings.items.blocking', { defaultValue: 'Blocages' }),
   notifications: (t) => t('settings.items.notifications', { defaultValue: 'Notifications' }),
   help: (t) => t('settings.items.help', { defaultValue: "Besoin d'aide ?" }),
   license: (t) => t('settings.items.license', { defaultValue: "Licence et droits d'auteur" }),
@@ -593,8 +593,8 @@ function SettingsSubView({ section, onSectionChange }: SettingsSubViewProps) {
     return <SettingsSecurityView />
   }
 
-  if (section === 'confidentiality') {
-    return <SettingsConfidentialityView />
+  if (section === 'blocking') {
+    return <SettingsBlockingView />
   }
 
   if (section === 'notifications') {
@@ -668,10 +668,10 @@ function SettingsLegalDocView({ kind }: { kind: 'terms' | 'privacy' }) {
   )
 }
 
-// ─── Sous-vue : Confidentialite ──────────────────────────────────────────────
+// ─── Sous-vue : Blocages ─────────────────────────────────────────────────────
 
 /**
- * Sous-vue Confidentialite, Nicolas 2026-05-24.
+ * Sous-vue Blocages, Nicolas 2026-05-24.
  *
  * Liste 2 nav rows vers les pages dediees :
  *   - Publications masquees, action inverse de Masquer cette publication
@@ -685,7 +685,7 @@ function SettingsLegalDocView({ kind }: { kind: 'terms' | 'privacy' }) {
  * largeur. Le panel sera ferme par la navigation et l user reviendra
  * dans le panel via le back du navigateur ou en re-cliquant Parametres.
  */
-function SettingsConfidentialityView() {
+function SettingsBlockingView() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { data: hiddenIds } = useHiddenPostIds()

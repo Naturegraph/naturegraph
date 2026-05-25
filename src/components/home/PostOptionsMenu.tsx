@@ -41,7 +41,7 @@ import {
 } from 'lucide-react'
 import { ReportModal } from './ReportModal'
 import { DeleteConfirmModal } from './DeleteConfirmModal'
-import { block } from '@/services/blockService'
+import { useBlock } from '@/hooks/useBlocks'
 import { useToggleSavedPost, useSavedPostIds } from '@/hooks/useSavedPosts'
 import { useIsFollowing, useToggleFollow } from '@/hooks/useFollow'
 import { useHidePost } from '@/hooks/useHiddenPosts'
@@ -167,6 +167,7 @@ export function PostOptionsMenu({
   const { data: isCurrentlyFollowing } = useIsFollowing(authorId)
   const toggleFollow = useToggleFollow()
   const hidePostMutation = useHidePost()
+  const blockMutation = useBlock()
   const deletePostMutation = useDeletePost()
 
   // Focus sur le premier item à l'ouverture
@@ -274,14 +275,17 @@ export function PostOptionsMenu({
     setActionedItem(action)
     try {
       if (action === 'mute-user' && authorId) {
-        await block(authorId)
+        // useBlock() au lieu de block() direct, pour invalider le cache
+        // blocked-users + feed automatiquement (Settings > Blocages a jour
+        // sans attendre le staleTime).
+        await blockMutation.mutateAsync(authorId)
       } else if (action === 'hide-post') {
-        // Mutation optimiste via useHidePost — l'invalidation déclenche
-        // un refetch du feed qui filtrera ce post.
+        // Mutation optimiste via useHidePost, l invalidation declenche un
+        // refetch du feed qui filtrera ce post.
         hidePostMutation.mutate({ postId })
       }
     } catch {
-      // Erreur silencieuse — TODO ajouter un système de toast global
+      // Erreur silencieuse, TODO toast global
     }
     setTimeout(() => {
       setActionedItem(null)

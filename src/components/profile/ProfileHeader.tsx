@@ -33,6 +33,8 @@ import { ProfileOptionsMenu } from './ProfileOptionsMenu'
 
 /** Données minimales nécessaires pour afficher l'en-tête du profil */
 export interface ProfileDisplayData {
+  /** UUID du profil, requis pour le block via ProfileOptionsMenu */
+  id: string
   username: string
   bio: string | null
   avatar_url: string | null
@@ -242,6 +244,7 @@ export function ProfileHeader({
                     </button>
                     {showOptionsMenu && (
                       <ProfileOptionsMenu
+                        userId={profile.id}
                         username={profile.username}
                         isOwnProfile={false}
                         onClose={() => setShowOptionsMenu(false)}

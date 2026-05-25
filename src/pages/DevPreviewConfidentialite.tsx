@@ -60,7 +60,7 @@ const MOCK_BLOCKED = [
 
 // ─── Composant ────────────────────────────────────────────────────────────────
 
-type View = 'list' | 'confidentiality' | 'hidden' | 'blocked'
+type View = 'list' | 'blocking' | 'hidden' | 'blocked'
 
 export default function DevPreviewConfidentialite() {
   const [view, setView] = useState<View>('list')
@@ -69,14 +69,14 @@ export default function DevPreviewConfidentialite() {
 
   const titles: Record<View, string> = {
     list: 'Paramètres',
-    confidentiality: 'Confidentialité',
+    blocking: 'Blocages',
     hidden: 'Publications masquées',
     blocked: 'Comptes bloqués',
   }
 
   function back() {
-    if (view === 'hidden' || view === 'blocked') setView('confidentiality')
-    else if (view === 'confidentiality') setView('list')
+    if (view === 'hidden' || view === 'blocked') setView('blocking')
+    else if (view === 'blocking') setView('list')
   }
 
   return (
@@ -112,8 +112,8 @@ export default function DevPreviewConfidentialite() {
         {view === 'list' && (
           <ListView onOpen={setView} hiddenCount={hidden.length} blockedCount={blocked.length} />
         )}
-        {view === 'confidentiality' && (
-          <ConfidentialityView
+        {view === 'blocking' && (
+          <BlockingView
             onOpen={setView}
             hiddenCount={hidden.length}
             blockedCount={blocked.length}
@@ -170,8 +170,8 @@ function ListView({
       <Item icon={<Unlock className="size-5" />} label="Sécurité" />
       <Item
         icon={<ShieldOff className="size-5" />}
-        label="Confidentialité"
-        onClick={() => onOpen('confidentiality')}
+        label="Blocages"
+        onClick={() => onOpen('blocking')}
         badge={totalPrivacy}
       />
       <Item icon={<Bell className="size-5" />} label="Notifications" />
@@ -187,7 +187,7 @@ function ListView({
 
 // ─── View 2, sous-vue Confidentialite ────────────────────────────────────────
 
-function ConfidentialityView({
+function BlockingView({
   onOpen,
   hiddenCount,
   blockedCount,
