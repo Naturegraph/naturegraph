@@ -28,6 +28,8 @@ import hermineIcon from '@/assets/images/hermine-icon.png'
 import { ImagePresets } from '@/lib/supabaseImage'
 import { getBadgeEmoji } from '@/utils/badgeHelpers'
 import { ProfileOptionsMenu } from './ProfileOptionsMenu'
+import { useIsFollowing, useToggleFollow } from '@/hooks/useFollow'
+import { useToast } from '@/contexts/ToastContext'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -76,10 +78,43 @@ export function ProfileHeader({
   onOptions,
 }: ProfileHeaderProps) {
   const { t } = useTranslation()
-  const [isFollowing, setIsFollowing] = useState(false)
+  const toast = useToast()
+  // Follow state, source de verite serveur via useIsFollowing (refletant les
+  // mutations toggleFollow + invalidations en cascade). Le state local
+  // useState(false) precedent ne persistait rien et donnait l illusion d un
+  // follow sans rien ecrire en base (Nicolas 2026-05-25, bug critique).
+  const { data: isFollowing = false } = useIsFollowing(isOwnProfile ? undefined : profile.id)
+  const toggleFollow = useToggleFollow()
   // Menu d'options (3 points) — ProfileOptionsMenu géré ici en local pour
   // que la position absolute soit relative au bouton (pas à Profile.tsx).
   const [showOptionsMenu, setShowOptionsMenu] = useState(false)
+
+  async function handleToggleFollow() {
+    try {
+      await toggleFollow.mutateAsync({
+        targetUserId: profile.id,
+        currentlyFollowing: isFollowing,
+      })
+      toast.success(
+        isFollowing
+          ? t('profile.unfollowSuccess', {
+              username: profile.username,
+              defaultValue: `Tu ne migres plus avec @${profile.username}.`,
+            })
+          : t('profile.followSuccess', {
+              username: profile.username,
+              defaultValue: `Tu migres maintenant avec @${profile.username}.`,
+            }),
+      )
+    } catch (err) {
+      toast.error(
+        t('profile.followError', {
+          defaultValue: 'Action impossible pour le moment, reessaie.',
+        }),
+        err instanceof Error ? err.message : String(err),
+      )
+    }
+  }
 
   const badgeEmoji = profile.badges.length > 0 ? getBadgeEmoji(profile.badges[0]) : null
 
@@ -209,13 +244,15 @@ export function ProfileHeader({
                 <>
                   <button
                     type="button"
-                    onClick={() => setIsFollowing((f) => !f)}
-                    className={`flex items-center gap-2 h-10 px-5 rounded-full text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                    onClick={handleToggleFollow}
+                    disabled={toggleFollow.isPending}
+                    aria-pressed={isFollowing}
+                    aria-busy={toggleFollow.isPending}
+                    className={`flex items-center gap-2 h-10 px-5 rounded-full text-sm font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                       isFollowing
                         ? 'bg-cream-lighter border border-border text-foreground hover:bg-cream'
                         : 'bg-primary text-primary-foreground hover:opacity-90'
                     }`}
-                    aria-pressed={isFollowing}
                   >
                     <TreeDeciduous className="size-4" aria-hidden="true" />
                     {isFollowing ? t('profile.migrating') : t('profile.migrer')}

@@ -104,7 +104,7 @@ function ProfileSkeleton() {
 export default function Profile() {
   const { t } = useTranslation()
   const { username } = useParams<{ username: string }>()
-  const { profile: authProfile } = useAuth()
+  const { profile: authProfile, refreshProfile } = useAuth()
 
   // BATCH 10 / QW-UX1 : titre dynamique pour onglet navigateur
   // (utilise le username quand on visite un profil tiers, sinon "Profil").
@@ -220,6 +220,10 @@ export default function Profile() {
         // (la colonne DB s'appelle `week_goal`, pas `weekProgress`).
         week_goal: data.weekProgress?.goal,
       })
+      // Nicolas 2026-05-25 : sync le state AuthContext.profile (utilise par
+      // HomeNavbar, MobileBottomNav, ProfileMenu pour l avatar). Sans ca, le
+      // nouvel avatar/banner ne s affiche pas dans la nav apres upload.
+      await refreshProfile()
       toast.success(t('profile.edit.saveSuccess', { defaultValue: 'Profil mis à jour' }))
     } catch (err) {
       console.error('[Profile] update failed', err)
