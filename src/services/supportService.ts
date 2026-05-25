@@ -19,6 +19,7 @@
  */
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { assertActiveSession } from '@/lib/authGuard'
 
 /**
  * Cast d'échappement vers le client Supabase non typé.
@@ -70,14 +71,11 @@ export async function submitHelpRequest(payload: SubmitHelpRequestPayload): Prom
     throw new Error('Supabase non configuré')
   }
 
-  // L'utilisateur doit être authentifié (RLS bloque sinon).
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-  if (authError || !user) {
-    throw new Error('Authentification requise pour envoyer un message')
-  }
+  // L utilisateur doit etre authentifie (RLS bloque sinon). Si la session
+  // est morte cote client (JWT expire + refresh impossible), on force une
+  // re-authentification propre via assertActiveSession au lieu de jeter une
+  // erreur generique que l user ne peut pas resoudre (cas Flo.d 2026-05-25).
+  const { user } = await assertActiveSession()
 
   const trimmedMessage = payload.message.trim()
   if (trimmedMessage.length < 20) {

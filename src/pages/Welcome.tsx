@@ -112,6 +112,27 @@ export default function Welcome() {
     }
   }, [view])
 
+  // Affiche un toast quand l user arrive ici suite a une session expiree
+  // (assertActiveSession a redirige + pose le flag dans sessionStorage).
+  // Nicolas 2026-05-25, cas Flo.d.
+  useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem('naturegraph-session-expired') === '1') {
+        window.sessionStorage.removeItem('naturegraph-session-expired')
+        toast.error(
+          t('auth.sessionExpired.title', {
+            defaultValue: 'Ta session a expiré',
+          }),
+          t('auth.sessionExpired.desc', {
+            defaultValue: 'Reconnecte-toi avec ton email pour continuer.',
+          }),
+        )
+      }
+    } catch {
+      // sessionStorage indisponible, on ignore
+    }
+  }, [toast, t])
+
   function handleCodeChange(e: React.ChangeEvent<HTMLInputElement>) {
     setCode(formatBetaCode(e.target.value))
     if (error) setError(null)
