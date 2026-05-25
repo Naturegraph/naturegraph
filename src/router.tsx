@@ -59,6 +59,8 @@ const Contribute = lazy(() => import('./pages/Contribute'))
 const Settings = lazy(() => import('./pages/Settings'))
 const SettingsHidden = lazy(() => import('./pages/SettingsHidden'))
 const SettingsBlocked = lazy(() => import('./pages/SettingsBlocked'))
+// Dev preview, n est mont seulement si import.meta.env.DEV
+const DevPreviewConfidentialite = lazy(() => import('./pages/DevPreviewConfidentialite'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const Waitlist = lazy(() => import('./pages/Waitlist'))
@@ -141,6 +143,20 @@ export const router = createBrowserRouter([
           </LazyPage>
         ),
       },
+
+      // Dev preview confidentialite, hors beta guard, dev only.
+      ...(import.meta.env.DEV
+        ? [
+            {
+              path: 'dev-preview/confidentialite',
+              element: (
+                <LazyPage>
+                  <DevPreviewConfidentialite />
+                </LazyPage>
+              ),
+            },
+          ]
+        : []),
 
       // ════════════════════════════════════════════════════════════════
       // ADMIN — gate propre (AdminGuard + RLS), pas de BetaAccessGuard
