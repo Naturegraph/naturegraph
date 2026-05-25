@@ -135,6 +135,7 @@ Si tu veux une deco "discrete" (par ex pour les comptes inactifs), il suffit de 
 
 ## Historique
 
-| Date       | Cas   | Users impactes | Raison                                                               |
-| ---------- | ----- | -------------- | -------------------------------------------------------------------- |
-| 2026-05-25 | Flo.d | 1              | Session locale corrompue Android Chrome, fix authGuard deploye en // |
+| Date       | Cas                            | Users impactes                     | Raison                                                                                       |
+| ---------- | ------------------------------ | ---------------------------------- | -------------------------------------------------------------------------------------------- |
+| 2026-05-25 | Flo.d                          | 1                                  | Session locale corrompue Android Chrome, fix authGuard deploye en //                         |
+| 2026-05-25 | Force-deco globale post V1.0.0 | 6 (5 photographes + Nicolas admin) | Repartir d une base stable apres stabilisation V1.0.0, alignement complet pre nouvelle norme |
