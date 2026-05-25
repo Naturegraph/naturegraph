@@ -38,6 +38,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import hermineIcon from '@/assets/images/hermine-icon.png'
+import { ImagePresets } from '@/lib/supabaseImage'
 import { useUserStreak } from '@/hooks/useStats'
 import { useUnreadCount } from '@/hooks/useNotifications'
 import { useLocation } from '@/contexts/LocationContext'
@@ -413,8 +414,10 @@ export function HomeNavbar({
                       <div className="size-12 rounded-full overflow-hidden border border-border shrink-0">
                         {profile?.avatar_url ? (
                           <img
-                            src={profile.avatar_url}
+                            src={ImagePresets.avatarSmall(profile.avatar_url)}
                             alt={profile.username ?? 'Profil'}
+                            loading="lazy"
+                            decoding="async"
                             className="size-full object-cover"
                           />
                         ) : (

@@ -25,6 +25,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pencil, Share2, MoreHorizontal, TreeDeciduous, Settings } from 'lucide-react'
 import hermineIcon from '@/assets/images/hermine-icon.png'
+import { ImagePresets } from '@/lib/supabaseImage'
 import { getBadgeEmoji } from '@/utils/badgeHelpers'
 import { ProfileOptionsMenu } from './ProfileOptionsMenu'
 
@@ -93,8 +94,9 @@ export function ProfileHeader({
         {profile.banner_url && (
           // Above-the-fold → loading="eager" + fetchpriority="high".
           // C'est le LCP de la page profil → on le charge en priorité.
+          // Supabase Pro : preset banner servit en ~1200px (au lieu de la full res).
           <img
-            src={profile.banner_url}
+            src={ImagePresets.banner(profile.banner_url)}
             alt=""
             aria-hidden="true"
             className="w-full h-full object-cover"
@@ -120,9 +122,12 @@ export function ProfileHeader({
           <div className="-mt-12 md:-mt-14 self-center md:self-start shrink-0">
             <div className="relative">
               <div className="size-24 md:size-32 rounded-full border-4 border-cream-lighter overflow-hidden bg-primary-light shadow-sm">
-                {/* Above-the-fold : eager + fetchpriority high pour LCP. */}
+                {/* Above-the-fold : eager + fetchpriority high pour LCP.
+                    Supabase Pro : preset avatarLarge (192px) pour le 128px DOM (retina x2). */}
                 <img
-                  src={profile.avatar_url ?? hermineIcon}
+                  src={
+                    profile.avatar_url ? ImagePresets.avatarLarge(profile.avatar_url) : hermineIcon
+                  }
                   alt={t('home.profile.avatarAlt', { name: profile.username })}
                   className="size-full object-cover"
                   loading="eager"

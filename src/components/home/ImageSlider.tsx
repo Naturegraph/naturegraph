@@ -27,6 +27,7 @@ import { useTranslation } from 'react-i18next'
 import type { MockPost } from './FeedPost'
 import { PhotoLightbox } from './PhotoLightbox'
 import type { LightboxData } from './PhotoLightbox'
+import { ImagePresets } from '@/lib/supabaseImage'
 
 // ─── Style par format ────────────────────────────────────────────────────────
 
@@ -249,8 +250,14 @@ export function ImageSlider({
           ].join(' ')}
           aria-label={`${images[0].alt} — ${enlargeLabel}`}
         >
+          {/*
+            Supabase Image Transformations (Pro plan), photo feed servie en
+            ~1000px max au lieu de la version originale (jusqu a 5 MB en RAW).
+            Pour les URLs externes (non Supabase) le preset retourne l URL
+            d origine sans modification.
+          */}
           <img
-            src={images[0].url}
+            src={ImagePresets.feedPhoto(images[0].url)}
             alt={images[0].alt}
             className="absolute inset-0 size-full object-cover"
             loading="eager"
@@ -302,7 +309,7 @@ export function ImageSlider({
                 aria-label={`${img.alt} — ${enlargeLabel} (${i + 1}/${images.length})`}
               >
                 <img
-                  src={img.url}
+                  src={ImagePresets.feedPhoto(img.url)}
                   alt={img.alt}
                   className="absolute inset-0 size-full object-cover pointer-events-none"
                   // Nicolas 2026-05-22 : eager pour les 2 premières slides

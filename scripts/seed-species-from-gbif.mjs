@@ -74,37 +74,35 @@ console.log(
 // users du Québec qui ne trouvent pas leurs espèces locales.
 
 const GROUPS = [
-  // Oiseaux : ~10 000 espèces dans le monde dont la moitié bien nommée en FR.
-  // On vise large — France + Canada + observables internationaux.
-  { group: 'birds', label: 'Oiseaux', keys: [212], quota: 3000 },
-  // Mammifères : ~6 500 espèces mondiales, ~2000 avec nom FR (les domestiques
-  // et la mégafaune reconnaissable comptent).
-  { group: 'mammals', label: 'Mammifères', keys: [359], quota: 1800 },
-  // Insectes : ordres ciblés (bien couverts en FR) — plusieurs millions
-  // d'espèces mondiales mais on cible les ordres avec couverture FR
-  // (papillons, libellules, coléoptères, abeilles, sauterelles, punaises).
-  // Cible relevée car potentiel énorme et insectes très observés en beta.
+  // V3 (Nicolas 2026-05-24) : objectif 15k espèces, quotas poussés au max
+  // de la couverture vernaculaire FR raisonnable. La qualité prime sur le
+  // quota — si GBIF n a plus de noms FR, le groupe s arrête naturellement.
+  //
+  // Oiseaux : ~10 000 espèces mondiales, ~5000 avec nom FR. Quota porté à 4500.
+  { group: 'birds', label: 'Oiseaux', keys: [212], quota: 4500 },
+  // Mammifères : ~6 500 espèces mondiales, ~2500 avec nom FR (mégafaune,
+  // domestiques, cétacés, rongeurs populaires).
+  { group: 'mammals', label: 'Mammifères', keys: [359], quota: 2500 },
+  // Insectes : ordres ciblés (papillons, libellules, coléoptères, abeilles,
+  // sauterelles, punaises). Potentiel énorme et insectes très observés.
   {
     group: 'insects',
     label: 'Insectes',
     keys: [797, 789, 1470, 1457, 1458, 809],
-    quota: 4000,
+    quota: 5500,
   },
   // Amphibiens : ~8000 espèces mondiales, couverture FR plus limitée.
-  { group: 'amphibians', label: 'Amphibiens', keys: [131], quota: 800 },
-  // Reptiles : ~11000 espèces mondiales (Squamata + Testudines), couverture
-  // FR moyenne mais les serpents, lézards et tortues populaires sont bien nommés.
-  { group: 'reptiles', label: 'Reptiles', keys: [11592253, 11418114], quota: 1000 },
+  { group: 'amphibians', label: 'Amphibiens', keys: [131], quota: 1200 },
+  // Reptiles : ~11000 espèces mondiales (Squamata + Testudines).
+  { group: 'reptiles', label: 'Reptiles', keys: [11592253, 11418114], quota: 1500 },
 ]
 
-// Boost régional — pour chaque groupe, on récupère jusqu'à N espèces
-// additionnelles via l'occurrence facet du Canada. Permet d'avoir une
-// meilleure couverture des espèces effectivement observées au Québec
-// (Nicolas 2026-05-24 : « je ne trouve aucune espèce du territoire »).
-// On le fait pour CA ET pour FR pour couvrir les deux territoires beta.
+// Boost régional, pour chaque groupe on récupère jusqu à N espèces
+// additionnelles via l occurrence facet du pays. V3 : boost relevé à 1500
+// par pays et par groupe pour pousser la couverture locale (Québec + France).
 const REGIONAL_BOOSTS = [
-  { countryCode: 'CA', label: '🇨🇦', perGroup: 1000 },
-  { countryCode: 'FR', label: '🇫🇷', perGroup: 1000 },
+  { countryCode: 'CA', label: '🇨🇦', perGroup: 1500 },
+  { countryCode: 'FR', label: '🇫🇷', perGroup: 1500 },
 ]
 
 const GBIF_SEARCH = 'https://api.gbif.org/v1/species/search'
