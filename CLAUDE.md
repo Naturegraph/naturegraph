@@ -116,8 +116,19 @@ feat/xxx  →  develop  →  staging  →  main
 
 - `develop` : push direct OK pour petits changements, PR recommandee pour features
 - `staging` : PR obligatoire depuis develop (jamais depuis une feature branch)
-- `main` : PR obligatoire depuis staging — JAMAIS de push direct
-- Hotfix urgents : `hotfix/xxx` depuis `main` → merger dans `main` → remonter dans `staging` → `develop`
+- `main` : PR obligatoire depuis develop + **release note validee par Nicolas**
+- Hotfix urgents : `hotfix/xxx` depuis `main` → merger dans `main` → remonter dans `develop`
+
+### Release process (regle permanente, Nicolas 2026-05-25)
+
+- **JAMAIS de push prod systematique**. On accumule plusieurs fixes/ameliorations puis on release groupé.
+- Avant tout merge `develop → main` :
+  1. Rediger une release note (template `docs/devops/RELEASE_PROCESS.md`)
+  2. Soumettre a Nicolas pour validation (date, heure, tests, force-logout, notif)
+  3. Attendre son OK explicite avant de merger
+- Cycle ideal : 1 release par jour ou par grappe coherente de 3-5 changements, pas par bug isole.
+- Force-logout des users seulement de temps en temps (refonte auth, schema casse), pas par defaut.
+- Notification in-app systeme : redaction + validation Nicolas avant insertion.
 
 **Supabase (Phase 1 MVP) :**
 
