@@ -1,198 +1,265 @@
 # Release Process Naturegraph
 
-> Norme officielle depuis 2026-05-25 (decision Nicolas).
+> Norme officielle V1.0.0+ (decision Nicolas 2026-05-25).
 > S applique a TOUTES les MAJ qui partent en prod (main).
 
 ---
 
 ## Principes
 
-1. **Pas de push prod systematique** : on accumule plusieurs fixes / ameliorations puis on release groupé.
+1. **Pas de push prod systematique** : on accumule plusieurs fixes / ameliorations puis on release groupe.
 2. **Double release note obligatoire** : technique + user-friendly. Nicolas valide les deux avant merge sur main.
-3. **Force-logout users seulement de temps en temps**, pas a chaque release.
-4. **Cycle ideal** : 1 release par jour ou par grappe de 3-5 changements coherents (pas par bug isole).
+3. **Workflow obligatoire** : develop -> staging (beta) -> main (prod), sans raccourci.
+4. **Force-logout users seulement de temps en temps**, pas a chaque release.
+5. **Production = sanctuaire** : jamais de test, jamais de debug, jamais de fake data.
+
+---
+
+## Types de releases (semver type SaaS)
+
+### PATCH (V1.0.1, V1.0.2, ...)
+
+**Contient** : bugfix, responsive, optimisation, stabilite, securite mineure, UX mineure.
+
+**Process** :
+
+- QA interne rapide suffit
+- Beta privee optionnelle (si fix simple) ou rapide (1-2h)
+- Pas d annonce in-app necessaire (sauf bug critique resolu)
+- Pas de deconnexion utilisateurs sauf cas particulier
+- Release note technique courte + user-friendly minimaliste
+
+### MINOR (V1.1.0, V1.2.0, ...)
+
+**Contient** : nouvelles fonctionnalites importantes, amelioration UX majeure, nouveaux modules, evolutions visibles produit.
+
+**Process** :
+
+- QA interne complete obligatoire
+- Beta privee obligatoire (3-7 jours minimum)
+- Annonce in-app obligatoire avant deploy prod
+- Monitoring renforce 24-48h post-deploy
+- Release note technique detaillee + user-friendly chaleureuse
+
+### MAJOR (V2.0.0, V3.0.0, ...)
+
+**Contient** : refonte importante, changement architecture, gros changement produit, evolution business.
+
+**Process** :
+
+- Plan QA complet (responsive + cross-browser + perf + securite + accessibilite)
+- Beta privee etendue (1-3 semaines, plusieurs iterations)
+- Communication utilisateurs en amont (annonce 1 semaine avant)
+- Migration eventuelle preparee et testee
+- Monitoring renforce 1 semaine post-deploy
+- Support renforce (FAQ, Discord beta)
+- Release note technique exhaustive + user-friendly orientee value
+- Possible necessite de force-logout (auth refacto) ou changement schema DB
+
+---
+
+## Workflow obligatoire en 5 etapes
+
+```
+1. DEVELOPMENT     develop branche, push libre, experimentation
+2. QA INTERNE      tests Nicolas sur preview Vercel develop
+3. BETA PRIVEE     staging -> beta.naturegraph.ca, testeurs autorises
+4. VALIDATION      checklist obligatoire + release note Nicolas valide
+5. PRODUCTION      merge main, tag git, surveillance post-deploy
+```
+
+### Etape 1, Developpement
+
+**Branche** : `develop`
+Push libre, autant de commits / PRs intermediaires que necessaire. Vercel deploie automatiquement les previews. Tests locaux ou sur preview branch.
+
+### Etape 2, QA interne
+
+Tests effectues par Nicolas (ou collaborateurs) sur la branche `develop` via le preview Vercel :
+
+- [ ] Responsive (mobile, tablette, desktop)
+- [ ] Cross-browser (Chrome, Safari iOS, Firefox)
+- [ ] Flows critiques (auth, publication, profil, recherche)
+- [ ] Supabase OK (pas d erreurs RLS, requetes propres)
+- [ ] Auth OK (signin, signout, refresh)
+- [ ] Performance (LCP, bundle size, pas de re-render excessif)
+- [ ] Stabilite (pas d erreurs console, pas de fuites memoire)
+
+### Etape 3, Beta privee
+
+**Branche** : `staging`
+**Domaine** : `beta.naturegraph.ca` (a configurer)
+
+PR `develop -> staging`, merge automatique. Les testeurs autorises iterent sur le code en conditions reelles avant la prod. Duree : 1-2 jours minimum (PATCH), 3-7 jours (MINOR), 1-3 semaines (MAJOR).
+
+### Etape 4, Validation release
+
+Checklist obligatoire avant merge `staging -> main` :
+
+- [ ] Zero bug critique signale en beta
+- [ ] Build stable (CI green : lint, TypeScript, build, bundle budget)
+- [ ] Monitoring OK (logs Supabase, Vercel)
+- [ ] Securite validee (RLS, secrets, callbacks auth)
+- [ ] Migration validee si applicable (schema DB testee en beta)
+- [ ] Release note technique redigee dans `docs/devops/releases/V[X.Y.Z]_TECHNICAL.md`
+- [ ] Release note user-friendly redigee dans `docs/devops/releases/V[X.Y.Z]_USER.md`
+- [ ] Nicolas valide les deux notes (date, heure, force-logout, notif, etc.)
+
+### Etape 5, Production
+
+PR `staging -> main` avec les release notes en body.
+
+1. Merge admin squash
+2. Vercel deploie automatiquement
+3. Tag git : `git tag -a v1.X.Y -m "Release v1.X.Y"` + `git push origin v1.X.Y`
+4. Si force-logout requis : exec SQL via runbook `FORCE_LOGOUT_RUNBOOK.md`
+5. Si notif in-app : INSERT batch via script valide par Nicolas
+6. Surveillance 30-60 min minimum
+7. Documenter dans `releases/README.md` (historique des versions)
+
+---
 
 ## Deux niveaux de release note
 
-Chaque release produit DEUX documents :
+Chaque release produit DEUX documents archives dans `docs/devops/releases/` :
 
-### 1. Note technique (archive interne)
+### 1. Note technique (interne)
 
-- Fichier : `docs/devops/releases/V[X.Y.Z]_TECHNICAL.md`
-- Public : interne (toi + collaborateurs futurs)
-- Contenu : changements complets, PRs, risques, rollback, tests internes
+- Fichier : `V[X.Y.Z]_TECHNICAL.md`
+- Public : Nicolas + collaborateurs futurs
+- Contenu : changements complets, PRs referencees, risques, rollback plan, tests internes, validation Nicolas
 - But : tracabilite, audit, debug si bug remonte
 
 ### 2. Note user-friendly (communication)
 
-- Fichier : `docs/devops/releases/V[X.Y.Z]_USER.md`
+- Fichier : `V[X.Y.Z]_USER.md`
 - Public : users de la beta (notif in-app, Discord, mail)
 - Contenu : ce qui change pour l user, ton chaleureux, sans jargon
-- But : informer les users qu une MAJ est sortie + les remercier
-
-Les deux fichiers vivent dans `docs/devops/releases/` qui devient l archive officielle des versions.
+- But : informer + rassurer + remercier
 
 ---
 
-## Workflow standard
+## Maintenance utilisateur
 
-```
-feature/fix → develop  (push libre, autant qu on veut)
-develop → main         (PR obligatoire avec release note + validation Nicolas)
-```
+Certaines releases peuvent necessiter cote user :
 
-### Etape 1 : developpement libre sur develop
+- Refresh session
+- Reconnexion (force-logout)
+- Refresh cache (hard reload)
+- Maintenance courte (downtime < 5 min)
 
-- Push autant de commits / PRs intermediaires que necessaire sur `develop`
-- Vercel deploie automatiquement les previews
-- Tests locaux ou sur preview branch
+**Regle absolue** : toujours prevenir les utilisateurs AVANT.
 
-### Etape 2 : preparation de la release
+### Process annonce maintenance
 
-Quand on a accumule assez de changements (ou qu un fix est urgent) :
+1. Decision : la release necessite-t-elle une maintenance ?
+2. Si oui : redaction d une notif in-app type `maintenance`, validation Nicolas
+3. Envoi de la notif 24h-48h avant le deploy (pour MAJOR/MINOR), 1-2h avant (pour PATCH critique)
+4. Le jour J : deploy + force-logout si necessaire
+5. Notif post-maintenance : confirmer que tout est rentre dans l ordre
 
-1. **Rediger la release note** (template ci-dessous)
-2. **Soumettre a Nicolas pour validation** (chat ou DM)
-3. Nicolas valide ou demande des ajustements
-4. **Une fois valide** : creer la PR develop -> main avec la release note en body
+### Force-logout cas d usage
 
-### Etape 3 : deploiement
+Cf. `FORCE_LOGOUT_RUNBOOK.md`. Cas types :
 
-- Merge PR develop -> main (squash ou merge commit selon contexte)
-- Vercel deploie automatiquement
-- **Si la release inclut un changement auth / schema** : force-logout tous les users via `docs/devops/FORCE_LOGOUT_RUNBOOK.md`
-- Sinon : pas de force-logout, les users continuent leur session normalement
-
-### Etape 4 : annonce + verification
-
-- Notification in-app aux users (si bug fix important) ou simple deploy silencieux (refactor / perf)
-- Surveiller les retours pendant 30-60 min
-- Documenter dans `docs/devops/RELEASE_HISTORY.md`
+| Cas                                        | Force-logout      |
+| ------------------------------------------ | ----------------- |
+| Refonte auth (Google OAuth, Passkeys)      | OUI               |
+| Migration schema DB cassant                | OUI               |
+| Rotation JWT secret                        | OUI               |
+| Bug critique session corrompue (cas isole) | Un user seulement |
+| MAJ purement code (UI, perf, fix mineur)   | NON               |
+| Nouvelle feature non-auth                  | NON               |
 
 ---
-
-## Template release note
-
-````markdown
-# Release v[MAJOR.MINOR.PATCH] — [Date YYYY-MM-DD HH:MM TZ]
-
-## Tag de version
-
-v0.X.Y (semver)
-
-## Resume une ligne
-
-Une phrase qui dit ce qui change pour l user.
-
-## Changements
-
-### Nouveautes
-
-- [Feature A], description courte centree sur le benefice user
-- [Feature B], ...
-
-### Corrections
-
-- [Bug 1] : impact + cause + fix (1 ligne chacun)
-- [Bug 2] : ...
-
-### Sous le capot (technique, non user-facing)
-
-- Refactor X, perf gain Y
-- Migration Z
-
-## Actions requises par les users
-
-- [ ] Force-logout requis ? OUI / NON
-- [ ] Annonce in-app ? OUI / NON (texte joint ci-dessous si oui)
-- [ ] Hard refresh recommande ? OUI / NON
-
-## Tests a faire (priorise par criticite)
-
-### 🔴 Critique (a tester avant validation)
-
-1. [Test 1] : etapes precises + resultat attendu
-2. [Test 2] : ...
-
-### 🟡 Important (a tester apres deploiement)
-
-1. [Test 3] : ...
-
-### 🟢 Nice-to-have
-
-1. [Test 4] : ...
-
-## Risques connus
-
-- [Risque 1] : description + mitigation
-- [Risque 2] : ...
 
 ## Rollback plan
 
-Si bug critique decouvert dans les 30 min post-deploiement :
+Toute release DOIT pouvoir etre rollback proprement. Aucun changement irreversible sans backup et plan de retour.
+
+### Rollback code
 
 ```bash
-git revert <commit-hash>
+# Identifier le commit a revert (le merge sur main)
+git log origin/main -5
+
+# Revert via PR
+git revert <merge-commit-hash>
 git push origin main
-```
-````
-
-## Validation Nicolas
-
-- [ ] Release note lue et validee : YES / NO
-- [ ] Date et heure de deploiement choisis : \_\_\_
-- [ ] Force-logout decide : OUI / NON
-- [ ] Notif in-app validee : OUI / NON
-
-Signature : Nicolas (heure validation)
-
+# OU rollback Vercel via dashboard si urgent
 ```
 
----
+### Rollback DB
 
-## Versioning semver
+- Schema : migration descending obligatoire pour les migrations cassantes
+- Donnees : PITR Supabase Pro permet restore 7 jours en arriere
+- Cas particulier (force-logout via SQL) : tracer le UPDATE avec un WHERE assez precis pour pouvoir cibler ce qui a ete change
 
-- **MAJOR** : breaking change (refonte auth, schema casse, URL changee)
-- **MINOR** : nouvelle feature retro-compatible
-- **PATCH** : bug fix ou amelioration mineure
+### Rollback notif
 
-Tag git correspondant : `git tag -a v0.X.Y -m "Release v0.X.Y"`
-
----
-
-## Quand utiliser force-logout
-
-Cf. `docs/devops/FORCE_LOGOUT_RUNBOOK.md`. Pour rappel :
-
-| Cas | Force tous |
-|---|---|
-| Refonte auth | ✅ |
-| Schema DB cassant | ✅ |
-| MAJ purement code (UI, perf, fix) | ❌ |
-| Bug critique necessitant cache reset | Cas par cas |
-
-**Pas de force-logout reflex**. Demande a Nicolas si on hesite.
+- Marquer les notifs envoyees a tort comme `read=true` + ajouter une notif corrective
+- OU DELETE si erreur grossiere
 
 ---
 
-## Notification in-app a tous les users
+## Stabilite production
 
-Pour les MAJ importantes, on peut pousser une notif a tous les users (table `notifications` + type `system`).
+La production doit etre un sanctuaire :
 
-Procedure :
-1. Rediger le message (titre court + corps)
-2. Soumettre a Nicolas pour validation
-3. Une fois valide : insert dans `notifications` pour chaque user_id de `profiles`
-4. Les users verront un badge dans NotificationsPanel
+✅ **AUTORISE** :
 
-Voir aussi : `docs/devops/SYSTEM_NOTIFICATIONS.md` (a creer) pour le pattern technique.
+- Code valide en beta
+- Code passe par les 5 etapes du workflow
+- Hotfix dans la branche `hotfix/x` depuis main, remonte ensuite vers staging + develop
+- Tag git v1.X.Y a chaque deploy
+
+❌ **INTERDIT** :
+
+- Push direct sur main
+- Tests en prod
+- Fake data
+- Console.log oublies
+- Feature flags actives par oubli
+- Branches non validees
+
+### Si bug critique decouvert en prod
+
+1. Communiquer immediatement avec les users impactes (Discord beta, mail)
+2. Decider : rollback rapide (revert PR) OU hotfix (\`hotfix/x\` branche)
+3. Si rollback : revert + verif prod redevient stable + post-mortem
+4. Si hotfix : `hotfix/x` depuis main, fix minimal, PR direct vers main (process accelere mais Nicolas valide), puis remonter dans staging + develop
+5. Documenter l incident dans `releases/INCIDENTS.md` (a creer si premier incident)
+
+---
+
+## Versioning officiel
+
+```
+V[MAJOR].[MINOR].[PATCH]
+```
+
+| Type  | Quand                                            | Exemples       |
+| ----- | ------------------------------------------------ | -------------- |
+| PATCH | Bugfix, optimisations, securite mineure          | V1.0.1, V1.0.2 |
+| MINOR | Nouvelles features, UX majeure, nouveaux modules | V1.1.0, V1.2.0 |
+| MAJOR | Refonte architecture, business majeur            | V2.0.0, V3.0.0 |
+
+### Tag git
+
+```bash
+git tag -a v1.X.Y -m "Release v1.X.Y, [resume une ligne]"
+git push origin v1.X.Y
+```
+
+Le tag rend la version traceable et permet de retrouver l etat exact du code a tout moment.
 
 ---
 
 ## Historique
 
-| Version | Date | Resume | Force-logout | Notif in-app |
-|---|---|---|---|---|
-| v0.0.1 | 2026-05-22 | Beta privée Quebec ouverte | Non | Non |
-| (a remplir au fil des releases) | | | | |
-```
+Index dans `releases/README.md`.
+
+| Version                         | Date       | Type  | Resume                                                            |
+| ------------------------------- | ---------- | ----- | ----------------------------------------------------------------- |
+| V1.0.0                          | 2026-05-25 | MAJOR | Premiere version officielle stable, cleanup documentation complet |
+| (a remplir au fil des releases) |            |       |                                                                   |
