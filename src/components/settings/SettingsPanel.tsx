@@ -635,7 +635,10 @@ function SettingsSubView({ section, onSectionChange }: SettingsSubViewProps) {
  */
 function SettingsLegalDocView({ kind }: { kind: 'terms' | 'privacy' }) {
   const { t } = useTranslation()
-  const sectionCount = kind === 'terms' ? 6 : 11
+  // V1.0.5 : ajout section 7 (CGU "Sources de donnees") + section 12 (Privacy
+  // "Sources tierces et sous-traitants") pour aligner avec les pages /legal
+  // et /privacy publiques. Cohenrence entre app et landing.
+  const sectionCount = kind === 'terms' ? 7 : 12
   const i18nNamespace = kind === 'terms' ? 'legal.terms' : 'legal.privacy'
   const sections = Array.from({ length: sectionCount }, (_, i) => ({
     titleKey: `${i18nNamespace}.section${i + 1}Title`,
