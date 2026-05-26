@@ -473,10 +473,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   // ─── Vérification OTP ────────────────────────────────────────────────────
+  //
+  // V1.0.4 fix critique : on update le state IMMEDIATEMENT apres verifyOtp
+  // au lieu d attendre que onAuthStateChange propage. Avant ce fix, le user
+  // entrait son code et restait bloque sur la page de verif jusqu a F5
+  // manuel (le navigate vers /home arrivait avant que isAuthenticated=true
+  // soit propage, donc le guard renvoyait vers /login).
   async function verifyOtp(email: string, token: string) {
     if (!supabase) return { error: new Error('Supabase not configured') }
-    const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
-    return { error: error ? new Error(error.message) : null }
+    const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
+    if (error) {
+      return { error: new Error(error.message) }
+    }
+    // Update state synchrone depuis la response, evite la race condition
+    const user = data.session?.user ?? data.user ?? null
+    const session = data.session ?? null
+    const profile = user ? await fetchProfile(user.id) : null
+    setState(deriveState({ user, session, profile, isLoading: false, isAuthenticated: !!user }))
+    return { error: null }
   }
 
   // ─── Finaliser l'onboarding ──────────────────────────────────────────────

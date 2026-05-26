@@ -277,7 +277,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // dans l'URL canonique pour préserver le SEO du lien partagé.
   const rawParam = (req.query.postId ?? req.query.id) as string | undefined
   const postId = extractUuid(rawParam)
-  const host = req.headers.host ?? 'naturegraph.ca'
+  // V1.0.4 fix CodeQL SSRF : valider l'host header contre une allowlist avant
+  // toute construction d'URL. Sans ca, un attaquant pourrait passer
+  // `Host: evil.com` pour que la fonction fetch evil.com/index.html (ligne 292).
+  const ALLOWED_HOSTS = [
+    'naturegraph.ca',
+    'www.naturegraph.ca',
+    'beta.naturegraph.ca',
+    'naturegraph-eight.vercel.app',
+  ]
+  const rawHost = (req.headers.host ?? '').toLowerCase()
+  const isAllowedHost =
+    ALLOWED_HOSTS.includes(rawHost) ||
+    // Vercel preview deployments : *-naturegraph-*.vercel.app
+    /^[a-z0-9-]+\.vercel\.app$/.test(rawHost)
+  const host = isAllowedHost ? rawHost : 'naturegraph.ca'
   const proto = (req.headers['x-forwarded-proto'] as string | undefined) ?? 'https'
   const postUrl = `${proto}://${host}/post/${rawParam ?? ''}`
 
