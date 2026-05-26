@@ -284,28 +284,62 @@ function Get-INatInsectFamilies {
     return $allFamilies
 }
 
-function Add-INatInsectFamilies {
-    param($Families, [bool]$InFr, [bool]$InCa)
+function Add-INatFamiliesForClass {
+    param($Families, [string]$ClassName, [string]$Phylum, [bool]$InFr, [bool]$InCa)
     foreach ($t in $Families) {
         if (-not $t.name) { continue }
         if ($t.rank -ne 'family') { continue }
         Add-Node -Rank 'family' -ScientificName $t.name `
             -CommonFr $t.preferred_common_name -CommonEn $t.english_common_name `
-            -Kingdom 'Animalia' -Phylum 'Arthropoda' -Class 'Insecta' -Family $t.name `
+            -Kingdom 'Animalia' -Phylum $Phylum -Class $ClassName -Family $t.name `
             -INatId $t.id -InFr $InFr -InCa $InCa
     }
-    # Ajout class Insecta
-    Add-Node -Rank 'class' -ScientificName 'Insecta' `
-        -Kingdom 'Animalia' -Phylum 'Arthropoda' -Class 'Insecta' `
-        -InFr $InFr -InCa $InCa
+}
+
+# Alias retro-compat (n est plus utilise dans la suite mais peut servir si besoin)
+function Add-INatInsectFamilies {
+    param($Families, [bool]$InFr, [bool]$InCa)
+    Add-INatFamiliesForClass -Families $Families -ClassName 'Insecta' -Phylum 'Arthropoda' -InFr $InFr -InCa $InCa
 }
 
 # Fetch dedies pour insectes (familles)
-Write-Host "[2.5/4] Fetch iNat insect families FR + CA via /v1/taxa ..." -ForegroundColor Yellow
-$frInsectFamiliesData = Get-INatInsectFamilies -PlaceId 6753
-$caInsectFamiliesData = Get-INatInsectFamilies -PlaceId 6712
-Write-Host "       FR insect families : $($frInsectFamiliesData.Count)"
-Write-Host "       CA insect families : $($caInsectFamiliesData.Count)"
+Write-Host "[2.5/4] Fetch iNat families pour TOUTES les classes via /v1/taxa ..." -ForegroundColor Yellow
+# V1.1.0 fix Nicolas 2026-05-26 : avant on n importait que les familles d insectes.
+# Maintenant on importe les familles des 8 classes pour que le "family fallback"
+# fonctionne sur Aves, Mammalia, Arachnida, Mollusca, etc. aussi.
+$iconicTaxaForFamilies = @('Aves','Mammalia','Amphibia','Reptilia','Insecta','Arachnida','Mollusca','Actinopterygii')
+
+function Get-INatFamiliesForClass {
+    param([string]$IconicTaxon, [int]$PlaceId, [int]$MaxPages = 10)
+    $allFamilies = @()
+    $perPage = 100
+    for ($page = 1; $page -le $MaxPages; $page++) {
+        $url = "https://api.inaturalist.org/v1/taxa?rank=family&iconic_taxa=$IconicTaxon&is_active=true&place_id=$PlaceId&per_page=$perPage&page=$page&locale=fr"
+        try {
+            $resp = Invoke-RestMethod -Uri $url -UseBasicParsing
+            if (-not $resp.results -or $resp.results.Count -eq 0) { break }
+            $allFamilies += $resp.results
+            Start-Sleep -Milliseconds 700
+            if ($resp.results.Count -lt $perPage) { break }
+        } catch {
+            Write-Host "       Warning $IconicTaxon page $page : $_" -ForegroundColor Yellow
+            Start-Sleep -Seconds 5
+            break
+        }
+    }
+    return $allFamilies
+}
+
+$frFamiliesByClass = @{}
+$caFamiliesByClass = @{}
+foreach ($t in $iconicTaxaForFamilies) {
+    $frFamiliesByClass[$t] = Get-INatFamiliesForClass -IconicTaxon $t -PlaceId 6753
+    $caFamiliesByClass[$t] = Get-INatFamiliesForClass -IconicTaxon $t -PlaceId 6712
+    Write-Host "       FR $($t.PadRight(15)) families : $($frFamiliesByClass[$t].Count)   CA : $($caFamiliesByClass[$t].Count)"
+}
+# Back-compat avec ancien code (les vars utilisees plus bas)
+$frInsectFamiliesData = $frFamiliesByClass['Insecta']
+$caInsectFamiliesData = $caFamiliesByClass['Insecta']
 
 # FR vertebres
 Add-INatVertebrateSpecies -Items $frAves     -ClassName 'Aves'     -InFr $true -InCa $false
@@ -316,8 +350,7 @@ Add-INatVertebrateSpecies -Items $frReptilia -ClassName 'Reptilia' -InFr $true -
 # Note : phylum=Arthropoda pour insectes mais Add-INatVertebrateSpecies l override
 # via iconic_taxon_name + on patch phylum apres
 Add-INatVertebrateSpecies -Items $frInsecta  -ClassName 'Insecta' -InFr $true -InCa $false
-Add-INatInsectFamilies    -Families $frInsectFamiliesData -InFr $true -InCa $false
-# FR autres invertebres + poissons
+# FR autres invertebres + poissons (especes)
 Add-INatVertebrateSpecies -Items $frArachnida      -ClassName 'Arachnida'      -InFr $true -InCa $false
 Add-INatVertebrateSpecies -Items $frMollusca       -ClassName 'Mollusca'       -InFr $true -InCa $false
 Add-INatVertebrateSpecies -Items $frActinopterygii -ClassName 'Actinopterygii' -InFr $true -InCa $false
@@ -327,13 +360,23 @@ Add-INatVertebrateSpecies -Items $caAves     -ClassName 'Aves'     -InFr $false 
 Add-INatVertebrateSpecies -Items $caMammalia -ClassName 'Mammalia' -InFr $false -InCa $true
 Add-INatVertebrateSpecies -Items $caAmphibia -ClassName 'Amphibia' -InFr $false -InCa $true
 Add-INatVertebrateSpecies -Items $caReptilia -ClassName 'Reptilia' -InFr $false -InCa $true
-# CA insectes : especes precises + familles
-Add-INatVertebrateSpecies -Items $caInsecta  -ClassName 'Insecta' -InFr $false -InCa $true
-Add-INatInsectFamilies    -Families $caInsectFamiliesData -InFr $false -InCa $true
-# CA autres invertebres + poissons
+Add-INatVertebrateSpecies -Items $caInsecta  -ClassName 'Insecta'  -InFr $false -InCa $true
 Add-INatVertebrateSpecies -Items $caArachnida      -ClassName 'Arachnida'      -InFr $false -InCa $true
 Add-INatVertebrateSpecies -Items $caMollusca       -ClassName 'Mollusca'       -InFr $false -InCa $true
 Add-INatVertebrateSpecies -Items $caActinopterygii -ClassName 'Actinopterygii' -InFr $false -InCa $true
+
+# Familles : pour CHAQUE classe (fix Nicolas family fallback)
+$classToPhylum = @{
+    'Aves' = 'Chordata'; 'Mammalia' = 'Chordata'; 'Amphibia' = 'Chordata'
+    'Reptilia' = 'Chordata'; 'Actinopterygii' = 'Chordata'
+    'Insecta' = 'Arthropoda'; 'Arachnida' = 'Arthropoda'
+    'Mollusca' = 'Mollusca'
+}
+foreach ($cls in $iconicTaxaForFamilies) {
+    $phylum = $classToPhylum[$cls]
+    Add-INatFamiliesForClass -Families $frFamiliesByClass[$cls] -ClassName $cls -Phylum $phylum -InFr $true -InCa $false
+    Add-INatFamiliesForClass -Families $caFamiliesByClass[$cls] -ClassName $cls -Phylum $phylum -InFr $false -InCa $true
+}
 
 # Patch : phylum correct selon class (Add-INatVertebrateSpecies met Chordata par defaut)
 $phylumByClass = @{

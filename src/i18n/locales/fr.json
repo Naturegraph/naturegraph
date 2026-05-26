@@ -819,7 +819,7 @@
       "unknownDesc": "Je ne cherche pas à identifier",
       "searchPlaceholder": "Mésange, renard...",
       "noResults": "Aucune espèce trouvée",
-      "dataCredit": "Données espèces : GBIF + Wikidata",
+      "dataCredit": "Données espèces : iNaturalist (CC-BY) + GBIF + Wikidata",
       "skip": "Passer l'identification",
       "skipFromEmpty": "Je ne sais pas, passer",
       "serviceUnavailable": "Recherche indisponible, réessaie dans un instant",

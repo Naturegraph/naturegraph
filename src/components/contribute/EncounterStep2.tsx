@@ -89,6 +89,10 @@ const TAXONOMIC_FILTERS: { value: TaxonomicGroup; labelKey: string }[] = [
   { value: 'insects', labelKey: 'taxonomy.insects' },
   { value: 'amphibians', labelKey: 'taxonomy.amphibians' },
   { value: 'reptiles', labelKey: 'taxonomy.reptiles' },
+  // V1.1.0 (Nicolas 2026-05-26) : nouvelles categories suite seed iNat
+  { value: 'arachnids', labelKey: 'taxonomy.arachnids' },
+  { value: 'mollusks', labelKey: 'taxonomy.mollusks' },
+  { value: 'fish', labelKey: 'taxonomy.fish' },
 ]
 
 /**
@@ -122,10 +126,11 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
   const [groupFilters, setGroupFilters] = useState<Set<TaxonomicGroup>>(new Set())
   const [filterOpen, setFilterOpen] = useState(false)
   const [results, setResults] = useState<TaxonomyHit[]>([])
-  // V1.1.0 (Nicolas 2026-05-26) : toggle precision identification
-  // 'species' = recherche especes precises (defaut)
-  // 'family'  = fallback famille quand user ne trouve pas l espece exacte
-  const [precision, setPrecision] = useState<'species' | 'family'>('species')
+  // V1.1.0 (Nicolas 2026-05-26) : toggles precision identification cumulatifs.
+  // L user peut cocher les 2 pour cumuler les resultats (especes + familles
+  // dans la meme recherche). Au moins 1 actif obligatoire (sinon zero resultats).
+  const [includeSpecies, setIncludeSpecies] = useState(true)
+  const [includeFamily, setIncludeFamily] = useState(false)
   // Nicolas 2026-05-22 : loader visible pendant le fetch + état d'erreur explicite
   // si l'espèce n'est pas trouvée, plutôt que de laisser le user sans feedback.
   const [isLoading, setIsLoading] = useState(false)
@@ -182,8 +187,16 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
       if (cancelled) return
       setIsLoading(true)
       const classFilter = singleGroup ? (GROUP_TO_CLASS[singleGroup] ?? null) : null
+      // Cumul des rangs selon les checkboxes de precision (Nicolas 2026-05-26)
+      const ranks: Array<'species' | 'family'> = []
+      if (includeSpecies) ranks.push('species')
+      if (includeFamily) ranks.push('family')
+      if (ranks.length === 0) {
+        // Defensif : si user decoche tout, on remet especes par defaut
+        ranks.push('species')
+      }
       searchTaxonomy(trimmed, {
-        ranks: [precision],
+        ranks,
         classFilter,
         limit: 8,
       })
@@ -213,7 +226,7 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
       cancelled = true
       clearTimeout(timer)
     }
-  }, [query, singleGroup, groupFilters, precision])
+  }, [query, singleGroup, groupFilters, includeSpecies, includeFamily])
 
   /** Convertit un TaxonomyHit en ObservationEntry.species pour le carnet. */
   function hitToSpecies(hit: TaxonomyHit): ObservationEntry['species'] {
@@ -462,37 +475,42 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
 
           <hr className="border-t-[0.5px] border-border" />
 
-          {/* Section 2 — Précision de l identification (V1.1.0 active) */}
+          {/* Section 2 — Précision de l identification (V1.1.0 checkbox cumulatif) */}
           <div className="flex flex-col gap-3">
             <p className="font-body text-base text-muted-foreground">
               {t('contribute.panel.filterPrecisionTitle', {
                 defaultValue: "Précision de l'identification",
               })}
             </p>
+            <p className="text-xs text-muted-foreground -mt-2">
+              {t('contribute.panel.filterPrecisionHint', {
+                defaultValue: 'Tu peux cumuler les deux pour voir espèces + familles',
+              })}
+            </p>
             <div
               className="flex flex-col gap-2"
-              role="radiogroup"
+              role="group"
               aria-label={t('contribute.panel.filterPrecisionTitle', {
                 defaultValue: "Précision de l'identification",
               })}
             >
               <button
                 type="button"
-                role="radio"
-                aria-checked={precision === 'species'}
-                onClick={() => setPrecision('species')}
+                role="checkbox"
+                aria-checked={includeSpecies}
+                onClick={() => setIncludeSpecies((v) => !v)}
                 className="flex items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
               >
                 <span
                   aria-hidden="true"
                   className={[
                     'flex items-center justify-center size-5 rounded-[4px] shrink-0 transition-colors',
-                    precision === 'species'
+                    includeSpecies
                       ? 'bg-primary border border-primary'
                       : 'bg-background border-[1.5px] border-border',
                   ].join(' ')}
                 >
-                  {precision === 'species' && (
+                  {includeSpecies && (
                     <Check
                       className="size-3.5 text-primary-foreground"
                       strokeWidth={3}
@@ -506,21 +524,21 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
               </button>
               <button
                 type="button"
-                role="radio"
-                aria-checked={precision === 'family'}
-                onClick={() => setPrecision('family')}
+                role="checkbox"
+                aria-checked={includeFamily}
+                onClick={() => setIncludeFamily((v) => !v)}
                 className="flex items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
               >
                 <span
                   aria-hidden="true"
                   className={[
                     'flex items-center justify-center size-5 rounded-[4px] shrink-0 transition-colors',
-                    precision === 'family'
+                    includeFamily
                       ? 'bg-primary border border-primary'
                       : 'bg-background border-[1.5px] border-border',
                   ].join(' ')}
                 >
-                  {precision === 'family' && (
+                  {includeFamily && (
                     <Check
                       className="size-3.5 text-primary-foreground"
                       strokeWidth={3}
