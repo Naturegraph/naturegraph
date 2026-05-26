@@ -29,11 +29,15 @@ $ErrorActionPreference = "Stop"
 $ProgressPreference = "Continue"
 
 # ─── Validation prerequis ──────────────────────────────────────
-if (-not $ServiceRoleKey) {
-    $ServiceRoleKey = Read-Host "SUPABASE_SERVICE_ROLE_KEY (Settings > API)" -AsSecureString
-    $ServiceRoleKey = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
-        [Runtime.InteropServices.Marshal]::SecureStringToBSTR($ServiceRoleKey)
-    )
+# La cle n est requise QUE pour le vrai run (insert). En DryRun on s en passe.
+if (-not $DryRun -and -not $ServiceRoleKey) {
+    $secure = Read-Host "SUPABASE_SERVICE_ROLE_KEY (Settings > API Keys > Secret keys)" -AsSecureString
+    $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+    try {
+        $ServiceRoleKey = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+    } finally {
+        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+    }
 }
 
 $workDir = Join-Path $PSScriptRoot ".taxonomy-seed-cache"
