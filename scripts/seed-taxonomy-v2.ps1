@@ -423,7 +423,9 @@ Write-Host "       Inseres : $inserted"
 Write-Host "       Echecs  : $failed" -ForegroundColor $(if ($failed -gt 0) { 'Red' } else { 'Green' })
 
 # ─── Resolve parent_id (post-insert SQL) ───────────────────────
-$resolveSQL = @"
+# Single-quoted here-string @'...'@ : pas d interpolation, pas d echappement.
+# On peut ecrire les quotes naturellement, ce qui evite le bug ""order"".
+$resolveSQL = @'
 -- Resolve parent_id pour la hierarchie
 -- species -> family si possible, sinon -> order
 UPDATE public.taxonomy_nodes child
@@ -434,8 +436,8 @@ WHERE child.parent_id IS NULL
     (child.rank = 'species' AND child.family IS NOT NULL
      AND parent.rank = 'family' AND parent.scientific_name = child.family)
     OR
-    (child.rank = 'family' AND child.""order"" IS NOT NULL
-     AND parent.rank = 'order' AND parent.scientific_name = child.""order"")
+    (child.rank = 'family' AND child."order" IS NOT NULL
+     AND parent.rank = 'order' AND parent.scientific_name = child."order")
     OR
     (child.rank = 'order' AND child.class IS NOT NULL
      AND parent.rank = 'class' AND parent.scientific_name = child.class)
@@ -446,7 +448,7 @@ SELECT rank, COUNT(*) AS orphans
 FROM public.taxonomy_nodes
 WHERE parent_id IS NULL AND rank <> 'class'
 GROUP BY rank;
-"@
+'@
 $resolveSQL | Out-File -FilePath (Join-Path $workDir "resolve_parents.sql") -Encoding UTF8
 Write-Host "       SQL genere : $workDir\resolve_parents.sql" -ForegroundColor Cyan
 Write-Host "       => A executer dans Supabase SQL editor pour finaliser hierarchie"
