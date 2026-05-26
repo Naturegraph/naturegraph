@@ -43,6 +43,36 @@ export interface SpeciesHit {
   group_label: string | null
 }
 
+/**
+ * TaxonomyHit — V1.1.0 (BDD taxonomy_nodes).
+ *
+ * Etend SpeciesHit avec :
+ *   - rank : 'species' | 'family' | 'genus' | 'order' (permet fallback famille
+ *     quand l'espece n'est pas trouvee, demande Nicolas 2026-05-26)
+ *   - taxonomy_node_id : UUID stable pour FK posts.taxonomy_node_id
+ *   - available_in_fr / available_in_ca : drapeaux territoire pour UI
+ *   - class : pour afficher la categorie (Aves, Insecta, etc.)
+ */
+export interface TaxonomyHit {
+  /** UUID de taxonomy_nodes.id — utilise comme FK pour posts.taxonomy_node_id */
+  taxonomy_node_id: string
+  /** Rang : 'species' (precis), 'genus', 'family' (fallback), 'order' */
+  rank: 'species' | 'genus' | 'family' | 'order' | 'class'
+  scientific_name: string
+  common_name_fr: string | null
+  common_name_en: string | null
+  /** Classe taxonomique (Aves, Mammalia, Insecta...). Utilise pour les filtres. */
+  class: string | null
+  family: string | null
+  available_in_fr: boolean
+  available_in_ca: boolean
+  /** ID iNaturalist (pour eventuel lien vers la fiche source). */
+  inaturalist_id: number | null
+  photo_url: string | null
+  popularity: number
+  match_score: number
+}
+
 // ─── Colonnes SELECT minimales pour les performances ─────────────────────────
 
 const SPECIES_MASTER_SELECT =
@@ -135,6 +165,93 @@ export async function searchSpecies(
     return ((data ?? []) as Record<string, unknown>[]).map(toSpeciesHit)
   } catch (err) {
     console.warn('[searchService] species search exception:', err)
+    return []
+  }
+}
+
+// ─── Recherche taxonomie V1.1.0 (BDD taxonomy_nodes) ────────────────────────
+
+/**
+ * searchTaxonomy — Recherche dans la nouvelle BDD taxonomy_nodes (V1.1.0).
+ *
+ * Remplace progressivement searchSpecies(). Avantages :
+ *   - Retourne especes + familles + ordres dans une seule recherche
+ *   - Permet le fallback "tagguer une famille" quand l'espece n'est pas
+ *     trouvee (demande Nicolas 2026-05-26)
+ *   - Filtre par territoire (FR / CA) via available_in_fr / available_in_ca
+ *   - Filtre par classe (Aves, Insecta, etc.)
+ *   - Tri intelligent : species > genus > family > order, puis match_score,
+ *     puis popularity (nb d'observations iNat)
+ *
+ * @param query           Terme saisi (min 1 caractere)
+ * @param territory       'fr' | 'ca' | null (les 2)
+ * @param ranks           Filtre rang. Defaut : species + family + genus + order
+ * @param classFilter     'Aves' | 'Mammalia' | 'Insecta'... (optionnel)
+ * @param limit           Nombre max de resultats (defaut 20)
+ */
+export async function searchTaxonomy(
+  query: string,
+  options: {
+    territory?: 'fr' | 'ca' | null
+    ranks?: Array<'species' | 'genus' | 'family' | 'order' | 'class'>
+    classFilter?: string | null
+    limit?: number
+  } = {},
+): Promise<TaxonomyHit[]> {
+  if (!isSupabaseConfigured || !supabase) return []
+
+  const q = query.trim()
+  if (q.length < 1) return []
+
+  const {
+    territory = null,
+    ranks = ['species', 'genus', 'family', 'order'],
+    classFilter = null,
+    limit = 20,
+  } = options
+
+  // Timeout client 6s (meme strategie que searchSpecies)
+  const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
+    setTimeout(() => resolve({ data: null, error: new Error('taxonomy search timeout 6s') }), 6000),
+  )
+
+  try {
+    const rpcCall = supabase.rpc('search_taxonomy', {
+      p_query: q,
+      p_territory: territory,
+      p_ranks: ranks,
+      p_class_filter: classFilter,
+      p_max_results: limit,
+    })
+
+    const result = await Promise.race([rpcCall, timeoutPromise])
+    const { data, error } = result as { data: unknown; error: unknown }
+
+    if (error) {
+      console.warn('[searchService] taxonomy search failed:', (error as Error).message ?? error)
+      return []
+    }
+
+    return ((data ?? []) as Record<string, unknown>[]).map(
+      (row) =>
+        ({
+          taxonomy_node_id: String(row['id'] ?? ''),
+          rank: String(row['rank'] ?? 'species') as TaxonomyHit['rank'],
+          scientific_name: String(row['scientific_name'] ?? ''),
+          common_name_fr: row['common_name_fr'] ? String(row['common_name_fr']) : null,
+          common_name_en: row['common_name_en'] ? String(row['common_name_en']) : null,
+          class: row['class'] ? String(row['class']) : null,
+          family: row['family'] ? String(row['family']) : null,
+          available_in_fr: Boolean(row['available_in_fr']),
+          available_in_ca: Boolean(row['available_in_ca']),
+          inaturalist_id: row['inaturalist_id'] ? Number(row['inaturalist_id']) : null,
+          photo_url: row['photo_url'] ? String(row['photo_url']) : null,
+          popularity: Number(row['popularity'] ?? 0),
+          match_score: Number(row['match_score'] ?? 0),
+        }) satisfies TaxonomyHit,
+    )
+  } catch (err) {
+    console.warn('[searchService] taxonomy search exception:', err)
     return []
   }
 }
