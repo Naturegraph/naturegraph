@@ -73,28 +73,6 @@ export interface TaxonomyHit {
   match_score: number
 }
 
-// ─── Colonnes SELECT minimales pour les performances ─────────────────────────
-
-const SPECIES_MASTER_SELECT =
-  'id, gbif_id, scientific_name, common_name_fr, common_name_en, taxonomic_group, popularity, image_url' as const
-
-/**
- * Mappe une ligne species_master vers SpeciesHit (interface stable utilisée
- * par SearchPanel + EncounterStep2). On expose gbif_id en priorité pour le
- * champ legacy `taxref_id` (qui sert d'identifiant taxonomique opaque côté
- * client) et on retombe sur l'UUID interne si pas de gbif_id.
- */
-function toSpeciesHit(row: Record<string, unknown>): SpeciesHit {
-  const gbifId = row['gbif_id']
-  const uuid = row['id']
-  return {
-    taxref_id: String(gbifId ?? uuid ?? ''),
-    scientific_name: String(row['scientific_name'] ?? ''),
-    common_name: row['common_name_fr'] ? String(row['common_name_fr']) : null,
-    group_label: row['taxonomic_group'] ? String(row['taxonomic_group']) : null,
-  }
-}
-
 // ─── Recherche espèces ────────────────────────────────────────────────────────
 
 /**
@@ -112,57 +90,74 @@ function toSpeciesHit(row: Record<string, unknown>): SpeciesHit {
  * @param limit  Nombre max de résultats (défaut 10)
  * @param group  Filtrer par groupe taxonomique (optionnel)
  */
+/**
+ * Mapping iNat class -> taxonomic_group legacy (cohérent avec ancien filtre UI).
+ * Permet de garder le filtre par classe sans casser l'interface SpeciesHit.
+ */
+const CLASS_TO_GROUP_LABEL: Record<string, string> = {
+  Aves: 'birds',
+  Mammalia: 'mammals',
+  Insecta: 'insects',
+  Amphibia: 'amphibians',
+  Reptilia: 'reptiles',
+  Actinopterygii: 'fish',
+  Arachnida: 'arachnids',
+  Mollusca: 'mollusks',
+}
+const GROUP_TO_CLASS_FILTER: Record<string, string> = Object.fromEntries(
+  Object.entries(CLASS_TO_GROUP_LABEL).map(([k, v]) => [v, k]),
+)
+
 export async function searchSpecies(
   query: string,
   limit = 10,
   group?: string,
 ): Promise<SpeciesHit[]> {
-  // Si Supabase non configuré : recherche vide (pas de mock fallback,
-  // Nicolas 2026-05-19 — test 100% réel sur species_master).
+  // V1.1.0 : delegue a search_taxonomy() (43 823 nodes vs 4 835 species_master legacy).
+  // Garde l'interface SpeciesHit stable pour ne pas casser les composants existants.
+  // Pour le moment on filtre rank='species' uniquement — le family fallback arrive
+  // en V1.1.1 via un toggle UI distinct dans EncounterStep2.
   if (!isSupabaseConfigured || !supabase) return []
 
-  const db = supabase!
   const q = query.trim()
   if (q.length < 2) return []
 
-  const pattern = `%${q}%`
+  const classFilter = group ? (GROUP_TO_CLASS_FILTER[group] ?? null) : null
 
-  // Timeout client 6s — Nicolas 2026-05-24 : sans ce timeout, sur réseau
-  // mobile lent la requête restait pending indéfiniment et l'user voyait
-  // l'icône tourner sans fin. 6s est large pour un ILIKE sur 5k espèces.
   const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
     setTimeout(() => resolve({ data: null, error: new Error('species search timeout 6s') }), 6000),
   )
 
   try {
-    let qb = db
-      .from('species_master')
-      .select(SPECIES_MASTER_SELECT)
-      .eq('is_active', true)
-      .or(
-        `common_name_fr.ilike.${pattern},` +
-          `scientific_name.ilike.${pattern},` +
-          `common_name_en.ilike.${pattern}`,
-      )
-      .order('popularity', { ascending: false, nullsFirst: false })
-      .limit(limit)
+    // Note : p_territory/p_class_filter doivent etre undefined (pas null) cote
+    // PostgREST RPC pour utiliser le DEFAULT NULL de la fonction SQL.
+    const rpcCall = supabase.rpc('search_taxonomy', {
+      p_query: q,
+      p_territory: undefined,
+      p_ranks: ['species'],
+      p_class_filter: classFilter ?? undefined,
+      p_max_results: limit,
+    })
 
-    if (group) {
-      qb = qb.eq('taxonomic_group', group)
-    }
-
-    const result = await Promise.race([qb, timeoutPromise])
+    const result = await Promise.race([rpcCall, timeoutPromise])
     const { data, error } = result as { data: unknown; error: unknown }
 
     if (error) {
-      console.warn(
-        '[searchService] species_master search failed:',
-        (error as Error).message ?? error,
-      )
+      console.warn('[searchService] search_taxonomy failed:', (error as Error).message ?? error)
       return []
     }
 
-    return ((data ?? []) as Record<string, unknown>[]).map(toSpeciesHit)
+    return ((data ?? []) as Record<string, unknown>[]).map((row) => {
+      const cls = row['class'] ? String(row['class']) : null
+      return {
+        // V1.1.0 : taxref_id stocke l'UUID taxonomy_nodes.id (pas un gbif_id).
+        // C'est utilise comme FK pour posts.taxonomy_node_id en V1.1.0+.
+        taxref_id: String(row['id'] ?? ''),
+        scientific_name: String(row['scientific_name'] ?? ''),
+        common_name: row['common_name_fr'] ? String(row['common_name_fr']) : null,
+        group_label: cls ? (CLASS_TO_GROUP_LABEL[cls] ?? 'other') : null,
+      } satisfies SpeciesHit
+    })
   } catch (err) {
     console.warn('[searchService] species search exception:', err)
     return []
@@ -218,9 +213,9 @@ export async function searchTaxonomy(
   try {
     const rpcCall = supabase.rpc('search_taxonomy', {
       p_query: q,
-      p_territory: territory,
+      p_territory: territory ?? undefined,
       p_ranks: ranks,
-      p_class_filter: classFilter,
+      p_class_filter: classFilter ?? undefined,
       p_max_results: limit,
     })
 
