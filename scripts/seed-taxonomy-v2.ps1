@@ -215,89 +215,99 @@ function Get-AncestorAtRank {
     if ($found) { return $found.name } else { return $null }
 }
 
-# Insere une liste d especes iNat pour un territoire donne
+# Insere une liste d especes iNat pour un territoire donne.
+# V2 : utilise iconic_taxon_name pour class (toujours present dans species_counts)
+# au lieu d ancestors (qui n est pas inclus dans cette response API).
 function Add-INatVertebrateSpecies {
     param($Items, [string]$ClassName, [bool]$InFr, [bool]$InCa)
     foreach ($item in $Items) {
         $t = $item.taxon
         if (-not $t.name) { continue }
-        if (-not $t.ancestors) { continue }
 
-        $kingdom = Get-AncestorAtRank $t.ancestors 'kingdom'
-        $phylum  = Get-AncestorAtRank $t.ancestors 'phylum'
-        $class   = Get-AncestorAtRank $t.ancestors 'class'
-        $order   = Get-AncestorAtRank $t.ancestors 'order'
-        $family  = Get-AncestorAtRank $t.ancestors 'family'
-        $genus   = Get-AncestorAtRank $t.ancestors 'genus'
-        if (-not $class) { $class = $ClassName }
+        # rank dans iNat peut etre species, subspecies, hybrid, etc.
+        # On garde seulement les vraies especes pour le MVP
+        if ($t.rank -and $t.rank -ne 'species') { continue }
 
-        # Aussi ajouter la famille + ordre dans le dataset (pour hierarchie)
-        if ($family) {
-            Add-Node -Rank 'family' -ScientificName $family `
-                -Kingdom $kingdom -Phylum $phylum -Class $class -Order $order -Family $family `
-                -InFr $InFr -InCa $InCa
-        }
-        if ($order) {
-            Add-Node -Rank 'order' -ScientificName $order `
-                -Kingdom $kingdom -Phylum $phylum -Class $class -Order $order `
-                -InFr $InFr -InCa $InCa
-        }
-        if ($class) {
-            Add-Node -Rank 'class' -ScientificName $class `
-                -Kingdom $kingdom -Phylum $phylum -Class $class `
-                -InFr $InFr -InCa $InCa
-        }
+        # iconic_taxon_name est le nom de la classe (Aves, Mammalia, etc.)
+        $class = if ($t.iconic_taxon_name) { $t.iconic_taxon_name } else { $ClassName }
+
+        # Phylum + Kingdom inferes (toujours les memes pour ces 4 classes)
+        $phylum  = 'Chordata'
+        $kingdom = 'Animalia'
 
         Add-Node -Rank 'species' -ScientificName $t.name `
             -CommonFr $t.preferred_common_name -CommonEn $t.english_common_name `
-            -Kingdom $kingdom -Phylum $phylum -Class $class -Order $order `
-            -Family $family -Genus $genus `
+            -Kingdom $kingdom -Phylum $phylum -Class $class `
             -INatId $t.id -InFr $InFr -InCa $InCa `
             -INatEstablishment $t.establishment_means `
             -INatObservationsCount ([int]$item.count)
     }
+
+    # Ajouter la classe elle-meme
+    Add-Node -Rank 'class' -ScientificName $ClassName `
+        -Kingdom 'Animalia' -Phylum 'Chordata' -Class $ClassName `
+        -InFr $InFr -InCa $InCa
+}
+
+# Pour les insectes, on utilise un endpoint different : /v1/taxa avec rank=family
+# Donne directement les familles d insectes d un territoire sans passer par les ancestors
+function Get-INatInsectFamilies {
+    param([int]$PlaceId, [int]$MaxPages = 15)
+    $allFamilies = @()
+    $perPage = 100
+    for ($page = 1; $page -le $MaxPages; $page++) {
+        $url = "https://api.inaturalist.org/v1/taxa?rank=family&iconic_taxa=Insecta&is_active=true&place_id=$PlaceId&per_page=$perPage&page=$page&locale=fr"
+        try {
+            $resp = Invoke-RestMethod -Uri $url -UseBasicParsing
+            if (-not $resp.results -or $resp.results.Count -eq 0) { break }
+            $allFamilies += $resp.results
+            Start-Sleep -Milliseconds 700
+            if ($resp.results.Count -lt $perPage) { break }
+        } catch {
+            Write-Host "       Warning page $page : $_" -ForegroundColor Yellow
+            Start-Sleep -Seconds 5
+            break
+        }
+    }
+    return $allFamilies
 }
 
 function Add-INatInsectFamilies {
-    param($Items, [bool]$InFr, [bool]$InCa)
-    foreach ($item in $Items) {
-        $t = $item.taxon
-        if (-not $t.ancestors) { continue }
-        $family = Get-AncestorAtRank $t.ancestors 'family'
-        $order  = Get-AncestorAtRank $t.ancestors 'order'
-        if (-not $family) { continue }
-
-        # Ajout ordre (hierarchie)
-        if ($order) {
-            Add-Node -Rank 'order' -ScientificName $order `
-                -Kingdom 'Animalia' -Phylum 'Arthropoda' -Class 'Insecta' -Order $order `
-                -InFr $InFr -InCa $InCa
-        }
-        # Famille
-        Add-Node -Rank 'family' -ScientificName $family `
-            -Kingdom 'Animalia' -Phylum 'Arthropoda' -Class 'Insecta' -Order $order -Family $family `
-            -InFr $InFr -InCa $InCa
+    param($Families, [bool]$InFr, [bool]$InCa)
+    foreach ($t in $Families) {
+        if (-not $t.name) { continue }
+        if ($t.rank -ne 'family') { continue }
+        Add-Node -Rank 'family' -ScientificName $t.name `
+            -CommonFr $t.preferred_common_name -CommonEn $t.english_common_name `
+            -Kingdom 'Animalia' -Phylum 'Arthropoda' -Class 'Insecta' -Family $t.name `
+            -INatId $t.id -InFr $InFr -InCa $InCa
     }
-
-    # Aussi ajouter la classe Insecta elle-meme
+    # Ajout class Insecta
     Add-Node -Rank 'class' -ScientificName 'Insecta' `
         -Kingdom 'Animalia' -Phylum 'Arthropoda' -Class 'Insecta' `
         -InFr $InFr -InCa $InCa
 }
 
-# FR vertebres + insectes
+# Fetch dedies pour insectes (familles)
+Write-Host "[2.5/4] Fetch iNat insect families FR + CA via /v1/taxa ..." -ForegroundColor Yellow
+$frInsectFamiliesData = Get-INatInsectFamilies -PlaceId 6753
+$caInsectFamiliesData = Get-INatInsectFamilies -PlaceId 6712
+Write-Host "       FR insect families : $($frInsectFamiliesData.Count)"
+Write-Host "       CA insect families : $($caInsectFamiliesData.Count)"
+
+# FR vertebres
 Add-INatVertebrateSpecies -Items $frAves     -ClassName 'Aves'     -InFr $true -InCa $false
 Add-INatVertebrateSpecies -Items $frMammalia -ClassName 'Mammalia' -InFr $true -InCa $false
 Add-INatVertebrateSpecies -Items $frAmphibia -ClassName 'Amphibia' -InFr $true -InCa $false
 Add-INatVertebrateSpecies -Items $frReptilia -ClassName 'Reptilia' -InFr $true -InCa $false
-Add-INatInsectFamilies    -Items $frInsecta  -InFr $true -InCa $false
+Add-INatInsectFamilies    -Families $frInsectFamiliesData -InFr $true -InCa $false
 
-# CA vertebres + insectes
+# CA vertebres
 Add-INatVertebrateSpecies -Items $caAves     -ClassName 'Aves'     -InFr $false -InCa $true
 Add-INatVertebrateSpecies -Items $caMammalia -ClassName 'Mammalia' -InFr $false -InCa $true
 Add-INatVertebrateSpecies -Items $caAmphibia -ClassName 'Amphibia' -InFr $false -InCa $true
 Add-INatVertebrateSpecies -Items $caReptilia -ClassName 'Reptilia' -InFr $false -InCa $true
-Add-INatInsectFamilies    -Items $caInsecta  -InFr $false -InCa $true
+Add-INatInsectFamilies    -Families $caInsectFamiliesData -InFr $false -InCa $true
 
 Write-Host "       Total nodes preparees : $($nodesByKey.Count)"
 $breakdown = $nodesByKey.Values | Group-Object rank | Sort-Object Name | Select-Object Name, Count
