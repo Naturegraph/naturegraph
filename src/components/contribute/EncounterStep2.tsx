@@ -17,7 +17,7 @@ import { useState, useId, useEffect, useMemo } from 'react'
 import { Search, Trash2, Plus, Minus, HelpCircle, Filter, X, Check, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
-import { searchSpecies, type SpeciesHit } from '@/services/searchService'
+import { searchTaxonomy, type TaxonomyHit } from '@/services/searchService'
 import { highlightMatch } from '@/utils/highlightMatch'
 import { Button } from '@/components/ui/Button'
 import { TAXONOMIC_GROUP_CONFIG } from '@/constants/commonSpecies'
@@ -58,7 +58,14 @@ function SpeciesCategoryIcon({ group }: { group: string | null }) {
 export interface ObservationEntry {
   /** Identifiant temporaire local */
   id: string
-  species: { id: string; commonName: string; scientificName: string; group: TaxonomicGroup } | null
+  species: {
+    id: string
+    commonName: string
+    scientificName: string
+    group: TaxonomicGroup
+    /** V1.1.0 : 'species' = identification precise, 'family' = fallback famille */
+    rank?: 'species' | 'family'
+  } | null
   /** true = espèce non déterminée (mystère) */
   isUnknown: boolean
   count: number
@@ -95,6 +102,18 @@ const TAXONOMIC_FILTERS: { value: TaxonomicGroup; labelKey: string }[] = [
  * manquantes via le workflow d'identification collaborative en Phase 2).
  * La portion du texte qui matche la requête est mise en gras (highlightMatch).
  */
+// Mapping iNat class -> taxonomic_group (preserve cohenrence UI existante).
+const CLASS_TO_GROUP: Record<string, TaxonomicGroup> = {
+  Aves: 'birds',
+  Mammalia: 'mammals',
+  Insecta: 'insects',
+  Amphibia: 'amphibians',
+  Reptilia: 'reptiles',
+  Actinopterygii: 'fish',
+  Arachnida: 'arachnids',
+  Mollusca: 'mollusks',
+}
+
 function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['species']) => void }) {
   const { t } = useTranslation()
   const listId = useId()
@@ -102,7 +121,11 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
   // Filtres par groupe taxonomique — Set vide = tous les groupes acceptés.
   const [groupFilters, setGroupFilters] = useState<Set<TaxonomicGroup>>(new Set())
   const [filterOpen, setFilterOpen] = useState(false)
-  const [results, setResults] = useState<SpeciesHit[]>([])
+  const [results, setResults] = useState<TaxonomyHit[]>([])
+  // V1.1.0 (Nicolas 2026-05-26) : toggle precision identification
+  // 'species' = recherche especes precises (defaut)
+  // 'family'  = fallback famille quand user ne trouve pas l espece exacte
+  const [precision, setPrecision] = useState<'species' | 'family'>('species')
   // Nicolas 2026-05-22 : loader visible pendant le fetch + état d'erreur explicite
   // si l'espèce n'est pas trouvée, plutôt que de laisser le user sans feedback.
   const [isLoading, setIsLoading] = useState(false)
@@ -137,10 +160,19 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
     }
   }
 
-  // Debounced query → searchService.searchSpecies (species_master Supabase).
-  // L'effet ne touche aux states que de façon asynchrone (dans la promise)
-  // ou via les setters provenant de l'API externe — pas de setState sync
-  // dans le body de l'effet (cf. react-hooks/set-state-in-effect).
+  // Mapping group filter UI -> iNat class pour searchTaxonomy
+  const GROUP_TO_CLASS: Record<string, string> = {
+    birds: 'Aves',
+    mammals: 'Mammalia',
+    insects: 'Insecta',
+    amphibians: 'Amphibia',
+    reptiles: 'Reptilia',
+    fish: 'Actinopterygii',
+    arachnids: 'Arachnida',
+    mollusks: 'Mollusca',
+  }
+
+  // Debounced query -> searchTaxonomy (taxonomy_nodes V1.1.0)
   useEffect(() => {
     const trimmed = query.trim()
     if (trimmed.length < 1) return
@@ -149,13 +181,24 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
     const timer = setTimeout(() => {
       if (cancelled) return
       setIsLoading(true)
-      searchSpecies(trimmed, 8, singleGroup)
+      const classFilter = singleGroup ? (GROUP_TO_CLASS[singleGroup] ?? null) : null
+      searchTaxonomy(trimmed, {
+        ranks: [precision],
+        classFilter,
+        limit: 8,
+      })
         .then((hits) => {
           if (cancelled) return
-          // Si plusieurs filtres actifs : filtrer côté client par group_label
+          // Si plusieurs filtres actifs : filter cote client par class
           const filtered =
             groupFilters.size > 1
-              ? hits.filter((h) => groupFilters.has((h.group_label ?? '') as TaxonomicGroup))
+              ? hits.filter((h) =>
+                  groupFilters.has(
+                    (h.class && CLASS_TO_GROUP[h.class]
+                      ? CLASS_TO_GROUP[h.class]
+                      : 'other') as TaxonomicGroup,
+                  ),
+                )
               : hits
           setResults(filtered.slice(0, 6))
           setIsLoading(false)
@@ -170,19 +213,28 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
       cancelled = true
       clearTimeout(timer)
     }
-  }, [query, singleGroup, groupFilters])
+  }, [query, singleGroup, groupFilters, precision])
 
-  /** Convertit un SpeciesHit en ObservationEntry.species pour le carnet. */
-  function hitToSpecies(hit: SpeciesHit): ObservationEntry['species'] {
+  /** Convertit un TaxonomyHit en ObservationEntry.species pour le carnet. */
+  function hitToSpecies(hit: TaxonomyHit): ObservationEntry['species'] {
+    const cls = hit.class
+    const group = cls && CLASS_TO_GROUP[cls] ? CLASS_TO_GROUP[cls] : ('other' as TaxonomicGroup)
+    // Pour les familles : pas de nom commun FR le plus souvent, on utilise le
+    // nom scientifique avec prefixe "Famille " pour clarte UI.
+    const isFamily = hit.rank === 'family'
+    const commonName = isFamily
+      ? (hit.common_name_fr ?? `Famille ${hit.scientific_name}`)
+      : (hit.common_name_fr ?? hit.scientific_name)
     return {
-      id: hit.taxref_id,
-      commonName: hit.common_name ?? hit.scientific_name,
+      id: hit.taxonomy_node_id,
+      commonName,
       scientificName: hit.scientific_name,
-      group: (hit.group_label ?? 'other') as TaxonomicGroup,
+      group,
+      rank: isFamily ? 'family' : 'species',
     }
   }
 
-  function handleSelect(hit: SpeciesHit) {
+  function handleSelect(hit: TaxonomyHit) {
     onAdd(hitToSpecies(hit))
     setQuery('')
     setResults([])
@@ -287,26 +339,36 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
 
           {results.length > 0 &&
             results.map((hit, i) => {
-              const commonName = hit.common_name ?? hit.scientific_name
+              const groupLabel =
+                hit.class && CLASS_TO_GROUP[hit.class] ? CLASS_TO_GROUP[hit.class] : null
+              const isFamily = hit.rank === 'family'
+              const commonName = isFamily
+                ? (hit.common_name_fr ?? `Famille ${hit.scientific_name}`)
+                : (hit.common_name_fr ?? hit.scientific_name)
               return (
-                <div key={hit.taxref_id} role="option" aria-selected={false}>
+                <div key={hit.taxonomy_node_id} role="option" aria-selected={false}>
                   {i > 0 && <div className="mx-5 h-px bg-border" aria-hidden="true" />}
                   <button
                     type="button"
                     onClick={() => handleSelect(hit)}
                     className="w-full flex items-center gap-3 px-5 py-3 hover:bg-primary-light/20 transition-colors focus-visible:outline-none focus-visible:bg-primary-light/20 text-left"
                   >
-                    <SpeciesCategoryIcon group={hit.group_label} />
+                    <SpeciesCategoryIcon group={groupLabel} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">
                         {highlightMatch(commonName, query)}
+                        {isFamily && (
+                          <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-primary-light text-primary align-middle">
+                            {t('contribute.panel.familyBadge', { defaultValue: 'Famille' })}
+                          </span>
+                        )}
                       </p>
                       <p className="text-xs text-muted-foreground truncate italic">
                         {highlightMatch(hit.scientific_name, query)}
                       </p>
                     </div>
                     <span className="text-xs text-muted-foreground shrink-0">
-                      · {groupConfig(hit.group_label).label}
+                      · {groupConfig(groupLabel).label}
                     </span>
                   </button>
                 </div>
@@ -400,43 +462,76 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
 
           <hr className="border-t-[0.5px] border-border" />
 
-          {/* Section 2 — Précision de l'identification (Bientôt) */}
+          {/* Section 2 — Précision de l identification (V1.1.0 active) */}
           <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <p className="font-body text-base text-muted-foreground">
-                {t('contribute.panel.filterPrecisionTitle', {
-                  defaultValue: "Précision de l'identification",
-                })}
-              </p>
-              <span className="inline-flex items-center justify-center h-5 px-2 rounded-full bg-primary-light text-primary text-[10px] font-bold uppercase tracking-wide">
-                {t('home.filters.comingSoon')}
-              </span>
-            </div>
-            <div className="flex flex-col gap-2 opacity-50 pointer-events-none">
-              <div className="flex items-center gap-2">
+            <p className="font-body text-base text-muted-foreground">
+              {t('contribute.panel.filterPrecisionTitle', {
+                defaultValue: "Précision de l'identification",
+              })}
+            </p>
+            <div
+              className="flex flex-col gap-2"
+              role="radiogroup"
+              aria-label={t('contribute.panel.filterPrecisionTitle', {
+                defaultValue: "Précision de l'identification",
+              })}
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={precision === 'species'}
+                onClick={() => setPrecision('species')}
+                className="flex items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              >
                 <span
                   aria-hidden="true"
-                  className="flex items-center justify-center size-5 rounded-[4px] bg-primary border border-primary shrink-0"
+                  className={[
+                    'flex items-center justify-center size-5 rounded-[4px] shrink-0 transition-colors',
+                    precision === 'species'
+                      ? 'bg-primary border border-primary'
+                      : 'bg-background border-[1.5px] border-border',
+                  ].join(' ')}
                 >
-                  <Check
-                    className="size-3.5 text-primary-foreground"
-                    strokeWidth={3}
-                    aria-hidden="true"
-                  />
+                  {precision === 'species' && (
+                    <Check
+                      className="size-3.5 text-primary-foreground"
+                      strokeWidth={3}
+                      aria-hidden="true"
+                    />
+                  )}
                 </span>
                 <span className="text-sm text-foreground">
                   {t('contribute.panel.precisionExact', { defaultValue: 'Espèce précise' })}
                 </span>
-              </div>
-              <div className="flex items-center gap-2">
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={precision === 'family'}
+                onClick={() => setPrecision('family')}
+                className="flex items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              >
                 <span
                   aria-hidden="true"
-                  className="flex items-center justify-center size-5 rounded-[4px] bg-background border-[1.5px] border-border shrink-0"
-                />
+                  className={[
+                    'flex items-center justify-center size-5 rounded-[4px] shrink-0 transition-colors',
+                    precision === 'family'
+                      ? 'bg-primary border border-primary'
+                      : 'bg-background border-[1.5px] border-border',
+                  ].join(' ')}
+                >
+                  {precision === 'family' && (
+                    <Check
+                      className="size-3.5 text-primary-foreground"
+                      strokeWidth={3}
+                      aria-hidden="true"
+                    />
+                  )}
+                </span>
                 <span className="text-sm text-foreground">
                   {t('contribute.panel.precisionFamily', { defaultValue: 'Famille seulement' })}
                 </span>
-              </div>
+              </button>
             </div>
           </div>
 
@@ -502,6 +597,11 @@ function ObservationRow({
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-foreground truncate">
           {entry.isUnknown ? t('contribute.panel.unknownSpecies') : entry.species?.commonName}
+          {entry.species?.rank === 'family' && (
+            <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-primary-light text-primary align-middle">
+              {t('contribute.panel.familyBadge', { defaultValue: 'Famille' })}
+            </span>
+          )}
         </p>
         <p className="text-xs text-muted-foreground italic truncate">
           {entry.isUnknown ? t('contribute.panel.unknownSubtitle') : entry.species?.scientificName}
