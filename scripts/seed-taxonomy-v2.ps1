@@ -343,29 +343,35 @@ if ($DryRun) {
 }
 
 Write-Host "[4/4] Bulk insert dans Supabase taxonomy_nodes ..." -ForegroundColor Yellow
+# Les nouvelles cles sb_secret_xxx bloquent les requetes "browser-like".
+# PowerShell envoie User-Agent: Mozilla... par defaut, donc Supabase rejette.
+# Fix : User-Agent non-browser + headers explicites
 $headers = @{
     "apikey" = $ServiceRoleKey
     "Authorization" = "Bearer $ServiceRoleKey"
     "Content-Type" = "application/json"
     "Prefer" = "resolution=merge-duplicates"
 }
+$userAgent = "Naturegraph-SeedScript/1.0 (server-side admin tool)"
 $endpoint = "$SupabaseUrl/rest/v1/taxonomy_nodes"
 $batch = @()
 $batchSize = 200
 $inserted = 0
 $failed = 0
+$lastError = $null
 
 foreach ($node in $nodesByKey.Values) {
     $batch += $node
     if ($batch.Count -ge $batchSize) {
         try {
             $body = ConvertTo-Json $batch -Depth 5 -Compress
-            Invoke-RestMethod -Uri $endpoint -Method POST -Headers $headers -Body $body | Out-Null
+            Invoke-RestMethod -Uri $endpoint -Method POST -Headers $headers -Body $body -UserAgent $userAgent | Out-Null
             $inserted += $batch.Count
             Write-Host -NoNewline "."
         } catch {
             $failed += $batch.Count
-            Write-Host "`n       ERROR batch : $_" -ForegroundColor Red
+            $lastError = $_
+            if ($failed -le 600) { Write-Host "`n       ERROR batch : $_" -ForegroundColor Red }
         }
         $batch = @()
     }
@@ -373,12 +379,26 @@ foreach ($node in $nodesByKey.Values) {
 if ($batch.Count -gt 0) {
     try {
         $body = ConvertTo-Json $batch -Depth 5 -Compress
-        Invoke-RestMethod -Uri $endpoint -Method POST -Headers $headers -Body $body | Out-Null
+        Invoke-RestMethod -Uri $endpoint -Method POST -Headers $headers -Body $body -UserAgent $userAgent | Out-Null
         $inserted += $batch.Count
     } catch {
         $failed += $batch.Count
+        $lastError = $_
         Write-Host "`n       ERROR final batch : $_" -ForegroundColor Red
     }
+}
+
+if ($failed -gt 0 -and $inserted -eq 0) {
+    Write-Host ""
+    Write-Host "===========================================================" -ForegroundColor Yellow
+    Write-Host "  ECHEC TOTAL : verifie le type de cle Supabase utilisee" -ForegroundColor Yellow
+    Write-Host "===========================================================" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "Si tu vois 'Forbidden use of secret API key in browser' :"
+    Write-Host "  -> La cle sb_secret_xxx est bloquee meme avec User-Agent custom"
+    Write-Host "  -> Utilise la cle LEGACY service_role (eyJ...) a la place"
+    Write-Host "  -> Settings > API Keys > onglet 'Legacy anon, service_role API keys'"
+    Write-Host ""
 }
 
 Write-Host ""
