@@ -300,6 +300,10 @@ Add-INatVertebrateSpecies -Items $frAves     -ClassName 'Aves'     -InFr $true -
 Add-INatVertebrateSpecies -Items $frMammalia -ClassName 'Mammalia' -InFr $true -InCa $false
 Add-INatVertebrateSpecies -Items $frAmphibia -ClassName 'Amphibia' -InFr $true -InCa $false
 Add-INatVertebrateSpecies -Items $frReptilia -ClassName 'Reptilia' -InFr $true -InCa $false
+# FR insectes : especes precises + familles (les 2)
+# Note : phylum=Arthropoda pour insectes mais Add-INatVertebrateSpecies l override
+# via iconic_taxon_name + on patch phylum apres
+Add-INatVertebrateSpecies -Items $frInsecta  -ClassName 'Insecta' -InFr $true -InCa $false
 Add-INatInsectFamilies    -Families $frInsectFamiliesData -InFr $true -InCa $false
 
 # CA vertebres
@@ -307,7 +311,17 @@ Add-INatVertebrateSpecies -Items $caAves     -ClassName 'Aves'     -InFr $false 
 Add-INatVertebrateSpecies -Items $caMammalia -ClassName 'Mammalia' -InFr $false -InCa $true
 Add-INatVertebrateSpecies -Items $caAmphibia -ClassName 'Amphibia' -InFr $false -InCa $true
 Add-INatVertebrateSpecies -Items $caReptilia -ClassName 'Reptilia' -InFr $false -InCa $true
+# CA insectes : especes precises + familles
+Add-INatVertebrateSpecies -Items $caInsecta  -ClassName 'Insecta' -InFr $false -InCa $true
 Add-INatInsectFamilies    -Families $caInsectFamiliesData -InFr $false -InCa $true
+
+# Patch : phylum Arthropoda pour les insectes (Add-INatVertebrateSpecies met Chordata par defaut)
+foreach ($key in $nodesByKey.Keys) {
+    $node = $nodesByKey[$key]
+    if ($node.class -eq 'Insecta') {
+        $node.phylum = 'Arthropoda'
+    }
+}
 
 Write-Host "       Total nodes preparees : $($nodesByKey.Count)"
 $breakdown = $nodesByKey.Values | Group-Object rank | Sort-Object Name | Select-Object Name, Count
