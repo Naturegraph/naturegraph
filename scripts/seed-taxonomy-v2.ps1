@@ -174,7 +174,10 @@ function Add-Node {
         [string]$Kingdom, [string]$Phylum, [string]$Class,
         [string]$Order, [string]$Family, [string]$Genus,
         [string]$InpnId, [int]$INatId,
-        [bool]$InFr, [bool]$InCa
+        [bool]$InFr, [bool]$InCa,
+        [string]$TaxrefStatusFr,  # P, Pc, B, W, C, E, I, D
+        [string]$INatEstablishment,  # native, introduced, endemic
+        [int]$INatObservationsCount = 0
     )
     $sci = Normalize-Name $ScientificName
     if (-not $sci) { return }
@@ -187,7 +190,32 @@ function Add-Node {
         if (-not $node.common_name_en -and $CommonEn) { $node.common_name_en = $CommonEn }
         if (-not $node.inpn_taxref_id -and $InpnId) { $node.inpn_taxref_id = $InpnId }
         if (-not $node.inaturalist_id -and $INatId) { $node.inaturalist_id = $INatId }
+        # Merge metadata.migration
+        if ($TaxrefStatusFr -or $INatEstablishment) {
+            if (-not $node.metadata.migration) { $node.metadata.migration = @{} }
+            if ($TaxrefStatusFr -and -not $node.metadata.migration.fr) {
+                $node.metadata.migration.fr = @{ status = $TaxrefStatusFr; label = (Get-TaxrefStatusLabel $TaxrefStatusFr) }
+            }
+            if ($INatEstablishment -and -not $node.metadata.migration.ca) {
+                $node.metadata.migration.ca = @{ establishment = $INatEstablishment }
+            }
+        }
+        # Boost popularite si obs CA
+        if ($INatObservationsCount -gt $node.popularity) {
+            $node.popularity = $INatObservationsCount
+        }
         return
+    }
+    # Construit metadata initial
+    $metadata = @{}
+    if ($TaxrefStatusFr -or $INatEstablishment) {
+        $metadata.migration = @{}
+        if ($TaxrefStatusFr) {
+            $metadata.migration.fr = @{ status = $TaxrefStatusFr; label = (Get-TaxrefStatusLabel $TaxrefStatusFr) }
+        }
+        if ($INatEstablishment) {
+            $metadata.migration.ca = @{ establishment = $INatEstablishment }
+        }
     }
     $nodesByKey[$key] = [PSCustomObject]@{
         rank = $Rank
@@ -204,7 +232,28 @@ function Add-Node {
         inaturalist_id = $INatId
         available_in_fr = $InFr
         available_in_ca = $InCa
+        popularity = $INatObservationsCount
         is_active = $true
+        metadata = $metadata
+        data_version = "TAXREF_v17+iNat_$(Get-Date -Format 'yyyy-MM')"
+        data_source = if ($InpnId) { "TAXREF" } elseif ($INatId) { "iNaturalist" } else { "manual" }
+    }
+}
+
+# Label francais pour les statuts TAXREF (FR column)
+function Get-TaxrefStatusLabel {
+    param([string]$Status)
+    switch ($Status) {
+        'P'  { 'Resident' }
+        'Pc' { 'Migrateur saisonnier' }
+        'B'  { 'Nicheur (reproduction)' }
+        'W'  { 'Hivernant' }
+        'C'  { 'Cantonnement (population partielle)' }
+        'E'  { 'Endemique' }
+        'I'  { 'Introduit' }
+        'D'  { 'Disparu' }
+        '?'  { 'Presence incertaine' }
+        default { $Status }
     }
 }
 
@@ -229,12 +278,13 @@ foreach ($f in ($vertFamilies + $frInsectFamilies)) {
         -InpnId $f.CD_NOM -InFr ($f.FR -in $frPresent) -InCa $false
 }
 
-# 4.4 Especes FR (vertebres uniquement)
+# 4.4 Especes FR (vertebres uniquement, avec statut migration TAXREF)
 foreach ($s in $frSpecies) {
     $commonFr = if ($s.NOM_VERN) { ($s.NOM_VERN -split ',')[0].Trim() } else { $null }
     Add-Node -Rank 'species' -ScientificName $s.LB_NOM -CommonFr $commonFr -CommonEn $s.NOM_VERN_ENG `
         -Kingdom $s.REGNE -Phylum $s.PHYLUM -Class $s.CLASSE -Order $s.ORDRE -Family $s.FAMILLE `
-        -InpnId $s.CD_NOM -InFr $true -InCa $false
+        -InpnId $s.CD_NOM -InFr $true -InCa $false `
+        -TaxrefStatusFr $s.FR
 }
 
 # 4.5 Especes CA (4 vertebres uniquement)
@@ -259,7 +309,9 @@ function Add-INatSpecies {
             -Kingdom $ancestors.kingdom -Phylum $ancestors.phylum `
             -Class ($ancestors.class ?? $ClassName) -Order $ancestors.order `
             -Family $ancestors.family -Genus $ancestors.genus `
-            -INatId $t.id -InFr $false -InCa $true
+            -INatId $t.id -InFr $false -InCa $true `
+            -INatEstablishment $t.establishment_means `
+            -INatObservationsCount ([int]$Item.count)
     }
 }
 $caAves     | Add-INatSpecies -ClassName 'Aves'
