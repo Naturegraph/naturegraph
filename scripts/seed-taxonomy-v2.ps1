@@ -304,10 +304,11 @@ function Add-INatSpecies {
                 'genus'   { $ancestors.genus = $a.name }
             }
         }
+        $classResolved = if ($ancestors.class) { $ancestors.class } else { $ClassName }
         Add-Node -Rank 'species' -ScientificName $t.name `
             -CommonFr $t.preferred_common_name -CommonEn $t.english_common_name `
             -Kingdom $ancestors.kingdom -Phylum $ancestors.phylum `
-            -Class ($ancestors.class ?? $ClassName) -Order $ancestors.order `
+            -Class $classResolved -Order $ancestors.order `
             -Family $ancestors.family -Genus $ancestors.genus `
             -INatId $t.id -InFr $false -InCa $true `
             -INatEstablishment $t.establishment_means `
