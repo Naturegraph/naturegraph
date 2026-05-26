@@ -360,12 +360,30 @@ $inserted = 0
 $failed = 0
 $lastError = $null
 
+# Helper : build une JSON array string sans le bug ConvertTo-Json de PS 5.1
+# (single-element array sort comme object, encoding BOM, etc.)
+function Build-JsonArray {
+    param([array]$Items)
+    $parts = foreach ($it in $Items) {
+        ConvertTo-Json $it -Depth 5 -Compress
+    }
+    return "[" + ($parts -join ",") + "]"
+}
+
+function Send-Batch {
+    param([array]$Batch, [string]$Endpoint, [hashtable]$Headers, [string]$UA)
+    $bodyStr = Build-JsonArray $Batch
+    # Force UTF-8 sans BOM pour eviter parser issues PostgREST
+    $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($bodyStr)
+    Invoke-RestMethod -Uri $Endpoint -Method POST -Headers $Headers `
+        -Body $bodyBytes -ContentType "application/json" -UserAgent $UA | Out-Null
+}
+
 foreach ($node in $nodesByKey.Values) {
     $batch += $node
     if ($batch.Count -ge $batchSize) {
         try {
-            $body = ConvertTo-Json $batch -Depth 5 -Compress
-            Invoke-RestMethod -Uri $endpoint -Method POST -Headers $headers -Body $body -UserAgent $userAgent | Out-Null
+            Send-Batch -Batch $batch -Endpoint $endpoint -Headers $headers -UA $userAgent
             $inserted += $batch.Count
             Write-Host -NoNewline "."
         } catch {
@@ -378,8 +396,7 @@ foreach ($node in $nodesByKey.Values) {
 }
 if ($batch.Count -gt 0) {
     try {
-        $body = ConvertTo-Json $batch -Depth 5 -Compress
-        Invoke-RestMethod -Uri $endpoint -Method POST -Headers $headers -Body $body -UserAgent $userAgent | Out-Null
+        Send-Batch -Batch $batch -Endpoint $endpoint -Headers $headers -UA $userAgent
         $inserted += $batch.Count
     } catch {
         $failed += $batch.Count
