@@ -12,7 +12,8 @@ export function Footer() {
           </p>
           <p className="text-xs text-[var(--color-text-tertiary)]">
             {t('footer.dataAttribution', {
-              defaultValue: 'Données taxonomiques : GBIF (CC0), enrichies via Wikidata.',
+              defaultValue:
+                'Données taxonomiques : iNaturalist (CC-BY 4.0), GBIF (CC0), Wikidata (CC0).',
             })}
           </p>
         </div>

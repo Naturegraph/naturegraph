@@ -30,7 +30,7 @@ des espèces.
 - **Eco-conception stricte** : budgets perf, lazy loading, images optimisées, pagination obligatoire
 - **Accessibilité WCAG AA** par défaut sur tout le produit
 - **Privacy-first** : RGPD + Loi 25 Québec, EXIF strippé, localisation floutable
-- **Source de données ouvertes** : GBIF (CC0) + Wikidata (CC0) pour la taxonomie
+- **Source de données ouvertes** : iNaturalist (CC-BY 4.0) source principale + GBIF (CC0) + Wikidata (CC0) pour la taxonomie. Attribution dans CGU + Privacy + Settings + Footer.
 - **Beta privée Québec + France** : démarrage contrôlé, retours photographes pro
 
 ### Audience cible
