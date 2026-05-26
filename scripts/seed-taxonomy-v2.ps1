@@ -1,40 +1,39 @@
 # =====================================================================
-# seed-taxonomy-v2.ps1 — Seed complet taxonomy_nodes (V1.1.0)
+# seed-taxonomy-v2.ps1 — Seed taxonomy_nodes via iNaturalist API
 # =====================================================================
 #
-# Strategie (validee Nicolas 2026-05-26) :
-#   - Aves + Mammalia + Amphibia + Reptilia : ESPECES precises FR + CA
+# Strategie (Nicolas 2026-05-26, pivot depuis TAXREF apres INPN 403) :
+#   - Source unique : iNaturalist API (place_id FR=6753, CA=6712)
+#   - 4 classes vertebrees : ESPECES precises FR + CA
 #   - Insecta : FAMILLES seulement (FR + CA)
-#   - Hierarchie complete : class -> order -> family -> [genus] -> species
+#   - Hierarchie complete : class > order > family > genus > species
+#   - Migration patterns : iNat establishment_means (native/introduced/endemic)
 #
-# Sources :
-#   - TAXREF v17 (INPN/MNHN) pour France (CC-BY)
-#   - iNaturalist API pour Canada (place_id 6712)
+# Avantages vs TAXREF :
+#   - Meme API pour les 2 territoires (uniformite)
+#   - Donnees actives (vs TAXREF 1x/an)
+#   - Pas de download lourd
+#   - Extension facile a d autres pays (changer place_id)
 #
-# Execution typique : 15-30 min (depend du reseau)
-# Pre-requis :
-#   - PowerShell 5.1+ (Windows)
-#   - SUPABASE_SERVICE_ROLE_KEY (Settings > API > service_role)
-#   - ~500 MB d espace disque pour TAXREF
+# Execution : 10-15 min (API rate limit 60 req/min)
+# Pre-requis : PowerShell 5.1+
 # =====================================================================
 
 param(
     [string]$SupabaseUrl = "https://hrxgduvworofnrjmgpcj.supabase.co",
     [string]$ServiceRoleKey = $env:SUPABASE_SERVICE_ROLE_KEY,
-    [switch]$DryRun = $false,
-    [switch]$SkipDownload = $false
+    [switch]$DryRun = $false
 )
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "Continue"
 
-# PowerShell 5.1 defaut TLS 1.0, modernes sites refusent. Force TLS 1.2.
+# PowerShell 5.1 defaut TLS 1.0, modernes sites refusent. Force TLS 1.2+.
 [System.Net.ServicePointManager]::SecurityProtocol = `
     [System.Net.SecurityProtocolType]::Tls12 -bor `
     [System.Net.SecurityProtocolType]::Tls13
 
 # ─── Validation prerequis ──────────────────────────────────────
-# La cle n est requise QUE pour le vrai run (insert). En DryRun on s en passe.
 if (-not $DryRun -and -not $ServiceRoleKey) {
     $secure = Read-Host "SUPABASE_SERVICE_ROLE_KEY (Settings > API Keys > Secret keys)" -AsSecureString
     $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
@@ -49,151 +48,13 @@ $workDir = Join-Path $PSScriptRoot ".taxonomy-seed-cache"
 New-Item -ItemType Directory -Force -Path $workDir | Out-Null
 
 Write-Host "===== SEED TAXONOMY V2 (V1.1.0) =====" -ForegroundColor Cyan
+Write-Host "Source      : iNaturalist API (FR=6753, CA=6712)"
 Write-Host "Supabase    : $SupabaseUrl"
 Write-Host "Cache       : $workDir"
 Write-Host "DryRun      : $DryRun"
 Write-Host ""
 
-# ─── 1. Download TAXREF v17 ────────────────────────────────────
-$taxrefZip = Join-Path $workDir "TAXREFv17.zip"
-$taxrefTxt = Join-Path $workDir "TAXREFv17.txt"
-
-if (-not $SkipDownload -and -not (Test-Path $taxrefTxt)) {
-    Write-Host "[1/6] Download TAXREF v17 (~80 MB) ..." -ForegroundColor Yellow
-    # URLs candidates pour TAXREF (INPN change parfois les liens)
-    $taxrefUrls = @(
-        "https://inpn.mnhn.fr/docs-web/docs/download/501920",
-        "https://inpn.mnhn.fr/docs-web/docs/download/471402",
-        "https://inpn.mnhn.fr/docs-web/docs/download/422038"
-    )
-    $downloadOk = $false
-    foreach ($url in $taxrefUrls) {
-        for ($try = 1; $try -le 3; $try++) {
-            try {
-                Write-Host "       Tentative $try : $url" -ForegroundColor DarkGray
-                Invoke-WebRequest -Uri $url -OutFile $taxrefZip -UseBasicParsing -TimeoutSec 300
-                if ((Get-Item $taxrefZip).Length -gt 1MB) {
-                    $downloadOk = $true
-                    break
-                }
-            } catch {
-                Write-Host "       Echec : $($_.Exception.Message)" -ForegroundColor DarkGray
-                Start-Sleep -Seconds 3
-            }
-        }
-        if ($downloadOk) { break }
-    }
-
-    if ($downloadOk) {
-        Write-Host "       Unzip ..." -ForegroundColor Yellow
-        Expand-Archive -Path $taxrefZip -DestinationPath $workDir -Force
-        $found = Get-ChildItem $workDir -Filter "TAXREF*.txt" | Select-Object -First 1
-        if ($found -and $found.FullName -ne $taxrefTxt) {
-            Move-Item $found.FullName $taxrefTxt -Force
-        }
-    }
-}
-
-if (-not (Test-Path $taxrefTxt)) {
-    Write-Host ""
-    Write-Host "===========================================================" -ForegroundColor Yellow
-    Write-Host "  DOWNLOAD AUTO ECHOUE - Telechargement manuel necessaire" -ForegroundColor Yellow
-    Write-Host "===========================================================" -ForegroundColor Yellow
-    Write-Host ""
-    Write-Host "1. Va sur : " -NoNewline; Write-Host "https://inpn.mnhn.fr/telechargement/referentielEspece/taxref" -ForegroundColor Cyan
-    Write-Host "2. Clique sur la derniere version (TAXREFv17 ou plus recent)"
-    Write-Host "3. Download le ZIP (~30 MB compresse, ~150 MB decompresse)"
-    Write-Host "4. Dezippe-le, recupere le fichier .txt (TAXREFvXX.txt)"
-    Write-Host "5. Place-le ici : " -NoNewline; Write-Host "$taxrefTxt" -ForegroundColor Cyan
-    Write-Host "6. Relance le script : " -NoNewline; Write-Host ".\scripts\seed-taxonomy-v2.ps1 -DryRun -SkipDownload" -ForegroundColor Cyan
-    Write-Host ""
-    exit 1
-}
-
-# ─── 2. Parse TAXREF ────────────────────────────────────────────
-Write-Host "[2/6] Parse TAXREF (depend de la taille, ~2-3 min) ..." -ForegroundColor Yellow
-
-# Lit le fichier comme tab-separated avec encoding UTF-8 / Latin-1 fallback
-$taxrefRows = Import-Csv -Path $taxrefTxt -Delimiter "`t" -Encoding UTF8
-Write-Host "       $($taxrefRows.Count) lignes brutes TAXREF"
-
-# Filtres :
-#   - 4 classes vertebrees -> RANG = ES (espece) + FR present (P, Pc, B, ?)
-#   - Insecta -> RANG = FM (famille)
-#   - Hierarchie (CL, OR, FM des 4 vertebres + tous les OR d Insecta)
-$frPresent = @('P', 'Pc', 'B', '?', 'C')  # statuts territoire FR consideres presents
-$targetClasses = @('Aves', 'Mammalia', 'Amphibia', 'Reptilia')
-
-$frSpecies = $taxrefRows | Where-Object {
-    $_.RANG -eq 'ES' -and
-    $_.CLASSE -in $targetClasses -and
-    $_.FR -in $frPresent
-}
-$frInsectFamilies = $taxrefRows | Where-Object {
-    $_.RANG -eq 'FM' -and
-    $_.CLASSE -eq 'Insecta' -and
-    $_.FR -in $frPresent
-}
-$frInsectOrders = $taxrefRows | Where-Object {
-    $_.RANG -eq 'OR' -and
-    $_.CLASSE -eq 'Insecta'
-}
-$vertOrders = $taxrefRows | Where-Object {
-    $_.RANG -eq 'OR' -and $_.CLASSE -in $targetClasses
-}
-$vertFamilies = $taxrefRows | Where-Object {
-    $_.RANG -eq 'FM' -and $_.CLASSE -in $targetClasses
-}
-$classes = $taxrefRows | Where-Object {
-    $_.RANG -eq 'CL' -and $_.CLASSE -in (@('Insecta') + $targetClasses)
-}
-
-Write-Host "       FR especes vertebres : $($frSpecies.Count)"
-Write-Host "       FR familles insectes : $($frInsectFamilies.Count)"
-Write-Host "       FR ordres insectes   : $($frInsectOrders.Count)"
-Write-Host "       Hierarchie classes   : $($classes.Count)"
-Write-Host "       Hierarchie ordres    : $($vertOrders.Count)"
-Write-Host "       Hierarchie familles  : $($vertFamilies.Count)"
-
-# ─── 3. Fetch iNaturalist Canada ──────────────────────────────
-Write-Host "[3/6] Fetch iNaturalist Canada (place_id=6712) ..." -ForegroundColor Yellow
-
-function Get-INatSpecies {
-    param([string]$IconicTaxon, [int]$PlaceId = 6712, [int]$MaxPages = 30)
-    $allTaxa = @()
-    $perPage = 500
-    for ($page = 1; $page -le $MaxPages; $page++) {
-        $url = "https://api.inaturalist.org/v1/observations/species_counts?place_id=$PlaceId&iconic_taxa=$IconicTaxon&per_page=$perPage&page=$page&locale=fr"
-        try {
-            $resp = Invoke-RestMethod -Uri $url -UseBasicParsing
-            if (-not $resp.results -or $resp.results.Count -eq 0) { break }
-            $allTaxa += $resp.results
-            Start-Sleep -Milliseconds 600   # rate limit iNat : 60 req/min
-            if ($resp.results.Count -lt $perPage) { break }
-        } catch {
-            Write-Host "       Warning page $page : $_" -ForegroundColor Yellow
-            break
-        }
-    }
-    return $allTaxa
-}
-
-$caAves       = Get-INatSpecies -IconicTaxon "Aves"
-$caMammalia   = Get-INatSpecies -IconicTaxon "Mammalia"
-$caAmphibia   = Get-INatSpecies -IconicTaxon "Amphibia"
-$caReptilia   = Get-INatSpecies -IconicTaxon "Reptilia"
-$caInsecta    = Get-INatSpecies -IconicTaxon "Insecta"
-
-Write-Host "       CA Aves      : $($caAves.Count)"
-Write-Host "       CA Mammalia  : $($caMammalia.Count)"
-Write-Host "       CA Amphibia  : $($caAmphibia.Count)"
-Write-Host "       CA Reptilia  : $($caReptilia.Count)"
-Write-Host "       CA Insecta   : $($caInsecta.Count) (sera dedupe par famille)"
-
-# ─── 4. Build merged dataset ──────────────────────────────────
-Write-Host "[4/6] Build merged dataset (FR + CA + hierarchy) ..." -ForegroundColor Yellow
-
-# Helper : normalise un nom (trim, capitalize first)
+# ─── Helpers ──────────────────────────────────────────────────
 function Normalize-Name {
     param([string]$Name)
     if ([string]::IsNullOrWhiteSpace($Name)) { return $null }
@@ -202,7 +63,76 @@ function Normalize-Name {
     return $null
 }
 
-# Map cle = "RANK::scientific_name" -> node
+function Get-TaxrefStatusLabel {
+    param([string]$Status)
+    switch ($Status) {
+        'P'  { 'Resident' }
+        'Pc' { 'Migrateur saisonnier' }
+        'B'  { 'Nicheur (reproduction)' }
+        'W'  { 'Hivernant' }
+        'native'     { 'Indigene' }
+        'introduced' { 'Introduit' }
+        'endemic'    { 'Endemique' }
+        default { $Status }
+    }
+}
+
+# Cache des taxa iNat pour eviter re-fetch ancestors
+$inatTaxonCache = @{}
+
+# ─── 1. Fetch iNaturalist par territoire + classe ──────────────
+function Get-INatSpecies {
+    param(
+        [string]$IconicTaxon,
+        [int]$PlaceId,
+        [int]$MaxPages = 60
+    )
+    $allTaxa = @()
+    $perPage = 500
+    for ($page = 1; $page -le $MaxPages; $page++) {
+        $url = "https://api.inaturalist.org/v1/observations/species_counts?place_id=$PlaceId&iconic_taxa=$IconicTaxon&per_page=$perPage&page=$page&locale=fr"
+        try {
+            $resp = Invoke-RestMethod -Uri $url -UseBasicParsing
+            if (-not $resp.results -or $resp.results.Count -eq 0) { break }
+            $allTaxa += $resp.results
+            Start-Sleep -Milliseconds 700
+            if ($resp.results.Count -lt $perPage) { break }
+        } catch {
+            Write-Host "       Warning page $page : $_" -ForegroundColor Yellow
+            Start-Sleep -Seconds 5
+            break
+        }
+    }
+    return $allTaxa
+}
+
+Write-Host "[1/4] Fetch iNaturalist France (place_id=6753) ..." -ForegroundColor Yellow
+$frAves     = Get-INatSpecies -IconicTaxon "Aves"     -PlaceId 6753
+$frMammalia = Get-INatSpecies -IconicTaxon "Mammalia" -PlaceId 6753
+$frAmphibia = Get-INatSpecies -IconicTaxon "Amphibia" -PlaceId 6753
+$frReptilia = Get-INatSpecies -IconicTaxon "Reptilia" -PlaceId 6753
+$frInsecta  = Get-INatSpecies -IconicTaxon "Insecta"  -PlaceId 6753
+Write-Host "       FR Aves      : $($frAves.Count)"
+Write-Host "       FR Mammalia  : $($frMammalia.Count)"
+Write-Host "       FR Amphibia  : $($frAmphibia.Count)"
+Write-Host "       FR Reptilia  : $($frReptilia.Count)"
+Write-Host "       FR Insecta   : $($frInsecta.Count) (sera dedupe par famille)"
+
+Write-Host "[2/4] Fetch iNaturalist Canada (place_id=6712) ..." -ForegroundColor Yellow
+$caAves     = Get-INatSpecies -IconicTaxon "Aves"     -PlaceId 6712
+$caMammalia = Get-INatSpecies -IconicTaxon "Mammalia" -PlaceId 6712
+$caAmphibia = Get-INatSpecies -IconicTaxon "Amphibia" -PlaceId 6712
+$caReptilia = Get-INatSpecies -IconicTaxon "Reptilia" -PlaceId 6712
+$caInsecta  = Get-INatSpecies -IconicTaxon "Insecta"  -PlaceId 6712
+Write-Host "       CA Aves      : $($caAves.Count)"
+Write-Host "       CA Mammalia  : $($caMammalia.Count)"
+Write-Host "       CA Amphibia  : $($caAmphibia.Count)"
+Write-Host "       CA Reptilia  : $($caReptilia.Count)"
+Write-Host "       CA Insecta   : $($caInsecta.Count) (sera dedupe par famille)"
+
+# ─── 3. Build merged dataset ──────────────────────────────────
+Write-Host "[3/4] Build merged dataset ..." -ForegroundColor Yellow
+
 $nodesByKey = @{}
 
 function Add-Node {
@@ -211,10 +141,9 @@ function Add-Node {
         [string]$CommonFr, [string]$CommonEn,
         [string]$Kingdom, [string]$Phylum, [string]$Class,
         [string]$Order, [string]$Family, [string]$Genus,
-        [string]$InpnId, [int]$INatId,
+        [int]$INatId,
         [bool]$InFr, [bool]$InCa,
-        [string]$TaxrefStatusFr,  # P, Pc, B, W, C, E, I, D
-        [string]$INatEstablishment,  # native, introduced, endemic
+        [string]$INatEstablishment,
         [int]$INatObservationsCount = 0
     )
     $sci = Normalize-Name $ScientificName
@@ -226,33 +155,34 @@ function Add-Node {
         $node.available_in_ca = $node.available_in_ca -or $InCa
         if (-not $node.common_name_fr -and $CommonFr) { $node.common_name_fr = $CommonFr }
         if (-not $node.common_name_en -and $CommonEn) { $node.common_name_en = $CommonEn }
-        if (-not $node.inpn_taxref_id -and $InpnId) { $node.inpn_taxref_id = $InpnId }
         if (-not $node.inaturalist_id -and $INatId) { $node.inaturalist_id = $INatId }
-        # Merge metadata.migration
-        if ($TaxrefStatusFr -or $INatEstablishment) {
-            if (-not $node.metadata.migration) { $node.metadata.migration = @{} }
-            if ($TaxrefStatusFr -and -not $node.metadata.migration.fr) {
-                $node.metadata.migration.fr = @{ status = $TaxrefStatusFr; label = (Get-TaxrefStatusLabel $TaxrefStatusFr) }
+        if ($INatEstablishment) {
+            if (-not $node.metadata.migration) {
+                $node.metadata.migration = @{}
             }
-            if ($INatEstablishment -and -not $node.metadata.migration.ca) {
-                $node.metadata.migration.ca = @{ establishment = $INatEstablishment }
+            $territory = if ($InFr) { 'fr' } elseif ($InCa) { 'ca' } else { $null }
+            if ($territory -and -not $node.metadata.migration[$territory]) {
+                $node.metadata.migration[$territory] = @{
+                    establishment = $INatEstablishment
+                    label = (Get-TaxrefStatusLabel $INatEstablishment)
+                }
             }
         }
-        # Boost popularite si obs CA
         if ($INatObservationsCount -gt $node.popularity) {
             $node.popularity = $INatObservationsCount
         }
         return
     }
-    # Construit metadata initial
     $metadata = @{}
-    if ($TaxrefStatusFr -or $INatEstablishment) {
-        $metadata.migration = @{}
-        if ($TaxrefStatusFr) {
-            $metadata.migration.fr = @{ status = $TaxrefStatusFr; label = (Get-TaxrefStatusLabel $TaxrefStatusFr) }
-        }
-        if ($INatEstablishment) {
-            $metadata.migration.ca = @{ establishment = $INatEstablishment }
+    if ($INatEstablishment) {
+        $territory = if ($InFr) { 'fr' } elseif ($InCa) { 'ca' } else { $null }
+        if ($territory) {
+            $metadata.migration = @{
+                $territory = @{
+                    establishment = $INatEstablishment
+                    label = (Get-TaxrefStatusLabel $INatEstablishment)
+                }
+            }
         }
     }
     $nodesByKey[$key] = [PSCustomObject]@{
@@ -266,124 +196,143 @@ function Add-Node {
         order = Normalize-Name $Order
         family = Normalize-Name $Family
         genus = Normalize-Name $Genus
-        inpn_taxref_id = $InpnId
         inaturalist_id = $INatId
         available_in_fr = $InFr
         available_in_ca = $InCa
         popularity = $INatObservationsCount
         is_active = $true
         metadata = $metadata
-        data_version = "TAXREF_v17+iNat_$(Get-Date -Format 'yyyy-MM')"
-        data_source = if ($InpnId) { "TAXREF" } elseif ($INatId) { "iNaturalist" } else { "manual" }
+        data_version = "iNat_$(Get-Date -Format 'yyyy-MM')"
+        data_source = "iNaturalist"
     }
 }
 
-# Label francais pour les statuts TAXREF (FR column)
-function Get-TaxrefStatusLabel {
-    param([string]$Status)
-    switch ($Status) {
-        'P'  { 'Resident' }
-        'Pc' { 'Migrateur saisonnier' }
-        'B'  { 'Nicheur (reproduction)' }
-        'W'  { 'Hivernant' }
-        'C'  { 'Cantonnement (population partielle)' }
-        'E'  { 'Endemique' }
-        'I'  { 'Introduit' }
-        'D'  { 'Disparu' }
-        '?'  { 'Presence incertaine' }
-        default { $Status }
-    }
+# Extract ancestors helper
+function Get-AncestorAtRank {
+    param($Ancestors, [string]$Rank)
+    if (-not $Ancestors) { return $null }
+    $found = $Ancestors | Where-Object { $_.rank -eq $Rank } | Select-Object -First 1
+    if ($found) { return $found.name } else { return $null }
 }
 
-# 4.1 Classes (les 5)
-foreach ($c in $classes) {
-    Add-Node -Rank 'class' -ScientificName $c.LB_NOM -CommonFr ($c.NOM_VERN -split ',')[0] `
-        -Kingdom $c.REGNE -Phylum $c.PHYLUM -Class $c.CLASSE `
-        -InpnId $c.CD_NOM -InFr ($c.FR -in $frPresent) -InCa $false
-}
+# Insere une liste d especes iNat pour un territoire donne
+function Add-INatVertebrateSpecies {
+    param($Items, [string]$ClassName, [bool]$InFr, [bool]$InCa)
+    foreach ($item in $Items) {
+        $t = $item.taxon
+        if (-not $t.name) { continue }
+        if (-not $t.ancestors) { continue }
 
-# 4.2 Ordres (vertebres + insectes)
-foreach ($o in ($vertOrders + $frInsectOrders)) {
-    Add-Node -Rank 'order' -ScientificName $o.LB_NOM -CommonFr ($o.NOM_VERN -split ',')[0] `
-        -Kingdom $o.REGNE -Phylum $o.PHYLUM -Class $o.CLASSE -Order $o.ORDRE `
-        -InpnId $o.CD_NOM -InFr ($o.FR -in $frPresent) -InCa $false
-}
+        $kingdom = Get-AncestorAtRank $t.ancestors 'kingdom'
+        $phylum  = Get-AncestorAtRank $t.ancestors 'phylum'
+        $class   = Get-AncestorAtRank $t.ancestors 'class'
+        $order   = Get-AncestorAtRank $t.ancestors 'order'
+        $family  = Get-AncestorAtRank $t.ancestors 'family'
+        $genus   = Get-AncestorAtRank $t.ancestors 'genus'
+        if (-not $class) { $class = $ClassName }
 
-# 4.3 Familles (vertebres + insectes)
-foreach ($f in ($vertFamilies + $frInsectFamilies)) {
-    Add-Node -Rank 'family' -ScientificName $f.LB_NOM -CommonFr ($f.NOM_VERN -split ',')[0] `
-        -Kingdom $f.REGNE -Phylum $f.PHYLUM -Class $f.CLASSE -Order $f.ORDRE -Family $f.FAMILLE `
-        -InpnId $f.CD_NOM -InFr ($f.FR -in $frPresent) -InCa $false
-}
-
-# 4.4 Especes FR (vertebres uniquement, avec statut migration TAXREF)
-foreach ($s in $frSpecies) {
-    $commonFr = if ($s.NOM_VERN) { ($s.NOM_VERN -split ',')[0].Trim() } else { $null }
-    Add-Node -Rank 'species' -ScientificName $s.LB_NOM -CommonFr $commonFr -CommonEn $s.NOM_VERN_ENG `
-        -Kingdom $s.REGNE -Phylum $s.PHYLUM -Class $s.CLASSE -Order $s.ORDRE -Family $s.FAMILLE `
-        -InpnId $s.CD_NOM -InFr $true -InCa $false `
-        -TaxrefStatusFr $s.FR
-}
-
-# 4.5 Especes CA (4 vertebres uniquement)
-function Add-INatSpecies {
-    param([Parameter(ValueFromPipeline=$true)]$Item, [string]$ClassName)
-    process {
-        $t = $Item.taxon
-        if (-not $t.name) { return }
-        $ancestors = @{}
-        foreach ($a in $t.ancestors) {
-            switch ($a.rank) {
-                'kingdom' { $ancestors.kingdom = $a.name }
-                'phylum'  { $ancestors.phylum = $a.name }
-                'class'   { $ancestors.class = $a.name }
-                'order'   { $ancestors.order = $a.name }
-                'family'  { $ancestors.family = $a.name }
-                'genus'   { $ancestors.genus = $a.name }
-            }
+        # Aussi ajouter la famille + ordre dans le dataset (pour hierarchie)
+        if ($family) {
+            Add-Node -Rank 'family' -ScientificName $family `
+                -Kingdom $kingdom -Phylum $phylum -Class $class -Order $order -Family $family `
+                -InFr $InFr -InCa $InCa
         }
-        $classResolved = if ($ancestors.class) { $ancestors.class } else { $ClassName }
+        if ($order) {
+            Add-Node -Rank 'order' -ScientificName $order `
+                -Kingdom $kingdom -Phylum $phylum -Class $class -Order $order `
+                -InFr $InFr -InCa $InCa
+        }
+        if ($class) {
+            Add-Node -Rank 'class' -ScientificName $class `
+                -Kingdom $kingdom -Phylum $phylum -Class $class `
+                -InFr $InFr -InCa $InCa
+        }
+
         Add-Node -Rank 'species' -ScientificName $t.name `
             -CommonFr $t.preferred_common_name -CommonEn $t.english_common_name `
-            -Kingdom $ancestors.kingdom -Phylum $ancestors.phylum `
-            -Class $classResolved -Order $ancestors.order `
-            -Family $ancestors.family -Genus $ancestors.genus `
-            -INatId $t.id -InFr $false -InCa $true `
+            -Kingdom $kingdom -Phylum $phylum -Class $class -Order $order `
+            -Family $family -Genus $genus `
+            -INatId $t.id -InFr $InFr -InCa $InCa `
             -INatEstablishment $t.establishment_means `
-            -INatObservationsCount ([int]$Item.count)
+            -INatObservationsCount ([int]$item.count)
     }
 }
-$caAves     | Add-INatSpecies -ClassName 'Aves'
-$caMammalia | Add-INatSpecies -ClassName 'Mammalia'
-$caAmphibia | Add-INatSpecies -ClassName 'Amphibia'
-$caReptilia | Add-INatSpecies -ClassName 'Reptilia'
 
-# 4.6 Familles CA d insectes (extrait depuis observations CA)
-foreach ($i in $caInsecta) {
-    $t = $i.taxon
-    if (-not $t.ancestors) { continue }
-    $famAncestor = $t.ancestors | Where-Object { $_.rank -eq 'family' } | Select-Object -First 1
-    if (-not $famAncestor) { continue }
-    $orderAncestor = $t.ancestors | Where-Object { $_.rank -eq 'order' } | Select-Object -First 1
-    Add-Node -Rank 'family' -ScientificName $famAncestor.name `
+function Add-INatInsectFamilies {
+    param($Items, [bool]$InFr, [bool]$InCa)
+    foreach ($item in $Items) {
+        $t = $item.taxon
+        if (-not $t.ancestors) { continue }
+        $family = Get-AncestorAtRank $t.ancestors 'family'
+        $order  = Get-AncestorAtRank $t.ancestors 'order'
+        if (-not $family) { continue }
+
+        # Ajout ordre (hierarchie)
+        if ($order) {
+            Add-Node -Rank 'order' -ScientificName $order `
+                -Kingdom 'Animalia' -Phylum 'Arthropoda' -Class 'Insecta' -Order $order `
+                -InFr $InFr -InCa $InCa
+        }
+        # Famille
+        Add-Node -Rank 'family' -ScientificName $family `
+            -Kingdom 'Animalia' -Phylum 'Arthropoda' -Class 'Insecta' -Order $order -Family $family `
+            -InFr $InFr -InCa $InCa
+    }
+
+    # Aussi ajouter la classe Insecta elle-meme
+    Add-Node -Rank 'class' -ScientificName 'Insecta' `
         -Kingdom 'Animalia' -Phylum 'Arthropoda' -Class 'Insecta' `
-        -Order $orderAncestor.name -Family $famAncestor.name `
-        -InFr $false -InCa $true
+        -InFr $InFr -InCa $InCa
 }
+
+# FR vertebres + insectes
+Add-INatVertebrateSpecies -Items $frAves     -ClassName 'Aves'     -InFr $true -InCa $false
+Add-INatVertebrateSpecies -Items $frMammalia -ClassName 'Mammalia' -InFr $true -InCa $false
+Add-INatVertebrateSpecies -Items $frAmphibia -ClassName 'Amphibia' -InFr $true -InCa $false
+Add-INatVertebrateSpecies -Items $frReptilia -ClassName 'Reptilia' -InFr $true -InCa $false
+Add-INatInsectFamilies    -Items $frInsecta  -InFr $true -InCa $false
+
+# CA vertebres + insectes
+Add-INatVertebrateSpecies -Items $caAves     -ClassName 'Aves'     -InFr $false -InCa $true
+Add-INatVertebrateSpecies -Items $caMammalia -ClassName 'Mammalia' -InFr $false -InCa $true
+Add-INatVertebrateSpecies -Items $caAmphibia -ClassName 'Amphibia' -InFr $false -InCa $true
+Add-INatVertebrateSpecies -Items $caReptilia -ClassName 'Reptilia' -InFr $false -InCa $true
+Add-INatInsectFamilies    -Items $caInsecta  -InFr $false -InCa $true
 
 Write-Host "       Total nodes preparees : $($nodesByKey.Count)"
 $breakdown = $nodesByKey.Values | Group-Object rank | Sort-Object Name | Select-Object Name, Count
 $breakdown | ForEach-Object { Write-Host "         $($_.Name.PadRight(10)) : $($_.Count)" }
 
-# ─── 5. Bulk insert Supabase ──────────────────────────────────
+# ─── 4. Bulk insert (ou export CSV si DryRun) ──────────────────
 if ($DryRun) {
-    Write-Host "[5/6] DRY-RUN, pas d insert. Export CSV pour review." -ForegroundColor Yellow
-    $nodesByKey.Values | Export-Csv -Path (Join-Path $workDir "taxonomy_preview.csv") -NoTypeInformation -Encoding UTF8
-    Write-Host "       Exported : $workDir\taxonomy_preview.csv"
+    Write-Host "[4/4] DRY-RUN, pas d insert. Export CSV pour review." -ForegroundColor Yellow
+    $previewPath = Join-Path $workDir "taxonomy_preview.csv"
+    # Flatten metadata pour CSV (JSONB ne s exporte pas bien en CSV)
+    $flat = $nodesByKey.Values | ForEach-Object {
+        $migrationFr = if ($_.metadata.migration.fr) { ($_.metadata.migration.fr | ConvertTo-Json -Compress) } else { '' }
+        $migrationCa = if ($_.metadata.migration.ca) { ($_.metadata.migration.ca | ConvertTo-Json -Compress) } else { '' }
+        [PSCustomObject]@{
+            rank = $_.rank
+            scientific_name = $_.scientific_name
+            common_name_fr = $_.common_name_fr
+            common_name_en = $_.common_name_en
+            class = $_.class
+            order = $_.order
+            family = $_.family
+            available_in_fr = $_.available_in_fr
+            available_in_ca = $_.available_in_ca
+            popularity = $_.popularity
+            inaturalist_id = $_.inaturalist_id
+            migration_fr = $migrationFr
+            migration_ca = $migrationCa
+        }
+    }
+    $flat | Export-Csv -Path $previewPath -NoTypeInformation -Encoding UTF8
+    Write-Host "       Exported : $previewPath"
     exit 0
 }
 
-Write-Host "[5/6] Bulk insert dans Supabase taxonomy_nodes ..." -ForegroundColor Yellow
+Write-Host "[4/4] Bulk insert dans Supabase taxonomy_nodes ..." -ForegroundColor Yellow
 $headers = @{
     "apikey" = $ServiceRoleKey
     "Authorization" = "Bearer $ServiceRoleKey"
@@ -426,38 +375,33 @@ Write-Host ""
 Write-Host "       Inseres : $inserted"
 Write-Host "       Echecs  : $failed" -ForegroundColor $(if ($failed -gt 0) { 'Red' } else { 'Green' })
 
-# ─── 6. Resolve parent_id (post-insert) ───────────────────────
-Write-Host "[6/6] Resolve parent_id (hierarchie)..." -ForegroundColor Yellow
-# Cette etape se fait cote DB via une fonction SQL (plus rapide que round-trips PowerShell)
-# A executer manuellement dans Supabase SQL editor :
+# ─── Resolve parent_id (post-insert SQL) ───────────────────────
 $resolveSQL = @"
--- Resolve parent_id : pour chaque node, trouver son parent dans la hierarchie
+-- Resolve parent_id pour la hierarchie
+-- species -> family si possible, sinon -> order
 UPDATE public.taxonomy_nodes child
 SET parent_id = parent.id
 FROM public.taxonomy_nodes parent
 WHERE child.parent_id IS NULL
   AND (
-    -- species -> genus, sinon -> family
     (child.rank = 'species' AND child.family IS NOT NULL
      AND parent.rank = 'family' AND parent.scientific_name = child.family)
     OR
-    -- family -> order
     (child.rank = 'family' AND child.""order"" IS NOT NULL
      AND parent.rank = 'order' AND parent.scientific_name = child.""order"")
     OR
-    -- order -> class
     (child.rank = 'order' AND child.class IS NOT NULL
      AND parent.rank = 'class' AND parent.scientific_name = child.class)
   );
 
--- Compter combien restent orphelins (devrait etre 0 ou tres peu)
+-- Orphelins (devrait etre 0 ou tres peu)
 SELECT rank, COUNT(*) AS orphans
 FROM public.taxonomy_nodes
 WHERE parent_id IS NULL AND rank <> 'class'
 GROUP BY rank;
 "@
 $resolveSQL | Out-File -FilePath (Join-Path $workDir "resolve_parents.sql") -Encoding UTF8
-Write-Host "       SQL genere : $workDir\resolve_parents.sql"
+Write-Host "       SQL genere : $workDir\resolve_parents.sql" -ForegroundColor Cyan
 Write-Host "       => A executer dans Supabase SQL editor pour finaliser hierarchie"
 
 # ─── Coverage report ──────────────────────────────────────────
@@ -494,11 +438,16 @@ foreach ($class in @('Aves', 'Mammalia', 'Amphibia', 'Reptilia')) {
 $report | Format-Table -AutoSize
 
 $insectFams = ($nodesByKey.Values | Where-Object { $_.rank -eq 'family' -and $_.class -eq 'Insecta' }).Count
-Write-Host "Familles d insectes seedees : $insectFams (FR + CA combinees)" -ForegroundColor Green
+$insectFamsFr = ($nodesByKey.Values | Where-Object { $_.rank -eq 'family' -and $_.class -eq 'Insecta' -and $_.available_in_fr }).Count
+$insectFamsCa = ($nodesByKey.Values | Where-Object { $_.rank -eq 'family' -and $_.class -eq 'Insecta' -and $_.available_in_ca }).Count
+Write-Host "Familles d insectes seedees :" -ForegroundColor Green
+Write-Host "   Total unique : $insectFams"
+Write-Host "   FR           : $insectFamsFr"
+Write-Host "   CA           : $insectFamsCa"
 
 Write-Host ""
 Write-Host "===== TERMINE =====" -ForegroundColor Green
 Write-Host "Prochaines etapes :"
 Write-Host "  1. Executer scripts\.taxonomy-seed-cache\resolve_parents.sql dans Supabase SQL editor"
-Write-Host "  2. Verifier dans le SQL editor : SELECT rank, COUNT(*) FROM public.taxonomy_nodes GROUP BY rank;"
-Write-Host "  3. Tester la recherche : SELECT * FROM public.search_taxonomy('Calopteryx', 'fr');"
+Write-Host "  2. Verifier : SELECT rank, COUNT(*) FROM public.taxonomy_nodes GROUP BY rank;"
+Write-Host "  3. Tester : SELECT * FROM public.search_taxonomy('calopteryx', 'fr');"
