@@ -303,18 +303,19 @@ function Add-INatInsectFamilies {
 }
 
 # Fetch dedies pour insectes (familles)
-Write-Host "[2.5/4] Fetch iNat families pour TOUTES les classes via /v1/taxa ..." -ForegroundColor Yellow
-# V1.1.0 fix Nicolas 2026-05-26 : avant on n importait que les familles d insectes.
-# Maintenant on importe les familles des 8 classes pour que le "family fallback"
-# fonctionne sur Aves, Mammalia, Arachnida, Mollusca, etc. aussi.
+Write-Host "[2.5/4] Fetch iNat ALL families globally + filter par iconic_taxon_name ..." -ForegroundColor Yellow
+# V1.1.0 fix Nicolas 2026-05-26 #2 : le filtre iconic_taxa= dans /v1/taxa ne fonctionne
+# pas comme attendu (renvoie 1000 familles globales identiques pour chaque classe).
+# Nouvelle strategie : fetch global (sans iconic_taxa), utilise iconic_taxon_name
+# du resultat pour assigner la bonne classe.
 $iconicTaxaForFamilies = @('Aves','Mammalia','Amphibia','Reptilia','Insecta','Arachnida','Mollusca','Actinopterygii')
 
-function Get-INatFamiliesForClass {
-    param([string]$IconicTaxon, [int]$PlaceId, [int]$MaxPages = 10)
+function Get-INatAllFamilies {
+    param([int]$PlaceId, [int]$MaxPages = 80)
     $allFamilies = @()
     $perPage = 100
     for ($page = 1; $page -le $MaxPages; $page++) {
-        $url = "https://api.inaturalist.org/v1/taxa?rank=family&iconic_taxa=$IconicTaxon&is_active=true&place_id=$PlaceId&per_page=$perPage&page=$page&locale=fr"
+        $url = "https://api.inaturalist.org/v1/taxa?rank=family&is_active=true&place_id=$PlaceId&per_page=$perPage&page=$page&locale=fr"
         try {
             $resp = Invoke-RestMethod -Uri $url -UseBasicParsing
             if (-not $resp.results -or $resp.results.Count -eq 0) { break }
@@ -322,7 +323,7 @@ function Get-INatFamiliesForClass {
             Start-Sleep -Milliseconds 700
             if ($resp.results.Count -lt $perPage) { break }
         } catch {
-            Write-Host "       Warning $IconicTaxon page $page : $_" -ForegroundColor Yellow
+            Write-Host "       Warning page $page : $_" -ForegroundColor Yellow
             Start-Sleep -Seconds 5
             break
         }
@@ -330,14 +331,22 @@ function Get-INatFamiliesForClass {
     return $allFamilies
 }
 
+Write-Host "       Fetching all families FR (place_id=6753) ..."
+$frAllFamilies = Get-INatAllFamilies -PlaceId 6753
+Write-Host "       Fetching all families CA (place_id=6712) ..."
+$caAllFamilies = Get-INatAllFamilies -PlaceId 6712
+Write-Host "       FR total families fetched : $($frAllFamilies.Count)"
+Write-Host "       CA total families fetched : $($caAllFamilies.Count)"
+
+# Regroupe par iconic_taxon_name pour stats + assignment correct
 $frFamiliesByClass = @{}
 $caFamiliesByClass = @{}
 foreach ($t in $iconicTaxaForFamilies) {
-    $frFamiliesByClass[$t] = Get-INatFamiliesForClass -IconicTaxon $t -PlaceId 6753
-    $caFamiliesByClass[$t] = Get-INatFamiliesForClass -IconicTaxon $t -PlaceId 6712
-    Write-Host "       FR $($t.PadRight(15)) families : $($frFamiliesByClass[$t].Count)   CA : $($caFamiliesByClass[$t].Count)"
+    $frFamiliesByClass[$t] = $frAllFamilies | Where-Object { $_.iconic_taxon_name -eq $t }
+    $caFamiliesByClass[$t] = $caAllFamilies | Where-Object { $_.iconic_taxon_name -eq $t }
+    Write-Host "       $($t.PadRight(15)) FR : $(($frFamiliesByClass[$t]|Measure-Object).Count)   CA : $(($caFamiliesByClass[$t]|Measure-Object).Count)"
 }
-# Back-compat avec ancien code (les vars utilisees plus bas)
+# Back-compat avec ancien code
 $frInsectFamiliesData = $frFamiliesByClass['Insecta']
 $caInsectFamiliesData = $caFamiliesByClass['Insecta']
 
