@@ -8,6 +8,33 @@ Les notes user-friendly sont dans `docs/devops/releases/V[X.Y.Z]_USER.md`.
 
 ---
 
+## [V1.0.5] - 2026-05-26, attribution iNat + BDD taxonomique scalable
+
+> Release de fondation pour V1.1.0. Voir `docs/devops/releases/V1.0.5_TECHNICAL.md`.
+
+### Securite legale
+
+- Attribution iNaturalist CC-BY 4.0 ajoutee dans 5 endroits : Settings, CGU section 7, Privacy section 12, Footer global, Docs.
+- Conformite RGPD Art. 13 + Loi 25 Quebec (declaration des sous-traitants de donnees).
+- i18n FR + EN complete pour les nouvelles sections legales.
+
+### Infrastructure
+
+- Nouvelle table `taxonomy_nodes` : hierarchie unifiee scalable (kingdom > class > order > family > genus > species).
+- 43 823 nodes seedes via iNaturalist API (FR place_id 6753 + CA 6712) : 8 classes, 1500 familles d insectes, 42 315 especes (Aves/Mammalia/Amphibia/Reptilia/Insecta/Arachnida/Mollusca/Actinopterygii).
+- `metadata` JSONB extensible pour ajouter sans migration cassante : statuts conservation IUCN/COSEWIC/SARA, protection regulation, habitats, migration patterns.
+- RPC `search_taxonomy()` : recherche unifiee especes + familles + ordres avec filtre territoire + ranking match_score + popularity.
+
+### Documentation
+
+- `docs/backend/TAXONOMY_DATABASE_DESIGN.md` : source de verite scalable (500+ lignes) couvrant schema, conventions JSONB, tables annexes planifiees, politique d evolution sans casser.
+
+### Devops
+
+- `.github/dependabot.yml` : ignore les bumps majors pendant la beta (reactivable plus tard).
+
+---
+
 ## [V1.0.4] - 2026-05-26, hotfix critique auth OTP + security Dependabot
 
 > Hotfix prod V1.0.3. Voir `docs/devops/releases/V1.0.4_TECHNICAL.md`.

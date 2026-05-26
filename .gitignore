@@ -48,3 +48,4 @@ Taxref/
 
 # Vitest coverage (BATCH 23 / T-008)
 /coverage/
+scripts/.taxonomy-seed-cache/
