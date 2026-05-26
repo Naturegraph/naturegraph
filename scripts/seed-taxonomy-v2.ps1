@@ -367,7 +367,9 @@ $headers = @{
     "Prefer" = "resolution=merge-duplicates"
 }
 $userAgent = "Naturegraph-SeedScript/1.0 (server-side admin tool)"
-$endpoint = "$SupabaseUrl/rest/v1/taxonomy_nodes"
+# on_conflict explicite pour que PostgREST honore resolution=merge-duplicates
+# sur notre contrainte UNIQUE(rank, scientific_name) (pas le PK qui est id UUID)
+$endpoint = "$SupabaseUrl/rest/v1/taxonomy_nodes?on_conflict=rank,scientific_name"
 $batch = @()
 $batchSize = 200
 $inserted = 0
