@@ -4,9 +4,18 @@
 > compris en arrivant sur le repo est ici, ou pointé depuis ici.
 > Mis à jour à chaque release.
 
-**Version actuelle** : V1.0.0
-**Date de stabilisation** : 2026-05-25
-**Statut** : Beta privée Québec ouverte, base stable validée
+**Version actuelle** : V1.0.5
+**Date de stabilisation** : 2026-05-25 (V1.0.0) — derniere release 2026-05-26 (V1.0.5)
+**Statut** : Beta privée Québec + France, infra Pro hardened, BDD taxonomy scalable (43 823 nodes)
+
+**Historique recent** :
+
+- V1.0.5 (2026-05-26) : attribution iNat (legal) + nouvelle BDD taxonomy_nodes 43 823 nodes + RPC search_taxonomy
+- V1.0.4 (2026-05-26) : hotfix critique OTP refresh + lockdown SSRF + 8 vulns Dependabot + cleanup GitHub
+- V1.0.3 (2026-05-25) : Supabase Pro Phase B (security DEFINER lockdown + pg_cron + Realtime + fix bug claim beta)
+- V1.0.2 (2026-05-25) : fix navigation mobile (PublicRoute sur Landing)
+- V1.0.1 (2026-05-25) : admin fix motivation waitlist + security route /post
+- V1.0.0 (2026-05-25) : premiere version officielle stable
 
 ---
 
@@ -22,7 +31,7 @@ des espèces.
 - **Eco-conception stricte** : budgets perf, lazy loading, images optimisées, pagination obligatoire
 - **Accessibilité WCAG AA** par défaut sur tout le produit
 - **Privacy-first** : RGPD + Loi 25 Québec, EXIF strippé, localisation floutable
-- **Source de données ouvertes** : GBIF (CC0) + Wikidata (CC0) pour la taxonomie
+- **Source de données ouvertes** : iNaturalist (CC-BY 4.0) source principale + GBIF (CC0) + Wikidata (CC0) pour la taxonomie. Attribution dans CGU + Privacy + Settings + Footer.
 - **Beta privée Québec + France** : démarrage contrôlé, retours photographes pro
 
 ### Audience cible

@@ -29,7 +29,9 @@ import { BetaStatusCallout } from '@/components/ui/BetaStatusCallout'
 export default function Legal() {
   const { t } = useTranslation()
 
-  const sections = Array.from({ length: 6 }, (_, i) => ({
+  // 7 sections (V1.1.0) : ajout section "Sources de donnees et attribution"
+  // pour expliciter l'utilisation d'iNaturalist + GBIF + Wikidata.
+  const sections = Array.from({ length: 7 }, (_, i) => ({
     titleKey: `legal.terms.section${i + 1}Title`,
     contentKey: `legal.terms.section${i + 1}Content`,
   }))

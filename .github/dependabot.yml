@@ -26,6 +26,12 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    # V1.0.4 : ignorer les bumps MAJORS pendant la phase beta.
+    # Trop de risque de casser le build pour un gain marginal.
+    # On les reviewra ponctuellement en V1.1.0 ou plus tard.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions
   - package-ecosystem: "github-actions"

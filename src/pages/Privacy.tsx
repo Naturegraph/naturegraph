@@ -40,7 +40,9 @@ import { BetaStatusCallout } from '@/components/ui/BetaStatusCallout'
 export default function Privacy() {
   const { t } = useTranslation()
 
-  const sections = Array.from({ length: 11 }, (_, i) => ({
+  // 12 sections (V1.1.0) : ajout section "Sources tierces et sous-traitants donnees"
+  // pour declarer iNaturalist comme processor des donnees taxonomiques (RGPD/Loi 25).
+  const sections = Array.from({ length: 12 }, (_, i) => ({
     titleKey: `legal.privacy.section${i + 1}Title`,
     contentKey: `legal.privacy.section${i + 1}Content`,
   }))

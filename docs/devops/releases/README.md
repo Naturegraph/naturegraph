@@ -11,6 +11,7 @@ Process complet dans `../RELEASE_PROCESS.md`.
 
 | Version                       | Date       | Type  | Resume                                                                                    |
 | ----------------------------- | ---------- | ----- | ----------------------------------------------------------------------------------------- |
+| [V1.0.5](V1.0.5_TECHNICAL.md) | 2026-05-26 | PATCH | Attribution iNat (legal compliance) + nouvelle BDD taxonomy_nodes (43 823 nodes seedes)   |
 | [V1.0.4](V1.0.4_TECHNICAL.md) | 2026-05-26 | PATCH | Hotfix critique OTP (refresh manuel obligatoire) + security overrides Dependabot          |
 | [V1.0.3](V1.0.3_TECHNICAL.md) | 2026-05-25 | PATCH | Supabase Pro Phase B (lockdown securite + cleanup DB + Realtime) + fix bug claim beta key |
 | [V1.0.2](V1.0.2_TECHNICAL.md) | 2026-05-25 | PATCH | Fix UX navigation, Landing protegee par PublicRoute (back button mobile)                  |

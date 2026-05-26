@@ -721,16 +721,17 @@ function SettingsBlockingView() {
  *   4. Respect des droits d'auteur (interdictions)
  *   5. Besoin d'en savoir plus ? (lien vers CGU + contact)
  *
- * Phase 1 (Nicolas 2026-05-19) : TAXREF retiré au profit de GBIF (CC0) +
- * Wikidata (CC0). Une intégration TAXREF officielle pourra revenir
- * Phase 2 quand un vrai accord/API key sera en place.
+ * V1.1.0 (Nicolas 2026-05-26) : pivot vers iNaturalist comme source principale
+ * de taxonomie (API API CC-BY + donnees actives FR + CA). GBIF + Wikidata restent
+ * mentionnes comme sources secondaires CC0.
  *
  * Le contenu est en clés i18n avec defaultValue (à intégrer dans fr.json/en.json).
  */
 function SettingsLicenseView({ onOpenTerms }: { onOpenTerms?: () => void }) {
   const { t } = useTranslation()
 
-  // Sources de données ouvertes utilisées en Phase 1.
+  // Sources de données ouvertes utilisées.
+  const INATURALIST_URL = 'https://www.inaturalist.org'
   const GBIF_URL = 'https://www.gbif.org'
   const WIKIDATA_URL = 'https://www.wikidata.org'
 
@@ -792,10 +793,25 @@ function SettingsLicenseView({ onOpenTerms }: { onOpenTerms?: () => void }) {
         <p className="text-sm text-foreground leading-relaxed">
           {t('settings.license.sourcesBody2', {
             defaultValue:
-              "Naturegraph s'appuie principalement sur deux sources, distribuées sous licence CC0 (domaine public) :",
+              "Naturegraph s'appuie principalement sur trois sources de référence distribuées sous licences ouvertes :",
           })}
         </p>
         <ul className="text-sm text-foreground leading-relaxed list-disc pl-6 space-y-1">
+          <li>
+            <a
+              href={INATURALIST_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+            >
+              iNaturalist
+            </a>
+            {' : '}
+            {t('settings.license.inaturalistDesc', {
+              defaultValue:
+                "plateforme participative mondiale d'observation de la biodiversité (CC-BY). Source principale des noms d'espèces, hiérarchies taxonomiques et statuts de présence territoriale (France + Canada).",
+            })}
+          </li>
           <li>
             <a
               href={GBIF_URL}
@@ -808,7 +824,7 @@ function SettingsLicenseView({ onOpenTerms }: { onOpenTerms?: () => void }) {
             {' : '}
             {t('settings.license.gbifDesc', {
               defaultValue:
-                'le référentiel taxonomique international ouvert (Global Biodiversity Information Facility).',
+                'référentiel taxonomique international (Global Biodiversity Information Facility) — CC0 domaine public.',
             })}
           </li>
           <li>
@@ -822,7 +838,7 @@ function SettingsLicenseView({ onOpenTerms }: { onOpenTerms?: () => void }) {
             </a>
             {' : '}
             {t('settings.license.wikidataDesc', {
-              defaultValue: 'pour les noms vernaculaires en français et en québécois.',
+              defaultValue: 'noms vernaculaires en français et en québécois — CC0 domaine public.',
             })}
           </li>
         </ul>

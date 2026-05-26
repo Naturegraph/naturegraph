@@ -203,6 +203,20 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 ---
 
+## Sources de donnees et attributions
+
+Les donnees taxonomiques (especes, hierarchies, statuts territoriaux FR + CA) proviennent de bases scientifiques ouvertes :
+
+- **[iNaturalist](https://www.inaturalist.org)** — source principale, donnees accessibles via l API publique sous licence Creative Commons CC-BY 4.0. Attribution requise et fournie via les Mentions legales + Politique de confidentialite + interface Settings.
+- **[GBIF](https://www.gbif.org)** — Global Biodiversity Information Facility, referentiel taxonomique international, licence CC0 (domaine public).
+- **[Wikidata](https://www.wikidata.org)** — noms vernaculaires complementaires en francais et quebecois, licence CC0.
+
+Naturegraph ne reproduit aucune donnee personnelle ou observation individuelle de ces plateformes. Seules les donnees de reference agregees (noms scientifiques, hierarchies, comptage par territoire) sont importees.
+
+Detail technique : [`docs/backend/TAXONOMY_DATABASE_DESIGN.md`](docs/backend/TAXONOMY_DATABASE_DESIGN.md)
+
+---
+
 ## Partenaires
 
 Naturegraph est soutenu par [Paloume](https://paloume.org), [Hub Environnement](https://hub-environnement.fr) et [Kreapulse](https://kreapulse.fr).
