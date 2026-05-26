@@ -350,43 +350,75 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
             </div>
           )}
 
+          {/* V1.1.0 (Nicolas 2026-05-26) : si combo especes + familles, regroupe
+              avec un header de section. Familles en haut (plus utiles comme
+              fallback) puis especes en bas. */}
           {results.length > 0 &&
-            results.map((hit, i) => {
-              const groupLabel =
-                hit.class && CLASS_TO_GROUP[hit.class] ? CLASS_TO_GROUP[hit.class] : null
-              const isFamily = hit.rank === 'family'
-              const commonName = isFamily
-                ? (hit.common_name_fr ?? `Famille ${hit.scientific_name}`)
-                : (hit.common_name_fr ?? hit.scientific_name)
-              return (
-                <div key={hit.taxonomy_node_id} role="option" aria-selected={false}>
-                  {i > 0 && <div className="mx-5 h-px bg-border" aria-hidden="true" />}
-                  <button
-                    type="button"
-                    onClick={() => handleSelect(hit)}
-                    className="w-full flex items-center gap-3 px-5 py-3 hover:bg-primary-light/20 transition-colors focus-visible:outline-none focus-visible:bg-primary-light/20 text-left"
-                  >
-                    <SpeciesCategoryIcon group={groupLabel} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">
-                        {highlightMatch(commonName, query)}
-                        {isFamily && (
-                          <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-primary-light text-primary align-middle">
-                            {t('contribute.panel.familyBadge', { defaultValue: 'Famille' })}
-                          </span>
-                        )}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate italic">
-                        {highlightMatch(hit.scientific_name, query)}
+            (() => {
+              const families = results.filter((h) => h.rank === 'family')
+              const species = results.filter((h) => h.rank !== 'family')
+              const showSeparator = families.length > 0 && species.length > 0
+              const sections: Array<{ label: string; items: TaxonomyHit[] }> = []
+              if (families.length > 0) {
+                sections.push({
+                  label: t('contribute.panel.sectionFamilies', { defaultValue: 'Familles' }),
+                  items: families,
+                })
+              }
+              if (species.length > 0) {
+                sections.push({
+                  label: t('contribute.panel.sectionSpecies', { defaultValue: 'Espèces' }),
+                  items: species,
+                })
+              }
+              return sections.map((section) => (
+                <div key={section.label}>
+                  {showSeparator && (
+                    <div className="px-5 py-2 bg-muted/30 border-b border-border">
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                        {section.label}
                       </p>
                     </div>
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      · {groupConfig(groupLabel).label}
-                    </span>
-                  </button>
+                  )}
+                  {section.items.map((hit, i) => {
+                    const groupLabel =
+                      hit.class && CLASS_TO_GROUP[hit.class] ? CLASS_TO_GROUP[hit.class] : null
+                    const isFamily = hit.rank === 'family'
+                    const commonName = isFamily
+                      ? (hit.common_name_fr ?? `Famille ${hit.scientific_name}`)
+                      : (hit.common_name_fr ?? hit.scientific_name)
+                    return (
+                      <div key={hit.taxonomy_node_id} role="option" aria-selected={false}>
+                        {i > 0 && <div className="mx-5 h-px bg-border" aria-hidden="true" />}
+                        <button
+                          type="button"
+                          onClick={() => handleSelect(hit)}
+                          className="w-full flex items-center gap-3 px-5 py-3 hover:bg-primary-light/20 transition-colors focus-visible:outline-none focus-visible:bg-primary-light/20 text-left"
+                        >
+                          <SpeciesCategoryIcon group={groupLabel} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground truncate">
+                              {highlightMatch(commonName, query)}
+                              {isFamily && (
+                                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-primary-light text-primary align-middle">
+                                  {t('contribute.panel.familyBadge', { defaultValue: 'Famille' })}
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate italic">
+                              {highlightMatch(hit.scientific_name, query)}
+                            </p>
+                          </div>
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            : {groupConfig(groupLabel).label}
+                          </span>
+                        </button>
+                      </div>
+                    )
+                  })}
                 </div>
-              )
-            })}
+              ))
+            })()}
 
           {showEmpty && (
             <div className="px-5 py-6 flex flex-col items-center gap-2 text-center">
