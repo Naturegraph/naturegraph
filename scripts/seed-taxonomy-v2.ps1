@@ -28,6 +28,11 @@ param(
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "Continue"
 
+# PowerShell 5.1 defaut TLS 1.0, modernes sites refusent. Force TLS 1.2.
+[System.Net.ServicePointManager]::SecurityProtocol = `
+    [System.Net.SecurityProtocolType]::Tls12 -bor `
+    [System.Net.SecurityProtocolType]::Tls13
+
 # ─── Validation prerequis ──────────────────────────────────────
 # La cle n est requise QUE pour le vrai run (insert). En DryRun on s en passe.
 if (-not $DryRun -and -not $ServiceRoleKey) {
@@ -55,24 +60,53 @@ $taxrefTxt = Join-Path $workDir "TAXREFv17.txt"
 
 if (-not $SkipDownload -and -not (Test-Path $taxrefTxt)) {
     Write-Host "[1/6] Download TAXREF v17 (~80 MB) ..." -ForegroundColor Yellow
-    # URL TAXREF v17. Si erreur 404, recuperer la derniere version sur :
-    # https://inpn.mnhn.fr/telechargement/referentielEspece/taxref
-    $taxrefUrl = "https://inpn.mnhn.fr/docs-web/docs/download/501920"
-    Invoke-WebRequest -Uri $taxrefUrl -OutFile $taxrefZip -UseBasicParsing
+    # URLs candidates pour TAXREF (INPN change parfois les liens)
+    $taxrefUrls = @(
+        "https://inpn.mnhn.fr/docs-web/docs/download/501920",
+        "https://inpn.mnhn.fr/docs-web/docs/download/471402",
+        "https://inpn.mnhn.fr/docs-web/docs/download/422038"
+    )
+    $downloadOk = $false
+    foreach ($url in $taxrefUrls) {
+        for ($try = 1; $try -le 3; $try++) {
+            try {
+                Write-Host "       Tentative $try : $url" -ForegroundColor DarkGray
+                Invoke-WebRequest -Uri $url -OutFile $taxrefZip -UseBasicParsing -TimeoutSec 300
+                if ((Get-Item $taxrefZip).Length -gt 1MB) {
+                    $downloadOk = $true
+                    break
+                }
+            } catch {
+                Write-Host "       Echec : $($_.Exception.Message)" -ForegroundColor DarkGray
+                Start-Sleep -Seconds 3
+            }
+        }
+        if ($downloadOk) { break }
+    }
 
-    Write-Host "       Unzip ..." -ForegroundColor Yellow
-    Expand-Archive -Path $taxrefZip -DestinationPath $workDir -Force
-    # Le fichier dezippe peut s appeler TAXREFv17.txt ou similaire
-    $found = Get-ChildItem $workDir -Filter "TAXREF*.txt" | Select-Object -First 1
-    if ($found -and $found.FullName -ne $taxrefTxt) {
-        Move-Item $found.FullName $taxrefTxt -Force
+    if ($downloadOk) {
+        Write-Host "       Unzip ..." -ForegroundColor Yellow
+        Expand-Archive -Path $taxrefZip -DestinationPath $workDir -Force
+        $found = Get-ChildItem $workDir -Filter "TAXREF*.txt" | Select-Object -First 1
+        if ($found -and $found.FullName -ne $taxrefTxt) {
+            Move-Item $found.FullName $taxrefTxt -Force
+        }
     }
 }
 
 if (-not (Test-Path $taxrefTxt)) {
-    Write-Host "ERROR: TAXREF file missing. Telecharger manuellement depuis :" -ForegroundColor Red
-    Write-Host "  https://inpn.mnhn.fr/telechargement/referentielEspece/taxref"
-    Write-Host "  Puis placer le TXT dans : $workDir"
+    Write-Host ""
+    Write-Host "===========================================================" -ForegroundColor Yellow
+    Write-Host "  DOWNLOAD AUTO ECHOUE - Telechargement manuel necessaire" -ForegroundColor Yellow
+    Write-Host "===========================================================" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "1. Va sur : " -NoNewline; Write-Host "https://inpn.mnhn.fr/telechargement/referentielEspece/taxref" -ForegroundColor Cyan
+    Write-Host "2. Clique sur la derniere version (TAXREFv17 ou plus recent)"
+    Write-Host "3. Download le ZIP (~30 MB compresse, ~150 MB decompresse)"
+    Write-Host "4. Dezippe-le, recupere le fichier .txt (TAXREFvXX.txt)"
+    Write-Host "5. Place-le ici : " -NoNewline; Write-Host "$taxrefTxt" -ForegroundColor Cyan
+    Write-Host "6. Relance le script : " -NoNewline; Write-Host ".\scripts\seed-taxonomy-v2.ps1 -DryRun -SkipDownload" -ForegroundColor Cyan
+    Write-Host ""
     exit 1
 }
 
