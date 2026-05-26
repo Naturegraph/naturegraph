@@ -107,28 +107,40 @@ function Get-INatSpecies {
 }
 
 Write-Host "[1/4] Fetch iNaturalist France (place_id=6753) ..." -ForegroundColor Yellow
-$frAves     = Get-INatSpecies -IconicTaxon "Aves"     -PlaceId 6753
-$frMammalia = Get-INatSpecies -IconicTaxon "Mammalia" -PlaceId 6753
-$frAmphibia = Get-INatSpecies -IconicTaxon "Amphibia" -PlaceId 6753
-$frReptilia = Get-INatSpecies -IconicTaxon "Reptilia" -PlaceId 6753
-$frInsecta  = Get-INatSpecies -IconicTaxon "Insecta"  -PlaceId 6753
-Write-Host "       FR Aves      : $($frAves.Count)"
-Write-Host "       FR Mammalia  : $($frMammalia.Count)"
-Write-Host "       FR Amphibia  : $($frAmphibia.Count)"
-Write-Host "       FR Reptilia  : $($frReptilia.Count)"
-Write-Host "       FR Insecta   : $($frInsecta.Count) (sera dedupe par famille)"
+$frAves           = Get-INatSpecies -IconicTaxon "Aves"            -PlaceId 6753
+$frMammalia       = Get-INatSpecies -IconicTaxon "Mammalia"        -PlaceId 6753
+$frAmphibia       = Get-INatSpecies -IconicTaxon "Amphibia"        -PlaceId 6753
+$frReptilia       = Get-INatSpecies -IconicTaxon "Reptilia"        -PlaceId 6753
+$frInsecta        = Get-INatSpecies -IconicTaxon "Insecta"         -PlaceId 6753
+$frArachnida      = Get-INatSpecies -IconicTaxon "Arachnida"       -PlaceId 6753
+$frMollusca       = Get-INatSpecies -IconicTaxon "Mollusca"        -PlaceId 6753
+$frActinopterygii = Get-INatSpecies -IconicTaxon "Actinopterygii"  -PlaceId 6753
+Write-Host "       FR Aves           : $($frAves.Count)"
+Write-Host "       FR Mammalia       : $($frMammalia.Count)"
+Write-Host "       FR Amphibia       : $($frAmphibia.Count)"
+Write-Host "       FR Reptilia       : $($frReptilia.Count)"
+Write-Host "       FR Insecta        : $($frInsecta.Count)"
+Write-Host "       FR Arachnida      : $($frArachnida.Count)"
+Write-Host "       FR Mollusca       : $($frMollusca.Count)"
+Write-Host "       FR Actinopterygii : $($frActinopterygii.Count) (poissons)"
 
 Write-Host "[2/4] Fetch iNaturalist Canada (place_id=6712) ..." -ForegroundColor Yellow
-$caAves     = Get-INatSpecies -IconicTaxon "Aves"     -PlaceId 6712
-$caMammalia = Get-INatSpecies -IconicTaxon "Mammalia" -PlaceId 6712
-$caAmphibia = Get-INatSpecies -IconicTaxon "Amphibia" -PlaceId 6712
-$caReptilia = Get-INatSpecies -IconicTaxon "Reptilia" -PlaceId 6712
-$caInsecta  = Get-INatSpecies -IconicTaxon "Insecta"  -PlaceId 6712
-Write-Host "       CA Aves      : $($caAves.Count)"
-Write-Host "       CA Mammalia  : $($caMammalia.Count)"
-Write-Host "       CA Amphibia  : $($caAmphibia.Count)"
-Write-Host "       CA Reptilia  : $($caReptilia.Count)"
-Write-Host "       CA Insecta   : $($caInsecta.Count) (sera dedupe par famille)"
+$caAves           = Get-INatSpecies -IconicTaxon "Aves"            -PlaceId 6712
+$caMammalia       = Get-INatSpecies -IconicTaxon "Mammalia"        -PlaceId 6712
+$caAmphibia       = Get-INatSpecies -IconicTaxon "Amphibia"        -PlaceId 6712
+$caReptilia       = Get-INatSpecies -IconicTaxon "Reptilia"        -PlaceId 6712
+$caInsecta        = Get-INatSpecies -IconicTaxon "Insecta"         -PlaceId 6712
+$caArachnida      = Get-INatSpecies -IconicTaxon "Arachnida"       -PlaceId 6712
+$caMollusca       = Get-INatSpecies -IconicTaxon "Mollusca"        -PlaceId 6712
+$caActinopterygii = Get-INatSpecies -IconicTaxon "Actinopterygii"  -PlaceId 6712
+Write-Host "       CA Aves           : $($caAves.Count)"
+Write-Host "       CA Mammalia       : $($caMammalia.Count)"
+Write-Host "       CA Amphibia       : $($caAmphibia.Count)"
+Write-Host "       CA Reptilia       : $($caReptilia.Count)"
+Write-Host "       CA Insecta        : $($caInsecta.Count)"
+Write-Host "       CA Arachnida      : $($caArachnida.Count)"
+Write-Host "       CA Mollusca       : $($caMollusca.Count)"
+Write-Host "       CA Actinopterygii : $($caActinopterygii.Count) (poissons)"
 
 # ─── 3. Build merged dataset ──────────────────────────────────
 Write-Host "[3/4] Build merged dataset ..." -ForegroundColor Yellow
@@ -305,6 +317,10 @@ Add-INatVertebrateSpecies -Items $frReptilia -ClassName 'Reptilia' -InFr $true -
 # via iconic_taxon_name + on patch phylum apres
 Add-INatVertebrateSpecies -Items $frInsecta  -ClassName 'Insecta' -InFr $true -InCa $false
 Add-INatInsectFamilies    -Families $frInsectFamiliesData -InFr $true -InCa $false
+# FR autres invertebres + poissons
+Add-INatVertebrateSpecies -Items $frArachnida      -ClassName 'Arachnida'      -InFr $true -InCa $false
+Add-INatVertebrateSpecies -Items $frMollusca       -ClassName 'Mollusca'       -InFr $true -InCa $false
+Add-INatVertebrateSpecies -Items $frActinopterygii -ClassName 'Actinopterygii' -InFr $true -InCa $false
 
 # CA vertebres
 Add-INatVertebrateSpecies -Items $caAves     -ClassName 'Aves'     -InFr $false -InCa $true
@@ -314,12 +330,22 @@ Add-INatVertebrateSpecies -Items $caReptilia -ClassName 'Reptilia' -InFr $false 
 # CA insectes : especes precises + familles
 Add-INatVertebrateSpecies -Items $caInsecta  -ClassName 'Insecta' -InFr $false -InCa $true
 Add-INatInsectFamilies    -Families $caInsectFamiliesData -InFr $false -InCa $true
+# CA autres invertebres + poissons
+Add-INatVertebrateSpecies -Items $caArachnida      -ClassName 'Arachnida'      -InFr $false -InCa $true
+Add-INatVertebrateSpecies -Items $caMollusca       -ClassName 'Mollusca'       -InFr $false -InCa $true
+Add-INatVertebrateSpecies -Items $caActinopterygii -ClassName 'Actinopterygii' -InFr $false -InCa $true
 
-# Patch : phylum Arthropoda pour les insectes (Add-INatVertebrateSpecies met Chordata par defaut)
+# Patch : phylum correct selon class (Add-INatVertebrateSpecies met Chordata par defaut)
+$phylumByClass = @{
+    'Insecta'        = 'Arthropoda'
+    'Arachnida'      = 'Arthropoda'
+    'Mollusca'       = 'Mollusca'
+    # Aves, Mammalia, Amphibia, Reptilia, Actinopterygii = Chordata (defaut OK)
+}
 foreach ($key in $nodesByKey.Keys) {
     $node = $nodesByKey[$key]
-    if ($node.class -eq 'Insecta') {
-        $node.phylum = 'Arthropoda'
+    if ($node.class -and $phylumByClass.ContainsKey($node.class)) {
+        $node.phylum = $phylumByClass[$node.class]
     }
 }
 
