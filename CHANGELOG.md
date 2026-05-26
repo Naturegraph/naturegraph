@@ -8,6 +8,18 @@ Les notes user-friendly sont dans `docs/devops/releases/V[X.Y.Z]_USER.md`.
 
 ---
 
+## [V1.0.4] - 2026-05-26, security overrides Dependabot
+
+> Note technique uniquement (zero impact UX). Voir `docs/devops/releases/V1.0.4_TECHNICAL.md`.
+
+### Securite
+
+- Resolution de 8 vulnerabilites JS (1 high + 1 high + 4 moderate + 1 low + 1 low) via overrides npm scopes sous `@vercel/node` et `@vercel/python-analysis`.
+- Packages patches : undici, minimatch, path-to-regexp, ajv, smol-toml.
+- `npm audit` : 0 vulnerabilites restantes.
+
+---
+
 ## [V1.0.3] - 2026-05-25, consolidation Supabase Pro Phase B
 
 > Note technique uniquement (zero impact UX visible). Voir `docs/devops/releases/V1.0.3_TECHNICAL.md` pour le detail.
