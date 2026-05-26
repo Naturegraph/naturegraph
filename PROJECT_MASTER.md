@@ -4,9 +4,17 @@
 > compris en arrivant sur le repo est ici, ou pointé depuis ici.
 > Mis à jour à chaque release.
 
-**Version actuelle** : V1.0.0
-**Date de stabilisation** : 2026-05-25
-**Statut** : Beta privée Québec ouverte, base stable validée
+**Version actuelle** : V1.0.4
+**Date de stabilisation** : 2026-05-25 (V1.0.0) — derniere release 2026-05-26 (V1.0.4)
+**Statut** : Beta privée Québec + France, infra Pro hardened (V1.0.3 + V1.0.4)
+
+**Historique recent** :
+
+- V1.0.4 (2026-05-26) : hotfix critique OTP refresh + lockdown SSRF + 8 vulns Dependabot + cleanup GitHub
+- V1.0.3 (2026-05-25) : Supabase Pro Phase B (security DEFINER lockdown + pg_cron + Realtime + fix bug claim beta)
+- V1.0.2 (2026-05-25) : fix navigation mobile (PublicRoute sur Landing)
+- V1.0.1 (2026-05-25) : admin fix motivation waitlist + security route /post
+- V1.0.0 (2026-05-25) : premiere version officielle stable
 
 ---
 
