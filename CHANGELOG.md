@@ -8,13 +8,17 @@ Les notes user-friendly sont dans `docs/devops/releases/V[X.Y.Z]_USER.md`.
 
 ---
 
-## [V1.0.4] - 2026-05-26, security overrides Dependabot
+## [V1.0.4] - 2026-05-26, hotfix critique auth OTP + security Dependabot
 
-> Note technique uniquement (zero impact UX). Voir `docs/devops/releases/V1.0.4_TECHNICAL.md`.
+> Hotfix prod V1.0.3. Voir `docs/devops/releases/V1.0.4_TECHNICAL.md`.
+
+### Corrections critiques
+
+- **Bug OTP** : users bloques apres saisie code OTP, necessitaient F5 manuel pour entrer dans la plateforme. `verifyOtp()` met desormais a jour le state synchronement depuis la response Supabase au lieu d attendre `onAuthStateChange`.
 
 ### Securite
 
-- Resolution de 8 vulnerabilites JS (1 high + 1 high + 4 moderate + 1 low + 1 low) via overrides npm scopes sous `@vercel/node` et `@vercel/python-analysis`.
+- Resolution de 8 vulnerabilites JS (2 high + 4 moderate + 2 low) via overrides npm scopes sous `@vercel/node` et `@vercel/python-analysis`.
 - Packages patches : undici, minimatch, path-to-regexp, ajv, smol-toml.
 - `npm audit` : 0 vulnerabilites restantes.
 
