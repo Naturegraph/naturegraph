@@ -141,7 +141,8 @@ export async function getPlatformStats(): Promise<PlatformStats> {
   const [users, posts, species] = await Promise.all([
     usersQuery,
     postsQuery,
-    c.from('taxref_cache').select('taxref_id', { count: 'exact', head: true }),
+    // V1.0.3 fix : taxref_cache n existait pas, basculer sur species_master (source de verite)
+    c.from('species_master').select('id', { count: 'exact', head: true }),
   ])
   return {
     totalUsers: users.count ?? 0,

@@ -793,13 +793,6 @@ export type Database = {
             foreignKeyName: 'media_species_id_fkey'
             columns: ['species_id']
             isOneToOne: false
-            referencedRelation: 'species_full'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'media_species_id_fkey'
-            columns: ['species_id']
-            isOneToOne: false
             referencedRelation: 'species_master'
             referencedColumns: ['id']
           },
@@ -1069,6 +1062,7 @@ export type Database = {
           habitat: string | null
           id: string
           identification_status: string | null
+          individuals_count: number | null
           latitude: number | null
           likes_count: number | null
           location_hidden: boolean | null
@@ -1081,6 +1075,7 @@ export type Database = {
           region: string | null
           scientific_name: string | null
           shares_count: number | null
+          short_id: string | null
           species_id: string | null
           species_identified: boolean | null
           species_name: string | null
@@ -1112,6 +1107,7 @@ export type Database = {
           habitat?: string | null
           id?: string
           identification_status?: string | null
+          individuals_count?: number | null
           latitude?: number | null
           likes_count?: number | null
           location_hidden?: boolean | null
@@ -1124,6 +1120,7 @@ export type Database = {
           region?: string | null
           scientific_name?: string | null
           shares_count?: number | null
+          short_id?: string | null
           species_id?: string | null
           species_identified?: boolean | null
           species_name?: string | null
@@ -1155,6 +1152,7 @@ export type Database = {
           habitat?: string | null
           id?: string
           identification_status?: string | null
+          individuals_count?: number | null
           latitude?: number | null
           likes_count?: number | null
           location_hidden?: boolean | null
@@ -1167,6 +1165,7 @@ export type Database = {
           region?: string | null
           scientific_name?: string | null
           shares_count?: number | null
+          short_id?: string | null
           species_id?: string | null
           species_identified?: boolean | null
           species_name?: string | null
@@ -1188,13 +1187,6 @@ export type Database = {
           weather?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: 'posts_species_id_fkey'
-            columns: ['species_id']
-            isOneToOne: false
-            referencedRelation: 'species_full'
-            referencedColumns: ['id']
-          },
           {
             foreignKeyName: 'posts_species_id_fkey'
             columns: ['species_id']
@@ -1238,6 +1230,7 @@ export type Database = {
           id: string
           instagram: string | null
           interests: string[] | null
+          is_internal: boolean
           is_public: boolean | null
           last_login_at: string | null
           last_name: string
@@ -1255,6 +1248,7 @@ export type Database = {
           updated_at: string | null
           username: string
           website: string | null
+          week_goal: number | null
         }
         Insert: {
           avatar_url?: string | null
@@ -1275,6 +1269,7 @@ export type Database = {
           id: string
           instagram?: string | null
           interests?: string[] | null
+          is_internal?: boolean
           is_public?: boolean | null
           last_login_at?: string | null
           last_name: string
@@ -1292,6 +1287,7 @@ export type Database = {
           updated_at?: string | null
           username: string
           website?: string | null
+          week_goal?: number | null
         }
         Update: {
           avatar_url?: string | null
@@ -1312,6 +1308,7 @@ export type Database = {
           id?: string
           instagram?: string | null
           interests?: string[] | null
+          is_internal?: boolean
           is_public?: boolean | null
           last_login_at?: string | null
           last_name?: string
@@ -1329,6 +1326,7 @@ export type Database = {
           updated_at?: string | null
           username?: string
           website?: string | null
+          week_goal?: number | null
         }
         Relationships: []
       }
@@ -1629,15 +1627,7 @@ export type Database = {
           taxref_id?: string | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: 'species_master_taxref_id_fkey'
-            columns: ['taxref_id']
-            isOneToOne: true
-            referencedRelation: 'taxref_cache'
-            referencedColumns: ['cd_nom']
-          },
-        ]
+        Relationships: []
       }
       support_tickets: {
         Row: {
@@ -1692,81 +1682,6 @@ export type Database = {
             referencedColumns: ['id']
           },
         ]
-      }
-      taxref_cache: {
-        Row: {
-          author: string | null
-          cached_at: string | null
-          cd_nom: string
-          cd_ref: string | null
-          class_name: string | null
-          common_name_en: string | null
-          common_name_fr: string | null
-          conservation_status: string | null
-          expires_at: string | null
-          family: string | null
-          genus: string | null
-          group: string | null
-          kingdom: string | null
-          normalized_common_name: string | null
-          normalized_scientific_name: string | null
-          order: string | null
-          phylum: string | null
-          rank: string | null
-          scientific_name: string
-          search_vector: unknown
-          synonyms: string[] | null
-          taxref_version: string | null
-        }
-        Insert: {
-          author?: string | null
-          cached_at?: string | null
-          cd_nom: string
-          cd_ref?: string | null
-          class_name?: string | null
-          common_name_en?: string | null
-          common_name_fr?: string | null
-          conservation_status?: string | null
-          expires_at?: string | null
-          family?: string | null
-          genus?: string | null
-          group?: string | null
-          kingdom?: string | null
-          normalized_common_name?: string | null
-          normalized_scientific_name?: string | null
-          order?: string | null
-          phylum?: string | null
-          rank?: string | null
-          scientific_name: string
-          search_vector?: unknown
-          synonyms?: string[] | null
-          taxref_version?: string | null
-        }
-        Update: {
-          author?: string | null
-          cached_at?: string | null
-          cd_nom?: string
-          cd_ref?: string | null
-          class_name?: string | null
-          common_name_en?: string | null
-          common_name_fr?: string | null
-          conservation_status?: string | null
-          expires_at?: string | null
-          family?: string | null
-          genus?: string | null
-          group?: string | null
-          kingdom?: string | null
-          normalized_common_name?: string | null
-          normalized_scientific_name?: string | null
-          order?: string | null
-          phylum?: string | null
-          rank?: string | null
-          scientific_name?: string
-          search_vector?: unknown
-          synonyms?: string[] | null
-          taxref_version?: string | null
-        }
-        Relationships: []
       }
       user_settings: {
         Row: {
@@ -1913,6 +1828,7 @@ export type Database = {
           habitat: string | null
           id: string | null
           identification_status: string | null
+          individuals_count: number | null
           latitude: number | null
           likes_count: number | null
           location_hidden: boolean | null
@@ -1925,6 +1841,7 @@ export type Database = {
           region: string | null
           scientific_name: string | null
           shares_count: number | null
+          short_id: string | null
           species_identified: boolean | null
           species_name: string | null
           status: string | null
@@ -1955,6 +1872,7 @@ export type Database = {
           habitat?: string | null
           id?: string | null
           identification_status?: string | null
+          individuals_count?: number | null
           latitude?: never
           likes_count?: number | null
           location_hidden?: boolean | null
@@ -1967,6 +1885,7 @@ export type Database = {
           region?: never
           scientific_name?: string | null
           shares_count?: number | null
+          short_id?: string | null
           species_identified?: boolean | null
           species_name?: string | null
           status?: string | null
@@ -1997,6 +1916,7 @@ export type Database = {
           habitat?: string | null
           id?: string | null
           identification_status?: string | null
+          individuals_count?: number | null
           latitude?: never
           likes_count?: number | null
           location_hidden?: boolean | null
@@ -2009,6 +1929,7 @@ export type Database = {
           region?: never
           scientific_name?: string | null
           shares_count?: number | null
+          short_id?: string | null
           species_identified?: boolean | null
           species_name?: string | null
           status?: string | null
@@ -2104,36 +2025,6 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
-      }
-      species_full: {
-        Row: {
-          common_name_en: string | null
-          common_name_fr: string | null
-          conservation_status: string | null
-          id: string | null
-          image_url: string | null
-          popularity: number | null
-          scientific_name: string | null
-          source: string | null
-          synonyms: string[] | null
-          taxonomic_group: string | null
-          taxref_author: string | null
-          taxref_common_name_en: string | null
-          taxref_family: string | null
-          taxref_genus: string | null
-          taxref_id: string | null
-          taxref_order: string | null
-          taxref_version: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'species_master_taxref_id_fkey'
-            columns: ['taxref_id']
-            isOneToOne: true
-            referencedRelation: 'taxref_cache'
-            referencedColumns: ['cd_nom']
-          },
-        ]
       }
     }
     Functions: {
@@ -2275,7 +2166,10 @@ export type Database = {
           valid: boolean
         }[]
       }
-      claim_beta_access_key: { Args: { p_code: string }; Returns: string }
+      claim_beta_access_key: {
+        Args: { p_code: string; p_user_id?: string }
+        Returns: string
+      }
       clear_user_location: { Args: { p_user_id: string }; Returns: undefined }
       disablelongtransactions: { Args: never; Returns: string }
       dropgeometrycolumn:
@@ -2441,6 +2335,7 @@ export type Database = {
       immutable_unaccent: { Args: { '': string }; Returns: string }
       increment_beta_user_count: { Args: never; Returns: undefined }
       is_admin: { Args: { p_user_id: string }; Returns: boolean }
+      is_internal_user: { Args: { p_user_id: string }; Returns: boolean }
       is_notif_enabled: {
         Args: { p_type: string; p_user_id: string }
         Returns: boolean

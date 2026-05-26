@@ -112,6 +112,23 @@ Deno.serve(async (req: Request) => {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
   const userAgent = req.headers.get('user-agent') ?? null
 
+  // V1.0.3 fix bug "Claire" : extraire le user_id du JWT pour lier la cle au compte.
+  // Le claim arrive APRES OTP verifie, donc l user est authentifie. On parse le JWT
+  // d Authorization (transmis automatiquement par supabase.functions.invoke cote client).
+  let authUserId: string | null = null
+  try {
+    const authHeader = req.headers.get('authorization')
+    if (authHeader?.startsWith('Bearer ')) {
+      const jwt = authHeader.slice(7)
+      const payload = JSON.parse(atob(jwt.split('.')[1] ?? ''))
+      if (payload?.sub && typeof payload.sub === 'string') {
+        authUserId = payload.sub
+      }
+    }
+  } catch {
+    // JWT absent ou malforme : on continue sans lier le user (claim still works)
+  }
+
   // 2. Rate limit par IP
   if (!checkRateLimit(ip)) {
     return new Response(
@@ -142,9 +159,10 @@ Deno.serve(async (req: Request) => {
   )
 
   try {
-    // 5. Atomic claim via RPC
+    // 5. Atomic claim via RPC (V1.0.3 : passe p_user_id pour ecrire used_by_user_id)
     const { data: keyId, error: claimError } = await supabase.rpc('claim_beta_access_key', {
       p_code: code,
+      p_user_id: authUserId,
     })
 
     if (claimError) {
