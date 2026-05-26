@@ -8,6 +8,31 @@ Les notes user-friendly sont dans `docs/devops/releases/V[X.Y.Z]_USER.md`.
 
 ---
 
+## [V1.0.3] - 2026-05-25, consolidation Supabase Pro Phase B
+
+> Note technique uniquement (zero impact UX visible). Voir `docs/devops/releases/V1.0.3_TECHNICAL.md` pour le detail.
+
+### Securite
+
+- Lockdown des 36 fonctions SECURITY DEFINER : REVOKE EXECUTE FROM PUBLIC + GRANT explicite par role. Surface d attaque reduite, advisor warnings 80+ -> 25.
+- Extensions pgaudit + hypopg + index_advisor deplacees hors du schema public.
+
+### Corrections
+
+- Bug claim_beta_access_key : ecrit desormais `used_by_user_id` au moment du claim. Edge Function `validate-beta-key` v2 extrait le user_id du JWT.
+- Backfill cle orpheline NG-NJQ6-Z3XZ liee a son user historique.
+
+### Infrastructure
+
+- DROP 17 indexes inutilises, KEEP 22 (FK + autocomplete + geo).
+- ANALYZE sur les tables chaudes post-cleanup.
+- Install pgaudit / hypopg / index_advisor.
+- 4 jobs pg_cron de maintenance (cleanup logs RGPD + ANALYZE quotidien).
+- Realtime active sur posts / follows / reactions / comments (prep V1.1.0 feed live).
+- Bucket storage post-media : 10 MB -> 100 MB.
+
+---
+
 ## [V1.0.2] - 2026-05-25, fix navigation mobile
 
 ### Securite / UX navigation
