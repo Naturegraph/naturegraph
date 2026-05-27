@@ -108,15 +108,62 @@ const GROUP_TO_CLASS_FILTER: Record<string, string> = Object.fromEntries(
   Object.entries(CLASS_TO_GROUP_LABEL).map(([k, v]) => [v, k]),
 )
 
+/**
+ * Pre-chauffe la connexion Supabase + le plan RPC en faisant une requete
+ * factice ASAP apres login. Evite que la 1ere recherche utilisateur subisse
+ * le cold start serverless.
+ *
+ * A appeler depuis AuthContext / App boot apres que l user est authentifie.
+ * Best-effort : pas de gestion d erreur, on log juste.
+ */
+export async function warmupTaxonomySearch(): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return
+  try {
+    await supabase.rpc('search_taxonomy', {
+      p_query: 'a',
+      p_ranks: ['species'],
+      p_max_results: 1,
+    })
+  } catch {
+    // Best-effort, on ignore
+  }
+}
+
+/**
+ * Helper interne : appel RPC avec retry automatique sur timeout (V1.1.1+).
+ * Le cold start Supabase serverless peut prendre 3-5s pour la 1ere requete
+ * d une session. On retry 1 fois si la 1ere echoue par timeout, ce qui
+ * laisse 30s total pour eviter qu un user voie un "loader infini".
+ */
+async function rpcWithRetry(
+  rpcFn: () => ReturnType<NonNullable<typeof supabase>['rpc']>,
+  timeoutMs: number,
+  label: string,
+): Promise<{ data: unknown; error: unknown }> {
+  const tryOnce = () => {
+    const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
+      setTimeout(
+        () => resolve({ data: null, error: new Error(`${label} timeout ${timeoutMs / 1000}s`) }),
+        timeoutMs,
+      ),
+    )
+    return Promise.race([rpcFn(), timeoutPromise]) as Promise<{ data: unknown; error: unknown }>
+  }
+  const first = await tryOnce()
+  if (first.error && /timeout/i.test((first.error as Error).message ?? '')) {
+    console.info(`[searchService] ${label} retry after timeout (cold start ?)`)
+    return await tryOnce()
+  }
+  return first
+}
+
 export async function searchSpecies(
   query: string,
   limit = 10,
   group?: string,
 ): Promise<SpeciesHit[]> {
-  // V1.1.0 : delegue a search_taxonomy() (43 823 nodes vs 4 835 species_master legacy).
+  // V1.1.0+ : delegue a search_taxonomy() (45 764 nodes vs 4 835 species_master legacy).
   // Garde l'interface SpeciesHit stable pour ne pas casser les composants existants.
-  // Pour le moment on filtre rank='species' uniquement — le family fallback arrive
-  // en V1.1.1 via un toggle UI distinct dans EncounterStep2.
   if (!isSupabaseConfigured || !supabase) return []
 
   const q = query.trim()
@@ -124,29 +171,20 @@ export async function searchSpecies(
 
   const classFilter = group ? (GROUP_TO_CLASS_FILTER[group] ?? null) : null
 
-  // V1.1.0 Nicolas 2026-05-27 : passe 6s -> 15s pour absorber cold start
-  // Supabase serverless. La RPC est rapide post-warmup (36ms) mais la 1ere
-  // requete d une session peut prendre plusieurs secondes (network + connection pool).
-  const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
-    setTimeout(
-      () => resolve({ data: null, error: new Error('species search timeout 15s') }),
-      15000,
-    ),
-  )
-
   try {
-    // Note : p_territory/p_class_filter doivent etre undefined (pas null) cote
-    // PostgREST RPC pour utiliser le DEFAULT NULL de la fonction SQL.
-    const rpcCall = supabase.rpc('search_taxonomy', {
-      p_query: q,
-      p_territory: undefined,
-      p_ranks: ['species'],
-      p_class_filter: classFilter ?? undefined,
-      p_max_results: limit,
-    })
-
-    const result = await Promise.race([rpcCall, timeoutPromise])
-    const { data, error } = result as { data: unknown; error: unknown }
+    const result = await rpcWithRetry(
+      () =>
+        supabase!.rpc('search_taxonomy', {
+          p_query: q,
+          p_territory: undefined,
+          p_ranks: ['species'],
+          p_class_filter: classFilter ?? undefined,
+          p_max_results: limit,
+        }),
+      8000,
+      'species search',
+    )
+    const { data, error } = result
 
     if (error) {
       console.warn('[searchService] search_taxonomy failed:', (error as Error).message ?? error)
@@ -156,8 +194,6 @@ export async function searchSpecies(
     return ((data ?? []) as Record<string, unknown>[]).map((row) => {
       const cls = row['class'] ? String(row['class']) : null
       return {
-        // V1.1.0 : taxref_id stocke l'UUID taxonomy_nodes.id (pas un gbif_id).
-        // C'est utilise comme FK pour posts.taxonomy_node_id en V1.1.0+.
         taxref_id: String(row['id'] ?? ''),
         scientific_name: String(row['scientific_name'] ?? ''),
         common_name: row['common_name_fr'] ? String(row['common_name_fr']) : null,
@@ -211,25 +247,21 @@ export async function searchTaxonomy(
     limit = 20,
   } = options
 
-  // Timeout client 15s (V1.1.0 : eleve depuis 6s pour cold start Supabase)
-  const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
-    setTimeout(
-      () => resolve({ data: null, error: new Error('taxonomy search timeout 15s') }),
-      15000,
-    ),
-  )
-
   try {
-    const rpcCall = supabase.rpc('search_taxonomy', {
-      p_query: q,
-      p_territory: territory ?? undefined,
-      p_ranks: ranks,
-      p_class_filter: classFilter ?? undefined,
-      p_max_results: limit,
-    })
-
-    const result = await Promise.race([rpcCall, timeoutPromise])
-    const { data, error } = result as { data: unknown; error: unknown }
+    // V1.1.1 : retry automatique sur timeout pour absorber le cold start
+    const result = await rpcWithRetry(
+      () =>
+        supabase!.rpc('search_taxonomy', {
+          p_query: q,
+          p_territory: territory ?? undefined,
+          p_ranks: ranks,
+          p_class_filter: classFilter ?? undefined,
+          p_max_results: limit,
+        }),
+      8000,
+      'taxonomy search',
+    )
+    const { data, error } = result
 
     if (error) {
       console.warn('[searchService] taxonomy search failed:', (error as Error).message ?? error)

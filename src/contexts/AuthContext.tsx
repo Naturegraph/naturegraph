@@ -308,6 +308,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const user = session?.user ?? null
       const profile = user ? await fetchProfile(user.id) : null
       setState(deriveState({ user, session, profile, isLoading: false, isAuthenticated: !!user }))
+      // V1.1.1 : pre-chauffe RPC search_taxonomy apres login pour eviter le
+      // cold start serverless lors de la 1ere recherche d especes. Best-effort.
+      if (user && event === 'SIGNED_IN') {
+        import('@/services/searchService')
+          .then(({ warmupTaxonomySearch }) => warmupTaxonomySearch())
+          .catch(() => {})
+      }
     })
 
     // Refresh automatique de session toutes les 30 minutes
