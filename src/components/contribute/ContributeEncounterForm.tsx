@@ -723,12 +723,12 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
           )}
 
           {/* Attribution sources données en pied de page (étape 2 uniquement).
-              Phase 1 (Nicolas 2026-05-19) : TAXREF retiré, on bascule sur
-              GBIF (CC0) + Wikidata (CC0) pour la liste d'espèces. */}
+              V1.1.0 (Nicolas 2026-05-26) : ajout iNaturalist en source principale
+              (CC-BY 4.0) + GBIF (CC0) + Wikidata (CC0). */}
           {step === 2 && (
             <p className="text-[10px] text-muted-foreground text-center mt-1">
               {t('contribute.species.dataCredit', {
-                defaultValue: 'Données espèces : GBIF + Wikidata',
+                defaultValue: 'Données espèces : iNaturalist (CC-BY) + GBIF + Wikidata',
               })}
             </p>
           )}

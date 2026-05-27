@@ -8,6 +8,31 @@ Les notes user-friendly sont dans `docs/devops/releases/V[X.Y.Z]_USER.md`.
 
 ---
 
+## [V1.1.0] - 2026-05-26, BDD taxonomique en prod + family fallback
+
+> Premiere release MINOR. Voir `docs/devops/releases/V1.1.0_USER.md` pour la communication users.
+
+### Nouveautes
+
+- Catalogue d especes : 4 835 -> **42 312 especes** disponibles (iNaturalist FR + CA)
+- **3 444 familles** disponibles pour le tag "famille seulement" quand l espece exacte n est pas trouvee
+- **Toggle "Famille seulement"** active dans le panneau filtres du sélecteur d especes (cumulatif avec "Espece precise" pour voir les 2)
+- **8 categories taxonomiques** dans les filtres : ajout Arachnides, Mollusques, Poissons (avant 5 categories)
+- **Footer global** : liens Mentions legales + Politique de confidentialite visibles sur toutes les pages
+
+### Ameliorations
+
+- Cohenrence : sections legales identiques entre app et pages publiques (CGU 7 sections, Privacy 12 sections)
+- UI : separateur visuel "Familles" / "Especes" dans les resultats de recherche quand combo coche
+- Style : em-dashes retires des textes legaux (conforme conventions francaises)
+
+### Infrastructure
+
+- Front connecte au RPC `search_taxonomy()` (V1.0.5 schema). species_master legacy conserve pour back-compat posts existants.
+- Mapping iNat class <-> taxonomic_group preserve pour ne pas casser les composants existants.
+
+---
+
 ## [V1.0.5] - 2026-05-26, attribution iNat + BDD taxonomique scalable
 
 > Release de fondation pour V1.1.0. Voir `docs/devops/releases/V1.0.5_TECHNICAL.md`.

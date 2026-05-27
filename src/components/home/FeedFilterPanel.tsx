@@ -40,12 +40,17 @@ import { useLocation } from '@/contexts/LocationContext'
  * `taxonomic_group` (enum backend). Seules les 5 plus courantes sont exposées au
  * MVP — extensibles plus tard (fish, plants, arachnids, etc.).
  */
+// V1.1.0 (Nicolas 2026-05-26) : extension aux 8 categories iNat suite seed
+// taxonomy_nodes (Arachnida, Mollusca, Actinopterygii ajoutees).
 const SPECIES_CATEGORIES: { label: string; value: string }[] = [
   { label: 'Oiseaux', value: 'birds' },
   { label: 'Mammifères', value: 'mammals' },
   { label: 'Insectes', value: 'insects' },
   { label: 'Amphibiens', value: 'amphibians' },
   { label: 'Reptiles', value: 'reptiles' },
+  { label: 'Arachnides', value: 'arachnids' },
+  { label: 'Mollusques', value: 'mollusks' },
+  { label: 'Poissons', value: 'fish' },
 ]
 
 /** Options de rayon géographique en km (0 = pas de filtre) */

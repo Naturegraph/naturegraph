@@ -1082,6 +1082,7 @@ export type Database = {
           status: string | null
           tags: string[] | null
           taxonomic_group: string | null
+          taxonomy_node_id: string | null
           taxref_id: string | null
           taxref_license: string | null
           taxref_rank: string | null
@@ -1127,6 +1128,7 @@ export type Database = {
           status?: string | null
           tags?: string[] | null
           taxonomic_group?: string | null
+          taxonomy_node_id?: string | null
           taxref_id?: string | null
           taxref_license?: string | null
           taxref_rank?: string | null
@@ -1172,6 +1174,7 @@ export type Database = {
           status?: string | null
           tags?: string[] | null
           taxonomic_group?: string | null
+          taxonomy_node_id?: string | null
           taxref_id?: string | null
           taxref_license?: string | null
           taxref_rank?: string | null
@@ -1192,6 +1195,13 @@ export type Database = {
             columns: ['species_id']
             isOneToOne: false
             referencedRelation: 'species_master'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'posts_taxonomy_node_id_fkey'
+            columns: ['taxonomy_node_id']
+            isOneToOne: false
+            referencedRelation: 'taxonomy_nodes'
             referencedColumns: ['id']
           },
           {
@@ -1679,6 +1689,107 @@ export type Database = {
             columns: ['user_id']
             isOneToOne: false
             referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      taxonomy_nodes: {
+        Row: {
+          available_in_ca: boolean | null
+          available_in_fr: boolean | null
+          class: string | null
+          common_name_en: string | null
+          common_name_fr: string | null
+          created_at: string | null
+          data_source: string | null
+          data_version: string | null
+          description_en: string | null
+          description_fr: string | null
+          family: string | null
+          gbif_taxon_key: number | null
+          genus: string | null
+          id: string
+          inaturalist_id: number | null
+          inpn_taxref_id: string | null
+          is_active: boolean | null
+          kingdom: string | null
+          metadata: Json | null
+          order: string | null
+          parent_id: string | null
+          photo_url: string | null
+          phylum: string | null
+          popularity: number | null
+          rank: string
+          scientific_name: string
+          synonyms: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          available_in_ca?: boolean | null
+          available_in_fr?: boolean | null
+          class?: string | null
+          common_name_en?: string | null
+          common_name_fr?: string | null
+          created_at?: string | null
+          data_source?: string | null
+          data_version?: string | null
+          description_en?: string | null
+          description_fr?: string | null
+          family?: string | null
+          gbif_taxon_key?: number | null
+          genus?: string | null
+          id?: string
+          inaturalist_id?: number | null
+          inpn_taxref_id?: string | null
+          is_active?: boolean | null
+          kingdom?: string | null
+          metadata?: Json | null
+          order?: string | null
+          parent_id?: string | null
+          photo_url?: string | null
+          phylum?: string | null
+          popularity?: number | null
+          rank: string
+          scientific_name: string
+          synonyms?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          available_in_ca?: boolean | null
+          available_in_fr?: boolean | null
+          class?: string | null
+          common_name_en?: string | null
+          common_name_fr?: string | null
+          created_at?: string | null
+          data_source?: string | null
+          data_version?: string | null
+          description_en?: string | null
+          description_fr?: string | null
+          family?: string | null
+          gbif_taxon_key?: number | null
+          genus?: string | null
+          id?: string
+          inaturalist_id?: number | null
+          inpn_taxref_id?: string | null
+          is_active?: boolean | null
+          kingdom?: string | null
+          metadata?: Json | null
+          order?: string | null
+          parent_id?: string | null
+          photo_url?: string | null
+          phylum?: string | null
+          popularity?: number | null
+          rank?: string
+          scientific_name?: string
+          synonyms?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'taxonomy_nodes_parent_id_fkey'
+            columns: ['parent_id']
+            isOneToOne: false
+            referencedRelation: 'taxonomy_nodes'
             referencedColumns: ['id']
           },
         ]
@@ -2419,6 +2530,31 @@ export type Database = {
           name: string
           population: number
           region_name: string
+        }[]
+      }
+      search_taxonomy: {
+        Args: {
+          p_class_filter?: string
+          p_max_results?: number
+          p_query: string
+          p_ranks?: string[]
+          p_territory?: string
+        }
+        Returns: {
+          available_in_ca: boolean
+          available_in_fr: boolean
+          class: string
+          common_name_en: string
+          common_name_fr: string
+          family: string
+          id: string
+          inaturalist_id: number
+          match_score: number
+          order: string
+          photo_url: string
+          popularity: number
+          rank: string
+          scientific_name: string
         }[]
       }
       show_limit: { Args: never; Returns: number }
