@@ -227,9 +227,11 @@ export function PostOptionsMenu({
     }, 1500)
   }
 
-  // handleEdit retiré du MVP : ContributeEditForm pas encore implémenté.
-  // À réintégrer en Phase 2 avec route /contribute?type=nature_encounter&edit=:id
-  // + détection de l'edit param dans Contribute/index.tsx + pré-remplissage form.
+  // Edition de post : entierement cablee depuis V1.1.0.
+  // - Home.handleEditPost passe (postId, postType) au panel via editingPostId
+  // - ContributeEncounterForm fetch les data du post et pre-remplit le form
+  // - useContributePostSubmit detecte editingPostId et appelle updatePost
+  //   au lieu de createPost. Les RLS posts UPDATE filtrent par user_id.
 
   /**
    * Suppression du post
@@ -295,11 +297,9 @@ export function PostOptionsMenu({
 
   // ── Contenu du menu selon le mode ─────────────────────────────────────────
 
-  // MVP : "Modifier mon observation" n'est pas encore implementé côté frontend
-  // (route /contribute?edit=... attend ?type=... → redirige vers /home).
-  // L'item est masqué pour ne pas frustrer l'utilisateur. Phase 2 :
-  // implémenter ContributeEditForm avec pré-remplissage + updatePost service.
-  // Backend updatePost service est déjà prêt (cf. postService.ts:323).
+  // V1.1.0 : "Modifier mon observation" actif quand le parent cable onEdit
+  // (Home -> FeedSection -> FeedPost -> PostOptionsMenu via handleEditPost).
+  // Pre-remplissage automatique du form via editingPostId + updatePost RPC.
   const ownPostItems = (
     <>
       <MenuItem
