@@ -4,12 +4,13 @@
 > compris en arrivant sur le repo est ici, ou pointé depuis ici.
 > Mis à jour à chaque release.
 
-**Version actuelle** : V1.0.5
-**Date de stabilisation** : 2026-05-25 (V1.0.0) — derniere release 2026-05-26 (V1.0.5)
-**Statut** : Beta privée Québec + France, infra Pro hardened, BDD taxonomy scalable (43 823 nodes)
+**Version actuelle** : V1.1.0
+**Date de stabilisation** : 2026-05-25 (V1.0.0) — derniere release 2026-05-26 (V1.1.0)
+**Statut** : Beta privée Québec + France, BDD taxonomique complete (45 764 nodes) + family fallback
 
 **Historique recent** :
 
+- V1.1.0 (2026-05-26) : BDD taxonomique en prod + family fallback + 8 categories + footer legal partout
 - V1.0.5 (2026-05-26) : attribution iNat (legal) + nouvelle BDD taxonomy_nodes 43 823 nodes + RPC search_taxonomy
 - V1.0.4 (2026-05-26) : hotfix critique OTP refresh + lockdown SSRF + 8 vulns Dependabot + cleanup GitHub
 - V1.0.3 (2026-05-25) : Supabase Pro Phase B (security DEFINER lockdown + pg_cron + Realtime + fix bug claim beta)
