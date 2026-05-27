@@ -69,14 +69,21 @@ for ($i = 0; $i -lt $total; $i += $batchSize) {
     $inatUrl = "https://api.inaturalist.org/v1/taxa?id=$idsParam&locale=fr&preferred_place_id=6753&per_page=30"
 
     try {
-        $resp = Invoke-RestMethod -Uri $inatUrl -UseBasicParsing
-        foreach ($t in $resp.results) {
-            # iNat retourne preferred_common_name selon locale=fr s il y en a un
-            $fr = $t.preferred_common_name
-            if ($fr) { $inatIdMap[$t.id] = $fr }
+        # Force JSON parsing manuel pour eviter ambiguites PSCustomObject vs Hashtable
+        $resp = Invoke-WebRequest -Uri $inatUrl -UseBasicParsing
+        $jsonContent = [System.Text.Encoding]::UTF8.GetString($resp.Content)
+        $parsed = $jsonContent | ConvertFrom-Json
+        if ($parsed -and $parsed.results) {
+            foreach ($t in $parsed.results) {
+                $pcn = $t.preferred_common_name
+                if ($pcn -and $pcn -ne '' -and $pcn -ne $null) {
+                    # Cast l ID en int pour cohenrence avec les inaturalist_id Supabase
+                    $inatIdMap[[int]$t.id] = [string]$pcn
+                }
+            }
         }
     } catch {
-        Write-Host "       Warning batch $i-$end : $_" -ForegroundColor Yellow
+        Write-Host "       Warning batch $i-$end : $($_.Exception.Message)" -ForegroundColor Yellow
     }
     if (($i / $batchSize) % 10 -eq 0) {
         $pct = [Math]::Round(100 * ($i + $batchSize) / $total, 0)
@@ -91,7 +98,7 @@ Write-Host "[3/3] Update Supabase ..." -ForegroundColor Yellow
 $updated = 0
 $failed = 0
 foreach ($fam in $families) {
-    $inatId = $fam.inaturalist_id
+    $inatId = [int]$fam.inaturalist_id
     if (-not $inatIdMap.ContainsKey($inatId)) { continue }
     $commonFr = $inatIdMap[$inatId]
     $patchUrl = "$SupabaseUrl/rest/v1/taxonomy_nodes?id=eq.$($fam.id)"
