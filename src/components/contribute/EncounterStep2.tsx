@@ -198,7 +198,9 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
       searchTaxonomy(trimmed, {
         ranks,
         classFilter,
-        limit: 8,
+        // V1.1.0 (Nicolas 2026-05-26) : limit augmente a 20 pour donner plus
+        // de choix aux utilisateurs, surtout en mode combo especes + familles.
+        limit: 20,
       })
         .then((hits) => {
           if (cancelled) return
@@ -213,7 +215,8 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
                   ),
                 )
               : hits
-          setResults(filtered.slice(0, 6))
+          // V1.1.0 : slice 16 (vs 6 avant) pour afficher au moins le double
+          setResults(filtered.slice(0, 16))
           setIsLoading(false)
         })
         .catch(() => {
