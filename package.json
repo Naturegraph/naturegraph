@@ -24,7 +24,10 @@
     "check:dead-code": "knip",
     "changeset": "changeset",
     "changeset:version": "changeset version",
-    "changeset:publish": "changeset publish"
+    "changeset:publish": "changeset publish",
+    "release:patch": "npm version patch --no-git-tag-version && node scripts/print-version.mjs",
+    "release:minor": "npm version minor --no-git-tag-version && node scripts/print-version.mjs",
+    "release:major": "npm version major --no-git-tag-version && node scripts/print-version.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
