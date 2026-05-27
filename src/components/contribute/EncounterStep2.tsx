@@ -118,7 +118,15 @@ const CLASS_TO_GROUP: Record<string, TaxonomicGroup> = {
   Mollusca: 'mollusks',
 }
 
-function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['species']) => void }) {
+function SpeciesSearchBar({
+  onAdd,
+  onSearchActiveChange,
+}: {
+  onAdd: (species: ObservationEntry['species']) => void
+  /** Fire avec true des que l user tape (query non vide), false quand vide.
+   *  Permet au parent de masquer le placeholder "Aucun résultat" pendant la recherche. */
+  onSearchActiveChange?: (active: boolean) => void
+}) {
   const { t } = useTranslation()
   const listId = useId()
   const [query, setQuery] = useState('')
@@ -159,6 +167,7 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
    */
   function handleQueryChange(value: string) {
     setQuery(value)
+    onSearchActiveChange?.(value.trim().length > 0)
     if (value.trim().length === 0) {
       setResults([])
       setIsLoading(false)
@@ -254,6 +263,7 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
     onAdd(hitToSpecies(hit))
     setQuery('')
     setResults([])
+    onSearchActiveChange?.(false)
   }
 
   // Helper rendu : true quand l'utilisateur a tapé quelque chose. Les états
@@ -735,15 +745,19 @@ export function EncounterStep2({
   }
 
   const hasObservations = observations.length > 0
+  // Masque le placeholder "Aucun résultat" pendant que l user tape une recherche
+  // (sinon il s affichait sous les suggestions, paradoxal — feedback Nicolas 2026-05-26).
+  const [isSearching, setIsSearching] = useState(false)
 
   return (
     <div className="flex flex-col gap-4">
       {/* Barre de recherche */}
-      <SpeciesSearchBar onAdd={handleAddSpecies} />
+      <SpeciesSearchBar onAdd={handleAddSpecies} onSearchActiveChange={setIsSearching} />
 
       {/* État vide — carte blanche bordurée (Figma Frame 4621) :
-          hermine + pill menthe "Aucun résultat" + hint en Quicksand Bold. */}
-      {!hasObservations && (
+          hermine + pill menthe "Aucun résultat" + hint en Quicksand Bold.
+          Masqué pendant la recherche active pour ne pas dupliquer le feedback. */}
+      {!hasObservations && !isSearching && (
         <div className="rounded-xl border-[0.5px] border-border bg-background flex flex-col items-center overflow-hidden">
           <img src={hermineImg} alt="" width={230} height={128} className="mt-6" loading="lazy" />
           <div className="flex flex-col items-center gap-3 p-6 w-full">
