@@ -65,7 +65,8 @@ for ($i = 0; $i -lt $total; $i += $batchSize) {
     $end = [Math]::Min($i + $batchSize - 1, $total - 1)
     $batch = $families[$i..$end]
     $idsParam = ($batch | ForEach-Object { $_.inaturalist_id }) -join ','
-    $inatUrl = "https://api.inaturalist.org/v1/taxa/$idsParam?locale=fr&preferred_place_id=6753"
+    # iNat : GET /v1/taxa?id=1,2,3 (query param) — pas /v1/taxa/1,2,3 (path)
+    $inatUrl = "https://api.inaturalist.org/v1/taxa?id=$idsParam&locale=fr&preferred_place_id=6753&per_page=30"
 
     try {
         $resp = Invoke-RestMethod -Uri $inatUrl -UseBasicParsing
