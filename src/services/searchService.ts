@@ -124,8 +124,14 @@ export async function searchSpecies(
 
   const classFilter = group ? (GROUP_TO_CLASS_FILTER[group] ?? null) : null
 
+  // V1.1.0 Nicolas 2026-05-27 : passe 6s -> 15s pour absorber cold start
+  // Supabase serverless. La RPC est rapide post-warmup (36ms) mais la 1ere
+  // requete d une session peut prendre plusieurs secondes (network + connection pool).
   const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
-    setTimeout(() => resolve({ data: null, error: new Error('species search timeout 6s') }), 6000),
+    setTimeout(
+      () => resolve({ data: null, error: new Error('species search timeout 15s') }),
+      15000,
+    ),
   )
 
   try {
@@ -205,9 +211,12 @@ export async function searchTaxonomy(
     limit = 20,
   } = options
 
-  // Timeout client 6s (meme strategie que searchSpecies)
+  // Timeout client 15s (V1.1.0 : eleve depuis 6s pour cold start Supabase)
   const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
-    setTimeout(() => resolve({ data: null, error: new Error('taxonomy search timeout 6s') }), 6000),
+    setTimeout(
+      () => resolve({ data: null, error: new Error('taxonomy search timeout 15s') }),
+      15000,
+    ),
   )
 
   try {
