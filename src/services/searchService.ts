@@ -136,18 +136,18 @@ export async function warmupTaxonomySearch(): Promise<void> {
  * laisse 30s total pour eviter qu un user voie un "loader infini".
  */
 async function rpcWithRetry(
-  rpcFn: () => ReturnType<NonNullable<typeof supabase>['rpc']>,
+  rpcFn: () => PromiseLike<{ data: unknown; error: unknown }>,
   timeoutMs: number,
   label: string,
 ): Promise<{ data: unknown; error: unknown }> {
-  const tryOnce = () => {
+  const tryOnce = async (): Promise<{ data: unknown; error: unknown }> => {
     const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
       setTimeout(
         () => resolve({ data: null, error: new Error(`${label} timeout ${timeoutMs / 1000}s`) }),
         timeoutMs,
       ),
     )
-    return Promise.race([rpcFn(), timeoutPromise]) as Promise<{ data: unknown; error: unknown }>
+    return Promise.race([rpcFn() as Promise<{ data: unknown; error: unknown }>, timeoutPromise])
   }
   const first = await tryOnce()
   if (first.error && /timeout/i.test((first.error as Error).message ?? '')) {
