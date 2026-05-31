@@ -16,7 +16,8 @@
  * demande et rendu en overlay au-dessus du feed — design Figma v2.
  */
 
-import { useState, lazy, Suspense } from 'react'
+import { useState, lazy, Suspense, useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -95,6 +96,23 @@ export default function Home() {
     setActivePanelType(null)
     setEditingPostId(null)
   }
+
+  // NG-002 (2026-05-31) : edition depuis Profile -> Home recoit l intention via
+  // location.state et ouvre le panel pre-rempli. clearState evite re-trigger
+  // si l user navigue ailleurs puis revient (back button etc.).
+  const location = useLocation()
+  const navigate = useNavigate()
+  useEffect(() => {
+    const state = location.state as {
+      editPostId?: string
+      editPostType?: 'nature_encounter' | 'nature_instant'
+    } | null
+    if (state?.editPostId && state.editPostType) {
+      handleEditPost(state.editPostId, state.editPostType)
+      navigate(location.pathname, { replace: true, state: null })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state])
 
   return (
     <div className="flex flex-col min-h-screen bg-cream-lighter">

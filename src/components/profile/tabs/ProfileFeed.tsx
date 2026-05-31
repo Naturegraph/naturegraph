@@ -10,11 +10,15 @@
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { LayoutList, LayoutGrid } from 'lucide-react'
 import { FeedPost } from '@/components/home/FeedPost'
 import type { MockPost } from '@/components/home/FeedPost'
 import { FeedGallery } from '@/components/home/FeedGallery'
 import { ProfileEmptyState } from '../ProfileEmptyState'
+import { useAuth } from '@/contexts/AuthContext'
+import { useToggleReaction } from '@/hooks/usePost'
+import type { ReactionType } from '@/types/database'
 
 // View toggle types
 type ViewMode = 'list' | 'grid'
@@ -38,9 +42,38 @@ interface ProfileFeedProps {
  */
 export function ProfileFeed({ userPosts, isOwnProfile }: ProfileFeedProps) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const [sort, setSort] = useState<SortMode>('recent')
   // Vue : liste (FeedPost en cards) ou grille (FeedGallery comme la home).
   const [viewMode, setViewMode] = useState<ViewMode>('list')
+
+  // NG-001 (2026-05-31) : reactions dans le profil. La mutation invalide
+  // ['feed'] + ['posts','by-user'] (cf. usePost.ts onSettled) donc les
+  // changements faits ici remontent automatiquement dans le feed Home,
+  // garantissant une source de verite unique entre les deux vues.
+  const reactionMutation = useToggleReaction(user?.id)
+  const profilePostsQueryKey = ['posts', 'by-user'] as const
+  function handleReact(postId: string, type: ReactionType) {
+    const post = userPosts.find((p) => p.id === postId)
+    reactionMutation.mutate({
+      postId,
+      type,
+      currentReaction: (post?.userReaction ?? null) as ReactionType | null,
+      feedQueryKey: profilePostsQueryKey,
+    })
+  }
+
+  /**
+   * NG-002 (2026-05-31) : edition possible depuis le profil.
+   * Le panel d edition vit dans Home.tsx (state editingPostId + activePanelType).
+   * On navigue vers / en passant l intention via location.state, Home.tsx la
+   * detecte au mount et ouvre le panel pre-rempli automatiquement. Pas de
+   * duplication de logique entre Home et Profil.
+   */
+  function handleEditPost(postId: string, postType: 'nature_encounter' | 'nature_instant') {
+    navigate('/', { state: { editPostId: postId, editPostType: postType } })
+  }
 
   /** Tri côté client sur les données mock */
   const sortedPosts =
@@ -145,6 +178,8 @@ export function ProfileFeed({ userPosts, isOwnProfile }: ProfileFeedProps) {
                 <FeedPost
                   {...post}
                   isOwnPost={isOwnProfile}
+                  onReact={handleReact}
+                  onEditPost={isOwnProfile ? handleEditPost : undefined}
                   hideEndBorder={idx === sortedPosts.length - 1}
                 />
               </div>

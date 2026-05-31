@@ -470,7 +470,7 @@
     "profile": {
       "obs": "Obs",
       "species": "Espèces",
-      "days": "Jours",
+      "days": "Semaines",
       "thisWeek": "Cette semaine",
       "avatarAlt": "Photo de profil de {{name}}",
       "progressLabel": "{{current}} observations sur {{goal}} cette semaine"
@@ -538,6 +538,7 @@
       "reactLoginPrompt": "Connecte-toi pour réagir",
       "noReactions": "Sois le premier à réagir",
       "yourReaction": "Ta réaction",
+      "observedOn": "Observé le : {{date}}",
       "chooseReaction": "Choisir une réaction",
       "filterBySpecies": "Filtrer le feed par {{species}}",
       "reactions": {

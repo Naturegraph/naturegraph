@@ -152,8 +152,15 @@ export function useToggleReaction(userId: string | undefined) {
       }
     },
 
-    onSettled: (_data, _error, { feedQueryKey }) => {
+    onSettled: (_data, _error, { feedQueryKey, postId }) => {
+      // NG-001 (2026-05-31) : la reaction doit etre coherente entre TOUTES
+      // les vues qui affichent ce post (feed, profil galerie, profil liste,
+      // post detail). Sans cette invalidation globale, une reaction faite
+      // dans le feed n etait pas visible dans le profil et vice versa.
       queryClient.invalidateQueries({ queryKey: feedQueryKey as readonly unknown[] })
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['posts', 'by-user'] })
+      queryClient.invalidateQueries({ queryKey: postQueryKey.byId(postId) })
     },
   })
 }
@@ -183,7 +190,7 @@ export function useDeletePost() {
     onSuccess: (_data, postId) => {
       // Invalider toutes les variantes du feed + le profil (galerie user).
       queryClient.invalidateQueries({ queryKey: ['feed'] })
-      queryClient.invalidateQueries({ queryKey: ['profile-posts'] })
+      queryClient.invalidateQueries({ queryKey: ['posts', 'by-user'] })
       queryClient.invalidateQueries({ queryKey: postQueryKey.byId(postId) })
     },
     onError: (err) => {

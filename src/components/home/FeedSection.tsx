@@ -172,6 +172,16 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
       ),
     },
     date: formatPostDate(item.created_at),
+    // NG-009 (2026-05-31) : date reelle d observation, calculee uniquement si
+    // elle differe vraiment du jour de publication (sinon FeedPost masque le
+    // bloc pour ne pas dupliquer l info). encounter_date est stocke en YYYY-MM-DD
+    // par le formulaire d encounter, created_at est un timestamp complet, donc
+    // on compare uniquement la partie date.
+    encounterDate: item.encounter_date
+      ? item.encounter_date.slice(0, 10) !== item.created_at.slice(0, 10)
+        ? formatPostDate(item.encounter_date)
+        : undefined
+      : undefined,
     // Règle de confidentialité (Nicolas 2026-05-24 — v3 mobile-friendly) :
     //  - location_hidden = true → uniquement le **pays** (« France », « Canada »)
     //    pour donner un repère biogéographique sans compromettre la vie privée.

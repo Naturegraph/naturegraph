@@ -60,6 +60,10 @@ export interface MockPost {
    */
   author: { name: string; username: string; avatar: string; badge?: string }
   date: string
+  /** NG-009 (2026-05-31) : date reelle d observation, affichee uniquement si
+   *  differente de la date de publication. Format identique au champ `date`
+   *  (deja formate cote postFeedItemToMockPost). */
+  encounterDate?: string
   location: string
   title: string
   content: string
@@ -229,6 +233,7 @@ export function FeedPost({
   postType,
   author,
   date,
+  encounterDate,
   location,
   title,
   content,
@@ -400,6 +405,17 @@ export function FeedPost({
                   </>
                 )}
               </div>
+              {/* NG-009 (2026-05-31) : date reelle d observation si differente
+                  de la date de publication. Discrete (text-xs italic muted)
+                  pour ne pas alourdir l interface, masquee si identique. */}
+              {encounterDate && encounterDate !== date && (
+                <p className="text-xs italic text-muted-foreground mt-0.5">
+                  {t('home.post.observedOn', {
+                    defaultValue: 'Observé le : {{date}}',
+                    date: encounterDate,
+                  })}
+                </p>
+              )}
             </div>
           </div>
 
