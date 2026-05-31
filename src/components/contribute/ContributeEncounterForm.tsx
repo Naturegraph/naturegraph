@@ -99,7 +99,11 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
 
   const isEditing = !!editingPostId
 
-  const [step, setStep] = useState(1)
+  // En mode edition on demarre directement a l etape 3 (details), les
+  // photos existantes ne sont pas re-injectables dans le picker et l user
+  // veut surtout corriger les metadonnees. Lazy init via callback pour
+  // eviter l appel setState dans useEffect (regle eslint react-hooks).
+  const [step, setStep] = useState<number>(() => (editingPostId ? 3 : 1))
   const [form, setForm] = useState<EncounterFormData>({
     files: [],
     displayFormat: '16:9',
@@ -136,6 +140,8 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
   useEffect(() => {
     if (!editingPostId || !supabase) return
     let cancelled = false
+    // L etape est deja sur 3 via le lazy init du useState plus haut.
+    // Ici on charge les valeurs du post pour pre-remplir le form.
     ;(async () => {
       // Cast `any` car les types supabase générés sont en retard sur
       // certaines colonnes (individuals_count, display_format) — runtime OK.
@@ -149,7 +155,11 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
         .maybeSingle()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const post = postRaw as any
-      if (cancelled || error || !post) return
+      if (cancelled || error || !post) {
+        if (error) console.error('[ContributeEncounterForm] edit fetch error :', error)
+        if (!post) console.warn('[ContributeEncounterForm] post introuvable :', editingPostId)
+        return
+      }
       // Reconstruit la première observation à partir des species_* du post
       // (si l'espèce était identifiée). Sinon on injecte une observation
       // « inconnue » pour rester cohérent avec le carnet.
@@ -192,9 +202,9 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
         displayFormat: (post.display_format ?? '16:9') as DisplayFormat,
         observations: initialObs,
       }))
-      // En édition on saute directement à l'étape 3 (les détails), car les
-      // photos existantes restent et le carnet est pré-rempli.
-      setStep(3)
+      // setStep(3) deja appele plus haut (avant le fetch async) pour
+      // garantir que l user est sur l etape details meme si le fetch
+      // post echoue (data partielle vs aucune visibilite UI).
     })()
     return () => {
       cancelled = true

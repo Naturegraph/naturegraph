@@ -191,7 +191,10 @@ export function ProfileSidebar() {
             <StatCard
               icon={Flame}
               value={streakDays}
-              label={t('home.profile.days', { count: streakDays })}
+              label={t('home.profile.days', {
+                count: streakDays,
+                defaultValue: streakDays <= 1 ? 'Semaine' : 'Semaines',
+              })}
               tone="warning"
             />
           </div>

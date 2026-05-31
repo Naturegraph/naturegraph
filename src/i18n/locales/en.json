@@ -470,6 +470,7 @@
     "profile": {
       "obs": "Obs",
       "species": "Species",
+      "days": "Weeks",
       "days_one": "Week",
       "days_other": "Weeks",
       "thisWeek": "This week",
