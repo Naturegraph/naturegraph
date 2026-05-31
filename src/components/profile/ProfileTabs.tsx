@@ -209,7 +209,12 @@ export function ProfileTabs({
           </div>
         )}
         {activeTab === 'journal' && (
-          <ProfileFeed userPosts={userPosts} isOwnProfile={isOwnProfile} onEditPost={onEditPost} />
+          <ProfileFeed
+            userPosts={userPosts}
+            profileId={profileId}
+            isOwnProfile={isOwnProfile}
+            onEditPost={onEditPost}
+          />
         )}
         {activeTab === 'inspirations' && (
           <ProfileInspirations savedPosts={savedPosts} username={profile.username} />

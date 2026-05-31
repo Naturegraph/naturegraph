@@ -16,7 +16,7 @@ import type { MockPost } from '@/components/home/FeedPost'
 import { FeedGallery } from '@/components/home/FeedGallery'
 import { ProfileEmptyState } from '../ProfileEmptyState'
 import { useAuth } from '@/contexts/AuthContext'
-import { useToggleReaction } from '@/hooks/usePost'
+import { useToggleReaction, postQueryKey } from '@/hooks/usePost'
 import type { ReactionType } from '@/types/database'
 
 // View toggle types
@@ -29,6 +29,9 @@ type SortMode = 'recent' | 'popular'
 interface ProfileFeedProps {
   /** Posts de l'utilisateur à afficher */
   userPosts: MockPost[]
+  /** ID du profil affiche - utilise pour calculer la cache key exacte
+   *  des mutations reactions (sinon optimistic update silent fail). */
+  profileId?: string
   /** Si true → l'utilisateur regarde son propre journal et peut supprimer
    *  ses posts via le menu 3-pts. Sinon : pas d'option Supprimer. */
   isOwnProfile: boolean
@@ -42,21 +45,24 @@ interface ProfileFeedProps {
 /**
  * Journal nature : liste des observations avec tri Récent / Populaire.
  */
-export function ProfileFeed({ userPosts, isOwnProfile, onEditPost }: ProfileFeedProps) {
+export function ProfileFeed({ userPosts, profileId, isOwnProfile, onEditPost }: ProfileFeedProps) {
   const { t } = useTranslation()
   const { user } = useAuth()
   const [sort, setSort] = useState<SortMode>('recent')
   // Vue : liste (FeedPost en cards) ou grille (FeedGallery comme la home).
   const [viewMode, setViewMode] = useState<ViewMode>('list')
 
-  // NG-001 (2026-05-31 retour QA) : reactions dans le profil. useUserPosts
-  // enrichit maintenant user_reaction + reactions_breakdown a chaque fetch
-  // (cf. usePost.ts), et useToggleReaction invalide les bons query keys
-  // (feed + posts.by-user + post.byId) dans onSettled. L optimistic update
-  // est silencieux ici (key non-feed shape) mais l invalidate + refetch
-  // garantit la coherence sub-seconde.
+  // Cache key EXACT du useUserPosts (cf. usePost.ts) :
+  // ['posts', 'by-user', userId, sort, viewerId]. On reconstruit la meme
+  // shape pour que setQueryData (optimistic) matche reellement le cache,
+  // sinon le badge ne change qu apres le refetch -> UX 'rien ne se passe'
+  // (retour QA Nicolas 2026-05-31).
+  const profilePostsQueryKey = [
+    ...postQueryKey.byUser(profileId ?? '', sort),
+    user?.id ?? 'anon',
+  ] as const
+
   const reactionMutation = useToggleReaction(user?.id)
-  const profilePostsQueryKey = ['posts', 'by-user'] as const
   function handleReact(postId: string, type: ReactionType) {
     const post = userPosts.find((p) => p.id === postId)
     reactionMutation.mutate({

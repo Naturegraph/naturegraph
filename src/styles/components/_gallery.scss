@@ -17,6 +17,11 @@
 .gallery-masonry {
   columns: 2;
   column-gap: 2px;
+  // font-size 0 elimine le whitespace introduit par inline-block sur les
+  // gallery-item (sinon spacing vertical visiblement > horizontal, retour
+  // Nicolas 2026-05-31).
+  font-size: 0;
+  line-height: 0;
 
   @media (min-width: 768px) {
     columns: 3;
@@ -31,12 +36,27 @@
 .gallery-item {
   break-inside: avoid;
   -webkit-column-break-inside: avoid;
-  margin-bottom: 2px;
-  display: inline-block;
+  // display: block plutot que inline-block evite tout whitespace residuel
+  // entre les items dans une colonne. Combine avec font-size: 0 sur le parent
+  // ca garantit un spacing pixel-perfect identique horizontal/vertical.
+  display: block;
   width: 100%;
   border-radius: 0;
+  // margin-bottom EXACTEMENT egal au column-gap pour spacing uniforme
+  // (2px mobile, 3px desktop). Match du column-gap par breakpoint.
+  margin-bottom: 2px;
 
   @media (min-width: 768px) {
     margin-bottom: 3px;
   }
+}
+
+// Reset font-size/line-height pour les enfants (img, badge, overlay)
+// puisque le parent .gallery-masonry est en font-size 0.
+.gallery-item img,
+.gallery-item span,
+.gallery-item p,
+.gallery-item div {
+  font-size: initial;
+  line-height: initial;
 }

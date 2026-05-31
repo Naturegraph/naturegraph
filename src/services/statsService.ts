@@ -277,10 +277,13 @@ export async function getTrendingSpecies(
     const postIds = sorted.map(([, v]) => v.postId)
     const { data: mediaRows } = await c
       .from('media')
-      .select('post_id, url')
+      .select('post_id, url, display_order')
       .in('post_id', postIds)
       .eq('status', 'ready')
-      .order('position', { ascending: true })
+      // Colonne reelle = display_order (table media). 'position' n existait
+      // pas en DB et generait un 400 silencieux dans la console (Nicolas
+      // 2026-05-31 audit console).
+      .order('display_order', { ascending: true })
 
     const imageMap = new Map<string, string>()
     for (const m of mediaRows ?? []) {
