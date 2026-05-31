@@ -30,6 +30,7 @@ import { supabase } from '@/lib/supabase'
 // 2026-05-23 audit final : single source of truth pour compression,
 // upload, watchdog, rollback).
 import { useContributePostSubmit } from '@/hooks/useContributePostSubmit'
+import { readDraft, useDraftAutoSave, clearDraft } from '@/hooks/useContributeDraft'
 import { createProposal } from '@/services/identificationService'
 import { Button } from '@/components/ui/Button'
 
@@ -104,26 +105,37 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
   // veut surtout corriger les metadonnees. Lazy init via callback pour
   // eviter l appel setState dans useEffect (regle eslint react-hooks).
   const [step, setStep] = useState<number>(() => (editingPostId ? 3 : 1))
-  const [form, setForm] = useState<EncounterFormData>({
-    files: [],
-    displayFormat: '16:9',
-    photoMetadata: {},
-    observations: [],
-    helpIdentification: false,
-    title: '',
-    description: '',
-    encounterDate: new Date().toISOString().slice(0, 10),
-    timeOfDay: '',
-    weather: '',
-    habitat: '',
-    locationName: '',
-    locationLat: null,
-    locationLng: null,
-    locationCountry: null,
-    locationRegion: null,
-    // Par défaut la localisation précise est masquée (sobriété privacy) ;
-    // l'utilisateur peut activer le switch « rendre public » à l'étape 3.
-    locationHidden: true,
+
+  // NG-004 (Nicolas 2026-05-31) : auto-save brouillon en localStorage (TTL 30 min)
+  // pour ne pas perdre le travail en cas d erreur de submit ou refresh accidentel.
+  // Pas en mode edition (les valeurs viennent de la DB, pas pertinent).
+  const DRAFT_KEY = 'encounter-v1'
+  // Type du payload brouillon (sans les Files qui ne sont pas serialisables).
+  type DraftPayload = Omit<EncounterFormData, 'files'>
+  const restoredDraft = !editingPostId ? readDraft<DraftPayload>(DRAFT_KEY) : null
+  const [form, setForm] = useState<EncounterFormData>(() => {
+    const defaults: EncounterFormData = {
+      files: [],
+      displayFormat: '16:9',
+      photoMetadata: {},
+      observations: [],
+      helpIdentification: false,
+      title: '',
+      description: '',
+      encounterDate: new Date().toISOString().slice(0, 10),
+      timeOfDay: '',
+      weather: '',
+      habitat: '',
+      locationName: '',
+      locationLat: null,
+      locationLng: null,
+      locationCountry: null,
+      locationRegion: null,
+      // Par défaut la localisation précise est masquée (sobriété privacy) ;
+      // l'utilisateur peut activer le switch « rendre public » à l'étape 3.
+      locationHidden: true,
+    }
+    return restoredDraft ? { ...defaults, ...restoredDraft, files: [] } : defaults
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   // Gate l'affichage des erreurs inline (second-agent/30) — passe à true au
@@ -210,6 +222,32 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
       cancelled = true
     }
   }, [editingPostId])
+
+  // NG-004 auto-save brouillon : ecrit toutes les ~1s dans localStorage
+  // un snapshot du form sans les Files. Restauration au prochain mount
+  // via le lazy init du useState plus haut. Desactive en mode edition.
+  useDraftAutoSave<DraftPayload>(
+    DRAFT_KEY,
+    {
+      displayFormat: form.displayFormat,
+      photoMetadata: form.photoMetadata,
+      observations: form.observations,
+      helpIdentification: form.helpIdentification,
+      title: form.title,
+      description: form.description,
+      encounterDate: form.encounterDate,
+      timeOfDay: form.timeOfDay,
+      weather: form.weather,
+      habitat: form.habitat,
+      locationName: form.locationName,
+      locationLat: form.locationLat,
+      locationLng: form.locationLng,
+      locationCountry: form.locationCountry,
+      locationRegion: form.locationRegion,
+      locationHidden: form.locationHidden,
+    },
+    !isEditing,
+  )
 
   // Fermer sur Escape
   useEffect(() => {
@@ -379,6 +417,8 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
             console.warn('[ContributeEncounterForm] createProposal failed:', err)
           }
         }
+        // NG-004 : succes -> purge le brouillon (on a publie, plus besoin).
+        clearDraft(DRAFT_KEY)
         onClose()
       },
     })

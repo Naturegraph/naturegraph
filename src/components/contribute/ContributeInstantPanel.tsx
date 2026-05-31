@@ -26,6 +26,7 @@ import type { TimeOfDay, WeatherCondition, DisplayFormat } from '@/types/databas
 import { EncounterStep1 } from './EncounterStep1'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import { useContributePostSubmit } from '@/hooks/useContributePostSubmit'
+import { readDraft, useDraftAutoSave, clearDraft } from '@/hooks/useContributeDraft'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { useLocationAutocomplete } from '@/hooks/useLocationAutocomplete'
@@ -101,23 +102,32 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
   const { submit, isSubmitting, uploadProgress, uploadError, clearError } =
     useContributePostSubmit('ContributeInstantPanel')
 
-  const [step, setStep] = useState(1)
-  const [form, setForm] = useState<InstantFormData>({
-    files: [],
-    displayFormat: '16:9',
-    photoMetadata: {},
-    title: '',
-    description: '',
-    encounterDate: new Date().toISOString().slice(0, 10),
-    timeOfDay: '',
-    weather: '',
-    phenomenon: '',
-    locationName: '',
-    locationLat: null,
-    locationLng: null,
-    locationCountry: null,
-    locationRegion: null,
-    locationHidden: true,
+  // NG-004 (Nicolas 2026-05-31) : auto-save brouillon TTL 30 min pour ne
+  // pas perdre le travail en cas d erreur de submit / refresh accidentel.
+  const DRAFT_KEY = 'instant-v1'
+  type DraftPayload = Omit<InstantFormData, 'files'>
+  const restoredDraft = !editingPostId ? readDraft<DraftPayload>(DRAFT_KEY) : null
+
+  const [step, setStep] = useState(editingPostId ? 2 : 1)
+  const [form, setForm] = useState<InstantFormData>(() => {
+    const defaults: InstantFormData = {
+      files: [],
+      displayFormat: '16:9',
+      photoMetadata: {},
+      title: '',
+      description: '',
+      encounterDate: new Date().toISOString().slice(0, 10),
+      timeOfDay: '',
+      weather: '',
+      phenomenon: '',
+      locationName: '',
+      locationLat: null,
+      locationLng: null,
+      locationCountry: null,
+      locationRegion: null,
+      locationHidden: true,
+    }
+    return restoredDraft ? { ...defaults, ...restoredDraft, files: [] } : defaults
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitAttempted, setSubmitAttempted] = useState(false)
@@ -164,6 +174,29 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
       cancelled = true
     }
   }, [editingPostId])
+
+  // NG-004 auto-save brouillon (sans les Files) toutes les ~1s. Desactive
+  // en mode edition (le state vient de la DB, pas pertinent de le sauver).
+  useDraftAutoSave<DraftPayload>(
+    DRAFT_KEY,
+    {
+      displayFormat: form.displayFormat,
+      photoMetadata: form.photoMetadata,
+      title: form.title,
+      description: form.description,
+      encounterDate: form.encounterDate,
+      timeOfDay: form.timeOfDay,
+      weather: form.weather,
+      phenomenon: form.phenomenon,
+      locationName: form.locationName,
+      locationLat: form.locationLat,
+      locationLng: form.locationLng,
+      locationCountry: form.locationCountry,
+      locationRegion: form.locationRegion,
+      locationHidden: form.locationHidden,
+    },
+    !editingPostId,
+  )
 
   // Escape ferme le panneau
   useEffect(() => {
@@ -271,7 +304,11 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
       },
       files: form.files,
       editingPostId,
-      onSuccess: onClose,
+      onSuccess: async () => {
+        // NG-004 : succes -> purge le brouillon.
+        clearDraft(DRAFT_KEY)
+        onClose()
+      },
     })
   }
 
