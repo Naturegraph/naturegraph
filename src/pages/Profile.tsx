@@ -12,7 +12,7 @@
  * jusqu'à l'implémentation du statsService (Sprint 4).
  */
 
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
@@ -36,6 +36,18 @@ import { postFeedItemToMockPost } from '@/components/home/FeedSection'
 import type { MockPost } from '@/components/home/FeedPost'
 import type { Profile } from '@/types/database'
 import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
+
+// NG-002 : panels d edition lazy-loaded, meme strategie que Home.tsx (eco-conception)
+const ContributeEncounterForm = lazy(() =>
+  import('@/components/contribute/ContributeEncounterForm').then((m) => ({
+    default: m.ContributeEncounterForm,
+  })),
+)
+const ContributeInstantPanel = lazy(() =>
+  import('@/components/contribute/ContributeInstantPanel').then((m) => ({
+    default: m.ContributeInstantPanel,
+  })),
+)
 
 // ─── Adaptateur Profile DB → ProfileDisplayData ───────────────────────────────
 //
@@ -120,6 +132,23 @@ export default function Profile() {
   const [showEditPanel, setShowEditPanel] = useState(false)
   const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [showShareSheet, setShowShareSheet] = useState(false)
+
+  // NG-002 (2026-05-31 retour QA) : panel d edition d observation rendu
+  // directement dans le profil pour eviter le redirect vers /. L user reste
+  // dans son contexte profil pendant l edition. State local : type de panel
+  // + ID du post a editer. Lazy loading des panels (perf, comme Home.tsx).
+  const [profilePanelType, setProfilePanelType] = useState<
+    'nature_encounter' | 'nature_instant' | null
+  >(null)
+  const [profileEditingPostId, setProfileEditingPostId] = useState<string | null>(null)
+  function handleEditFromProfile(postId: string, postType: 'nature_encounter' | 'nature_instant') {
+    setProfileEditingPostId(postId)
+    setProfilePanelType(postType)
+  }
+  function handleCloseProfilePanel() {
+    setProfilePanelType(null)
+    setProfileEditingPostId(null)
+  }
 
   // ── Hooks Supabase ────────────────────────────────────────────────────────
   // Tous les hooks DOIVENT être appelés inconditionnellement (rules of hooks).
@@ -330,6 +359,7 @@ export default function Profile() {
               userPosts={userPosts}
               savedPosts={savedPosts}
               isOwnProfile={isOwnProfile}
+              onEditPost={handleEditFromProfile}
             />
           </div>
         </div>
@@ -346,6 +376,25 @@ export default function Profile() {
       )}
 
       {showSettingsPanel && <SettingsPanel onClose={() => setShowSettingsPanel(false)} />}
+
+      {/* NG-002 : panel d edition rendu directement dans le profil. Meme
+          architecture que Home.tsx, lazy-loaded pour ne pas alourdir le bundle. */}
+      {profilePanelType === 'nature_encounter' && (
+        <Suspense fallback={null}>
+          <ContributeEncounterForm
+            onClose={handleCloseProfilePanel}
+            editingPostId={profileEditingPostId ?? undefined}
+          />
+        </Suspense>
+      )}
+      {profilePanelType === 'nature_instant' && (
+        <Suspense fallback={null}>
+          <ContributeInstantPanel
+            onClose={handleCloseProfilePanel}
+            editingPostId={profileEditingPostId ?? undefined}
+          />
+        </Suspense>
+      )}
 
       {showShareSheet && (
         <SharePopover

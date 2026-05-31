@@ -40,6 +40,8 @@ interface ProfileTabsProps {
   /** L'utilisateur connecté regarde-t-il son propre profil ?
    *  → propagé à ProfileFeed pour activer l'option "Supprimer" sur les posts. */
   isOwnProfile: boolean
+  /** NG-002 : callback edition d observation, propage a ProfileFeed. */
+  onEditPost?: (postId: string, postType: 'nature_encounter' | 'nature_instant') => void
 }
 
 // ─── Configuration des onglets ────────────────────────────────────────────────
@@ -89,6 +91,7 @@ export function ProfileTabs({
   userPosts,
   savedPosts,
   isOwnProfile,
+  onEditPost,
 }: ProfileTabsProps) {
   const { t } = useTranslation()
   // Tab par défaut : "journal" (Journal nature) — règle d'usage Nicolas
@@ -206,7 +209,7 @@ export function ProfileTabs({
           </div>
         )}
         {activeTab === 'journal' && (
-          <ProfileFeed userPosts={userPosts} isOwnProfile={isOwnProfile} />
+          <ProfileFeed userPosts={userPosts} isOwnProfile={isOwnProfile} onEditPost={onEditPost} />
         )}
         {activeTab === 'inspirations' && (
           <ProfileInspirations savedPosts={savedPosts} username={profile.username} />

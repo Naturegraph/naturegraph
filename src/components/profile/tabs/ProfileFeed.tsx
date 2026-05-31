@@ -10,7 +10,6 @@
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
 import { LayoutList, LayoutGrid } from 'lucide-react'
 import { FeedPost } from '@/components/home/FeedPost'
 import type { MockPost } from '@/components/home/FeedPost'
@@ -33,6 +32,9 @@ interface ProfileFeedProps {
   /** Si true → l'utilisateur regarde son propre journal et peut supprimer
    *  ses posts via le menu 3-pts. Sinon : pas d'option Supprimer. */
   isOwnProfile: boolean
+  /** NG-002 : callback edition d observation, ouvre le panel directement
+   *  dans le profil (rendu par Profile.tsx). */
+  onEditPost?: (postId: string, postType: 'nature_encounter' | 'nature_instant') => void
 }
 
 // ─── Composant ────────────────────────────────────────────────────────────────
@@ -40,18 +42,19 @@ interface ProfileFeedProps {
 /**
  * Journal nature : liste des observations avec tri Récent / Populaire.
  */
-export function ProfileFeed({ userPosts, isOwnProfile }: ProfileFeedProps) {
+export function ProfileFeed({ userPosts, isOwnProfile, onEditPost }: ProfileFeedProps) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const { user } = useAuth()
   const [sort, setSort] = useState<SortMode>('recent')
   // Vue : liste (FeedPost en cards) ou grille (FeedGallery comme la home).
   const [viewMode, setViewMode] = useState<ViewMode>('list')
 
-  // NG-001 (2026-05-31) : reactions dans le profil. La mutation invalide
-  // ['feed'] + ['posts','by-user'] (cf. usePost.ts onSettled) donc les
-  // changements faits ici remontent automatiquement dans le feed Home,
-  // garantissant une source de verite unique entre les deux vues.
+  // NG-001 (2026-05-31 retour QA) : reactions dans le profil. useUserPosts
+  // enrichit maintenant user_reaction + reactions_breakdown a chaque fetch
+  // (cf. usePost.ts), et useToggleReaction invalide les bons query keys
+  // (feed + posts.by-user + post.byId) dans onSettled. L optimistic update
+  // est silencieux ici (key non-feed shape) mais l invalidate + refetch
+  // garantit la coherence sub-seconde.
   const reactionMutation = useToggleReaction(user?.id)
   const profilePostsQueryKey = ['posts', 'by-user'] as const
   function handleReact(postId: string, type: ReactionType) {
@@ -62,17 +65,6 @@ export function ProfileFeed({ userPosts, isOwnProfile }: ProfileFeedProps) {
       currentReaction: (post?.userReaction ?? null) as ReactionType | null,
       feedQueryKey: profilePostsQueryKey,
     })
-  }
-
-  /**
-   * NG-002 (2026-05-31) : edition possible depuis le profil.
-   * Le panel d edition vit dans Home.tsx (state editingPostId + activePanelType).
-   * On navigue vers / en passant l intention via location.state, Home.tsx la
-   * detecte au mount et ouvre le panel pre-rempli automatiquement. Pas de
-   * duplication de logique entre Home et Profil.
-   */
-  function handleEditPost(postId: string, postType: 'nature_encounter' | 'nature_instant') {
-    navigate('/', { state: { editPostId: postId, editPostType: postType } })
   }
 
   /** Tri côté client sur les données mock */
@@ -179,7 +171,7 @@ export function ProfileFeed({ userPosts, isOwnProfile }: ProfileFeedProps) {
                   {...post}
                   isOwnPost={isOwnProfile}
                   onReact={handleReact}
-                  onEditPost={isOwnProfile ? handleEditPost : undefined}
+                  onEditPost={isOwnProfile ? onEditPost : undefined}
                   hideEndBorder={idx === sortedPosts.length - 1}
                 />
               </div>

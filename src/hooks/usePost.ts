@@ -10,6 +10,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getPostById,
   getPostsByUser,
+  getUserReactions,
+  getReactionsBreakdown,
   toggleReaction,
   createPost,
   deletePost,
@@ -17,6 +19,7 @@ import {
   type CreatePostPayload,
 } from '@/services/postService'
 import type { PostFeedItem, ReactionType } from '@/types/database'
+import { useAuth } from '@/contexts/AuthContext'
 
 export const postQueryKey = {
   byId: (postId: string) => ['post', postId] as const,
@@ -50,9 +53,31 @@ export function useUserPosts(
   sort: 'recent' | 'popular' = 'recent',
   limit = 20,
 ) {
+  // NG-001 (2026-05-31 retour QA Nicolas) : le profil n affichait aucune
+  // reaction (ni les anciennes, ni les nouvelles). getPostsByUser ne
+  // retournait pas user_reaction / reactions_breakdown, contrairement
+  // a useFeed qui enrichit chaque post via 2 requetes parallel apres
+  // fetch. On replique la meme logique ici pour avoir des reactions
+  // pleinement fonctionnelles dans le profil.
+  const { user } = useAuth()
+  const viewerId = user?.id
   return useQuery<PostFeedItem[], Error>({
-    queryKey: postQueryKey.byUser(userId ?? '', sort),
-    queryFn: () => getPostsByUser(userId!, sort, limit),
+    queryKey: [...postQueryKey.byUser(userId ?? '', sort), viewerId ?? 'anon'],
+    queryFn: async () => {
+      const posts = await getPostsByUser(userId!, sort, limit)
+      if (posts.length === 0) return posts
+      const postIds = posts.map((p) => p.id)
+      const emptyReactions: Record<string, ReactionType> = {}
+      const [userReactions, breakdown] = await Promise.all([
+        viewerId ? getUserReactions(viewerId, postIds) : Promise.resolve(emptyReactions),
+        getReactionsBreakdown(postIds),
+      ])
+      return posts.map((p) => ({
+        ...p,
+        user_reaction: userReactions[p.id] ?? null,
+        reactions_breakdown: breakdown[p.id] ?? null,
+      }))
+    },
     enabled: !!userId,
     staleTime: 60 * 1000,
   })

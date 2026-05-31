@@ -191,7 +191,7 @@ export function ProfileSidebar() {
             <StatCard
               icon={Flame}
               value={streakDays}
-              label={t('home.profile.days')}
+              label={t('home.profile.days', { count: streakDays })}
               tone="warning"
             />
           </div>

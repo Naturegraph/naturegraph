@@ -470,7 +470,8 @@
     "profile": {
       "obs": "Obs",
       "species": "Espèces",
-      "days": "Semaines",
+      "days_one": "Semaine",
+      "days_other": "Semaines",
       "thisWeek": "Cette semaine",
       "avatarAlt": "Photo de profil de {{name}}",
       "progressLabel": "{{current}} observations sur {{goal}} cette semaine"
