@@ -12,8 +12,9 @@
  * L'état viewMode + showFilters est levé ici pour être partagé entre
  * HomeNavbar (contrôles mobiles) et FeedSection (contrôles desktop).
  *
- * Le panneau de contribution (ContributeEncounterForm) est chargé à la
- * demande et rendu en overlay au-dessus du feed — design Figma v2.
+ * Le panneau de contribution est rendu via le hook partagé `useEditPostFlow`
+ * qui centralise le state (active type, editing ID) et les lazy imports.
+ * Meme behavior dans Home, Profile et PostDetail (coherence produit V1.1.3).
  */
 
 import { useState, lazy, Suspense } from 'react'
@@ -26,19 +27,7 @@ import { ProfileSidebar } from '@/components/home/ProfileSidebar'
 import { FeedSection } from '@/components/home/FeedSection'
 import { MobileNavLayer } from '@/components/home/MobileNavLayer'
 import { ContributeModal } from '@/components/home/ContributeModal'
-
-// Chargé à la demande — chunk séparé (éco-conception : ne charge que si besoin)
-const ContributeEncounterForm = lazy(() =>
-  import('@/components/contribute/ContributeEncounterForm').then((m) => ({
-    default: m.ContributeEncounterForm,
-  })),
-)
-
-const ContributeInstantPanel = lazy(() =>
-  import('@/components/contribute/ContributeInstantPanel').then((m) => ({
-    default: m.ContributeInstantPanel,
-  })),
-)
+import { useEditPostFlow } from '@/hooks/useEditPostFlow'
 
 // StatsSidebar lazy (QW-I2 / T-082) — affichée uniquement xl:block (>=1280px).
 // Avant : 311 lignes chargees dans le bundle initial meme sur mobile/tablet.
@@ -57,18 +46,11 @@ export default function Home() {
   usePageTitle(t('nav.home'))
   const [showContributeModal, setShowContributeModal] = useState(false)
 
-  /** Type actif dans le panneau inline — null = panneau fermé */
-  const [activePanelType, setActivePanelType] = useState<
-    'nature_encounter' | 'nature_instant' | null
-  >(null)
-
-  /**
-   * ID du post en cours d'édition — quand non-null, le panel correspondant
-   * (Encounter ou Instant selon activePanelType) s'ouvre en mode update
-   * avec pré-remplissage. À la fermeture / soumission, repasse à null
-   * (Nicolas 2026-05-24 : possibilité de corriger ses observations).
-   */
-  const [editingPostId, setEditingPostId] = useState<string | null>(null)
+  // Hook partage : gere les panels create/edit + leur lazy load.
+  // onEditPost -> passe a FeedSection pour les FeedPost.
+  // openCreate -> branche sur les boutons Contribuer.
+  // panelNode -> a rendre dans le composant racine.
+  const { onEditPost, openCreate, panelNode } = useEditPostFlow()
 
   // État partagé feed — contrôlable depuis la navbar mobile ET le header desktop
   const [feedViewMode, setFeedViewMode] = useState<'list' | 'grid'>('list')
@@ -78,22 +60,9 @@ export default function Home() {
   /** Appelé depuis ContributeModal (desktop via navbar et mobile via FAB) */
   function handleContributeTypeSelect(type: string) {
     setShowContributeModal(false)
-    setEditingPostId(null) // Sécurité : crée toujours un NOUVEAU post (pas un edit).
     if (type === 'nature_encounter' || type === 'nature_instant') {
-      setActivePanelType(type)
+      openCreate(type)
     }
-  }
-
-  /** Appelé depuis le menu PostOptionsMenu (FeedSection → FeedPost → onEditPost). */
-  function handleEditPost(postId: string, postType: 'nature_encounter' | 'nature_instant') {
-    setEditingPostId(postId)
-    setActivePanelType(postType)
-  }
-
-  /** Reset complet quand on ferme un panel (crée ou édite). */
-  function handleClosePanel() {
-    setActivePanelType(null)
-    setEditingPostId(null)
   }
 
   return (
@@ -135,8 +104,8 @@ export default function Home() {
               onHasActiveFiltersChange={setFeedHasActiveFilters}
               // Empty state CTA "Partager une observation" → ouvre directement
               // le panel Rencontre Nature (même flow que la navbar).
-              onContributeClick={() => setActivePanelType('nature_encounter')}
-              onEditPost={handleEditPost}
+              onContributeClick={() => openCreate('nature_encounter')}
+              onEditPost={onEditPost}
             />
           </main>
 
@@ -164,26 +133,8 @@ export default function Home() {
         />
       )}
 
-      {/* Panneau Rencontre Nature — overlay latéral droit.
-          Si editingPostId est set : ouvre en mode édition (pré-rempli). */}
-      {activePanelType === 'nature_encounter' && (
-        <Suspense fallback={null}>
-          <ContributeEncounterForm
-            onClose={handleClosePanel}
-            editingPostId={editingPostId ?? undefined}
-          />
-        </Suspense>
-      )}
-
-      {/* Panneau Instant Nature — même architecture, 2 étapes (photos + détails) */}
-      {activePanelType === 'nature_instant' && (
-        <Suspense fallback={null}>
-          <ContributeInstantPanel
-            onClose={handleClosePanel}
-            editingPostId={editingPostId ?? undefined}
-          />
-        </Suspense>
-      )}
+      {/* Panneau Contribuer (Encounter ou Instant selon le type actif) */}
+      {panelNode}
     </div>
   )
 }
