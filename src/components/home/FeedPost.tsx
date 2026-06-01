@@ -589,11 +589,14 @@ export function FeedPost({
               const categoryLabel = taxonomicCfg?.label ?? null
 
               // Espèce identifiée = on a au moins le nom commun OU scientifique.
-              // Nicolas 2026-05-22 : chip espèce TOUJOURS passif (plus de filtre
-              // par click) — pas d'action sur le chip pour le moment.
+              // V1.1.4 NG-023 (Nicolas 2026-06-01) : reactivation du chip
+              // cliquable maintenant que NG-022 a connecte le Species Context
+              // Layer au backend (filter par taxref_id). Cliquer sur l espece
+              // dans un post -> feed filtre par cette espece + bandeau qui
+              // permet de reset au feed global.
               const speciesName = species || scientific_name || null
               const hasIdentifiedSpecies = !!speciesName
-              const isSpeciesClickable = false
+              const isSpeciesClickable = !!taxref_id
               const unknownLabel = t('home.post.unknownSpecies', {
                 defaultValue: 'Espèce non déterminée',
               })

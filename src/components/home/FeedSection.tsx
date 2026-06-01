@@ -365,6 +365,11 @@ export function FeedSection({
   const feedFilters = {
     categories: filters.categories,
     helpOnly: filters.helpOnly,
+    // V1.1.4 NG-022 (Nicolas 2026-06-01) : propagation du Species Context Layer
+    // au backend. Avant ce fix, activeSpecies n affichait qu un bandeau visuel
+    // mais le feed retournait quand meme TOUS les posts -> l user pensait que
+    // la recherche etait cassee. Maintenant on filtre reellement par taxref_id.
+    taxrefId: activeSpecies?.taxref_id ?? undefined,
     shareTypes:
       filters.shareTypes.encounter && filters.shareTypes.instant ? undefined : filters.shareTypes,
     period: filters.period,

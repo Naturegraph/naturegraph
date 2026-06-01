@@ -148,6 +148,12 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
   // Gate l'affichage des erreurs inline (second-agent/30) — passe à true au
   // premier handleSubmit ; remis à false sur navigation entre étapes.
   const [submitAttempted, setSubmitAttempted] = useState(false)
+  // V1.1.4 NG-024 (Nicolas 2026-06-01) : photos existantes en mode edition.
+  // Charge des qu on a un editingPostId pour les afficher en step 3 et
+  // permettre la suppression individuelle. Optimistic local + delete API.
+  const [existingMedia, setExistingMedia] = useState<
+    Array<{ id: string; url: string; storagePath: string }>
+  >([])
 
   // ── Pré-remplissage en mode édition ─────────────────────────────────────
   // Quand editingPostId est défini au mount, on fetch les valeurs courantes
@@ -221,6 +227,25 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
         displayFormat: (post.display_format ?? '16:9') as DisplayFormat,
         observations: initialObs,
       }))
+
+      // V1.1.4 NG-024 : charge aussi les medias existants pour les afficher
+      // dans l UI d edition. Sans ce fetch, l user voyait son post sans
+      // aucune photo et pensait qu elles avaient ete perdues.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: mediaRaw } = await (supabase as any)
+        .from('media')
+        .select('id, url, storage_path, display_order')
+        .eq('post_id', editingPostId)
+        .order('display_order', { ascending: true })
+      if (!cancelled && Array.isArray(mediaRaw)) {
+        setExistingMedia(
+          mediaRaw.map((m: { id: string; url: string; storage_path: string | null }) => ({
+            id: m.id,
+            url: m.url,
+            storagePath: m.storage_path ?? '',
+          })),
+        )
+      }
       // setStep(3) deja appele plus haut (avant le fetch async) pour
       // garantir que l user est sur l etape details meme si le fetch
       // post echoue (data partielle vs aucune visibilite UI).
@@ -562,6 +587,19 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
             {step === 3 && (
               <EncounterStep3
                 submitAttempted={submitAttempted}
+                existingMedia={isEditing ? existingMedia : undefined}
+                onRemoveExistingMedia={async (mediaId, storagePath) => {
+                  // V1.1.4 NG-024 : suppression optimiste (state local d abord)
+                  // puis delete API best-effort. Si la suppression DB echoue,
+                  // l user reload et reverra la photo (pas de rollback UI).
+                  setExistingMedia((prev) => prev.filter((m) => m.id !== mediaId))
+                  try {
+                    const { deletePostMedia } = await import('@/services/mediaService')
+                    await deletePostMedia(mediaId, storagePath)
+                  } catch (err) {
+                    console.error('[ContributeEncounterForm] delete media failed:', err)
+                  }
+                }}
                 title={form.title}
                 onTitleChange={(v) => set('title', v)}
                 description={form.description}

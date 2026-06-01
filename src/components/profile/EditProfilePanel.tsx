@@ -144,21 +144,27 @@ export function EditProfilePanel({ profile, onClose, onSave }: EditProfilePanelP
           ))}
         </div>
 
-        {/* ── Contenu scrollable ── */}
+        {/* ── Contenu scrollable ──
+            V1.1.4 NG-021 (Nicolas 2026-06-01) : les 3 tabs sont desormais
+            TOUJOURS mountees (CSS hidden au lieu de conditional render).
+            Avant, changer d onglet unmontait l ancien -> state local perdu
+            -> donnees saisies disparues au retour. Maintenant le state
+            persiste tant que le panel est ouvert. Les refs (infoRef/prefsRef)
+            restent valides et le save() footer continue de fonctionner. */}
         <div
           role="tabpanel"
           aria-label={tabs.find((t) => t.id === activeTab)?.label}
           className="flex-1 overflow-y-auto"
         >
-          {activeTab === 'info' && (
+          <div hidden={activeTab !== 'info'}>
             <EditInfoTab ref={infoRef} profile={profile} onSave={onSave} onClose={onClose} />
-          )}
-          {activeTab === 'prefs' && (
+          </div>
+          <div hidden={activeTab !== 'prefs'}>
             <EditPrefsTab ref={prefsRef} profile={profile} onSave={onSave} onClose={onClose} />
-          )}
-          {activeTab === 'photo' && (
+          </div>
+          <div hidden={activeTab !== 'photo'}>
             <EditPhotoTab profile={profile} onSave={onSave} onClose={onClose} />
-          )}
+          </div>
         </div>
 
         {/* ── Footer sticky : bouton Sauvegarder ──
