@@ -17,7 +17,7 @@
  * dépend de la page : Home ouvre un panel, Profile pourrait ne pas l'avoir).
  */
 
-import { useState, lazy, Suspense } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSpecies } from '@/contexts/SpeciesContext'
 import { MobileBottomNav } from './MobileBottomNav'
@@ -64,6 +64,15 @@ export function MobileNavLayer({ onContributeClick }: MobileNavLayerProps) {
   // Si la page fournit un callback, on l'utilise. Sinon on ouvre la modale
   // interne — c'est le cas par défaut hors Home.
   const handleContribute = onContributeClick ?? (() => setShowContribute(true))
+
+  // V1.1.4 QA round 6 (Nicolas 2026-06-01) : le pill recherche dans FeedSection
+  // emet un event custom pour ouvrir le SearchPanel mobile. Permet a l user
+  // de modifier l espece active sans avoir a fermer puis re-cliquer Search.
+  useEffect(() => {
+    const handler = () => setShowSearch(true)
+    window.addEventListener('naturegraph:open-search', handler)
+    return () => window.removeEventListener('naturegraph:open-search', handler)
+  }, [])
 
   return (
     <>

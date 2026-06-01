@@ -499,26 +499,38 @@ export function FeedSection({
        * Cf. HomeNavbar.tsx pour l affichage du pill actif.
        */}
 
-      {/* V1.1.4 QA round 5 (Nicolas 2026-06-01) : pill recherche active en
-          MOBILE sticky sous la navbar. Avant ce fix le pill etait dans la
-          HomeNavbar mobile -> ca poussait le header. Maintenant integre dans
-          la zone feed comme la tab bar desktop (sticky top-[72px]). */}
+      {/* V1.1.4 QA round 6 (Nicolas 2026-06-01) : pill recherche active mobile
+          sticky sous la navbar. Click sur le pill -> ouvre le SearchPanel
+          pour changer d espece. X clear le filtre. */}
       {activeSpecies && (
-        <div className="md:hidden sticky top-[72px] z-30 -mx-4 px-4 py-2 mb-3 bg-cream-lighter/95 backdrop-blur-sm">
-          <div className="flex items-center gap-2 bg-primary-light border border-primary/20 rounded-full px-3 py-2">
-            <Search
-              className="size-4 text-primary shrink-0"
-              strokeWidth={3}
-              aria-hidden="true"
-            />
-            <span className="flex-1 text-sm font-medium text-foreground truncate">
-              {activeSpecies.common_name ?? activeSpecies.scientific_name}
-            </span>
+        <div className="md:hidden sticky top-[72px] z-30 -mx-4 px-4 pt-3 pb-2 mb-2 bg-cream-lighter/95 backdrop-blur-sm">
+          <div className="flex items-center gap-2 bg-primary-light border border-primary/20 rounded-full pl-3 pr-2 py-2">
             <button
               type="button"
-              onClick={() => clearActiveSpecies()}
+              onClick={() => {
+                // Ouvre le SearchPanel via un event que MobileNavLayer ecoute
+                window.dispatchEvent(new CustomEvent('naturegraph:open-search'))
+              }}
+              className="flex-1 flex items-center gap-2 min-w-0 focus-visible:outline-none rounded-full"
+              aria-label="Modifier la recherche"
+            >
+              <Search
+                className="size-4 text-primary shrink-0"
+                strokeWidth={3}
+                aria-hidden="true"
+              />
+              <span className="text-sm font-medium text-foreground truncate text-left">
+                {activeSpecies.common_name ?? activeSpecies.scientific_name}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                clearActiveSpecies()
+              }}
               aria-label="Retirer le filtre"
-              className="shrink-0 size-6 flex items-center justify-center rounded-full hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="shrink-0 size-7 flex items-center justify-center rounded-full hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <X className="size-4 text-foreground" aria-hidden="true" />
             </button>

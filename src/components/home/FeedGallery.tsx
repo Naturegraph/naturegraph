@@ -141,11 +141,11 @@ export function FeedGallery({ posts }: FeedGalleryProps) {
             {item.imagesCount > 1 && (
               <span
                 className="absolute top-2 right-2 inline-flex items-center bg-black/55 text-white rounded backdrop-blur-sm"
-                style={{ gap: '2px', padding: '2px 5px' }}
+                style={{ gap: '3px', padding: '3px 6px' }}
                 aria-hidden="true"
               >
-                <Images aria-hidden="true" style={{ width: '10px', height: '10px' }} />
-                <span style={{ fontSize: '10px', fontWeight: 600, lineHeight: 1 }}>
+                <Images aria-hidden="true" style={{ width: '12px', height: '12px' }} />
+                <span style={{ fontSize: '12px', fontWeight: 600, lineHeight: 1 }}>
                   {item.imagesCount}
                 </span>
               </span>
