@@ -17,8 +17,9 @@
  * dépend de la page : Home ouvre un panel, Profile pourrait ne pas l'avoir).
  */
 
-import { useState, lazy, Suspense } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useSpecies } from '@/contexts/SpeciesContext'
 import { MobileBottomNav } from './MobileBottomNav'
 import { SearchPanel } from './SearchPanel'
 import { ProfileMenu } from './ProfileMenu'
@@ -44,6 +45,9 @@ interface MobileNavLayerProps {
 
 export function MobileNavLayer({ onContributeClick }: MobileNavLayerProps) {
   const { isAuthenticated } = useAuth()
+  // V1.1.4 QA Nicolas : indicateur visuel sur l icone Search mobile quand
+  // une espece est active dans le Species Context Layer.
+  const { activeSpecies } = useSpecies()
 
   const [showSearch, setShowSearch] = useState(false)
   const [showDrawer, setShowDrawer] = useState(false)
@@ -61,6 +65,15 @@ export function MobileNavLayer({ onContributeClick }: MobileNavLayerProps) {
   // interne — c'est le cas par défaut hors Home.
   const handleContribute = onContributeClick ?? (() => setShowContribute(true))
 
+  // V1.1.4 QA round 6 (Nicolas 2026-06-01) : le pill recherche dans FeedSection
+  // emet un event custom pour ouvrir le SearchPanel mobile. Permet a l user
+  // de modifier l espece active sans avoir a fermer puis re-cliquer Search.
+  useEffect(() => {
+    const handler = () => setShowSearch(true)
+    window.addEventListener('naturegraph:open-search', handler)
+    return () => window.removeEventListener('naturegraph:open-search', handler)
+  }, [])
+
   return (
     <>
       <MobileBottomNav
@@ -71,6 +84,7 @@ export function MobileNavLayer({ onContributeClick }: MobileNavLayerProps) {
         // onProfileClick seulement si authentifié — la MobileBottomNav navigue
         // d'elle-même vers /login en mode invité.
         onProfileClick={isAuthenticated ? () => setShowProfile(true) : undefined}
+        searchActive={!!activeSpecies}
       />
 
       {showSearch && <SearchPanel onClose={() => setShowSearch(false)} />}

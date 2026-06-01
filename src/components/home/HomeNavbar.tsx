@@ -35,6 +35,7 @@ import {
   Filter,
   Flame,
   BarChart3,
+  X,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import hermineIcon from '@/assets/images/hermine-icon.png'
@@ -42,6 +43,9 @@ import { ImagePresets } from '@/lib/supabaseImage'
 import { useUserStreak } from '@/hooks/useStats'
 import { useUnreadCount } from '@/hooks/useNotifications'
 import { useLocation } from '@/contexts/LocationContext'
+// V1.1.4 NG-023 ext final : indique le filtre actif (espece ou categorie)
+// directement dans le bouton recherche au lieu d un bandeau separe.
+import { useSpecies } from '@/contexts/SpeciesContext'
 import { SearchPanel } from './SearchPanel'
 import { NotificationsPanel } from './NotificationsPanel'
 import { ContributeModal } from './ContributeModal'
@@ -60,8 +64,11 @@ interface HomeNavbarProps {
   onToggleFeedView?: () => void
   /** Ouvre le panel filtres depuis la navbar mobile */
   onOpenFeedFilters?: () => void
-  /** Affiche le badge sur l'icône filtre si des filtres actifs */
-  feedHasActiveFilters?: boolean
+  /**
+   * V1.1.4 QA round 4 : nombre de filtres actifs (0..N) pour afficher un
+   * vrai badge chiffre sur l icone entonnoir, coherent desktop/mobile.
+   */
+  feedActiveFiltersCount?: number
   /**
    * Rappelé quand l'utilisateur choisit un type de contribution dans le menu desktop.
    * Si fourni, ouvre le panneau inline (panel overlay) plutôt que de naviguer.
@@ -89,7 +96,7 @@ export function HomeNavbar({
   feedViewMode = 'list',
   onToggleFeedView,
   onOpenFeedFilters,
-  feedHasActiveFilters = false,
+  feedActiveFiltersCount = 0,
   onContributeTypeSelect,
 }: HomeNavbarProps) {
   const { t } = useTranslation()
@@ -107,12 +114,37 @@ export function HomeNavbar({
   // Compteur de notifications non lues, alimente le badge
   const { data: unreadCount } = useUnreadCount(profile?.id)
 
-  // ── États des panels / modals ─────────────────────────────────────────────
-  const [showSearch, setShowSearch] = useState(false)
-  const [showNotifications, setShowNotifications] = useState(false)
-  const [showContribute, setShowContribute] = useState(false)
-  const [showLocationModal, setShowLocationModal] = useState(false)
-  const [showProfileMenu, setShowProfileMenu] = useState(false)
+  // V1.1.4 NG-023 ext final : pill espece active dans le bouton recherche.
+  // La categorie a un flow distinct (FeedFilterPanel + badge compteur).
+  const { activeSpecies, clearActiveSpecies } = useSpecies()
+  const activeFilterLabel = activeSpecies
+    ? (activeSpecies.common_name ?? activeSpecies.scientific_name)
+    : null
+
+  // ── État unique pour TOUS les panels / modals ────────────────────────────
+  // V1.1.4 QA round 4 (Nicolas 2026-06-01) : exclusivite garantie par design.
+  // Un seul state -> impossible d avoir plusieurs panels ouverts en meme
+  // temps. Les wrappers separes precedents souffraient d un bug de batch
+  // React (state stale). Avec un seul state, ouvrir un panel ferme
+  // mecaniquement les autres car la valeur change.
+  type ActivePanel =
+    | 'search'
+    | 'notifications'
+    | 'contribute'
+    | 'location'
+    | 'profile'
+    | null
+  const [activePanel, setActivePanel] = useState<ActivePanel>(null)
+  const showSearch = activePanel === 'search'
+  const showNotifications = activePanel === 'notifications'
+  const showContribute = activePanel === 'contribute'
+  const showLocationModal = activePanel === 'location'
+  const showProfileMenu = activePanel === 'profile'
+
+  // Helpers : toggle ouvre/ferme le panel (si deja ouvert -> close)
+  const togglePanel = (panel: NonNullable<ActivePanel>) =>
+    setActivePanel((prev) => (prev === panel ? null : panel))
+  const closePanel = () => setActivePanel(null)
   // SettingsPanel ouvert depuis le ProfileMenu (item "Paramètres"), son
   // state vit dans HomeNavbar (et non ProfileMenu) pour survivre à la
   // fermeture du ProfileMenu : on ferme le menu profil ET on ouvre les
@@ -131,13 +163,13 @@ export function HomeNavbar({
     if (!isAuthenticated) {
       navigate('/signup')
     } else {
-      setShowContribute((v) => !v)
+      togglePanel('contribute')
     }
   }
 
   function handleProfileClick() {
     if (isAuthenticated) {
-      setShowProfileMenu((v) => !v)
+      togglePanel('profile')
     }
   }
 
@@ -206,11 +238,13 @@ export function HomeNavbar({
                     >
                       <Filter className="size-5 text-foreground" aria-hidden="true" />
                     </button>
-                    {feedHasActiveFilters && (
+                    {feedActiveFiltersCount > 0 && (
                       <span
-                        aria-hidden="true"
-                        className="absolute top-2 right-2 size-2 rounded-full bg-primary pointer-events-none"
-                      />
+                        aria-label={`${feedActiveFiltersCount} filtres actifs`}
+                        className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary-light text-primary text-[11px] font-bold leading-none pointer-events-none border border-cream-lighter"
+                      >
+                        {feedActiveFiltersCount}
+                      </span>
                     )}
                   </div>
                 )}
@@ -221,7 +255,7 @@ export function HomeNavbar({
                     <button
                       ref={notifBtnRef}
                       type="button"
-                      onClick={() => setShowNotifications((v) => !v)}
+                      onClick={() => togglePanel('notifications')}
                       className={btnIcon}
                       aria-label={t('home.navbar.notifications')}
                       aria-expanded={showNotifications}
@@ -240,7 +274,7 @@ export function HomeNavbar({
                     {showNotifications && (
                       <NotificationsPanel
                         anchorRef={notifBtnRef}
-                        onClose={() => setShowNotifications(false)}
+                        onClose={() => closePanel()}
                       />
                     )}
                   </div>
@@ -255,7 +289,7 @@ export function HomeNavbar({
                 <div className="relative">
                   <button
                     type="button"
-                    onClick={() => setShowLocationModal((v) => !v)}
+                    onClick={() => togglePanel('location')}
                     aria-expanded={showLocationModal}
                     aria-haspopup="dialog"
                     aria-label={
@@ -296,24 +330,64 @@ export function HomeNavbar({
                   </button>
 
                   {showLocationModal && (
-                    <LocationModal onClose={() => setShowLocationModal(false)} />
+                    <LocationModal onClose={() => closePanel()} />
                   )}
                 </div>
 
-                {/* ── Recherche ─────────────────────────────────────────── */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setShowSearch((v) => !v)}
-                    className={btnIcon}
-                    aria-label={t('home.navbar.search')}
-                    aria-expanded={showSearch}
-                    aria-haspopup="dialog"
+                {/* ── Recherche ───────────────────────────────────────────
+                    V1.1.4 NG-023 ext final : si un filtre est actif (espece ou
+                    categorie), le bouton devient un pill affichant le label
+                    du filtre + une croix X pour le clear. Cliquer sur le pill
+                    (hors croix) ouvre le SearchPanel pour modifier le filtre.
+                    Pas de filtre actif -> icone loupe seule (comportement par defaut). */}
+                {activeFilterLabel ? (
+                  <div
+                    className={`${btnPill} relative bg-primary-light border border-primary/20`}
+                    aria-label={t('home.navbar.activeFilter', {
+                      defaultValue: 'Filtre actif',
+                    })}
                   >
-                    <Search className="size-5 text-foreground" aria-hidden="true" />
-                  </button>
-                  {showSearch && <SearchPanel onClose={() => setShowSearch(false)} />}
-                </div>
+                    <Search
+                      className="size-4 text-primary shrink-0"
+                      strokeWidth={3}
+                      aria-hidden="true"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePanel('search')}
+                      className="text-sm font-medium text-foreground truncate max-w-[140px] md:max-w-[200px] focus-visible:outline-none"
+                      aria-expanded={showSearch}
+                      aria-haspopup="dialog"
+                    >
+                      {activeFilterLabel}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => clearActiveSpecies()}
+                      aria-label={t('home.navbar.clearFilter', {
+                        defaultValue: 'Retirer le filtre',
+                      })}
+                      className="shrink-0 size-5 flex items-center justify-center rounded-full hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      <X className="size-3.5 text-foreground" aria-hidden="true" />
+                    </button>
+                    {showSearch && <SearchPanel onClose={() => closePanel()} />}
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => togglePanel('search')}
+                      className={btnIcon}
+                      aria-label={t('home.navbar.search')}
+                      aria-expanded={showSearch}
+                      aria-haspopup="dialog"
+                    >
+                      <Search className="size-5 text-foreground" aria-hidden="true" />
+                    </button>
+                    {showSearch && <SearchPanel onClose={() => closePanel()} />}
+                  </div>
+                )}
 
                 {/* ── Notifications, connecté seulement ───────────────── */}
                 {isAuthenticated && (
@@ -321,7 +395,7 @@ export function HomeNavbar({
                     <button
                       ref={notifBtnRef}
                       type="button"
-                      onClick={() => setShowNotifications((v) => !v)}
+                      onClick={() => togglePanel('notifications')}
                       className={btnIcon}
                       aria-label={t('home.navbar.notifications')}
                       aria-expanded={showNotifications}
@@ -340,7 +414,7 @@ export function HomeNavbar({
                     {showNotifications && (
                       <NotificationsPanel
                         anchorRef={notifBtnRef}
-                        onClose={() => setShowNotifications(false)}
+                        onClose={() => closePanel()}
                       />
                     )}
                   </div>
@@ -393,7 +467,7 @@ export function HomeNavbar({
 
                   {showContribute && isAuthenticated && (
                     <ContributeModal
-                      onClose={() => setShowContribute(false)}
+                      onClose={() => closePanel()}
                       onTypeSelect={onContributeTypeSelect}
                     />
                   )}
@@ -451,12 +525,12 @@ export function HomeNavbar({
 
                     {showProfileMenu && (
                       <ProfileMenu
-                        onClose={() => setShowProfileMenu(false)}
+                        onClose={() => closePanel()}
                         onOpenSettings={() => {
                           // Ferme le menu profil ET ouvre le panel settings.
                           // Le state `showSettingsPanel` vit dans HomeNavbar
                           // pour survivre au démontage du ProfileMenu.
-                          setShowProfileMenu(false)
+                          closePanel()
                           setShowSettingsPanel(true)
                         }}
                       />

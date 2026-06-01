@@ -17,7 +17,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { LayoutList, LayoutGrid, Filter, X } from 'lucide-react'
+import { LayoutList, LayoutGrid, Filter, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { ErrorState } from '@/components/ui'
 import { FeedPost } from './FeedPost'
@@ -287,7 +287,12 @@ interface FeedSectionProps {
   onViewModeChange: (mode: 'list' | 'grid') => void
   showFilters: boolean
   onShowFiltersChange: (show: boolean) => void
-  onHasActiveFiltersChange: (has: boolean) => void
+  /**
+   * V1.1.4 QA round 4 : remontee du COMPTE de filtres actifs (0..N) pour
+   * que la HomeNavbar puisse afficher un vrai badge chiffre coherent
+   * desktop/mobile (au lieu d un simple point rond).
+   */
+  onHasActiveFiltersChange: (count: number) => void
   /** Callback pour ouvrir le panel "Rencontre Nature" depuis le CTA empty state.
    *  Géré au niveau Home (qui contrôle activePanelType). */
   onContributeClick?: () => void
@@ -323,9 +328,10 @@ export function FeedSection({
   const { locationCoords, locationLabel, locationDistance } = useLocation()
   const isLocalized = !!(locationLabel && locationCoords)
   const queryClient = useQueryClient()
-  // Species Context Layer — filtre global activé depuis la recherche (PRD §3.4 / §6.1)
-  // V1.1.4 NG-023 ext : activeCategory propage le click chip catégorie d un post.
-  const { activeSpecies, activeCategory, clearActiveSpecies, clearActiveCategory } = useSpecies()
+  // Species Context Layer, filtre global active depuis la recherche (PRD §3.4 / §6.1)
+  // V1.1.4 : seule l espece passe par ce contexte. La categorie passe par
+  // FeedFilters (panel filtres + badge compteur), cf. onSelectCategory plus bas.
+  const { activeSpecies, clearActiveSpecies } = useSpecies()
   const [activeTab, setActiveTab] = useState<FeedTab>('recent')
   const [filters, setFilters] = useState<FeedFilters>({ ...DEFAULT_FILTERS })
   const [page, setPage] = useState(1)
@@ -364,11 +370,7 @@ export function FeedSection({
   const effectiveRadius = isLocalized && filters.radius === 0 ? locationDistance : filters.radius
 
   const feedFilters = {
-    // V1.1.4 NG-023 ext : activeCategory override les categories du filter panel.
-    // Quand l user click un chip catégorie d un post -> on filtre uniquement
-    // sur ce groupe taxonomique (les categories deja selectionnees dans le
-    // panel sont temporairement ignorees, prioriser l action explicite click).
-    categories: activeCategory ? [activeCategory.group] : filters.categories,
+    categories: filters.categories,
     helpOnly: filters.helpOnly,
     // V1.1.4 NG-022 (Nicolas 2026-06-01) : propagation du Species Context Layer
     // au backend. Avant ce fix, activeSpecies n affichait qu un bandeau visuel
@@ -415,8 +417,9 @@ export function FeedSection({
   const hasActiveFilters = activeFiltersCount > 0
 
   useEffect(() => {
-    onHasActiveFiltersChange(hasActiveFilters)
-  }, [hasActiveFilters, onHasActiveFiltersChange])
+    // V1.1.4 QA round 4 : on remonte le count (0..N) pour le badge chiffre
+    onHasActiveFiltersChange(activeFiltersCount)
+  }, [activeFiltersCount, onHasActiveFiltersChange])
 
   // Remettre à la page 1 quand l'onglet ou les filtres changent (reset synchrone via useState).
   const [prevTab, setPrevTab] = useState(activeTab)
@@ -488,69 +491,50 @@ export function FeedSection({
   return (
     <section aria-label="Feed des observations">
       {/*
-       * Bannière Species Context Layer — visible quand une espèce est active (PRD §6.1).
-       * Informe l'utilisateur que le feed est filtré + permet de revenir au feed global.
+       * V1.1.4 NG-023 ext final (Nicolas 2026-06-01) :
+       * Banniere "Feed filtre" RETIREE. Le filtre actif est desormais materialise
+       * directement dans le bouton recherche de la HomeNavbar (pill avec nom +
+       * croix X). Permet de garder l espace feed clean et integre l indication
+       * de filtre la ou l user attend de la voir : dans la barre de recherche.
+       * Cf. HomeNavbar.tsx pour l affichage du pill actif.
        */}
-      {activeSpecies && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="mb-4 flex items-center gap-3 rounded-xl bg-primary-light border border-primary/20 px-4 py-3"
-        >
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate">
-              {activeSpecies.common_name ?? activeSpecies.scientific_name}
-            </p>
-            <p className="text-xs text-muted-foreground italic truncate">
-              {activeSpecies.scientific_name}
-            </p>
-          </div>
-          <span className="text-xs text-primary font-medium shrink-0">Feed filtré</span>
-          <button
-            type="button"
-            onClick={clearActiveSpecies}
-            aria-label="Revenir au feed global"
-            className="size-7 flex items-center justify-center rounded-full hover:bg-primary/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
-          >
-            <X className="size-4 text-foreground" aria-hidden="true" />
-          </button>
-        </div>
-      )}
 
-      {/*
-       * V1.1.4 NG-023 ext (Nicolas 2026-06-01) :
-       * Banniere Category Context Layer, equivalente a celle d espece. Apparait
-       * quand l user clique sur un chip catégorie d un post -> feed filtre.
-       * Exclusive avec activeSpecies (cf. SpeciesContext setter logic).
-       */}
-      {activeCategory && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="mb-4 flex items-center gap-3 rounded-xl bg-primary-light border border-primary/20 px-4 py-3"
-        >
-          <span className="text-xl shrink-0" aria-hidden="true">
-            {activeCategory.emoji}
-          </span>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate">
-              {activeCategory.label}
-            </p>
-            <p className="text-xs text-muted-foreground truncate">
-              {t('home.feed.filteredByCategory', {
-                defaultValue: 'Filtre par catégorie',
-              })}
-            </p>
+      {/* V1.1.4 QA round 6 (Nicolas 2026-06-01) : pill recherche active mobile
+          sticky sous la navbar. Click sur le pill -> ouvre le SearchPanel
+          pour changer d espece. X clear le filtre. */}
+      {activeSpecies && (
+        <div className="md:hidden sticky top-[72px] z-30 px-4 pt-3 pb-2 mb-2 bg-cream-lighter/95 backdrop-blur-sm">
+          <div className="flex items-center gap-2 bg-cream-lighter border border-border rounded-full pl-3 pr-2 py-2">
+            <button
+              type="button"
+              onClick={() => {
+                // Ouvre le SearchPanel via un event que MobileNavLayer ecoute
+                window.dispatchEvent(new CustomEvent('naturegraph:open-search'))
+              }}
+              className="flex-1 flex items-center gap-2 min-w-0 focus-visible:outline-none rounded-full"
+              aria-label="Modifier la recherche"
+            >
+              <Search
+                className="size-4 text-primary shrink-0"
+                strokeWidth={3}
+                aria-hidden="true"
+              />
+              <span className="text-sm font-medium text-foreground truncate text-left">
+                {activeSpecies.common_name ?? activeSpecies.scientific_name}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                clearActiveSpecies()
+              }}
+              aria-label="Retirer le filtre"
+              className="shrink-0 size-7 flex items-center justify-center rounded-full hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <X className="size-4 text-foreground" aria-hidden="true" />
+            </button>
           </div>
-          <span className="text-xs text-primary font-medium shrink-0">Feed filtré</span>
-          <button
-            type="button"
-            onClick={clearActiveCategory}
-            aria-label="Revenir au feed global"
-            className="size-7 flex items-center justify-center rounded-full hover:bg-primary/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
-          >
-            <X className="size-4 text-foreground" aria-hidden="true" />
-          </button>
         </div>
       )}
 
@@ -759,6 +743,20 @@ export function FeedSection({
                   isOwnPost={!!user?.id && post.authorId === user.id}
                   onReact={handleReact}
                   onEditPost={onEditPost}
+                  /* V1.1.4 NG-023 ext : click chip categorie -> coche dans
+                     filters.categories (badge "1" naturel via FeedFilterPanel).
+                     L user reset via le panneau filtres standard.
+                     QA Nicolas 2026-06-01 : scroll up auto, l user etait
+                     laisse au milieu de la page apres click ce qui etait
+                     perturbant ("je suis ou ?"). */
+                  onSelectCategory={(group) => {
+                    setFilters((prev) =>
+                      prev.categories.includes(group)
+                        ? prev
+                        : { ...prev, categories: [...prev.categories, group] },
+                    )
+                    window.scrollTo({ top: 0, behavior: 'auto' })
+                  }}
                   /* Dernier item du feed : on retire la bordure de fin pour
                      éviter une barre orpheline en bas de liste. */
                   hideEndBorder={idx === posts.length - 1}

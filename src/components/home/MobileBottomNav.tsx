@@ -46,6 +46,12 @@ interface MobileBottomNavProps {
    * En mode invité, on navigue toujours vers /login (jamais ce callback).
    */
   onProfileClick?: () => void
+  /**
+   * @deprecated V1.1.4 QA round 4 : retire. L indicateur est maintenant
+   * dans le sub-header full width de HomeNavbar mobile, pas sur l icone.
+   * Conserve pour compat retro sans warning TypeScript chez les callers.
+   */
+  searchActive?: boolean
 }
 
 /**
@@ -58,6 +64,7 @@ export function MobileBottomNav({
   onMenuClick,
   onLocationClick,
   onProfileClick,
+  searchActive: _searchActive = false,
 }: MobileBottomNavProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -144,7 +151,11 @@ export function MobileBottomNav({
           </button>
         </div>
 
-        {/* ── Recherche ────────────────────────────────────────────────────── */}
+        {/* ── Recherche ──────────────────────────────────────────────────────
+            V1.1.4 QA round 4 (Nicolas 2026-06-01) : retrait du style actif
+            sur l icone mobile. L indicateur de filtre actif est materialise
+            par un sub-header full width sous la HomeNavbar (cf. HomeNavbar
+            mobile), plus visible et plus accessible que sur l icone. */}
         <button
           type="button"
           onClick={onSearchClick}

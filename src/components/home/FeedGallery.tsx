@@ -132,14 +132,22 @@ export function FeedGallery({ posts }: FeedGalleryProps) {
               className={['w-full object-cover', ASPECT_CLASSES[item.format]].join(' ')}
             />
 
-            {/* Badge multi-photos — visible si le post a plusieurs images */}
+            {/* Badge multi-photos — visible si le post a plusieurs images.
+                V1.1.4 QA round 6 (Nicolas 2026-06-01) : font-size INLINE
+                pour bypass tout purge/cache Tailwind. Avant les arbitrary
+                values text-[9px] etaient peut-etre purgees -> aucun
+                changement visible apres mes commits. Inline style = source
+                de verite, prioritaire sur tout. */}
             {item.imagesCount > 1 && (
               <span
-                className="absolute top-2 right-2 flex items-center gap-1 bg-black/55 text-white text-xs font-semibold px-1.5 py-0.5 rounded backdrop-blur-sm"
+                className="absolute top-2 right-2 inline-flex items-center bg-black/55 text-white rounded backdrop-blur-sm"
+                style={{ gap: '3px', padding: '3px 6px' }}
                 aria-hidden="true"
               >
-                <Images className="size-3" aria-hidden="true" />
-                {item.imagesCount}
+                <Images aria-hidden="true" style={{ width: '12px', height: '12px' }} />
+                <span style={{ fontSize: '12px', fontWeight: 600, lineHeight: 1 }}>
+                  {item.imagesCount}
+                </span>
               </span>
             )}
 
