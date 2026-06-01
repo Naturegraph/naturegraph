@@ -324,9 +324,9 @@ export function FeedSection({
   const isLocalized = !!(locationLabel && locationCoords)
   const queryClient = useQueryClient()
   // Species Context Layer, filtre global active depuis la recherche (PRD §3.4 / §6.1)
-  // V1.1.4 NG-023 ext : activeCategory propage le click chip categorie d un post.
-  // Le clear se fait depuis le pill dans HomeNavbar (plus de bandeau dedie).
-  const { activeSpecies, activeCategory } = useSpecies()
+  // V1.1.4 : seule l espece passe par ce contexte. La categorie passe par
+  // FeedFilters (panel filtres + badge compteur), cf. onSelectCategory plus bas.
+  const { activeSpecies } = useSpecies()
   const [activeTab, setActiveTab] = useState<FeedTab>('recent')
   const [filters, setFilters] = useState<FeedFilters>({ ...DEFAULT_FILTERS })
   const [page, setPage] = useState(1)
@@ -365,11 +365,7 @@ export function FeedSection({
   const effectiveRadius = isLocalized && filters.radius === 0 ? locationDistance : filters.radius
 
   const feedFilters = {
-    // V1.1.4 NG-023 ext : activeCategory override les categories du filter panel.
-    // Quand l user click un chip catégorie d un post -> on filtre uniquement
-    // sur ce groupe taxonomique (les categories deja selectionnees dans le
-    // panel sont temporairement ignorees, prioriser l action explicite click).
-    categories: activeCategory ? [activeCategory.group] : filters.categories,
+    categories: filters.categories,
     helpOnly: filters.helpOnly,
     // V1.1.4 NG-022 (Nicolas 2026-06-01) : propagation du Species Context Layer
     // au backend. Avant ce fix, activeSpecies n affichait qu un bandeau visuel
@@ -702,6 +698,16 @@ export function FeedSection({
                   isOwnPost={!!user?.id && post.authorId === user.id}
                   onReact={handleReact}
                   onEditPost={onEditPost}
+                  /* V1.1.4 NG-023 ext : click chip categorie -> coche dans
+                     filters.categories (badge "1" naturel via FeedFilterPanel).
+                     L user reset via le panneau filtres standard. */
+                  onSelectCategory={(group) => {
+                    setFilters((prev) =>
+                      prev.categories.includes(group)
+                        ? prev
+                        : { ...prev, categories: [...prev.categories, group] },
+                    )
+                  }}
                   /* Dernier item du feed : on retire la bordure de fin pour
                      éviter une barre orpheline en bas de liste. */
                   hideEndBorder={idx === posts.length - 1}

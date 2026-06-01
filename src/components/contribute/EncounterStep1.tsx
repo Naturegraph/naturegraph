@@ -275,6 +275,16 @@ interface EncounterStep1Props {
   /** Callback pré-remplissage étape 3 (date, GPS, time-of-day extraits). */
   onMetadataExtracted?: (meta: PhotoMetadata) => void
   error?: string
+  /**
+   * V1.1.4 NG-024 (Nicolas 2026-06-01) : photos deja attachees au post quand
+   * on est en mode edition. Affichage thumbnails en haut de l etape 1 avec
+   * bouton X individuel pour supprimer. Sans cette section, l user editait
+   * son post sans voir aucune de ses photos -> impression qu elles avaient
+   * disparu.
+   */
+  existingMedia?: Array<{ id: string; url: string; storagePath: string }>
+  /** Appele quand l user supprime une photo existante. */
+  onRemoveExistingMedia?: (mediaId: string, storagePath: string) => void
 }
 
 export function EncounterStep1({
@@ -284,6 +294,8 @@ export function EncounterStep1({
   onDisplayFormatChange,
   onMetadataExtracted,
   error,
+  existingMedia,
+  onRemoveExistingMedia,
 }: EncounterStep1Props) {
   const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -357,6 +369,47 @@ export function EncounterStep1({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-base text-foreground">{labels.maxPhotos}</p>
+
+      {/* V1.1.4 NG-024 : photos existantes en mode edition.
+          Sans cette section, l user en mode edit voyait l uploader vide et
+          pensait que ses photos avaient disparu. Affichage en haut, separe
+          des nouvelles photos (Files) pour distinguer existant vs ajout. */}
+      {existingMedia && existingMedia.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-medium text-foreground">
+            {t('contribute.media.existingPhotos', {
+              defaultValue: 'Photos de cette observation',
+              count: existingMedia.length,
+            })}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {existingMedia.map((media) => (
+              <div
+                key={media.id}
+                className="relative size-20 rounded-md overflow-hidden border border-border bg-muted shrink-0"
+              >
+                <img
+                  src={media.url}
+                  alt=""
+                  className="size-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+                {onRemoveExistingMedia && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveExistingMedia(media.id, media.storagePath)}
+                    aria-label={labels.removeShort}
+                    className="absolute top-1 right-1 size-6 rounded-full bg-foreground/80 text-background hover:bg-foreground transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <X className="size-3.5" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {files.length === 0 ? (
         <Dropzone

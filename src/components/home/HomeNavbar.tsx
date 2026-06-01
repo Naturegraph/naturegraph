@@ -111,14 +111,12 @@ export function HomeNavbar({
   // Compteur de notifications non lues, alimente le badge
   const { data: unreadCount } = useUnreadCount(profile?.id)
 
-  // V1.1.4 NG-023 ext final : filtre actif depuis le Species/Category Context Layer
-  const { activeSpecies, activeCategory, clearActiveSpecies, clearActiveCategory } = useSpecies()
-  // Label affichable du filtre actif (espece > categorie > rien)
+  // V1.1.4 NG-023 ext final : pill espece active dans le bouton recherche.
+  // La categorie a un flow distinct (FeedFilterPanel + badge compteur).
+  const { activeSpecies, clearActiveSpecies } = useSpecies()
   const activeFilterLabel = activeSpecies
     ? (activeSpecies.common_name ?? activeSpecies.scientific_name)
-    : activeCategory
-      ? activeCategory.label
-      : null
+    : null
 
   // ── États des panels / modals ─────────────────────────────────────────────
   const [showSearch, setShowSearch] = useState(false)
@@ -342,10 +340,7 @@ export function HomeNavbar({
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        if (activeSpecies) clearActiveSpecies()
-                        else if (activeCategory) clearActiveCategory()
-                      }}
+                      onClick={() => clearActiveSpecies()}
                       aria-label={t('home.navbar.clearFilter', {
                         defaultValue: 'Retirer le filtre',
                       })}

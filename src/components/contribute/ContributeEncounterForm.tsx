@@ -570,6 +570,18 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
                   }))
                 }}
                 error={errors.files}
+                // V1.1.4 NG-024 : photos existantes affichees aussi en step 1
+                // pour permettre la suppression OU l ajout depuis l etape photos.
+                existingMedia={isEditing ? existingMedia : undefined}
+                onRemoveExistingMedia={async (mediaId, storagePath) => {
+                  setExistingMedia((prev) => prev.filter((m) => m.id !== mediaId))
+                  try {
+                    const { deletePostMedia } = await import('@/services/mediaService')
+                    await deletePostMedia(mediaId, storagePath)
+                  } catch (err) {
+                    console.error('[ContributeEncounterForm] delete media failed:', err)
+                  }
+                }}
               />
             )}
 
