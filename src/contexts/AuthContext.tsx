@@ -361,11 +361,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       30 * 60 * 1000,
     )
 
+    // V1.1.4 NG-004 Phase 1 (Nicolas 2026-05-31) : refresh proactif quand
+    // l user revient sur l onglet apres une longue absence (visibility change).
+    // Symptome NG-004 #2/#3 : session instable apres 30 min usage / perte
+    // d etat authentifie. Cause probable : token expire pendant l absence
+    // mais le refresh interval ne se declenche que toutes les 30 min.
+    // Solution : au visibility change visible, on force un refresh session
+    // si la derniere mise a jour date de > 10 min.
+    let lastSessionCheck = Date.now()
+    function handleVisibility() {
+      if (document.visibilityState !== 'visible') return
+      const elapsed = Date.now() - lastSessionCheck
+      if (elapsed < 10 * 60 * 1000) return
+      lastSessionCheck = Date.now()
+      supabase?.auth.refreshSession().catch(async (err) => {
+        if (isInvalidRefreshTokenError(err)) {
+          console.warn('[Auth] Refresh token mort au retour de tab -> signOut')
+          clearAuthStorage()
+          await supabase!.auth.signOut({ scope: 'local' }).catch(() => {})
+        }
+      })
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
     return () => {
       clearTimeout(bootTimeout)
       subscription.unsubscribe()
       clearInterval(refreshInterval)
       window.removeEventListener('storage', handleStorageChange)
+      document.removeEventListener('visibilitychange', handleVisibility)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
