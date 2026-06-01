@@ -100,19 +100,26 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
 
   const isEditing = !!editingPostId
 
-  // En mode edition on demarre directement a l etape 3 (details), les
-  // photos existantes ne sont pas re-injectables dans le picker et l user
-  // veut surtout corriger les metadonnees. Lazy init via callback pour
-  // eviter l appel setState dans useEffect (regle eslint react-hooks).
-  const [step, setStep] = useState<number>(() => (editingPostId ? 3 : 1))
-
   // NG-004 (Nicolas 2026-05-31) : auto-save brouillon en localStorage (TTL 30 min)
   // pour ne pas perdre le travail en cas d erreur de submit ou refresh accidentel.
   // Pas en mode edition (les valeurs viennent de la DB, pas pertinent).
+  // Inclut maintenant `step` pour reprendre l user a l etape ou il etait
+  // (retour QA Nicolas : "j ai du me refaire les 3 etapes pour comprendre").
   const DRAFT_KEY = 'encounter-v1'
-  // Type du payload brouillon (sans les Files qui ne sont pas serialisables).
-  type DraftPayload = Omit<EncounterFormData, 'files'>
+  type DraftPayload = Omit<EncounterFormData, 'files'> & { step?: number }
   const restoredDraft = !editingPostId ? readDraft<DraftPayload>(DRAFT_KEY) : null
+
+  // En mode edition -> step 3 force. Sinon : si brouillon avec step memorise,
+  // on reprend ou l user etait. Sinon : step 1 (debut neuf).
+  // Cap a 2 max : sans photos persistees on ne peut pas valider step 3, donc
+  // on s arrete a step 2 (especes) qui permet de continuer logiquement.
+  const [step, setStep] = useState<number>(() => {
+    if (editingPostId) return 3
+    if (restoredDraft?.step && restoredDraft.step > 1) {
+      return Math.min(restoredDraft.step, 2)
+    }
+    return 1
+  })
   const [form, setForm] = useState<EncounterFormData>(() => {
     const defaults: EncounterFormData = {
       files: [],
@@ -245,6 +252,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
       locationCountry: form.locationCountry,
       locationRegion: form.locationRegion,
       locationHidden: form.locationHidden,
+      step,
     },
     !isEditing,
   )

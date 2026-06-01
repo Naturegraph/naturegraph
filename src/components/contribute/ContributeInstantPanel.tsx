@@ -102,13 +102,20 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
   const { submit, isSubmitting, uploadProgress, uploadError, clearError } =
     useContributePostSubmit('ContributeInstantPanel')
 
-  // NG-004 (Nicolas 2026-05-31) : auto-save brouillon TTL 30 min pour ne
-  // pas perdre le travail en cas d erreur de submit / refresh accidentel.
+  // NG-004 (Nicolas 2026-05-31) : auto-save brouillon TTL 30 min + reprise
+  // a l etape ou l user etait (retour QA "je dois tout reprendre").
   const DRAFT_KEY = 'instant-v1'
-  type DraftPayload = Omit<InstantFormData, 'files'>
+  type DraftPayload = Omit<InstantFormData, 'files'> & { step?: number }
   const restoredDraft = !editingPostId ? readDraft<DraftPayload>(DRAFT_KEY) : null
 
-  const [step, setStep] = useState(editingPostId ? 2 : 1)
+  // En edition -> step 2 (details). Sinon : reprend l etape memorisee (cap 1
+  // car sans Files persistees, step 2 a besoin d au moins une photo).
+  // Pour InstantPanel il n y a que 2 etapes donc on reprend step 1 par defaut
+  // si brouillon (l user voit ses metadonnees deja saisies au prochain step).
+  const [step, setStep] = useState(() => {
+    if (editingPostId) return 2
+    return 1
+  })
   const [form, setForm] = useState<InstantFormData>(() => {
     const defaults: InstantFormData = {
       files: [],
@@ -194,6 +201,7 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
       locationCountry: form.locationCountry,
       locationRegion: form.locationRegion,
       locationHidden: form.locationHidden,
+      step,
     },
     !editingPostId,
   )

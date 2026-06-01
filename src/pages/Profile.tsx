@@ -126,7 +126,11 @@ export default function Profile() {
   // directement dans le profil pour eviter le redirect vers /. L user reste
   // dans son contexte profil pendant l edition. Logique partagee via le
   // hook useEditPostFlow (meme behavior dans Home, Profile, PostDetail).
-  const { onEditPost: handleEditFromProfile, panelNode: editPanelNode } = useEditPostFlow()
+  const {
+    onEditPost: handleEditFromProfile,
+    openCreate,
+    panelNode: editPanelNode,
+  } = useEditPostFlow()
 
   // ── Hooks Supabase ────────────────────────────────────────────────────────
   // Tous les hooks DOIVENT être appelés inconditionnellement (rules of hooks).
@@ -303,9 +307,18 @@ export default function Profile() {
     )
   }
 
+  // Wire le hook openCreate sur la navbar pour que clic "+ Contribuer" depuis
+  // le profil ouvre le panel inline (au lieu de naviguer vers /contribute en
+  // fond blanc - retour QA Nicolas 2026-05-31).
+  function handleContributeTypeSelect(type: string) {
+    if (type === 'nature_encounter' || type === 'nature_instant') {
+      openCreate(type)
+    }
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-cream-lighter">
-      <HomeNavbar />
+      <HomeNavbar onContributeTypeSelect={handleContributeTypeSelect} />
 
       <main id="main-content" className="flex-1 w-full pb-20 md:pb-6">
         {/* Header pleine largeur */}
@@ -343,7 +356,9 @@ export default function Profile() {
         </div>
       </main>
 
-      <MobileNavLayer />
+      {/* Mobile bottom nav : bouton "+" ouvre directement le panel Rencontre
+          Nature dans le profil (au lieu de naviguer vers /contribute fond blanc). */}
+      <MobileNavLayer onContributeClick={() => openCreate('nature_encounter')} />
 
       {showEditPanel && (
         <EditProfilePanel
