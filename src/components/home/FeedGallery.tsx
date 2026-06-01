@@ -132,13 +132,15 @@ export function FeedGallery({ posts }: FeedGalleryProps) {
               className={['w-full object-cover', ASPECT_CLASSES[item.format]].join(' ')}
             />
 
-            {/* Badge multi-photos — visible si le post a plusieurs images */}
+            {/* Badge multi-photos — visible si le post a plusieurs images.
+                V1.1.4 QA (Nicolas 2026-06-01) : taille reduite (10px text +
+                icone 2.5 + padding 1) pour rester discret sur les tiles. */}
             {item.imagesCount > 1 && (
               <span
-                className="absolute top-2 right-2 flex items-center gap-1 bg-black/55 text-white text-xs font-semibold px-1.5 py-0.5 rounded backdrop-blur-sm"
+                className="absolute top-1.5 right-1.5 flex items-center gap-0.5 bg-black/55 text-white text-[10px] font-semibold px-1 py-0.5 rounded backdrop-blur-sm leading-none"
                 aria-hidden="true"
               >
-                <Images className="size-3" aria-hidden="true" />
+                <Images className="size-2.5" aria-hidden="true" />
                 {item.imagesCount}
               </span>
             )}
