@@ -56,6 +56,7 @@ function profileToDisplayData(profile: Profile): ProfileDisplayData {
     // Convertit string[] → { id, percent }[] pour l'affichage des badges intérêts
     interests: (profile.interests ?? []).map((id) => ({ id, percent: 0 })),
     instagram: profile.instagram,
+    twitter: profile.twitter,
     website: profile.website,
     followers_count: profile.followers_count,
     following_count: profile.following_count,
@@ -221,6 +222,7 @@ export default function Profile() {
         city: data.city ?? undefined,
         region: data.region ?? undefined,
         instagram: data.instagram ?? undefined,
+        twitter: data.twitter ?? undefined,
         website: data.website ?? undefined,
         // `null` autorisé pour supprimer la photo (cas EditPhotoTab Supprimer).
         avatar_url: data.avatar_url === undefined ? undefined : data.avatar_url,

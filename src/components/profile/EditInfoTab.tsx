@@ -17,6 +17,7 @@
 
 import { forwardRef, useImperativeHandle, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Globe, Instagram, Twitter } from 'lucide-react'
 import type { ProfileDisplayData } from './ProfileHeader'
 import {
   validateUsernameFormat,
@@ -56,6 +57,12 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
 
   const [username, setUsername] = useState(profile.username)
   const [bio, setBio] = useState(profile.bio ?? '')
+  // NG-011 (Nicolas 2026-05-31) : 3 reseaux limites au scope Figma actuel.
+  // Twitter (X), Instagram, site personnel. iNaturalist + autres viendront
+  // en V1.2.0 si la beta en fait la demande.
+  const [instagram, setInstagram] = useState(profile.instagram ?? '')
+  const [twitter, setTwitter] = useState(profile.twitter ?? '')
+  const [website, setWebsite] = useState(profile.website ?? '')
   const [weekGoal, setWeekGoal] = useState<number>(profile.weekProgress?.goal ?? 5)
   // `weekGoalInput` permet à l'utilisateur de vider l'input pour taper
   // un nombre — sans ça type="number" + Number('') = NaN bloquait la saisie.
@@ -73,9 +80,15 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
     () => ({
       save() {
         if (!isUsernameValid) return false
+        // Nettoyage @ prefix sur handles (Instagram / Twitter) au cas ou l user
+        // l a colle. Trim systematique.
+        const cleanHandle = (s: string) => s.trim().replace(/^@+/, '')
         onSave({
           username: trimmedUsername,
           bio: bio || null,
+          instagram: cleanHandle(instagram) || null,
+          twitter: cleanHandle(twitter) || null,
+          website: website.trim() || null,
           weekProgress: {
             current: profile.weekProgress?.current ?? 0,
             goal: weekGoal,
@@ -89,6 +102,9 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
       isUsernameValid,
       trimmedUsername,
       bio,
+      instagram,
+      twitter,
+      website,
       weekGoal,
       profile.weekProgress?.current,
       onSave,
@@ -164,6 +180,67 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
           maxLength={300}
           className={TEXTAREA_CLASS}
         />
+      </div>
+
+      {/* ── NG-011 Reseaux sociaux et lien externe ──
+          Scope V1.1.3 : Instagram, Twitter (X), site web. Limite intentionnelle
+          a 3 reseaux les plus courants pour les naturalistes / photographes.
+          On enrichira (iNaturalist, YouTube, etc.) en V1.2.0 si la beta le
+          demande (Nicolas 2026-05-31). */}
+      <div className="flex flex-col gap-3">
+        <p className="text-sm font-medium text-foreground">
+          {t('profile.edit.socialsTitle', { defaultValue: 'Reseaux sociaux et lien externe' })}
+        </p>
+
+        {/* Instagram - sans @, on le retire au save si l user le tape */}
+        <div className="flex items-center gap-2">
+          <Instagram className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
+          <input
+            type="text"
+            value={instagram}
+            onChange={(e) => setInstagram(e.target.value)}
+            placeholder={t('profile.edit.instagramPlaceholder', { defaultValue: 'ton_pseudo' })}
+            maxLength={30}
+            aria-label="Instagram"
+            className={INPUT_PILL_CLASS}
+          />
+        </div>
+
+        {/* Twitter / X - meme strategie sans @ */}
+        <div className="flex items-center gap-2">
+          <Twitter className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
+          <input
+            type="text"
+            value={twitter}
+            onChange={(e) => setTwitter(e.target.value)}
+            placeholder={t('profile.edit.twitterPlaceholder', { defaultValue: 'ton_pseudo' })}
+            maxLength={30}
+            aria-label="X (Twitter)"
+            className={INPUT_PILL_CLASS}
+          />
+        </div>
+
+        {/* Site personnel - URL complete */}
+        <div className="flex items-center gap-2">
+          <Globe className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
+          <input
+            type="url"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            placeholder={t('profile.edit.websitePlaceholder', {
+              defaultValue: 'https://mon-site.fr',
+            })}
+            maxLength={200}
+            aria-label={t('profile.edit.website', { defaultValue: 'Site web' })}
+            className={INPUT_PILL_CLASS}
+          />
+        </div>
+
+        <p className="text-xs italic text-muted-foreground">
+          {t('profile.edit.socialsHelper', {
+            defaultValue: 'Optionnel. Visible publiquement sur ton profil.',
+          })}
+        </p>
       </div>
 
       {/* ── Objectif hebdomadaire — saisie libre 1-50 ── */}
