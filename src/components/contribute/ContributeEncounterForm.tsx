@@ -609,19 +609,6 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
             {step === 3 && (
               <EncounterStep3
                 submitAttempted={submitAttempted}
-                existingMedia={isEditing ? existingMedia : undefined}
-                onRemoveExistingMedia={async (mediaId, storagePath) => {
-                  // V1.1.4 NG-024 : suppression optimiste (state local d abord)
-                  // puis delete API best-effort. Si la suppression DB echoue,
-                  // l user reload et reverra la photo (pas de rollback UI).
-                  setExistingMedia((prev) => prev.filter((m) => m.id !== mediaId))
-                  try {
-                    const { deletePostMedia } = await import('@/services/mediaService')
-                    await deletePostMedia(mediaId, storagePath)
-                  } catch (err) {
-                    console.error('[ContributeEncounterForm] delete media failed:', err)
-                  }
-                }}
                 title={form.title}
                 onTitleChange={(v) => set('title', v)}
                 description={form.description}

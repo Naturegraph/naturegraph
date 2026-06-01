@@ -710,7 +710,7 @@ export function FeedSection({
                         ? prev
                         : { ...prev, categories: [...prev.categories, group] },
                     )
-                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                    window.scrollTo({ top: 0, behavior: 'auto' })
                   }}
                   /* Dernier item du feed : on retire la bordure de fin pour
                      éviter une barre orpheline en bas de liste. */

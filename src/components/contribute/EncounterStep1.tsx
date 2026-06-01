@@ -302,12 +302,28 @@ export function EncounterStep1({
   const [isDragging, setIsDragging] = useState(false)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const previewUrls = usePreviewUrls(files)
+  const filePreviewUrls = usePreviewUrls(files)
 
-  // Index sécurisé : si la photo sélectionnée est supprimée, on retombe sur
-  // la dernière disponible. Calculé en dérivé (pas de useEffect → évite les
-  // cascading renders, lint react-hooks/set-state-in-effect).
-  const safeIndex = files.length > 0 ? Math.min(selectedIndex, files.length - 1) : 0
+  // V1.1.4 NG-024 (Nicolas 2026-06-01) : liste unifiee photos existantes
+  // (deja en DB) + nouveaux Files. L UI BigPreview + ThumbRow traite les
+  // deux sources de maniere uniforme. La distinction se fait au moment
+  // du remove (existing -> delete API ; file -> retrait local).
+  type Slot =
+    | { kind: 'existing'; id: string; url: string; storagePath: string }
+    | { kind: 'file'; fileIndex: number; url: string }
+  const slots: Slot[] = [
+    ...(existingMedia ?? []).map((m) => ({
+      kind: 'existing' as const,
+      id: m.id,
+      url: m.url,
+      storagePath: m.storagePath,
+    })),
+    ...files.map((_, i) => ({ kind: 'file' as const, fileIndex: i, url: filePreviewUrls[i] })),
+  ]
+  const totalSlots = slots.length
+
+  // Index securise sur la liste unifiee
+  const safeIndex = totalSlots > 0 ? Math.min(selectedIndex, totalSlots - 1) : 0
 
   const handleFiles = useCallback(
     (incoming: FileList | null) => {
@@ -349,6 +365,20 @@ export function EncounterStep1({
     [files, onFilesChange, onMetadataExtracted],
   )
 
+  // V1.1.4 NG-024 : suppression unifiee sur la liste fusionnee
+  // - existing : appelle le callback du parent (delete API + state local)
+  // - file : retire du tableau files local
+  const removeSlot = useCallback(
+    (slot: Slot) => {
+      if (slot.kind === 'existing') {
+        onRemoveExistingMedia?.(slot.id, slot.storagePath)
+      } else {
+        removeAt(slot.fileIndex)
+      }
+    },
+    [onRemoveExistingMedia, removeAt],
+  )
+
   const labels = {
     maxPhotos: t('contribute.panel.maxPhotos', { count: MAX_FILES }),
     addBig: t('contribute.media.addPhotosBig', {
@@ -370,48 +400,13 @@ export function EncounterStep1({
     <div className="flex flex-col gap-4">
       <p className="text-base text-foreground">{labels.maxPhotos}</p>
 
-      {/* V1.1.4 NG-024 : photos existantes en mode edition.
-          Sans cette section, l user en mode edit voyait l uploader vide et
-          pensait que ses photos avaient disparu. Affichage en haut, separe
-          des nouvelles photos (Files) pour distinguer existant vs ajout. */}
-      {existingMedia && existingMedia.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium text-foreground">
-            {t('contribute.media.existingPhotos', {
-              defaultValue: 'Photos de cette observation',
-              count: existingMedia.length,
-            })}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {existingMedia.map((media) => (
-              <div
-                key={media.id}
-                className="relative size-20 rounded-md overflow-hidden border border-border bg-muted shrink-0"
-              >
-                <img
-                  src={media.url}
-                  alt=""
-                  className="size-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                />
-                {onRemoveExistingMedia && (
-                  <button
-                    type="button"
-                    onClick={() => onRemoveExistingMedia(media.id, media.storagePath)}
-                    aria-label={labels.removeShort}
-                    className="absolute top-1 right-1 size-6 rounded-full bg-foreground/80 text-background hover:bg-foreground transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                  >
-                    <X className="size-3.5" aria-hidden="true" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {files.length === 0 ? (
+      {/* V1.1.4 NG-024 (Nicolas 2026-06-01 round 3) : EXACTEMENT meme UI que
+          la creation. Les photos existantes (mode edition) et les nouvelles
+          Files sont fusionnees dans une seule liste `slots`. BigPreview +
+          ThumbRow traitent les deux sources de maniere uniforme.
+          L user voit ses photos comme s il venait de les uploader, avec
+          BigPreview + thumbnails + X pour supprimer. */}
+      {totalSlots === 0 ? (
         <Dropzone
           onClick={openPicker}
           onDrop={handleFiles}
@@ -426,22 +421,28 @@ export function EncounterStep1({
         // → bascule la sélection.
         <div className="flex flex-col gap-1" role="region" aria-label={labels.galleryLabel}>
           <BigPreview
-            url={previewUrls[safeIndex]}
+            url={slots[safeIndex]?.url ?? ''}
             aspectClass={FORMAT_ASPECT[displayFormat]}
-            onRemove={() => removeAt(safeIndex)}
+            onRemove={() => {
+              const slot = slots[safeIndex]
+              if (slot) removeSlot(slot)
+            }}
             removeLabel={labels.removeShort}
           />
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1">
-            {Array.from({ length: MAX_FILES }).map((_, i) =>
-              i < files.length ? (
+            {Array.from({ length: MAX_FILES }).map((_, i) => {
+              const slot = slots[i]
+              return slot ? (
                 <ThumbSlot
-                  key={`thumb-${i}`}
-                  url={previewUrls[i]}
+                  key={
+                    slot.kind === 'existing' ? `existing-${slot.id}` : `file-${slot.fileIndex}`
+                  }
+                  url={slot.url}
                   selected={i === safeIndex}
                   aspectClass={FORMAT_ASPECT[displayFormat]}
                   onSelect={() => setSelectedIndex(i)}
-                  onRemove={() => removeAt(i)}
+                  onRemove={() => removeSlot(slot)}
                   selectLabel={`${t('home.post.goToImage', { defaultValue: 'Aller à la photo' })} ${i + 1}`}
                   removeLabel={labels.removeShort}
                 />
@@ -452,8 +453,8 @@ export function EncounterStep1({
                   label={labels.addMore}
                   aspectClass={FORMAT_ASPECT[displayFormat]}
                 />
-              ),
-            )}
+              )
+            })}
           </div>
         </div>
       )}

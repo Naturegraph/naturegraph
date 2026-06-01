@@ -119,11 +119,49 @@ export function HomeNavbar({
     : null
 
   // ── États des panels / modals ─────────────────────────────────────────────
-  const [showSearch, setShowSearch] = useState(false)
-  const [showNotifications, setShowNotifications] = useState(false)
-  const [showContribute, setShowContribute] = useState(false)
-  const [showLocationModal, setShowLocationModal] = useState(false)
-  const [showProfileMenu, setShowProfileMenu] = useState(false)
+  // V1.1.4 QA round 3 (Nicolas 2026-06-01) : exclusivite forcee. Quand un
+  // panel s ouvre, on ferme tous les autres simultanement. Plus robuste que
+  // le click outside seul (qui pouvait laisser un cumul si l user cliquait
+  // tres vite ou si un panel ratait le listener).
+  const [showSearch, setShowSearchRaw] = useState(false)
+  const [showNotifications, setShowNotificationsRaw] = useState(false)
+  const [showContribute, setShowContributeRaw] = useState(false)
+  const [showLocationModal, setShowLocationModalRaw] = useState(false)
+  const [showProfileMenu, setShowProfileMenuRaw] = useState(false)
+
+  // Helper : ouvre un panel et ferme tous les autres
+  function closeAllPanels() {
+    setShowSearchRaw(false)
+    setShowNotificationsRaw(false)
+    setShowContributeRaw(false)
+    setShowLocationModalRaw(false)
+    setShowProfileMenuRaw(false)
+  }
+  function setShowSearch(v: boolean | ((prev: boolean) => boolean)) {
+    const next = typeof v === 'function' ? v(showSearch) : v
+    if (next) closeAllPanels()
+    setShowSearchRaw(next)
+  }
+  function setShowNotifications(v: boolean | ((prev: boolean) => boolean)) {
+    const next = typeof v === 'function' ? v(showNotifications) : v
+    if (next) closeAllPanels()
+    setShowNotificationsRaw(next)
+  }
+  function setShowContribute(v: boolean | ((prev: boolean) => boolean)) {
+    const next = typeof v === 'function' ? v(showContribute) : v
+    if (next) closeAllPanels()
+    setShowContributeRaw(next)
+  }
+  function setShowLocationModal(v: boolean | ((prev: boolean) => boolean)) {
+    const next = typeof v === 'function' ? v(showLocationModal) : v
+    if (next) closeAllPanels()
+    setShowLocationModalRaw(next)
+  }
+  function setShowProfileMenu(v: boolean | ((prev: boolean) => boolean)) {
+    const next = typeof v === 'function' ? v(showProfileMenu) : v
+    if (next) closeAllPanels()
+    setShowProfileMenuRaw(next)
+  }
   // SettingsPanel ouvert depuis le ProfileMenu (item "Paramètres"), son
   // state vit dans HomeNavbar (et non ProfileMenu) pour survivre à la
   // fermeture du ProfileMenu : on ferme le menu profil ET on ouvre les

@@ -663,7 +663,7 @@ export function FeedPost({
                             group_label: taxonomic_group ?? null,
                           })
                           // QA Nicolas : scroll up auto, coherence avec chip categorie
-                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                          window.scrollTo({ top: 0, behavior: 'auto' })
                         }}
                         aria-label={t('home.post.filterBySpecies', { species: speciesName ?? '' })}
                         className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}

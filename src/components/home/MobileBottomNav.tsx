@@ -152,9 +152,10 @@ export function MobileBottomNav({
         </div>
 
         {/* ── Recherche ──────────────────────────────────────────────────────
-            V1.1.4 QA Nicolas 2026-06-01 : indicateur visuel quand filtre actif
-            -> fond violet light + point sur l icone (coherent avec d autres
-            states actifs du DS). */}
+            V1.1.4 QA round 3 (Nicolas 2026-06-01) : indicateur visuel quand
+            filtre actif -> rond 40px (taille avatar profil) bg-primary-light
+            + petit point primary en haut a droite (coherent badge filtres
+            actifs + avatar profil). */}
         <button
           type="button"
           onClick={onSearchClick}
@@ -163,7 +164,7 @@ export function MobileBottomNav({
           aria-pressed={searchActive}
         >
           {searchActive ? (
-            <span className="inline-flex items-center justify-center size-9 rounded-full bg-primary-light">
+            <span className="relative inline-flex items-center justify-center size-10 rounded-full bg-primary-light border border-primary/20">
               <Search
                 className="size-5 text-primary"
                 strokeWidth={2.5}
@@ -171,7 +172,7 @@ export function MobileBottomNav({
               />
               <span
                 aria-hidden="true"
-                className="absolute top-1 right-1 size-2 rounded-full bg-primary pointer-events-none ring-2 ring-cream-lighter"
+                className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-primary pointer-events-none ring-2 ring-cream-lighter"
               />
             </span>
           ) : (
