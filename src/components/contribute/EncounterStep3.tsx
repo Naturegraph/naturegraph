@@ -134,6 +134,15 @@ interface EncounterStep3Props {
    *  switch ON ⇒ « rendre public » ⇒ locationHidden = false. */
   locationHidden: boolean
   onLocationHiddenChange: (v: boolean) => void
+  /**
+   * V1.1.4 NG-024 : photos existantes en mode edition.
+   * Quand defini (mode edit), affiche la grille des photos deja attachees
+   * au post avec un bouton X pour les supprimer individuellement.
+   * Undefined en mode creation.
+   */
+  existingMedia?: Array<{ id: string; url: string; storagePath: string }>
+  /** Appele quand l user supprime une photo existante. */
+  onRemoveExistingMedia?: (mediaId: string, storagePath: string) => void
 }
 
 const MAX_DESC = 1500
@@ -163,6 +172,8 @@ export function EncounterStep3({
   onLocationCoordsChange,
   locationHidden,
   onLocationHiddenChange,
+  existingMedia,
+  onRemoveExistingMedia,
 }: EncounterStep3Props) {
   const { t } = useTranslation()
   const titleId = useId()
@@ -239,12 +250,57 @@ export function EncounterStep3({
         })}
       </p>
 
+<<<<<<< HEAD
       {/* V1.1.4 NG-024 : section "Photos existantes" RETIREE de l etape 3.
           Les photos sont desormais affichees UNIQUEMENT dans l etape 1
           (Step1) avec exactement la meme UI que la creation (BigPreview +
           ThumbRow). L user voit ses photos comme s il venait de les
           uploader. Retour Nicolas 2026-06-01 : "plus logique en step 1
           uniquement, pas en mode thumbnails bizarre". */}
+=======
+      {/* V1.1.4 NG-024 : photos existantes en mode edition.
+          Sans cette section, l user editait son post sans voir aucune de ses
+          photos -> impression que les images avaient disparu. Ici grille
+          thumbnails 88px avec bouton X individuel pour supprimer. */}
+      {existingMedia && existingMedia.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-medium text-foreground">
+            {t('contribute.media.existingPhotos', {
+              defaultValue: 'Photos de cette observation',
+              count: existingMedia.length,
+            })}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {existingMedia.map((media) => (
+              <div
+                key={media.id}
+                className="relative size-20 rounded-md overflow-hidden border border-border bg-muted"
+              >
+                <img
+                  src={media.url}
+                  alt=""
+                  className="size-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+                {onRemoveExistingMedia && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveExistingMedia(media.id, media.storagePath)}
+                    aria-label={t('contribute.media.removeShort', {
+                      defaultValue: 'Supprimer',
+                    })}
+                    className="absolute top-1 right-1 size-6 rounded-full bg-foreground/80 text-background hover:bg-foreground transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <X className="size-3.5" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+>>>>>>> origin/main
 
       {/* ── 1. Titre (optionnel) ───────────────────────────────────────── */}
       <div className="flex flex-col gap-1.5">
