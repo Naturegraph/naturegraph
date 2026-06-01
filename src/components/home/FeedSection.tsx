@@ -287,7 +287,12 @@ interface FeedSectionProps {
   onViewModeChange: (mode: 'list' | 'grid') => void
   showFilters: boolean
   onShowFiltersChange: (show: boolean) => void
-  onHasActiveFiltersChange: (has: boolean) => void
+  /**
+   * V1.1.4 QA round 4 : remontee du COMPTE de filtres actifs (0..N) pour
+   * que la HomeNavbar puisse afficher un vrai badge chiffre coherent
+   * desktop/mobile (au lieu d un simple point rond).
+   */
+  onHasActiveFiltersChange: (count: number) => void
   /** Callback pour ouvrir le panel "Rencontre Nature" depuis le CTA empty state.
    *  Géré au niveau Home (qui contrôle activePanelType). */
   onContributeClick?: () => void
@@ -412,8 +417,9 @@ export function FeedSection({
   const hasActiveFilters = activeFiltersCount > 0
 
   useEffect(() => {
-    onHasActiveFiltersChange(hasActiveFilters)
-  }, [hasActiveFilters, onHasActiveFiltersChange])
+    // V1.1.4 QA round 4 : on remonte le count (0..N) pour le badge chiffre
+    onHasActiveFiltersChange(activeFiltersCount)
+  }, [activeFiltersCount, onHasActiveFiltersChange])
 
   // Remettre à la page 1 quand l'onglet ou les filtres changent (reset synchrone via useState).
   const [prevTab, setPrevTab] = useState(activeTab)

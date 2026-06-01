@@ -133,16 +133,17 @@ export function FeedGallery({ posts }: FeedGalleryProps) {
             />
 
             {/* Badge multi-photos — visible si le post a plusieurs images.
-                V1.1.4 QA round 3 (Nicolas 2026-06-01) : on garde l icone a
-                taille normale (size-3) mais on reduit UNIQUEMENT le chiffre
-                (text-[10px]) pour qu il reste lisible mais discret. */}
+                V1.1.4 QA round 4 (Nicolas 2026-06-01) : chiffre encore plus
+                petit (text-[9px] tabular-nums) et padding compact. */}
             {item.imagesCount > 1 && (
               <span
-                className="absolute top-2 right-2 inline-flex items-center gap-1 bg-black/55 text-white px-1.5 py-0.5 rounded backdrop-blur-sm"
+                className="absolute top-2 right-2 inline-flex items-center gap-0.5 bg-black/55 text-white px-1 py-px rounded backdrop-blur-sm"
                 aria-hidden="true"
               >
                 <Images className="size-3" aria-hidden="true" />
-                <span className="text-[10px] font-semibold leading-none">{item.imagesCount}</span>
+                <span className="text-[9px] font-medium leading-none tabular-nums">
+                  {item.imagesCount}
+                </span>
               </span>
             )}
 

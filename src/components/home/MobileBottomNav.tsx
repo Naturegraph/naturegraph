@@ -47,9 +47,9 @@ interface MobileBottomNavProps {
    */
   onProfileClick?: () => void
   /**
-   * V1.1.4 QA Nicolas 2026-06-01 : true quand un filtre de recherche (espece)
-   * est actif. L icone Search prend alors un fond violet light + un point
-   * indicateur pour signaler visuellement que la recherche est en cours.
+   * @deprecated V1.1.4 QA round 4 : retire. L indicateur est maintenant
+   * dans le sub-header full width de HomeNavbar mobile, pas sur l icone.
+   * Conserve pour compat retro sans warning TypeScript chez les callers.
    */
   searchActive?: boolean
 }
@@ -64,7 +64,7 @@ export function MobileBottomNav({
   onMenuClick,
   onLocationClick,
   onProfileClick,
-  searchActive = false,
+  searchActive: _searchActive = false,
 }: MobileBottomNavProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -152,32 +152,17 @@ export function MobileBottomNav({
         </div>
 
         {/* ── Recherche ──────────────────────────────────────────────────────
-            V1.1.4 QA round 3 (Nicolas 2026-06-01) : indicateur visuel quand
-            filtre actif -> rond 40px (taille avatar profil) bg-primary-light
-            + petit point primary en haut a droite (coherent badge filtres
-            actifs + avatar profil). */}
+            V1.1.4 QA round 4 (Nicolas 2026-06-01) : retrait du style actif
+            sur l icone mobile. L indicateur de filtre actif est materialise
+            par un sub-header full width sous la HomeNavbar (cf. HomeNavbar
+            mobile), plus visible et plus accessible que sur l icone. */}
         <button
           type="button"
           onClick={onSearchClick}
-          className={`${itemClasses(false)} relative`}
+          className={itemClasses(false)}
           aria-label={t('common.search')}
-          aria-pressed={searchActive}
         >
-          {searchActive ? (
-            <span className="relative inline-flex items-center justify-center size-10 rounded-full bg-primary-light border border-primary/20">
-              <Search
-                className="size-5 text-primary"
-                strokeWidth={2.5}
-                aria-hidden="true"
-              />
-              <span
-                aria-hidden="true"
-                className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-primary pointer-events-none ring-2 ring-cream-lighter"
-              />
-            </span>
-          ) : (
-            <Search className={iconSize} strokeWidth={2} aria-hidden="true" />
-          )}
+          <Search className={iconSize} strokeWidth={2} aria-hidden="true" />
         </button>
 
         {/* ── Profil ───────────────────────────────────────────────────────────

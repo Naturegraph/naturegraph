@@ -64,8 +64,11 @@ interface HomeNavbarProps {
   onToggleFeedView?: () => void
   /** Ouvre le panel filtres depuis la navbar mobile */
   onOpenFeedFilters?: () => void
-  /** Affiche le badge sur l'icône filtre si des filtres actifs */
-  feedHasActiveFilters?: boolean
+  /**
+   * V1.1.4 QA round 4 : nombre de filtres actifs (0..N) pour afficher un
+   * vrai badge chiffre sur l icone entonnoir, coherent desktop/mobile.
+   */
+  feedActiveFiltersCount?: number
   /**
    * Rappelé quand l'utilisateur choisit un type de contribution dans le menu desktop.
    * Si fourni, ouvre le panneau inline (panel overlay) plutôt que de naviguer.
@@ -93,7 +96,7 @@ export function HomeNavbar({
   feedViewMode = 'list',
   onToggleFeedView,
   onOpenFeedFilters,
-  feedHasActiveFilters = false,
+  feedActiveFiltersCount = 0,
   onContributeTypeSelect,
 }: HomeNavbarProps) {
   const { t } = useTranslation()
@@ -172,6 +175,30 @@ export function HomeNavbar({
 
   return (
     <>
+      {/* V1.1.4 QA round 4 (Nicolas 2026-06-01) : sub-header mobile full width
+          pour materialiser le filtre actif (espece). Avant : indicateur sur
+          l icone Search compact -> peu visible. Maintenant : bandeau dedie
+          sous la navbar avec label + bouton X, plus accessible. */}
+      {activeFilterLabel && (
+        <div
+          className="md:hidden sticky top-[72px] z-30 bg-primary-light border-b border-primary/20 px-4 py-2 flex items-center gap-2"
+          role="status"
+          aria-label={t('home.navbar.activeFilter', { defaultValue: 'Filtre actif' })}
+        >
+          <Search className="size-4 text-primary shrink-0" strokeWidth={3} aria-hidden="true" />
+          <span className="flex-1 text-sm font-medium text-foreground truncate">
+            {activeFilterLabel}
+          </span>
+          <button
+            type="button"
+            onClick={() => clearActiveSpecies()}
+            aria-label={t('home.navbar.clearFilter', { defaultValue: 'Retirer le filtre' })}
+            className="size-6 flex items-center justify-center rounded-full hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
+          >
+            <X className="size-4 text-foreground" aria-hidden="true" />
+          </button>
+        </div>
+      )}
       <header className="bg-cream-lighter h-[72px] sticky top-0 z-40 shrink-0 w-full">
         {/* Séparateur bas */}
         <div
@@ -235,11 +262,13 @@ export function HomeNavbar({
                     >
                       <Filter className="size-5 text-foreground" aria-hidden="true" />
                     </button>
-                    {feedHasActiveFilters && (
+                    {feedActiveFiltersCount > 0 && (
                       <span
-                        aria-hidden="true"
-                        className="absolute top-2 right-2 size-2 rounded-full bg-primary pointer-events-none"
-                      />
+                        aria-label={`${feedActiveFiltersCount} filtres actifs`}
+                        className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold leading-none pointer-events-none ring-2 ring-cream-lighter"
+                      >
+                        {feedActiveFiltersCount}
+                      </span>
                     )}
                   </div>
                 )}

@@ -55,7 +55,8 @@ export default function Home() {
   // État partagé feed — contrôlable depuis la navbar mobile ET le header desktop
   const [feedViewMode, setFeedViewMode] = useState<'list' | 'grid'>('list')
   const [feedShowFilters, setFeedShowFilters] = useState(false)
-  const [feedHasActiveFilters, setFeedHasActiveFilters] = useState(false)
+  // V1.1.4 QA round 4 : compteur de filtres actifs (0..N), pour le badge chiffre
+  const [feedActiveFiltersCount, setFeedActiveFiltersCount] = useState(0)
 
   /** Appelé depuis ContributeModal (desktop via navbar et mobile via FAB) */
   function handleContributeTypeSelect(type: string) {
@@ -72,7 +73,7 @@ export default function Home() {
         feedViewMode={feedViewMode}
         onToggleFeedView={() => setFeedViewMode((v) => (v === 'list' ? 'grid' : 'list'))}
         onOpenFeedFilters={() => setFeedShowFilters(true)}
-        feedHasActiveFilters={feedHasActiveFilters}
+        feedActiveFiltersCount={feedActiveFiltersCount}
         onContributeTypeSelect={handleContributeTypeSelect}
       />
 
@@ -101,7 +102,7 @@ export default function Home() {
               onViewModeChange={setFeedViewMode}
               showFilters={feedShowFilters}
               onShowFiltersChange={setFeedShowFilters}
-              onHasActiveFiltersChange={setFeedHasActiveFilters}
+              onHasActiveFiltersChange={setFeedActiveFiltersCount}
               // Empty state CTA "Partager une observation" → ouvre directement
               // le panel Rencontre Nature (même flow que la navbar).
               onContributeClick={() => openCreate('nature_encounter')}
