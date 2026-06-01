@@ -149,14 +149,9 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
   // premier handleSubmit ; remis à false sur navigation entre étapes.
   const [submitAttempted, setSubmitAttempted] = useState(false)
   // V1.1.4 NG-024 (Nicolas 2026-06-01) : photos existantes en mode edition.
-<<<<<<< HEAD
   // Charge des qu on a un editingPostId pour les afficher en step 1 + step 3.
   // Le storage_path est RECONSTRUIT depuis l URL publique (la colonne
   // n existe pas en DB, seul url est stocke).
-=======
-  // Charge des qu on a un editingPostId pour les afficher en step 3 et
-  // permettre la suppression individuelle. Optimistic local + delete API.
->>>>>>> origin/main
   const [existingMedia, setExistingMedia] = useState<
     Array<{ id: string; url: string; storagePath: string }>
   >([])
@@ -237,7 +232,6 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
       // V1.1.4 NG-024 : charge aussi les medias existants pour les afficher
       // dans l UI d edition. Sans ce fetch, l user voyait son post sans
       // aucune photo et pensait qu elles avaient ete perdues.
-<<<<<<< HEAD
       // FIX 2026-06-01 : la colonne storage_path n existe PAS sur la table
       // media (seule url est stockee). On reconstruit le path depuis l URL
       // publique : tout ce qui suit /post-media/ dans l URL est le path.
@@ -260,21 +254,6 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
             const storagePath = idx >= 0 ? m.url.slice(idx + marker.length).split('?')[0] : ''
             return { id: m.id, url: m.url, storagePath }
           }),
-=======
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: mediaRaw } = await (supabase as any)
-        .from('media')
-        .select('id, url, storage_path, display_order')
-        .eq('post_id', editingPostId)
-        .order('display_order', { ascending: true })
-      if (!cancelled && Array.isArray(mediaRaw)) {
-        setExistingMedia(
-          mediaRaw.map((m: { id: string; url: string; storage_path: string | null }) => ({
-            id: m.id,
-            url: m.url,
-            storagePath: m.storage_path ?? '',
-          })),
->>>>>>> origin/main
         )
       }
       // setStep(3) deja appele plus haut (avant le fetch async) pour
@@ -630,19 +609,6 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
             {step === 3 && (
               <EncounterStep3
                 submitAttempted={submitAttempted}
-                existingMedia={isEditing ? existingMedia : undefined}
-                onRemoveExistingMedia={async (mediaId, storagePath) => {
-                  // V1.1.4 NG-024 : suppression optimiste (state local d abord)
-                  // puis delete API best-effort. Si la suppression DB echoue,
-                  // l user reload et reverra la photo (pas de rollback UI).
-                  setExistingMedia((prev) => prev.filter((m) => m.id !== mediaId))
-                  try {
-                    const { deletePostMedia } = await import('@/services/mediaService')
-                    await deletePostMedia(mediaId, storagePath)
-                  } catch (err) {
-                    console.error('[ContributeEncounterForm] delete media failed:', err)
-                  }
-                }}
                 title={form.title}
                 onTitleChange={(v) => set('title', v)}
                 description={form.description}
