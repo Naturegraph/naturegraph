@@ -35,6 +35,7 @@ import {
   Filter,
   Flame,
   BarChart3,
+  X,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import hermineIcon from '@/assets/images/hermine-icon.png'
@@ -42,6 +43,9 @@ import { ImagePresets } from '@/lib/supabaseImage'
 import { useUserStreak } from '@/hooks/useStats'
 import { useUnreadCount } from '@/hooks/useNotifications'
 import { useLocation } from '@/contexts/LocationContext'
+// V1.1.4 NG-023 ext final : indique le filtre actif (espece ou categorie)
+// directement dans le bouton recherche au lieu d un bandeau separe.
+import { useSpecies } from '@/contexts/SpeciesContext'
 import { SearchPanel } from './SearchPanel'
 import { NotificationsPanel } from './NotificationsPanel'
 import { ContributeModal } from './ContributeModal'
@@ -106,6 +110,15 @@ export function HomeNavbar({
 
   // Compteur de notifications non lues, alimente le badge
   const { data: unreadCount } = useUnreadCount(profile?.id)
+
+  // V1.1.4 NG-023 ext final : filtre actif depuis le Species/Category Context Layer
+  const { activeSpecies, activeCategory, clearActiveSpecies, clearActiveCategory } = useSpecies()
+  // Label affichable du filtre actif (espece > categorie > rien)
+  const activeFilterLabel = activeSpecies
+    ? (activeSpecies.common_name ?? activeSpecies.scientific_name)
+    : activeCategory
+      ? activeCategory.label
+      : null
 
   // ── États des panels / modals ─────────────────────────────────────────────
   const [showSearch, setShowSearch] = useState(false)
@@ -300,20 +313,63 @@ export function HomeNavbar({
                   )}
                 </div>
 
-                {/* ── Recherche ─────────────────────────────────────────── */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setShowSearch((v) => !v)}
-                    className={btnIcon}
-                    aria-label={t('home.navbar.search')}
-                    aria-expanded={showSearch}
-                    aria-haspopup="dialog"
+                {/* ── Recherche ───────────────────────────────────────────
+                    V1.1.4 NG-023 ext final : si un filtre est actif (espece ou
+                    categorie), le bouton devient un pill affichant le label
+                    du filtre + une croix X pour le clear. Cliquer sur le pill
+                    (hors croix) ouvre le SearchPanel pour modifier le filtre.
+                    Pas de filtre actif -> icone loupe seule (comportement par defaut). */}
+                {activeFilterLabel ? (
+                  <div
+                    className={`${btnPill} relative bg-primary-light border border-primary/20`}
+                    aria-label={t('home.navbar.activeFilter', {
+                      defaultValue: 'Filtre actif',
+                    })}
                   >
-                    <Search className="size-5 text-foreground" aria-hidden="true" />
-                  </button>
-                  {showSearch && <SearchPanel onClose={() => setShowSearch(false)} />}
-                </div>
+                    <Search
+                      className="size-4 text-primary shrink-0"
+                      strokeWidth={3}
+                      aria-hidden="true"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSearch((v) => !v)}
+                      className="text-sm font-medium text-foreground truncate max-w-[140px] md:max-w-[200px] focus-visible:outline-none"
+                      aria-expanded={showSearch}
+                      aria-haspopup="dialog"
+                    >
+                      {activeFilterLabel}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (activeSpecies) clearActiveSpecies()
+                        else if (activeCategory) clearActiveCategory()
+                      }}
+                      aria-label={t('home.navbar.clearFilter', {
+                        defaultValue: 'Retirer le filtre',
+                      })}
+                      className="shrink-0 size-5 flex items-center justify-center rounded-full hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      <X className="size-3.5 text-foreground" aria-hidden="true" />
+                    </button>
+                    {showSearch && <SearchPanel onClose={() => setShowSearch(false)} />}
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowSearch((v) => !v)}
+                      className={btnIcon}
+                      aria-label={t('home.navbar.search')}
+                      aria-expanded={showSearch}
+                      aria-haspopup="dialog"
+                    >
+                      <Search className="size-5 text-foreground" aria-hidden="true" />
+                    </button>
+                    {showSearch && <SearchPanel onClose={() => setShowSearch(false)} />}
+                  </div>
+                )}
 
                 {/* ── Notifications, connecté seulement ───────────────── */}
                 {isAuthenticated && (

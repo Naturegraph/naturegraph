@@ -17,7 +17,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { LayoutList, LayoutGrid, Filter, X } from 'lucide-react'
+import { LayoutList, LayoutGrid, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { ErrorState } from '@/components/ui'
 import { FeedPost } from './FeedPost'
@@ -323,9 +323,10 @@ export function FeedSection({
   const { locationCoords, locationLabel, locationDistance } = useLocation()
   const isLocalized = !!(locationLabel && locationCoords)
   const queryClient = useQueryClient()
-  // Species Context Layer — filtre global activé depuis la recherche (PRD §3.4 / §6.1)
-  // V1.1.4 NG-023 ext : activeCategory propage le click chip catégorie d un post.
-  const { activeSpecies, activeCategory, clearActiveSpecies, clearActiveCategory } = useSpecies()
+  // Species Context Layer, filtre global active depuis la recherche (PRD §3.4 / §6.1)
+  // V1.1.4 NG-023 ext : activeCategory propage le click chip categorie d un post.
+  // Le clear se fait depuis le pill dans HomeNavbar (plus de bandeau dedie).
+  const { activeSpecies, activeCategory } = useSpecies()
   const [activeTab, setActiveTab] = useState<FeedTab>('recent')
   const [filters, setFilters] = useState<FeedFilters>({ ...DEFAULT_FILTERS })
   const [page, setPage] = useState(1)
@@ -488,71 +489,13 @@ export function FeedSection({
   return (
     <section aria-label="Feed des observations">
       {/*
-       * Bannière Species Context Layer — visible quand une espèce est active (PRD §6.1).
-       * Informe l'utilisateur que le feed est filtré + permet de revenir au feed global.
+       * V1.1.4 NG-023 ext final (Nicolas 2026-06-01) :
+       * Banniere "Feed filtre" RETIREE. Le filtre actif est desormais materialise
+       * directement dans le bouton recherche de la HomeNavbar (pill avec nom +
+       * croix X). Permet de garder l espace feed clean et integre l indication
+       * de filtre la ou l user attend de la voir : dans la barre de recherche.
+       * Cf. HomeNavbar.tsx pour l affichage du pill actif.
        */}
-      {activeSpecies && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="mb-4 flex items-center gap-3 rounded-xl bg-primary-light border border-primary/20 px-4 py-3"
-        >
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate">
-              {activeSpecies.common_name ?? activeSpecies.scientific_name}
-            </p>
-            <p className="text-xs text-muted-foreground italic truncate">
-              {activeSpecies.scientific_name}
-            </p>
-          </div>
-          <span className="text-xs text-primary font-medium shrink-0">Feed filtré</span>
-          <button
-            type="button"
-            onClick={clearActiveSpecies}
-            aria-label="Revenir au feed global"
-            className="size-7 flex items-center justify-center rounded-full hover:bg-primary/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
-          >
-            <X className="size-4 text-foreground" aria-hidden="true" />
-          </button>
-        </div>
-      )}
-
-      {/*
-       * V1.1.4 NG-023 ext (Nicolas 2026-06-01) :
-       * Banniere Category Context Layer, equivalente a celle d espece. Apparait
-       * quand l user clique sur un chip catégorie d un post -> feed filtre.
-       * Exclusive avec activeSpecies (cf. SpeciesContext setter logic).
-       */}
-      {activeCategory && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="mb-4 flex items-center gap-3 rounded-xl bg-primary-light border border-primary/20 px-4 py-3"
-        >
-          <span className="text-xl shrink-0" aria-hidden="true">
-            {activeCategory.emoji}
-          </span>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate">
-              {activeCategory.label}
-            </p>
-            <p className="text-xs text-muted-foreground truncate">
-              {t('home.feed.filteredByCategory', {
-                defaultValue: 'Filtre par catégorie',
-              })}
-            </p>
-          </div>
-          <span className="text-xs text-primary font-medium shrink-0">Feed filtré</span>
-          <button
-            type="button"
-            onClick={clearActiveCategory}
-            aria-label="Revenir au feed global"
-            className="size-7 flex items-center justify-center rounded-full hover:bg-primary/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
-          >
-            <X className="size-4 text-foreground" aria-hidden="true" />
-          </button>
-        </div>
-      )}
 
       {/* Header tabs + contrôles — desktop seulement */}
       {/*
