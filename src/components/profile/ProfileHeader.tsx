@@ -163,7 +163,9 @@ export function ProfileHeader({
             <div className="relative">
               <div className="size-24 md:size-32 rounded-full border-4 border-cream-lighter overflow-hidden bg-primary-light shadow-sm">
                 {/* Above-the-fold : eager + fetchpriority high pour LCP.
-                    Supabase Pro : preset avatarLarge (192px) pour le 128px DOM (retina x2). */}
+                    Supabase Pro : preset avatarLarge (192px) pour le 128px DOM (retina x2).
+                    V1.1.4 : onError fallback hermine si URL invalide / fichier supprime
+                    (cas Patosz remonte par Nicolas 2026-06-01). */}
                 <img
                   src={
                     profile.avatar_url ? ImagePresets.avatarLarge(profile.avatar_url) : hermineIcon
@@ -172,6 +174,10 @@ export function ProfileHeader({
                   className="size-full object-cover"
                   loading="eager"
                   fetchPriority="high"
+                  onError={(e) => {
+                    const img = e.currentTarget
+                    if (img.src !== hermineIcon) img.src = hermineIcon
+                  }}
                 />
               </div>
               {/* Badge — Figma 6385:74513 : Container 32×32 à x=144 y=96 (relatif
