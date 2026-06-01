@@ -80,7 +80,7 @@ export default function Welcome() {
   const [searchParams] = useSearchParams()
   const toast = useToast()
   const { hasAccess, grantAccess } = useBetaAccess()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
   usePageTitle(t('welcome.title', { defaultValue: 'Bienvenue' }))
 
   // Lien d'invitation /welcome?code=NG-XXXX-XXXX (présent dans l'email beta).
@@ -166,6 +166,23 @@ export default function Welcome() {
 
     setError(errorMessageForReason(result.reason, t))
     setIsSubmitting(false)
+  }
+
+  // V1.1.4 NG-004B (Nicolas 2026-06-01) : pendant le boot session, afficher
+  // un loader plutot que la vue initiale (boutons "J'ai un code" / "Waitlist").
+  // Sans ce loader, un user deja authentifie qui rouvre l app voit Welcome
+  // pendant 1-3s puis est redirige -> ressenti "app casse, je dois cliquer".
+  if (isAuthLoading || (isAuthenticated && !hasAccess)) {
+    return (
+      <BetaAuthLayout>
+        <div className="flex items-center justify-center min-h-[40vh] w-full">
+          <Loader2
+            className="size-8 text-[var(--color-primary)] motion-safe:animate-spin"
+            aria-label={t('common.loading', { defaultValue: 'Chargement' })}
+          />
+        </div>
+      </BetaAuthLayout>
+    )
   }
 
   return (
