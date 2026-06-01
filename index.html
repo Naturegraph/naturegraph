@@ -3,9 +3,12 @@
   <head>
     <meta charset="UTF-8" />
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/hermine-icon.png" />
-    <link rel="apple-touch-icon" href="/hermine-icon.png" />
+    <!-- Favicon
+         V1.1.4 NG-014 : favicon.png plus compact (257px) pour onglets navigateur.
+         hermine-icon.png (512px) reste pour apple-touch-icon retina + manifest PWA. -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/hermine-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/hermine-icon.png" />
 
     <!-- PWA manifest (BATCH 36) -->
     <link rel="manifest" href="/manifest.json" />
