@@ -118,50 +118,30 @@ export function HomeNavbar({
     ? (activeSpecies.common_name ?? activeSpecies.scientific_name)
     : null
 
-  // ── États des panels / modals ─────────────────────────────────────────────
-  // V1.1.4 QA round 3 (Nicolas 2026-06-01) : exclusivite forcee. Quand un
-  // panel s ouvre, on ferme tous les autres simultanement. Plus robuste que
-  // le click outside seul (qui pouvait laisser un cumul si l user cliquait
-  // tres vite ou si un panel ratait le listener).
-  const [showSearch, setShowSearchRaw] = useState(false)
-  const [showNotifications, setShowNotificationsRaw] = useState(false)
-  const [showContribute, setShowContributeRaw] = useState(false)
-  const [showLocationModal, setShowLocationModalRaw] = useState(false)
-  const [showProfileMenu, setShowProfileMenuRaw] = useState(false)
+  // ── État unique pour TOUS les panels / modals ────────────────────────────
+  // V1.1.4 QA round 4 (Nicolas 2026-06-01) : exclusivite garantie par design.
+  // Un seul state -> impossible d avoir plusieurs panels ouverts en meme
+  // temps. Les wrappers separes precedents souffraient d un bug de batch
+  // React (state stale). Avec un seul state, ouvrir un panel ferme
+  // mecaniquement les autres car la valeur change.
+  type ActivePanel =
+    | 'search'
+    | 'notifications'
+    | 'contribute'
+    | 'location'
+    | 'profile'
+    | null
+  const [activePanel, setActivePanel] = useState<ActivePanel>(null)
+  const showSearch = activePanel === 'search'
+  const showNotifications = activePanel === 'notifications'
+  const showContribute = activePanel === 'contribute'
+  const showLocationModal = activePanel === 'location'
+  const showProfileMenu = activePanel === 'profile'
 
-  // Helper : ouvre un panel et ferme tous les autres
-  function closeAllPanels() {
-    setShowSearchRaw(false)
-    setShowNotificationsRaw(false)
-    setShowContributeRaw(false)
-    setShowLocationModalRaw(false)
-    setShowProfileMenuRaw(false)
-  }
-  function setShowSearch(v: boolean | ((prev: boolean) => boolean)) {
-    const next = typeof v === 'function' ? v(showSearch) : v
-    if (next) closeAllPanels()
-    setShowSearchRaw(next)
-  }
-  function setShowNotifications(v: boolean | ((prev: boolean) => boolean)) {
-    const next = typeof v === 'function' ? v(showNotifications) : v
-    if (next) closeAllPanels()
-    setShowNotificationsRaw(next)
-  }
-  function setShowContribute(v: boolean | ((prev: boolean) => boolean)) {
-    const next = typeof v === 'function' ? v(showContribute) : v
-    if (next) closeAllPanels()
-    setShowContributeRaw(next)
-  }
-  function setShowLocationModal(v: boolean | ((prev: boolean) => boolean)) {
-    const next = typeof v === 'function' ? v(showLocationModal) : v
-    if (next) closeAllPanels()
-    setShowLocationModalRaw(next)
-  }
-  function setShowProfileMenu(v: boolean | ((prev: boolean) => boolean)) {
-    const next = typeof v === 'function' ? v(showProfileMenu) : v
-    if (next) closeAllPanels()
-    setShowProfileMenuRaw(next)
-  }
+  // Helpers : toggle ouvre/ferme le panel (si deja ouvert -> close)
+  const togglePanel = (panel: NonNullable<ActivePanel>) =>
+    setActivePanel((prev) => (prev === panel ? null : panel))
+  const closePanel = () => setActivePanel(null)
   // SettingsPanel ouvert depuis le ProfileMenu (item "Paramètres"), son
   // state vit dans HomeNavbar (et non ProfileMenu) pour survivre à la
   // fermeture du ProfileMenu : on ferme le menu profil ET on ouvre les
@@ -180,13 +160,13 @@ export function HomeNavbar({
     if (!isAuthenticated) {
       navigate('/signup')
     } else {
-      setShowContribute((v) => !v)
+      togglePanel('contribute')
     }
   }
 
   function handleProfileClick() {
     if (isAuthenticated) {
-      setShowProfileMenu((v) => !v)
+      togglePanel('profile')
     }
   }
 
@@ -270,7 +250,7 @@ export function HomeNavbar({
                     <button
                       ref={notifBtnRef}
                       type="button"
-                      onClick={() => setShowNotifications((v) => !v)}
+                      onClick={() => togglePanel('notifications')}
                       className={btnIcon}
                       aria-label={t('home.navbar.notifications')}
                       aria-expanded={showNotifications}
@@ -289,7 +269,7 @@ export function HomeNavbar({
                     {showNotifications && (
                       <NotificationsPanel
                         anchorRef={notifBtnRef}
-                        onClose={() => setShowNotifications(false)}
+                        onClose={() => closePanel()}
                       />
                     )}
                   </div>
@@ -304,7 +284,7 @@ export function HomeNavbar({
                 <div className="relative">
                   <button
                     type="button"
-                    onClick={() => setShowLocationModal((v) => !v)}
+                    onClick={() => togglePanel('location')}
                     aria-expanded={showLocationModal}
                     aria-haspopup="dialog"
                     aria-label={
@@ -345,7 +325,7 @@ export function HomeNavbar({
                   </button>
 
                   {showLocationModal && (
-                    <LocationModal onClose={() => setShowLocationModal(false)} />
+                    <LocationModal onClose={() => closePanel()} />
                   )}
                 </div>
 
@@ -369,7 +349,7 @@ export function HomeNavbar({
                     />
                     <button
                       type="button"
-                      onClick={() => setShowSearch((v) => !v)}
+                      onClick={() => togglePanel('search')}
                       className="text-sm font-medium text-foreground truncate max-w-[140px] md:max-w-[200px] focus-visible:outline-none"
                       aria-expanded={showSearch}
                       aria-haspopup="dialog"
@@ -386,13 +366,13 @@ export function HomeNavbar({
                     >
                       <X className="size-3.5 text-foreground" aria-hidden="true" />
                     </button>
-                    {showSearch && <SearchPanel onClose={() => setShowSearch(false)} />}
+                    {showSearch && <SearchPanel onClose={() => closePanel()} />}
                   </div>
                 ) : (
                   <div className="relative">
                     <button
                       type="button"
-                      onClick={() => setShowSearch((v) => !v)}
+                      onClick={() => togglePanel('search')}
                       className={btnIcon}
                       aria-label={t('home.navbar.search')}
                       aria-expanded={showSearch}
@@ -400,7 +380,7 @@ export function HomeNavbar({
                     >
                       <Search className="size-5 text-foreground" aria-hidden="true" />
                     </button>
-                    {showSearch && <SearchPanel onClose={() => setShowSearch(false)} />}
+                    {showSearch && <SearchPanel onClose={() => closePanel()} />}
                   </div>
                 )}
 
@@ -410,7 +390,7 @@ export function HomeNavbar({
                     <button
                       ref={notifBtnRef}
                       type="button"
-                      onClick={() => setShowNotifications((v) => !v)}
+                      onClick={() => togglePanel('notifications')}
                       className={btnIcon}
                       aria-label={t('home.navbar.notifications')}
                       aria-expanded={showNotifications}
@@ -429,7 +409,7 @@ export function HomeNavbar({
                     {showNotifications && (
                       <NotificationsPanel
                         anchorRef={notifBtnRef}
-                        onClose={() => setShowNotifications(false)}
+                        onClose={() => closePanel()}
                       />
                     )}
                   </div>
@@ -482,7 +462,7 @@ export function HomeNavbar({
 
                   {showContribute && isAuthenticated && (
                     <ContributeModal
-                      onClose={() => setShowContribute(false)}
+                      onClose={() => closePanel()}
                       onTypeSelect={onContributeTypeSelect}
                     />
                   )}
@@ -540,12 +520,12 @@ export function HomeNavbar({
 
                     {showProfileMenu && (
                       <ProfileMenu
-                        onClose={() => setShowProfileMenu(false)}
+                        onClose={() => closePanel()}
                         onOpenSettings={() => {
                           // Ferme le menu profil ET ouvre le panel settings.
                           // Le state `showSettingsPanel` vit dans HomeNavbar
                           // pour survivre au démontage du ProfileMenu.
-                          setShowProfileMenu(false)
+                          closePanel()
                           setShowSettingsPanel(true)
                         }}
                       />
