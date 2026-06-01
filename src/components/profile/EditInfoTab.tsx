@@ -17,7 +17,7 @@
 
 import { forwardRef, useImperativeHandle, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Globe, Instagram, Twitter } from 'lucide-react'
+import { Facebook, Globe, Instagram } from 'lucide-react'
 import type { ProfileDisplayData } from './ProfileHeader'
 import {
   validateUsernameFormat,
@@ -57,11 +57,11 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
 
   const [username, setUsername] = useState(profile.username)
   const [bio, setBio] = useState(profile.bio ?? '')
-  // NG-011 (Nicolas 2026-05-31) : 3 reseaux limites au scope Figma actuel.
-  // Twitter (X), Instagram, site personnel. iNaturalist + autres viendront
-  // en V1.2.0 si la beta en fait la demande.
+  // NG-011 (Nicolas 2026-05-31) : 3 liens limites au scope beta final.
+  // Instagram, Facebook, site web. Twitter retire (peu d usage naturaliste).
+  // iNat / YouTube etc. viendront en V1.2.0 si la beta en fait la demande.
   const [instagram, setInstagram] = useState(profile.instagram ?? '')
-  const [twitter, setTwitter] = useState(profile.twitter ?? '')
+  const [facebook, setFacebook] = useState(profile.facebook ?? '')
   const [website, setWebsite] = useState(profile.website ?? '')
   const [weekGoal, setWeekGoal] = useState<number>(profile.weekProgress?.goal ?? 5)
   // `weekGoalInput` permet à l'utilisateur de vider l'input pour taper
@@ -87,7 +87,7 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
           username: trimmedUsername,
           bio: bio || null,
           instagram: cleanHandle(instagram) || null,
-          twitter: cleanHandle(twitter) || null,
+          facebook: cleanHandle(facebook) || null,
           website: website.trim() || null,
           weekProgress: {
             current: profile.weekProgress?.current ?? 0,
@@ -103,7 +103,7 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
       trimmedUsername,
       bio,
       instagram,
-      twitter,
+      facebook,
       website,
       weekGoal,
       profile.weekProgress?.current,
@@ -206,16 +206,16 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
           />
         </div>
 
-        {/* Twitter / X - meme strategie sans @ */}
+        {/* Facebook - handle apres facebook.com/ */}
         <div className="flex items-center gap-2">
-          <Twitter className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
+          <Facebook className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
           <input
             type="text"
-            value={twitter}
-            onChange={(e) => setTwitter(e.target.value)}
-            placeholder={t('profile.edit.twitterPlaceholder', { defaultValue: 'ton_pseudo' })}
-            maxLength={30}
-            aria-label="X (Twitter)"
+            value={facebook}
+            onChange={(e) => setFacebook(e.target.value)}
+            placeholder={t('profile.edit.facebookPlaceholder', { defaultValue: 'ton_pseudo' })}
+            maxLength={50}
+            aria-label="Facebook"
             className={INPUT_PILL_CLASS}
           />
         </div>

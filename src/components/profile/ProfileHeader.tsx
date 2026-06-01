@@ -45,7 +45,7 @@ export interface ProfileDisplayData {
   region: string | null
   interests: Array<{ id: string; percent: number }>
   instagram: string | null
-  twitter: string | null
+  facebook: string | null
   website: string | null
   followers_count: number
   following_count: number

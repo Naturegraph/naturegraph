@@ -14,7 +14,7 @@
  */
 
 import { useTranslation } from 'react-i18next'
-import { Calendar, Globe, Instagram, Twitter, UserRound } from 'lucide-react'
+import { Calendar, Facebook, Globe, Instagram, UserRound } from 'lucide-react'
 import type { ProfileDisplayData } from './ProfileHeader'
 
 interface ProfileAboutCardProps {
@@ -124,16 +124,16 @@ export function ProfileAboutCard({ profile, compact = false }: ProfileAboutCardP
           </a>
         )}
 
-        {/* NG-011 (2026-05-31) : lien X / Twitter, meme pattern. */}
-        {profile.twitter && (
+        {/* NG-011 (2026-05-31) : lien Facebook (Twitter retire, peu d usage naturaliste). */}
+        {profile.facebook && (
           <a
-            href={`https://x.com/${profile.twitter}`}
+            href={`https://facebook.com/${profile.facebook}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-primary hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
           >
-            <Twitter className="size-[18px] shrink-0" aria-hidden="true" />
-            <span className="font-bold underline underline-offset-2">@{profile.twitter}</span>
+            <Facebook className="size-[18px] shrink-0" aria-hidden="true" />
+            <span className="font-bold underline underline-offset-2">@{profile.facebook}</span>
           </a>
         )}
       </div>
