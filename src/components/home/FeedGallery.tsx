@@ -133,14 +133,15 @@ export function FeedGallery({ posts }: FeedGalleryProps) {
             />
 
             {/* Badge multi-photos — visible si le post a plusieurs images.
-                V1.1.4 QA (Nicolas 2026-06-01) : taille reduite (10px text +
-                icone 2.5 + padding 1) pour rester discret sur les tiles. */}
+                V1.1.4 QA (Nicolas 2026-06-01 round 2) : taille tres reduite,
+                rond compact 9px + icone 2 pour rester quasi-invisible mais
+                informatif. Avant : trop gros (text-xs + icon 3). */}
             {item.imagesCount > 1 && (
               <span
-                className="absolute top-1.5 right-1.5 flex items-center gap-0.5 bg-black/55 text-white text-[10px] font-semibold px-1 py-0.5 rounded backdrop-blur-sm leading-none"
+                className="absolute top-1 right-1 inline-flex items-center gap-0.5 bg-black/60 text-white text-[9px] font-bold px-1 py-px rounded-sm backdrop-blur-sm leading-none"
                 aria-hidden="true"
               >
-                <Images className="size-2.5" aria-hidden="true" />
+                <Images className="size-2" aria-hidden="true" strokeWidth={2.5} />
                 {item.imagesCount}
               </span>
             )}

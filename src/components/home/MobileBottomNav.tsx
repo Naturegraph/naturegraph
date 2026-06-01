@@ -46,6 +46,12 @@ interface MobileBottomNavProps {
    * En mode invité, on navigue toujours vers /login (jamais ce callback).
    */
   onProfileClick?: () => void
+  /**
+   * V1.1.4 QA Nicolas 2026-06-01 : true quand un filtre de recherche (espece)
+   * est actif. L icone Search prend alors un fond violet light + un point
+   * indicateur pour signaler visuellement que la recherche est en cours.
+   */
+  searchActive?: boolean
 }
 
 /**
@@ -58,6 +64,7 @@ export function MobileBottomNav({
   onMenuClick,
   onLocationClick,
   onProfileClick,
+  searchActive = false,
 }: MobileBottomNavProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -144,14 +151,32 @@ export function MobileBottomNav({
           </button>
         </div>
 
-        {/* ── Recherche ────────────────────────────────────────────────────── */}
+        {/* ── Recherche ──────────────────────────────────────────────────────
+            V1.1.4 QA Nicolas 2026-06-01 : indicateur visuel quand filtre actif
+            -> fond violet light + point sur l icone (coherent avec d autres
+            states actifs du DS). */}
         <button
           type="button"
           onClick={onSearchClick}
-          className={itemClasses(false)}
+          className={`${itemClasses(false)} relative`}
           aria-label={t('common.search')}
+          aria-pressed={searchActive}
         >
-          <Search className={iconSize} strokeWidth={2} aria-hidden="true" />
+          {searchActive ? (
+            <span className="inline-flex items-center justify-center size-9 rounded-full bg-primary-light">
+              <Search
+                className="size-5 text-primary"
+                strokeWidth={2.5}
+                aria-hidden="true"
+              />
+              <span
+                aria-hidden="true"
+                className="absolute top-1 right-1 size-2 rounded-full bg-primary pointer-events-none ring-2 ring-cream-lighter"
+              />
+            </span>
+          ) : (
+            <Search className={iconSize} strokeWidth={2} aria-hidden="true" />
+          )}
         </button>
 
         {/* ── Profil ───────────────────────────────────────────────────────────

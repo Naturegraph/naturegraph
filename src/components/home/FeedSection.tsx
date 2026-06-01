@@ -700,13 +700,17 @@ export function FeedSection({
                   onEditPost={onEditPost}
                   /* V1.1.4 NG-023 ext : click chip categorie -> coche dans
                      filters.categories (badge "1" naturel via FeedFilterPanel).
-                     L user reset via le panneau filtres standard. */
+                     L user reset via le panneau filtres standard.
+                     QA Nicolas 2026-06-01 : scroll up auto, l user etait
+                     laisse au milieu de la page apres click ce qui etait
+                     perturbant ("je suis ou ?"). */
                   onSelectCategory={(group) => {
                     setFilters((prev) =>
                       prev.categories.includes(group)
                         ? prev
                         : { ...prev, categories: [...prev.categories, group] },
                     )
+                    window.scrollTo({ top: 0, behavior: 'smooth' })
                   }}
                   /* Dernier item du feed : on retire la bordure de fin pour
                      éviter une barre orpheline en bas de liste. */

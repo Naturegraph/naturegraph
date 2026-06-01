@@ -290,10 +290,6 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
       if (!target) return
       if (target.closest('[role="dialog"][aria-label="' + t('home.notifications.title') + '"]'))
         return
-      // V1.1.4 (Nicolas 2026-06-01) : cumul panels navbar.
-      // Click sur un autre bouton toggle ou un autre dialog -> ne ferme pas.
-      if (target.closest('button[aria-haspopup="dialog"]')) return
-      if (target.closest('[role="dialog"]')) return
       onClose()
     }
     const timer = setTimeout(() => document.addEventListener('click', fn), 50)

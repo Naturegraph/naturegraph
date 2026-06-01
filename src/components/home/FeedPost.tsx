@@ -654,7 +654,7 @@ export function FeedPost({
                     {isSpeciesClickable ? (
                       <button
                         type="button"
-                        onClick={() =>
+                        onClick={() => {
                           setActiveSpecies({
                             taxref_id: taxref_id!,
                             scientific_name: scientific_name ?? speciesName!,
@@ -662,7 +662,9 @@ export function FeedPost({
                               speciesName !== scientific_name ? (speciesName ?? null) : null,
                             group_label: taxonomic_group ?? null,
                           })
-                        }
+                          // QA Nicolas : scroll up auto, coherence avec chip categorie
+                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                        }}
                         aria-label={t('home.post.filterBySpecies', { species: speciesName ?? '' })}
                         className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}
                       >

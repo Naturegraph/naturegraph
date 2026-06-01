@@ -315,14 +315,6 @@ export function ProfileMenu({ onClose, onOpenSettings }: ProfileMenuProps) {
       if (!target) return
       // Si le clic est dans un dialogue ProfileMenu (desktop OU mobile), on garde ouvert.
       if (target.closest('[role="dialog"][aria-label="Menu profil"]')) return
-      // V1.1.4 (Nicolas 2026-06-01) : cumul des ouvertures de panels navbar.
-      // Si le clic est sur un bouton qui ouvre un autre panel (Notifications,
-      // Contribuer, Localisation, etc.), ne ferme PAS ce menu. L user attend
-      // de pouvoir consulter plusieurs panels en parallele.
-      if (target.closest('button[aria-haspopup="dialog"]')) return
-      // Idem si le clic est dans un autre dialogue ouvert (NotificationsPanel,
-      // ContributeModal, etc.).
-      if (target.closest('[role="dialog"]')) return
       onClose()
     }
     // Délai pour éviter que le clic d'ouverture ne ferme immédiatement
