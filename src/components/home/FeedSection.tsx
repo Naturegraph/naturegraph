@@ -503,7 +503,7 @@ export function FeedSection({
           sticky sous la navbar. Click sur le pill -> ouvre le SearchPanel
           pour changer d espece. X clear le filtre. */}
       {activeSpecies && (
-        <div className="md:hidden sticky top-[72px] z-30 -mx-4 px-4 pt-3 pb-2 mb-2 bg-cream-lighter/95 backdrop-blur-sm">
+        <div className="md:hidden sticky top-[72px] z-30 px-4 pt-3 pb-2 mb-2 bg-cream-lighter/95 backdrop-blur-sm">
           <div className="flex items-center gap-2 bg-primary-light border border-primary/20 rounded-full pl-3 pr-2 py-2">
             <button
               type="button"
