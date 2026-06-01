@@ -35,17 +35,22 @@ export interface SuggestedUsersParams {
 
 export interface UpdateProfilePayload {
   username?: string
+  // first_name + last_name : NOT NULL en DB -> on n autorise pas null ici.
   first_name?: string
   last_name?: string
-  bio?: string
+  /** V1.1.5 (Nicolas 2026-05-31) : passer `null` pour effacer le champ.
+   *  Avant : tous etaient `?: string` -> null devenait undefined -> Supabase
+   *  ignorait l update -> impossible de vider un champ apres l avoir rempli.
+   *  bio, city, region, country, instagram, facebook, website : nullable en DB. */
+  bio?: string | null
   interests?: string[]
-  city?: string
-  region?: string
-  country?: string
-  instagram?: string
-  twitter?: string
-  facebook?: string
-  website?: string
+  city?: string | null
+  region?: string | null
+  country?: string | null
+  instagram?: string | null
+  twitter?: string | null
+  facebook?: string | null
+  website?: string | null
   is_public?: boolean
   avatar_url?: string | null
   banner_url?: string | null

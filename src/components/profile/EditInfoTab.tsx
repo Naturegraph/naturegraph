@@ -17,7 +17,7 @@
 
 import { forwardRef, useImperativeHandle, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Facebook, Globe, Instagram } from 'lucide-react'
+import { Facebook, Globe, Instagram, X } from 'lucide-react'
 import type { ProfileDisplayData } from './ProfileHeader'
 import {
   validateUsernameFormat,
@@ -43,6 +43,24 @@ interface EditInfoTabProps {
 
 const INPUT_PILL_CLASS =
   'w-full h-10 px-4 rounded-full border-[0.5px] border-border bg-background text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:bg-primary-light focus:border-primary focus:ring-2 focus:ring-primary'
+
+/**
+ * Bouton X discret pour vider un input rapidement (V1.1.5 Nicolas 2026-05-31).
+ * Visible uniquement si la valeur n est pas vide. Click -> setter('').
+ */
+function ClearButton({ value, onClear, label }: { value: string; onClear: () => void; label: string }) {
+  if (!value) return null
+  return (
+    <button
+      type="button"
+      onClick={onClear}
+      aria-label={label}
+      className="shrink-0 size-7 rounded-full bg-muted/40 hover:bg-muted/60 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
+      <X className="size-3.5" aria-hidden="true" strokeWidth={2.5} />
+    </button>
+  )
+}
 
 const TEXTAREA_CLASS =
   'w-full px-4 py-3 rounded-2xl border-[0.5px] border-border bg-background text-sm text-foreground placeholder:text-muted-foreground resize-none transition-colors focus:outline-none focus:bg-primary-light focus:border-primary focus:ring-2 focus:ring-primary'
@@ -215,6 +233,7 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
             aria-label="Instagram"
             className={`${INPUT_PILL_CLASS} flex-1 min-w-0`}
           />
+          <ClearButton value={instagram} onClear={() => setInstagram('')} label="Effacer Instagram" />
         </div>
 
         {/* Facebook - URL ou pseudo */}
@@ -231,6 +250,7 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
             aria-label="Facebook"
             className={`${INPUT_PILL_CLASS} flex-1 min-w-0`}
           />
+          <ClearButton value={facebook} onClear={() => setFacebook('')} label="Effacer Facebook" />
         </div>
 
         {/* Site personnel - URL complete */}
@@ -247,6 +267,7 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
             aria-label={t('profile.edit.website', { defaultValue: 'Site web' })}
             className={`${INPUT_PILL_CLASS} flex-1 min-w-0`}
           />
+          <ClearButton value={website} onClear={() => setWebsite('')} label="Effacer site web" />
         </div>
       </div>
 

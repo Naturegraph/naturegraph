@@ -29,6 +29,7 @@ import { ProfileTabs } from '@/components/profile/ProfileTabs'
 import { ProfileAboutCard } from '@/components/profile/ProfileAboutCard'
 import { ProfileDNACard } from '@/components/profile/ProfileDNACard'
 import { EditProfilePanel } from '@/components/profile/EditProfilePanel'
+import { ContributeModal } from '@/components/home/ContributeModal'
 import { SettingsPanel } from '@/components/settings/SettingsPanel'
 // SharePopover du feed réutilisé pour cohérence (Nicolas 2026-05-01).
 import { SharePopover } from '@/components/home/SharePopover'
@@ -122,6 +123,10 @@ export default function Profile() {
   const [showEditPanel, setShowEditPanel] = useState(false)
   const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [showShareSheet, setShowShareSheet] = useState(false)
+  // V1.1.5 hotfix (Nicolas 2026-05-31) : ContributeModal sur Profile mobile
+  // pour que l user puisse choisir entre Rencontre Nature et Instant Nature
+  // (avant : openCreate ouvrait directement la Rencontre, pas de choix).
+  const [showContributeModal, setShowContributeModal] = useState(false)
 
   // NG-002 (2026-05-31 retour QA) : panel d edition d observation rendu
   // directement dans le profil pour eviter le redirect vers /. L user reste
@@ -216,14 +221,18 @@ export default function Profile() {
   async function handleSave(data: Partial<ProfileDisplayData>) {
     if (!authProfile?.id) return
     try {
+      // V1.1.5 (Nicolas 2026-05-31) : on PROPAGE null au lieu de le mapper
+      // a undefined. Sinon Supabase ignore le champ et l user ne peut pas
+      // effacer ses donnees (bio, reseaux, etc.). Critique pour la
+      // personnalisation du profil.
       await updateProfileMutation.mutateAsync({
         username: data.username,
-        bio: data.bio ?? undefined,
-        city: data.city ?? undefined,
-        region: data.region ?? undefined,
-        instagram: data.instagram ?? undefined,
-        facebook: data.facebook ?? undefined,
-        website: data.website ?? undefined,
+        bio: data.bio === undefined ? undefined : data.bio,
+        city: data.city === undefined ? undefined : data.city,
+        region: data.region === undefined ? undefined : data.region,
+        instagram: data.instagram === undefined ? undefined : data.instagram,
+        facebook: data.facebook === undefined ? undefined : data.facebook,
+        website: data.website === undefined ? undefined : data.website,
         // `null` autorisé pour supprimer la photo (cas EditPhotoTab Supprimer).
         avatar_url: data.avatar_url === undefined ? undefined : data.avatar_url,
         banner_url: data.banner_url === undefined ? undefined : data.banner_url,
@@ -313,6 +322,7 @@ export default function Profile() {
   // le profil ouvre le panel inline (au lieu de naviguer vers /contribute en
   // fond blanc - retour QA Nicolas 2026-05-31).
   function handleContributeTypeSelect(type: string) {
+    setShowContributeModal(false)
     if (type === 'nature_encounter' || type === 'nature_instant') {
       openCreate(type)
     }
@@ -358,9 +368,17 @@ export default function Profile() {
         </div>
       </main>
 
-      {/* Mobile bottom nav : bouton "+" ouvre directement le panel Rencontre
-          Nature dans le profil (au lieu de naviguer vers /contribute fond blanc). */}
-      <MobileNavLayer onContributeClick={() => openCreate('nature_encounter')} />
+      {/* Mobile bottom nav : bouton "+" ouvre la ContributeModal pour choisir
+          entre Rencontre Nature et Instant Nature (V1.1.5 fix : avant ca
+          ouvrait directement le panel Rencontre sans choix possible). */}
+      <MobileNavLayer onContributeClick={() => setShowContributeModal(true)} />
+
+      {showContributeModal && (
+        <ContributeModal
+          onClose={() => setShowContributeModal(false)}
+          onTypeSelect={handleContributeTypeSelect}
+        />
+      )}
 
       {showEditPanel && (
         <EditProfilePanel
