@@ -191,10 +191,11 @@ export function ProfileSidebar() {
             <StatCard
               icon={Flame}
               value={streakDays}
-              label={t('home.profile.days', {
-                count: streakDays,
-                defaultValue: streakDays <= 1 ? 'Semaine' : 'Semaines',
-              })}
+              // FR rule : 0/1 = singulier "Semaine", 2+ = pluriel "Semaines".
+              // i18next deroule days_one / days_other selon CLDR mais on
+              // force ici a la main pour garantir le bon affichage (retour
+              // QA Nicolas : "affiche Semaines meme si 0 ou 1").
+              label={streakDays <= 1 ? 'Semaine' : 'Semaines'}
               tone="warning"
             />
           </div>

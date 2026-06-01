@@ -152,6 +152,7 @@ function DemoAuthProvider({ children }: { children: React.ReactNode }) {
         location_updated_at: null,
         instagram: null,
         twitter: null,
+        facebook: null,
         website: null,
         is_public: true,
         email_verified: true,

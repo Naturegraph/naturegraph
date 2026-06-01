@@ -80,14 +80,25 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
     () => ({
       save() {
         if (!isUsernameValid) return false
-        // Nettoyage @ prefix sur handles (Instagram / Twitter) au cas ou l user
-        // l a colle. Trim systematique.
-        const cleanHandle = (s: string) => s.trim().replace(/^@+/, '')
+        // Extrait le username depuis une URL si l user colle un lien complet :
+        // https://www.instagram.com/naturegraph -> naturegraph
+        // https://facebook.com/naturegraph -> naturegraph
+        // @naturegraph -> naturegraph
+        // naturegraph -> naturegraph (deja propre)
+        function extractHandle(raw: string, domain: string): string {
+          let s = raw.trim().replace(/^@+/, '')
+          // Match domain.com/handle (avec ou sans www, http, trailing slash)
+          const re = new RegExp(`(?:https?:\\/\\/)?(?:www\\.)?${domain}\\/([^/?#]+)`, 'i')
+          const match = s.match(re)
+          if (match) s = match[1]
+          // Strip trailing slash
+          return s.replace(/\/$/, '')
+        }
         onSave({
           username: trimmedUsername,
           bio: bio || null,
-          instagram: cleanHandle(instagram) || null,
-          facebook: cleanHandle(facebook) || null,
+          instagram: extractHandle(instagram, 'instagram\\.com') || null,
+          facebook: extractHandle(facebook, 'facebook\\.com') || null,
           website: website.trim() || null,
           weekProgress: {
             current: profile.weekProgress?.current ?? 0,
@@ -183,40 +194,45 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
       </div>
 
       {/* ── NG-011 Reseaux sociaux et lien externe ──
-          Scope V1.1.3 : Instagram, Twitter (X), site web. Limite intentionnelle
-          a 3 reseaux les plus courants pour les naturalistes / photographes.
-          On enrichira (iNaturalist, YouTube, etc.) en V1.2.0 si la beta le
-          demande (Nicolas 2026-05-31). */}
+          Scope V1.1.3 final : Instagram + Facebook + Site web.
+          Les inputs acceptent soit le pseudo (naturegraph) soit une URL
+          complete (https://www.instagram.com/naturegraph) - extraction
+          automatique du handle au save (Nicolas 2026-05-31 retour QA).
+          Maxlength 200 pour permettre URLs collees confortablement. */}
       <div className="flex flex-col gap-3">
         <p className="text-sm font-medium text-foreground">
           {t('profile.edit.socialsTitle', { defaultValue: 'Reseaux sociaux et lien externe' })}
         </p>
 
-        {/* Instagram - sans @, on le retire au save si l user le tape */}
+        {/* Instagram */}
         <div className="flex items-center gap-2">
           <Instagram className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
           <input
             type="text"
             value={instagram}
             onChange={(e) => setInstagram(e.target.value)}
-            placeholder={t('profile.edit.instagramPlaceholder', { defaultValue: 'ton_pseudo' })}
-            maxLength={30}
+            placeholder={t('profile.edit.instagramPlaceholder', {
+              defaultValue: 'naturegraph ou URL',
+            })}
+            maxLength={200}
             aria-label="Instagram"
-            className={INPUT_PILL_CLASS}
+            className={`${INPUT_PILL_CLASS} flex-1 min-w-0`}
           />
         </div>
 
-        {/* Facebook - handle apres facebook.com/ */}
+        {/* Facebook */}
         <div className="flex items-center gap-2">
           <Facebook className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
           <input
             type="text"
             value={facebook}
             onChange={(e) => setFacebook(e.target.value)}
-            placeholder={t('profile.edit.facebookPlaceholder', { defaultValue: 'ton_pseudo' })}
-            maxLength={50}
+            placeholder={t('profile.edit.facebookPlaceholder', {
+              defaultValue: 'naturegraph ou URL',
+            })}
+            maxLength={200}
             aria-label="Facebook"
-            className={INPUT_PILL_CLASS}
+            className={`${INPUT_PILL_CLASS} flex-1 min-w-0`}
           />
         </div>
 
@@ -232,15 +248,9 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
             })}
             maxLength={200}
             aria-label={t('profile.edit.website', { defaultValue: 'Site web' })}
-            className={INPUT_PILL_CLASS}
+            className={`${INPUT_PILL_CLASS} flex-1 min-w-0`}
           />
         </div>
-
-        <p className="text-xs italic text-muted-foreground">
-          {t('profile.edit.socialsHelper', {
-            defaultValue: 'Optionnel. Visible publiquement sur ton profil.',
-          })}
-        </p>
       </div>
 
       {/* ── Objectif hebdomadaire — saisie libre 1-50 ── */}

@@ -148,6 +148,12 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
   // Gate l'affichage des erreurs inline (second-agent/30) — passe à true au
   // premier handleSubmit ; remis à false sur navigation entre étapes.
   const [submitAttempted, setSubmitAttempted] = useState(false)
+  // NG-002 V1.1.4 partial (Nicolas 2026-05-31) : photos existantes affichees
+  // au top du form en mode edition pour rassurer l user qu elles n ont pas
+  // ete perdues (display only, pas de delete/edit a ce stade).
+  const [existingMedia, setExistingMedia] = useState<{ url: string; thumbnail_url: string | null }[]>(
+    [],
+  )
 
   // ── Pré-remplissage en mode édition ─────────────────────────────────────
   // Quand editingPostId est défini au mount, on fetch les valeurs courantes
@@ -178,6 +184,24 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
         if (error) console.error('[ContributeEncounterForm] edit fetch error :', error)
         if (!post) console.warn('[ContributeEncounterForm] post introuvable :', editingPostId)
         return
+      }
+
+      // Fetch media en parallele pour afficher les photos existantes au top
+      // du form (rassurer l user qu il edite bien LE bon post).
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: mediaRows } = await (supabase as any)
+        .from('media')
+        .select('url, thumbnail_url, display_order')
+        .eq('post_id', editingPostId)
+        .eq('status', 'ready')
+        .order('display_order', { ascending: true })
+      if (!cancelled && mediaRows) {
+        setExistingMedia(
+          mediaRows.map((m: { url: string; thumbnail_url: string | null }) => ({
+            url: m.url,
+            thumbnail_url: m.thumbnail_url,
+          })),
+        )
       }
       // Reconstruit la première observation à partir des species_* du post
       // (si l'espèce était identifiée). Sinon on injecte une observation
@@ -557,6 +581,33 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
                 helpIdentification={form.helpIdentification}
                 onHelpIdentificationChange={(v) => set('helpIdentification', v)}
               />
+            )}
+
+            {/* NG-002 (Nicolas 2026-05-31 retour QA) : en mode edition, affiche
+                les photos existantes au top du step 3 pour rassurer l user
+                qu il modifie bien LE bon post. Read-only pour V1.1.3 (le
+                refacto edit/delete photos viendra en V1.1.4). */}
+            {step === 3 && isEditing && existingMedia.length > 0 && (
+              <div className="px-5 pt-5">
+                <div className="rounded-xl bg-cream-lighter border border-border p-3 flex flex-col gap-2">
+                  <p className="text-xs font-medium text-foreground">
+                    {existingMedia.length === 1
+                      ? '1 photo actuelle sur cette observation'
+                      : `${existingMedia.length} photos actuelles sur cette observation`}
+                  </p>
+                  <div className="flex gap-2 overflow-x-auto">
+                    {existingMedia.map((m, i) => (
+                      <img
+                        key={i}
+                        src={m.thumbnail_url ?? m.url}
+                        alt=""
+                        loading="lazy"
+                        className="size-16 rounded-md object-cover shrink-0 border border-border"
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
 
             {step === 3 && (
