@@ -42,6 +42,7 @@ import { MainLayout } from '@/components/layout'
 import { ProtectedRoute, PublicRoute, OnboardingGuard } from '@/components/guards'
 import { BetaAccessGuard } from '@/components/guards/BetaAccessGuard'
 import { AdminGuard } from '@/components/admin/AdminGuard'
+import { AppLoader } from '@/components/ui/AppLoader'
 
 // ─── Lazy-loaded pages (code splitting pour éco-conception) ────────
 
@@ -80,21 +81,7 @@ const AdminAnalytics = lazy(() => import('./pages/Admin/AdminAnalytics'))
  */
 // eslint-disable-next-line react-refresh/only-export-components
 function LazyPage({ children }: { children: React.ReactNode }) {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div
-            className="w-6 h-6 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin"
-            role="status"
-            aria-label="Chargement"
-          />
-        </div>
-      }
-    >
-      {children}
-    </Suspense>
-  )
+  return <Suspense fallback={<AppLoader size="md" />}>{children}</Suspense>
 }
 
 /**

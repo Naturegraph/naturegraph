@@ -19,6 +19,7 @@ import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { KeyRound, Mail, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { AppLoader } from '@/components/ui/AppLoader'
 import { BetaAuthLayout } from '@/components/auth/BetaAuthLayout'
 import { useToast } from '@/contexts/ToastContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -80,7 +81,7 @@ export default function Welcome() {
   const [searchParams] = useSearchParams()
   const toast = useToast()
   const { hasAccess, grantAccess } = useBetaAccess()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
   usePageTitle(t('welcome.title', { defaultValue: 'Bienvenue' }))
 
   // Lien d'invitation /welcome?code=NG-XXXX-XXXX (présent dans l'email beta).
@@ -166,6 +167,18 @@ export default function Welcome() {
 
     setError(errorMessageForReason(result.reason, t))
     setIsSubmitting(false)
+  }
+
+  // V1.1.4 NG-004B (Nicolas 2026-06-01) : pendant le boot session, afficher
+  // un loader plutot que la vue initiale (boutons "J'ai un code" / "Waitlist").
+  // Sans ce loader, un user deja authentifie qui rouvre l app voit Welcome
+  // pendant 1-3s puis est redirige -> ressenti "app casse, je dois cliquer".
+  if (isAuthLoading || (isAuthenticated && !hasAccess)) {
+    return (
+      <BetaAuthLayout>
+        <AppLoader size="md" />
+      </BetaAuthLayout>
+    )
   }
 
   return (

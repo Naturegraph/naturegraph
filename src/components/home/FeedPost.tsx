@@ -263,7 +263,7 @@ export function FeedPost({
 }: FeedPostProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { setActiveSpecies } = useSpecies()
+  const { setActiveSpecies, setActiveCategory } = useSpecies()
   const [isExpanded, setIsExpanded] = useState(false)
   const [showOptions, setShowOptions] = useState(false)
   const [showReactionPicker, setShowReactionPicker] = useState(false)
@@ -589,11 +589,14 @@ export function FeedPost({
               const categoryLabel = taxonomicCfg?.label ?? null
 
               // Espèce identifiée = on a au moins le nom commun OU scientifique.
-              // Nicolas 2026-05-22 : chip espèce TOUJOURS passif (plus de filtre
-              // par click) — pas d'action sur le chip pour le moment.
+              // V1.1.4 NG-023 (Nicolas 2026-06-01) : reactivation du chip
+              // cliquable maintenant que NG-022 a connecte le Species Context
+              // Layer au backend (filter par taxref_id). Cliquer sur l espece
+              // dans un post -> feed filtre par cette espece + bandeau qui
+              // permet de reset au feed global.
               const speciesName = species || scientific_name || null
               const hasIdentifiedSpecies = !!speciesName
-              const isSpeciesClickable = false
+              const isSpeciesClickable = !!taxref_id
               const unknownLabel = t('home.post.unknownSpecies', {
                 defaultValue: 'Espèce non déterminée',
               })
@@ -609,10 +612,33 @@ export function FeedPost({
               // Chip catégorie — texte uniquement, pas d'emoji (règle DS Nicolas
               // 2026-05-02 : alléger le design, jamais d'emoji dans les chips
               // pour garder la cohérence visuelle avec le reste du produit).
+              // V1.1.4 NG-023 ext (Nicolas 2026-06-01) : meme principe que
+              // l espece, le chip catégorie active le filtre par groupe
+              // taxonomique (Oiseaux, Mammiferes, etc.) au click.
               const categoryChip = categoryLabel ? (
-                <span className={CHIP_BASE_CLASS}>
-                  <span>{categoryLabel}</span>
-                </span>
+                taxonomic_group ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveCategory({
+                        group: taxonomic_group,
+                        label: categoryLabel,
+                        emoji: taxonomicCfg?.emoji ?? '🌿',
+                      })
+                    }
+                    aria-label={t('home.post.filterByCategory', {
+                      defaultValue: 'Filtrer par {{category}}',
+                      category: categoryLabel,
+                    })}
+                    className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}
+                  >
+                    <span>{categoryLabel}</span>
+                  </button>
+                ) : (
+                  <span className={CHIP_BASE_CLASS}>
+                    <span>{categoryLabel}</span>
+                  </span>
+                )
               ) : null
 
               // ─── Cas 1 : catégorie + espèce identifiée → 2 chips séparés ───

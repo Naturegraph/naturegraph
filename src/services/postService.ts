@@ -33,6 +33,13 @@ export interface FeedFilterParams {
    * mais conservée pour que la clé de cache React Query change quand elle varie.
    */
   radiusKm?: number
+  /**
+   * V1.1.4 NG-022 (Nicolas 2026-06-01) : filtre par taxref_id d espece (Species
+   * Context Layer). Avant ce fix, le bandeau "Feed filtre: X" s affichait mais
+   * le backend ne filtrait pas -> feed inchange -> impression que la recherche
+   * etait cassee.
+   */
+  taxrefId?: string
 }
 
 export interface FeedParams {
@@ -187,6 +194,11 @@ export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
   if (filters?.categories && filters.categories.length > 0) {
     // Catégories d'espèces → colonne indexée posts.taxonomic_group
     query = query.in('taxonomic_group', filters.categories)
+  }
+
+  // V1.1.4 NG-022 : Species Context Layer (recherche par espece precise)
+  if (filters?.taxrefId) {
+    query = query.eq('taxref_id', filters.taxrefId)
   }
 
   if (filters?.helpOnly) {

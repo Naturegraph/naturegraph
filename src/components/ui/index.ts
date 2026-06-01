@@ -48,6 +48,7 @@ export { Tabs, TabPanel } from './Tabs'
 export { Alert } from './Alert'
 export { Modal } from './Modal'
 export { Spinner } from './Spinner'
+export { AppLoader } from './AppLoader'
 export { Skeleton, SkeletonGroup } from './Skeleton'
 
 // States (T-017 / T-018 / T-019 — primitives unifiées loading/empty/error)

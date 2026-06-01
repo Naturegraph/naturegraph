@@ -8,7 +8,7 @@
  * Adapté du design Figma Make — design system Naturegraph appliqué.
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
@@ -62,7 +62,7 @@ export default function AuthPage({
 }: AuthPageProps) {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { completeOnboarding } = useAuth()
+  const { completeOnboarding, isAuthenticated, onboardingCompleted } = useAuth()
   const { success, error: notifyError } = useToast()
   const prefersReducedMotion = useReducedMotion()
   const { containerRef, mouse, handleMouseMove, handleMouseLeave } = useAuthOrbTracking()
@@ -92,6 +92,24 @@ export default function AuthPage({
     home: () => (onAuthComplete ? onAuthComplete() : navigate('/home')),
     guest: () => (onDiscoverAsGuest ? onDiscoverAsGuest() : navigate('/home')),
   }
+
+  // V1.1.4 NG-004B (Nicolas 2026-06-01) : fallback navigate si on est en mode
+  // verification ou onboarding et que isAuthenticated devient true. Cas typique :
+  // l user valide son OTP, AuthContext.setState met isAuthenticated = true, mais
+  // le navigate('/home') dans handleVerificationSuccess est interrompu par un
+  // re-render (AnimatePresence, race condition motion, etc.) -> l user reste
+  // bloque sur la page de verification jusqu a refresh manuel.
+  // Cet effet detecte le cas et force la redirection.
+  useEffect(() => {
+    if (!isAuthenticated) return
+    // Pas de redirect si on est dans le flow onboarding (l user a un compte
+    // mais n a pas encore choisi son username / interets / etc).
+    if (mode === 'onboarding') return
+    if (mode === 'verification' && initialAuthMode === 'login') {
+      const target = onboardingCompleted ? '/home' : '/onboarding'
+      navigate(target, { replace: true })
+    }
+  }, [isAuthenticated, mode, initialAuthMode, onboardingCompleted, navigate])
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 

@@ -53,6 +53,8 @@ function serializeFilters(filters?: FeedParams['filters']): string {
     shareTypes: filters.shareTypes ?? null,
     period: filters.period ?? 'all',
     radiusKm: filters.radiusKm ?? 0,
+    // V1.1.4 NG-022 : taxrefId inclus pour invalidation cache cible
+    taxrefId: filters.taxrefId ?? null,
   })
 }
 
