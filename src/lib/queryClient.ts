@@ -39,21 +39,25 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000,
+      // V1.1.6 (Nicolas 2026-05-31) : gcTime explicite 10 min pour eviter
+      // l accumulation memoire sur les sessions longues. Sans cette config,
+      // React Query garde les queries jusqu a explicit garbage collect (5 min
+      // par defaut mais peut s accumuler avec des cle distincts par user/post).
+      // 10 min = compromis : assez court pour liberer la memoire, assez long
+      // pour eviter les refetch inutiles quand l user revient sur une page.
+      gcTime: 10 * 60 * 1000,
       retry: (failureCount, error) => {
-        // 4xx : pas de retry (pas la peine, la cause ne va pas changer)
-        // 5xx : 3 tentatives max avec backoff
         if (!is5xxError(error)) return false
         return failureCount < 3
       },
-      // Backoff exponentiel : 1s, 2s, 4s (NG-004 Phase 1)
       retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
     },
     mutations: {
-      // Mutations : pas de retry auto (risque doublons cote serveur).
-      // L user clique a nouveau si l erreur le mentionne explicitement.
       retry: false,
+      // Meme gcTime sur les mutations pour liberer les onMutate context.
+      gcTime: 5 * 60 * 1000,
     },
   },
 })
