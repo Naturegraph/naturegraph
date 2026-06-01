@@ -263,7 +263,7 @@ export function FeedPost({
 }: FeedPostProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { setActiveSpecies } = useSpecies()
+  const { setActiveSpecies, setActiveCategory } = useSpecies()
   const [isExpanded, setIsExpanded] = useState(false)
   const [showOptions, setShowOptions] = useState(false)
   const [showReactionPicker, setShowReactionPicker] = useState(false)
@@ -612,10 +612,33 @@ export function FeedPost({
               // Chip catégorie — texte uniquement, pas d'emoji (règle DS Nicolas
               // 2026-05-02 : alléger le design, jamais d'emoji dans les chips
               // pour garder la cohérence visuelle avec le reste du produit).
+              // V1.1.4 NG-023 ext (Nicolas 2026-06-01) : meme principe que
+              // l espece, le chip catégorie active le filtre par groupe
+              // taxonomique (Oiseaux, Mammiferes, etc.) au click.
               const categoryChip = categoryLabel ? (
-                <span className={CHIP_BASE_CLASS}>
-                  <span>{categoryLabel}</span>
-                </span>
+                taxonomic_group ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveCategory({
+                        group: taxonomic_group,
+                        label: categoryLabel,
+                        emoji: taxonomicCfg?.emoji ?? '🌿',
+                      })
+                    }
+                    aria-label={t('home.post.filterByCategory', {
+                      defaultValue: 'Filtrer par {{category}}',
+                      category: categoryLabel,
+                    })}
+                    className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}
+                  >
+                    <span>{categoryLabel}</span>
+                  </button>
+                ) : (
+                  <span className={CHIP_BASE_CLASS}>
+                    <span>{categoryLabel}</span>
+                  </span>
+                )
               ) : null
 
               // ─── Cas 1 : catégorie + espèce identifiée → 2 chips séparés ───
