@@ -129,6 +129,10 @@ export interface Profile {
   // Il n'est jamais renvoyé au client — usage serveur uniquement (ST_DWithin).
   instagram: string | null
   twitter: string | null
+  /** NG-011 (V1.1.3) : optionnel pour ne pas casser les Profile objects existants
+   *  (notamment AuthContext demo profile). Le runtime Supabase retourne bien
+   *  la colonne via SELECT *. */
+  facebook?: string | null
   website: string | null
   is_public: boolean
   email_verified: boolean

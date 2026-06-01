@@ -277,10 +277,13 @@ export async function getTrendingSpecies(
     const postIds = sorted.map(([, v]) => v.postId)
     const { data: mediaRows } = await c
       .from('media')
-      .select('post_id, url')
+      .select('post_id, url, display_order')
       .in('post_id', postIds)
       .eq('status', 'ready')
-      .order('position', { ascending: true })
+      // Colonne reelle = display_order (table media). 'position' n existait
+      // pas en DB et generait un 400 silencieux dans la console (Nicolas
+      // 2026-05-31 audit console).
+      .order('display_order', { ascending: true })
 
     const imageMap = new Map<string, string>()
     for (const m of mediaRows ?? []) {
@@ -349,35 +352,69 @@ export interface WeekProgress {
 }
 
 /**
- * Calcule le streak de jours consécutifs avec au moins un post publié.
- * Compte à rebours depuis aujourd'hui, s'arrête dès qu'un jour sans post est trouvé.
+ * Calcule le streak hebdomadaire (NG-008, Nicolas 2026-05-31).
+ *
+ * Une serie reste active si l user publie au moins 2 observations dans une
+ * periode glissante de 7 jours (lundi -> dimanche). Compte le nombre de
+ * semaines consecutives, en partant de la semaine courante et en remontant
+ * dans le temps. Stop des qu une semaine a moins de 2 posts.
+ *
+ * Le passage du streak quotidien -> hebdomadaire reflete la realite des
+ * naturalistes : sorties terrain rares (meteo, dispos), mais regulieres
+ * sur l echelle de la semaine. Evite la frustration "j ai loupe une journee
+ * j ai perdu mon streak".
+ *
+ * Valeur retournee = nombre de semaines consecutives. La semaine en cours
+ * compte uniquement si le seuil de 2 posts est deja atteint (sinon on
+ * compte a partir de la semaine precedente, pour ne pas demarrer a 0 en
+ * milieu de semaine apres une seule publication).
  */
 export async function getUserStreak(userId: string): Promise<number> {
   const c = ensureClient()
 
-  // Récupère les dates de publication des 90 derniers jours (max streak raisonnable)
-  const ninetyDaysAgo = new Date(Date.now() - 90 * 86_400_000).toISOString()
+  // Fenetre d analyse : 52 semaines = 1 an. Largement suffisant pour
+  // afficher un streak realiste en beta + capper le cout de la requete.
+  const oneYearAgo = new Date(Date.now() - 52 * 7 * 86_400_000).toISOString()
   const { data: rows, error } = await c
     .from('posts')
     .select('created_at')
     .eq('user_id', userId)
     .eq('status', 'published')
-    .gte('created_at', ninetyDaysAgo)
+    .gte('created_at', oneYearAgo)
     .order('created_at', { ascending: false })
 
   if (error) throw new Error(error.message)
   if (!rows || rows.length === 0) return 0
 
-  // Extraire les dates uniques (YYYY-MM-DD) en set
-  const postDates = new Set(rows.map((r) => (r.created_at as string).slice(0, 10)))
+  // Pour chaque post, on calcule la cle de sa semaine ISO (debut = lundi).
+  // Cle au format YYYY-MM-DD du lundi de cette semaine. Permet de grouper
+  // sans dependance lourde (pas de date-fns).
+  function getMondayOfWeek(d: Date): string {
+    const day = d.getDay() // 0 = dimanche, 1 = lundi, ..., 6 = samedi
+    const offset = day === 0 ? -6 : 1 - day // dimanche -> -6, lundi -> 0
+    const monday = new Date(d.getTime() + offset * 86_400_000)
+    return monday.toISOString().slice(0, 10)
+  }
 
-  // Parcourir jour par jour depuis aujourd'hui
-  let streak = 0
+  // Compte les posts par semaine ISO
+  const postsByWeek = new Map<string, number>()
+  for (const r of rows) {
+    const weekKey = getMondayOfWeek(new Date(r.created_at as string))
+    postsByWeek.set(weekKey, (postsByWeek.get(weekKey) ?? 0) + 1)
+  }
+
+  // Parcourt les semaines en remontant depuis maintenant. Seuil = 2 posts/semaine.
+  const THRESHOLD = 2
   const today = new Date()
-  for (let i = 0; i < 90; i++) {
-    const d = new Date(today.getTime() - i * 86_400_000)
-    const dateStr = d.toISOString().slice(0, 10)
-    if (postDates.has(dateStr)) {
+  const currentWeekKey = getMondayOfWeek(today)
+  let streak = 0
+  // Si la semaine en cours n a pas encore atteint le seuil, on demarre le
+  // comptage a la semaine precedente pour ne pas afficher 0 a un user actif.
+  const startOffset = (postsByWeek.get(currentWeekKey) ?? 0) >= THRESHOLD ? 0 : 1
+  for (let i = startOffset; i < 52; i++) {
+    const weekDate = new Date(today.getTime() - i * 7 * 86_400_000)
+    const weekKey = getMondayOfWeek(weekDate)
+    if ((postsByWeek.get(weekKey) ?? 0) >= THRESHOLD) {
       streak++
     } else {
       break

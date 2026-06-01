@@ -244,6 +244,22 @@ V[MAJOR].[MINOR].[PATCH]
 | MINOR | Nouvelles features, UX majeure, nouveaux modules | V1.1.0, V1.2.0 |
 | MAJOR | Refonte architecture, business majeur            | V2.0.0, V3.0.0 |
 
+### Bump package.json (obligatoire avant chaque release)
+
+Le bandeau "App version X.Y.Z" du ProfileMenu lit `__APP_VERSION__` injecte
+depuis `pkg.version`. Si on oublie le bump, les users voient une vieille version.
+
+Trois scripts npm pour automatiser :
+
+```bash
+npm run release:patch   # 1.1.2 -> 1.1.3
+npm run release:minor   # 1.1.2 -> 1.2.0
+npm run release:major   # 1.1.2 -> 2.0.0
+```
+
+Les scripts utilisent `npm version` avec `--no-git-tag-version` (pas de tag auto)
+puis affichent les prochaines etapes a executer manuellement.
+
 ### Tag git
 
 ```bash

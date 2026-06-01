@@ -470,7 +470,9 @@
     "profile": {
       "obs": "Obs",
       "species": "Species",
-      "days": "Days",
+      "days": "Weeks",
+      "days_one": "Week",
+      "days_other": "Weeks",
       "thisWeek": "This week",
       "avatarAlt": "Profile picture of {{name}}",
       "progressLabel": "{{current}} observations out of {{goal}} this week"
@@ -538,6 +540,7 @@
       "reactLoginPrompt": "Sign in to react",
       "noReactions": "Be the first to react",
       "yourReaction": "Your reaction",
+      "observedOn": "Observed on: {{date}}",
       "chooseReaction": "Choose a reaction",
       "filterBySpecies": "Filter feed by {{species}}",
       "reactions": {
@@ -938,9 +941,10 @@
       "weekGoal": "My weekly observation goal",
       "weekGoalHelper": "You can change this goal at any time.",
       "socialLinks": "Social links",
+      "socialsTitle": "Social media and external link",
       "websitePlaceholder": "https://www.mywebsite.com",
-      "instagramPlaceholder": "https://www.instagram.com/...",
-      "facebookPlaceholder": "https://www.facebook.com/...",
+      "instagramPlaceholder": "naturegraph or link",
+      "facebookPlaceholder": "naturegraph or link",
       "interestsTitle": "What are your interests?",
       "interestsSubtitle": "Choose up to 3 interests that others can see.",
       "photoAvatar": "Profile photo",

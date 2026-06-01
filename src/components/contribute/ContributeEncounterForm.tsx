@@ -30,6 +30,7 @@ import { supabase } from '@/lib/supabase'
 // 2026-05-23 audit final : single source of truth pour compression,
 // upload, watchdog, rollback).
 import { useContributePostSubmit } from '@/hooks/useContributePostSubmit'
+import { readDraft, useDraftAutoSave, clearDraft } from '@/hooks/useContributeDraft'
 import { createProposal } from '@/services/identificationService'
 import { Button } from '@/components/ui/Button'
 
@@ -99,27 +100,49 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
 
   const isEditing = !!editingPostId
 
-  const [step, setStep] = useState(1)
-  const [form, setForm] = useState<EncounterFormData>({
-    files: [],
-    displayFormat: '16:9',
-    photoMetadata: {},
-    observations: [],
-    helpIdentification: false,
-    title: '',
-    description: '',
-    encounterDate: new Date().toISOString().slice(0, 10),
-    timeOfDay: '',
-    weather: '',
-    habitat: '',
-    locationName: '',
-    locationLat: null,
-    locationLng: null,
-    locationCountry: null,
-    locationRegion: null,
-    // Par défaut la localisation précise est masquée (sobriété privacy) ;
-    // l'utilisateur peut activer le switch « rendre public » à l'étape 3.
-    locationHidden: true,
+  // NG-004 (Nicolas 2026-05-31) : auto-save brouillon en localStorage (TTL 30 min)
+  // pour ne pas perdre le travail en cas d erreur de submit ou refresh accidentel.
+  // Pas en mode edition (les valeurs viennent de la DB, pas pertinent).
+  // Inclut maintenant `step` pour reprendre l user a l etape ou il etait
+  // (retour QA Nicolas : "j ai du me refaire les 3 etapes pour comprendre").
+  const DRAFT_KEY = 'encounter-v1'
+  type DraftPayload = Omit<EncounterFormData, 'files'> & { step?: number }
+  const restoredDraft = !editingPostId ? readDraft<DraftPayload>(DRAFT_KEY) : null
+
+  // En mode edition -> step 3 force. Sinon : si brouillon avec step memorise,
+  // on reprend ou l user etait. Sinon : step 1 (debut neuf).
+  // Cap a 2 max : sans photos persistees on ne peut pas valider step 3, donc
+  // on s arrete a step 2 (especes) qui permet de continuer logiquement.
+  const [step, setStep] = useState<number>(() => {
+    if (editingPostId) return 3
+    if (restoredDraft?.step && restoredDraft.step > 1) {
+      return Math.min(restoredDraft.step, 2)
+    }
+    return 1
+  })
+  const [form, setForm] = useState<EncounterFormData>(() => {
+    const defaults: EncounterFormData = {
+      files: [],
+      displayFormat: '16:9',
+      photoMetadata: {},
+      observations: [],
+      helpIdentification: false,
+      title: '',
+      description: '',
+      encounterDate: new Date().toISOString().slice(0, 10),
+      timeOfDay: '',
+      weather: '',
+      habitat: '',
+      locationName: '',
+      locationLat: null,
+      locationLng: null,
+      locationCountry: null,
+      locationRegion: null,
+      // Par défaut la localisation précise est masquée (sobriété privacy) ;
+      // l'utilisateur peut activer le switch « rendre public » à l'étape 3.
+      locationHidden: true,
+    }
+    return restoredDraft ? { ...defaults, ...restoredDraft, files: [] } : defaults
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   // Gate l'affichage des erreurs inline (second-agent/30) — passe à true au
@@ -136,6 +159,8 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
   useEffect(() => {
     if (!editingPostId || !supabase) return
     let cancelled = false
+    // L etape est deja sur 3 via le lazy init du useState plus haut.
+    // Ici on charge les valeurs du post pour pre-remplir le form.
     ;(async () => {
       // Cast `any` car les types supabase générés sont en retard sur
       // certaines colonnes (individuals_count, display_format) — runtime OK.
@@ -149,7 +174,11 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
         .maybeSingle()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const post = postRaw as any
-      if (cancelled || error || !post) return
+      if (cancelled || error || !post) {
+        if (error) console.error('[ContributeEncounterForm] edit fetch error :', error)
+        if (!post) console.warn('[ContributeEncounterForm] post introuvable :', editingPostId)
+        return
+      }
       // Reconstruit la première observation à partir des species_* du post
       // (si l'espèce était identifiée). Sinon on injecte une observation
       // « inconnue » pour rester cohérent avec le carnet.
@@ -192,14 +221,41 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
         displayFormat: (post.display_format ?? '16:9') as DisplayFormat,
         observations: initialObs,
       }))
-      // En édition on saute directement à l'étape 3 (les détails), car les
-      // photos existantes restent et le carnet est pré-rempli.
-      setStep(3)
+      // setStep(3) deja appele plus haut (avant le fetch async) pour
+      // garantir que l user est sur l etape details meme si le fetch
+      // post echoue (data partielle vs aucune visibilite UI).
     })()
     return () => {
       cancelled = true
     }
   }, [editingPostId])
+
+  // NG-004 auto-save brouillon : ecrit toutes les ~1s dans localStorage
+  // un snapshot du form sans les Files. Restauration au prochain mount
+  // via le lazy init du useState plus haut. Desactive en mode edition.
+  useDraftAutoSave<DraftPayload>(
+    DRAFT_KEY,
+    {
+      displayFormat: form.displayFormat,
+      photoMetadata: form.photoMetadata,
+      observations: form.observations,
+      helpIdentification: form.helpIdentification,
+      title: form.title,
+      description: form.description,
+      encounterDate: form.encounterDate,
+      timeOfDay: form.timeOfDay,
+      weather: form.weather,
+      habitat: form.habitat,
+      locationName: form.locationName,
+      locationLat: form.locationLat,
+      locationLng: form.locationLng,
+      locationCountry: form.locationCountry,
+      locationRegion: form.locationRegion,
+      locationHidden: form.locationHidden,
+      step,
+    },
+    !isEditing,
+  )
 
   // Fermer sur Escape
   useEffect(() => {
@@ -369,6 +425,8 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
             console.warn('[ContributeEncounterForm] createProposal failed:', err)
           }
         }
+        // NG-004 : succes -> purge le brouillon (on a publie, plus besoin).
+        clearDraft(DRAFT_KEY)
         onClose()
       },
     })

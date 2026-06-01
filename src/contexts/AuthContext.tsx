@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import type { User } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { setRememberMe, clearAuthStorage } from '@/lib/authStorage'
@@ -203,6 +204,7 @@ function DemoAuthProvider({ children }: { children: React.ReactNode }) {
 // ─── Provider ────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient()
   const [state, setState] = useState<AuthState>({
     ...defaultState,
     isLoading: isSupabaseConfigured,
@@ -304,10 +306,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // BATCH 103 : SIGNED_OUT déclenché par un refresh fail -> purge propre
       if (event === 'SIGNED_OUT') {
         clearAuthStorage()
+        // NG-004 (2026-05-31) : nettoie le cache React Query au signOut.
+        // Sans ce clear, le prochain user qui se connecte sur le meme
+        // navigateur voit brievement les donnees de l ancien user (feed,
+        // profil, notifications). C est une des sources principales de la
+        // sensation "app cassee, faut refresh" rapportee par les beta-testers.
+        queryClient.clear()
       }
       const user = session?.user ?? null
       const profile = user ? await fetchProfile(user.id) : null
       setState(deriveState({ user, session, profile, isLoading: false, isAuthenticated: !!user }))
+      // NG-004 : au login fresh, invalide aussi les queries pour repartir
+      // sur des donnees propres (au cas ou un cache fantome aurait survecu).
+      if (event === 'SIGNED_IN') {
+        queryClient.invalidateQueries()
+      }
       // V1.1.1 : pre-chauffe RPC search_taxonomy apres login pour eviter le
       // cold start serverless lors de la 1ere recherche d especes. Best-effort.
       if (user && event === 'SIGNED_IN') {
@@ -316,6 +329,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .catch(() => {})
       }
     })
+
+    // NG-004 (2026-05-31) : sync auth entre onglets via storage event.
+    // Si l user signOut dans l onglet A, l onglet B detecte le changement
+    // sur localStorage et se met a jour aussi. Idem pour login.
+    function handleStorageChange(e: StorageEvent) {
+      if (e.key === 'naturegraph-auth' || e.key === null) {
+        // Refresh la session pour propager l etat aux autres onglets.
+        // getSession lit le storage et trigger onAuthStateChange si necessaire.
+        supabase?.auth.getSession().catch(() => {})
+      }
+    }
+    window.addEventListener('storage', handleStorageChange)
 
     // Refresh automatique de session toutes les 30 minutes
     // Évite qu'une session expirée côté serveur reste valide côté client.
@@ -340,7 +365,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(bootTimeout)
       subscription.unsubscribe()
       clearInterval(refreshInterval)
+      window.removeEventListener('storage', handleStorageChange)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ─── Rate limiting côté client ────────────────────────────────────────────

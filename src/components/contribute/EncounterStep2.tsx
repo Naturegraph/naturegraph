@@ -118,7 +118,15 @@ const CLASS_TO_GROUP: Record<string, TaxonomicGroup> = {
   Mollusca: 'mollusks',
 }
 
-function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['species']) => void }) {
+function SpeciesSearchBar({
+  onAdd,
+  onSearchActiveChange,
+}: {
+  onAdd: (species: ObservationEntry['species']) => void
+  /** Fire avec true des que l user tape (query non vide), false quand vide.
+   *  Permet au parent de masquer le placeholder "Aucun résultat" pendant la recherche. */
+  onSearchActiveChange?: (active: boolean) => void
+}) {
   const { t } = useTranslation()
   const listId = useId()
   const [query, setQuery] = useState('')
@@ -159,6 +167,7 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
    */
   function handleQueryChange(value: string) {
     setQuery(value)
+    onSearchActiveChange?.(value.trim().length > 0)
     if (value.trim().length === 0) {
       setResults([])
       setIsLoading(false)
@@ -254,6 +263,7 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
     onAdd(hitToSpecies(hit))
     setQuery('')
     setResults([])
+    onSearchActiveChange?.(false)
   }
 
   // Helper rendu : true quand l'utilisateur a tapé quelque chose. Les états
@@ -263,11 +273,13 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
   const showEmpty = hasQuery && !isLoading && results.length === 0
 
   return (
-    // `relative` sur le container racine permet au panel filtres d'être
-    // positionné en absolute par-dessus le contenu suivant (cf. plus bas).
-    <div className="relative flex flex-col gap-3">
-      {/* Row : champ pill (flex-1) + bouton filtre circulaire — Figma 6385-50262 */}
-      <div className="flex items-center gap-4">
+    <div className="flex flex-col gap-3">
+      {/* Row search + filter : `relative z-30` ancre le panel filtres
+          (rendu plus bas en absolute top-full) directement sous la row,
+          pas sous le listbox de resultats. Sinon le panel se decalait
+          sous les resultats (feedback Nicolas 2026-05-26). z-30 le passe
+          au-dessus du listbox (z auto). */}
+      <div className="relative z-30 flex items-center gap-4">
         <div className="relative flex-1">
           <div className="flex items-center gap-2 h-12 px-5 rounded-full border border-border bg-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors">
             <Search className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
@@ -322,6 +334,172 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
             </span>
           )}
         </button>
+
+        {/* Panel filtres — ancre `top-full` dans la row (parent relative z-30)
+            pour etre un vrai dropdown overlay au-dessus du listbox de
+            resultats, pas un bloc qui pousse le layout (feedback Nicolas
+            2026-05-26). Structure : header + chips catégorie + checkboxes
+            précision + footer (Sauvegarder + Réinitialiser). */}
+        {filterOpen && (
+          <div className="absolute left-0 right-0 top-full mt-3 z-20 rounded-2xl border-[0.5px] border-border bg-background p-5 flex flex-col gap-5 shadow-xl">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <h4 className="font-title font-bold text-lg text-foreground">
+                {t('contribute.panel.filtersTitle', { defaultValue: 'Filtres' })}
+              </h4>
+              <button
+                type="button"
+                onClick={() => setFilterOpen(false)}
+                aria-label={t('common.close', { defaultValue: 'Fermer' })}
+                className="size-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <X className="size-4" aria-hidden="true" />
+              </button>
+            </div>
+
+            {/* Section 1 — Par catégorie d'espèces */}
+            <div className="flex flex-col gap-3">
+              <p className="font-body text-base text-muted-foreground">
+                {t('contribute.panel.filterByCategory', {
+                  defaultValue: "Par catégorie d'espèces",
+                })}
+              </p>
+              <div
+                className="flex flex-wrap gap-2"
+                role="group"
+                aria-label={t('contribute.panel.filterByCategory', {
+                  defaultValue: "Par catégorie d'espèces",
+                })}
+              >
+                {TAXONOMIC_FILTERS.map((f) => {
+                  const active = groupFilters.has(f.value)
+                  return (
+                    <button
+                      key={f.value}
+                      type="button"
+                      role="checkbox"
+                      aria-checked={active}
+                      onClick={() => toggleGroup(f.value)}
+                      className={[
+                        'inline-flex items-center justify-center h-8 px-3 rounded-full',
+                        'font-body text-sm leading-[1.5] transition-colors',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+                        active
+                          ? 'bg-primary-light border border-primary text-foreground'
+                          : 'bg-transparent border border-border text-foreground hover:border-foreground/40',
+                      ].join(' ')}
+                    >
+                      {t(f.labelKey)}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <hr className="border-t-[0.5px] border-border" />
+
+            {/* Section 2 — Précision identification (V1.1.0 checkbox cumulatif) */}
+            <div className="flex flex-col gap-3">
+              <p className="font-body text-base text-muted-foreground">
+                {t('contribute.panel.filterPrecisionTitle', {
+                  defaultValue: "Précision de l'identification",
+                })}
+              </p>
+              <p className="text-xs text-muted-foreground -mt-2">
+                {t('contribute.panel.filterPrecisionHint', {
+                  defaultValue: 'Tu peux cumuler les deux pour voir espèces + familles',
+                })}
+              </p>
+              <div
+                className="flex flex-col gap-2"
+                role="group"
+                aria-label={t('contribute.panel.filterPrecisionTitle', {
+                  defaultValue: "Précision de l'identification",
+                })}
+              >
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={includeSpecies}
+                  onClick={() => setIncludeSpecies((v) => !v)}
+                  className="flex items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={[
+                      'flex items-center justify-center size-5 rounded-[4px] shrink-0 transition-colors',
+                      includeSpecies
+                        ? 'bg-primary border border-primary'
+                        : 'bg-background border-[1.5px] border-border',
+                    ].join(' ')}
+                  >
+                    {includeSpecies && (
+                      <Check
+                        className="size-3.5 text-primary-foreground"
+                        strokeWidth={3}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </span>
+                  <span className="text-sm text-foreground">
+                    {t('contribute.panel.precisionExact', { defaultValue: 'Espèce précise' })}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={includeFamily}
+                  onClick={() => setIncludeFamily((v) => !v)}
+                  className="flex items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={[
+                      'flex items-center justify-center size-5 rounded-[4px] shrink-0 transition-colors',
+                      includeFamily
+                        ? 'bg-primary border border-primary'
+                        : 'bg-background border-[1.5px] border-border',
+                    ].join(' ')}
+                  >
+                    {includeFamily && (
+                      <Check
+                        className="size-3.5 text-primary-foreground"
+                        strokeWidth={3}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </span>
+                  <span className="text-sm text-foreground">
+                    {t('contribute.panel.precisionFamily', { defaultValue: 'Famille seulement' })}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Footer — Sauvegarder + Réinitialiser */}
+            <div className="flex flex-col items-center gap-3 pt-2">
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => setFilterOpen(false)}
+                className="w-full"
+              >
+                {t('contribute.panel.saveFilters', { defaultValue: 'Sauvegarder les filtres' })}
+              </Button>
+              <button
+                type="button"
+                onClick={() => setGroupFilters(new Set())}
+                className={[
+                  'font-body font-bold text-base leading-[1.5] text-primary underline underline-offset-4',
+                  'hover:opacity-80 transition-opacity',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded',
+                ].join(' ')}
+              >
+                {t('common.reset', { defaultValue: 'Réinitialiser' })}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Résultats de recherche INLINE — Nicolas 2026-05-22 ──────────────
@@ -439,180 +617,6 @@ function SpeciesSearchBar({ onAdd }: { onAdd: (species: ObservationEntry['specie
               </p>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Panel filtres — structuré comme FeedFilterPanel :
-          - Header avec titre + close
-          - Section "Par catégorie d'espèces" (chips toggleables)
-          - Divider
-          - Section "Précision de l'identification" (Bientôt — second-agent/26)
-          - Footer : "Sauvegarder les filtres" + "Réinitialiser"
-          Affiché en DROPDOWN absolute par-dessus le contenu suivant pour
-          éviter le saut de mise en page (second-agent/26 itération
-          2026-05-01). Shadow renforcée pour bien décoller du fond. */}
-      {filterOpen && (
-        <div className="absolute left-0 right-0 top-full mt-3 z-20 rounded-2xl border-[0.5px] border-border bg-background p-5 flex flex-col gap-5 shadow-xl">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <h4 className="font-title font-bold text-lg text-foreground">
-              {t('contribute.panel.filtersTitle', { defaultValue: 'Filtres' })}
-            </h4>
-            <button
-              type="button"
-              onClick={() => setFilterOpen(false)}
-              aria-label={t('common.close', { defaultValue: 'Fermer' })}
-              className="size-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <X className="size-4" aria-hidden="true" />
-            </button>
-          </div>
-
-          {/* Section 1 — Par catégorie d'espèces */}
-          <div className="flex flex-col gap-3">
-            <p className="font-body text-base text-muted-foreground">
-              {t('contribute.panel.filterByCategory', {
-                defaultValue: "Par catégorie d'espèces",
-              })}
-            </p>
-            <div
-              className="flex flex-wrap gap-2"
-              role="group"
-              aria-label={t('contribute.panel.filterByCategory', {
-                defaultValue: "Par catégorie d'espèces",
-              })}
-            >
-              {TAXONOMIC_FILTERS.map((f) => {
-                const active = groupFilters.has(f.value)
-                return (
-                  <button
-                    key={f.value}
-                    type="button"
-                    role="checkbox"
-                    aria-checked={active}
-                    onClick={() => toggleGroup(f.value)}
-                    className={[
-                      // Style strictement identique à FilterChip du FeedFilterPanel
-                      'inline-flex items-center justify-center h-8 px-3 rounded-full',
-                      'font-body text-sm leading-[1.5] transition-colors',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
-                      active
-                        ? 'bg-primary-light border border-primary text-foreground'
-                        : 'bg-transparent border border-border text-foreground hover:border-foreground/40',
-                    ].join(' ')}
-                  >
-                    {t(f.labelKey)}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <hr className="border-t-[0.5px] border-border" />
-
-          {/* Section 2 — Précision de l identification (V1.1.0 checkbox cumulatif) */}
-          <div className="flex flex-col gap-3">
-            <p className="font-body text-base text-muted-foreground">
-              {t('contribute.panel.filterPrecisionTitle', {
-                defaultValue: "Précision de l'identification",
-              })}
-            </p>
-            <p className="text-xs text-muted-foreground -mt-2">
-              {t('contribute.panel.filterPrecisionHint', {
-                defaultValue: 'Tu peux cumuler les deux pour voir espèces + familles',
-              })}
-            </p>
-            <div
-              className="flex flex-col gap-2"
-              role="group"
-              aria-label={t('contribute.panel.filterPrecisionTitle', {
-                defaultValue: "Précision de l'identification",
-              })}
-            >
-              <button
-                type="button"
-                role="checkbox"
-                aria-checked={includeSpecies}
-                onClick={() => setIncludeSpecies((v) => !v)}
-                className="flex items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-              >
-                <span
-                  aria-hidden="true"
-                  className={[
-                    'flex items-center justify-center size-5 rounded-[4px] shrink-0 transition-colors',
-                    includeSpecies
-                      ? 'bg-primary border border-primary'
-                      : 'bg-background border-[1.5px] border-border',
-                  ].join(' ')}
-                >
-                  {includeSpecies && (
-                    <Check
-                      className="size-3.5 text-primary-foreground"
-                      strokeWidth={3}
-                      aria-hidden="true"
-                    />
-                  )}
-                </span>
-                <span className="text-sm text-foreground">
-                  {t('contribute.panel.precisionExact', { defaultValue: 'Espèce précise' })}
-                </span>
-              </button>
-              <button
-                type="button"
-                role="checkbox"
-                aria-checked={includeFamily}
-                onClick={() => setIncludeFamily((v) => !v)}
-                className="flex items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-              >
-                <span
-                  aria-hidden="true"
-                  className={[
-                    'flex items-center justify-center size-5 rounded-[4px] shrink-0 transition-colors',
-                    includeFamily
-                      ? 'bg-primary border border-primary'
-                      : 'bg-background border-[1.5px] border-border',
-                  ].join(' ')}
-                >
-                  {includeFamily && (
-                    <Check
-                      className="size-3.5 text-primary-foreground"
-                      strokeWidth={3}
-                      aria-hidden="true"
-                    />
-                  )}
-                </span>
-                <span className="text-sm text-foreground">
-                  {t('contribute.panel.precisionFamily', { defaultValue: 'Famille seulement' })}
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* Footer — Sauvegarder + Réinitialiser
-              Style strictement aligné sur FeedFilterPanel.panelFooter :
-              Button DS variant="primary" + lien "Réinitialiser" en
-              text-primary underline underline-offset-4 (toujours actif). */}
-          <div className="flex flex-col items-center gap-3 pt-2">
-            <Button
-              variant="primary"
-              size="md"
-              onClick={() => setFilterOpen(false)}
-              className="w-full"
-            >
-              {t('contribute.panel.saveFilters', { defaultValue: 'Sauvegarder les filtres' })}
-            </Button>
-            <button
-              type="button"
-              onClick={() => setGroupFilters(new Set())}
-              className={[
-                'font-body font-bold text-base leading-[1.5] text-primary underline underline-offset-4',
-                'hover:opacity-80 transition-opacity',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded',
-              ].join(' ')}
-            >
-              {t('common.reset', { defaultValue: 'Réinitialiser' })}
-            </button>
-          </div>
         </div>
       )}
     </div>
@@ -735,15 +739,19 @@ export function EncounterStep2({
   }
 
   const hasObservations = observations.length > 0
+  // Masque le placeholder "Aucun résultat" pendant que l user tape une recherche
+  // (sinon il s affichait sous les suggestions, paradoxal — feedback Nicolas 2026-05-26).
+  const [isSearching, setIsSearching] = useState(false)
 
   return (
     <div className="flex flex-col gap-4">
       {/* Barre de recherche */}
-      <SpeciesSearchBar onAdd={handleAddSpecies} />
+      <SpeciesSearchBar onAdd={handleAddSpecies} onSearchActiveChange={setIsSearching} />
 
       {/* État vide — carte blanche bordurée (Figma Frame 4621) :
-          hermine + pill menthe "Aucun résultat" + hint en Quicksand Bold. */}
-      {!hasObservations && (
+          hermine + pill menthe "Aucun résultat" + hint en Quicksand Bold.
+          Masqué pendant la recherche active pour ne pas dupliquer le feedback. */}
+      {!hasObservations && !isSearching && (
         <div className="rounded-xl border-[0.5px] border-border bg-background flex flex-col items-center overflow-hidden">
           <img src={hermineImg} alt="" width={230} height={128} className="mt-6" loading="lazy" />
           <div className="flex flex-col items-center gap-3 p-6 w-full">

@@ -17,6 +17,7 @@
 
 import { forwardRef, useImperativeHandle, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Facebook, Globe, Instagram } from 'lucide-react'
 import type { ProfileDisplayData } from './ProfileHeader'
 import {
   validateUsernameFormat,
@@ -56,6 +57,12 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
 
   const [username, setUsername] = useState(profile.username)
   const [bio, setBio] = useState(profile.bio ?? '')
+  // NG-011 (Nicolas 2026-05-31) : 3 liens limites au scope beta final.
+  // Instagram, Facebook, site web. Twitter retire (peu d usage naturaliste).
+  // iNat / YouTube etc. viendront en V1.2.0 si la beta en fait la demande.
+  const [instagram, setInstagram] = useState(profile.instagram ?? '')
+  const [facebook, setFacebook] = useState(profile.facebook ?? '')
+  const [website, setWebsite] = useState(profile.website ?? '')
   const [weekGoal, setWeekGoal] = useState<number>(profile.weekProgress?.goal ?? 5)
   // `weekGoalInput` permet à l'utilisateur de vider l'input pour taper
   // un nombre — sans ça type="number" + Number('') = NaN bloquait la saisie.
@@ -73,9 +80,24 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
     () => ({
       save() {
         if (!isUsernameValid) return false
+        // Extrait le username depuis une URL si l user colle un lien complet :
+        // https://www.instagram.com/naturegraph -> naturegraph
+        // https://facebook.com/naturegraph -> naturegraph
+        // @naturegraph -> naturegraph
+        // naturegraph -> naturegraph (deja propre)
+        function extractHandle(raw: string, domainEscaped: string): string {
+          let s = raw.trim().replace(/^@+/, '')
+          const re = new RegExp(`(?:https?:\\/\\/)?(?:www\\.)?${domainEscaped}\\/([^/?#]+)`, 'i')
+          const match = s.match(re)
+          if (match) s = match[1]
+          return s.replace(/\/$/, '')
+        }
         onSave({
           username: trimmedUsername,
           bio: bio || null,
+          instagram: extractHandle(instagram, 'instagram\\.com') || null,
+          facebook: extractHandle(facebook, 'facebook\\.com') || null,
+          website: website.trim() || null,
           weekProgress: {
             current: profile.weekProgress?.current ?? 0,
             goal: weekGoal,
@@ -89,6 +111,9 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
       isUsernameValid,
       trimmedUsername,
       bio,
+      instagram,
+      facebook,
+      website,
       weekGoal,
       profile.weekProgress?.current,
       onSave,
@@ -164,6 +189,65 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
           maxLength={300}
           className={TEXTAREA_CLASS}
         />
+      </div>
+
+      {/* ── NG-011 Reseaux sociaux et lien externe ──
+          Scope V1.1.3 : Instagram, Twitter (X), site web. Limite intentionnelle
+          a 3 reseaux les plus courants pour les naturalistes / photographes.
+          On enrichira (iNaturalist, YouTube, etc.) en V1.2.0 si la beta le
+          demande (Nicolas 2026-05-31). */}
+      <div className="flex flex-col gap-3">
+        <p className="text-sm font-medium text-foreground">
+          {t('profile.edit.socialsTitle', { defaultValue: 'Reseaux sociaux et lien externe' })}
+        </p>
+
+        {/* Instagram - URL ou pseudo (extraction auto au save) */}
+        <div className="flex items-center gap-2">
+          <Instagram className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
+          <input
+            type="text"
+            value={instagram}
+            onChange={(e) => setInstagram(e.target.value)}
+            placeholder={t('profile.edit.instagramPlaceholder', {
+              defaultValue: 'naturegraph ou URL',
+            })}
+            maxLength={200}
+            aria-label="Instagram"
+            className={`${INPUT_PILL_CLASS} flex-1 min-w-0`}
+          />
+        </div>
+
+        {/* Facebook - URL ou pseudo */}
+        <div className="flex items-center gap-2">
+          <Facebook className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
+          <input
+            type="text"
+            value={facebook}
+            onChange={(e) => setFacebook(e.target.value)}
+            placeholder={t('profile.edit.facebookPlaceholder', {
+              defaultValue: 'naturegraph ou URL',
+            })}
+            maxLength={200}
+            aria-label="Facebook"
+            className={`${INPUT_PILL_CLASS} flex-1 min-w-0`}
+          />
+        </div>
+
+        {/* Site personnel - URL complete */}
+        <div className="flex items-center gap-2">
+          <Globe className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
+          <input
+            type="url"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            placeholder={t('profile.edit.websitePlaceholder', {
+              defaultValue: 'https://mon-site.fr',
+            })}
+            maxLength={200}
+            aria-label={t('profile.edit.website', { defaultValue: 'Site web' })}
+            className={`${INPUT_PILL_CLASS} flex-1 min-w-0`}
+          />
+        </div>
       </div>
 
       {/* ── Objectif hebdomadaire — saisie libre 1-50 ── */}

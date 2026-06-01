@@ -15,6 +15,9 @@
 
     <!-- Compat navigateurs (BATCH 115) -->
     <meta name="color-scheme" content="light" />
+    <!-- mobile-web-app-capable est la nouvelle clé standard. apple-mobile-web-app-capable
+         reste pour iOS Safari uniquement (deprecated dans Chrome 116+ mais necessaire pour iOS). -->
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="format-detection" content="telephone=no" />
@@ -53,21 +56,12 @@
       ════════════════════════════════════════════════════════════════════
       Source unique : `vercel.json` (HTTP headers) — BATCH 39 unification.
 
-      Pourquoi pas de meta CSP ici :
-        • Les HTTP headers ont la priorite et couvrent les meme cas
-        • Avoir 2 CSP cree une intersection des permissions = la plus stricte
-          gagne. Cela bloquait Sentry et TAXREF en prod (CSP meta n'autorise pas
-          *.sentry.io ni api.taxref.fr alors que vercel.json oui).
-        • En local dev, Vite serve sans CSP (les connect-src localhost sont OK
-          car aucune restriction CSP appliquee en dev).
-
-      Conserve X-Frame-Options DENY ici comme fallback pour navigateurs anciens
-      qui ne lisent pas la directive frame-ancestors de CSP.
+      X-Frame-Options RETIRE de meta (2026-05-31) : la spec interdit cette
+      directive en meta, elle DOIT etre un HTTP header. Voir vercel.json qui
+      la pose proprement. La directive frame-ancestors de la CSP HTTP couvre
+      le meme cas (anti-clickjacking) pour les navigateurs modernes.
       ════════════════════════════════════════════════════════════════════
     -->
-
-    <!-- Anti-clickjacking (support navigateurs anciens ne lisant pas CSP frame-ancestors) -->
-    <meta http-equiv="X-Frame-Options" content="DENY" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

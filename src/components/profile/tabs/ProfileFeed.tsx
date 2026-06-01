@@ -15,6 +15,9 @@ import { FeedPost } from '@/components/home/FeedPost'
 import type { MockPost } from '@/components/home/FeedPost'
 import { FeedGallery } from '@/components/home/FeedGallery'
 import { ProfileEmptyState } from '../ProfileEmptyState'
+import { useAuth } from '@/contexts/AuthContext'
+import { useToggleReaction, postQueryKey } from '@/hooks/usePost'
+import type { ReactionType } from '@/types/database'
 
 // View toggle types
 type ViewMode = 'list' | 'grid'
@@ -26,9 +29,15 @@ type SortMode = 'recent' | 'popular'
 interface ProfileFeedProps {
   /** Posts de l'utilisateur à afficher */
   userPosts: MockPost[]
+  /** ID du profil affiche - utilise pour calculer la cache key exacte
+   *  des mutations reactions (sinon optimistic update silent fail). */
+  profileId?: string
   /** Si true → l'utilisateur regarde son propre journal et peut supprimer
    *  ses posts via le menu 3-pts. Sinon : pas d'option Supprimer. */
   isOwnProfile: boolean
+  /** NG-002 : callback edition d observation, ouvre le panel directement
+   *  dans le profil (rendu par Profile.tsx). */
+  onEditPost?: (postId: string, postType: 'nature_encounter' | 'nature_instant') => void
 }
 
 // ─── Composant ────────────────────────────────────────────────────────────────
@@ -36,11 +45,33 @@ interface ProfileFeedProps {
 /**
  * Journal nature : liste des observations avec tri Récent / Populaire.
  */
-export function ProfileFeed({ userPosts, isOwnProfile }: ProfileFeedProps) {
+export function ProfileFeed({ userPosts, profileId, isOwnProfile, onEditPost }: ProfileFeedProps) {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const [sort, setSort] = useState<SortMode>('recent')
   // Vue : liste (FeedPost en cards) ou grille (FeedGallery comme la home).
   const [viewMode, setViewMode] = useState<ViewMode>('list')
+
+  // Cache key EXACT du useUserPosts (cf. usePost.ts) :
+  // ['posts', 'by-user', userId, sort, viewerId]. On reconstruit la meme
+  // shape pour que setQueryData (optimistic) matche reellement le cache,
+  // sinon le badge ne change qu apres le refetch -> UX 'rien ne se passe'
+  // (retour QA Nicolas 2026-05-31).
+  const profilePostsQueryKey = [
+    ...postQueryKey.byUser(profileId ?? '', sort),
+    user?.id ?? 'anon',
+  ] as const
+
+  const reactionMutation = useToggleReaction(user?.id)
+  function handleReact(postId: string, type: ReactionType) {
+    const post = userPosts.find((p) => p.id === postId)
+    reactionMutation.mutate({
+      postId,
+      type,
+      currentReaction: (post?.userReaction ?? null) as ReactionType | null,
+      feedQueryKey: profilePostsQueryKey,
+    })
+  }
 
   /** Tri côté client sur les données mock */
   const sortedPosts =
@@ -145,6 +176,8 @@ export function ProfileFeed({ userPosts, isOwnProfile }: ProfileFeedProps) {
                 <FeedPost
                   {...post}
                   isOwnPost={isOwnProfile}
+                  onReact={handleReact}
+                  onEditPost={isOwnProfile ? onEditPost : undefined}
                   hideEndBorder={idx === sortedPosts.length - 1}
                 />
               </div>

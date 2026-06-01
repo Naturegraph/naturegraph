@@ -44,6 +44,7 @@ export interface UpdateProfilePayload {
   country?: string
   instagram?: string
   twitter?: string
+  facebook?: string
   website?: string
   is_public?: boolean
   avatar_url?: string | null

@@ -191,7 +191,8 @@ export function ProfileSidebar() {
             <StatCard
               icon={Flame}
               value={streakDays}
-              label={t('home.profile.days')}
+              // FR : 0/1 -> singulier, 2+ -> pluriel (retour QA Nicolas)
+              label={streakDays <= 1 ? 'Semaine' : 'Semaines'}
               tone="warning"
             />
           </div>

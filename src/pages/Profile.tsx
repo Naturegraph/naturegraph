@@ -36,6 +36,7 @@ import { postFeedItemToMockPost } from '@/components/home/FeedSection'
 import type { MockPost } from '@/components/home/FeedPost'
 import type { Profile } from '@/types/database'
 import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
+import { useEditPostFlow } from '@/hooks/useEditPostFlow'
 
 // ─── Adaptateur Profile DB → ProfileDisplayData ───────────────────────────────
 //
@@ -55,6 +56,7 @@ function profileToDisplayData(profile: Profile): ProfileDisplayData {
     // Convertit string[] → { id, percent }[] pour l'affichage des badges intérêts
     interests: (profile.interests ?? []).map((id) => ({ id, percent: 0 })),
     instagram: profile.instagram,
+    facebook: (profile as Profile & { facebook?: string | null }).facebook ?? null,
     website: profile.website,
     followers_count: profile.followers_count,
     following_count: profile.following_count,
@@ -120,6 +122,16 @@ export default function Profile() {
   const [showEditPanel, setShowEditPanel] = useState(false)
   const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [showShareSheet, setShowShareSheet] = useState(false)
+
+  // NG-002 (2026-05-31 retour QA) : panel d edition d observation rendu
+  // directement dans le profil pour eviter le redirect vers /. L user reste
+  // dans son contexte profil pendant l edition. Logique partagee via le
+  // hook useEditPostFlow (meme behavior dans Home, Profile, PostDetail).
+  const {
+    onEditPost: handleEditFromProfile,
+    openCreate,
+    panelNode: editPanelNode,
+  } = useEditPostFlow()
 
   // ── Hooks Supabase ────────────────────────────────────────────────────────
   // Tous les hooks DOIVENT être appelés inconditionnellement (rules of hooks).
@@ -210,6 +222,7 @@ export default function Profile() {
         city: data.city ?? undefined,
         region: data.region ?? undefined,
         instagram: data.instagram ?? undefined,
+        facebook: data.facebook ?? undefined,
         website: data.website ?? undefined,
         // `null` autorisé pour supprimer la photo (cas EditPhotoTab Supprimer).
         avatar_url: data.avatar_url === undefined ? undefined : data.avatar_url,
@@ -296,9 +309,18 @@ export default function Profile() {
     )
   }
 
+  // Wire le hook openCreate sur la navbar pour que clic "+ Contribuer" depuis
+  // le profil ouvre le panel inline (au lieu de naviguer vers /contribute en
+  // fond blanc - retour QA Nicolas 2026-05-31).
+  function handleContributeTypeSelect(type: string) {
+    if (type === 'nature_encounter' || type === 'nature_instant') {
+      openCreate(type)
+    }
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-cream-lighter">
-      <HomeNavbar />
+      <HomeNavbar onContributeTypeSelect={handleContributeTypeSelect} />
 
       <main id="main-content" className="flex-1 w-full pb-20 md:pb-6">
         {/* Header pleine largeur */}
@@ -330,12 +352,15 @@ export default function Profile() {
               userPosts={userPosts}
               savedPosts={savedPosts}
               isOwnProfile={isOwnProfile}
+              onEditPost={handleEditFromProfile}
             />
           </div>
         </div>
       </main>
 
-      <MobileNavLayer />
+      {/* Mobile bottom nav : bouton "+" ouvre directement le panel Rencontre
+          Nature dans le profil (au lieu de naviguer vers /contribute fond blanc). */}
+      <MobileNavLayer onContributeClick={() => openCreate('nature_encounter')} />
 
       {showEditPanel && (
         <EditProfilePanel
@@ -346,6 +371,10 @@ export default function Profile() {
       )}
 
       {showSettingsPanel && <SettingsPanel onClose={() => setShowSettingsPanel(false)} />}
+
+      {/* NG-002 : panel d edition rendu directement dans le profil via le hook
+          partage useEditPostFlow (coherence avec Home et PostDetail). */}
+      {editPanelNode}
 
       {showShareSheet && (
         <SharePopover

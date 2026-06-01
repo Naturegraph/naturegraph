@@ -43,6 +43,9 @@ import { HomeNavbar } from '@/components/home/HomeNavbar'
 import { MobileNavLayer } from '@/components/home/MobileNavLayer'
 import { GuestSidebar } from '@/components/home/GuestSidebar'
 import { ProfileSidebar } from '@/components/home/ProfileSidebar'
+import { useToggleReaction } from '@/hooks/usePost'
+import { useEditPostFlow } from '@/hooks/useEditPostFlow'
+import type { ReactionType, PostFeedItem } from '@/types/database'
 
 // FeedPost lazy — composant lourd, on évite le coût bundle si on
 // arrive sur une 404 ou un état d'erreur.
@@ -93,7 +96,7 @@ function PostNotFound({ backLabel }: { backLabel: string }) {
 export default function PostDetail() {
   const { t } = useTranslation()
   const { postId: routeParam } = useParams<{ postId: string }>()
-  const { isAuthenticated, profile } = useAuth()
+  const { isAuthenticated, profile, user } = useAuth()
 
   // Le segment `:postId` peut être :
   //   - un UUID nu (anciens liens) → on l'utilise tel quel
@@ -110,6 +113,25 @@ export default function PostDetail() {
 
   const post = data ? postFeedItemToMockPost(data) : null
   const isOwnPost = !!post && !!profile && post.authorId === profile.id
+
+  // Reactions sur PostDetail - meme behavior que feed/profil (coherence
+  // produit V1.1.3). useToggleReaction invalide feed + posts.by-user + post.byId
+  // dans onSettled donc le changement est propage partout.
+  const reactionMutation = useToggleReaction(user?.id)
+  const detailQueryKey = ['post', postId] as const
+  function handleReact(targetPostId: string, type: ReactionType) {
+    reactionMutation.mutate({
+      postId: targetPostId,
+      type,
+      currentReaction: ((data as PostFeedItem | null)?.user_reaction ??
+        null) as ReactionType | null,
+      feedQueryKey: detailQueryKey,
+    })
+  }
+
+  // Edition rendue directement dans PostDetail via le hook partage (meme
+  // experience que Home et Profile : pas de redirect, l user reste sur sa page).
+  const { onEditPost, panelNode: editPanelNode } = useEditPostFlow()
 
   return (
     <div className="min-h-screen flex flex-col bg-cream-lighter">
@@ -143,6 +165,8 @@ export default function PostDetail() {
                     {...post}
                     canInteract={isAuthenticated}
                     isOwnPost={isOwnPost}
+                    onReact={handleReact}
+                    onEditPost={isOwnPost ? onEditPost : undefined}
                     hideEndBorder
                   />
                 </Suspense>
@@ -154,6 +178,9 @@ export default function PostDetail() {
 
       {/* Bottom nav mobile */}
       <MobileNavLayer />
+
+      {/* Panneau edition (meme hook que Home et Profile) */}
+      {editPanelNode}
     </div>
   )
 }
