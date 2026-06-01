@@ -128,7 +128,7 @@ function truncate(s: string, max = 200): string {
   return s.slice(0, max - 1).trimEnd() + '…'
 }
 
-function buildCrawlerHtml(profile: OgProfile, profileUrl: string): string {
+function buildCrawlerHtml(profile: OgProfile, profileUrl: string, origin: string): string {
   const safeName = escapeHtml(profile.displayName)
   const safeUsername = escapeHtml(profile.username)
   const safeBio = escapeHtml(
@@ -140,20 +140,22 @@ function buildCrawlerHtml(profile: OgProfile, profileUrl: string): string {
   // ratio quasi-OG ; l'avatar est carré et moins flatteur en preview).
   // Resize via Supabase render endpoint pour < 200 KB (WhatsApp/iMessage
   // timeout sur les images lourdes en data mobile).
+  // V1.1.4 NG-012 : fallback og-preview.png si pas d avatar ni banner pour
+  // garantir une preview visuelle (vs blank).
   const rawOgImage = profile.bannerUrl ?? profile.avatarUrl ?? ''
   const ogImage = rawOgImage
     ? rawOgImage.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') +
       (rawOgImage.includes('?') ? '&' : '?') +
       'width=1200&height=630&resize=cover&quality=80'
-    : ''
-  const safeImage = ogImage ? escapeHtml(ogImage) : ''
+    : `${origin}/og-preview.png`
+  const safeImage = escapeHtml(ogImage)
   const safeUrl = escapeHtml(profileUrl)
 
-  const ogImageTags = safeImage
-    ? `
+  const ogImageTags = `
     <meta property="og:image" content="${safeImage}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta name="twitter:image" content="${safeImage}" />`
-    : ''
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -260,7 +262,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=3600')
 
   if (profile) {
-    res.status(200).send(buildCrawlerHtml(profile, profileUrl))
+    res.status(200).send(buildCrawlerHtml(profile, profileUrl, `${proto}://${safeHost}`))
   } else {
     res.status(200).send(buildFallbackHtml(profileUrl))
   }

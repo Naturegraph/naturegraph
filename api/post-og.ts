@@ -186,19 +186,21 @@ function truncate(s: string, max = 200): string {
  * Construit le HTML minimal servi aux crawlers avec les meta OG dynamiques.
  * Pas de JS — juste les balises essentielles pour le preview.
  */
-function buildCrawlerHtml(post: OgPost, postUrl: string): string {
+function buildCrawlerHtml(post: OgPost, postUrl: string, origin: string): string {
   const safeTitle = escapeHtml(post.title)
   const safeDesc = escapeHtml(truncate(post.description))
-  const safeImage = post.imageUrl ? escapeHtml(post.imageUrl) : ''
+  // V1.1.4 NG-012 (Nicolas 2026-06-01) : fallback og-preview si le post n a
+  // pas d image. Sans ce fallback, WhatsApp/iMessage affichait une preview
+  // sans visuel donc moins engageante.
+  const imageUrlOrFallback = post.imageUrl ?? `${origin}/og-preview.png`
+  const safeImage = escapeHtml(imageUrlOrFallback)
   const safeUrl = escapeHtml(postUrl)
 
-  const ogImageTags = safeImage
-    ? `
+  const ogImageTags = `
     <meta property="og:image" content="${safeImage}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:image" content="${safeImage}" />`
-    : ''
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -333,7 +335,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=3600')
 
   if (post) {
-    res.status(200).send(buildCrawlerHtml(post, postUrl))
+    res.status(200).send(buildCrawlerHtml(post, postUrl, `${proto}://${host}`))
   } else {
     res.status(200).send(buildFallbackHtml(postUrl))
   }
