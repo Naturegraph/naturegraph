@@ -23,16 +23,7 @@
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  Pencil,
-  Share2,
-  MoreHorizontal,
-  TreeDeciduous,
-  Settings,
-  Instagram,
-  Facebook,
-  Globe,
-} from 'lucide-react'
+import { Pencil, Share2, MoreHorizontal, TreeDeciduous, Settings } from 'lucide-react'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 import { ImagePresets } from '@/lib/supabaseImage'
 import { getBadgeEmoji } from '@/utils/badgeHelpers'
@@ -223,61 +214,6 @@ export function ProfileHeader({
                   <span className="text-muted-foreground">{t('profile.migrations')}</span>
                 </span>
               </div>
-
-              {/* NG-011 (Nicolas 2026-05-31 retour QA) : icones reseaux sociaux
-                  directement sous le username pour etre visibles immediatement
-                  (avant elles n etaient que dans la card 'A propos' du tab mobile,
-                  invisibles au premier coup d oeil). Affiche que les renseignes,
-                  rien si tout vide (pas de bullet orphelin). */}
-              {(profile.instagram || profile.facebook || profile.website) && (
-                <div className="flex items-center gap-3 mt-1">
-                  {profile.instagram && (
-                    <a
-                      href={
-                        profile.instagram.startsWith('http')
-                          ? profile.instagram
-                          : `https://instagram.com/${profile.instagram}`
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`Instagram de ${profile.username}`}
-                      className="size-9 flex items-center justify-center rounded-full bg-background border border-border hover:border-primary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    >
-                      <Instagram className="size-4" aria-hidden="true" />
-                    </a>
-                  )}
-                  {profile.facebook && (
-                    <a
-                      href={
-                        profile.facebook.startsWith('http')
-                          ? profile.facebook
-                          : `https://facebook.com/${profile.facebook}`
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`Facebook de ${profile.username}`}
-                      className="size-9 flex items-center justify-center rounded-full bg-background border border-border hover:border-primary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    >
-                      <Facebook className="size-4" aria-hidden="true" />
-                    </a>
-                  )}
-                  {profile.website && (
-                    <a
-                      href={
-                        profile.website.startsWith('http')
-                          ? profile.website
-                          : `https://${profile.website}`
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`Site web de ${profile.username}`}
-                      className="size-9 flex items-center justify-center rounded-full bg-background border border-border hover:border-primary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    >
-                      <Globe className="size-4" aria-hidden="true" />
-                    </a>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* Boutons d'action — alignés en haut sur desktop (self-start) */}

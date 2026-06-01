@@ -129,7 +129,6 @@ export interface Profile {
   // Il n'est jamais renvoyé au client — usage serveur uniquement (ST_DWithin).
   instagram: string | null
   twitter: string | null
-  facebook: string | null
   website: string | null
   is_public: boolean
   email_verified: boolean
