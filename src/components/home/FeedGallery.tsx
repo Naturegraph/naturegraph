@@ -133,15 +133,19 @@ export function FeedGallery({ posts }: FeedGalleryProps) {
             />
 
             {/* Badge multi-photos — visible si le post a plusieurs images.
-                V1.1.4 QA round 4 (Nicolas 2026-06-01) : chiffre encore plus
-                petit (text-[9px] tabular-nums) et padding compact. */}
+                V1.1.4 QA round 6 (Nicolas 2026-06-01) : font-size INLINE
+                pour bypass tout purge/cache Tailwind. Avant les arbitrary
+                values text-[9px] etaient peut-etre purgees -> aucun
+                changement visible apres mes commits. Inline style = source
+                de verite, prioritaire sur tout. */}
             {item.imagesCount > 1 && (
               <span
-                className="absolute top-2 right-2 inline-flex items-center gap-0.5 bg-black/55 text-white px-1 py-px rounded backdrop-blur-sm"
+                className="absolute top-2 right-2 inline-flex items-center bg-black/55 text-white rounded backdrop-blur-sm"
+                style={{ gap: '2px', padding: '2px 5px' }}
                 aria-hidden="true"
               >
-                <Images className="size-3" aria-hidden="true" />
-                <span className="text-[9px] font-medium leading-none tabular-nums">
+                <Images aria-hidden="true" style={{ width: '10px', height: '10px' }} />
+                <span style={{ fontSize: '10px', fontWeight: 600, lineHeight: 1 }}>
                   {item.imagesCount}
                 </span>
               </span>
