@@ -175,30 +175,6 @@ export function HomeNavbar({
 
   return (
     <>
-      {/* V1.1.4 QA round 4 (Nicolas 2026-06-01) : sub-header mobile full width
-          pour materialiser le filtre actif (espece). Avant : indicateur sur
-          l icone Search compact -> peu visible. Maintenant : bandeau dedie
-          sous la navbar avec label + bouton X, plus accessible. */}
-      {activeFilterLabel && (
-        <div
-          className="md:hidden sticky top-[72px] z-30 bg-primary-light border-b border-primary/20 px-4 py-2 flex items-center gap-2"
-          role="status"
-          aria-label={t('home.navbar.activeFilter', { defaultValue: 'Filtre actif' })}
-        >
-          <Search className="size-4 text-primary shrink-0" strokeWidth={3} aria-hidden="true" />
-          <span className="flex-1 text-sm font-medium text-foreground truncate">
-            {activeFilterLabel}
-          </span>
-          <button
-            type="button"
-            onClick={() => clearActiveSpecies()}
-            aria-label={t('home.navbar.clearFilter', { defaultValue: 'Retirer le filtre' })}
-            className="size-6 flex items-center justify-center rounded-full hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
-          >
-            <X className="size-4 text-foreground" aria-hidden="true" />
-          </button>
-        </div>
-      )}
       <header className="bg-cream-lighter h-[72px] sticky top-0 z-40 shrink-0 w-full">
         {/* Séparateur bas */}
         <div
@@ -265,7 +241,7 @@ export function HomeNavbar({
                     {feedActiveFiltersCount > 0 && (
                       <span
                         aria-label={`${feedActiveFiltersCount} filtres actifs`}
-                        className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold leading-none pointer-events-none ring-2 ring-cream-lighter"
+                        className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary-light text-primary text-[11px] font-bold leading-none pointer-events-none border border-cream-lighter"
                       >
                         {feedActiveFiltersCount}
                       </span>

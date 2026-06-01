@@ -17,7 +17,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { LayoutList, LayoutGrid, Filter } from 'lucide-react'
+import { LayoutList, LayoutGrid, Filter, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { ErrorState } from '@/components/ui'
 import { FeedPost } from './FeedPost'
@@ -331,7 +331,7 @@ export function FeedSection({
   // Species Context Layer, filtre global active depuis la recherche (PRD §3.4 / §6.1)
   // V1.1.4 : seule l espece passe par ce contexte. La categorie passe par
   // FeedFilters (panel filtres + badge compteur), cf. onSelectCategory plus bas.
-  const { activeSpecies } = useSpecies()
+  const { activeSpecies, clearActiveSpecies } = useSpecies()
   const [activeTab, setActiveTab] = useState<FeedTab>('recent')
   const [filters, setFilters] = useState<FeedFilters>({ ...DEFAULT_FILTERS })
   const [page, setPage] = useState(1)
@@ -498,6 +498,33 @@ export function FeedSection({
        * de filtre la ou l user attend de la voir : dans la barre de recherche.
        * Cf. HomeNavbar.tsx pour l affichage du pill actif.
        */}
+
+      {/* V1.1.4 QA round 5 (Nicolas 2026-06-01) : pill recherche active en
+          MOBILE sticky sous la navbar. Avant ce fix le pill etait dans la
+          HomeNavbar mobile -> ca poussait le header. Maintenant integre dans
+          la zone feed comme la tab bar desktop (sticky top-[72px]). */}
+      {activeSpecies && (
+        <div className="md:hidden sticky top-[72px] z-30 -mx-4 px-4 py-2 mb-3 bg-cream-lighter/95 backdrop-blur-sm">
+          <div className="flex items-center gap-2 bg-primary-light border border-primary/20 rounded-full px-3 py-2">
+            <Search
+              className="size-4 text-primary shrink-0"
+              strokeWidth={3}
+              aria-hidden="true"
+            />
+            <span className="flex-1 text-sm font-medium text-foreground truncate">
+              {activeSpecies.common_name ?? activeSpecies.scientific_name}
+            </span>
+            <button
+              type="button"
+              onClick={() => clearActiveSpecies()}
+              aria-label="Retirer le filtre"
+              className="shrink-0 size-6 flex items-center justify-center rounded-full hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <X className="size-4 text-foreground" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Header tabs + contrôles — desktop seulement */}
       {/*
