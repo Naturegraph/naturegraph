@@ -20,7 +20,7 @@
 
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { Spinner } from '@/components/ui'
+import { AppLoader } from '@/components/ui'
 
 interface PublicRouteProps {
   children: React.ReactNode
@@ -54,13 +54,9 @@ export function PublicRoute({ children }: PublicRouteProps) {
     return <Navigate to="/home" replace />
   }
 
-  // Pendant la vérification de session (sans hint local), afficher un spinner
+  // Pendant la vérification de session (sans hint local), afficher le loader officiel
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Spinner size="lg" />
-      </div>
-    )
+    return <AppLoader size="md" />
   }
 
   // Si connecté et onboarding terminé, /home

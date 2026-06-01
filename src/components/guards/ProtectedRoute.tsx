@@ -10,7 +10,7 @@
 
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { Spinner } from '@/components/ui'
+import { AppLoader } from '@/components/ui'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -20,13 +20,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, onboardingCompleted } = useAuth()
   const location = useLocation()
 
-  // Pendant la vérification de session, afficher un spinner
+  // V1.1.4 NG-013 : loader officiel Naturegraph pendant le check session
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Spinner size="lg" />
-      </div>
-    )
+    return <AppLoader size="md" />
   }
 
   // Si non authentifié, rediriger vers login en conservant la destination

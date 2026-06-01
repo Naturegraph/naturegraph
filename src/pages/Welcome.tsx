@@ -19,6 +19,7 @@ import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { KeyRound, Mail, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { AppLoader } from '@/components/ui/AppLoader'
 import { BetaAuthLayout } from '@/components/auth/BetaAuthLayout'
 import { useToast } from '@/contexts/ToastContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -175,12 +176,7 @@ export default function Welcome() {
   if (isAuthLoading || (isAuthenticated && !hasAccess)) {
     return (
       <BetaAuthLayout>
-        <div className="flex items-center justify-center min-h-[40vh] w-full">
-          <Loader2
-            className="size-8 text-[var(--color-primary)] motion-safe:animate-spin"
-            aria-label={t('common.loading', { defaultValue: 'Chargement' })}
-          />
-        </div>
+        <AppLoader size="md" />
       </BetaAuthLayout>
     )
   }
