@@ -80,14 +80,23 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
     () => ({
       save() {
         if (!isUsernameValid) return false
-        // Nettoyage @ prefix sur handles (Instagram / Twitter) au cas ou l user
-        // l a colle. Trim systematique.
-        const cleanHandle = (s: string) => s.trim().replace(/^@+/, '')
+        // Extrait le username depuis une URL si l user colle un lien complet :
+        // https://www.instagram.com/naturegraph -> naturegraph
+        // https://facebook.com/naturegraph -> naturegraph
+        // @naturegraph -> naturegraph
+        // naturegraph -> naturegraph (deja propre)
+        function extractHandle(raw: string, domainEscaped: string): string {
+          let s = raw.trim().replace(/^@+/, '')
+          const re = new RegExp(`(?:https?:\\/\\/)?(?:www\\.)?${domainEscaped}\\/([^/?#]+)`, 'i')
+          const match = s.match(re)
+          if (match) s = match[1]
+          return s.replace(/\/$/, '')
+        }
         onSave({
           username: trimmedUsername,
           bio: bio || null,
-          instagram: cleanHandle(instagram) || null,
-          facebook: cleanHandle(facebook) || null,
+          instagram: extractHandle(instagram, 'instagram\\.com') || null,
+          facebook: extractHandle(facebook, 'facebook\\.com') || null,
           website: website.trim() || null,
           weekProgress: {
             current: profile.weekProgress?.current ?? 0,
@@ -192,31 +201,35 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
           {t('profile.edit.socialsTitle', { defaultValue: 'Reseaux sociaux et lien externe' })}
         </p>
 
-        {/* Instagram - sans @, on le retire au save si l user le tape */}
+        {/* Instagram - URL ou pseudo (extraction auto au save) */}
         <div className="flex items-center gap-2">
           <Instagram className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
           <input
             type="text"
             value={instagram}
             onChange={(e) => setInstagram(e.target.value)}
-            placeholder={t('profile.edit.instagramPlaceholder', { defaultValue: 'ton_pseudo' })}
-            maxLength={30}
+            placeholder={t('profile.edit.instagramPlaceholder', {
+              defaultValue: 'naturegraph ou URL',
+            })}
+            maxLength={200}
             aria-label="Instagram"
-            className={INPUT_PILL_CLASS}
+            className={`${INPUT_PILL_CLASS} flex-1 min-w-0`}
           />
         </div>
 
-        {/* Facebook - handle apres facebook.com/ */}
+        {/* Facebook - URL ou pseudo */}
         <div className="flex items-center gap-2">
           <Facebook className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
           <input
             type="text"
             value={facebook}
             onChange={(e) => setFacebook(e.target.value)}
-            placeholder={t('profile.edit.facebookPlaceholder', { defaultValue: 'ton_pseudo' })}
-            maxLength={50}
+            placeholder={t('profile.edit.facebookPlaceholder', {
+              defaultValue: 'naturegraph ou URL',
+            })}
+            maxLength={200}
             aria-label="Facebook"
-            className={INPUT_PILL_CLASS}
+            className={`${INPUT_PILL_CLASS} flex-1 min-w-0`}
           />
         </div>
 
@@ -232,15 +245,9 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
             })}
             maxLength={200}
             aria-label={t('profile.edit.website', { defaultValue: 'Site web' })}
-            className={INPUT_PILL_CLASS}
+            className={`${INPUT_PILL_CLASS} flex-1 min-w-0`}
           />
         </div>
-
-        <p className="text-xs italic text-muted-foreground">
-          {t('profile.edit.socialsHelper', {
-            defaultValue: 'Optionnel. Visible publiquement sur ton profil.',
-          })}
-        </p>
       </div>
 
       {/* ── Objectif hebdomadaire — saisie libre 1-50 ── */}

@@ -45,7 +45,9 @@ export interface ProfileDisplayData {
   region: string | null
   interests: Array<{ id: string; percent: number }>
   instagram: string | null
-  facebook: string | null
+  /** NG-011 V1.1.3 : optionnel pour back-compat avec les composants qui
+   *  construisent ProfileDisplayData sans ce champ (legacy + mocks). */
+  facebook?: string | null
   website: string | null
   followers_count: number
   following_count: number
