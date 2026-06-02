@@ -12,21 +12,27 @@ import { InstallPromptBanner } from '@/components/layout/InstallPromptBanner'
 import { AppLoader } from '@/components/ui/AppLoader'
 
 /**
- * V1.1.4 QA round 8 (Nicolas 2026-06-01) : BootSplash systematique au
- * premier mount pour materialiser le branding (AppLoader webm Naturegraph)
- * et masquer les eventuels lags de boot session/lazy chunks. Duree min
- * 900ms, pas plus -> branding sans frustration.
+ * V1.1.4 QA round 9 (Nicolas 2026-06-02) : BootSplash systematique au
+ * premier mount avec video webm en grand format mobile (presque pleine
+ * largeur) et raisonnable en desktop. Duree augmentee a 1800ms pour
+ * laisser le temps de voir l animation complete (Nicolas : "il faut une
+ * loupe pour voir le loader"). Si le feed est pret avant, on attend
+ * quand meme la fin de la boucle pour ne pas couper.
  */
 function BootSplash({ children }: { children: React.ReactNode }) {
   const [show, setShow] = useState(true)
   useEffect(() => {
-    const t = setTimeout(() => setShow(false), 900)
+    const t = setTimeout(() => setShow(false), 1800)
     return () => clearTimeout(t)
   }, [])
   if (show) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-cream-lighter">
-        <AppLoader size="lg" />
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-cream-lighter px-6">
+        {/* Mobile : presque pleine largeur (max 320px de hauteur).
+            Desktop : raisonnable (max 256px). Container responsive. */}
+        <div className="w-full max-w-[80vw] sm:max-w-[320px] aspect-square flex items-center justify-center">
+          <AppLoader fullSize />
+        </div>
       </div>
     )
   }
