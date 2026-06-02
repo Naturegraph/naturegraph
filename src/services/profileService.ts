@@ -204,19 +204,37 @@ export async function getSuggestedUsers({
   const { data: candidates, error } = await query
   if (error) throw new Error(error.message)
 
-  // Seuil minimum : si on n'a pas 3 candidats (dans la région si fournie) → vide
-  if (!candidates || candidates.length < 3) return []
+  // V1.1.4 QA round 9 (Nicolas 2026-06-02) : on retire le seuil minimum.
+  // Avant : si < 3 candidats -> retournait []. Resultat : "Bientot, decouvre
+  // les naturalistes actifs pres de chez toi" alors qu il y avait 1 ou 2
+  // users actifs. Maintenant on retourne ce qu on a, meme si c est 1 ou 2.
+  // Le frontend gere l affichage de 1, 2 ou 3 cards selon le retour.
+  if (!candidates || candidates.length === 0) return []
 
   // 3. Cascade par intérêts — priorité #1 → #2 → #3 → fallback
+  // V1.1.4 QA round 9 : rotation au sein de chaque tranche d interet via
+  // shuffle aleatoire. Permet une UI vivante : a chaque visite l user voit
+  // une selection differente plutot que toujours les 3 memes profils.
   const picked: (typeof candidates)[number][] = []
   const usedIds = new Set<string>()
   const priorityInterests = userInterests.slice(0, 3)
 
+  function shuffle<T>(arr: T[]): T[] {
+    const a = [...arr]
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[a[i], a[j]] = [a[j], a[i]]
+    }
+    return a
+  }
+
   for (const interest of priorityInterests) {
     if (picked.length >= limit) break
-    // Candidats ayant ce centre d'intérêt, non encore sélectionnés
-    const matches = candidates.filter(
-      (c) => !usedIds.has(c.id) && Array.isArray(c.interests) && c.interests.includes(interest),
+    // Candidats ayant ce centre d'intérêt, non encore sélectionnés, shuffles
+    const matches = shuffle(
+      candidates.filter(
+        (c) => !usedIds.has(c.id) && Array.isArray(c.interests) && c.interests.includes(interest),
+      ),
     )
     for (const m of matches) {
       if (picked.length >= limit) break
@@ -225,7 +243,9 @@ export async function getSuggestedUsers({
     }
   }
 
-  // 4. Fallback : compléter avec les profils restants (tri posts_count hérité)
+  // 4. Fallback : compléter avec les profils restants (tri posts_count hérité).
+  // QA round 9 : si user pas localise / pas d interets / pas assez de
+  // matchs -> on prend les plus actifs (deja triees par posts_count desc).
   if (picked.length < limit) {
     for (const c of candidates) {
       if (picked.length >= limit) break
@@ -236,9 +256,7 @@ export async function getSuggestedUsers({
     }
   }
 
-  // Garantie finale : si malgré le fallback on n'atteint pas 3 → vide
-  if (picked.length < limit) return []
-
+  // Retourne ce qu on a, meme si c est 1 ou 2 profils (avant : []).
   return picked.slice(0, limit) as SuggestedUser[]
 }
 

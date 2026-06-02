@@ -32,6 +32,12 @@ interface AppLoaderProps {
   inline?: boolean
   /** Label accessible (sr-only). */
   label?: string
+  /**
+   * V1.1.4 QA round 9 (Nicolas 2026-06-02) : si true, la video / spinner
+   * remplit son container parent (w-full h-full). Permet au BootSplash
+   * mobile d afficher le webm en grand presque pleine largeur.
+   */
+  fullSize?: boolean
 }
 
 const sizeClasses: Record<AppLoaderSize, string> = {
@@ -75,7 +81,12 @@ function usePrefersReducedMotion(): boolean {
   return prefers
 }
 
-export function AppLoader({ size = 'md', inline = false, label }: AppLoaderProps) {
+export function AppLoader({
+  size = 'md',
+  inline = false,
+  label,
+  fullSize = false,
+}: AppLoaderProps) {
   const { t } = useTranslation()
   const videoRef = useRef<HTMLVideoElement>(null)
   const prefersReducedMotion = usePrefersReducedMotion()
@@ -84,12 +95,15 @@ export function AppLoader({ size = 'md', inline = false, label }: AppLoaderProps
   // Si reduced-motion ou pas de support webm : spinner CSS de secours
   const useFallback = prefersReducedMotion || !canPlayWebm()
 
+  // V1.1.4 QA round 9 : si fullSize, on prend toute la place du parent
+  const videoClass = fullSize ? 'w-full h-full object-contain' : `${sizeClasses[size]} object-contain`
+
   const content = useFallback ? (
-    <Spinner size={size === 'sm' ? 'sm' : 'lg'} label={accessibleLabel} />
+    <Spinner size={fullSize || size === 'lg' ? 'lg' : size} label={accessibleLabel} />
   ) : (
     <video
       ref={videoRef}
-      className={`${sizeClasses[size]} object-contain`}
+      className={videoClass}
       src={loadingVideo}
       autoPlay
       loop
