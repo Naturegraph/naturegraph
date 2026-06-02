@@ -210,6 +210,9 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
     // mappe directement (avant : toujours undefined faute de colonne). FeedPost
     // affiche un suffixe « (N) » sur le chip espèce quand > 1.
     individualsCount: (item as { individuals_count?: number }).individuals_count ?? undefined,
+    // V1.2.0 (NG-005/006) : si le post est issu d un carnet, FeedPost rendra
+    // la carte enrichie au lieu des chips espece/categorie standard.
+    notebookId: (item as { notebook_id?: string | null }).notebook_id ?? null,
     scientific_name: item.scientific_name ?? null,
     taxref_id: item.taxref_id ?? null,
     taxonomic_group: item.taxonomic_group ?? null,
@@ -514,11 +517,7 @@ export function FeedSection({
               className="flex-1 flex items-center gap-2 min-w-0 focus-visible:outline-none rounded-full"
               aria-label="Modifier la recherche"
             >
-              <Search
-                className="size-4 text-primary shrink-0"
-                strokeWidth={3}
-                aria-hidden="true"
-              />
+              <Search className="size-4 text-primary shrink-0" strokeWidth={3} aria-hidden="true" />
               <span className="text-sm font-medium text-foreground truncate text-left">
                 {activeSpecies.common_name ?? activeSpecies.scientific_name}
               </span>

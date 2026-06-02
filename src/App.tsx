@@ -7,8 +7,10 @@ import { ToastProvider } from '@/contexts/ToastContext'
 import { LocationProvider } from '@/contexts/LocationContext'
 import { SpeciesProvider } from '@/contexts/SpeciesContext'
 import { AccessibilityProvider } from '@/contexts/AccessibilityContext'
+import { NotebookProvider } from '@/contexts/NotebookContext'
 import { CookieBanner } from '@/components/layout/CookieBanner'
 import { InstallPromptBanner } from '@/components/layout/InstallPromptBanner'
+import { NotebookBanner } from '@/components/notebook/NotebookBanner'
 import loadingVideo from '@/assets/branding/app-loading.webm'
 
 /**
@@ -81,24 +83,32 @@ export default function App() {
             <LocationProvider>
               {/* SpeciesProvider — Species Context Layer (PRD Recherche §3.4) */}
               <SpeciesProvider>
-                <ToastProvider>
-                  {/* Skip link global — pointe vers l'id="main-content" de chaque page */}
-                  <a href="#main-content" className="skip-link">
-                    Aller au contenu principal
-                  </a>
-                  {/* BootSplash : loader Naturegraph visible 900ms au tout premier
+                {/* NotebookProvider V1.2.0 (NG-005/006) : gere le carnet
+                    d observations actif (mode terrain). Recovery au boot
+                    si l user avait un carnet draft/active cote serveur. */}
+                <NotebookProvider>
+                  <ToastProvider>
+                    {/* Skip link global — pointe vers l'id="main-content" de chaque page */}
+                    <a href="#main-content" className="skip-link">
+                      Aller au contenu principal
+                    </a>
+                    {/* BootSplash : loader Naturegraph visible 900ms au tout premier
                       mount (cohérent avec branding sur boot PWA / mobile web). */}
-                  <BootSplash>
-                    <Outlet />
-                  </BootSplash>
-                  {/* InstallPromptBanner — propose l'installation PWA en haut
+                    <BootSplash>
+                      {/* Bandeau sticky mode carnet actif (NG-006). Visible partout
+                        dans l app pour rester dans le contexte terrain. */}
+                      <NotebookBanner />
+                      <Outlet />
+                    </BootSplash>
+                    {/* InstallPromptBanner — propose l'installation PWA en haut
                       (Chrome beforeinstallprompt OU guide iOS Safari).
                       Affiché ~3 sec après chargement, dismissible 30 j. */}
-                  <InstallPromptBanner />
-                  {/* CookieBanner global — RGPD/ePrivacy/Loi 25 information layer.
+                    <InstallPromptBanner />
+                    {/* CookieBanner global — RGPD/ePrivacy/Loi 25 information layer.
                       Affiché une seule fois par navigateur (localStorage). */}
-                  <CookieBanner />
-                </ToastProvider>
+                    <CookieBanner />
+                  </ToastProvider>
+                </NotebookProvider>
               </SpeciesProvider>
             </LocationProvider>
           </AuthProvider>

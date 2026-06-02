@@ -34,7 +34,7 @@
 
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bird, MountainSnow } from 'lucide-react'
+import { Bird, MountainSnow, BookOpen } from 'lucide-react'
 
 // ─── Types de contribution ────────────────────────────────────────────────────
 
@@ -50,6 +50,10 @@ interface ContributionType {
   Icon: React.ElementType
   /** Si true, carte grisée + badge "Bientôt" — non cliquable */
   disabled: boolean
+  /** V1.2.0 : si true, la carte n est rendue que sur mobile (md:hidden).
+   *  Utilise pour le carnet d observations, dont le mode terrain n a de
+   *  sens que sur smartphone. */
+  mobileOnly?: boolean
 }
 
 const CONTRIBUTION_TYPES: ContributionType[] = [
@@ -75,6 +79,25 @@ const CONTRIBUTION_TYPES: ContributionType[] = [
     Icon: MountainSnow,
     // Nicolas 2026-05-23 : activé en preview, branche feat/instant-nature-preview.
     disabled: false,
+  },
+  {
+    // V1.2.0 (NG-005/006) : mode terrain dedie. MOBILE-ONLY.
+    // Decision Nicolas 2026-06-02 : un PC ne se balade pas en nature, le
+    // mode terrain (timer + brouillon persistant + ajout rapide d especes)
+    // n a de sens que sur smartphone. Sur desktop, l user peut quand meme
+    // creer un post multi-especes via "Rencontre nature" (qui pourra
+    // reprendre un carnet entame sur mobile, Phase 4+).
+    // Rendu visuel : la carte est filtree au render via mobileOnly = true.
+    id: 'nature_notebook',
+    title: "Carnet d'observations",
+    description: 'Démarre une sortie nature : ajoute progressivement les espèces observées.',
+    /** Primary-light du design system (violet brand pale) */
+    cardBg: 'var(--color-primary-light)',
+    /** Primary brand */
+    iconBg: 'var(--color-primary)',
+    Icon: BookOpen,
+    disabled: false,
+    mobileOnly: true,
   },
 ]
 
@@ -157,6 +180,9 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
       {CONTRIBUTION_TYPES.map((type, i) => {
         const { Icon } = type
 
+        // V1.2.0 : carte cachee sur desktop (md+) si mobileOnly = true
+        const mobileOnlyClass = type.mobileOnly ? 'md:hidden' : ''
+
         // Carte désactivée (bientôt disponible) — rendu en <div> non cliquable
         if (type.disabled) {
           return (
@@ -164,7 +190,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
               key={type.id}
               role="menuitem"
               aria-disabled="true"
-              className="flex items-center gap-5 p-4 rounded-lg opacity-60 cursor-not-allowed select-none"
+              className={`flex items-center gap-5 p-4 rounded-lg opacity-60 cursor-not-allowed select-none ${mobileOnlyClass}`}
               style={{ backgroundColor: type.cardBg }}
             >
               {/* Cercle icône */}
@@ -200,7 +226,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
             type="button"
             role="menuitem"
             onClick={() => handleSelect(type)}
-            className="w-full flex items-center gap-5 p-4 rounded-lg text-left transition-opacity hover:opacity-90 active:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+            className={`w-full flex items-center gap-5 p-4 rounded-lg text-left transition-opacity hover:opacity-90 active:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${mobileOnlyClass}`}
             style={{ backgroundColor: type.cardBg }}
           >
             {/* Cercle icône */}

@@ -12,7 +12,7 @@
  * jusqu'à l'implémentation du statsService (Sprint 4).
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
@@ -30,6 +30,7 @@ import { ProfileAboutCard } from '@/components/profile/ProfileAboutCard'
 import { ProfileDNACard } from '@/components/profile/ProfileDNACard'
 import { EditProfilePanel } from '@/components/profile/EditProfilePanel'
 import { ContributeModal } from '@/components/home/ContributeModal'
+import { NotebookPanel } from '@/components/notebook/NotebookPanel'
 import { SettingsPanel } from '@/components/settings/SettingsPanel'
 // SharePopover du feed réutilisé pour cohérence (Nicolas 2026-05-01).
 import { SharePopover } from '@/components/home/SharePopover'
@@ -127,6 +128,13 @@ export default function Profile() {
   // pour que l user puisse choisir entre Rencontre Nature et Instant Nature
   // (avant : openCreate ouvrait directement la Rencontre, pas de choix).
   const [showContributeModal, setShowContributeModal] = useState(false)
+  // V1.2.0 NG-005/006 : panneau Carnet d observations (mode terrain)
+  const [showNotebookPanel, setShowNotebookPanel] = useState(false)
+  useEffect(() => {
+    const handler = () => setShowNotebookPanel(true)
+    window.addEventListener('naturegraph:open-notebook', handler)
+    return () => window.removeEventListener('naturegraph:open-notebook', handler)
+  }, [])
 
   // NG-002 (2026-05-31 retour QA) : panel d edition d observation rendu
   // directement dans le profil pour eviter le redirect vers /. L user reste
@@ -325,6 +333,8 @@ export default function Profile() {
     setShowContributeModal(false)
     if (type === 'nature_encounter' || type === 'nature_instant') {
       openCreate(type)
+    } else if (type === 'nature_notebook') {
+      setShowNotebookPanel(true)
     }
   }
 
@@ -379,6 +389,9 @@ export default function Profile() {
           onTypeSelect={handleContributeTypeSelect}
         />
       )}
+
+      {/* V1.2.0 : panneau Carnet d observations */}
+      {showNotebookPanel && <NotebookPanel onClose={() => setShowNotebookPanel(false)} />}
 
       {showEditPanel && (
         <EditProfilePanel
