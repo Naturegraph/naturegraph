@@ -271,8 +271,10 @@ export function ProfileSidebar() {
           </div>
         )}
 
-        {/* État rempli — exactement 3 migrateurs */}
-        {!suggestionsLoading && suggestedUsers && suggestedUsers.length >= 3 && (
+        {/* V1.1.4 QA round 11 (Nicolas 2026-06-02) : accepte 1, 2 ou 3
+            migrateurs. Avant : exigeait exactement 3 -> Mobile affichait
+            toujours vide car le service retournait parfois 1 ou 2. */}
+        {!suggestionsLoading && suggestedUsers && suggestedUsers.length > 0 && (
           <ul className="flex flex-col gap-4 px-6">
             {suggestedUsers.slice(0, 3).map((user) => {
               // Intérêt principal (#1) → badge sur l'avatar
@@ -345,8 +347,8 @@ export function ProfileSidebar() {
           </ul>
         )}
 
-        {/* État vide — < 3 migrateurs disponibles dans le secteur */}
-        {!suggestionsLoading && (!suggestedUsers || suggestedUsers.length < 3) && (
+        {/* État vide — 0 migrateur (rare, seulement si DB vide) */}
+        {!suggestionsLoading && (!suggestedUsers || suggestedUsers.length === 0) && (
           <p className="text-xs text-muted-foreground px-6">{t('home.sidebar.migratorsEmpty')}</p>
         )}
       </div>

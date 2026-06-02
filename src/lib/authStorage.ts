@@ -163,4 +163,8 @@ export function clearAuthStorage(): void {
     safeLocalRemove(k)
     safeSessionRemove(k)
   }
+  // V1.1.4 QA round 11 (Nicolas 2026-06-02) : on purge aussi le flag du
+  // BootSplash pour que l user revoie le loader Naturegraph apres une
+  // reconnexion (effet "bienvenue", coherent avec le branding).
+  safeSessionRemove('naturegraph-splash-seen')
 }
