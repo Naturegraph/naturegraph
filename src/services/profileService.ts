@@ -188,36 +188,14 @@ export async function getSuggestedUsers({
 
   const excludeIds = [currentUserId, ...(followedRows ?? []).map((r) => r.following_id)]
 
-  // 2. Pool de candidats — restreint à la région si fournie
-  //    Pool élargi (x10) pour avoir de la marge lors du tri par cascade
-  let query = supabase
-    .from('profiles')
-    .select('id, username, avatar_url, interests, posts_count, region')
-    .not('id', 'in', `(${excludeIds.join(',')})`)
-    .eq('is_public', true)
-    .gt('posts_count', 0)
-    .order('posts_count', { ascending: false })
-    .limit(limit * 10)
-
-  if (region) query = query.eq('region', region)
-
-  const { data: candidates, error } = await query
-  if (error) throw new Error(error.message)
-
-  // V1.1.4 QA round 9 (Nicolas 2026-06-02) : on retire le seuil minimum.
-  // Avant : si < 3 candidats -> retournait []. Resultat : "Bientot, decouvre
-  // les naturalistes actifs pres de chez toi" alors qu il y avait 1 ou 2
-  // users actifs. Maintenant on retourne ce qu on a, meme si c est 1 ou 2.
-  // Le frontend gere l affichage de 1, 2 ou 3 cards selon le retour.
-  if (!candidates || candidates.length === 0) return []
-
-  // 3. Cascade par intérêts — priorité #1 → #2 → #3 → fallback
-  // V1.1.4 QA round 9 : rotation au sein de chaque tranche d interet via
-  // shuffle aleatoire. Permet une UI vivante : a chaque visite l user voit
-  // une selection differente plutot que toujours les 3 memes profils.
-  const picked: (typeof candidates)[number][] = []
-  const usedIds = new Set<string>()
-  const priorityInterests = userInterests.slice(0, 3)
+  // V1.1.4 QA round 10 (Nicolas 2026-06-02) : refonte intelligente.
+  // - Pool de base : TOP contributeurs globaux par posts_count (exclus soi
+  //   meme + deja suivis + is_internal). Pas de filtre region par defaut.
+  // - Si localise (region fournie) : on essaie d abord la region. Si on a
+  //   au moins `limit` candidats localement, on reste sur la region. Sinon
+  //   fallback global (pour ne jamais avoir une carte vide).
+  // - Boost interets : on shuffle dans chaque cluster (matchs interet vs
+  //   sans match) pour un mixte intelligent + rotation a chaque visite.
 
   function shuffle<T>(arr: T[]): T[] {
     const a = [...arr]
@@ -228,36 +206,70 @@ export async function getSuggestedUsers({
     return a
   }
 
-  for (const interest of priorityInterests) {
-    if (picked.length >= limit) break
-    // Candidats ayant ce centre d'intérêt, non encore sélectionnés, shuffles
-    const matches = shuffle(
-      candidates.filter(
-        (c) => !usedIds.has(c.id) && Array.isArray(c.interests) && c.interests.includes(interest),
-      ),
-    )
-    for (const m of matches) {
-      if (picked.length >= limit) break
-      picked.push(m)
-      usedIds.add(m.id)
+  // Etape 1 : tentative regionale si user localise
+  let candidates: Array<{
+    id: string
+    username: string
+    avatar_url: string | null
+    interests: string[] | null
+    posts_count: number
+    region: string | null
+  }> = []
+
+  if (region) {
+    const { data: regionalData } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_url, interests, posts_count, region')
+      .not('id', 'in', `(${excludeIds.join(',')})`)
+      .eq('is_public', true)
+      .gt('posts_count', 0)
+      .eq('region', region)
+      .order('posts_count', { ascending: false })
+      .limit(limit * 10)
+    candidates = (regionalData ?? []) as typeof candidates
+  }
+
+  // Etape 2 : si pas assez localement, fallback global TOP contributeurs
+  if (candidates.length < limit) {
+    const { data: globalData, error } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_url, interests, posts_count, region')
+      .not('id', 'in', `(${excludeIds.join(',')})`)
+      .eq('is_public', true)
+      .gt('posts_count', 0)
+      .order('posts_count', { ascending: false })
+      .limit(limit * 10)
+    if (error) throw new Error(error.message)
+    // Fusion : on garde les regionaux deja trouves + on complete avec le global
+    const seenIds = new Set(candidates.map((c) => c.id))
+    for (const c of (globalData ?? []) as typeof candidates) {
+      if (!seenIds.has(c.id)) candidates.push(c)
     }
   }
 
-  // 4. Fallback : compléter avec les profils restants (tri posts_count hérité).
-  // QA round 9 : si user pas localise / pas d interets / pas assez de
-  // matchs -> on prend les plus actifs (deja triees par posts_count desc).
-  if (picked.length < limit) {
-    for (const c of candidates) {
-      if (picked.length >= limit) break
-      if (!usedIds.has(c.id)) {
-        picked.push(c)
-        usedIds.add(c.id)
-      }
-    }
-  }
+  if (candidates.length === 0) return []
 
-  // Retourne ce qu on a, meme si c est 1 ou 2 profils (avant : []).
-  return picked.slice(0, limit) as SuggestedUser[]
+  // Etape 3 : split entre matchs interets (boost) + reste (fallback top actifs)
+  const hasInterestMatch = (
+    c: (typeof candidates)[number],
+  ): boolean =>
+    Array.isArray(c.interests) &&
+    userInterests.some((interest) => c.interests!.includes(interest))
+
+  const withInterest = shuffle(candidates.filter(hasInterestMatch))
+  const withoutInterest = shuffle(candidates.filter((c) => !hasInterestMatch(c)))
+
+  // Mix intelligent : on alterne pour avoir un panel varie (pas que les
+  // matchs interets identiques a chaque visite). On prend d abord 2/3
+  // de matchs interets si possible, complete avec top actifs.
+  const interestSlots = Math.min(Math.ceil(limit * 0.66), withInterest.length)
+  const picked = [
+    ...withInterest.slice(0, interestSlots),
+    ...withoutInterest,
+    ...withInterest.slice(interestSlots), // si vraiment pas assez sans interet
+  ].slice(0, limit)
+
+  return picked as SuggestedUser[]
 }
 
 /**
