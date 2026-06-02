@@ -155,6 +155,16 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
   const [existingMedia, setExistingMedia] = useState<
     Array<{ id: string; url: string; storagePath: string }>
   >([])
+  // V1.1.4 NG-024 v2 (Nicolas 2026-06-02 - bug Patrice) : on N efface PLUS
+  // immediatement les anciennes photos quand l user clique la croix. On
+  // accumule la liste des suppressions ici, et on les execute APRES que
+  // les uploads des nouvelles photos aient reussi (dans onSuccess du
+  // submit). Sinon : si l upload echoue ou si l user annule, les anciennes
+  // photos sont perdues definitivement -> bug critique decrit dans NG-024
+  // "Mise a jour - Validation utilisateur echouee".
+  const [pendingMediaDeletions, setPendingMediaDeletions] = useState<
+    Array<{ id: string; storagePath: string }>
+  >([])
 
   // ── Pré-remplissage en mode édition ─────────────────────────────────────
   // Quand editingPostId est défini au mount, on fetch les valeurs courantes
@@ -460,6 +470,26 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
             console.warn('[ContributeEncounterForm] createProposal failed:', err)
           }
         }
+        // V1.1.4 NG-024 v2 (Nicolas 2026-06-02) : suppression effective des
+        // anciennes photos UNIQUEMENT maintenant, apres que createPost +
+        // upload aient reussi. Si on arrive ici c est que la nouvelle
+        // version du post est en DB avec les nouvelles photos uploadees.
+        // Best-effort : un echec de deletion laisse des photos orphelines
+        // en storage mais ne casse pas la publication (toast warning).
+        if (pendingMediaDeletions.length > 0) {
+          try {
+            const { deletePostMedia } = await import('@/services/mediaService')
+            await Promise.all(
+              pendingMediaDeletions.map((p) =>
+                deletePostMedia(p.id, p.storagePath).catch((err) => {
+                  console.error('[ContributeEncounterForm] delete media failed:', p.id, err)
+                }),
+              ),
+            )
+          } catch (err) {
+            console.warn('[ContributeEncounterForm] pending deletions failed:', err)
+          }
+        }
         // NG-004 : succes -> purge le brouillon (on a publie, plus besoin).
         clearDraft(DRAFT_KEY)
         onClose()
@@ -583,14 +613,17 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
                 // V1.1.4 NG-024 : photos existantes affichees aussi en step 1
                 // pour permettre la suppression OU l ajout depuis l etape photos.
                 existingMedia={isEditing ? existingMedia : undefined}
-                onRemoveExistingMedia={async (mediaId, storagePath) => {
+                onRemoveExistingMedia={(mediaId, storagePath) => {
+                  // V1.1.4 NG-024 v2 : suppression DIFFEREE jusqu apres
+                  // que le submit ait reussi. Ainsi : si l upload des
+                  // nouvelles photos echoue ou si l user annule, les
+                  // anciennes restent intactes en DB.
                   setExistingMedia((prev) => prev.filter((m) => m.id !== mediaId))
-                  try {
-                    const { deletePostMedia } = await import('@/services/mediaService')
-                    await deletePostMedia(mediaId, storagePath)
-                  } catch (err) {
-                    console.error('[ContributeEncounterForm] delete media failed:', err)
-                  }
+                  setPendingMediaDeletions((prev) =>
+                    prev.some((p) => p.id === mediaId)
+                      ? prev
+                      : [...prev, { id: mediaId, storagePath }],
+                  )
                 }}
               />
             )}
