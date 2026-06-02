@@ -337,9 +337,17 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
 
         // Si toutes les photos ont échoué ET qu'on était en mode CRÉATION,
         // on rollback le post orphelin pour ne pas laisser un post vide.
-        // En édition on garde le post existant (les anciennes photos sont
-        // toujours là).
-        if (!isEditing && files.length > 0 && failedUploads.length === files.length) {
+        //
+        // V1.1.4 NG-024 v2 (Nicolas 2026-06-02 - bug Patrice) :
+        // En mode EDITION on throw AUSSI si toutes les uploads echouent.
+        // Sans ce throw, onSuccess etait appele meme sans aucune photo
+        // uploadee -> l user voyait son post "sauvegarde" mais en realite
+        // les anciennes photos avaient ete supprimees (via onRemoveExistingMedia
+        // du Step1) et les nouvelles n etaient jamais arrivees en DB.
+        // Le throw empeche la fermeture du panel + affiche un toast clair.
+        // Combine avec la sauvegarde differee des suppressions cote form,
+        // les anciennes photos sont preservees integralement.
+        if (files.length > 0 && failedUploads.length === files.length) {
           throw new Error(
             failedUploads.length === 1
               ? failedUploads[0].reason

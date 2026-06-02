@@ -144,6 +144,12 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
   const [existingMedia, setExistingMedia] = useState<
     Array<{ id: string; url: string; storagePath: string }>
   >([])
+  // V1.1.4 NG-024 v2 (Nicolas 2026-06-02 - bug Patrice) : suppressions
+  // differees jusqu apres le submit reussi. Cf commentaire identique
+  // dans ContributeEncounterForm.
+  const [pendingMediaDeletions, setPendingMediaDeletions] = useState<
+    Array<{ id: string; storagePath: string }>
+  >([])
 
   // ── Pré-remplissage en mode édition ─────────────────────────────────────
   // Fetch les valeurs du post Instant au mount et init le form. On saute
@@ -342,6 +348,23 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
       files: form.files,
       editingPostId,
       onSuccess: async () => {
+        // V1.1.4 NG-024 v2 (Nicolas 2026-06-02) : on execute MAINTENANT
+        // les deletions reportees. Le submit ayant reussi, on peut
+        // proprement effacer les anciennes photos remplacees.
+        if (pendingMediaDeletions.length > 0) {
+          try {
+            const { deletePostMedia } = await import('@/services/mediaService')
+            await Promise.all(
+              pendingMediaDeletions.map((p) =>
+                deletePostMedia(p.id, p.storagePath).catch((err) => {
+                  console.error('[ContributeInstantPanel] delete media failed:', p.id, err)
+                }),
+              ),
+            )
+          } catch (err) {
+            console.warn('[ContributeInstantPanel] pending deletions failed:', err)
+          }
+        }
         // NG-004 : succes -> purge le brouillon.
         clearDraft(DRAFT_KEY)
         onClose()
@@ -444,14 +467,15 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
                 }}
                 error={errors.files}
                 existingMedia={editingPostId ? existingMedia : undefined}
-                onRemoveExistingMedia={async (mediaId, storagePath) => {
+                onRemoveExistingMedia={(mediaId, storagePath) => {
+                  // V1.1.4 NG-024 v2 : suppression DIFFEREE jusqu apres
+                  // que le submit ait reussi (cf ContributeEncounterForm).
                   setExistingMedia((prev) => prev.filter((m) => m.id !== mediaId))
-                  try {
-                    const { deletePostMedia } = await import('@/services/mediaService')
-                    await deletePostMedia(mediaId, storagePath)
-                  } catch (err) {
-                    console.error('[ContributeInstantPanel] delete media failed:', err)
-                  }
+                  setPendingMediaDeletions((prev) =>
+                    prev.some((p) => p.id === mediaId)
+                      ? prev
+                      : [...prev, { id: mediaId, storagePath }],
+                  )
                 }}
               />
             )}
