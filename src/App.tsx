@@ -9,7 +9,7 @@ import { SpeciesProvider } from '@/contexts/SpeciesContext'
 import { AccessibilityProvider } from '@/contexts/AccessibilityContext'
 import { CookieBanner } from '@/components/layout/CookieBanner'
 import { InstallPromptBanner } from '@/components/layout/InstallPromptBanner'
-import { AppLoader } from '@/components/ui/AppLoader'
+import loadingVideo from '@/assets/branding/app-loading.webm'
 
 /**
  * V1.1.4 QA round 9 (Nicolas 2026-06-02) : BootSplash systematique au
@@ -27,12 +27,19 @@ function BootSplash({ children }: { children: React.ReactNode }) {
   }, [])
   if (show) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-cream-lighter px-6">
-        {/* Mobile : presque pleine largeur (max 320px de hauteur).
-            Desktop : raisonnable (max 256px). Container responsive. */}
-        <div className="w-full max-w-[80vw] sm:max-w-[320px] aspect-square flex items-center justify-center">
-          <AppLoader fullSize />
-        </div>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-cream-lighter overflow-hidden">
+        {/* QA round 10 (Nicolas 2026-06-02) : video DIRECTEMENT en grand
+            sans wrapper AppLoader qui le contraignait. Mobile : h-[60vh]
+            (60% hauteur ecran). Desktop : 480px max. */}
+        <video
+          src={loadingVideo}
+          autoPlay
+          loop
+          muted
+          playsInline
+          aria-hidden="true"
+          className="h-[60vh] w-auto max-w-[90vw] sm:h-[480px] sm:max-w-[480px] object-contain"
+        />
       </div>
     )
   }
