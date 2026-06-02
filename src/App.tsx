@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { MotionConfig } from 'motion/react'
 import { ThemeProvider } from '@/contexts/ThemeContext'
@@ -8,6 +9,29 @@ import { SpeciesProvider } from '@/contexts/SpeciesContext'
 import { AccessibilityProvider } from '@/contexts/AccessibilityContext'
 import { CookieBanner } from '@/components/layout/CookieBanner'
 import { InstallPromptBanner } from '@/components/layout/InstallPromptBanner'
+import { AppLoader } from '@/components/ui/AppLoader'
+
+/**
+ * V1.1.4 QA round 8 (Nicolas 2026-06-01) : BootSplash systematique au
+ * premier mount pour materialiser le branding (AppLoader webm Naturegraph)
+ * et masquer les eventuels lags de boot session/lazy chunks. Duree min
+ * 900ms, pas plus -> branding sans frustration.
+ */
+function BootSplash({ children }: { children: React.ReactNode }) {
+  const [show, setShow] = useState(true)
+  useEffect(() => {
+    const t = setTimeout(() => setShow(false), 900)
+    return () => clearTimeout(t)
+  }, [])
+  if (show) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-cream-lighter">
+        <AppLoader size="lg" />
+      </div>
+    )
+  }
+  return <>{children}</>
+}
 
 export default function App() {
   return (
@@ -25,7 +49,11 @@ export default function App() {
                   <a href="#main-content" className="skip-link">
                     Aller au contenu principal
                   </a>
-                  <Outlet />
+                  {/* BootSplash : loader Naturegraph visible 900ms au tout premier
+                      mount (cohérent avec branding sur boot PWA / mobile web). */}
+                  <BootSplash>
+                    <Outlet />
+                  </BootSplash>
                   {/* InstallPromptBanner — propose l'installation PWA en haut
                       (Chrome beforeinstallprompt OU guide iOS Safari).
                       Affiché ~3 sec après chargement, dismissible 30 j. */}
