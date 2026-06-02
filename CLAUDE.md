@@ -125,24 +125,48 @@ Cf. `docs/devops/environments.md` pour le detail complet.
 - Force-logout des users seulement de temps en temps (refonte auth, schema casse), pas par defaut.
 - Notification in-app systeme : redaction + validation Nicolas avant insertion.
 
-**Supabase (Phase 1 MVP) :**
+**Supabase (etat 2026-06-02) : un seul projet BDD, partage dev + prod**
 
-- `naturegraph-dev` : utilise par develop + staging
-- `naturegraph-prod` : utilise par main uniquement
-- Variables Vercel configurees separement par branche (Production vs Preview)
+- **UN SEUL projet Supabase** : `hrxgduvworofnrjmgpcj` (region ca-central-1).
+- Utilise par develop local + staging + main en simultane.
+- Pas de naturegraph-dev separe pour le moment (decision Nicolas 2026-06-02 :
+  cout 10$/mois supplementaire non justifie tant que le volume reste limite).
+- Variables Vercel : production + preview pointent vers la meme BDD.
+
+**ATTENTION precautions critiques (decoulant du fait qu il n y a qu une BDD) :**
+
+1. **Migrations** : avant `apply_migration` ou `execute_sql DDL`, verifier que
+   le changement est compatible avec l usage prod. Toute migration impacte
+   immediatement la prod.
+2. **Tests de schema en dev** : ne PAS appliquer de migrations de feature
+   branches sur la BDD prod. Si tu dois tester une feature avec changement de
+   schema (ex V1.2.0 carnets), DEMANDER A NICOLAS de creer un projet dev temporaire
+   avant d ecrire la moindre migration.
+3. **Drop / destructive operations** : interdit sans validation explicite.
+4. **Tests E2E qui ecrivent en DB** : utiliser des donnees mock fictives
+   (cf. src/data/mock/), pas de vraie INSERT en prod.
 
 **Convention migrations SQL :**
 
 - Format : `YYYYMMDD_description.sql` (ex: `20260401_rls_security_fixes.sql`)
-- Appliquer manuellement sur le bon projet Supabase lors de chaque merge vers staging et main
-- Ne jamais laisser les schemas diverger entre environnements sans le documenter
+- Une migration appliquee = appliquee partout (puisque BDD unique).
+- Ne jamais laisser une migration en local sans apply (ou alors la commenter
+  EXPLICITEMENT dans le fichier avec `-- DO NOT APPLY UNTIL ...`).
 
 **URLs cibles :**
 
-- `naturegraph.ca` → main (production publique — Hostinger DNS + Vercel + Supabase prod)
+- `naturegraph.ca` → main (production publique — Hostinger DNS + Vercel + Supabase unique)
 - `staging-naturegraph-git-staging-*.vercel.app` → staging (URL Vercel auto, preview)
 - `naturegraph-eight.vercel.app` → URL Vercel auto pour les autres preview branches
 - Preview Vercel auto → feature branches (URL changeante, pour review interne uniquement)
+
+**Cas a creer un projet Supabase dev separe (futur)** :
+
+- Si feature complexe avec gros changement de schema (carnets V1.2.0, refonte
+  taxonomy, etc.).
+- Si volume utilisateurs depasse Free tier prod et qu on veut isoler les tests
+  de perf / load.
+- Cout estime : 10$/mois pour un projet ou une branche Supabase Pro.
 
 ## Legacy project
 
