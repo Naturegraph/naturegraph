@@ -138,6 +138,12 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitAttempted, setSubmitAttempted] = useState(false)
+  // V1.1.4 NG-024 (Nicolas 2026-06-01) : photos existantes en mode edition,
+  // strict alignement avec ContributeEncounterForm. Storage path reconstruit
+  // depuis l URL publique (la colonne n existe pas en DB).
+  const [existingMedia, setExistingMedia] = useState<
+    Array<{ id: string; url: string; storagePath: string }>
+  >([])
 
   // ── Pré-remplissage en mode édition ─────────────────────────────────────
   // Fetch les valeurs du post Instant au mount et init le form. On saute
@@ -175,6 +181,29 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
         locationHidden: post.location_hidden ?? true,
         displayFormat: (post.display_format ?? '16:9') as DisplayFormat,
       }))
+
+      // V1.1.4 NG-024 : fetch les medias existants pour les afficher en step 1
+      // avec exactement la meme UI que la creation (BigPreview + ThumbRow).
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: mediaRaw, error: mediaErr } = await (supabase as any)
+        .from('media')
+        .select('id, url, display_order')
+        .eq('post_id', editingPostId)
+        .order('display_order', { ascending: true })
+      if (mediaErr) {
+        console.error('[ContributeInstantPanel] fetch media error :', mediaErr)
+      }
+      if (!cancelled && Array.isArray(mediaRaw)) {
+        setExistingMedia(
+          mediaRaw.map((m: { id: string; url: string }) => {
+            const marker = '/post-media/'
+            const idx = m.url.indexOf(marker)
+            const storagePath = idx >= 0 ? m.url.slice(idx + marker.length).split('?')[0] : ''
+            return { id: m.id, url: m.url, storagePath }
+          }),
+        )
+      }
+
       setStep(2)
     })()
     return () => {
@@ -414,6 +443,16 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
                   }))
                 }}
                 error={errors.files}
+                existingMedia={editingPostId ? existingMedia : undefined}
+                onRemoveExistingMedia={async (mediaId, storagePath) => {
+                  setExistingMedia((prev) => prev.filter((m) => m.id !== mediaId))
+                  try {
+                    const { deletePostMedia } = await import('@/services/mediaService')
+                    await deletePostMedia(mediaId, storagePath)
+                  } catch (err) {
+                    console.error('[ContributeInstantPanel] delete media failed:', err)
+                  }
+                }}
               />
             )}
 
