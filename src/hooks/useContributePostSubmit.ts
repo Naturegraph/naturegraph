@@ -377,8 +377,21 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         //    immédiatement dans la liste. On invalide aussi les posts du
         //    profil pour que l'ADN d'observateur + journal nature se
         //    rafraîchissent dès la première observation (Nicolas 2026-05-24).
+        //
+        // V1.1.4 hotfix (Nicolas 2026-06-02 19h40) : en mode edition, le
+        // user devait refresh la page manuellement pour voir les nouvelles
+        // photos. Cause : `['post', editingPostId]` (utilise par usePost
+        // sur PostDetail + FeedPost details) n etait pas invalide ici.
+        // Maintenant on invalide aussi cette query et on attend le refetch
+        // avant onSuccess (qui ferme le panel) -> UI a jour des reouverture.
         queryClient.invalidateQueries({ queryKey: ['feed'] })
         queryClient.invalidateQueries({ queryKey: ['posts', 'by-user'] })
+        if (isEditing && editingPostId) {
+          // refetchQueries (au lieu de invalidate) force le fetch
+          // synchrone : quand onSuccess ferme le panel, le cache du post
+          // contient deja les nouvelles donnees (titre/photos/etc).
+          await queryClient.refetchQueries({ queryKey: ['post', editingPostId] })
+        }
 
         await onSuccess(post)
       } catch (err) {
