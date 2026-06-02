@@ -42,7 +42,6 @@ import { MainLayout } from '@/components/layout'
 import { ProtectedRoute, PublicRoute, OnboardingGuard } from '@/components/guards'
 import { BetaAccessGuard } from '@/components/guards/BetaAccessGuard'
 import { AdminGuard } from '@/components/admin/AdminGuard'
-import { AppLoader } from '@/components/ui/AppLoader'
 
 // ─── Lazy-loaded pages (code splitting pour éco-conception) ────────
 
@@ -81,7 +80,21 @@ const AdminAnalytics = lazy(() => import('./pages/Admin/AdminAnalytics'))
  */
 // eslint-disable-next-line react-refresh/only-export-components
 function LazyPage({ children }: { children: React.ReactNode }) {
-  return <Suspense fallback={<AppLoader size="md" />}>{children}</Suspense>
+  // V1.1.4 hotfix post-round-11 (Nicolas 2026-06-02 18h50) : aplat cream
+  // au lieu d AppLoader pour le fallback Suspense. Au refresh apres splash
+  // sessionStorage skip, l AppLoader laissait un mini residu visible.
+  // L aplat cream est invisible et neutre quel que soit le delai de chunk.
+  return (
+    <Suspense
+      fallback={
+        <div className="fixed inset-0 bg-cream-lighter" role="status" aria-label="Chargement">
+          <span className="sr-only">Chargement</span>
+        </div>
+      }
+    >
+      {children}
+    </Suspense>
+  )
 }
 
 /**
