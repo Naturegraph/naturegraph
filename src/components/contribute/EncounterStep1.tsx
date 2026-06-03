@@ -19,7 +19,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ImagePlus, Plus, X } from 'lucide-react'
+import { ImagePlus, Plus, X, ImageOff } from 'lucide-react'
 import { extractBatchMetadata, type PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import type { DisplayFormat } from '@/types/database'
 
@@ -29,7 +29,10 @@ const MAX_FILES = 4
 // Nicolas 2026-05-21 : garde-fou large (50 Mo) — la compression adaptative
 // dans `stripImageExif()` ramène l'upload réel sous 2 Mo. On n'impose plus
 // à l'utilisateur de compresser lui-même ses photos avant de partager.
-const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024 // 50 Mo (garde-fou mémoire navigateur)
+// V1.1.4 NG-025 (Nicolas 2026-06-03) : aligne avec MAX_INPUT_BYTES de
+// processMediaForUpload.ts. Au-dela, on rejette immediatement sans tenter
+// le decode canvas (qui crash mobile bas de gamme sur 50 Mo).
+const MAX_FILE_SIZE_BYTES = 40 * 1024 * 1024 // 40 Mo
 
 // Aspect ratios par format — alignés sur ceux du feed (FeedPost.ImageSlider)
 // pour que ce que voit l'utilisateur ici corresponde EXACTEMENT au rendu
@@ -68,13 +71,24 @@ const ALLOWED_MIME_TYPES = new Set([
 ])
 
 function validateFile(file: File): string | null {
+  // V1.1.4 NG-025 (Nicolas 2026-06-03) : messages clairs alignes avec
+  // processMediaForUpload. Cap 40 Mo. RAW detecte via extension nom de
+  // fichier pour donner un message specifique au photographe.
+
+  // RAW detection prioritaire (extension fiable, MIME parfois `application/octet-stream`)
+  const rawMatch = file.name.match(/\.(cr2|cr3|nef|arw|raf|dng|orf|rw2|pef|srw|x3f)$/i)
+  if (rawMatch) {
+    const ext = rawMatch[1].toUpperCase()
+    return `Fichier RAW (${ext}) non supporté. Convertis-le en JPEG dans ton logiciel photo, puis réessaye.`
+  }
+
   // MIME vide tolérée (Android Chrome ancienne version) — on tente l'upload.
   if (file.type && !ALLOWED_MIME_TYPES.has(file.type)) {
-    return `Format non supporté : ${file.type}. Utilise JPEG, PNG, HEIC ou WebP.`
+    return `Format non supporté : ${file.type}. Formats acceptés : JPEG, PNG, WebP, AVIF, HEIC.`
   }
   if (file.size > MAX_FILE_SIZE_BYTES) {
     const mb = (file.size / (1024 * 1024)).toFixed(1)
-    return `Fichier trop lourd : ${mb} Mo (max 50 Mo — Naturegraph compresse automatiquement, mais ce fichier dépasse notre limite navigateur).`
+    return `Cette photo est trop volumineuse (${mb} Mo). Taille maximale : 40 Mo.`
   }
   return null
 }
@@ -435,9 +449,7 @@ export function EncounterStep1({
               const slot = slots[i]
               return slot ? (
                 <ThumbSlot
-                  key={
-                    slot.kind === 'existing' ? `existing-${slot.id}` : `file-${slot.fileIndex}`
-                  }
+                  key={slot.kind === 'existing' ? `existing-${slot.id}` : `file-${slot.fileIndex}`}
                   url={slot.url}
                   selected={i === safeIndex}
                   aspectClass={FORMAT_ASPECT[displayFormat]}
@@ -512,13 +524,32 @@ export function EncounterStep1({
       />
 
       {validationErrors.length > 0 && (
-        <ul role="alert" aria-live="polite" className="flex flex-col gap-1">
-          {validationErrors.map((e, i) => (
-            <li key={i} className="text-xs text-[var(--color-error)]">
-              {e}
-            </li>
-          ))}
-        </ul>
+        // V1.1.4 NG-025 Phase 3 (Nicolas 2026-06-03) : panneau "Photos rejetees"
+        // visible avec icone + raison par photo. Avant : juste une liste
+        // d items texte rouge minuscules pas voyante. Maintenant un encart
+        // ambre / orange avec icone d alerte pour que l user voit qu il y a
+        // un probleme avant de passer a l etape suivante.
+        <div
+          role="alert"
+          aria-live="polite"
+          className="rounded-lg border border-amber-300 bg-amber-50 p-3 flex flex-col gap-2"
+        >
+          <div className="flex items-center gap-2 text-amber-900">
+            <ImageOff className="size-4 shrink-0" aria-hidden="true" />
+            <span className="text-xs font-bold">
+              {validationErrors.length === 1
+                ? '1 photo rejetée'
+                : `${validationErrors.length} photos rejetées`}
+            </span>
+          </div>
+          <ul className="flex flex-col gap-1 pl-6">
+            {validationErrors.map((e, i) => (
+              <li key={i} className="text-xs text-amber-900 list-disc">
+                {e}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {error && (
