@@ -1,5 +1,5 @@
 /**
- * mediaService — Upload de medias vers Supabase Storage + ligne `media`
+ * mediaService : Upload de medias vers Supabase Storage + ligne `media`
  *
  * Convention de chemin : {bucket}/{user_id}/{post_id?}/{uuid}.{ext}
  * RLS Storage : owner-only en ecriture, public en lecture (sauf bucket exports).
@@ -24,8 +24,8 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 // useContributePostSubmit, ContributeInstantForm, storageService) fait
 // deja le strip EXIF par construction (canvas re-encode).
 
-// Nicolas 2026-05-21 : ajout AVIF — `compressPhoto` produit de l'AVIF sur Chrome.
-// Nicolas 2026-05-22 : ajout HEIC / HEIF — iPhone par défaut. iOS Safari avec
+// Nicolas 2026-05-21 : ajout AVIF (processMediaForUpload peut produire AVIF sur Chrome).
+// Nicolas 2026-05-22 : ajout HEIC / HEIF, iPhone par défaut. iOS Safari avec
 // `accept="image/*"` convertit normalement en JPEG, mais dans certains cas
 // (sélection multiple, partage depuis Photos.app) le HEIC arrive brut. On
 // l'accepte plutôt que de rejeter silencieusement et casser le partage.
@@ -146,10 +146,10 @@ export async function uploadPostMedia(params: {
   const { error: upErr } = await supabase.storage.from('post-media').upload(path, stripped, {
     contentType: stripped.type,
     upsert: false,
-    // Cache 1 an immutable — chaque photo a un path UUID unique (jamais
+    // Cache 1 an immutable : chaque photo a un path UUID unique (jamais
     // ré-écrit), donc on peut maxer le cache navigateur en toute sécurité.
     // Effet : -90 % d'egress sur les visites répétées du feed (Supabase free
-    // plan oblige — voir docs eco-conception).
+    // plan oblige, voir docs eco-conception).
     cacheControl: '31536000',
   })
   if (upErr) throw new Error(upErr.message)

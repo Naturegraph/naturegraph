@@ -1,5 +1,5 @@
 /**
- * processMediaForUpload — Pipeline unifie de traitement media pour posts
+ * processMediaForUpload : Pipeline unifie de traitement media pour posts
  * ====================================================================
  *
  * NG-025 Phase 2 (Nicolas 2026-06-03) : unifier compressPhoto + stripExif +

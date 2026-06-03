@@ -1,16 +1,17 @@
 /**
- * storageService — Upload avatars / bannières vers Supabase Storage
+ * storageService : Upload avatars / bannières vers Supabase Storage
  * ===================================================================
  *
  * Buckets utilisés :
- *   - `avatars` (1 MB max, image/*) — existant
- *   - `banners` (2 MB max, image/*) — créé par migration `20260502_settings_phase2_complete.sql`
+ *   - `avatars` (1 MB max, image/*), existant
+ *   - `banners` (2 MB max, image/*), créé par migration `20260502_settings_phase2_complete.sql`
  *
  * Convention de nommage : `{user_id}/{timestamp}.{ext}`. Le préfixe user_id
  * est exploité par les RLS storage pour vérifier l'ownership.
  *
- * Sécurité : tous les uploads sont strippés de leurs métadonnées EXIF via
- * `stripImageExif()` avant stockage (RGPD Art 5(1)(c) + Art 25). Cf.
+ * Sécurité (V1.1.4 NG-025) : tous les uploads passent par
+ * `processMediaForUpload()` (pipeline unifie) qui strip les métadonnées
+ * EXIF par re-encode canvas (RGPD Art 5(1)(c) + Art 25). Cf.
  * `docs/AUDIT_LEGAL.md` NC-3 et `mediaService.ts`.
  */
 
