@@ -14,7 +14,7 @@
  */
 
 import { useCallback, useRef, useState, useMemo, useEffect } from 'react'
-import { ImagePlus, X } from 'lucide-react'
+import { ImagePlus, X, ImageOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 // ─── Contraintes de sécurité sur les uploads ──────────────────────────────────
@@ -26,8 +26,10 @@ import { useTranslation } from 'react-i18next'
 // bloquer les fichiers manifestement invalides (vidéo accidentelle, image 8K
 // non-photographique) et protéger la mémoire navigateur lors du décodage canvas.
 
-/** Garde-fou taille max par fichier : 50 Mo (protection mémoire + erreurs UX). */
-const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024
+/** V1.1.4 NG-025 (Nicolas 2026-06-03) : aligne sur processMediaForUpload.
+ *  Cap 40 Mo en entree. Au-dela on rejette sans tenter le decode canvas
+ *  (qui crash mobile bas de gamme sur 50 Mo). */
+const MAX_FILE_SIZE_BYTES = 40 * 1024 * 1024
 
 /**
  * Types MIME autorisés.
@@ -58,13 +60,21 @@ const ALLOWED_MIME_TYPES = new Set([
  * côté serveur — le MIME type client peut être falsifié.
  */
 function validateFile(file: File): string | null {
+  // V1.1.4 NG-025 (Nicolas 2026-06-03) : aligne avec EncounterStep1 et
+  // processMediaForUpload. RAW detecte par extension nom de fichier
+  // (MIME parfois `application/octet-stream`), message specifique au format.
+  const rawMatch = file.name.match(/\.(cr2|cr3|nef|arw|raf|dng|orf|rw2|pef|srw|x3f)$/i)
+  if (rawMatch) {
+    const ext = rawMatch[1].toUpperCase()
+    return `Fichier RAW (${ext}) non supporté. Convertis-le en JPEG dans ton logiciel photo, puis réessaye.`
+  }
   // MIME vide tolérée (Android Chrome ancienne version) — on tente l'upload.
   if (file.type && !ALLOWED_MIME_TYPES.has(file.type)) {
-    return `Format non supporté : ${file.type}. Utilise JPEG, PNG, HEIC ou WebP.`
+    return `Format non supporté : ${file.type}. Formats acceptés : JPEG, PNG, WebP, AVIF, HEIC.`
   }
   if (file.size > MAX_FILE_SIZE_BYTES) {
     const mb = (file.size / (1024 * 1024)).toFixed(1)
-    return `Fichier trop lourd : ${mb} Mo (max 50 Mo — Naturegraph compresse automatiquement, mais ce fichier dépasse notre limite navigateur).`
+    return `Cette photo est trop volumineuse (${mb} Mo). Taille maximale : 40 Mo.`
   }
   return null
 }
@@ -217,15 +227,30 @@ export function MediaUploader({ files, onChange, maxFiles = 4, error }: MediaUpl
         </div>
       )}
 
-      {/* Erreurs de validation fichier (format/taille) */}
+      {/* V1.1.4 NG-025 Phase 3 (Nicolas 2026-06-03) : panneau Photos rejetees
+          ambre + icone, aligne avec EncounterStep1. */}
       {validationErrors.length > 0 && (
-        <ul role="alert" aria-live="polite" className="flex flex-col gap-1">
-          {validationErrors.map((e, i) => (
-            <li key={i} className="text-xs text-[var(--color-error)]">
-              {e}
-            </li>
-          ))}
-        </ul>
+        <div
+          role="alert"
+          aria-live="polite"
+          className="rounded-lg border border-amber-300 bg-amber-50 p-3 flex flex-col gap-2"
+        >
+          <div className="flex items-center gap-2 text-amber-900">
+            <ImageOff className="size-4 shrink-0" aria-hidden="true" />
+            <span className="text-xs font-bold">
+              {validationErrors.length === 1
+                ? '1 photo rejetée'
+                : `${validationErrors.length} photos rejetées`}
+            </span>
+          </div>
+          <ul className="flex flex-col gap-1 pl-6">
+            {validationErrors.map((e, i) => (
+              <li key={i} className="text-xs text-amber-900 list-disc">
+                {e}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {error && (

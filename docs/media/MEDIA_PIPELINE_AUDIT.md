@@ -333,3 +333,87 @@ Total : ~46 cas testés manuellement, documentés dans `MEDIA_QA_MATRIX.md`.
 
 _Document rédigé par Claude Code sur la branche `feat/ng-025-media-audit`._
 _Sources : lecture intégrale code prod main au 2026-06-03 (commit `bfa3ec9`)._
+
+## 10. État après Phases 2-4 (mise à jour 2026-06-03 fin de cycle)
+
+### Pipeline final livré
+
+```
+[1] Selection (input file + drag/drop + multiple)
+[2] Validation rapide (validateFile EncounterStep1 + MediaUploader)
+    - RAW detection prioritaire par extension (CR2/CR3/NEF/ARW/RAF/DNG/ORF/RW2/PEF/SRW/X3F)
+    - Cap 40 Mo aligne avec MAX_INPUT_BYTES
+    - MIME whitelist
+    - Messages user-friendly (panneau ambre + icone)
+[3] State local form.files: File[] (max 4 par post, voir MAX_FILES)
+[4] Click Mettre a jour / Partager
+[5] Pipeline submit (useContributePostSubmit OU ContributeInstantForm) :
+    a. processMediaForUpload(file) UNIFIE
+       - readMagic (detection vraie identite formats)
+       - Cap 40 Mo strict
+       - HEIC: decode via heic2any LAZY
+       - readExifOrientation via exifr
+       - Single-pass canvas (resize + rotate + re-encode JPEG/WebP)
+       - Erreurs structurees (7 codes + messages)
+    b. uploadPostMedia: MIME check + Storage upload + INSERT media
+[6] Affichage feed/profil/detail
+    - Refetch toutes queries impactees (NG-024 v5)
+    - URL Supabase Storage UUID unique (cache 1 an OK)
+```
+
+### Risques Phase 1 résolus
+
+| #   | Risque Phase 1                  | Resolution Phase 2-4                                                                            |
+| --- | ------------------------------- | ----------------------------------------------------------------------------------------------- |
+| R1  | HEIC rejete par bucket          | ✅ heic2any decode HEIC -> JPEG avant upload                                                    |
+| R2  | Triple-pass canvas              | ✅ Single-pass dans processMediaForUpload                                                       |
+| R3  | Pas de cap entree               | ✅ Cap 40 Mo explicite avec rejet clair                                                         |
+| R4  | AVIF refuse par bucket          | ✅ pickOutputFormat exclut AVIF                                                                 |
+| R5  | EXIF orientation ignoree        | ✅ Lue via exifr + applyOrientation au canvas                                                   |
+| R6  | ICC profile force sans warning  | ⚠️ Toujours forced sRGB (acceptable pour MVP)                                                   |
+| R7  | createImageBitmap fail silent   | ✅ Erreur image_load_failed avec message clair                                                  |
+| R8  | Messages generiques             | ✅ 7 codes structures ProcessMediaError + panneau ambre                                         |
+| R9  | Pas de validation magic numbers | ✅ readMagic dans processMediaForUpload                                                         |
+| R10 | Safari canvas.toBlob null       | ✅ Erreur reencode_failed avec message                                                          |
+| R11 | Pas de feedback compression     | ⚠️ Spinner global, pas de % par photo (acceptable)                                              |
+| R12 | 3 utils dupliques               | ✅ Drop stripExif.ts (mort) ; compressPhoto/stripImageExif gardes uniquement pour avatar/banner |
+
+### Périmètre : ce qui est COUVERT par NG-025
+
+- ✅ Création post Rencontre nature (ContributeEncounterForm → useContributePostSubmit)
+- ✅ Création post Instant nature **panel slide-over** (ContributeInstantPanel → useContributePostSubmit)
+- ✅ Création post Instant nature **page legacy** `/contribute?type=nature_instant` (ContributeInstantForm + MediaUploader → processMediaForUpload directement)
+- ✅ Édition post (mêmes pipelines avec mode edit)
+
+### Périmètre : ce qui est HORS SCOPE (intentionnel)
+
+| Flow                                  | Composant          | Pipeline utilisé                                          | Statut                  |
+| ------------------------------------- | ------------------ | --------------------------------------------------------- | ----------------------- |
+| **Avatar profile**                    | EditPhotoTab.tsx   | compressPhoto + uploadAvatar (qui appelle stripImageExif) | 🟡 Inchangé, fonctionne |
+| **Banner profile**                    | (interne settings) | storageService → stripImageExif                           | 🟡 Inchangé, fonctionne |
+| **Photos communautaires (héro auth)** | community_photos   | Pas d'upload user, fixtures admin                         | 🟡 N/A                  |
+
+Justification : NG-025 cible explicitement le pipeline d'upload post (photos d'observations). Les flux avatar/banner ont :
+
+- Des contraintes différentes (cap 2 Mo, format fixe, écrasement par path)
+- Des tailles d'image bien plus petites en pratique
+- Un volume de bugs reportés très faible
+
+**Future itération** : un NG-026 pourrait unifier avatar/banner sur processMediaForUpload avec un preset différent.
+
+### Note sur MAX_FILES = 4
+
+Le ticket Notion mentionne des tests "5 photos" et "10 photos". Naturegraph plafonne actuellement à **4 photos par post** (MAX_FILES = 4 dans EncounterStep1 + MediaUploader). Cette limite est une décision produit (cf. Figma 6385:47535), pas une contrainte technique.
+
+Si le besoin de tester 5/10 photos vient, il faut d'abord décider d'augmenter MAX_FILES côté UI.
+
+### Commits livrés (develop local, non pushé)
+
+| Commit         | Phase    | Contenu                                                                                  |
+| -------------- | -------- | ---------------------------------------------------------------------------------------- |
+| `0810ffc`      | Phase 1  | docs/media/MEDIA_PIPELINE_AUDIT.md (ce doc)                                              |
+| `73b50c4`      | Phase 2  | src/utils/processMediaForUpload.ts + branchements useContributePostSubmit + mediaService |
+| `096ed2e`      | Phase 3  | EncounterStep1 messages + panneau ambre                                                  |
+| `9ba5aef`      | Phase 4  | docs/media/MEDIA_QA_MATRIX.md                                                            |
+| `5c4bd6f`      | Phase 4  | Drop stripExif.ts + tests vitest processMediaForUpload                                   |
+| TBD (en cours) | Phase 4+ | Alignement ContributeInstantForm + MediaUploader.tsx (legacy page route)                 |
