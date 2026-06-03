@@ -6,7 +6,7 @@
  *  - useCreatePost()       : mutation pour créer un post (sans upload média)
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import {
   getPostById,
   getPostsByUser,
@@ -48,6 +48,72 @@ export function usePost(postId: string | undefined) {
  * Si le hook est appelé pour le profil propriétaire, il pourrait à terme
  * accepter un flag `includeDrafts` pour aussi remonter les brouillons.
  */
+/**
+ * V1.1.4 NG-026 (Nicolas 2026-06-03) : variante scroll infini de
+ * useUserPosts. Charge les posts d'un user page par page via React
+ * Query useInfiniteQuery + getPostsByUser(offset, limit).
+ *
+ * Garde-fous CLAUDE.md (scroll infini autorise) :
+ *  - Pagination backend (offset/limit Postgrest range())
+ *  - maxPages: 10 (cap 200 posts max simultanes)
+ *  - Enrichissement reactions par page (identique useUserPosts)
+ */
+export function useInfiniteUserPosts(
+  userId: string | undefined,
+  sort: 'recent' | 'popular' = 'recent',
+  limit = 20,
+) {
+  const { user } = useAuth()
+  const viewerId = user?.id
+
+  const query = useInfiniteQuery<PostFeedItem[], Error>({
+    queryKey: [...postQueryKey.byUser(userId ?? '', sort), viewerId ?? 'anon', 'infinite'],
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      // Si la derniere page est pleine, il y a probablement plus de posts.
+      // Sinon, on s'arrete (pagination Postgrest sans count).
+      if (lastPage.length < limit) return undefined
+      return allPages.length * limit
+    },
+    queryFn: async ({ pageParam }) => {
+      const posts = await getPostsByUser(userId!, sort, limit, pageParam as number)
+      if (posts.length === 0) return posts
+      const postIds = posts.map((p) => p.id)
+      const emptyReactions: Record<string, ReactionType> = {}
+      const [userReactions, breakdown] = await Promise.all([
+        viewerId ? getUserReactions(viewerId, postIds) : Promise.resolve(emptyReactions),
+        getReactionsBreakdown(postIds),
+      ])
+      return posts.map((p) => ({
+        ...p,
+        user_reaction: userReactions[p.id] ?? null,
+        reactions_breakdown: breakdown[p.id] ?? null,
+      }))
+    },
+    enabled: !!userId,
+    staleTime: 60 * 1000,
+    maxPages: 10,
+    placeholderData: (prev) => prev,
+  })
+
+  // Flatten les pages pour usage direct dans le composant.
+  const posts = (query.data?.pages ?? []).flat()
+
+  return {
+    posts,
+    isLoading: query.isLoading,
+    isFetchingNextPage: query.isFetchingNextPage,
+    hasNextPage: !!query.hasNextPage,
+    fetchNextPage: () => {
+      void query.fetchNextPage()
+    },
+    isError: query.isError,
+    refetch: () => {
+      void query.refetch()
+    },
+  }
+}
+
 export function useUserPosts(
   userId: string | undefined,
   sort: 'recent' | 'popular' = 'recent',

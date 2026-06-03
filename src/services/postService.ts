@@ -494,6 +494,7 @@ export async function getPostsByUser(
   userId: string,
   sort: 'recent' | 'popular' = 'recent',
   limit = 20,
+  offset = 0,
 ): Promise<PostFeedItem[]> {
   if (!supabase) throw new Error('Supabase non configuré')
 
@@ -514,7 +515,10 @@ export async function getPostsByUser(
       ? query.order('likes_count', { ascending: false })
       : query.order('created_at', { ascending: false })
 
-  const { data, error } = await query.limit(limit)
+  // V1.1.4 NG-026 (Nicolas 2026-06-03) : support pagination offset pour
+  // useInfiniteUserPosts (scroll infini profil). offset = 0 par defaut
+  // donne le meme comportement que l'ancien (premiers `limit` posts).
+  const { data, error } = await query.range(offset, offset + limit - 1)
   if (error) throw new Error(error.message)
   return (data ?? []) as unknown as PostFeedItem[]
 }

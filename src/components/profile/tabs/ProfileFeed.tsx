@@ -10,13 +10,15 @@
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LayoutList, LayoutGrid } from 'lucide-react'
+import { LayoutList, LayoutGrid, Loader2 } from 'lucide-react'
 import { FeedPost } from '@/components/home/FeedPost'
 import type { MockPost } from '@/components/home/FeedPost'
 import { FeedGallery } from '@/components/home/FeedGallery'
 import { ProfileEmptyState } from '../ProfileEmptyState'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToggleReaction, postQueryKey } from '@/hooks/usePost'
+// V1.1.4 NG-026 (Nicolas 2026-06-03) : scroll infini profil.
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import type { ReactionType } from '@/types/database'
 
 // View toggle types
@@ -38,6 +40,11 @@ interface ProfileFeedProps {
   /** NG-002 : callback edition d observation, ouvre le panel directement
    *  dans le profil (rendu par Profile.tsx). */
   onEditPost?: (postId: string, postType: 'nature_encounter' | 'nature_instant') => void
+  /** V1.1.4 NG-026 : pagination scroll infini.
+   *  Si fourni, le composant rend un sentinel IntersectionObserver. */
+  hasNextPage?: boolean
+  isFetchingNextPage?: boolean
+  fetchNextPage?: () => void
 }
 
 // ─── Composant ────────────────────────────────────────────────────────────────
@@ -45,10 +52,27 @@ interface ProfileFeedProps {
 /**
  * Journal nature : liste des observations avec tri Récent / Populaire.
  */
-export function ProfileFeed({ userPosts, profileId, isOwnProfile, onEditPost }: ProfileFeedProps) {
+export function ProfileFeed({
+  userPosts,
+  profileId,
+  isOwnProfile,
+  onEditPost,
+  hasNextPage = false,
+  isFetchingNextPage = false,
+  fetchNextPage,
+}: ProfileFeedProps) {
   const { t } = useTranslation()
   const { user } = useAuth()
   const [sort, setSort] = useState<SortMode>('recent')
+
+  // V1.1.4 NG-026 (Nicolas 2026-06-03) : sentinel scroll infini. Le
+  // composant parent (Profile.tsx) gere la pagination via useInfiniteUserPosts.
+  // Si pas de fetchNextPage fourni, le hook est neutralise (hasNextPage=false).
+  const { sentinelRef } = useInfiniteScroll({
+    hasNextPage: hasNextPage && !!fetchNextPage,
+    isFetchingNextPage,
+    fetchNextPage: fetchNextPage ?? (() => undefined),
+  })
   // Vue : liste (FeedPost en cards) ou grille (FeedGallery comme la home).
   const [viewMode, setViewMode] = useState<ViewMode>('list')
 
@@ -195,6 +219,26 @@ export function ProfileFeed({ userPosts, profileId, isOwnProfile, onEditPost }: 
             defaultValue: 'Reviens plus tard pour découvrir ses prochaines découvertes',
           })}
         />
+      )}
+      {/* V1.1.4 NG-026 : sentinel scroll infini. Visible uniquement quand
+          il y a encore des pages a charger. Loader pendant le fetch. */}
+      {hasNextPage && fetchNextPage && (
+        <div
+          ref={sentinelRef}
+          className="flex justify-center items-center py-6 text-muted-foreground"
+          aria-hidden={!isFetchingNextPage}
+        >
+          {isFetchingNextPage && (
+            <span className="inline-flex items-center gap-2 text-sm">
+              <Loader2
+                className="size-4 motion-safe:animate-spin"
+                aria-hidden="true"
+                strokeWidth={2.5}
+              />
+              {t('common.loading', { defaultValue: 'Chargement...' })}
+            </span>
+          )}
+        </div>
       )}
     </div>
   )
