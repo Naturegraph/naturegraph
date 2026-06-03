@@ -301,30 +301,19 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
 
   async function handleSubmit(e: React.FormEvent | React.SyntheticEvent) {
     e.preventDefault()
-    // V1.1.4 NG-025 (Nicolas 2026-06-03) : trace robuste pour diagnostiquer
-    // les cas "bouton ne reagit pas du tout". Tout passe ici, donc si
-    // ce log n'apparait pas le clic n'arrive pas au handler.
-    console.info('[ContributeInstantPanel] handleSubmit triggered', {
-      step,
-      totalSteps: TOTAL_STEPS,
-      isSubmitting,
-      filesCount: form.files.length,
-      descLen: form.description.length,
-    })
-
     if (step < TOTAL_STEPS) {
       handleNext()
       return
     }
 
-    // Try/catch global : toute exception non capturee remontait sans feedback
-    // visible (le bouton paraissait inerte). On surface via toast.
+    // V1.1.4 NG-027 (Nicolas 2026-06-03) : try/catch global. Avant, toute
+    // exception non capturee remontait sans feedback visible (le bouton
+    // paraissait inerte, retour QA). On surface desormais via toast.error.
     try {
       setSubmitAttempted(true)
       const errs = validateStep2()
       if (Object.keys(errs).length > 0) {
         setErrors(errs)
-        console.info('[ContributeInstantPanel] validation errors', errs)
         return
       }
 
@@ -345,7 +334,6 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
       // time-of-day : valeur saisie > fallback EXIF de la photo.
       const timeOfDay = form.timeOfDay || form.photoMetadata.timeOfDay || undefined
 
-      console.info('[ContributeInstantPanel] calling submit()')
       await submit({
         payload: {
           type: 'nature_instant',
