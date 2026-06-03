@@ -27,6 +27,7 @@ import { EncounterStep1 } from './EncounterStep1'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import { useContributePostSubmit } from '@/hooks/useContributePostSubmit'
 import { readDraft, useDraftAutoSave, clearDraft } from '@/hooks/useContributeDraft'
+import { useToast } from '@/contexts/ToastContext'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { useLocationAutocomplete } from '@/hooks/useLocationAutocomplete'
@@ -95,6 +96,10 @@ interface ContributeInstantPanelProps {
 
 export function ContributeInstantPanel({ onClose, editingPostId }: ContributeInstantPanelProps) {
   const { t } = useTranslation()
+  // V1.1.4 NG-025 (Nicolas 2026-06-03) : toast user-facing pour piéger les
+  // exceptions silencieuses qui faisaient que le bouton Publier semblait
+  // inerte. Cf retour Nicolas en QA dev.
+  const toast = useToast()
 
   // Pipeline submit factorisé (cf. useContributePostSubmit) — identique
   // à ContributeEncounterForm pour garantir le même comportement watchdog
@@ -290,63 +295,89 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
 
   async function handleSubmit(e: React.FormEvent | React.SyntheticEvent) {
     e.preventDefault()
+    // V1.1.4 NG-025 (Nicolas 2026-06-03) : trace robuste pour diagnostiquer
+    // les cas "bouton ne reagit pas du tout". Tout passe ici, donc si
+    // ce log n'apparait pas le clic n'arrive pas au handler.
+    console.info('[ContributeInstantPanel] handleSubmit triggered', {
+      step,
+      totalSteps: TOTAL_STEPS,
+      isSubmitting,
+      filesCount: form.files.length,
+      descLen: form.description.length,
+    })
+
     if (step < TOTAL_STEPS) {
       handleNext()
       return
     }
-    setSubmitAttempted(true)
-    const errs = validateStep2()
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs)
-      return
+
+    // Try/catch global : toute exception non capturee remontait sans feedback
+    // visible (le bouton paraissait inerte). On surface via toast.
+    try {
+      setSubmitAttempted(true)
+      const errs = validateStep2()
+      if (Object.keys(errs).length > 0) {
+        setErrors(errs)
+        console.info('[ContributeInstantPanel] validation errors', errs)
+        return
+      }
+
+      // Décompose le label localisation → city / region pour FeedPost.
+      const locSegments = form.locationName
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      const cityFromInput = locSegments[0] || undefined
+      const regionFromInput = locSegments[locSegments.length - 1] || undefined
+
+      // Phenomenon stocké en tags (la colonne posts.phenomenon existe en DB
+      // mais l'UI feed ne l'expose pas encore, tag = workaround simple).
+      const phenomenonLabel = form.phenomenon
+        ? PHENOMENON_OPTIONS.find((o) => o.id === form.phenomenon)?.label
+        : undefined
+
+      // time-of-day : valeur saisie > fallback EXIF de la photo.
+      const timeOfDay = form.timeOfDay || form.photoMetadata.timeOfDay || undefined
+
+      console.info('[ContributeInstantPanel] calling submit()')
+      await submit({
+        payload: {
+          type: 'nature_instant',
+          title: form.title.trim() || undefined,
+          description: form.description.trim(),
+          visibility: 'public',
+          encounter_date: form.encounterDate,
+          time_of_day: timeOfDay,
+          weather: form.weather || undefined,
+          location_name: form.locationName || undefined,
+          city: cityFromInput,
+          region:
+            form.locationRegion ??
+            (regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : undefined),
+          latitude: form.locationLat ?? undefined,
+          longitude: form.locationLng ?? undefined,
+          country: form.locationCountry ?? undefined,
+          location_hidden: form.locationHidden,
+          tags: phenomenonLabel ? [phenomenonLabel] : [],
+          display_format: form.displayFormat,
+        },
+        files: form.files,
+        editingPostId,
+        onSuccess: async () => {
+          // NG-004 : succes -> purge le brouillon.
+          clearDraft(DRAFT_KEY)
+          onClose()
+        },
+      })
+    } catch (err) {
+      console.error('[ContributeInstantPanel] handleSubmit FAILED', err)
+      toast.error(
+        t('contribute.errors.submitFailed', {
+          defaultValue: 'Impossible de publier pour le moment.',
+        }),
+        err instanceof Error ? err.message : String(err),
+      )
     }
-
-    // Décompose le label localisation → city / region pour FeedPost.
-    const locSegments = form.locationName
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-    const cityFromInput = locSegments[0] || undefined
-    const regionFromInput = locSegments[locSegments.length - 1] || undefined
-
-    // Phenomenon stocké en tags (la colonne posts.phenomenon existe en DB
-    // mais l'UI feed ne l'expose pas encore — tag = workaround simple).
-    const phenomenonLabel = form.phenomenon
-      ? PHENOMENON_OPTIONS.find((o) => o.id === form.phenomenon)?.label
-      : undefined
-
-    // time-of-day : valeur saisie > fallback EXIF de la photo.
-    const timeOfDay = form.timeOfDay || form.photoMetadata.timeOfDay || undefined
-
-    await submit({
-      payload: {
-        type: 'nature_instant',
-        title: form.title.trim() || undefined,
-        description: form.description.trim(),
-        visibility: 'public',
-        encounter_date: form.encounterDate,
-        time_of_day: timeOfDay,
-        weather: form.weather || undefined,
-        location_name: form.locationName || undefined,
-        city: cityFromInput,
-        region:
-          form.locationRegion ??
-          (regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : undefined),
-        latitude: form.locationLat ?? undefined,
-        longitude: form.locationLng ?? undefined,
-        country: form.locationCountry ?? undefined,
-        location_hidden: form.locationHidden,
-        tags: phenomenonLabel ? [phenomenonLabel] : [],
-        display_format: form.displayFormat,
-      },
-      files: form.files,
-      editingPostId,
-      onSuccess: async () => {
-        // NG-004 : succes -> purge le brouillon.
-        clearDraft(DRAFT_KEY)
-        onClose()
-      },
-    })
   }
 
   const stepTitles: Record<number, string> = {
