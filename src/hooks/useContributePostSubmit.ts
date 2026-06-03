@@ -378,20 +378,30 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         //    profil pour que l'ADN d'observateur + journal nature se
         //    rafraîchissent dès la première observation (Nicolas 2026-05-24).
         //
-        // V1.1.4 hotfix (Nicolas 2026-06-02 19h40) : en mode edition, le
-        // user devait refresh la page manuellement pour voir les nouvelles
-        // photos. Cause : `['post', editingPostId]` (utilise par usePost
-        // sur PostDetail + FeedPost details) n etait pas invalide ici.
-        // Maintenant on invalide aussi cette query et on attend le refetch
-        // avant onSuccess (qui ferme le panel) -> UI a jour des reouverture.
-        queryClient.invalidateQueries({ queryKey: ['feed'] })
-        queryClient.invalidateQueries({ queryKey: ['posts', 'by-user'] })
-        if (isEditing && editingPostId) {
-          // refetchQueries (au lieu de invalidate) force le fetch
-          // synchrone : quand onSuccess ferme le panel, le cache du post
-          // contient deja les nouvelles donnees (titre/photos/etc).
-          await queryClient.refetchQueries({ queryKey: ['post', editingPostId] })
-        }
+        // V1.1.4 hotfix v5 (Nicolas 2026-06-02 19h50) : forcer un refresh
+        // SYNCHRONE de TOUTES les queries impactees avant que onSuccess
+        // ferme le panel. Sinon le user voit l ancienne data (cache stale)
+        // et doit refresh manuellement pour voir les changements.
+        //
+        // queryClient.invalidateQueries est NON-bloquant -> onSuccess
+        // s execute avant que le refetch finisse, le user voit l ancienne
+        // photo/titre/description.
+        //
+        // refetchQueries avec await force l attente du resultat avant
+        // continuation. On le fait pour :
+        //   - ['feed']            : page Home + feed mobile
+        //   - ['posts', 'by-user'] : journal du profil
+        //   - ['post', postId]    : page detail du post (PostDetail)
+        //
+        // En mode creation, le post n existe pas dans ces caches donc
+        // les refetch sont rapides (cache miss -> fetch direct).
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: ['feed'] }),
+          queryClient.refetchQueries({ queryKey: ['posts', 'by-user'] }),
+          ...(isEditing && editingPostId
+            ? [queryClient.refetchQueries({ queryKey: ['post', editingPostId] })]
+            : []),
+        ])
 
         await onSuccess(post)
       } catch (err) {
