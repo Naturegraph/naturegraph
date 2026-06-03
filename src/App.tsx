@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { MotionConfig } from 'motion/react'
 import { ThemeProvider } from '@/contexts/ThemeContext'
-import { AuthProvider } from '@/contexts/AuthContext'
+import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { LocationProvider } from '@/contexts/LocationContext'
 import { SpeciesProvider } from '@/contexts/SpeciesContext'
@@ -31,27 +31,72 @@ import loadingVideo from '@/assets/branding/app-loading.webm'
  *   le splash apres connexion (effet "bienvenue").
  */
 const SPLASH_SEEN_KEY = 'naturegraph-splash-seen'
+// V1.1.4 NG-004B MAJ (Nicolas 2026-06-03) : duree mini de la video splash
+// (animation pleine boucle). Avant on relachait toujours apres ce timeout
+// sans verifier l'etat d'auth, ce qui creait une race condition au boot
+// PWA : le Router decidait Landing avant que la session ne soit restored.
+const SPLASH_MIN_DURATION_MS = 1800
+// Fail-safe absolu : meme si l'auth ne resout pas (reseau coupe, Supabase
+// down, etc), on libere le splash pour ne pas figer l'app indefiniment.
+// 6s permet d'absorber le cold start Supabase (5s timeout AuthContext + 1s
+// marge) sur reseau mobile lent (3G/4G rurale Quebec).
+const SPLASH_MAX_DURATION_MS = 6000
 
 function BootSplash({ children }: { children: React.ReactNode }) {
-  const [show, setShow] = useState(() => {
+  // V1.1.4 NG-004B MAJ : on consulte aussi l'etat d'auth. Le splash reste
+  // visible tant que la session n'est pas resolue (isLoading=true cote
+  // AuthContext), pour eviter que le Router decide Landing alors que la
+  // session Supabase est en cours de restore.
+  const { isLoading: isAuthLoading } = useAuth()
+  const [skipSplash] = useState(() => {
     if (typeof window === 'undefined') return false
     try {
-      return window.sessionStorage.getItem(SPLASH_SEEN_KEY) !== '1'
+      return window.sessionStorage.getItem(SPLASH_SEEN_KEY) === '1'
     } catch {
-      return true
+      return false
     }
   })
+  const [animFinished, setAnimFinished] = useState(false)
+  const [forceHide, setForceHide] = useState(false)
+
   useEffect(() => {
-    if (!show) return
+    if (skipSplash) return
     try {
       window.sessionStorage.setItem(SPLASH_SEEN_KEY, '1')
     } catch {
       // ignore (mode prive Safari)
     }
-    const t = setTimeout(() => setShow(false), 1800)
-    return () => clearTimeout(t)
-  }, [show])
-  if (show) {
+    const animTimer = setTimeout(() => setAnimFinished(true), SPLASH_MIN_DURATION_MS)
+    const maxTimer = setTimeout(() => {
+      console.warn('[BootSplash] fail-safe : auth toujours en cours apres 6s, on relache')
+      setForceHide(true)
+    }, SPLASH_MAX_DURATION_MS)
+    return () => {
+      clearTimeout(animTimer)
+      clearTimeout(maxTimer)
+    }
+  }, [skipSplash])
+
+  // V1.1.4 NG-004B MAJ : si skipSplash=true (refresh dans la meme session),
+  // on considere l'animation comme deja "finie" et on attend juste auth.
+  // Sinon, on attend min 1800ms (animation video) ET auth resolu.
+  // Le fail-safe (forceHide) libere apres 6s dans tous les cas.
+  const animMinReached = skipSplash || animFinished
+  const shouldBlock = !forceHide && (isAuthLoading || !animMinReached)
+
+  if (shouldBlock) {
+    // Si on est juste en train d'attendre auth (skipSplash actif + anim deja
+    // skip), on n'affiche PAS la video lourde mais un simple ecran neutre
+    // pour ne pas surprendre l'user au refresh.
+    if (skipSplash) {
+      return (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-cream-lighter"
+          aria-busy="true"
+          aria-label="Restauration de la session"
+        />
+      )
+    }
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-cream-lighter overflow-hidden">
         <video
