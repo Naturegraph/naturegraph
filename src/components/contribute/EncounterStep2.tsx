@@ -142,6 +142,11 @@ function SpeciesSearchBar({
   // Nicolas 2026-05-22 : loader visible pendant le fetch + état d'erreur explicite
   // si l'espèce n'est pas trouvée, plutôt que de laisser le user sans feedback.
   const [isLoading, setIsLoading] = useState(false)
+  // V1.1.4 NG-027 (Nicolas 2026-06-03) : etat erreur reseau distinct du
+  // "aucun resultat". Avant : tout fetch raté retombait sur "Aucun
+  // resultat" silencieux. Maintenant on differencie pour afficher
+  // "Connexion lente, reessaye".
+  const [hasNetworkError, setHasNetworkError] = useState(false)
 
   function toggleGroup(g: TaxonomicGroup) {
     setGroupFilters((prev) => {
@@ -204,6 +209,7 @@ function SpeciesSearchBar({
         // Defensif : si user decoche tout, on remet especes par defaut
         ranks.push('species')
       }
+      setHasNetworkError(false)
       searchTaxonomy(trimmed, {
         ranks,
         classFilter,
@@ -228,10 +234,14 @@ function SpeciesSearchBar({
           setResults(filtered.slice(0, 16))
           setIsLoading(false)
         })
-        .catch(() => {
+        .catch((err) => {
           if (cancelled) return
+          // V1.1.4 NG-027 (Nicolas 2026-06-03) : exception = panne reseau
+          // ou Supabase indisponible. On marque l etat pour affichage.
+          console.error('[EncounterStep2] searchTaxonomy failed', err)
           setResults([])
           setIsLoading(false)
+          setHasNetworkError(true)
         })
     }, 200)
     return () => {
@@ -270,7 +280,7 @@ function SpeciesSearchBar({
   // « pas encore tapé » / « en cours de recherche » / « aucun résultat » sont
   // distingués pour donner un feedback clair sur ce qu'il se passe.
   const hasQuery = query.trim().length >= 1
-  const showEmpty = hasQuery && !isLoading && results.length === 0
+  const showEmpty = hasQuery && !isLoading && !hasNetworkError && results.length === 0
 
   return (
     <div className="flex flex-col gap-3">
@@ -615,6 +625,19 @@ function SpeciesSearchBar({
                     "Vérifie l'orthographe ou utilise « Je ne connais pas l'espèce » en bas pour partager quand même.",
                 })}
               </p>
+            </div>
+          )}
+          {/* V1.1.4 NG-027 (Nicolas 2026-06-03) : panne reseau affichee
+              explicitement au lieu du faux "Aucun resultat" silencieux. */}
+          {hasNetworkError && (
+            <div
+              role="alert"
+              className="mx-3 my-3 px-3 py-2 rounded-lg border border-amber-300 bg-amber-50 text-sm text-amber-900"
+            >
+              {t('contribute.errors.speciesNetworkError', {
+                defaultValue:
+                  'Connexion lente ou interrompue. Verifie ta connexion ou reessaye dans un instant.',
+              })}
             </div>
           )}
         </div>

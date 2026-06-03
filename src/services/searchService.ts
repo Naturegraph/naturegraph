@@ -287,8 +287,12 @@ export async function searchTaxonomy(
         }) satisfies TaxonomyHit,
     )
   } catch (err) {
-    console.warn('[searchService] taxonomy search exception:', err)
-    return []
+    // V1.1.4 NG-027 (Nicolas 2026-06-03) : on log en error (vs warn) et
+    // on RE-THROW pour permettre aux consommateurs (EncounterStep2,
+    // SearchPanel via React Query) de distinguer "zero resultat" de
+    // "panne reseau" et afficher un message specifique au user.
+    console.error('[searchService] taxonomy search network/exception failure:', err)
+    throw err instanceof Error ? err : new Error('Taxonomy search failed')
   }
 }
 

@@ -260,7 +260,14 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
         ...prev,
         title: post.title ?? '',
         description: post.description ?? '',
-        encounterDate: post.encounter_date ?? prev.encounterDate,
+        // V1.1.4 NG-027 (Nicolas 2026-06-03) : encounter_date est TIMESTAMPTZ
+        // en DB, Supabase renvoie un ISO complet ("2026-05-15T00:00:00.000Z").
+        // L'<input type="date"> exige strict YYYY-MM-DD : sans slice, certains
+        // navigateurs rejettent et l'input apparait reinitialise.
+        encounterDate:
+          typeof post.encounter_date === 'string' && post.encounter_date.length >= 10
+            ? post.encounter_date.slice(0, 10)
+            : prev.encounterDate,
         timeOfDay: (post.time_of_day ?? '') as EncounterFormData['timeOfDay'],
         weather: (post.weather ?? '') as EncounterFormData['weather'],
         habitat: (post.habitat ?? '') as EncounterFormData['habitat'],

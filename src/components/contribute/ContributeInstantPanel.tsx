@@ -174,7 +174,13 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
         ...prev,
         title: post.title ?? '',
         description: post.description ?? '',
-        encounterDate: post.encounter_date ?? prev.encounterDate,
+        // V1.1.4 NG-027 (Nicolas 2026-06-03) : meme fix que ContributeEncounterForm.
+        // encounter_date est TIMESTAMPTZ, Supabase renvoie ISO complet.
+        // L'<input type="date"> reinitialise si on ne slice pas a YYYY-MM-DD.
+        encounterDate:
+          typeof post.encounter_date === 'string' && post.encounter_date.length >= 10
+            ? post.encounter_date.slice(0, 10)
+            : prev.encounterDate,
         timeOfDay: (post.time_of_day ?? '') as InstantFormData['timeOfDay'],
         weather: (post.weather ?? '') as InstantFormData['weather'],
         phenomenon: phenomenonId,
@@ -736,7 +742,13 @@ function InstantStep2({
   // Autocomplete location — même hook que Encounter / Navbar.
   const [locSuggestionsOpen, setLocSuggestionsOpen] = useState(false)
   const locInputRef = useRef<HTMLDivElement | null>(null)
-  const { suggestions, isLoading: locLoading } = useLocationAutocomplete(locationName)
+  // V1.1.4 NG-027 (Nicolas 2026-06-03) : on remonte aussi `error` pour
+  // afficher la panne reseau au user (avant : silence trompeur).
+  const {
+    suggestions,
+    isLoading: locLoading,
+    error: locError,
+  } = useLocationAutocomplete(locationName)
 
   useEffect(() => {
     if (!locSuggestionsOpen) return
@@ -930,7 +942,7 @@ function InstantStep2({
             className="w-full h-11 pl-10 pr-4 rounded-full border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
           />
 
-          {locSuggestionsOpen && (suggestions.length > 0 || locLoading) && (
+          {locSuggestionsOpen && (suggestions.length > 0 || locLoading || locError) && (
             <ul
               id={`${locId}-listbox`}
               role="listbox"
@@ -939,6 +951,15 @@ function InstantStep2({
               {locLoading && suggestions.length === 0 && (
                 <li className="px-4 py-2.5 text-sm text-muted-foreground italic">
                   {t('common.loading', { defaultValue: 'Chargement…' })}
+                </li>
+              )}
+              {/* V1.1.4 NG-027 : panne reseau visible */}
+              {!locLoading && locError && (
+                <li className="px-4 py-2.5 text-sm text-amber-900 bg-amber-50 italic">
+                  {t('contribute.errors.locationNetworkError', {
+                    defaultValue:
+                      'Connexion lente. Verifie ta connexion ou reessaye dans un instant.',
+                  })}
                 </li>
               )}
               {suggestions.map((city) => (
