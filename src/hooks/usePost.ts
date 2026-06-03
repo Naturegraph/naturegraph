@@ -165,6 +165,24 @@ export function useToggleReaction(userId: string | undefined) {
         if (Array.isArray(old)) {
           return (old as PostFeedItem[]).map(patchPost)
         }
+        // V1.1.4 NG-026 (Nicolas 2026-06-03) : shape 4, useInfiniteQuery
+        // -> { pages: [{ data: [...], pagination: {...} }], pageParams: [...] }
+        // On verifie AVANT shape 2 car { pages: [...] } a aussi un object,
+        // mais pas de .data direct.
+        if (
+          typeof old === 'object' &&
+          'pages' in old &&
+          Array.isArray((old as { pages: unknown }).pages)
+        ) {
+          const typed = old as {
+            pages: Array<{ data: PostFeedItem[]; pagination: unknown }>
+            pageParams: unknown[]
+          }
+          return {
+            ...typed,
+            pages: typed.pages.map((p) => ({ ...p, data: p.data.map(patchPost) })),
+          }
+        }
         // Shape 2 : { data: [], pagination: ... } (useFeed)
         if (
           typeof old === 'object' &&
