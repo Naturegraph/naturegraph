@@ -18,7 +18,12 @@ Plateforme web citoyenne biodiversite. React 19 + TypeScript + Vite + Tailwind +
 - Images : WebP/AVIF, lazy loading, dimensions explicites
 - Pas de dependance JS sans justification
 - Pas d'animation superflue, respecter `prefers-reduced-motion`
-- Pagination obligatoire (jamais de scroll infini)
+- Scroll infini autorise (NG-026 decision Nicolas 2026-06-03) avec garde-fous obligatoires :
+  - Pagination backend conservee (cap N items par requete cote serveur)
+  - Cap React Query `maxPages: 10` pour borner la memoire navigateur
+  - Lazy load images (loading="lazy") + dimensions explicites
+  - Virtualisation (react-window ou equivalent) recommandee si liste regulierement > 200 items
+  - IntersectionObserver pour detecter le bas de liste (pas de scroll listener qui s execute en continu)
 - Preferer CSS aux solutions JS
 
 ### Accessibilite (WCAG AA)
