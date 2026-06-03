@@ -131,7 +131,10 @@ export async function createNotebook(
       city: payload.city ?? null,
       region: payload.region ?? null,
       country: payload.country ?? null,
-      metadata: payload.metadata ?? {},
+      // metadata est typee Record<string, unknown> cote app mais la colonne
+      // Supabase attend le type Json genere. Cast localise (le contenu est
+      // bien du JSON valide cote runtime). NG-027 build fix 2026-06-03.
+      metadata: (payload.metadata ?? {}) as never,
     })
     .select()
     .single()
@@ -170,7 +173,9 @@ export async function updateNotebook(
   const c = client()
   const { data, error } = await c
     .from('notebooks')
-    .update(patch)
+    // patch.metadata est Record<string, unknown> cote app vs Json cote
+    // colonne Supabase. Cast localise. NG-027 build fix 2026-06-03.
+    .update(patch as never)
     .eq('id', notebookId)
     .select()
     .single()

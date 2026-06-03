@@ -33,7 +33,7 @@ export function NotebookPublishDialog({ onClose, onPublished }: NotebookPublishD
   const { user } = useAuth()
   const { activeNotebook, refresh } = useNotebook()
   const queryClient = useQueryClient()
-  const { showToast } = useToast()
+  const toast = useToast()
 
   const [title, setTitle] = useState(activeNotebook?.title ?? '')
   const [description, setDescription] = useState('')
@@ -113,15 +113,12 @@ export function NotebookPublishDialog({ onClose, onPublished }: NotebookPublishD
         queryClient.invalidateQueries({ queryKey: ['profile-posts'] }),
       ])
 
-      showToast({
-        message: 'Carnet publié dans le feed',
-        variant: 'success',
-      })
+      toast.success('Carnet publié dans le feed')
       if (onPublished) await onPublished(post.id)
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       setError(msg)
-      showToast({ message: `Erreur publication : ${msg}`, variant: 'error' })
+      toast.error('Erreur publication', msg)
     } finally {
       setIsPublishing(false)
     }
