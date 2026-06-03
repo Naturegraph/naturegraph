@@ -15,7 +15,10 @@
  */
 
 import { supabase } from '@/lib/supabase'
-import { stripImageExif } from '@/utils/stripImageExif'
+// V1.1.4 NG-025 (Nicolas 2026-06-03) : aligne avatar + banner sur le
+// pipeline unifie processMediaForUpload (un seul flow pour TOUS les
+// uploads d'image dans le projet).
+import { processMediaForUpload, isProcessMediaError } from '@/utils/processMediaForUpload'
 
 export type StorageBucket = 'avatars' | 'banners'
 
@@ -48,22 +51,18 @@ export async function uploadImage(bucket: StorageBucket, file: File): Promise<Up
     throw new Error('Authentification requise pour uploader une image')
   }
 
-  // Limite de taille SOFT — la photo est compressée AVANT l'appel
-  // (cf. compressPhoto dans EditPhotoTab) donc on accepte jusqu'à 10 MB
-  // côté input (largement au-dessus du résultat compressé typique de 300 KB
-  // pour avatar / 800 KB pour banner). Évite que les photos iPhone HEIC
-  // 5-8 MB soient refusées avant même l'upload (Nicolas 2026-05-22).
-  const HARD_MAX = 10 * 1_048_576
-  if (file.size > HARD_MAX) {
-    throw new Error(
-      `Fichier trop volumineux (${(file.size / 1e6).toFixed(1)} MB, max ${HARD_MAX / 1e6} MB après compression)`,
-    )
+  // V1.1.4 NG-025 (Nicolas 2026-06-03) : pipeline unifie.
+  // processMediaForUpload gere :
+  //   - cap entree 40 Mo (rejet clair)
+  //   - HEIC decode lazy via heic2any
+  //   - resize + rotation EXIF + re-encode JPEG/WebP
+  //   - strip EXIF par construction (RGPD Art 5(1)(c) + Art 25)
+  //   - erreurs structurees user-friendly
+  const result = await processMediaForUpload(file)
+  if (isProcessMediaError(result)) {
+    throw new Error(result.message)
   }
-
-  // Strip EXIF avant upload (RGPD Art 5(1)(c) + Art 25).
-  // Le re-encodage canvas peut convertir PNG → JPEG, donc on prend
-  // l'extension du File résultant.
-  const stripped = await stripImageExif(file)
+  const stripped = result.file
 
   const ext = stripped.name.split('.').pop()?.toLowerCase() ?? 'jpg'
   const path = `${user.id}/${Date.now()}.${ext}`

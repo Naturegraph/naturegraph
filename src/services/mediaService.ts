@@ -5,9 +5,10 @@
  * RLS Storage : owner-only en ecriture, public en lecture (sauf bucket exports).
  *
  * Sécurité :
- *   - Tous les uploads sont strippés de leurs métadonnées EXIF via
- *     `stripImageExif()` AVANT l'envoi à Supabase Storage. Cela retire
- *     coordonnées GPS, date prise, marque/modèle appareil, ICC profile.
+ *   - Tous les uploads sont strippés de leurs métadonnées EXIF en amont
+ *     via `processMediaForUpload()` (pipeline unifie NG-025) AVANT
+ *     l'envoi à Supabase Storage. Cela retire coordonnées GPS, date
+ *     prise, marque/modèle appareil, ICC profile.
  *   - RGPD Art 5(1)(c) minimisation + Art 25 Privacy by Default.
  *   - Cf. `docs/AUDIT_LEGAL.md` NC-3 et `docs/AUDIT_SUPABASE.md` P-3.
  *
@@ -18,7 +19,10 @@
  */
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import { stripImageExif } from '@/utils/stripImageExif'
+// V1.1.4 NG-025 (Nicolas 2026-06-03) : stripImageExif retire, plus aucun
+// consommateur. Le pipeline unifie processMediaForUpload (utilise par
+// useContributePostSubmit, ContributeInstantForm, storageService) fait
+// deja le strip EXIF par construction (canvas re-encode).
 
 // Nicolas 2026-05-21 : ajout AVIF — `compressPhoto` produit de l'AVIF sur Chrome.
 // Nicolas 2026-05-22 : ajout HEIC / HEIF — iPhone par défaut. iOS Safari avec
@@ -33,11 +37,10 @@ const ACCEPTED_IMAGE_MIME = [
   'image/heic',
   'image/heif',
 ]
-const MAX_AVATAR_BYTES = 2 * 1024 * 1024 // 2 MB
-// Garde-fou aligné sur la limite bucket Supabase Storage (10 Mo). Le fichier
-// arrivant ici est DÉJÀ passé par `stripImageExif()` qui vise ≤ 2 Mo en sortie ;
-// ce check n'est qu'un filet de sécurité au cas où la compression ne se déclenche
-// pas (cas exotique non-image). Nicolas 2026-05-21.
+// Garde-fou aligné sur la limite bucket Supabase Storage (10 Mo).
+// Le fichier arrivant ici a deja transite par processMediaForUpload (~1.5 Mo
+// cible), donc ce check sert juste de filet de securite. Nicolas 2026-05-21,
+// reaffirme NG-025 2026-06-03.
 const MAX_POST_MEDIA_BYTES = 10 * 1024 * 1024 // 10 MB (= plafond bucket Supabase)
 
 function ext(file: File): string {
@@ -67,39 +70,11 @@ function uuid(): string {
 }
 
 // ── Avatar ───────────────────────────────────────────────────────────────────
-
-/** Upload l'avatar du user. Ecrase l'existant. Retourne l'URL publique. */
-export async function uploadAvatar(file: File, userId: string): Promise<string> {
-  if (!isSupabaseConfigured || !supabase) throw new Error('Storage indisponible (mode demo)')
-  if (!ACCEPTED_IMAGE_MIME.includes(file.type)) {
-    throw new Error('Format non supporte (jpeg, png, webp)')
-  }
-
-  // Strip EXIF + compression AVANT contrôle de taille (Nicolas 2026-05-21) :
-  // un selfie iPhone moderne fait ~3-5 Mo en HEIC→JPEG, donc on doit compresser
-  // avant de mesurer. La passe canvas ramène l'avatar largement sous 2 Mo
-  // grâce au resize 2560 px (un avatar s'affiche à 80 px max dans l'UI).
-  const stripped = await stripImageExif(file)
-  if (stripped.size > MAX_AVATAR_BYTES) {
-    throw new Error(
-      'Avatar trop lourd après optimisation (max 2 Mo). Essaie une photo plus simple.',
-    )
-  }
-
-  const path = `${userId}/avatar.${ext(stripped)}`
-  const { error } = await supabase.storage.from('avatars').upload(path, stripped, {
-    contentType: stripped.type,
-    upsert: true,
-    // Cache 1 an immutable — les avatars sont uploadés sur un path déterministe
-    // et l'upsert remplace le contenu, donc on peut bénéficier d'un cache long.
-    // (NB : l'URL ne change pas — si tu veux invalider, ajoute un querystring `?v=`.)
-    cacheControl: '31536000',
-  })
-  if (error) throw new Error(error.message)
-
-  const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path)
-  return pub.publicUrl
-}
+//
+// V1.1.4 NG-025 (Nicolas 2026-06-03) : la fonction uploadAvatar dupliquait
+// le flow de storageService.uploadImage('avatars', file) sans aucun
+// consommateur reel. Retiree. L'upload avatar passe par
+// EditPhotoTab -> storageService.uploadImage -> processMediaForUpload.
 
 // ── Post media ───────────────────────────────────────────────────────────────
 
