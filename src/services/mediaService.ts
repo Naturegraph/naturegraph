@@ -149,21 +149,17 @@ export async function uploadPostMedia(params: {
     throw new Error('Format non supporte (jpeg, png, webp)')
   }
 
-  // Strip EXIF + compression adaptative AVANT upload (Nicolas 2026-05-21).
-  // `stripImageExif()` resize ≤ 2560 px côté long puis ré-encode en JPEG/WebP
-  // avec une boucle de qualité dégressive ciblant ≤ 2 Mo. Effets cumulés :
-  //   - RGPD Art 5(1)(c) minimisation : retire GPS, date prise, modèle appareil.
-  //   - RGESN éco-conception : -80 à -95 % de poids vs original boîtier reflex.
-  //   - UX : libère l'utilisateur de la contrainte « 10 Mo max ».
+  // V1.1.4 NG-025 (Nicolas 2026-06-03) : le pipeline d upload des posts
+  // appelle desormais processMediaForUpload() en amont dans
+  // useContributePostSubmit. Ce module unifie compression + strip EXIF +
+  // resize + rotation EXIF + decode HEIC en une seule passe canvas.
+  // Donc le 3eme passe stripImageExif ici est devenu redondant : le file
+  // arrive deja JPEG/WebP, sans EXIF, sous le cap.
   //
-  // L'extraction EXIF utile (date/GPS pour pré-remplir l'étape 3) est faite
-  // EN AMONT (`extractPhotoMetadata.ts` côté EncounterStep1) sur les Files
-  // originaux. Ici on ne fait que stripper + compresser avant stockage.
-  const stripped = await stripImageExif(file)
+  // On garde une garde de securite sur la taille au cas ou un appelant
+  // contournerait le pipeline (test, futur, etc.).
+  const stripped = file
 
-  // Filet de sécurité : la compression devrait toujours produire ≤ 2 Mo, mais
-  // pour des images bruitées extrêmes même à qualité min on peut dépasser.
-  // On bloque à 10 Mo (= plafond bucket Supabase) avec un message explicite.
   if (stripped.size > MAX_POST_MEDIA_BYTES) {
     throw new Error(
       'Photo trop complexe à compresser (>10 Mo après optimisation). Essaie de réduire la résolution.',

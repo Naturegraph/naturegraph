@@ -27,11 +27,11 @@ import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCreatePost, useUpdatePost } from '@/hooks/usePost'
-import { compressPhoto } from '@/utils/compressPhoto'
 import { uploadPostMedia } from '@/services/mediaService'
 import { supabase } from '@/lib/supabase'
 import { assertActiveSession, SessionExpiredError } from '@/lib/authGuard'
 import type { CreatePostPayload } from '@/services/postService'
+import { processMediaForUpload, isProcessMediaError } from '@/utils/processMediaForUpload'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -235,11 +235,6 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         //    continue les photos suivantes même si une échoue.
         const failedUploads: Array<{ name: string; reason: string }> = []
         if (files.length > 0) {
-          const [{ detectPhotoFormat }, { stripExif }] = await Promise.all([
-            import('@/utils/detectPhotoFormat'),
-            import('@/utils/stripExif'),
-          ])
-
           for (let i = 0; i < files.length; i++) {
             setUploadProgress({ current: i + 1, total: files.length })
 
@@ -249,31 +244,25 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
               `[${formLabel}] upload photo ${i + 1}/${files.length} — ${rawFile.name} (${sizeMo.toFixed(1)} Mo, ${rawFile.type})`,
             )
 
-            let dims: { width: number; height: number } | null = null
-            try {
-              dims = await detectPhotoFormat(rawFile)
-            } catch {
-              /* fallback silencieux */
-            }
-
-            // Compression + strip EXIF — étape locale, peut échouer si
-            // photo corrompue ou format exotique. On capture l'erreur et
-            // on skip cette photo plutôt que de tout faire planter.
-            let fileToUpload: File
-            try {
-              const compressed = await compressPhoto(rawFile)
-              fileToUpload = await stripExif(compressed)
-              console.info(
-                `[${formLabel}] compressed → ${(fileToUpload.size / 1024).toFixed(0)} Ko (${fileToUpload.type})`,
+            // V1.1.4 NG-025 (Nicolas 2026-06-03) : pipeline unifie.
+            // processMediaForUpload remplace compressPhoto + stripExif +
+            // stripImageExif. Single-pass canvas, orientation EXIF appliquee,
+            // HEIC decode lazy via heic2any, cap 40 Mo, output JPEG/WebP,
+            // erreurs structurees user-friendly.
+            const result = await processMediaForUpload(rawFile)
+            if (isProcessMediaError(result)) {
+              console.error(
+                `[${formLabel}] process failed for ${rawFile.name}: ${result.code}`,
+                result.details,
               )
-            } catch (err) {
-              console.error(`[${formLabel}] compression failed for ${rawFile.name}:`, err)
-              failedUploads.push({
-                name: rawFile.name,
-                reason: 'Format non supporté ou photo corrompue.',
-              })
+              failedUploads.push({ name: rawFile.name, reason: result.message })
               continue
             }
+            const fileToUpload = result.file
+            const dims = result.finalDimensions
+            console.info(
+              `[${formLabel}] processed → ${(fileToUpload.size / 1024).toFixed(0)} Ko (${fileToUpload.type})`,
+            )
 
             // En mode édition : APPEND derrière les médias existants
             // (displayOrder timestamp + isCover=false).
@@ -295,8 +284,8 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
                     copyrightNotice: '',
                     displayOrder,
                     isCover,
-                    width: dims?.width,
-                    height: dims?.height,
+                    width: dims.width,
+                    height: dims.height,
                   }),
                   45_000,
                   `upload photo ${i + 1}/${files.length} (tentative ${attempt})`,
