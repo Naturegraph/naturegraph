@@ -337,12 +337,24 @@ export async function getRelatedPosts(opts: {
     return (media ?? []).some((m) => m.type === 'photo' && !!m.url)
   }
 
-  /** Ajoute des posts uniques (hors deja vus, avec photo) jusqu'a la limite. */
+  /**
+   * Regle produit (Nicolas 2026-06-04) : on ne met en avant ici que les
+   * observations COMPLETES (titre explicite + description). Ca evite les
+   * decalages de hauteur dans le carrousel et valorise les posts soignes.
+   * On verifie le titre brut (item.title), pas le titre derive du mapper qui
+   * retombe sur la description en l'absence de titre.
+   */
+  function isComplete(row: PostFeedItem): boolean {
+    const r = row as unknown as { title?: string | null; description?: string | null }
+    return !!r.title?.trim() && !!r.description?.trim()
+  }
+
+  /** Ajoute les posts uniques, avec photo ET complets (titre + description). */
   function collect(rows: PostFeedItem[] | null | undefined) {
     for (const row of rows ?? []) {
       if (results.length >= limit) break
       if (seen.has(row.id)) continue
-      if (!hasPhoto(row)) continue
+      if (!hasPhoto(row) || !isComplete(row)) continue
       seen.add(row.id)
       results.push(row)
     }

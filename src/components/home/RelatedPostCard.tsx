@@ -23,7 +23,7 @@
  */
 
 import { Link } from 'react-router-dom'
-import { Bird, MountainSnow } from 'lucide-react'
+import { Bird, MountainSnow, Images } from 'lucide-react'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 import { ImagePresets } from '@/lib/supabaseImage'
 import { TAXONOMIC_GROUP_CONFIG } from '@/constants/commonSpecies'
@@ -123,14 +123,25 @@ export function RelatedPostCard(post: MockPost) {
           </div>
         )}
 
-        {/* Chips espece (display only) */}
+        {/* Chips espece (display only).
+            Regle mobile (Nicolas 2026-06-04) : la rangee reste TOUJOURS sur une
+            seule ligne (flex-nowrap) pour eviter les decalages de hauteur. Si une
+            espece est identifiee, la categorie est masquee en mobile (wrapper
+            hidden sm:contents) et seule l'espece est gardee ; les 2 chips
+            reapparaissent des sm. Le nom d'espece tronque si trop long. */}
         {showSpeciesRow && (
-          <div className="flex flex-wrap gap-2">
-            {categoryLabel && <span className={CHIP_CLASS}>{categoryLabel}</span>}
+          <div className="flex flex-nowrap items-center gap-2 min-w-0 overflow-hidden">
+            {categoryLabel && (
+              <span className={speciesName ? 'hidden sm:contents' : 'contents'}>
+                <span className={`${CHIP_CLASS} shrink-0`}>{categoryLabel}</span>
+              </span>
+            )}
             {speciesName && (
-              <span className={CHIP_CLASS}>
-                {speciesName}
-                {countSuffix}
+              <span className={`${CHIP_CLASS} min-w-0 max-w-full`}>
+                <span className="truncate">
+                  {speciesName}
+                  {countSuffix}
+                </span>
               </span>
             )}
           </div>
@@ -139,7 +150,7 @@ export function RelatedPostCard(post: MockPost) {
 
       {/* Photo de couverture — ratio fixe pour une hauteur de carte constante */}
       <div className="px-4 pb-4">
-        <div className="aspect-[3/2] w-full overflow-hidden rounded-md bg-muted">
+        <div className="relative aspect-[3/2] w-full overflow-hidden rounded-md bg-muted">
           <img
             src={ImagePresets.feedPhoto(cover.url)}
             alt={cover.alt || title || species || author.name}
@@ -149,6 +160,21 @@ export function RelatedPostCard(post: MockPost) {
             height={cover.height}
             className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transform-none"
           />
+          {/* Badge multi-photos (coin haut droit), aligne sur la galerie du feed
+              (FeedGallery) : icone + nombre total de photos quand le post en a
+              plusieurs. Indique visuellement qu'il y a d'autres cliches. */}
+          {images.length > 1 && (
+            <span
+              className="absolute top-2 right-2 inline-flex items-center bg-black/55 text-white rounded backdrop-blur-sm"
+              style={{ gap: '3px', padding: '3px 6px' }}
+              aria-hidden="true"
+            >
+              <Images aria-hidden="true" style={{ width: '12px', height: '12px' }} />
+              <span style={{ fontSize: '12px', fontWeight: 600, lineHeight: 1 }}>
+                {images.length}
+              </span>
+            </span>
+          )}
         </div>
       </div>
     </Link>
