@@ -23,6 +23,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { MockPost } from './FeedPost'
 import { PhotoLightbox } from './PhotoLightbox'
@@ -215,6 +216,25 @@ export function ImageSlider({
   const currentIndex = useCurrentSlideIndex(scrollerRef, isMulti)
   const drag = useCarouselDrag(scrollerRef)
 
+  // V1.1.5 NG-030 (Nicolas 2026-06-03) : navigation explicite par chevrons sur
+  // desktop. Le swipe (tactile + drag souris) restait l'unique moyen de changer
+  // de photo, non decouvrable sur desktop (retour QA : "je ne comprends pas a
+  // quoi sert le glissement"). On ajoute des chevrons VISIBLES en md+ ; le swipe
+  // devient secondaire. scrollTo s'appuie sur la largeur reelle de la 1ere slide
+  // (meme logique que le snap manuel du drag).
+  const goToSlide = useCallback(
+    (target: number) => {
+      const scroller = scrollerRef.current
+      if (!scroller) return
+      const slides = scroller.querySelectorAll<HTMLElement>('[data-slide-index]')
+      if (slides.length === 0) return
+      const clamped = Math.max(0, Math.min(slides.length - 1, target))
+      const step = slides[0].offsetWidth + SLIDE_GAP_PX
+      scroller.scrollTo({ left: clamped * step, behavior: 'smooth' })
+    },
+    [scrollerRef],
+  )
+
   if (images.length === 0) return null
 
   const openLightbox = (index: number) => {
@@ -344,6 +364,45 @@ export function ImageSlider({
             <span className="font-bold">{currentIndex + 1}</span>
             <span aria-hidden="true">/{images.length}</span>
           </div>
+
+          {/* V1.1.5 NG-030 : chevrons de navigation explicites, DESKTOP UNIQUEMENT
+              (hidden md:flex). Sur mobile le swipe natif suffit et reste l'usage
+              attendu ; sur desktop ces controles rendent la navigation evidente.
+              Masques aux extremites (pas de chevron gauche sur la 1ere photo, ni
+              droit sur la derniere). pointer-events sur le bouton seul pour ne pas
+              bloquer le clic d'agrandissement sur le reste de l'image. */}
+          {currentIndex > 0 && (
+            <button
+              type="button"
+              onClick={() => goToSlide(currentIndex - 1)}
+              aria-label={t('home.post.prevImage', { defaultValue: 'Image précédente' })}
+              className={[
+                'hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10',
+                'size-9 items-center justify-center rounded-full',
+                'bg-foreground/40 backdrop-blur-md text-white',
+                'hover:bg-foreground/60 transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
+              ].join(' ')}
+            >
+              <ChevronLeft className="size-5" aria-hidden="true" />
+            </button>
+          )}
+          {currentIndex < images.length - 1 && (
+            <button
+              type="button"
+              onClick={() => goToSlide(currentIndex + 1)}
+              aria-label={t('home.post.nextImage', { defaultValue: 'Image suivante' })}
+              className={[
+                'hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10',
+                'size-9 items-center justify-center rounded-full',
+                'bg-foreground/40 backdrop-blur-md text-white',
+                'hover:bg-foreground/60 transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
+              ].join(' ')}
+            >
+              <ChevronRight className="size-5" aria-hidden="true" />
+            </button>
+          )}
         </div>
       )}
 
