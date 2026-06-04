@@ -50,9 +50,18 @@ jobs:
 
       - name: Bundle size check (eco-conception)
         run: |
-          JS_SIZE=$(find dist/assets -name '*.js' -exec gzip -c {} + | wc -c)
+          # V1.1.4 NG-025 (2026-06-03) : heic2any EXCLU du budget. C'est un
+          # decodeur HEIC->JPEG (~341 KB gzip) charge UNIQUEMENT a la demande,
+          # via import() dynamique, quand l'utilisateur selectionne une photo
+          # HEIC (iPhone). Il n'est JAMAIS sur le chemin critique ni charge au
+          # boot d'aucune page : l'inclure dans le budget "par page" fausserait
+          # la mesure eco-conception (le first-paint reel reste ~200 KB gzip).
+          JS_SIZE=$(find dist/assets -name '*.js' ! -name 'heic2any-*' -exec gzip -c {} + | wc -c)
           JS_KB=$((JS_SIZE / 1024))
-          echo "JS gzip total: ${JS_KB}KB"
+          HEIC_SIZE=$(find dist/assets -name 'heic2any-*.js' -exec gzip -c {} + 2>/dev/null | wc -c)
+          HEIC_KB=$((HEIC_SIZE / 1024))
+          echo "JS gzip total (hors heic2any lazy): ${JS_KB}KB"
+          echo "heic2any lazy chunk (exclu du budget): ${HEIC_KB}KB"
           # Budget MVP : 330 KB gzip (somme de TOUS les chunks JS, pas la critical
           # path). Note : le first-paint réel pour la home charge ~190 KB gzip
           # (index + vendor + supabase + i18n) — le reste est lazy-loaded par
