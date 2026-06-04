@@ -31,7 +31,6 @@ import { ImagePresets } from '@/lib/supabaseImage'
 import type { ReactionType } from '@/types/database'
 import { useSpecies } from '@/contexts/SpeciesContext'
 import { TAXONOMIC_GROUP_CONFIG } from '@/constants/commonSpecies'
-import { NotebookCardInFeed } from '@/components/notebook/NotebookCardInFeed'
 
 // ─── Type UI pour les posts du feed ──────────────────────────────────────────
 // Bridge entre le type DB (PostFeedItem) et le composant FeedPost.
@@ -99,14 +98,6 @@ export interface MockPost {
    * espèce. Si null/1, pas de suffixe.
    */
   individualsCount?: number
-  /**
-   * V1.2.0 (NG-005/006) : si non null, ce post est issu d un carnet
-   * d observations. Affiche la NotebookCardInFeed avec la liste categorisee
-   * d especes a la place du chip espece classique.
-   */
-  notebookId?: string | null
-  /** Compteur d especes du carnet (pre-charge depuis notebooks.species_count). */
-  notebookSpeciesCount?: number | null
   format: '16:9' | 'portrait' | '1:1'
   images: Array<{
     url: string
@@ -265,8 +256,6 @@ export function FeedPost({
   taxonomic_group,
   // multipleObservations supprimé du destructuring (deprecated, plus utilisé).
   individualsCount,
-  notebookId,
-  notebookSpeciesCount,
   format,
   images,
   reactions,
@@ -596,23 +585,11 @@ export function FeedPost({
          *   3. Rien d'identifié
          *      → 1 chip simple "Espèce non déterminée" (passive)
          */}
-        {/* V1.2.0 (NG-005/006) : si ce post est issu d un carnet, on
-            remplace les chips espece/categorie classiques par la carte
-            carnet d observations avec la liste categorisee par classe
-            taxonomique. */}
-        {postType !== 'nature_instant' && notebookId && (
-          <NotebookCardInFeed
-            notebookId={notebookId}
-            speciesCount={notebookSpeciesCount ?? undefined}
-            defaultOpen={true}
-          />
-        )}
-
         {/* Pour les posts nature_instant : pas de chips espèce/catégorie
             — un instant nature ne décrit pas une observation d'espèce
             (Nicolas 2026-05-23). On masque toute la rangée pour éviter
             le « Espèce non déterminée » qui n'a pas de sens ici. */}
-        {postType !== 'nature_instant' && !notebookId && (
+        {postType !== 'nature_instant' && (
           <div className="flex flex-wrap gap-2">
             {(() => {
               const taxonomicCfg = taxonomic_group ? TAXONOMIC_GROUP_CONFIG[taxonomic_group] : null

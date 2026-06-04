@@ -17,7 +17,7 @@
  * Meme behavior dans Home, Profile et PostDetail (coherence produit V1.1.3).
  */
 
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -28,7 +28,6 @@ import { FeedSection } from '@/components/home/FeedSection'
 import { MobileNavLayer } from '@/components/home/MobileNavLayer'
 import { ContributeModal } from '@/components/home/ContributeModal'
 import { useEditPostFlow } from '@/hooks/useEditPostFlow'
-import { NotebookPanel } from '@/components/notebook/NotebookPanel'
 
 // StatsSidebar lazy (QW-I2 / T-082) — affichée uniquement xl:block (>=1280px).
 // Avant : 311 lignes chargees dans le bundle initial meme sur mobile/tablet.
@@ -46,17 +45,7 @@ export default function Home() {
   // BATCH 10 / QW-UX1 : titre dynamique pour onglet navigateur (SEO + UX)
   usePageTitle(t('nav.home'))
   const [showContributeModal, setShowContributeModal] = useState(false)
-  // V1.2.0 (NG-005/006) : panneau Carnet d observations (mode terrain).
-  // Ouvert depuis le menu Contribute OU depuis le NotebookBanner sticky
-  // (via l event 'naturegraph:open-notebook').
-  const [showNotebookPanel, setShowNotebookPanel] = useState(false)
-
-  // Ecoute l ouverture du panneau carnet depuis le bandeau sticky global.
-  useEffect(() => {
-    const handler = () => setShowNotebookPanel(true)
-    window.addEventListener('naturegraph:open-notebook', handler)
-    return () => window.removeEventListener('naturegraph:open-notebook', handler)
-  }, [])
+  // V1.2.0 carnets (mode terrain) retire de cette release : feature gelee.
 
   // Hook partage : gere les panels create/edit + leur lazy load.
   // onEditPost -> passe a FeedSection pour les FeedPost.
@@ -75,9 +64,6 @@ export default function Home() {
     setShowContributeModal(false)
     if (type === 'nature_encounter' || type === 'nature_instant') {
       openCreate(type)
-    } else if (type === 'nature_notebook') {
-      // V1.2.0 : mode terrain carnet d observations (NG-005/006)
-      setShowNotebookPanel(true)
     }
   }
 
@@ -151,9 +137,6 @@ export default function Home() {
 
       {/* Panneau Contribuer (Encounter ou Instant selon le type actif) */}
       {panelNode}
-
-      {/* V1.2.0 : panneau Carnet d observations (mode terrain) */}
-      {showNotebookPanel && <NotebookPanel onClose={() => setShowNotebookPanel(false)} />}
     </div>
   )
 }

@@ -22,9 +22,6 @@ import { EncounterStep1 } from './EncounterStep1'
 import { EncounterStep2 } from './EncounterStep2'
 import { EncounterStep3 } from './EncounterStep3'
 import type { ObservationEntry } from './EncounterStep2'
-import { NotebookResumePicker } from '@/components/notebook/NotebookResumePicker'
-import type { NotebookObservation } from '@/services/notebookService'
-import type { TaxonomicGroup } from '@/types/database'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import { toStorageTimestamp, toDateInputValue } from '@/utils/observationDate'
 import { useAuth } from '@/contexts/AuthContext'
@@ -37,28 +34,8 @@ import { useContributePostSubmit } from '@/hooks/useContributePostSubmit'
 import { readDraft, useDraftAutoSave, clearDraft } from '@/hooks/useContributeDraft'
 import { createProposal } from '@/services/identificationService'
 import { Button } from '@/components/ui/Button'
-// V1.2.0 NG-005 : sauvegarde reelle multi-especes via carnet.
-import {
-  createPublishedNotebookFromEncounter,
-  publishExistingNotebookForPost,
-  listUserNotebooks,
-  type Notebook,
-} from '@/services/notebookService'
 
 // V1.2.0 : mapping interne TaxonomicGroup -> iNat class pour vernacular_class.
-// Symetrique au CLASS_TO_GROUP de EncounterStep2 mais en sens inverse.
-const GROUP_TO_INAT_CLASS: Record<string, string> = {
-  birds: 'Aves',
-  mammals: 'Mammalia',
-  insects: 'Insecta',
-  amphibians: 'Amphibia',
-  reptiles: 'Reptilia',
-  fish: 'Actinopterygii',
-  arachnids: 'Arachnida',
-  mollusks: 'Mollusca',
-  plants: 'Plantae',
-}
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /**
@@ -123,26 +100,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
   const { submit, isSubmitting, uploadProgress, uploadError, clearError } =
     useContributePostSubmit('ContributeEncounterForm')
 
-  // V1.2.0 NG-005 : si l user a "repris un carnet en cours" via le picker en
-  // haut de Step2, on garde l id ici. Au submit, on linkera le post a ce
-  // carnet au lieu d en creer un nouveau.
-  const [resumedNotebookId, setResumedNotebookId] = useState<string | null>(null)
-  // Liste des carnets draft/active du user pour le picker (lazy fetch au mount).
-  const [availableNotebooks, setAvailableNotebooks] = useState<Notebook[]>([])
-  useEffect(() => {
-    if (!user?.id) return
-    let cancelled = false
-    listUserNotebooks(user.id, { statuses: ['draft', 'active'], limit: 10 })
-      .then((nbs) => {
-        if (!cancelled) setAvailableNotebooks(nbs)
-      })
-      .catch(() => {
-        if (!cancelled) setAvailableNotebooks([])
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [user?.id])
+  // V1.2.0 carnets (reprise multi-especes via carnet) retire de cette release.
 
   const isEditing = !!editingPostId
 
@@ -514,78 +472,10 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
           }
         }
 
-        // V1.2.0 NG-005 : sauvegarde reelle multi-especes via carnet.
-        // Avant V1.2.0 : seule firstKnown etait persistee, les autres entries
-        // de form.observations etaient perdues. Maintenant on cree un carnet
-        // automatique en arriere-plan + on lie le post via posts.notebook_id.
-        //
-        // 3 cas :
-        //  A. Carnet repris en cours (resumedNotebookId) -> on publie ce carnet
-        //  B. Plus d 1 espece identifiee -> on cree un carnet auto
-        //  C. 1 seule espece -> comportement V1.1.x (rien a faire)
-        try {
-          if (user?.id && supabase) {
-            const knownEntries = form.observations.filter((o) => !o.isUnknown && o.species)
-
-            if (resumedNotebookId) {
-              // CAS A : on finalise le carnet entame en mode terrain
-              await publishExistingNotebookForPost(resumedNotebookId, post.id, {
-                title: form.title.trim() || null,
-                location_name: form.locationName || null,
-                city: cityFromInput,
-                region:
-                  form.locationRegion ??
-                  (regionFromInput && regionFromInput !== cityFromInput
-                    ? regionFromInput
-                    : undefined) ??
-                  null,
-                country: form.locationCountry ?? null,
-                latitude: form.locationLat ?? null,
-                longitude: form.locationLng ?? null,
-              })
-              await supabase
-                .from('posts')
-                .update({ notebook_id: resumedNotebookId })
-                .eq('id', post.id)
-            } else if (knownEntries.length > 1) {
-              // CAS B : creation auto carnet a partir des entries Step2
-              const speciesPayload = knownEntries.map((entry) => {
-                const sp = entry.species!
-                return {
-                  taxref_id: sp.id,
-                  species_name: sp.commonName,
-                  scientific_name: sp.scientificName,
-                  vernacular_class: GROUP_TO_INAT_CLASS[sp.group] ?? null,
-                  individuals_count: entry.count > 0 ? entry.count : 1,
-                }
-              })
-              const newNotebook = await createPublishedNotebookFromEncounter(
-                user.id,
-                {
-                  postId: post.id,
-                  title: form.title.trim() || null,
-                  location_name: form.locationName || null,
-                  city: cityFromInput ?? null,
-                  region:
-                    form.locationRegion ??
-                    (regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : null),
-                  country: form.locationCountry ?? null,
-                  latitude: form.locationLat ?? null,
-                  longitude: form.locationLng ?? null,
-                  started_at: new Date().toISOString(),
-                },
-                speciesPayload,
-              )
-              await supabase.from('posts').update({ notebook_id: newNotebook.id }).eq('id', post.id)
-            }
-            // CAS C : aucune action, le post est mono-espece comme avant.
-          }
-        } catch (err) {
-          // Best-effort : si le carnet echoue, le post est quand meme cree.
-          // L user voit son post (mono-espece via firstKnown) sans la carte
-          // carnet enrichie, ce qui est moins pire qu une publication ratee.
-          console.warn('[ContributeEncounterForm] carnet save failed:', err)
-        }
+        // V1.2.0 carnets (sauvegarde multi-especes via carnet) retire de cette
+        // release. On revient au comportement V1.1.x : seule l'espece
+        // principale (firstKnown) est persistee sur le post. La sauvegarde
+        // multi-especes reviendra avec V1.2.0 (mode terrain / carnets).
 
         // NG-004 : succes -> purge le brouillon (on a publie, plus besoin).
         clearDraft(DRAFT_KEY)
@@ -724,54 +614,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
 
             {step === 2 && (
               <div className="flex flex-col gap-4">
-                {/* V1.2.0 NG-005/006 : picker carnet entame (mobile + desktop).
-                    Permet a l user de reprendre un carnet draft/active demarre
-                    via le mode terrain. Si selectionne, les observations du
-                    carnet sont injectees dans le formulaire. */}
-                <NotebookResumePicker
-                  notebooks={availableNotebooks}
-                  resumedNotebookId={resumedNotebookId}
-                  onResume={(notebookId, observations) => {
-                    if (!notebookId) {
-                      // Annulation de la reprise -> vide observations
-                      setResumedNotebookId(null)
-                      setForm((prev) => ({ ...prev, observations: [] }))
-                      return
-                    }
-                    setResumedNotebookId(notebookId)
-                    // Convertit NotebookObservation -> ObservationEntry pour Step2
-                    const entries: ObservationEntry[] = observations.map(
-                      (obs: NotebookObservation) => ({
-                        id: obs.id,
-                        isUnknown: false,
-                        count: obs.individuals_count,
-                        species: {
-                          id: obs.taxref_id,
-                          commonName: obs.species_name,
-                          scientificName: obs.scientific_name ?? '',
-                          // best-effort : remap vernacular_class -> TaxonomicGroup
-                          group: (() => {
-                            const cls = obs.vernacular_class ?? ''
-                            const map: Record<string, TaxonomicGroup> = {
-                              Aves: 'birds',
-                              Mammalia: 'mammals',
-                              Insecta: 'insects',
-                              Amphibia: 'amphibians',
-                              Reptilia: 'reptiles',
-                              Actinopterygii: 'fish',
-                              Arachnida: 'arachnids',
-                              Mollusca: 'mollusks',
-                              Plantae: 'plants',
-                            }
-                            return map[cls] ?? ('other' as TaxonomicGroup)
-                          })(),
-                          rank: 'species',
-                        },
-                      }),
-                    )
-                    setForm((prev) => ({ ...prev, observations: entries }))
-                  }}
-                />
+                {/* V1.2.0 carnets (NotebookResumePicker) retire de cette release. */}
                 <EncounterStep2
                   observations={form.observations}
                   onAdd={handleAddObservation}

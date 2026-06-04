@@ -221,9 +221,6 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
     // mappe directement (avant : toujours undefined faute de colonne). FeedPost
     // affiche un suffixe « (N) » sur le chip espèce quand > 1.
     individualsCount: (item as { individuals_count?: number }).individuals_count ?? undefined,
-    // V1.2.0 (NG-005/006) : si le post est issu d un carnet, FeedPost rendra
-    // la carte enrichie au lieu des chips espece/categorie standard.
-    notebookId: (item as { notebook_id?: string | null }).notebook_id ?? null,
     scientific_name: item.scientific_name ?? null,
     taxref_id: item.taxref_id ?? null,
     taxonomic_group: item.taxonomic_group ?? null,

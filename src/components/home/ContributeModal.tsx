@@ -34,7 +34,7 @@
 
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bird, MountainSnow, BookOpen } from 'lucide-react'
+import { Bird, MountainSnow } from 'lucide-react'
 
 // ─── Types de contribution ────────────────────────────────────────────────────
 
@@ -80,25 +80,8 @@ const CONTRIBUTION_TYPES: ContributionType[] = [
     // Nicolas 2026-05-23 : activé en preview, branche feat/instant-nature-preview.
     disabled: false,
   },
-  {
-    // V1.2.0 (NG-005/006) : mode terrain dedie. MOBILE-ONLY.
-    // Decision Nicolas 2026-06-02 : un PC ne se balade pas en nature, le
-    // mode terrain (timer + brouillon persistant + ajout rapide d especes)
-    // n a de sens que sur smartphone. Sur desktop, l user peut quand meme
-    // creer un post multi-especes via "Rencontre nature" (qui pourra
-    // reprendre un carnet entame sur mobile, Phase 4+).
-    // Rendu visuel : la carte est filtree au render via mobileOnly = true.
-    id: 'nature_notebook',
-    title: "Carnet d'observations",
-    description: 'Démarre une sortie nature : ajoute progressivement les espèces observées.',
-    /** Primary-light du design system (violet brand pale) */
-    cardBg: 'var(--color-primary-light)',
-    /** Primary brand */
-    iconBg: 'var(--color-primary)',
-    Icon: BookOpen,
-    disabled: false,
-    mobileOnly: true,
-  },
+  // V1.2.0 "Carnet d'observations" (mode terrain) retire de cette release :
+  // feature gelee, reviendra avec V1.2.0 quand le mode terrain sera finalise.
 ]
 
 // ─── Badge "Bientôt" ─────────────────────────────────────────────────────────

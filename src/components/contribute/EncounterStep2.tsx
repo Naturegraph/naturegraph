@@ -788,11 +788,14 @@ export function EncounterStep2({
         </div>
       )}
 
-      {/* Carnet d'observations */}
+      {/* Liste des especes observees pour cette rencontre.
+          V1.1.4 : label "Especes observees" (le terme "Carnet" referait a la
+          feature V1.2.0 mode terrain, gelee). */}
       {hasObservations && (
         <div className="flex flex-col gap-2">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            {t('contribute.panel.notebook')} ({observations.length})
+            {t('contribute.panel.speciesObserved', { defaultValue: 'Espèces observées' })} (
+            {observations.length})
           </p>
           {observations.map((entry) => (
             <ObservationRow
