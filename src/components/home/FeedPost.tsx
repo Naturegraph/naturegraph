@@ -422,7 +422,25 @@ export function FeedPost({
                     <Icon className={`size-[18px] shrink-0 ${cfg.colorClass}`} aria-hidden="true" />
                   )
                 })()}
-                <span className="text-sm text-foreground">{date}</span>
+                {/* Date = permalien vers la page detail (Nicolas 2026-06-04).
+                    Garantit un point d'entree vers /post/:id meme quand le post
+                    n'a PAS de titre (sinon ces posts, ~19% en beta, etaient
+                    totalement inaccessibles : le titre etait le seul lien).
+                    Pattern type reseau social. Inactif sur PostDetail
+                    (linkToDetail=false) pour ne pas lier vers soi-meme. */}
+                {linkToDetail ? (
+                  <Link
+                    to={buildPostPath(id, { title, species })}
+                    aria-label={t('home.post.openDetail', {
+                      defaultValue: 'Voir le détail de l’observation',
+                    })}
+                    className="text-sm text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded"
+                  >
+                    {date}
+                  </Link>
+                ) : (
+                  <span className="text-sm text-foreground">{date}</span>
+                )}
                 {/* Localisation : affichée uniquement si publique ET si la
                     ville est connue (second-agent/29). Sinon le post n'affiche
                     que la date — pas de bullet orphelin. */}
