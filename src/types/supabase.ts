@@ -877,19 +877,43 @@ export type Database = {
       }
       notebook_observations: {
         Row: {
-          added_at: string | null
+          created_at: string
+          id: string
+          individuals_count: number
           notebook_id: string
-          observation_id: string
+          notes: string | null
+          observed_at: string
+          rank: number
+          scientific_name: string | null
+          species_name: string
+          taxref_id: string
+          vernacular_class: string | null
         }
         Insert: {
-          added_at?: string | null
+          created_at?: string
+          id?: string
+          individuals_count?: number
           notebook_id: string
-          observation_id: string
+          notes?: string | null
+          observed_at?: string
+          rank?: number
+          scientific_name?: string | null
+          species_name: string
+          taxref_id: string
+          vernacular_class?: string | null
         }
         Update: {
-          added_at?: string | null
+          created_at?: string
+          id?: string
+          individuals_count?: number
           notebook_id?: string
-          observation_id?: string
+          notes?: string | null
+          observed_at?: string
+          rank?: number
+          scientific_name?: string | null
+          species_name?: string
+          taxref_id?: string
+          vernacular_class?: string | null
         }
         Relationships: [
           {
@@ -899,64 +923,97 @@ export type Database = {
             referencedRelation: 'notebooks'
             referencedColumns: ['id']
           },
+        ]
+      }
+      notebooks: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          description: string | null
+          finished_at: string | null
+          id: string
+          latitude: number | null
+          location_name: string | null
+          longitude: number | null
+          metadata: Json
+          observations_count: number
+          post_id: string | null
+          region: string | null
+          species_count: number
+          started_at: string | null
+          status: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          description?: string | null
+          finished_at?: string | null
+          id?: string
+          latitude?: number | null
+          location_name?: string | null
+          longitude?: number | null
+          metadata?: Json
+          observations_count?: number
+          post_id?: string | null
+          region?: string | null
+          species_count?: number
+          started_at?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          description?: string | null
+          finished_at?: string | null
+          id?: string
+          latitude?: number | null
+          location_name?: string | null
+          longitude?: number | null
+          metadata?: Json
+          observations_count?: number
+          post_id?: string | null
+          region?: string | null
+          species_count?: number
+          started_at?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
           {
-            foreignKeyName: 'notebook_observations_observation_id_fkey'
-            columns: ['observation_id']
+            foreignKeyName: 'notebooks_post_id_fkey'
+            columns: ['post_id']
             isOneToOne: false
             referencedRelation: 'posts'
             referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'notebook_observations_observation_id_fkey'
-            columns: ['observation_id']
+            foreignKeyName: 'notebooks_post_id_fkey'
+            columns: ['post_id']
             isOneToOne: false
             referencedRelation: 'posts_public'
             referencedColumns: ['id']
           },
-        ]
-      }
-      notebooks: {
-        Row: {
-          author_id: string
-          cover_image_url: string | null
-          created_at: string | null
-          description: string | null
-          id: string
-          title: string
-          updated_at: string | null
-          visibility: string | null
-        }
-        Insert: {
-          author_id: string
-          cover_image_url?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          title: string
-          updated_at?: string | null
-          visibility?: string | null
-        }
-        Update: {
-          author_id?: string
-          cover_image_url?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          title?: string
-          updated_at?: string | null
-          visibility?: string | null
-        }
-        Relationships: [
           {
-            foreignKeyName: 'notebooks_author_id_fkey'
-            columns: ['author_id']
+            foreignKeyName: 'notebooks_user_id_fkey'
+            columns: ['user_id']
             isOneToOne: false
             referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'notebooks_author_id_fkey'
-            columns: ['author_id']
+            foreignKeyName: 'notebooks_user_id_fkey'
+            columns: ['user_id']
             isOneToOne: false
             referencedRelation: 'profiles_public'
             referencedColumns: ['id']
@@ -1070,6 +1127,7 @@ export type Database = {
           location_point: unknown
           longitude: number | null
           multiple_observations: boolean | null
+          notebook_id: string | null
           phenomenon: string | null
           published_at: string | null
           region: string | null
@@ -1116,6 +1174,7 @@ export type Database = {
           location_point?: unknown
           longitude?: number | null
           multiple_observations?: boolean | null
+          notebook_id?: string | null
           phenomenon?: string | null
           published_at?: string | null
           region?: string | null
@@ -1162,6 +1221,7 @@ export type Database = {
           location_point?: unknown
           longitude?: number | null
           multiple_observations?: boolean | null
+          notebook_id?: string | null
           phenomenon?: string | null
           published_at?: string | null
           region?: string | null
@@ -1190,6 +1250,13 @@ export type Database = {
           weather?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: 'posts_notebook_id_fkey'
+            columns: ['notebook_id']
+            isOneToOne: false
+            referencedRelation: 'notebooks'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'posts_species_id_fkey'
             columns: ['species_id']
@@ -1233,6 +1300,7 @@ export type Database = {
           created_at: string | null
           email: string
           email_verified: boolean | null
+          facebook: string | null
           first_name: string
           followers_count: number | null
           following_count: number | null
@@ -1272,6 +1340,7 @@ export type Database = {
           created_at?: string | null
           email: string
           email_verified?: boolean | null
+          facebook?: string | null
           first_name: string
           followers_count?: number | null
           following_count?: number | null
@@ -1311,6 +1380,7 @@ export type Database = {
           created_at?: string | null
           email?: string
           email_verified?: boolean | null
+          facebook?: string | null
           first_name?: string
           followers_count?: number | null
           following_count?: number | null

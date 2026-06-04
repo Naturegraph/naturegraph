@@ -10,6 +10,7 @@
 
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { AppLoader } from '@/components/ui'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -19,19 +20,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, onboardingCompleted } = useAuth()
   const location = useLocation()
 
-  // V1.1.4 hotfix post-round-11 (Nicolas 2026-06-02 18h50) : pas de loader
-  // visible pendant le check session. Avant : AppLoader size=md affichait
-  // un mini residu visuel apres refresh (le BootSplash sessionStorage peut
-  // skipper et le AppLoader inline restait dans la viewport quelques 100ms).
-  // Maintenant : aplat cream-lighter pleine page = invisible si check
-  // rapide, neutre si check lent. Le BootSplash (premier mount) reste
-  // intact pour l effet branding.
+  // V1.1.4 NG-013 : loader officiel Naturegraph pendant le check session
   if (isLoading) {
-    return (
-      <div className="fixed inset-0 bg-cream-lighter" role="status" aria-label="Chargement">
-        <span className="sr-only">Chargement</span>
-      </div>
-    )
+    return <AppLoader size="md" />
   }
 
   // Si non authentifié, rediriger vers login en conservant la destination

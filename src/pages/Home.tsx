@@ -45,6 +45,7 @@ export default function Home() {
   // BATCH 10 / QW-UX1 : titre dynamique pour onglet navigateur (SEO + UX)
   usePageTitle(t('nav.home'))
   const [showContributeModal, setShowContributeModal] = useState(false)
+  // V1.2.0 carnets (mode terrain) retire de cette release : feature gelee.
 
   // Hook partage : gere les panels create/edit + leur lazy load.
   // onEditPost -> passe a FeedSection pour les FeedPost.

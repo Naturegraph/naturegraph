@@ -27,6 +27,8 @@ import { EncounterStep1 } from './EncounterStep1'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import { useContributePostSubmit } from '@/hooks/useContributePostSubmit'
 import { readDraft, useDraftAutoSave, clearDraft } from '@/hooks/useContributeDraft'
+import { useToast } from '@/contexts/ToastContext'
+import { toStorageTimestamp, toDateInputValue } from '@/utils/observationDate'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { useLocationAutocomplete } from '@/hooks/useLocationAutocomplete'
@@ -95,6 +97,10 @@ interface ContributeInstantPanelProps {
 
 export function ContributeInstantPanel({ onClose, editingPostId }: ContributeInstantPanelProps) {
   const { t } = useTranslation()
+  // V1.1.4 NG-025 (Nicolas 2026-06-03) : toast user-facing pour piéger les
+  // exceptions silencieuses qui faisaient que le bouton Publier semblait
+  // inerte. Cf retour Nicolas en QA dev.
+  const toast = useToast()
 
   // Pipeline submit factorisé (cf. useContributePostSubmit) — identique
   // à ContributeEncounterForm pour garantir le même comportement watchdog
@@ -144,12 +150,6 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
   const [existingMedia, setExistingMedia] = useState<
     Array<{ id: string; url: string; storagePath: string }>
   >([])
-  // V1.1.4 NG-024 v2 (Nicolas 2026-06-02 - bug Patrice) : suppressions
-  // differees jusqu apres le submit reussi. Cf commentaire identique
-  // dans ContributeEncounterForm.
-  const [pendingMediaDeletions, setPendingMediaDeletions] = useState<
-    Array<{ id: string; storagePath: string }>
-  >([])
 
   // ── Pré-remplissage en mode édition ─────────────────────────────────────
   // Fetch les valeurs du post Instant au mount et init le form. On saute
@@ -175,7 +175,9 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
         ...prev,
         title: post.title ?? '',
         description: post.description ?? '',
-        encounterDate: post.encounter_date ?? prev.encounterDate,
+        // V1.1.4 NG-027 round 12 : lecture date-only sans decalage timezone
+        // (cf utils/observationDate). encounter_date est TIMESTAMPTZ.
+        encounterDate: toDateInputValue(post.encounter_date) || prev.encounterDate,
         timeOfDay: (post.time_of_day ?? '') as InstantFormData['timeOfDay'],
         weather: (post.weather ?? '') as InstantFormData['weather'],
         phenomenon: phenomenonId,
@@ -300,76 +302,74 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
       handleNext()
       return
     }
-    setSubmitAttempted(true)
-    const errs = validateStep2()
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs)
-      return
+
+    // V1.1.4 NG-027 (Nicolas 2026-06-03) : try/catch global. Avant, toute
+    // exception non capturee remontait sans feedback visible (le bouton
+    // paraissait inerte, retour QA). On surface desormais via toast.error.
+    try {
+      setSubmitAttempted(true)
+      const errs = validateStep2()
+      if (Object.keys(errs).length > 0) {
+        setErrors(errs)
+        return
+      }
+
+      // Décompose le label localisation → city / region pour FeedPost.
+      const locSegments = form.locationName
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      const cityFromInput = locSegments[0] || undefined
+      const regionFromInput = locSegments[locSegments.length - 1] || undefined
+
+      // Phenomenon stocké en tags (la colonne posts.phenomenon existe en DB
+      // mais l'UI feed ne l'expose pas encore, tag = workaround simple).
+      const phenomenonLabel = form.phenomenon
+        ? PHENOMENON_OPTIONS.find((o) => o.id === form.phenomenon)?.label
+        : undefined
+
+      // time-of-day : valeur saisie > fallback EXIF de la photo.
+      const timeOfDay = form.timeOfDay || form.photoMetadata.timeOfDay || undefined
+
+      await submit({
+        payload: {
+          type: 'nature_instant',
+          title: form.title.trim() || undefined,
+          description: form.description.trim(),
+          visibility: 'public',
+          // V1.1.4 NG-027 round 12 : ancre midi UTC (cf utils/observationDate).
+          encounter_date: toStorageTimestamp(form.encounterDate),
+          time_of_day: timeOfDay,
+          weather: form.weather || undefined,
+          location_name: form.locationName || undefined,
+          city: cityFromInput,
+          region:
+            form.locationRegion ??
+            (regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : undefined),
+          latitude: form.locationLat ?? undefined,
+          longitude: form.locationLng ?? undefined,
+          country: form.locationCountry ?? undefined,
+          location_hidden: form.locationHidden,
+          tags: phenomenonLabel ? [phenomenonLabel] : [],
+          display_format: form.displayFormat,
+        },
+        files: form.files,
+        editingPostId,
+        onSuccess: async () => {
+          // NG-004 : succes -> purge le brouillon.
+          clearDraft(DRAFT_KEY)
+          onClose()
+        },
+      })
+    } catch (err) {
+      console.error('[ContributeInstantPanel] handleSubmit FAILED', err)
+      toast.error(
+        t('contribute.errors.submitFailed', {
+          defaultValue: 'Impossible de publier pour le moment.',
+        }),
+        err instanceof Error ? err.message : String(err),
+      )
     }
-
-    // Décompose le label localisation → city / region pour FeedPost.
-    const locSegments = form.locationName
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-    const cityFromInput = locSegments[0] || undefined
-    const regionFromInput = locSegments[locSegments.length - 1] || undefined
-
-    // Phenomenon stocké en tags (la colonne posts.phenomenon existe en DB
-    // mais l'UI feed ne l'expose pas encore — tag = workaround simple).
-    const phenomenonLabel = form.phenomenon
-      ? PHENOMENON_OPTIONS.find((o) => o.id === form.phenomenon)?.label
-      : undefined
-
-    // time-of-day : valeur saisie > fallback EXIF de la photo.
-    const timeOfDay = form.timeOfDay || form.photoMetadata.timeOfDay || undefined
-
-    await submit({
-      payload: {
-        type: 'nature_instant',
-        title: form.title.trim() || undefined,
-        description: form.description.trim(),
-        visibility: 'public',
-        encounter_date: form.encounterDate,
-        time_of_day: timeOfDay,
-        weather: form.weather || undefined,
-        location_name: form.locationName || undefined,
-        city: cityFromInput,
-        region:
-          form.locationRegion ??
-          (regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : undefined),
-        latitude: form.locationLat ?? undefined,
-        longitude: form.locationLng ?? undefined,
-        country: form.locationCountry ?? undefined,
-        location_hidden: form.locationHidden,
-        tags: phenomenonLabel ? [phenomenonLabel] : [],
-        display_format: form.displayFormat,
-      },
-      files: form.files,
-      editingPostId,
-      onSuccess: async () => {
-        // V1.1.4 NG-024 v2 (Nicolas 2026-06-02) : on execute MAINTENANT
-        // les deletions reportees. Le submit ayant reussi, on peut
-        // proprement effacer les anciennes photos remplacees.
-        if (pendingMediaDeletions.length > 0) {
-          try {
-            const { deletePostMedia } = await import('@/services/mediaService')
-            await Promise.all(
-              pendingMediaDeletions.map((p) =>
-                deletePostMedia(p.id, p.storagePath).catch((err) => {
-                  console.error('[ContributeInstantPanel] delete media failed:', p.id, err)
-                }),
-              ),
-            )
-          } catch (err) {
-            console.warn('[ContributeInstantPanel] pending deletions failed:', err)
-          }
-        }
-        // NG-004 : succes -> purge le brouillon.
-        clearDraft(DRAFT_KEY)
-        onClose()
-      },
-    })
   }
 
   const stepTitles: Record<number, string> = {
@@ -467,15 +467,14 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
                 }}
                 error={errors.files}
                 existingMedia={editingPostId ? existingMedia : undefined}
-                onRemoveExistingMedia={(mediaId, storagePath) => {
-                  // V1.1.4 NG-024 v2 : suppression DIFFEREE jusqu apres
-                  // que le submit ait reussi (cf ContributeEncounterForm).
+                onRemoveExistingMedia={async (mediaId, storagePath) => {
                   setExistingMedia((prev) => prev.filter((m) => m.id !== mediaId))
-                  setPendingMediaDeletions((prev) =>
-                    prev.some((p) => p.id === mediaId)
-                      ? prev
-                      : [...prev, { id: mediaId, storagePath }],
-                  )
+                  try {
+                    const { deletePostMedia } = await import('@/services/mediaService')
+                    await deletePostMedia(mediaId, storagePath)
+                  } catch (err) {
+                    console.error('[ContributeInstantPanel] delete media failed:', err)
+                  }
                 }}
               />
             )}
@@ -729,7 +728,13 @@ function InstantStep2({
   // Autocomplete location — même hook que Encounter / Navbar.
   const [locSuggestionsOpen, setLocSuggestionsOpen] = useState(false)
   const locInputRef = useRef<HTMLDivElement | null>(null)
-  const { suggestions, isLoading: locLoading } = useLocationAutocomplete(locationName)
+  // V1.1.4 NG-027 (Nicolas 2026-06-03) : on remonte aussi `error` pour
+  // afficher la panne reseau au user (avant : silence trompeur).
+  const {
+    suggestions,
+    isLoading: locLoading,
+    error: locError,
+  } = useLocationAutocomplete(locationName)
 
   useEffect(() => {
     if (!locSuggestionsOpen) return
@@ -923,7 +928,7 @@ function InstantStep2({
             className="w-full h-11 pl-10 pr-4 rounded-full border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
           />
 
-          {locSuggestionsOpen && (suggestions.length > 0 || locLoading) && (
+          {locSuggestionsOpen && (suggestions.length > 0 || locLoading || locError) && (
             <ul
               id={`${locId}-listbox`}
               role="listbox"
@@ -932,6 +937,15 @@ function InstantStep2({
               {locLoading && suggestions.length === 0 && (
                 <li className="px-4 py-2.5 text-sm text-muted-foreground italic">
                   {t('common.loading', { defaultValue: 'Chargement…' })}
+                </li>
+              )}
+              {/* V1.1.4 NG-027 : panne reseau visible */}
+              {!locLoading && locError && (
+                <li className="px-4 py-2.5 text-sm text-amber-900 bg-amber-50 italic">
+                  {t('contribute.errors.locationNetworkError', {
+                    defaultValue:
+                      'Connexion lente. Verifie ta connexion ou reessaye dans un instant.',
+                  })}
                 </li>
               )}
               {suggestions.map((city) => (
@@ -949,8 +963,10 @@ function InstantStep2({
                       <span className="block text-sm font-medium text-foreground truncate">
                         {city.name}
                       </span>
+                      {/* V1.1.4 NG-027 round 12 : pays affiche (France/Canada). */}
                       <span className="block text-xs text-muted-foreground truncate">
                         {city.departmentCode} · {city.regionName}
+                        {city.country ? ` · ${city.country}` : ''}
                       </span>
                     </span>
                   </button>

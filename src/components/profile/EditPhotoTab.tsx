@@ -20,14 +20,13 @@
  *   - Avatar : hermine icon dans cercle border-primary + bg-primary-light
  *   - Banner : box vide bg-primary-light (lavande) sans image
  *
- * TODO [BACKEND] Phase 2, voir second-agent/03-profil-backend-notes.md §8
- *   1. Créer 2 buckets Storage Supabase :
- *      - `avatars` (public read, owner write, max 1MB, MIME image/*)
- *      - `banners` (public read, owner write, max 2MB, MIME image/*)
- *   2. Service `storageService.uploadAvatar(file: File): Promise<string>`
- *      → renvoie URL publique après upload + compression côté client (WebP)
- *   3. Service `storageService.uploadBanner(file: File): Promise<string>`
- *   4. Validation MIME + taille côté Edge Function (sécurité vs JS bypass)
+ * Backend connecte (V1.1.4 NG-025) :
+ *   1. Buckets Storage Supabase `avatars` + `banners` (public read,
+ *      owner write, max 10 Mo, MIME image/*).
+ *   2. Service unifie `storageService.uploadImage(bucket, file)` qui passe
+ *      par `processMediaForUpload` (resize 2048 px + EXIF rotate + strip
+ *      + re-encode JPEG/WebP, cap entree 40 Mo).
+ *   3. Validation MIME + taille cote Edge Function (securite vs JS bypass).
  *   5. Mutation `useUpdateProfile()` met à jour `profiles.avatar_url`/`banner_url`
  *      avec optimistic update (preview locale avant retour serveur).
  *   6. Suppression : DELETE storage object + UPDATE profiles SET avatar_url=null
@@ -44,7 +43,10 @@ import { useToast } from '@/contexts/ToastContext'
 import { uploadImage } from '@/services/storageService'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { sanitizeImageUrl } from '@/lib/sanitize'
-import { compressPhoto } from '@/utils/compressPhoto'
+// V1.1.4 NG-025 (Nicolas 2026-06-03) : compressPhoto retire.
+// storageService.uploadImage appelle directement processMediaForUpload qui
+// gere resize + EXIF rotate + strip + re-encode dans un seul flow unifie
+// (un seul pipeline pour TOUS les uploads d'image du projet).
 import type { ProfileDisplayData } from './ProfileHeader'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -221,13 +223,12 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
     setIsUploading(kind)
     try {
       const bucket = kind === 'avatar' ? 'avatars' : 'banners'
-      // BATCH 16 / T-075 : compression client avant upload (eco-conception).
-      // Avatars : 1024px max ; banners : 2560px max (TIER_FREE default).
-      // Reduit storage 50-80% et accelere l'upload sur connexions mobiles.
-      const compressed = await compressPhoto(file, {
-        maxDimension: kind === 'avatar' ? 1024 : 2560,
-      })
-      const { publicUrl } = await uploadImage(bucket, compressed)
+      // V1.1.4 NG-025 (Nicolas 2026-06-03) : uploadImage applique
+      // processMediaForUpload en interne (resize + EXIF rotate + strip + re-encode).
+      // Note : cible 2048 px commune avatar et banner. L'avatar s'affiche
+      // 80 px en UI donc 2048 est tres confortable ; le banner peut afficher
+      // jusqu'a 1920 px de large en pleine page, idem confortable.
+      const { publicUrl } = await uploadImage(bucket, file)
       // Remplace la Blob URL par l'URL Supabase persistée.
       if (kind === 'avatar') {
         if (avatarUrl?.startsWith('blob:')) URL.revokeObjectURL(avatarUrl)

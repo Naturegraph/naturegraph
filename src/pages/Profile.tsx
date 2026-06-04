@@ -18,7 +18,8 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useProfile, useProfileByUsername, useUpdateProfile } from '@/hooks/useProfile'
-import { useUserPosts } from '@/hooks/usePost'
+// V1.1.4 NG-026 (Nicolas 2026-06-03) : Profile en scroll infini.
+import { useInfiniteUserPosts } from '@/hooks/usePost'
 import { useSavedPostsPage } from '@/hooks/useSavedPosts'
 import { useToast } from '@/contexts/ToastContext'
 import { HomeNavbar } from '@/components/home/HomeNavbar'
@@ -127,6 +128,7 @@ export default function Profile() {
   // pour que l user puisse choisir entre Rencontre Nature et Instant Nature
   // (avant : openCreate ouvrait directement la Rencontre, pas de choix).
   const [showContributeModal, setShowContributeModal] = useState(false)
+  // V1.2.0 carnets (mode terrain) retire de cette release : feature gelee.
 
   // NG-002 (2026-05-31 retour QA) : panel d edition d observation rendu
   // directement dans le profil pour eviter le redirect vers /. L user reste
@@ -171,10 +173,16 @@ export default function Profile() {
   }
 
   // ── Posts publiés par cet utilisateur (onglet "Journal nature") ───────────
-  // Tri chronologique inverse, limite 20. RLS : seuls les posts publics et
-  // publiés sont retournés (cohérent avec le feed home).
-  const { data: userPostsRaw } = useUserPosts(profileId)
-  const userPosts: MockPost[] = (userPostsRaw ?? []).map((p, i) => postFeedItemToMockPost(p, i))
+  // V1.1.4 NG-026 (Nicolas 2026-06-03) : scroll infini. La premiere page
+  // est limit 20, fetchNextPage charge la suite. RLS : posts publics +
+  // publies uniquement (coherent feed home).
+  const {
+    posts: userPostsRaw,
+    hasNextPage: hasMoreUserPosts,
+    isFetchingNextPage: isFetchingMoreUserPosts,
+    fetchNextPage: fetchMoreUserPosts,
+  } = useInfiniteUserPosts(profileId)
+  const userPosts: MockPost[] = userPostsRaw.map((p, i) => postFeedItemToMockPost(p, i))
 
   // ── Calcul ADN d'observateur ──────────────────────────────────────────────
   // Pourcentages calculés côté client depuis les posts réels (taxonomic_group)
@@ -363,6 +371,9 @@ export default function Profile() {
               savedPosts={savedPosts}
               isOwnProfile={isOwnProfile}
               onEditPost={handleEditFromProfile}
+              hasMoreUserPosts={hasMoreUserPosts}
+              isFetchingMoreUserPosts={isFetchingMoreUserPosts}
+              fetchMoreUserPosts={fetchMoreUserPosts}
             />
           </div>
         </div>

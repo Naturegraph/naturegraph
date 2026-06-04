@@ -4,8 +4,13 @@
  * V1.1.4 NG-004 Phase 1 (Nicolas 2026-05-31) :
  *   Avant : quand le wifi/4G tombait, les requetes timeout silencieusement,
  *   l user croyait que "l app est cassee" et faisait des refresh dans le vide.
- *   Maintenant : bandeau rouge en haut qui dit explicitement "Tu es hors
- *   ligne, tes actions ne seront pas sauvegardees".
+ *   Maintenant : bandeau rouge qui dit explicitement "Tu es hors ligne,
+ *   tes actions ne seront pas sauvegardees".
+ *
+ * V1.1.4 round 12 (Nicolas 2026-06-03) : positionne en BAS de l'ecran
+ * (fixed bottom-0) et non plus en haut. En haut, il recouvrait la navbar
+ * et le header des panels de contribution (retour QA). En bas il reste
+ * visible sans rien ecraser, sur toutes les pages.
  *
  * Detection :
  *   - navigator.onLine : initial value
@@ -65,11 +70,11 @@ export function OnlineStatusBanner() {
       role="status"
       aria-live="polite"
       className={`
-        fixed top-0 left-0 right-0 z-[10000]
+        fixed bottom-0 left-0 right-0 z-[10000]
         flex items-center justify-center gap-2
-        px-4 py-2
+        px-4 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]
         text-sm font-medium
-        motion-safe:animate-in motion-safe:slide-in-from-top motion-safe:duration-200
+        motion-safe:animate-in motion-safe:slide-in-from-bottom motion-safe:duration-200
         ${
           isOnline
             ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]'

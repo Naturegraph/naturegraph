@@ -50,6 +50,10 @@ interface ContributionType {
   Icon: React.ElementType
   /** Si true, carte grisée + badge "Bientôt" — non cliquable */
   disabled: boolean
+  /** V1.2.0 : si true, la carte n est rendue que sur mobile (md:hidden).
+   *  Utilise pour le carnet d observations, dont le mode terrain n a de
+   *  sens que sur smartphone. */
+  mobileOnly?: boolean
 }
 
 const CONTRIBUTION_TYPES: ContributionType[] = [
@@ -76,6 +80,8 @@ const CONTRIBUTION_TYPES: ContributionType[] = [
     // Nicolas 2026-05-23 : activé en preview, branche feat/instant-nature-preview.
     disabled: false,
   },
+  // V1.2.0 "Carnet d'observations" (mode terrain) retire de cette release :
+  // feature gelee, reviendra avec V1.2.0 quand le mode terrain sera finalise.
 ]
 
 // ─── Badge "Bientôt" ─────────────────────────────────────────────────────────
@@ -157,6 +163,9 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
       {CONTRIBUTION_TYPES.map((type, i) => {
         const { Icon } = type
 
+        // V1.2.0 : carte cachee sur desktop (md+) si mobileOnly = true
+        const mobileOnlyClass = type.mobileOnly ? 'md:hidden' : ''
+
         // Carte désactivée (bientôt disponible) — rendu en <div> non cliquable
         if (type.disabled) {
           return (
@@ -164,7 +173,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
               key={type.id}
               role="menuitem"
               aria-disabled="true"
-              className="flex items-center gap-5 p-4 rounded-lg opacity-60 cursor-not-allowed select-none"
+              className={`flex items-center gap-5 p-4 rounded-lg opacity-60 cursor-not-allowed select-none ${mobileOnlyClass}`}
               style={{ backgroundColor: type.cardBg }}
             >
               {/* Cercle icône */}
@@ -200,7 +209,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
             type="button"
             role="menuitem"
             onClick={() => handleSelect(type)}
-            className="w-full flex items-center gap-5 p-4 rounded-lg text-left transition-opacity hover:opacity-90 active:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+            className={`w-full flex items-center gap-5 p-4 rounded-lg text-left transition-opacity hover:opacity-90 active:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${mobileOnlyClass}`}
             style={{ backgroundColor: type.cardBg }}
           >
             {/* Cercle icône */}

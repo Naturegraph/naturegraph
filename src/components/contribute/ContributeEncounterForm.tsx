@@ -23,6 +23,7 @@ import { EncounterStep2 } from './EncounterStep2'
 import { EncounterStep3 } from './EncounterStep3'
 import type { ObservationEntry } from './EncounterStep2'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
+import { toStorageTimestamp, toDateInputValue } from '@/utils/observationDate'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 // Pipeline submit factorisé — partagé avec ContributeInstantPanel pour
@@ -34,6 +35,7 @@ import { readDraft, useDraftAutoSave, clearDraft } from '@/hooks/useContributeDr
 import { createProposal } from '@/services/identificationService'
 import { Button } from '@/components/ui/Button'
 
+// V1.2.0 : mapping interne TaxonomicGroup -> iNat class pour vernacular_class.
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /**
@@ -98,6 +100,8 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
   const { submit, isSubmitting, uploadProgress, uploadError, clearError } =
     useContributePostSubmit('ContributeEncounterForm')
 
+  // V1.2.0 carnets (reprise multi-especes via carnet) retire de cette release.
+
   const isEditing = !!editingPostId
 
   // NG-004 (Nicolas 2026-05-31) : auto-save brouillon en localStorage (TTL 30 min)
@@ -154,16 +158,6 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
   // n existe pas en DB, seul url est stocke).
   const [existingMedia, setExistingMedia] = useState<
     Array<{ id: string; url: string; storagePath: string }>
-  >([])
-  // V1.1.4 NG-024 v2 (Nicolas 2026-06-02 - bug Patrice) : on N efface PLUS
-  // immediatement les anciennes photos quand l user clique la croix. On
-  // accumule la liste des suppressions ici, et on les execute APRES que
-  // les uploads des nouvelles photos aient reussi (dans onSuccess du
-  // submit). Sinon : si l upload echoue ou si l user annule, les anciennes
-  // photos sont perdues definitivement -> bug critique decrit dans NG-024
-  // "Mise a jour - Validation utilisateur echouee".
-  const [pendingMediaDeletions, setPendingMediaDeletions] = useState<
-    Array<{ id: string; storagePath: string }>
   >([])
 
   // ── Pré-remplissage en mode édition ─────────────────────────────────────
@@ -225,7 +219,12 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
         ...prev,
         title: post.title ?? '',
         description: post.description ?? '',
-        encounterDate: post.encounter_date ?? prev.encounterDate,
+        // V1.1.4 NG-027 round 12 : lecture date-only sans decalage timezone
+        // (cf utils/observationDate.toDateInputValue). Avant : encounter_date est TIMESTAMPTZ
+        // en DB, Supabase renvoie un ISO complet ("2026-05-15T00:00:00.000Z").
+        // L'<input type="date"> exige strict YYYY-MM-DD : sans slice, certains
+        // navigateurs rejettent et l'input apparait reinitialise.
+        encounterDate: toDateInputValue(post.encounter_date) || prev.encounterDate,
         timeOfDay: (post.time_of_day ?? '') as EncounterFormData['timeOfDay'],
         weather: (post.weather ?? '') as EncounterFormData['weather'],
         habitat: (post.habitat ?? '') as EncounterFormData['habitat'],
@@ -430,7 +429,9 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
         title: form.title.trim() || undefined,
         description: form.description.trim(),
         visibility: 'public',
-        encounter_date: form.encounterDate,
+        // V1.1.4 NG-027 round 12 : ancre midi UTC pour eviter le decalage -1
+        // jour (colonne timestamptz, cf utils/observationDate).
+        encounter_date: toStorageTimestamp(form.encounterDate),
         time_of_day: timeOfDay,
         weather: form.weather || undefined,
         habitat: form.habitat || undefined,
@@ -470,26 +471,12 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
             console.warn('[ContributeEncounterForm] createProposal failed:', err)
           }
         }
-        // V1.1.4 NG-024 v2 (Nicolas 2026-06-02) : suppression effective des
-        // anciennes photos UNIQUEMENT maintenant, apres que createPost +
-        // upload aient reussi. Si on arrive ici c est que la nouvelle
-        // version du post est en DB avec les nouvelles photos uploadees.
-        // Best-effort : un echec de deletion laisse des photos orphelines
-        // en storage mais ne casse pas la publication (toast warning).
-        if (pendingMediaDeletions.length > 0) {
-          try {
-            const { deletePostMedia } = await import('@/services/mediaService')
-            await Promise.all(
-              pendingMediaDeletions.map((p) =>
-                deletePostMedia(p.id, p.storagePath).catch((err) => {
-                  console.error('[ContributeEncounterForm] delete media failed:', p.id, err)
-                }),
-              ),
-            )
-          } catch (err) {
-            console.warn('[ContributeEncounterForm] pending deletions failed:', err)
-          }
-        }
+
+        // V1.2.0 carnets (sauvegarde multi-especes via carnet) retire de cette
+        // release. On revient au comportement V1.1.x : seule l'espece
+        // principale (firstKnown) est persistee sur le post. La sauvegarde
+        // multi-especes reviendra avec V1.2.0 (mode terrain / carnets).
+
         // NG-004 : succes -> purge le brouillon (on a publie, plus besoin).
         clearDraft(DRAFT_KEY)
         onClose()
@@ -613,30 +600,30 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
                 // V1.1.4 NG-024 : photos existantes affichees aussi en step 1
                 // pour permettre la suppression OU l ajout depuis l etape photos.
                 existingMedia={isEditing ? existingMedia : undefined}
-                onRemoveExistingMedia={(mediaId, storagePath) => {
-                  // V1.1.4 NG-024 v2 : suppression DIFFEREE jusqu apres
-                  // que le submit ait reussi. Ainsi : si l upload des
-                  // nouvelles photos echoue ou si l user annule, les
-                  // anciennes restent intactes en DB.
+                onRemoveExistingMedia={async (mediaId, storagePath) => {
                   setExistingMedia((prev) => prev.filter((m) => m.id !== mediaId))
-                  setPendingMediaDeletions((prev) =>
-                    prev.some((p) => p.id === mediaId)
-                      ? prev
-                      : [...prev, { id: mediaId, storagePath }],
-                  )
+                  try {
+                    const { deletePostMedia } = await import('@/services/mediaService')
+                    await deletePostMedia(mediaId, storagePath)
+                  } catch (err) {
+                    console.error('[ContributeEncounterForm] delete media failed:', err)
+                  }
                 }}
               />
             )}
 
             {step === 2 && (
-              <EncounterStep2
-                observations={form.observations}
-                onAdd={handleAddObservation}
-                onRemove={handleRemoveObservation}
-                onCountChange={handleCountChange}
-                helpIdentification={form.helpIdentification}
-                onHelpIdentificationChange={(v) => set('helpIdentification', v)}
-              />
+              <div className="flex flex-col gap-4">
+                {/* V1.2.0 carnets (NotebookResumePicker) retire de cette release. */}
+                <EncounterStep2
+                  observations={form.observations}
+                  onAdd={handleAddObservation}
+                  onRemove={handleRemoveObservation}
+                  onCountChange={handleCountChange}
+                  helpIdentification={form.helpIdentification}
+                  onHelpIdentificationChange={(v) => set('helpIdentification', v)}
+                />
+              </div>
             )}
 
             {step === 3 && (

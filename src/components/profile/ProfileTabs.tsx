@@ -42,6 +42,11 @@ interface ProfileTabsProps {
   isOwnProfile: boolean
   /** NG-002 : callback edition d observation, propage a ProfileFeed. */
   onEditPost?: (postId: string, postType: 'nature_encounter' | 'nature_instant') => void
+  /** V1.1.4 NG-026 : pagination scroll infini posts user.
+   *  Si fourni, ProfileFeed active le sentinel pour charger la suite. */
+  hasMoreUserPosts?: boolean
+  isFetchingMoreUserPosts?: boolean
+  fetchMoreUserPosts?: () => void
 }
 
 // ─── Configuration des onglets ────────────────────────────────────────────────
@@ -92,6 +97,9 @@ export function ProfileTabs({
   savedPosts,
   isOwnProfile,
   onEditPost,
+  hasMoreUserPosts = false,
+  isFetchingMoreUserPosts = false,
+  fetchMoreUserPosts,
 }: ProfileTabsProps) {
   const { t } = useTranslation()
   // Tab par défaut : "journal" (Journal nature) — règle d'usage Nicolas
@@ -214,6 +222,9 @@ export function ProfileTabs({
             profileId={profileId}
             isOwnProfile={isOwnProfile}
             onEditPost={onEditPost}
+            hasNextPage={hasMoreUserPosts}
+            isFetchingNextPage={isFetchingMoreUserPosts}
+            fetchNextPage={fetchMoreUserPosts}
           />
         )}
         {activeTab === 'inspirations' && (

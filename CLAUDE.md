@@ -18,7 +18,12 @@ Plateforme web citoyenne biodiversite. React 19 + TypeScript + Vite + Tailwind +
 - Images : WebP/AVIF, lazy loading, dimensions explicites
 - Pas de dependance JS sans justification
 - Pas d'animation superflue, respecter `prefers-reduced-motion`
-- Pagination obligatoire (jamais de scroll infini)
+- Scroll infini autorise (NG-026 decision Nicolas 2026-06-03) avec garde-fous obligatoires :
+  - Pagination backend conservee (cap N items par requete cote serveur)
+  - Cap React Query `maxPages: 10` pour borner la memoire navigateur
+  - Lazy load images (loading="lazy") + dimensions explicites
+  - Virtualisation (react-window ou equivalent) recommandee si liste regulierement > 200 items
+  - IntersectionObserver pour detecter le bas de liste (pas de scroll listener qui s execute en continu)
 - Preferer CSS aux solutions JS
 
 ### Accessibilite (WCAG AA)
@@ -125,48 +130,24 @@ Cf. `docs/devops/environments.md` pour le detail complet.
 - Force-logout des users seulement de temps en temps (refonte auth, schema casse), pas par defaut.
 - Notification in-app systeme : redaction + validation Nicolas avant insertion.
 
-**Supabase (etat 2026-06-02) : un seul projet BDD, partage dev + prod**
+**Supabase (Phase 1 MVP) :**
 
-- **UN SEUL projet Supabase** : `hrxgduvworofnrjmgpcj` (region ca-central-1).
-- Utilise par develop local + staging + main en simultane.
-- Pas de naturegraph-dev separe pour le moment (decision Nicolas 2026-06-02 :
-  cout 10$/mois supplementaire non justifie tant que le volume reste limite).
-- Variables Vercel : production + preview pointent vers la meme BDD.
-
-**ATTENTION precautions critiques (decoulant du fait qu il n y a qu une BDD) :**
-
-1. **Migrations** : avant `apply_migration` ou `execute_sql DDL`, verifier que
-   le changement est compatible avec l usage prod. Toute migration impacte
-   immediatement la prod.
-2. **Tests de schema en dev** : ne PAS appliquer de migrations de feature
-   branches sur la BDD prod. Si tu dois tester une feature avec changement de
-   schema (ex V1.2.0 carnets), DEMANDER A NICOLAS de creer un projet dev temporaire
-   avant d ecrire la moindre migration.
-3. **Drop / destructive operations** : interdit sans validation explicite.
-4. **Tests E2E qui ecrivent en DB** : utiliser des donnees mock fictives
-   (cf. src/data/mock/), pas de vraie INSERT en prod.
+- `naturegraph-dev` : utilise par develop + staging
+- `naturegraph-prod` : utilise par main uniquement
+- Variables Vercel configurees separement par branche (Production vs Preview)
 
 **Convention migrations SQL :**
 
 - Format : `YYYYMMDD_description.sql` (ex: `20260401_rls_security_fixes.sql`)
-- Une migration appliquee = appliquee partout (puisque BDD unique).
-- Ne jamais laisser une migration en local sans apply (ou alors la commenter
-  EXPLICITEMENT dans le fichier avec `-- DO NOT APPLY UNTIL ...`).
+- Appliquer manuellement sur le bon projet Supabase lors de chaque merge vers staging et main
+- Ne jamais laisser les schemas diverger entre environnements sans le documenter
 
 **URLs cibles :**
 
-- `naturegraph.ca` → main (production publique — Hostinger DNS + Vercel + Supabase unique)
+- `naturegraph.ca` → main (production publique — Hostinger DNS + Vercel + Supabase prod)
 - `staging-naturegraph-git-staging-*.vercel.app` → staging (URL Vercel auto, preview)
 - `naturegraph-eight.vercel.app` → URL Vercel auto pour les autres preview branches
 - Preview Vercel auto → feature branches (URL changeante, pour review interne uniquement)
-
-**Cas a creer un projet Supabase dev separe (futur)** :
-
-- Si feature complexe avec gros changement de schema (carnets V1.2.0, refonte
-  taxonomy, etc.).
-- Si volume utilisateurs depasse Free tier prod et qu on veut isoler les tests
-  de perf / load.
-- Cout estime : 10$/mois pour un projet ou une branche Supabase Pro.
 
 ## Legacy project
 
