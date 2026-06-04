@@ -30,19 +30,26 @@
  *     d'écran.
  */
 
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useRef } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
-import { getPostById } from '@/services/postService'
+import {
+  getPostById,
+  getRelatedPosts,
+  getUserReactions,
+  getReactionsBreakdown,
+} from '@/services/postService'
 import { postFeedItemToMockPost } from '@/components/home/FeedSection'
 import { extractPostId } from '@/lib/postSlug'
 import { HomeNavbar } from '@/components/home/HomeNavbar'
 import { MobileNavLayer } from '@/components/home/MobileNavLayer'
 import { GuestSidebar } from '@/components/home/GuestSidebar'
 import { ProfileSidebar } from '@/components/home/ProfileSidebar'
+import { RelatedPostCard } from '@/components/home/RelatedPostCard'
 import { useToggleReaction } from '@/hooks/usePost'
 import { useEditPostFlow } from '@/hooks/useEditPostFlow'
 import type { ReactionType, PostFeedItem } from '@/types/database'
@@ -51,6 +58,12 @@ import type { ReactionType, PostFeedItem } from '@/types/database'
 // arrive sur une 404 ou un état d'erreur.
 const FeedPost = lazy(() =>
   import('@/components/home/FeedPost').then((m) => ({ default: m.FeedPost })),
+)
+
+// Sidebar droite (Impact + Tendances) — meme composant que Home, lazy : on ne
+// paye le chunk que sur ecran XL (>=1280px) ou la colonne est visible.
+const StatsSidebar = lazy(() =>
+  import('@/components/home/StatsSidebar').then((m) => ({ default: m.StatsSidebar })),
 )
 
 // ─── États visuels ────────────────────────────────────────────────────────────
@@ -106,13 +119,61 @@ export default function PostDetail() {
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['post', postId],
-    queryFn: () => (postId ? getPostById(postId) : Promise.resolve(null)),
+    // V1.1.5 (Nicolas 2026-06-04) : getPostById ne renvoie PAS user_reaction ni
+    // reactions_breakdown. Sans enrichissement, les reactions ne s'affichaient
+    // pas et "disparaissaient" au refetch (onSettled invalide ['post', id]).
+    // On enrichit donc le post comme le font le feed (useFeed) et le profil
+    // (useUserPosts) : reaction du viewer + repartition par type. Resultat :
+    // reactions fonctionnelles et persistantes sur la page detail.
+    queryFn: async () => {
+      if (!postId) return null
+      const p = await getPostById(postId)
+      if (!p) return null
+      const [userReactions, breakdown] = await Promise.all([
+        user?.id
+          ? getUserReactions(user.id, [p.id])
+          : Promise.resolve({} as Record<string, ReactionType>),
+        getReactionsBreakdown([p.id]),
+      ])
+      return {
+        ...p,
+        user_reaction: userReactions[p.id] ?? null,
+        reactions_breakdown: breakdown[p.id] ?? null,
+      }
+    },
     enabled: !!postId,
     staleTime: 60 * 1000,
   })
 
   const post = data ? postFeedItemToMockPost(data) : null
   const isOwnPost = !!post && !!profile && post.authorId === profile.id
+
+  // V1.1.5 NG-028 : observations a decouvrir (recommandations). Meme espece >
+  // meme groupe taxonomique > recents (cf getRelatedPosts). Charge seulement
+  // une fois le post connu. Accessible aussi aux visiteurs non connectes
+  // (RLS posts_public : publics publies uniquement).
+  const relatedQueryKey = ['related-posts', postId] as const
+  const { data: relatedRaw } = useQuery({
+    queryKey: relatedQueryKey,
+    queryFn: () =>
+      data
+        ? getRelatedPosts({
+            excludePostId: data.id,
+            taxrefId: data.taxref_id ?? null,
+            taxonomicGroup: data.taxonomic_group ?? null,
+            // V1.1.5 QA (Nicolas) : 4 posts similaires en carrousel.
+            limit: 4,
+          })
+        : Promise.resolve([]),
+    enabled: !!data,
+    staleTime: 5 * 60 * 1000,
+  })
+  // Regle produit (Nicolas 2026-06-04) : jamais de carte sans photo dans les
+  // recommandations. getRelatedPosts filtre deja en amont ; ce filtre est une
+  // securite cote client (au cas ou un post perdrait ses medias).
+  const relatedPosts = (relatedRaw ?? [])
+    .map((p, i) => postFeedItemToMockPost(p, i))
+    .filter((p) => p.images.length > 0)
 
   // Reactions sur PostDetail - meme behavior que feed/profil (coherence
   // produit V1.1.3). useToggleReaction invalide feed + posts.by-user + post.byId
@@ -133,9 +194,24 @@ export default function PostDetail() {
   // experience que Home et Profile : pas de redirect, l user reste sur sa page).
   const { onEditPost, panelNode: editPanelNode } = useEditPostFlow()
 
+  // V1.1.5 QA (Nicolas) : carrousel horizontal pour la section recommandations.
+  // Les chevrons du header font defiler d'environ une largeur de viewport.
+  const carouselRef = useRef<HTMLDivElement>(null)
+  function scrollCarousel(dir: 1 | -1) {
+    const el = carouselRef.current
+    if (!el) return
+    el.scrollBy({ left: dir * el.clientWidth * 0.9, behavior: 'smooth' })
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-cream-lighter">
-      <HomeNavbar />
+      {/* Navbar masquee en mobile (Nicolas 2026-06-04) : sur la page detail,
+          le bouton "Retour au fil" en haut sert de navigation globale et
+          remplace la navbar pour une experience focus sur l'observation. La
+          navbar reste affichee des md (tablette/desktop). */}
+      <div className="hidden md:block">
+        <HomeNavbar />
+      </div>
 
       <div className="flex flex-1 w-full">
         <div className="w-full xl:max-w-[1440px] mx-auto flex md:gap-6 gap-0 md:px-6 px-0 md:py-6 pb-20 md:pb-6">
@@ -144,20 +220,41 @@ export default function PostDetail() {
             {isAuthenticated ? <ProfileSidebar /> : <GuestSidebar />}
           </aside>
 
-          {/* Colonne centrale — Post détail */}
-          <main id="main-content" className="flex-1 min-w-0 flex flex-col gap-4 px-4 md:px-0">
-            <Link
-              to="/home"
-              className="inline-flex items-center gap-2 text-sm text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded w-fit"
-            >
-              <ArrowLeft size={16} aria-hidden="true" />
-              {t('post.backToFeed', { defaultValue: 'Retour au fil' })}
-            </Link>
+          {/* Colonne centrale — Post détail.
+              Marges mobiles (Nicolas 2026-06-04) : un seul gouttiere de 16px
+              (px-4) appliquee par bloc, JAMAIS cumulee. Le post principal
+              (FeedPost) porte deja sa propre marge interne, donc il reste en
+              pleine largeur (px-0) ; le bouton retour, le titre de section et
+              le carrousel sont alignes a 16px du bord. */}
+          <main id="main-content" className="flex-1 min-w-0 flex flex-col gap-4">
+            {/* Bouton retour en variant secondary (coherence DS). En mobile il
+                remplace la navbar : FIXE au scroll (sticky top-0) pour pouvoir
+                revenir au fil sans remonter en haut. Fond + blur pour rester
+                lisible au-dessus du contenu qui defile. Statique des md (la
+                navbar reprend ce role). */}
+            <div className="sticky top-0 z-30 bg-cream-lighter/95 backdrop-blur-sm px-4 pt-4 pb-3 md:static md:bg-transparent md:backdrop-blur-none md:px-0 md:pt-0 md:pb-0">
+              <Button
+                to="/home"
+                variant="secondary"
+                size="sm"
+                icon={<ArrowLeft size={16} aria-hidden="true" />}
+              >
+                {t('post.backToFeed', { defaultValue: 'Retour au fil' })}
+              </Button>
+            </div>
 
             <div aria-live="polite">
-              {isLoading && <PostSkeleton />}
+              {isLoading && (
+                <div className="px-4 md:px-0">
+                  <PostSkeleton />
+                </div>
+              )}
               {!isLoading && (isError || !post) && (
-                <PostNotFound backLabel={t('post.backToFeed', { defaultValue: 'Retour au fil' })} />
+                <div className="px-4 md:px-0">
+                  <PostNotFound
+                    backLabel={t('post.backToFeed', { defaultValue: 'Retour au fil' })}
+                  />
+                </div>
               )}
               {!isLoading && post && (
                 <Suspense fallback={<PostSkeleton />}>
@@ -168,11 +265,88 @@ export default function PostDetail() {
                     onReact={handleReact}
                     onEditPost={isOwnPost ? onEditPost : undefined}
                     hideEndBorder
+                    linkToDetail={false}
+                    // V1.1.5 (Nicolas) : sur la page detail, description complete
+                    // (pas de "Voir plus") + chips categorie/espece passifs.
+                    expandContent
+                    disableChipFilters
                   />
                 </Suspense>
               )}
             </div>
+
+            {/* NG-028 : section "Observations susceptibles de t'interesser".
+                Jusqu'a 4 observations similaires (meme espece > groupe >
+                recents), en CARROUSEL horizontal (scroll-snap). Chevrons de
+                navigation a droite du titre. Chaque carte (RelatedPostCard) est
+                allegee (header + titre + description 2 lignes + chips + photo)
+                et ENTIEREMENT cliquable vers la page detail = exploration
+                continue. Jamais de post sans photo ici. */}
+            {!isLoading && post && relatedPosts.length > 0 && (
+              <section
+                aria-label={t('post.related.title', {
+                  defaultValue: 'Observations susceptibles de t’intéresser',
+                })}
+                className="mt-2 px-4 md:px-0"
+              >
+                {/* Separateur (Nicolas 2026-06-04) : un filet discret cree une
+                    respiration entre le post principal et la section reco. */}
+                <hr className="border-0 border-t-[0.5px] border-border mb-6" />
+                {/* Header : titre + chevrons de navigation du carrousel */}
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <h2 className="text-lg font-bold text-foreground">
+                    {t('post.related.title', {
+                      defaultValue: 'Observations susceptibles de t’intéresser',
+                    })}
+                  </h2>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => scrollCarousel(-1)}
+                      aria-label={t('post.related.prev', { defaultValue: 'Précédent' })}
+                      className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center text-foreground hover:bg-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      <ChevronLeft className="size-4" aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => scrollCarousel(1)}
+                      aria-label={t('post.related.next', { defaultValue: 'Suivant' })}
+                      className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center text-foreground hover:bg-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      <ChevronRight className="size-4" aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Carrousel scroll-snap : ~1 carte/vue mobile (peek), ~2 desktop.
+                    La premiere carte s'aligne sur la gouttiere 16px de la section
+                    (pas de -mx negatif qui collait les cartes au bord). On laisse
+                    la derniere carte deborder a droite (-mr-4) pour suggerer le
+                    scroll, tout en gardant 16px de marge a gauche. */}
+                <div
+                  ref={carouselRef}
+                  className="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth -mr-4 pr-4 md:mr-0 md:pr-0 pb-1 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
+                >
+                  {relatedPosts.map((rp) => (
+                    <div key={rp.id} className="snap-start shrink-0 w-[85%] sm:w-[60%] lg:w-[48%]">
+                      <RelatedPostCard {...rp} />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
           </main>
+
+          {/* Colonne droite — Impact & Tendances — visible uniquement XL desktop
+              (>=1280px), comme sur Home, pour ne pas creer un grand vide a
+              droite du post (Nicolas 2026-06-04). Lazy : chunk charge seulement
+              quand la colonne est rendue. */}
+          <aside className="hidden xl:block w-[320px] shrink-0">
+            <Suspense fallback={<div className="w-[320px] h-96 bg-muted/20 rounded-lg" />}>
+              <StatsSidebar />
+            </Suspense>
+          </aside>
         </div>
       </div>
 

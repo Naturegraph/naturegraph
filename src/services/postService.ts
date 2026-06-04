@@ -306,6 +306,102 @@ export async function getPostById(postId: string): Promise<PostFeedItem | null> 
 }
 
 /**
+ * V1.1.5 NG-028 : observations a decouvrir (recommandations) pour la page
+ * detail d'un post. Strategie en cascade pour toujours retourner du contenu :
+ *   1. Meme espece (taxref_id) si disponible
+ *   2. Complement par meme groupe taxonomique (oiseaux, mammiferes, etc.)
+ *   3. Complement par posts recents (si l'espece/groupe ne suffit pas)
+ * Exclut le post courant. Lecture via posts_public (RLS : publics publies).
+ * Tri par popularite (likes_count) pour mettre en avant les meilleures obs.
+ */
+export async function getRelatedPosts(opts: {
+  excludePostId: string
+  taxrefId?: string | null
+  taxonomicGroup?: string | null
+  limit?: number
+}): Promise<PostFeedItem[]> {
+  if (!supabase) throw new Error('Supabase non configuré')
+  const { excludePostId, taxrefId, taxonomicGroup, limit = 6 } = opts
+
+  const seen = new Set<string>([excludePostId])
+  const results: PostFeedItem[] = []
+
+  /**
+   * Regle produit (Nicolas 2026-06-04) : sur la page detail, la section
+   * "Observations susceptibles de t'interesser" ne montre JAMAIS un post sans
+   * photo (la vignette est l'accroche principale). On exclut donc tout post
+   * dont aucun media n'est une photo exploitable (type photo + url).
+   */
+  function hasPhoto(row: PostFeedItem): boolean {
+    const media = (row as unknown as { media?: Array<{ type?: string; url?: string }> }).media
+    return (media ?? []).some((m) => m.type === 'photo' && !!m.url)
+  }
+
+  /**
+   * Regle produit (Nicolas 2026-06-04) : on ne met en avant ici que les
+   * observations COMPLETES (titre explicite + description). Ca evite les
+   * decalages de hauteur dans le carrousel et valorise les posts soignes.
+   * On verifie le titre brut (item.title), pas le titre derive du mapper qui
+   * retombe sur la description en l'absence de titre.
+   */
+  function isComplete(row: PostFeedItem): boolean {
+    const r = row as unknown as { title?: string | null; description?: string | null }
+    return !!r.title?.trim() && !!r.description?.trim()
+  }
+
+  /**
+   * Regle produit (Nicolas 2026-06-04) : l'espece doit etre DETERMINEE pour
+   * apparaitre dans les recommandations. Garantit que chaque carte du carrousel
+   * affiche bien la rangee de chips espece -> hauteur uniforme, pas de decalage.
+   * On exige au moins un nom (commun ou scientifique).
+   */
+  function hasSpecies(row: PostFeedItem): boolean {
+    const r = row as unknown as { species_name?: string | null; scientific_name?: string | null }
+    return !!r.species_name?.trim() || !!r.scientific_name?.trim()
+  }
+
+  /**
+   * Ajoute les posts uniques qui respectent TOUTES les regles produit de la
+   * section : photo + observation complete (titre + description) + espece
+   * determinee.
+   */
+  function collect(rows: PostFeedItem[] | null | undefined) {
+    for (const row of rows ?? []) {
+      if (results.length >= limit) break
+      if (seen.has(row.id)) continue
+      if (!hasPhoto(row) || !isComplete(row) || !hasSpecies(row)) continue
+      seen.add(row.id)
+      results.push(row)
+    }
+  }
+
+  /** Requete generique : posts publies, exclus le courant, tri popularite. */
+  async function fetchBy(column: 'taxref_id' | 'taxonomic_group' | null, value?: string) {
+    if (results.length >= limit) return
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let q = (supabase as any)
+      .from(POSTS_READ_SOURCE)
+      .select(POST_FEED_SELECT)
+      .eq('status', 'published')
+      .neq('id', excludePostId)
+      .order('likes_count', { ascending: false })
+      .limit(limit * 2)
+    if (column && value) q = q.eq(column, value)
+    const { data } = await q
+    collect(data as PostFeedItem[] | null)
+  }
+
+  // 1. Meme espece
+  if (taxrefId) await fetchBy('taxref_id', taxrefId)
+  // 2. Meme groupe taxonomique
+  if (results.length < limit && taxonomicGroup) await fetchBy('taxonomic_group', taxonomicGroup)
+  // 3. Fallback recents (aucun filtre espece)
+  if (results.length < limit) await fetchBy(null)
+
+  return results.slice(0, limit)
+}
+
+/**
  * Crée un nouveau post (texte uniquement).
  * Les médias sont uploadés séparément via mediaService, puis rattachés
  * via INSERT dans la table media avec le post_id retourné.

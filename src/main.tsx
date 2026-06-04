@@ -15,6 +15,30 @@ import './index.css'
 // Initialise Sentry si VITE_SENTRY_DSN est defini (no-op sinon)
 void initMonitoring()
 
+/**
+ * Recuperation des chunks perimes apres un deploiement (Nicolas 2026-06-04).
+ *
+ * Probleme : a chaque deploiement, Vite regenere des noms de fichiers hashes
+ * (ex: NotFound-BEHJZ5di.js). Un onglet reste ouvert avec l'ancien index.html
+ * en cache tente alors de charger un chunk dont le hash n'existe plus sur le
+ * serveur -> 404 -> "Failed to fetch dynamically imported module" -> ecran
+ * d'erreur. Tres frequent en beta ou on deploie souvent.
+ *
+ * Solution : Vite emet l'event `vite:preloadError` quand un import dynamique
+ * echoue. On recharge la page UNE fois pour recuperer le nouvel index.html et
+ * les bons chunks. Garde anti-boucle via sessionStorage : si un rechargement
+ * recent n'a pas resolu (ex: vraie panne reseau), on laisse l'erreur remonter
+ * a l'AppErrorBoundary au lieu de boucler indefiniment.
+ */
+window.addEventListener('vite:preloadError', (event) => {
+  const RELOAD_KEY = 'ng:chunk-reload-at'
+  const last = Number(sessionStorage.getItem(RELOAD_KEY) ?? '0')
+  if (Date.now() - last < 10_000) return // deja tente il y a moins de 10s
+  event.preventDefault()
+  sessionStorage.setItem(RELOAD_KEY, String(Date.now()))
+  window.location.reload()
+})
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     {/* NG-004 : filet global pour les erreurs de rendu. Sans ca, une erreur

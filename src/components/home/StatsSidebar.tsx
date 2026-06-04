@@ -9,11 +9,12 @@
  */
 
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { TrendingUp, TrendingDown, ChevronDown, ChevronRight, Globe } from 'lucide-react'
 import { useImpactStats, useTrendingSpecies } from '@/hooks/useStats'
 import { useLocation } from '@/contexts/LocationContext'
+import { useSpecies } from '@/contexts/SpeciesContext'
 import type { StatsPeriod } from '@/services/statsService'
 
 // ─── Constantes ─────────────────────────────────────────────────────────────
@@ -34,9 +35,38 @@ function formatNumber(n: number): string {
 
 // ─── Composant ───────────────────────────────────────────────────────────────
 
-export function StatsSidebar() {
+/**
+ * @param onItemSelected V1.1.5 NG-032 : appele quand l'utilisateur clique une
+ *   espece tendance. Permet au StatsSheet (tiroir mobile) de se fermer apres
+ *   l'application du filtre. Optionnel (sidebar desktop n'en a pas besoin).
+ */
+export function StatsSidebar({ onItemSelected }: { onItemSelected?: () => void } = {}) {
   const { t } = useTranslation()
   const { locationLabel } = useLocation()
+  const navigate = useNavigate()
+  // V1.1.5 NG-032 : meme filtre espece que le chip d'un post (Species Context).
+  const { setActiveSpecies } = useSpecies()
+
+  /** Clic sur une espece tendance : applique le filtre espece (comme dans un
+   *  post) et ramene au feed, au lieu d'ouvrir la page explorer. */
+  function handleTrendingClick(species: {
+    name: string
+    taxrefId: string | null
+    scientificName: string | null
+    category: string | null
+  }) {
+    if (species.taxrefId) {
+      setActiveSpecies({
+        taxref_id: species.taxrefId,
+        scientific_name: species.scientificName ?? species.name,
+        common_name: species.name !== species.scientificName ? species.name : null,
+        group_label: species.category,
+      })
+    }
+    onItemSelected?.()
+    navigate('/home')
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }
 
   // Périodes sélectionnées par l'utilisateur (Impact + Tendances indépendants)
   const [impactPeriod, setImpactPeriod] = useState<StatsPeriod>('month')
@@ -61,15 +91,17 @@ export function StatsSidebar() {
     region,
   )
   /**
-   * Règles Tendances (second-agent/17) :
-   *   1. On n'affiche QUE les espèces qui ont une photo (sinon l'item disparaît).
-   *   2. Une espèce n'est une "tendance" qu'à partir de 7 observations — sous
-   *      ce seuil c'est une simple observation, pas une tendance.
-   * Si la liste filtrée est vide → état vide (le compteur global Observations
-   * reste indépendant).
+   * Règles Tendances — V1.1.5 NG-032 (Nicolas 2026-06-03).
+   *
+   * Contexte : en beta fermée (faible volume), l'ancien seuil (≥ 7 obs)
+   * rendait la section quasi toujours vide. On abaisse le seuil pour refleter
+   * l'activite reelle, MAIS on garde une regle stricte : une espece n'apparait
+   * QUE si elle a au moins une observation AVEC photo (sinon pas comptabilisee
+   * dans les tendances). Ce filtrage est fait cote service (getTrendingSpecies
+   * retourne deja au plus 3 especes ayant une photo, fallback all-time inclus).
+   * Le composant affiche donc directement ce que le service renvoie.
    */
-  const TRENDING_MIN_OBS = 7
-  const trending = trendingRaw?.filter((s) => !!s.imageUrl && s.observations >= TRENDING_MIN_OBS)
+  const trending = trendingRaw
 
   // ── Rendu ─────────────────────────────────────────────────────────────────
 
@@ -224,23 +256,22 @@ export function StatsSidebar() {
           </div>
         )}
 
-        {/* État rempli — 3 espèces cliquables (filtre sur /explore) */}
+        {/* État rempli — 3 espèces cliquables. V1.1.5 NG-032 : clic = applique
+            le filtre espece (Species Context Layer) + retour feed, MEME
+            comportement que le chip espece d'un post (au lieu de /explore). */}
         {!trendingLoading && trending && trending.length > 0 && (
           <ul className="flex flex-col gap-3 px-6">
             {trending.slice(0, 3).map((species) => {
               return (
                 <li key={species.name}>
-                  <Link
-                    to={`/explore?species=${encodeURIComponent(species.name)}`}
+                  <button
+                    type="button"
+                    onClick={() => handleTrendingClick(species)}
                     aria-label={t('home.trending.openSpecies', { species: species.name })}
-                    className="flex items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 group"
+                    className="w-full flex items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 group text-left"
                   >
-                    {/*
-                      Image espèce — 48×48 rounded-md.
-                      Règle (second-agent/17) : on n'affiche JAMAIS d'icône de
-                      catégorie ici — soit la dernière photo partagée, soit un
-                      simple placeholder neutre. Pas de fallback emoji.
-                    */}
+                    {/* Image espèce — 48×48. Le service garantit une photo
+                        (regle NG-032 : pas d'espece sans photo dans tendances). */}
                     <div className="size-12 rounded-md overflow-hidden shrink-0 bg-[var(--color-action-light)]">
                       {species.imageUrl && (
                         <img
@@ -271,7 +302,7 @@ export function StatsSidebar() {
                     >
                       <ChevronRight className="size-4" />
                     </span>
-                  </Link>
+                  </button>
                 </li>
               )
             })}

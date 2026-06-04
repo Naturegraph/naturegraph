@@ -26,9 +26,7 @@ import { useTranslation } from 'react-i18next'
 
 // Lazy load — la sidebar contient des hooks Supabase et fait du fetch ;
 // on ne paye le chunk que si l'utilisateur ouvre réellement le sheet.
-const StatsSidebar = lazy(() =>
-  import('./StatsSidebar').then((m) => ({ default: m.StatsSidebar })),
-)
+const StatsSidebar = lazy(() => import('./StatsSidebar').then((m) => ({ default: m.StatsSidebar })))
 
 interface StatsSheetProps {
   onClose: () => void
@@ -72,10 +70,7 @@ export function StatsSheet({ onClose }: StatsSheetProps) {
       >
         {/* Header */}
         <div className="shrink-0 flex items-center justify-between gap-3 px-5 h-16 border-b border-border">
-          <h2
-            id="stats-sheet-title"
-            className="font-title font-bold text-lg text-foreground"
-          >
+          <h2 id="stats-sheet-title" className="font-title font-bold text-lg text-foreground">
             {t('home.statsSheet.title', { defaultValue: 'Tendances & communauté' })}
           </h2>
           <button
@@ -90,10 +85,10 @@ export function StatsSheet({ onClose }: StatsSheetProps) {
 
         {/* Contenu scrollable — StatsSidebar lazy-loaded */}
         <div className="flex-1 overflow-y-auto p-5">
-          <Suspense
-            fallback={<div className="w-full h-96 bg-muted/20 rounded-lg animate-pulse" />}
-          >
-            <StatsSidebar />
+          <Suspense fallback={<div className="w-full h-96 bg-muted/20 rounded-lg animate-pulse" />}>
+            {/* V1.1.5 NG-032 : clic sur une tendance applique le filtre espece
+                puis ferme le tiroir (onClose) pour revenir au feed filtre. */}
+            <StatsSidebar onItemSelected={onClose} />
           </Suspense>
         </div>
       </aside>
