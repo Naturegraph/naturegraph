@@ -248,6 +248,9 @@ export default function PostDetail() {
                 })}
                 className="mt-2"
               >
+                {/* Separateur (Nicolas 2026-06-04) : un filet discret cree une
+                    respiration entre le post principal et la section reco. */}
+                <hr className="border-0 border-t-[0.5px] border-border mb-6" />
                 {/* Header : titre + chevrons de navigation du carrousel */}
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <h2 className="text-lg font-bold text-foreground">
