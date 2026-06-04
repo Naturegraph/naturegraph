@@ -189,6 +189,7 @@ export default function PostDetail() {
                     onReact={handleReact}
                     onEditPost={isOwnPost ? onEditPost : undefined}
                     hideEndBorder
+                    linkToDetail={false}
                   />
                 </Suspense>
               )}

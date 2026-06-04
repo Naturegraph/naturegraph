@@ -31,6 +31,7 @@ import { ImagePresets } from '@/lib/supabaseImage'
 import type { ReactionType } from '@/types/database'
 import { useSpecies } from '@/contexts/SpeciesContext'
 import { TAXONOMIC_GROUP_CONFIG } from '@/constants/commonSpecies'
+import { buildPostPath } from '@/lib/postSlug'
 
 // ─── Type UI pour les posts du feed ──────────────────────────────────────────
 // Bridge entre le type DB (PostFeedItem) et le composant FeedPost.
@@ -220,6 +221,12 @@ interface FeedPostProps extends MockPost {
    */
   hideEndBorder?: boolean
   /**
+   * V1.1.5 NG-028 : titre cliquable vers la page detail /post/:id.
+   * true par defaut (feed, profil) ; false sur PostDetail (on est deja sur
+   * la page, pas de lien vers soi-meme).
+   */
+  linkToDetail?: boolean
+  /**
    * Callback édition post — remonté jusqu'à Home pour rouvrir le panel de
    * création (Encounter/Instant) pré-rempli. Affiche le bouton « Modifier »
    * dans le PostOptionsMenu uniquement si défini ET si isOwnPost.
@@ -262,6 +269,7 @@ export function FeedPost({
   userReaction,
   totalReactions,
   canInteract = true,
+  linkToDetail = true,
   isOwnPost = false,
   onReact,
   hideEndBorder = false,
@@ -460,9 +468,20 @@ export function FeedPost({
             naturellement vers les meta/chips/image sous le pseudo). */}
         {(title?.trim() || content?.trim()) && (
           <div className="flex flex-col gap-2">
-            {title?.trim() && (
-              <h3 className="text-lg font-bold leading-[1.2] text-foreground">{title}</h3>
-            )}
+            {title?.trim() &&
+              (linkToDetail ? (
+                // V1.1.5 NG-028 : titre cliquable -> page detail /post/:id.
+                <Link
+                  to={buildPostPath(id, { title, species })}
+                  className="w-fit rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <h3 className="text-lg font-bold leading-[1.2] text-foreground hover:underline">
+                    {title}
+                  </h3>
+                </Link>
+              ) : (
+                <h3 className="text-lg font-bold leading-[1.2] text-foreground">{title}</h3>
+              ))}
 
             {/*
              * Description : line-clamp-2 + bouton "Voir plus" affiché UNIQUEMENT
