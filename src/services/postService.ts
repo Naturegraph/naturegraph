@@ -349,12 +349,27 @@ export async function getRelatedPosts(opts: {
     return !!r.title?.trim() && !!r.description?.trim()
   }
 
-  /** Ajoute les posts uniques, avec photo ET complets (titre + description). */
+  /**
+   * Regle produit (Nicolas 2026-06-04) : l'espece doit etre DETERMINEE pour
+   * apparaitre dans les recommandations. Garantit que chaque carte du carrousel
+   * affiche bien la rangee de chips espece -> hauteur uniforme, pas de decalage.
+   * On exige au moins un nom (commun ou scientifique).
+   */
+  function hasSpecies(row: PostFeedItem): boolean {
+    const r = row as unknown as { species_name?: string | null; scientific_name?: string | null }
+    return !!r.species_name?.trim() || !!r.scientific_name?.trim()
+  }
+
+  /**
+   * Ajoute les posts uniques qui respectent TOUTES les regles produit de la
+   * section : photo + observation complete (titre + description) + espece
+   * determinee.
+   */
   function collect(rows: PostFeedItem[] | null | undefined) {
     for (const row of rows ?? []) {
       if (results.length >= limit) break
       if (seen.has(row.id)) continue
-      if (!hasPhoto(row) || !isComplete(row)) continue
+      if (!hasPhoto(row) || !isComplete(row) || !hasSpecies(row)) continue
       seen.add(row.id)
       results.push(row)
     }
