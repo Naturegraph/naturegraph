@@ -237,16 +237,24 @@ export async function getTrendingSpecies(
   const c = ensureClient()
   const { current } = getPeriodBounds(period)
 
-  /** Requête + agrégation pour une zone donnée (ou globale si region = null). */
-  async function queryZone(zoneRegion: string | null): Promise<TrendingSpecies[]> {
+  /**
+   * Requête + agrégation pour une zone donnée (ou globale si region = null).
+   * V1.1.5 NG-032 : `withDateFilter` permet un fallback all-time quand la
+   * periode courante ne donne pas assez de tendances (beta faible volume),
+   * pour que la section ne paraisse jamais morte.
+   */
+  async function queryZone(
+    zoneRegion: string | null,
+    withDateFilter = true,
+  ): Promise<TrendingSpecies[]> {
     let q = c
       .from('posts')
       .select('species_name, id, created_at, taxonomic_group')
       .eq('status', 'published')
       .not('species_name', 'is', null)
-      .gte('created_at', current)
       .order('created_at', { ascending: false })
 
+    if (withDateFilter) q = q.gte('created_at', current)
     if (zoneRegion) q = q.eq('region', zoneRegion)
 
     const { data: rows, error } = await q
@@ -298,15 +306,21 @@ export async function getTrendingSpecies(
     }))
   }
 
-  // 1. Tentative locale si région fournie
+  // 1. Tentative locale si région fournie (sur la période)
   if (region) {
     const local = await queryZone(region)
     if (local.length >= 3) return local
     // Fallback : la zone n'a pas assez de données, on bascule en global
   }
 
-  // 2. Global plateforme
-  return queryZone(null)
+  // 2. Global plateforme (sur la période)
+  const global = await queryZone(null)
+  if (global.length > 0) return global
+
+  // 3. V1.1.5 NG-032 : fallback all-time (sans filtre de date). En beta, une
+  // periode courte peut etre vide ; on remonte alors les dernieres especes
+  // identifiees toutes periodes confondues pour garder la section vivante.
+  return queryZone(null, false)
 }
 
 // ─── Stats utilisateur ──────────────────────────────────────────────────────

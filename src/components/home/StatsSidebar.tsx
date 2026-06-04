@@ -15,6 +15,8 @@ import { TrendingUp, TrendingDown, ChevronDown, ChevronRight, Globe } from 'luci
 import { useImpactStats, useTrendingSpecies } from '@/hooks/useStats'
 import { useLocation } from '@/contexts/LocationContext'
 import type { StatsPeriod } from '@/services/statsService'
+// V1.1.5 NG-032 : fallback emoji categorie pour les especes tendance sans photo.
+import { CATEGORY_EMOJIS } from '@/utils/badgeHelpers'
 
 // ─── Constantes ─────────────────────────────────────────────────────────────
 
@@ -61,15 +63,22 @@ export function StatsSidebar() {
     region,
   )
   /**
-   * Règles Tendances (second-agent/17) :
-   *   1. On n'affiche QUE les espèces qui ont une photo (sinon l'item disparaît).
-   *   2. Une espèce n'est une "tendance" qu'à partir de 7 observations — sous
-   *      ce seuil c'est une simple observation, pas une tendance.
-   * Si la liste filtrée est vide → état vide (le compteur global Observations
-   * reste indépendant).
+   * Règles Tendances — RÉVISÉES V1.1.5 NG-032 (Nicolas 2026-06-03).
+   *
+   * Contexte : en beta fermée (faible volume), l'ancienne regle (≥ 7 obs ET
+   * photo obligatoire) rendait la section quasi toujours vide -> perception
+   * d'un produit inactif. On privilegie desormais la "vie du produit percue".
+   *
+   * Nouvelle logique :
+   *   1. Seuil minimum abaisse a 1 observation (toute espece observee peut
+   *      apparaitre). Le tri par count decroissant (cote service) fait
+   *      naturellement remonter les especes a 2+ obs en priorite.
+   *   2. On n'exige PLUS de photo : une espece sans image s'affiche avec un
+   *      emoji de sa categorie taxonomique (fallback), au lieu de disparaitre.
+   * Si vraiment aucune espece identifiee sur la periode -> etat vide.
    */
-  const TRENDING_MIN_OBS = 7
-  const trending = trendingRaw?.filter((s) => !!s.imageUrl && s.observations >= TRENDING_MIN_OBS)
+  const TRENDING_MIN_OBS = 1
+  const trending = trendingRaw?.filter((s) => s.observations >= TRENDING_MIN_OBS)
 
   // ── Rendu ─────────────────────────────────────────────────────────────────
 
@@ -237,12 +246,13 @@ export function StatsSidebar() {
                   >
                     {/*
                       Image espèce — 48×48 rounded-md.
-                      Règle (second-agent/17) : on n'affiche JAMAIS d'icône de
-                      catégorie ici — soit la dernière photo partagée, soit un
-                      simple placeholder neutre. Pas de fallback emoji.
+                      V1.1.5 NG-032 : si une photo existe on l'affiche, sinon
+                      fallback emoji de la categorie taxonomique (centre) pour
+                      garder une tendance visuelle vivante meme sans image
+                      (revise la regle second-agent/17 "pas de fallback emoji").
                     */}
-                    <div className="size-12 rounded-md overflow-hidden shrink-0 bg-[var(--color-action-light)]">
-                      {species.imageUrl && (
+                    <div className="size-12 rounded-md overflow-hidden shrink-0 bg-[var(--color-action-light)] flex items-center justify-center">
+                      {species.imageUrl ? (
                         <img
                           src={species.imageUrl}
                           alt=""
@@ -251,6 +261,11 @@ export function StatsSidebar() {
                           width={48}
                           height={48}
                         />
+                      ) : (
+                        <span className="text-2xl" aria-hidden="true">
+                          {CATEGORY_EMOJIS[species.category as keyof typeof CATEGORY_EMOJIS] ??
+                            '✨'}
+                        </span>
                       )}
                     </div>
 
