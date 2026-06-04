@@ -38,8 +38,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { getPostById, getRelatedPosts } from '@/services/postService'
 import { postFeedItemToMockPost } from '@/components/home/FeedSection'
-import { extractPostId, buildPostPath } from '@/lib/postSlug'
-import { ImagePresets } from '@/lib/supabaseImage'
+import { extractPostId } from '@/lib/postSlug'
 import { HomeNavbar } from '@/components/home/HomeNavbar'
 import { MobileNavLayer } from '@/components/home/MobileNavLayer'
 import { GuestSidebar } from '@/components/home/GuestSidebar'
@@ -119,21 +118,34 @@ export default function PostDetail() {
   // meme groupe taxonomique > recents (cf getRelatedPosts). Charge seulement
   // une fois le post connu. Accessible aussi aux visiteurs non connectes
   // (RLS posts_public : publics publies uniquement).
+  const relatedQueryKey = ['related-posts', postId] as const
   const { data: relatedRaw } = useQuery({
-    queryKey: ['related-posts', postId],
+    queryKey: relatedQueryKey,
     queryFn: () =>
       data
         ? getRelatedPosts({
             excludePostId: data.id,
             taxrefId: data.taxref_id ?? null,
             taxonomicGroup: data.taxonomic_group ?? null,
-            limit: 6,
+            // V1.1.5 QA (Nicolas) : 3 posts similaires max, affiches en entier.
+            limit: 3,
           })
         : Promise.resolve([]),
     enabled: !!data,
     staleTime: 5 * 60 * 1000,
   })
   const relatedPosts = (relatedRaw ?? []).map((p, i) => postFeedItemToMockPost(p, i))
+
+  // Reaction sur un post recommande : optimistic update sur le cache related.
+  function handleReactRelated(targetPostId: string, type: ReactionType) {
+    const rp = (relatedRaw as PostFeedItem[] | undefined)?.find((p) => p.id === targetPostId)
+    reactionMutation.mutate({
+      postId: targetPostId,
+      type,
+      currentReaction: (rp?.user_reaction ?? null) as ReactionType | null,
+      feedQueryKey: relatedQueryKey,
+    })
+  }
 
   // Reactions sur PostDetail - meme behavior que feed/profil (coherence
   // produit V1.1.3). useToggleReaction invalide feed + posts.by-user + post.byId
@@ -195,46 +207,31 @@ export default function PostDetail() {
               )}
             </div>
 
-            {/* V1.1.5 NG-028 : section "A decouvrir" — recommandations en bas de
-                la page detail. Transforme la page d'un post isole en point
-                d'exploration (espece similaire / groupe / recents). Chaque
-                vignette NAVIGUE vers la page detail de l'observation (boucle
-                d'exploration continue), pas une simple lightbox. Vignettes avec
-                image uniquement (sinon pas de visuel pertinent en grille). */}
-            {!isLoading && post && relatedPosts.some((p) => p.images[0]?.url) && (
+            {/* V1.1.5 NG-028 : section "A decouvrir" — jusqu'a 3 observations
+                similaires (meme espece > groupe > recents), affichees EN ENTIER
+                comme sur le profil (FeedPost en 2 colonnes masonry). Chaque post
+                est cliquable (titre/image) vers sa page detail = exploration
+                continue. */}
+            {!isLoading && post && relatedPosts.length > 0 && (
               <section aria-label={t('post.related.title', { defaultValue: 'À découvrir' })}>
                 <h2 className="text-lg font-bold text-foreground mb-3 mt-2">
                   {t('post.related.title', { defaultValue: 'À découvrir' })}
                 </h2>
-                <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {relatedPosts
-                    .filter((p) => p.images[0]?.url)
-                    .map((rp) => (
-                      <li key={rp.id}>
-                        <Link
-                          to={buildPostPath(rp.id, { title: rp.title, species: rp.species })}
-                          className="group block relative aspect-square overflow-hidden rounded-lg bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                          aria-label={
-                            rp.species ||
-                            rp.title ||
-                            t('post.related.title', { defaultValue: 'À découvrir' })
-                          }
-                        >
-                          <img
-                            src={ImagePresets.feedPhoto(rp.images[0].url)}
-                            alt=""
-                            loading="lazy"
-                            className="size-full object-cover transition-transform group-hover:scale-105"
-                          />
-                          {(rp.species || rp.title) && (
-                            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-foreground/70 to-transparent px-2 py-1.5 text-xs font-medium text-white truncate">
-                              {rp.species || rp.title}
-                            </span>
-                          )}
-                        </Link>
-                      </li>
-                    ))}
-                </ul>
+                <div className="columns-1 md:columns-2 gap-0 md:gap-6 [column-fill:_balance]">
+                  {relatedPosts.map((rp, idx) => (
+                    <div key={rp.id} className="break-inside-avoid mb-4 md:mb-6">
+                      <Suspense fallback={<PostSkeleton />}>
+                        <FeedPost
+                          {...rp}
+                          canInteract={isAuthenticated}
+                          isOwnPost={!!profile && rp.authorId === profile.id}
+                          onReact={handleReactRelated}
+                          hideEndBorder={idx === relatedPosts.length - 1}
+                        />
+                      </Suspense>
+                    </div>
+                  ))}
+                </div>
               </section>
             )}
           </main>
