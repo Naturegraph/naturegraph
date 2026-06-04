@@ -37,7 +37,12 @@ import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
-import { getPostById, getRelatedPosts } from '@/services/postService'
+import {
+  getPostById,
+  getRelatedPosts,
+  getUserReactions,
+  getReactionsBreakdown,
+} from '@/services/postService'
 import { postFeedItemToMockPost } from '@/components/home/FeedSection'
 import { extractPostId } from '@/lib/postSlug'
 import { HomeNavbar } from '@/components/home/HomeNavbar'
@@ -114,7 +119,28 @@ export default function PostDetail() {
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['post', postId],
-    queryFn: () => (postId ? getPostById(postId) : Promise.resolve(null)),
+    // V1.1.5 (Nicolas 2026-06-04) : getPostById ne renvoie PAS user_reaction ni
+    // reactions_breakdown. Sans enrichissement, les reactions ne s'affichaient
+    // pas et "disparaissaient" au refetch (onSettled invalide ['post', id]).
+    // On enrichit donc le post comme le font le feed (useFeed) et le profil
+    // (useUserPosts) : reaction du viewer + repartition par type. Resultat :
+    // reactions fonctionnelles et persistantes sur la page detail.
+    queryFn: async () => {
+      if (!postId) return null
+      const p = await getPostById(postId)
+      if (!p) return null
+      const [userReactions, breakdown] = await Promise.all([
+        user?.id
+          ? getUserReactions(user.id, [p.id])
+          : Promise.resolve({} as Record<string, ReactionType>),
+        getReactionsBreakdown([p.id]),
+      ])
+      return {
+        ...p,
+        user_reaction: userReactions[p.id] ?? null,
+        reactions_breakdown: breakdown[p.id] ?? null,
+      }
+    },
     enabled: !!postId,
     staleTime: 60 * 1000,
   })
@@ -194,12 +220,19 @@ export default function PostDetail() {
             {isAuthenticated ? <ProfileSidebar /> : <GuestSidebar />}
           </aside>
 
-          {/* Colonne centrale — Post détail */}
-          <main id="main-content" className="flex-1 min-w-0 flex flex-col gap-4 px-4 md:px-0">
+          {/* Colonne centrale — Post détail.
+              Marges mobiles (Nicolas 2026-06-04) : un seul gouttiere de 16px
+              (px-4) appliquee par bloc, JAMAIS cumulee. Le post principal
+              (FeedPost) porte deja sa propre marge interne, donc il reste en
+              pleine largeur (px-0) ; le bouton retour, le titre de section et
+              le carrousel sont alignes a 16px du bord. */}
+          <main id="main-content" className="flex-1 min-w-0 flex flex-col gap-4">
             {/* Bouton retour en variant secondary (coherence DS). En mobile il
-                remplace la navbar (retour global au fil) : espacement top genereux
-                + zone de respiration. */}
-            <div className="pt-4 md:pt-0">
+                remplace la navbar : FIXE au scroll (sticky top-0) pour pouvoir
+                revenir au fil sans remonter en haut. Fond + blur pour rester
+                lisible au-dessus du contenu qui defile. Statique des md (la
+                navbar reprend ce role). */}
+            <div className="sticky top-0 z-30 bg-cream-lighter/95 backdrop-blur-sm px-4 pt-4 pb-3 md:static md:bg-transparent md:backdrop-blur-none md:px-0 md:pt-0 md:pb-0">
               <Button
                 to="/home"
                 variant="secondary"
@@ -211,9 +244,17 @@ export default function PostDetail() {
             </div>
 
             <div aria-live="polite">
-              {isLoading && <PostSkeleton />}
+              {isLoading && (
+                <div className="px-4 md:px-0">
+                  <PostSkeleton />
+                </div>
+              )}
               {!isLoading && (isError || !post) && (
-                <PostNotFound backLabel={t('post.backToFeed', { defaultValue: 'Retour au fil' })} />
+                <div className="px-4 md:px-0">
+                  <PostNotFound
+                    backLabel={t('post.backToFeed', { defaultValue: 'Retour au fil' })}
+                  />
+                </div>
               )}
               {!isLoading && post && (
                 <Suspense fallback={<PostSkeleton />}>
@@ -246,7 +287,7 @@ export default function PostDetail() {
                 aria-label={t('post.related.title', {
                   defaultValue: 'Observations susceptibles de t’intéresser',
                 })}
-                className="mt-2"
+                className="mt-2 px-4 md:px-0"
               >
                 {/* Separateur (Nicolas 2026-06-04) : un filet discret cree une
                     respiration entre le post principal et la section reco. */}
@@ -278,10 +319,14 @@ export default function PostDetail() {
                   </div>
                 </div>
 
-                {/* Carrousel scroll-snap : ~1 carte/vue mobile (peek), ~2 desktop. */}
+                {/* Carrousel scroll-snap : ~1 carte/vue mobile (peek), ~2 desktop.
+                    La premiere carte s'aligne sur la gouttiere 16px de la section
+                    (pas de -mx negatif qui collait les cartes au bord). On laisse
+                    la derniere carte deborder a droite (-mr-4) pour suggerer le
+                    scroll, tout en gardant 16px de marge a gauche. */}
                 <div
                   ref={carouselRef}
-                  className="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth -mx-4 px-4 md:mx-0 md:px-0 pb-1 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
+                  className="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth -mr-4 pr-4 md:mr-0 md:pr-0 pb-1 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
                 >
                   {relatedPosts.map((rp) => (
                     <div key={rp.id} className="snap-start shrink-0 w-[85%] sm:w-[60%] lg:w-[48%]">
