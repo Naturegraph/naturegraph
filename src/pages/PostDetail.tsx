@@ -36,9 +36,10 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
-import { getPostById } from '@/services/postService'
+import { getPostById, getRelatedPosts } from '@/services/postService'
 import { postFeedItemToMockPost } from '@/components/home/FeedSection'
-import { extractPostId } from '@/lib/postSlug'
+import { extractPostId, buildPostPath } from '@/lib/postSlug'
+import { ImagePresets } from '@/lib/supabaseImage'
 import { HomeNavbar } from '@/components/home/HomeNavbar'
 import { MobileNavLayer } from '@/components/home/MobileNavLayer'
 import { GuestSidebar } from '@/components/home/GuestSidebar'
@@ -114,6 +115,26 @@ export default function PostDetail() {
   const post = data ? postFeedItemToMockPost(data) : null
   const isOwnPost = !!post && !!profile && post.authorId === profile.id
 
+  // V1.1.5 NG-028 : observations a decouvrir (recommandations). Meme espece >
+  // meme groupe taxonomique > recents (cf getRelatedPosts). Charge seulement
+  // une fois le post connu. Accessible aussi aux visiteurs non connectes
+  // (RLS posts_public : publics publies uniquement).
+  const { data: relatedRaw } = useQuery({
+    queryKey: ['related-posts', postId],
+    queryFn: () =>
+      data
+        ? getRelatedPosts({
+            excludePostId: data.id,
+            taxrefId: data.taxref_id ?? null,
+            taxonomicGroup: data.taxonomic_group ?? null,
+            limit: 6,
+          })
+        : Promise.resolve([]),
+    enabled: !!data,
+    staleTime: 5 * 60 * 1000,
+  })
+  const relatedPosts = (relatedRaw ?? []).map((p, i) => postFeedItemToMockPost(p, i))
+
   // Reactions sur PostDetail - meme behavior que feed/profil (coherence
   // produit V1.1.3). useToggleReaction invalide feed + posts.by-user + post.byId
   // dans onSettled donc le changement est propage partout.
@@ -172,6 +193,49 @@ export default function PostDetail() {
                 </Suspense>
               )}
             </div>
+
+            {/* V1.1.5 NG-028 : section "A decouvrir" — recommandations en bas de
+                la page detail. Transforme la page d'un post isole en point
+                d'exploration (espece similaire / groupe / recents). Chaque
+                vignette NAVIGUE vers la page detail de l'observation (boucle
+                d'exploration continue), pas une simple lightbox. Vignettes avec
+                image uniquement (sinon pas de visuel pertinent en grille). */}
+            {!isLoading && post && relatedPosts.some((p) => p.images[0]?.url) && (
+              <section aria-label={t('post.related.title', { defaultValue: 'À découvrir' })}>
+                <h2 className="text-lg font-bold text-foreground mb-3 mt-2">
+                  {t('post.related.title', { defaultValue: 'À découvrir' })}
+                </h2>
+                <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {relatedPosts
+                    .filter((p) => p.images[0]?.url)
+                    .map((rp) => (
+                      <li key={rp.id}>
+                        <Link
+                          to={buildPostPath(rp.id, { title: rp.title, species: rp.species })}
+                          className="group block relative aspect-square overflow-hidden rounded-lg bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                          aria-label={
+                            rp.species ||
+                            rp.title ||
+                            t('post.related.title', { defaultValue: 'À découvrir' })
+                          }
+                        >
+                          <img
+                            src={ImagePresets.feedPhoto(rp.images[0].url)}
+                            alt=""
+                            loading="lazy"
+                            className="size-full object-cover transition-transform group-hover:scale-105"
+                          />
+                          {(rp.species || rp.title) && (
+                            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-foreground/70 to-transparent px-2 py-1.5 text-xs font-medium text-white truncate">
+                              {rp.species || rp.title}
+                            </span>
+                          )}
+                        </Link>
+                      </li>
+                    ))}
+                </ul>
+              </section>
+            )}
           </main>
         </div>
       </div>
