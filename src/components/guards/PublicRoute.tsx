@@ -20,6 +20,7 @@
 
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { AppLoader } from '@/components/ui'
 
 interface PublicRouteProps {
   children: React.ReactNode
@@ -53,16 +54,9 @@ export function PublicRoute({ children }: PublicRouteProps) {
     return <Navigate to="/home" replace />
   }
 
-  // V1.1.4 hotfix post-round-11 (Nicolas 2026-06-02 18h50) : aplat
-  // cream invisible au lieu d un AppLoader inline. Le BootSplash a deja
-  // joue son role de branding au premier mount via sessionStorage flag,
-  // et un AppLoader visible ici laisse un petit residu apres refresh.
+  // Pendant la vérification de session (sans hint local), afficher le loader officiel
   if (isLoading) {
-    return (
-      <div className="fixed inset-0 bg-cream-lighter" role="status" aria-label="Chargement">
-        <span className="sr-only">Chargement</span>
-      </div>
-    )
+    return <AppLoader size="md" />
   }
 
   // Si connecté et onboarding terminé, /home

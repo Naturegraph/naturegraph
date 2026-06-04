@@ -207,7 +207,14 @@ export function EncounterStep3({
   // - Frappe libre : possible (texte libre conservé tel quel)
   const [locSuggestionsOpen, setLocSuggestionsOpen] = useState(false)
   const locInputRef = useRef<HTMLDivElement | null>(null)
-  const { suggestions, isLoading: locLoading } = useLocationAutocomplete(locationName)
+  // V1.1.4 NG-027 (Nicolas 2026-06-03) : on remonte aussi `error` pour
+  // surface visuellement les pannes reseau (avant : silence + "Aucun
+  // resultat" trompeur).
+  const {
+    suggestions,
+    isLoading: locLoading,
+    error: locError,
+  } = useLocationAutocomplete(locationName)
 
   useEffect(() => {
     if (!locSuggestionsOpen) return
@@ -421,7 +428,7 @@ export function EncounterStep3({
           />
 
           {/* Dropdown suggestions API Adresse */}
-          {locSuggestionsOpen && (suggestions.length > 0 || locLoading) && (
+          {locSuggestionsOpen && (suggestions.length > 0 || locLoading || locError) && (
             <ul
               id={`${locId}-listbox`}
               role="listbox"
@@ -430,6 +437,16 @@ export function EncounterStep3({
               {locLoading && suggestions.length === 0 && (
                 <li className="px-4 py-2.5 text-sm text-muted-foreground italic">
                   {t('common.loading', { defaultValue: 'Chargement…' })}
+                </li>
+              )}
+              {/* V1.1.4 NG-027 (Nicolas 2026-06-03) : panne reseau visible
+                  au lieu du faux "Aucun resultat" silencieux. */}
+              {!locLoading && locError && (
+                <li className="px-4 py-2.5 text-sm text-amber-900 bg-amber-50 italic">
+                  {t('contribute.errors.locationNetworkError', {
+                    defaultValue:
+                      'Connexion lente. Verifie ta connexion ou reessaye dans un instant.',
+                  })}
                 </li>
               )}
               {suggestions.map((city) => (
@@ -447,8 +464,12 @@ export function EncounterStep3({
                       <span className="block text-sm font-medium text-foreground truncate">
                         {city.name}
                       </span>
+                      {/* V1.1.4 NG-027 round 12 (Nicolas 2026-06-03) : pays
+                          affiche pour distinguer France / Canada d'un coup
+                          d'oeil (villes homonymes FR/QC). */}
                       <span className="block text-xs text-muted-foreground truncate">
                         {city.departmentCode} · {city.regionName}
+                        {city.country ? ` · ${city.country}` : ''}
                       </span>
                     </span>
                   </button>

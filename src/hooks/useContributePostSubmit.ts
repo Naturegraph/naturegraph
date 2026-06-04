@@ -27,11 +27,11 @@ import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCreatePost, useUpdatePost } from '@/hooks/usePost'
-import { compressPhoto } from '@/utils/compressPhoto'
 import { uploadPostMedia } from '@/services/mediaService'
 import { supabase } from '@/lib/supabase'
 import { assertActiveSession, SessionExpiredError } from '@/lib/authGuard'
 import type { CreatePostPayload } from '@/services/postService'
+import { processMediaForUpload, isProcessMediaError } from '@/utils/processMediaForUpload'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -235,11 +235,6 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         //    continue les photos suivantes même si une échoue.
         const failedUploads: Array<{ name: string; reason: string }> = []
         if (files.length > 0) {
-          const [{ detectPhotoFormat }, { stripExif }] = await Promise.all([
-            import('@/utils/detectPhotoFormat'),
-            import('@/utils/stripExif'),
-          ])
-
           for (let i = 0; i < files.length; i++) {
             setUploadProgress({ current: i + 1, total: files.length })
 
@@ -249,31 +244,25 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
               `[${formLabel}] upload photo ${i + 1}/${files.length} — ${rawFile.name} (${sizeMo.toFixed(1)} Mo, ${rawFile.type})`,
             )
 
-            let dims: { width: number; height: number } | null = null
-            try {
-              dims = await detectPhotoFormat(rawFile)
-            } catch {
-              /* fallback silencieux */
-            }
-
-            // Compression + strip EXIF — étape locale, peut échouer si
-            // photo corrompue ou format exotique. On capture l'erreur et
-            // on skip cette photo plutôt que de tout faire planter.
-            let fileToUpload: File
-            try {
-              const compressed = await compressPhoto(rawFile)
-              fileToUpload = await stripExif(compressed)
-              console.info(
-                `[${formLabel}] compressed → ${(fileToUpload.size / 1024).toFixed(0)} Ko (${fileToUpload.type})`,
+            // V1.1.4 NG-025 (Nicolas 2026-06-03) : pipeline unifie.
+            // processMediaForUpload remplace compressPhoto + stripExif +
+            // stripImageExif. Single-pass canvas, orientation EXIF appliquee,
+            // HEIC decode lazy via heic2any, cap 40 Mo, output JPEG/WebP,
+            // erreurs structurees user-friendly.
+            const result = await processMediaForUpload(rawFile)
+            if (isProcessMediaError(result)) {
+              console.error(
+                `[${formLabel}] process failed for ${rawFile.name}: ${result.code}`,
+                result.details,
               )
-            } catch (err) {
-              console.error(`[${formLabel}] compression failed for ${rawFile.name}:`, err)
-              failedUploads.push({
-                name: rawFile.name,
-                reason: 'Format non supporté ou photo corrompue.',
-              })
+              failedUploads.push({ name: rawFile.name, reason: result.message })
               continue
             }
+            const fileToUpload = result.file
+            const dims = result.finalDimensions
+            console.info(
+              `[${formLabel}] processed → ${(fileToUpload.size / 1024).toFixed(0)} Ko (${fileToUpload.type})`,
+            )
 
             // En mode édition : APPEND derrière les médias existants
             // (displayOrder timestamp + isCover=false).
@@ -295,8 +284,8 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
                     copyrightNotice: '',
                     displayOrder,
                     isCover,
-                    width: dims?.width,
-                    height: dims?.height,
+                    width: dims.width,
+                    height: dims.height,
                   }),
                   45_000,
                   `upload photo ${i + 1}/${files.length} (tentative ${attempt})`,
@@ -337,17 +326,9 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
 
         // Si toutes les photos ont échoué ET qu'on était en mode CRÉATION,
         // on rollback le post orphelin pour ne pas laisser un post vide.
-        //
-        // V1.1.4 NG-024 v2 (Nicolas 2026-06-02 - bug Patrice) :
-        // En mode EDITION on throw AUSSI si toutes les uploads echouent.
-        // Sans ce throw, onSuccess etait appele meme sans aucune photo
-        // uploadee -> l user voyait son post "sauvegarde" mais en realite
-        // les anciennes photos avaient ete supprimees (via onRemoveExistingMedia
-        // du Step1) et les nouvelles n etaient jamais arrivees en DB.
-        // Le throw empeche la fermeture du panel + affiche un toast clair.
-        // Combine avec la sauvegarde differee des suppressions cote form,
-        // les anciennes photos sont preservees integralement.
-        if (files.length > 0 && failedUploads.length === files.length) {
+        // En édition on garde le post existant (les anciennes photos sont
+        // toujours là).
+        if (!isEditing && files.length > 0 && failedUploads.length === files.length) {
           throw new Error(
             failedUploads.length === 1
               ? failedUploads[0].reason
@@ -377,31 +358,8 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         //    immédiatement dans la liste. On invalide aussi les posts du
         //    profil pour que l'ADN d'observateur + journal nature se
         //    rafraîchissent dès la première observation (Nicolas 2026-05-24).
-        //
-        // V1.1.4 hotfix v5 (Nicolas 2026-06-02 19h50) : forcer un refresh
-        // SYNCHRONE de TOUTES les queries impactees avant que onSuccess
-        // ferme le panel. Sinon le user voit l ancienne data (cache stale)
-        // et doit refresh manuellement pour voir les changements.
-        //
-        // queryClient.invalidateQueries est NON-bloquant -> onSuccess
-        // s execute avant que le refetch finisse, le user voit l ancienne
-        // photo/titre/description.
-        //
-        // refetchQueries avec await force l attente du resultat avant
-        // continuation. On le fait pour :
-        //   - ['feed']            : page Home + feed mobile
-        //   - ['posts', 'by-user'] : journal du profil
-        //   - ['post', postId]    : page detail du post (PostDetail)
-        //
-        // En mode creation, le post n existe pas dans ces caches donc
-        // les refetch sont rapides (cache miss -> fetch direct).
-        await Promise.all([
-          queryClient.refetchQueries({ queryKey: ['feed'] }),
-          queryClient.refetchQueries({ queryKey: ['posts', 'by-user'] }),
-          ...(isEditing && editingPostId
-            ? [queryClient.refetchQueries({ queryKey: ['post', editingPostId] })]
-            : []),
-        ])
+        queryClient.invalidateQueries({ queryKey: ['feed'] })
+        queryClient.invalidateQueries({ queryKey: ['posts', 'by-user'] })
 
         await onSuccess(post)
       } catch (err) {

@@ -27,6 +27,11 @@ import { FEED_QUERY_KEY } from '@/hooks/useFeed'
 import { uploadPostMedia } from '@/services/mediaService'
 import { supabase } from '@/lib/supabase'
 import { useQueryClient } from '@tanstack/react-query'
+// V1.1.4 NG-025 (Nicolas 2026-06-03) : pipeline unifie. Aligne avec
+// useContributePostSubmit pour eviter d uploader des HEIC bruts (rejetes
+// par le bucket) ou des photos non strippees (faille RGPD GPS).
+import { processMediaForUpload, isProcessMediaError } from '@/utils/processMediaForUpload'
+import { toStorageTimestamp } from '@/utils/observationDate'
 // useToast retiré (Nicolas 2026-05-22) — plus de toast publication.
 
 // ─── État du formulaire ───────────────────────────────────────────────────────
@@ -121,7 +126,8 @@ export function ContributeInstantForm() {
         type: 'nature_instant',
         description: form.description.trim(),
         visibility: form.visibility,
-        encounter_date: form.encounterDate,
+        // V1.1.4 NG-027 round 12 : ancre midi UTC (cf utils/observationDate).
+        encounter_date: toStorageTimestamp(form.encounterDate),
         time_of_day: form.timeOfDay || undefined,
         location_name: form.locationName || undefined,
         city: cityFromInput,
@@ -132,15 +138,30 @@ export function ContributeInstantForm() {
       createdPostId = post.id
 
       // 2. Upload des médias liés au post créé
-      //    (CHECK display_order > 0 → on démarre à 1)
+      //    V1.1.4 NG-025 (Nicolas 2026-06-03) : process avant upload
+      //    (HEIC decode, strip EXIF, resize, single-pass canvas).
+      //    Sans ca le bucket Supabase rejette HEIC/AVIF/photos lourdes
+      //    et on conserve GPS EXIF (faille RGPD).
+      const failedFiles: string[] = []
       for (let i = 0; i < form.files.length; i++) {
+        const result = await processMediaForUpload(form.files[i])
+        if (isProcessMediaError(result)) {
+          failedFiles.push(`${form.files[i].name} : ${result.message}`)
+          continue
+        }
         await uploadPostMedia({
-          file: form.files[i],
+          file: result.file,
           postId: post.id,
           userId: user.id,
           copyrightNotice: '',
           displayOrder: i + 1,
+          width: result.finalDimensions.width,
+          height: result.finalDimensions.height,
         })
+      }
+      // Si toutes les photos ont echoue : on remonte une erreur claire.
+      if (failedFiles.length > 0 && failedFiles.length === form.files.length) {
+        throw new Error(failedFiles.join(' | '))
       }
 
       // Invalider le feed APRÈS l'upload media pour que le post apparaisse avec sa photo

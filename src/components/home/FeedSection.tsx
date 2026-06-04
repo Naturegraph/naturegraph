@@ -31,7 +31,13 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useLocation } from '@/contexts/LocationContext'
 import { useSpecies } from '@/contexts/SpeciesContext'
 import { useQueryClient } from '@tanstack/react-query'
-import { useFeed, FEED_QUERY_KEY } from '@/hooks/useFeed'
+import { FEED_QUERY_KEY } from '@/hooks/useFeed'
+// V1.1.4 NG-026 (Nicolas 2026-06-03) : feed principal en scroll infini.
+// useFeed (pagination boutons) reste expose pour compat, mais le composant
+// utilise maintenant useInfiniteFeed + useInfiniteScroll.
+import { useInfiniteFeed, INFINITE_FEED_QUERY_KEY } from '@/hooks/useInfiniteFeed'
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
+import { Loader2 } from 'lucide-react'
 import { useHiddenPostIds } from '@/hooks/useHiddenPosts'
 import { useToggleReaction } from '@/hooks/usePost'
 // LocationPermissionModal + useLocationCTA + requestBrowserLocation retirés
@@ -42,6 +48,7 @@ import { useToggleReaction } from '@/hooks/usePost'
 // import { requestBrowserLocation } from '@/lib/location/geocoding'
 // import type { LocationFormData } from '@/types/location'
 import type { PostFeedItem, ReactionType } from '@/types/database'
+import { formatObservationDate } from '@/utils/observationDate'
 import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
 
 /**
@@ -177,9 +184,13 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
     // bloc pour ne pas dupliquer l info). encounter_date est stocke en YYYY-MM-DD
     // par le formulaire d encounter, created_at est un timestamp complet, donc
     // on compare uniquement la partie date.
+    // V1.1.4 NG-027 round 12 : formatObservationDate lit la partie calendaire
+    // sans conversion timezone (evite le decalage -1 jour sur la date pure
+    // d'observation stockee en timestamptz). La comparaison se fait aussi sur
+    // la partie date uniquement.
     encounterDate: item.encounter_date
       ? item.encounter_date.slice(0, 10) !== item.created_at.slice(0, 10)
-        ? formatPostDate(item.encounter_date)
+        ? formatObservationDate(item.encounter_date)
         : undefined
       : undefined,
     // Règle de confidentialité (Nicolas 2026-05-24 — v3 mobile-friendly) :
@@ -334,7 +345,6 @@ export function FeedSection({
   const { activeSpecies, clearActiveSpecies } = useSpecies()
   const [activeTab, setActiveTab] = useState<FeedTab>('recent')
   const [filters, setFilters] = useState<FeedFilters>({ ...DEFAULT_FILTERS })
-  const [page, setPage] = useState(1)
 
   // BATCH 74 : suppression de la modale discovery "Pour vous" (decision Nicolas).
   // Le tab "Pour vous" reste disable visuellement pour les non-connectes
@@ -383,16 +393,20 @@ export function FeedSection({
     radiusKm: effectiveRadius,
   }
 
-  // useFeed — données Supabase via React Query, avec filtres appliqués
+  // V1.1.4 NG-026 (Nicolas 2026-06-03) : feed principal en scroll infini.
+  // useInfiniteFeed accumule les pages et expose un array flat `posts`,
+  // plus fetchNextPage/hasNextPage pour le sentinel IntersectionObserver.
   const {
-    data: feedData,
+    posts: rawPosts,
     isLoading: isFeedLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
     isError: isFeedError,
     refetch: refetchFeed,
-  } = useFeed(
+  } = useInfiniteFeed(
     {
       tab: tabToServiceTab[activeTab],
-      page,
       limit: 20,
       filters: feedFilters,
       // Pour vous : filtre côté serveur sur les utilisateurs suivis (follows).
@@ -400,6 +414,13 @@ export function FeedSection({
     },
     locationCoords,
   )
+
+  // Sentinel scroll infini : declenche fetchNextPage quand visible.
+  const { sentinelRef } = useInfiniteScroll({
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  })
 
   // Comptage des filtres actifs — affiché en badge numérique sur l'icône entonnoir.
   // Règle : chaque groupe de filtre "modifié" par rapport au défaut compte pour 1.
@@ -421,18 +442,9 @@ export function FeedSection({
     onHasActiveFiltersChange(activeFiltersCount)
   }, [activeFiltersCount, onHasActiveFiltersChange])
 
-  // Remettre à la page 1 quand l'onglet ou les filtres changent (reset synchrone via useState).
-  const [prevTab, setPrevTab] = useState(activeTab)
-  if (prevTab !== activeTab) {
-    setPrevTab(activeTab)
-    setPage(1)
-  }
-  const filtersKey = JSON.stringify(filters)
-  const [prevFiltersKey, setPrevFiltersKey] = useState(filtersKey)
-  if (prevFiltersKey !== filtersKey) {
-    setPrevFiltersKey(filtersKey)
-    setPage(1)
-  }
+  // V1.1.4 NG-026 : avec useInfiniteQuery, React Query reset automatiquement
+  // les pages quand la queryKey change (changement d'onglet ou filtres ->
+  // nouvelle cle). Le reset manuel de page n'est plus necessaire.
 
   const isLoading_ = isFeedLoading
   const isError_ = isFeedError
@@ -443,15 +455,15 @@ export function FeedSection({
   const { data: hiddenIds } = useHiddenPostIds()
   const hiddenSet = new Set(hiddenIds ?? [])
 
-  const posts: MockPost[] = (feedData?.data ?? [])
+  const posts: MockPost[] = rawPosts
     .filter((item) => !hiddenSet.has(item.id))
     .map((item, idx) => postFeedItemToMockPost(item, idx))
 
-  // Clé de cache du feed courant — passée au hook de réaction pour l'optimistic update
-  // Doit inclure les filtres pour matcher exactement l'entrée cache de useFeed.
-  const currentFeedQueryKey = FEED_QUERY_KEY({
+  // V1.1.4 NG-026 : cle de cache InfiniteFeed pour l'optimistic update des
+  // reactions. Le useToggleReaction reconnait maintenant le shape useInfiniteQuery
+  // ({ pages: [{ data, pagination }], pageParams }) en plus des 3 shapes existants.
+  const currentFeedQueryKey = INFINITE_FEED_QUERY_KEY({
     tab: tabToServiceTab[activeTab],
-    page,
     limit: 20,
     filters: feedFilters,
     currentUserId: user?.id,
@@ -462,8 +474,9 @@ export function FeedSection({
 
   /** Callback passé à chaque FeedPost — déclenche la mutation optimiste */
   function handleReact(postId: string, type: ReactionType) {
-    const sourcePosts = feedData?.data ?? []
-    const post = sourcePosts.find((p: PostFeedItem) => p.id === postId)
+    // V1.1.4 NG-026 : on cherche directement dans rawPosts (flat array
+    // accumule des pages) au lieu de feedData.data (cas pagination).
+    const post = rawPosts.find((p: PostFeedItem) => p.id === postId)
     reactionMutation.mutate({
       postId,
       type,
@@ -514,11 +527,7 @@ export function FeedSection({
               className="flex-1 flex items-center gap-2 min-w-0 focus-visible:outline-none rounded-full"
               aria-label="Modifier la recherche"
             >
-              <Search
-                className="size-4 text-primary shrink-0"
-                strokeWidth={3}
-                aria-hidden="true"
-              />
+              <Search className="size-4 text-primary shrink-0" strokeWidth={3} aria-hidden="true" />
               <span className="text-sm font-medium text-foreground truncate text-left">
                 {activeSpecies.common_name ?? activeSpecies.scientific_name}
               </span>
@@ -765,29 +774,39 @@ export function FeedSection({
             </div>
           )}
 
-          {/* Pagination */}
-          {feedData && feedData.pagination.totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-4">
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={!feedData.pagination.hasPrevious}
-                className="h-9 px-4 rounded-full border border-border text-sm disabled:opacity-40 hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                {t('common.previous', { defaultValue: 'Précédent' })}
-              </button>
-              <span className="h-9 px-4 flex items-center text-sm text-muted-foreground">
-                {page} / {feedData?.pagination.totalPages}
-              </span>
-              <button
-                type="button"
-                onClick={() => setPage((p) => p + 1)}
-                disabled={!feedData?.pagination.hasNext}
-                className="h-9 px-4 rounded-full border border-border text-sm disabled:opacity-40 hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                {t('common.next', { defaultValue: 'Suivant' })}
-              </button>
+          {/* V1.1.4 NG-026 (Nicolas 2026-06-03) : sentinel scroll infini.
+              Le div est observe par useInfiniteScroll qui declenche
+              fetchNextPage des qu'il entre dans le viewport. Loader visible
+              pendant le fetch. */}
+          {hasNextPage && (
+            <div
+              ref={sentinelRef}
+              className="flex justify-center items-center py-6 text-muted-foreground"
+              aria-hidden={!isFetchingNextPage}
+            >
+              {isFetchingNextPage && (
+                <span className="inline-flex items-center gap-2 text-sm">
+                  <Loader2
+                    className="size-4 motion-safe:animate-spin"
+                    aria-hidden="true"
+                    strokeWidth={2.5}
+                  />
+                  {t('common.loading', { defaultValue: 'Chargement...' })}
+                </span>
+              )}
             </div>
+          )}
+
+          {/* V1.1.4 round 12 (Nicolas 2026-06-03) : message de fin de liste.
+              L'utilisateur sait qu'il a tout vu (pas de fausse impression
+              qu'il reste du contenu a charger). Affiche seulement quand il y
+              a au moins quelques posts (sinon l'empty state suffit). */}
+          {!hasNextPage && posts.length >= 5 && (
+            <p className="text-center text-sm text-muted-foreground py-6">
+              {t('home.feed.endOfList', {
+                defaultValue: 'Tu as vu toutes les observations pour le moment.',
+              })}
+            </p>
           )}
         </>
       )}
