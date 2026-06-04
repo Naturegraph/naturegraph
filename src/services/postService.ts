@@ -326,11 +326,23 @@ export async function getRelatedPosts(opts: {
   const seen = new Set<string>([excludePostId])
   const results: PostFeedItem[] = []
 
-  /** Ajoute des posts uniques (hors deja vus) jusqu'a atteindre la limite. */
+  /**
+   * Regle produit (Nicolas 2026-06-04) : sur la page detail, la section
+   * "Observations susceptibles de t'interesser" ne montre JAMAIS un post sans
+   * photo (la vignette est l'accroche principale). On exclut donc tout post
+   * dont aucun media n'est une photo exploitable (type photo + url).
+   */
+  function hasPhoto(row: PostFeedItem): boolean {
+    const media = (row as unknown as { media?: Array<{ type?: string; url?: string }> }).media
+    return (media ?? []).some((m) => m.type === 'photo' && !!m.url)
+  }
+
+  /** Ajoute des posts uniques (hors deja vus, avec photo) jusqu'a la limite. */
   function collect(rows: PostFeedItem[] | null | undefined) {
     for (const row of rows ?? []) {
       if (results.length >= limit) break
       if (seen.has(row.id)) continue
+      if (!hasPhoto(row)) continue
       seen.add(row.id)
       results.push(row)
     }
