@@ -30,11 +30,12 @@
  *     d'écran.
  */
 
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useRef } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
 import { getPostById, getRelatedPosts } from '@/services/postService'
 import { postFeedItemToMockPost } from '@/components/home/FeedSection'
@@ -127,8 +128,8 @@ export default function PostDetail() {
             excludePostId: data.id,
             taxrefId: data.taxref_id ?? null,
             taxonomicGroup: data.taxonomic_group ?? null,
-            // V1.1.5 QA (Nicolas) : 3 posts similaires max, affiches en entier.
-            limit: 3,
+            // V1.1.5 QA (Nicolas) : 4 posts similaires en carrousel.
+            limit: 4,
           })
         : Promise.resolve([]),
     enabled: !!data,
@@ -166,6 +167,15 @@ export default function PostDetail() {
   // experience que Home et Profile : pas de redirect, l user reste sur sa page).
   const { onEditPost, panelNode: editPanelNode } = useEditPostFlow()
 
+  // V1.1.5 QA (Nicolas) : carrousel horizontal pour la section recommandations.
+  // Les chevrons du header font defiler d'environ une largeur de viewport.
+  const carouselRef = useRef<HTMLDivElement>(null)
+  function scrollCarousel(dir: 1 | -1) {
+    const el = carouselRef.current
+    if (!el) return
+    el.scrollBy({ left: dir * el.clientWidth * 0.9, behavior: 'smooth' })
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-cream-lighter">
       <HomeNavbar />
@@ -179,13 +189,19 @@ export default function PostDetail() {
 
           {/* Colonne centrale — Post détail */}
           <main id="main-content" className="flex-1 min-w-0 flex flex-col gap-4 px-4 md:px-0">
-            <Link
-              to="/home"
-              className="inline-flex items-center gap-2 text-sm text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded w-fit"
-            >
-              <ArrowLeft size={16} aria-hidden="true" />
-              {t('post.backToFeed', { defaultValue: 'Retour au fil' })}
-            </Link>
+            {/* V1.1.5 QA (Nicolas) : bouton retour en variant secondary
+                (coherence DS) + espacement top en mobile (la navbar sticky le
+                collait sinon). */}
+            <div className="pt-3 md:pt-0">
+              <Button
+                to="/home"
+                variant="secondary"
+                size="sm"
+                icon={<ArrowLeft size={16} aria-hidden="true" />}
+              >
+                {t('post.backToFeed', { defaultValue: 'Retour au fil' })}
+              </Button>
+            </div>
 
             <div aria-live="polite">
               {isLoading && <PostSkeleton />}
@@ -207,26 +223,58 @@ export default function PostDetail() {
               )}
             </div>
 
-            {/* V1.1.5 NG-028 : section "A decouvrir" — jusqu'a 3 observations
-                similaires (meme espece > groupe > recents), affichees EN ENTIER
-                comme sur le profil (FeedPost en 2 colonnes masonry). Chaque post
-                est cliquable (titre/image) vers sa page detail = exploration
-                continue. */}
+            {/* V1.1.5 NG-028 : section recommandations — jusqu'a 4 observations
+                similaires (meme espece > groupe > recents), en CARROUSEL
+                horizontal (scroll-snap). Chevrons de navigation a droite du
+                titre. Chaque post complet est cliquable (titre/image) vers sa
+                page detail = exploration continue. */}
             {!isLoading && post && relatedPosts.length > 0 && (
-              <section aria-label={t('post.related.title', { defaultValue: 'À découvrir' })}>
-                <h2 className="text-lg font-bold text-foreground mb-3 mt-2">
-                  {t('post.related.title', { defaultValue: 'À découvrir' })}
-                </h2>
-                <div className="columns-1 md:columns-2 gap-0 md:gap-6 [column-fill:_balance]">
-                  {relatedPosts.map((rp, idx) => (
-                    <div key={rp.id} className="break-inside-avoid mb-4 md:mb-6">
+              <section
+                aria-label={t('post.related.title', {
+                  defaultValue: 'Les observations qui pourraient vous intéresser',
+                })}
+              >
+                {/* Header : titre + chevrons de navigation du carrousel */}
+                <div className="flex items-center justify-between gap-3 mb-3 mt-2">
+                  <h2 className="text-lg font-bold text-foreground">
+                    {t('post.related.title', {
+                      defaultValue: 'Les observations qui pourraient vous intéresser',
+                    })}
+                  </h2>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => scrollCarousel(-1)}
+                      aria-label={t('post.related.prev', { defaultValue: 'Précédent' })}
+                      className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center text-foreground hover:bg-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      <ChevronLeft className="size-4" aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => scrollCarousel(1)}
+                      aria-label={t('post.related.next', { defaultValue: 'Suivant' })}
+                      className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center text-foreground hover:bg-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      <ChevronRight className="size-4" aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Carrousel scroll-snap : 1 post/vue mobile, ~2 desktop (peek). */}
+                <div
+                  ref={carouselRef}
+                  className="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth -mx-4 px-4 md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
+                >
+                  {relatedPosts.map((rp) => (
+                    <div key={rp.id} className="snap-start shrink-0 w-[88%] sm:w-[70%] lg:w-[48%]">
                       <Suspense fallback={<PostSkeleton />}>
                         <FeedPost
                           {...rp}
                           canInteract={isAuthenticated}
                           isOwnPost={!!profile && rp.authorId === profile.id}
                           onReact={handleReactRelated}
-                          hideEndBorder={idx === relatedPosts.length - 1}
+                          hideEndBorder
                         />
                       </Suspense>
                     </div>
