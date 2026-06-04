@@ -240,6 +240,17 @@ export function ProfileFeed({
           )}
         </div>
       )}
+
+      {/* V1.1.4 round 12 (Nicolas 2026-06-03) : message de fin de liste,
+          quand on a tout charge et qu'il y a assez de posts pour que ce
+          soit pertinent (fetchNextPage fourni = pagination active). */}
+      {fetchNextPage && !hasNextPage && sortedPosts.length >= 5 && (
+        <p className="text-center text-sm text-muted-foreground py-6">
+          {t('profile.journal.endOfList', {
+            defaultValue: 'Fin du journal, toutes les observations sont affichées.',
+          })}
+        </p>
+      )}
     </div>
   )
 }

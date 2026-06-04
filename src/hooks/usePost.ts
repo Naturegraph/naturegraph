@@ -69,11 +69,15 @@ export function useInfiniteUserPosts(
   const query = useInfiniteQuery<PostFeedItem[], Error>({
     queryKey: [...postQueryKey.byUser(userId ?? '', sort), viewerId ?? 'anon', 'infinite'],
     initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      // Si la derniere page est pleine, il y a probablement plus de posts.
-      // Sinon, on s'arrete (pagination Postgrest sans count).
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+      // V1.1.4 round 12 fix (Nicolas 2026-06-03) : on derive l'offset suivant
+      // depuis lastPageParam (offset de la page courante) + limit, PAS depuis
+      // allPages.length * limit. Avec maxPages: 10, allPages est plafonne a 10
+      // entrees, donc allPages.length * limit se figeait a 200 et rechargeait
+      // en boucle la meme page au-dela (loader infini). lastPageParam reste
+      // l'offset reel de la derniere page chargee.
       if (lastPage.length < limit) return undefined
-      return allPages.length * limit
+      return (lastPageParam as number) + limit
     },
     queryFn: async ({ pageParam }) => {
       const posts = await getPostsByUser(userId!, sort, limit, pageParam as number)
@@ -93,12 +97,13 @@ export function useInfiniteUserPosts(
     enabled: !!userId,
     staleTime: 60 * 1000,
     maxPages: 10,
-    placeholderData: (prev) => prev,
+    // V1.1.4 round 12 fix : placeholderData retire (idem useInfiniteFeed).
   })
 
   // Flatten les pages pour usage direct dans le composant.
   const posts = (query.data?.pages ?? []).flat()
 
+  // V1.1.4 round 12 : pas de useCallback manuel (React Compiler memoise).
   return {
     posts,
     isLoading: query.isLoading,

@@ -103,6 +103,18 @@ export function useInfiniteFeed(
 
       // Filtre radius cote client (Haversine), identique a useFeed.
       if (radiusKm > 0 && userCoords) {
+        // V1.1.4 round 12 fix (Nicolas 2026-06-03) : BUG boucle infinie.
+        // getFeed calcule hasNext sur le COUNT TOTAL non filtre. Avec le
+        // filtre radius cote client, une page peut etre videe entierement
+        // alors que hasNext reste true -> le scroll infini bouclait sans
+        // jamais afficher de nouveau post (loader infini). On recalcule
+        // hasNext sur la taille de la page BRUTE serveur : tant que la
+        // requete serveur renvoie une page pleine (fetchLimit), il reste
+        // potentiellement des resultats plus loin ; sinon on a atteint le
+        // bout reel des donnees. getFeed utilise fetchLimit = limit * 5
+        // quand radius actif (cf postService.getFeed).
+        const rawCount = feedResult.data.length
+        const fetchLimit = limit * 5
         feedResult.data = feedResult.data.filter((post: PostFeedItem) => {
           const lat = (post as unknown as { latitude: number | null }).latitude
           const lon = (post as unknown as { longitude: number | null }).longitude
@@ -110,6 +122,10 @@ export function useInfiniteFeed(
           return haversineKm(userCoords.lat, userCoords.lon, lat, lon) <= radiusKm
         })
         feedResult.data = feedResult.data.slice(0, limit)
+        feedResult.pagination = {
+          ...feedResult.pagination,
+          hasNext: rawCount >= fetchLimit,
+        }
       }
 
       // Enrichissement reactions (identique a useFeed).
@@ -135,18 +151,21 @@ export function useInfiniteFeed(
     // simultanes en memoire. Au-dela, React Query libere les anciennes
     // pages (mais hasNextPage reste vrai donc l'user peut continuer).
     maxPages: 10,
-    placeholderData: (prev) => prev,
+    // V1.1.4 round 12 fix : placeholderData retire. Sur une infinite query
+    // il pouvait figer l'affichage des pages precedentes pendant un fetch
+    // et brouiller la detection de fin de liste. Le skeleton initial suffit.
   })
 
   // Flatten les pages en un seul array de posts pour le composant consommateur.
   const posts = (query.data?.pages ?? []).flatMap((p) => p.data)
 
-  // V1.1.4 NG-026 : helper pour invalider en parallele les caches useFeed
-  // (pagination classique) ET useInfiniteFeed (scroll infini). Utile si on
-  // migre progressivement les composants.
   void queryClient
   void FEED_QUERY_KEY
 
+  // V1.1.4 round 12 : pas de useCallback manuel (React Compiler memoise).
+  // useInfiniteScroll lit fetchNextPage via une ref interne et ne le met
+  // pas en dependance de l'observer, donc l'instabilite de reference n'a
+  // aucun impact (plus de recreation d'observer en boucle).
   return {
     posts,
     isLoading: query.isLoading,

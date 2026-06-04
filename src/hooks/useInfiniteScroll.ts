@@ -7,28 +7,25 @@
  * la regle eco-conception CLAUDE.md (IntersectionObserver, pas de scroll
  * listener qui s'execute en continu).
  *
+ * V1.1.4 round 12 fix (Nicolas 2026-06-03) : refonte pour corriger le bug
+ * "loader en boucle". L'ancienne version recreait l'observer a chaque render
+ * (fetchNextPage instable en dependance) et pouvait soit boucler, soit ne
+ * jamais re-declencher. Nouvelle approche :
+ *   - L'observer est cree UNE fois sur le node (callback ref).
+ *   - Le callback lit les valeurs fraiches via une ref (pas de stale closure).
+ *   - Un effet re-verifie l'intersection apres chaque fin de fetch : si le
+ *     sentinel est encore visible et qu'il reste des pages, on enchaine.
+ *     C'est ce qui permet de charger plusieurs pages quand le contenu tient
+ *     dans le viewport, sans boucle infinie (borne par hasNextPage).
+ *
  * Usage type :
  *   const { sentinelRef } = useInfiniteScroll({
- *     hasNextPage,
- *     isFetchingNextPage,
- *     fetchNextPage,
- *     rootMargin: '600px', // declenche le fetch 600px avant le bas
+ *     hasNextPage, isFetchingNextPage, fetchNextPage,
  *   })
- *   return (
- *     <>
- *       {pages.map(...)}
- *       <div ref={sentinelRef} aria-hidden />
- *     </>
- *   )
- *
- * Garde-fous :
- *   - Ne re-trigger pas pendant un fetch en cours (isFetchingNextPage)
- *   - Se desabonne au demontage (cleanup)
- *   - rootMargin permet de prefetch avant que l'user n'atteigne le bas
- *     (UX fluide, pas de flicker)
+ *   {hasNextPage && <div ref={sentinelRef} aria-hidden />}
  */
 
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 export interface UseInfiniteScrollOptions {
   /** True si une page suivante existe (cf React Query useInfiniteQuery). */
@@ -36,16 +33,14 @@ export interface UseInfiniteScrollOptions {
   /** True pendant le fetch de la page suivante. Empeche le re-trigger. */
   isFetchingNextPage: boolean
   /** Callback a appeler pour charger la page suivante. */
-  fetchNextPage: () => void
+  fetchNextPage: () => void | Promise<unknown>
   /**
    * Distance du bord du viewport a laquelle on commence a prefetch.
-   * Defaut 600px : assez pour absorber un fetch lent (mobile 3G/4G).
+   * Defaut 400px : assez pour absorber un fetch lent sans charger trop
+   * de pages d'un coup (300KB budget eco-conception).
    */
   rootMargin?: string
-  /**
-   * Element racine pour l'observer (defaut : viewport navigateur).
-   * Utile si le scroll est dans un container avec overflow.
-   */
+  /** Element racine pour l'observer (defaut : viewport navigateur). */
   root?: Element | null
 }
 
@@ -58,58 +53,75 @@ export function useInfiniteScroll({
   hasNextPage,
   isFetchingNextPage,
   fetchNextPage,
-  rootMargin = '600px',
+  rootMargin = '400px',
   root = null,
 }: UseInfiniteScrollOptions): UseInfiniteScrollResult {
-  // On stocke la node dans un ref callback (pattern callback ref) pour
-  // pouvoir reagir aux changements de DOM et re-observer si necessaire.
+  // Ref qui contient toujours les valeurs fraiches. Le callback de
+  // l'observer la lit, ce qui evite de recreer l'observer a chaque render
+  // et evite les stale closures. Mise a jour via effet (jamais pendant le
+  // render : interdit par le React Compiler).
+  const stateRef = useRef({ hasNextPage, isFetchingNextPage, fetchNextPage })
+  useEffect(() => {
+    stateRef.current = { hasNextPage, isFetchingNextPage, fetchNextPage }
+  })
+
   const observerRef = useRef<IntersectionObserver | null>(null)
   const sentinelNodeRef = useRef<HTMLDivElement | null>(null)
 
-  // Effet : (re)cree l'observer quand les flags d'etat changent.
-  // L'observer se ré-attache au sentinel courant.
+  /** Declenche le fetch si les conditions sont reunies (lecture fraiche). */
+  const maybeFetch = useCallback(() => {
+    const s = stateRef.current
+    if (s.hasNextPage && !s.isFetchingNextPage) {
+      void s.fetchNextPage()
+    }
+  }, [])
+
+  // Callback ref : cree l'observer une seule fois quand le node est monte.
+  const sentinelRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      sentinelNodeRef.current = node
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+        observerRef.current = null
+      }
+      if (!node || typeof IntersectionObserver === 'undefined') return
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries[0]?.isIntersecting) maybeFetch()
+        },
+        { root, rootMargin, threshold: 0 },
+      )
+      observer.observe(node)
+      observerRef.current = observer
+    },
+    [maybeFetch, root, rootMargin],
+  )
+
+  // Apres chaque fin de fetch (isFetchingNextPage : true -> false), si le
+  // sentinel est toujours dans le viewport et qu'il reste des pages, on
+  // enchaine. Indispensable quand tout le contenu charge tient dans le
+  // viewport (sinon l'observer ne re-fire pas faute de changement
+  // d'intersection). Borne par hasNextPage donc pas de boucle infinie.
   useEffect(() => {
-    if (typeof IntersectionObserver === 'undefined') return
-    // Nettoie l'ancien observer si existant.
-    if (observerRef.current) {
-      observerRef.current.disconnect()
-      observerRef.current = null
+    if (isFetchingNextPage || !hasNextPage) return
+    const node = sentinelNodeRef.current
+    if (!node) return
+    const rect = node.getBoundingClientRect()
+    const viewportH = window.innerHeight || document.documentElement.clientHeight
+    // Marge identique a rootMargin (400px) pour coherence du prefetch.
+    if (rect.top <= viewportH + 400) {
+      maybeFetch()
     }
-    if (!hasNextPage || isFetchingNextPage) return
+  }, [isFetchingNextPage, hasNextPage, maybeFetch])
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0]
-        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage()
-        }
-      },
-      {
-        root,
-        rootMargin,
-        threshold: 0,
-      },
-    )
-
-    if (sentinelNodeRef.current) {
-      observer.observe(sentinelNodeRef.current)
-    }
-    observerRef.current = observer
-
+  // Cleanup au demontage.
+  useEffect(() => {
     return () => {
-      observer.disconnect()
+      observerRef.current?.disconnect()
       observerRef.current = null
     }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage, rootMargin, root])
-
-  // Callback ref : appelee a chaque changement du node DOM. On (re)observe
-  // si on a deja un observer et un nouveau node.
-  const sentinelRef = (node: HTMLDivElement | null) => {
-    sentinelNodeRef.current = node
-    if (node && observerRef.current) {
-      observerRef.current.observe(node)
-    }
-  }
+  }, [])
 
   return { sentinelRef }
 }

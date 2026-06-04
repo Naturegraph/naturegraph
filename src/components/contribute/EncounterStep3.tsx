@@ -464,8 +464,12 @@ export function EncounterStep3({
                       <span className="block text-sm font-medium text-foreground truncate">
                         {city.name}
                       </span>
+                      {/* V1.1.4 NG-027 round 12 (Nicolas 2026-06-03) : pays
+                          affiche pour distinguer France / Canada d'un coup
+                          d'oeil (villes homonymes FR/QC). */}
                       <span className="block text-xs text-muted-foreground truncate">
                         {city.departmentCode} · {city.regionName}
+                        {city.country ? ` · ${city.country}` : ''}
                       </span>
                     </span>
                   </button>

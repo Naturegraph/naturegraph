@@ -26,6 +26,7 @@ import { NotebookResumePicker } from '@/components/notebook/NotebookResumePicker
 import type { NotebookObservation } from '@/services/notebookService'
 import type { TaxonomicGroup } from '@/types/database'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
+import { toStorageTimestamp, toDateInputValue } from '@/utils/observationDate'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 // Pipeline submit factorisé — partagé avec ContributeInstantPanel pour
@@ -260,14 +261,12 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
         ...prev,
         title: post.title ?? '',
         description: post.description ?? '',
-        // V1.1.4 NG-027 (Nicolas 2026-06-03) : encounter_date est TIMESTAMPTZ
+        // V1.1.4 NG-027 round 12 : lecture date-only sans decalage timezone
+        // (cf utils/observationDate.toDateInputValue). Avant : encounter_date est TIMESTAMPTZ
         // en DB, Supabase renvoie un ISO complet ("2026-05-15T00:00:00.000Z").
         // L'<input type="date"> exige strict YYYY-MM-DD : sans slice, certains
         // navigateurs rejettent et l'input apparait reinitialise.
-        encounterDate:
-          typeof post.encounter_date === 'string' && post.encounter_date.length >= 10
-            ? post.encounter_date.slice(0, 10)
-            : prev.encounterDate,
+        encounterDate: toDateInputValue(post.encounter_date) || prev.encounterDate,
         timeOfDay: (post.time_of_day ?? '') as EncounterFormData['timeOfDay'],
         weather: (post.weather ?? '') as EncounterFormData['weather'],
         habitat: (post.habitat ?? '') as EncounterFormData['habitat'],
@@ -472,7 +471,9 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
         title: form.title.trim() || undefined,
         description: form.description.trim(),
         visibility: 'public',
-        encounter_date: form.encounterDate,
+        // V1.1.4 NG-027 round 12 : ancre midi UTC pour eviter le decalage -1
+        // jour (colonne timestamptz, cf utils/observationDate).
+        encounter_date: toStorageTimestamp(form.encounterDate),
         time_of_day: timeOfDay,
         weather: form.weather || undefined,
         habitat: form.habitat || undefined,

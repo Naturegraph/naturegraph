@@ -303,6 +303,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // V1.1.4 NG-004B round 12 (Nicolas 2026-06-03) : BUG critique session PWA.
+      // On IGNORE l'event INITIAL_SESSION. Le boot est gere exclusivement par
+      // handleAuthBoot() via getSession(), qui rafraichit l'access token si
+      // necessaire (cas reouverture PWA apres plusieurs heures/jours : l'access
+      // token est expire mais le refresh token valide 30j permet de restaurer).
+      // Avant ce fix, onAuthStateChange recevait un INITIAL_SESSION avec
+      // session=null transitoire (avant resolution du storage/refresh) et
+      // mettait isLoading=false + isAuthenticated=false -> la Landing
+      // s'affichait au lieu du feed, et il fallait un refresh manuel pour que
+      // getSession recupere la vraie session. En laissant getSession seul
+      // gerer le boot, l'utilisateur deja connecte arrive directement sur le feed.
+      if (event === 'INITIAL_SESSION') return
+
       // BATCH 103 : SIGNED_OUT déclenché par un refresh fail -> purge propre
       if (event === 'SIGNED_OUT') {
         clearAuthStorage()

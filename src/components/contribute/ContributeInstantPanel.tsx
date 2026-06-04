@@ -28,6 +28,7 @@ import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import { useContributePostSubmit } from '@/hooks/useContributePostSubmit'
 import { readDraft, useDraftAutoSave, clearDraft } from '@/hooks/useContributeDraft'
 import { useToast } from '@/contexts/ToastContext'
+import { toStorageTimestamp, toDateInputValue } from '@/utils/observationDate'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { useLocationAutocomplete } from '@/hooks/useLocationAutocomplete'
@@ -174,13 +175,9 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
         ...prev,
         title: post.title ?? '',
         description: post.description ?? '',
-        // V1.1.4 NG-027 (Nicolas 2026-06-03) : meme fix que ContributeEncounterForm.
-        // encounter_date est TIMESTAMPTZ, Supabase renvoie ISO complet.
-        // L'<input type="date"> reinitialise si on ne slice pas a YYYY-MM-DD.
-        encounterDate:
-          typeof post.encounter_date === 'string' && post.encounter_date.length >= 10
-            ? post.encounter_date.slice(0, 10)
-            : prev.encounterDate,
+        // V1.1.4 NG-027 round 12 : lecture date-only sans decalage timezone
+        // (cf utils/observationDate). encounter_date est TIMESTAMPTZ.
+        encounterDate: toDateInputValue(post.encounter_date) || prev.encounterDate,
         timeOfDay: (post.time_of_day ?? '') as InstantFormData['timeOfDay'],
         weather: (post.weather ?? '') as InstantFormData['weather'],
         phenomenon: phenomenonId,
@@ -340,7 +337,8 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
           title: form.title.trim() || undefined,
           description: form.description.trim(),
           visibility: 'public',
-          encounter_date: form.encounterDate,
+          // V1.1.4 NG-027 round 12 : ancre midi UTC (cf utils/observationDate).
+          encounter_date: toStorageTimestamp(form.encounterDate),
           time_of_day: timeOfDay,
           weather: form.weather || undefined,
           location_name: form.locationName || undefined,
@@ -965,8 +963,10 @@ function InstantStep2({
                       <span className="block text-sm font-medium text-foreground truncate">
                         {city.name}
                       </span>
+                      {/* V1.1.4 NG-027 round 12 : pays affiche (France/Canada). */}
                       <span className="block text-xs text-muted-foreground truncate">
                         {city.departmentCode} · {city.regionName}
+                        {city.country ? ` · ${city.country}` : ''}
                       </span>
                     </span>
                   </button>

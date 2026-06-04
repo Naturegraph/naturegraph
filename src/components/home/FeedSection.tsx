@@ -48,6 +48,7 @@ import { useToggleReaction } from '@/hooks/usePost'
 // import { requestBrowserLocation } from '@/lib/location/geocoding'
 // import type { LocationFormData } from '@/types/location'
 import type { PostFeedItem, ReactionType } from '@/types/database'
+import { formatObservationDate } from '@/utils/observationDate'
 import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
 
 /**
@@ -183,9 +184,13 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
     // bloc pour ne pas dupliquer l info). encounter_date est stocke en YYYY-MM-DD
     // par le formulaire d encounter, created_at est un timestamp complet, donc
     // on compare uniquement la partie date.
+    // V1.1.4 NG-027 round 12 : formatObservationDate lit la partie calendaire
+    // sans conversion timezone (evite le decalage -1 jour sur la date pure
+    // d'observation stockee en timestamptz). La comparaison se fait aussi sur
+    // la partie date uniquement.
     encounterDate: item.encounter_date
       ? item.encounter_date.slice(0, 10) !== item.created_at.slice(0, 10)
-        ? formatPostDate(item.encounter_date)
+        ? formatObservationDate(item.encounter_date)
         : undefined
       : undefined,
     // Règle de confidentialité (Nicolas 2026-05-24 — v3 mobile-friendly) :
@@ -774,9 +779,8 @@ export function FeedSection({
 
           {/* V1.1.4 NG-026 (Nicolas 2026-06-03) : sentinel scroll infini.
               Le div est observe par useInfiniteScroll qui declenche
-              fetchNextPage des qu'il entre dans le viewport (avec 600px
-              de marge). Loader visible pendant le fetch. Quand plus de
-              page : pas de sentinel rendu (silent). */}
+              fetchNextPage des qu'il entre dans le viewport. Loader visible
+              pendant le fetch. */}
           {hasNextPage && (
             <div
               ref={sentinelRef}
@@ -794,6 +798,18 @@ export function FeedSection({
                 </span>
               )}
             </div>
+          )}
+
+          {/* V1.1.4 round 12 (Nicolas 2026-06-03) : message de fin de liste.
+              L'utilisateur sait qu'il a tout vu (pas de fausse impression
+              qu'il reste du contenu a charger). Affiche seulement quand il y
+              a au moins quelques posts (sinon l'empty state suffit). */}
+          {!hasNextPage && posts.length >= 5 && (
+            <p className="text-center text-sm text-muted-foreground py-6">
+              {t('home.feed.endOfList', {
+                defaultValue: 'Tu as vu toutes les observations pour le moment.',
+              })}
+            </p>
           )}
         </>
       )}
