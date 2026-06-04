@@ -225,6 +225,10 @@ export default function PostDetail() {
                     onEditPost={isOwnPost ? onEditPost : undefined}
                     hideEndBorder
                     linkToDetail={false}
+                    // V1.1.5 (Nicolas) : sur la page detail, description complete
+                    // (pas de "Voir plus") + chips categorie/espece passifs.
+                    expandContent
+                    disableChipFilters
                   />
                 </Suspense>
               )}
