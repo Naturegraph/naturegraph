@@ -48,7 +48,15 @@ const INPUT_PILL_CLASS =
  * Bouton X discret pour vider un input rapidement (V1.1.5 Nicolas 2026-05-31).
  * Visible uniquement si la valeur n est pas vide. Click -> setter('').
  */
-function ClearButton({ value, onClear, label }: { value: string; onClear: () => void; label: string }) {
+function ClearButton({
+  value,
+  onClear,
+  label,
+}: {
+  value: string
+  onClear: () => void
+  label: string
+}) {
   if (!value) return null
   return (
     <button
@@ -64,6 +72,34 @@ function ClearButton({ value, onClear, label }: { value: string; onClear: () => 
 
 const TEXTAREA_CLASS =
   'w-full px-4 py-3 rounded-2xl border-[0.5px] border-border bg-background text-sm text-foreground placeholder:text-muted-foreground resize-none transition-colors focus:outline-none focus:bg-primary-light focus:border-primary focus:ring-2 focus:ring-primary'
+
+/**
+ * Normalise et valide un lien social / site web saisi par l'utilisateur.
+ *
+ * Regle V1.1.6 (Nicolas 2026-06-05) : on stocke desormais l'URL COMPLETE
+ * (fini l'extraction de pseudo, source de confusion "mon lien ne se garde
+ * pas"). Si l'utilisateur omet le schema (http/https), on prefixe https://
+ * automatiquement pour rester tolerant. Un champ vide est autorise (= efface
+ * le lien).
+ *
+ * @returns value = URL complete normalisee (ou null si champ vide),
+ *          error = true si la saisie n'est pas une URL exploitable.
+ */
+function normalizeSocialUrl(raw: string): { value: string | null; error: boolean } {
+  const trimmed = raw.trim()
+  if (!trimmed) return { value: null, error: false }
+  const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+  try {
+    const url = new URL(candidate)
+    // http(s) uniquement + hostname plausible (doit contenir au moins un point).
+    if ((url.protocol === 'https:' || url.protocol === 'http:') && url.hostname.includes('.')) {
+      return { value: url.toString(), error: false }
+    }
+  } catch {
+    /* saisie non parsable en URL */
+  }
+  return { value: null, error: true }
+}
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 
@@ -81,6 +117,13 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
   const [instagram, setInstagram] = useState(profile.instagram ?? '')
   const [facebook, setFacebook] = useState(profile.facebook ?? '')
   const [website, setWebsite] = useState(profile.website ?? '')
+  // V1.1.6 : erreurs de validation des liens (URL complete requise). Affichees
+  // inline sous chaque champ apres une tentative de save invalide.
+  const [socialErrors, setSocialErrors] = useState<{
+    instagram?: boolean
+    facebook?: boolean
+    website?: boolean
+  }>({})
   const [weekGoal, setWeekGoal] = useState<number>(profile.weekProgress?.goal ?? 5)
   // `weekGoalInput` permet à l'utilisateur de vider l'input pour taper
   // un nombre — sans ça type="number" + Number('') = NaN bloquait la saisie.
@@ -98,24 +141,24 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
     () => ({
       save() {
         if (!isUsernameValid) return false
-        // Extrait le username depuis une URL si l user colle un lien complet :
-        // https://www.instagram.com/naturegraph -> naturegraph
-        // https://facebook.com/naturegraph -> naturegraph
-        // @naturegraph -> naturegraph
-        // naturegraph -> naturegraph (deja propre)
-        function extractHandle(raw: string, domainEscaped: string): string {
-          let s = raw.trim().replace(/^@+/, '')
-          const re = new RegExp(`(?:https?:\\/\\/)?(?:www\\.)?${domainEscaped}\\/([^/?#]+)`, 'i')
-          const match = s.match(re)
-          if (match) s = match[1]
-          return s.replace(/\/$/, '')
+        // V1.1.6 : on enregistre les liens sous forme d'URL COMPLETE. On valide
+        // chaque champ ; si une saisie n'est pas une URL exploitable, on bloque
+        // la sauvegarde et on affiche l'erreur inline (pas de save silencieux
+        // partiel qui ferait croire "mon lien ne se garde pas").
+        const ig = normalizeSocialUrl(instagram)
+        const fb = normalizeSocialUrl(facebook)
+        const web = normalizeSocialUrl(website)
+        if (ig.error || fb.error || web.error) {
+          setSocialErrors({ instagram: ig.error, facebook: fb.error, website: web.error })
+          return false
         }
+        setSocialErrors({})
         onSave({
           username: trimmedUsername,
           bio: bio || null,
-          instagram: extractHandle(instagram, 'instagram\\.com') || null,
-          facebook: extractHandle(facebook, 'facebook\\.com') || null,
-          website: website.trim() || null,
+          instagram: ig.value,
+          facebook: fb.value,
+          website: web.value,
           weekProgress: {
             current: profile.weekProgress?.current ?? 0,
             goal: weekGoal,
@@ -218,56 +261,131 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
         <p className="text-sm font-medium text-foreground">
           {t('profile.edit.socialsTitle', { defaultValue: 'Reseaux sociaux et lien externe' })}
         </p>
+        {/* V1.1.6 : on attend desormais un lien COMPLET (https://...). */}
+        <p className="text-xs text-muted-foreground -mt-1">
+          {t('profile.edit.socialsHelper', {
+            defaultValue: 'Colle le lien complet (commençant par https://).',
+          })}
+        </p>
 
-        {/* Instagram - URL ou pseudo (extraction auto au save) */}
-        <div className="flex items-center gap-2">
-          <Instagram className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
-          <input
-            type="text"
-            value={instagram}
-            onChange={(e) => setInstagram(e.target.value)}
-            placeholder={t('profile.edit.instagramPlaceholder', {
-              defaultValue: 'naturegraph ou URL',
-            })}
-            maxLength={200}
-            aria-label="Instagram"
-            className={`${INPUT_PILL_CLASS} flex-1 min-w-0`}
-          />
-          <ClearButton value={instagram} onClear={() => setInstagram('')} label="Effacer Instagram" />
+        {/* Instagram - URL complete */}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <Instagram className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
+            <input
+              type="url"
+              inputMode="url"
+              value={instagram}
+              onChange={(e) => {
+                setInstagram(e.target.value)
+                if (socialErrors.instagram) setSocialErrors((s) => ({ ...s, instagram: false }))
+              }}
+              placeholder={t('profile.edit.instagramPlaceholder', {
+                defaultValue: 'https://instagram.com/ton-compte',
+              })}
+              maxLength={200}
+              aria-label="Instagram"
+              aria-invalid={socialErrors.instagram || undefined}
+              className={`${INPUT_PILL_CLASS} flex-1 min-w-0 ${
+                socialErrors.instagram ? '!border-[var(--color-error)] !ring-0' : ''
+              }`}
+            />
+            <ClearButton
+              value={instagram}
+              onClear={() => {
+                setInstagram('')
+                setSocialErrors((s) => ({ ...s, instagram: false }))
+              }}
+              label="Effacer Instagram"
+            />
+          </div>
+          {socialErrors.instagram && (
+            <p className="text-xs text-[var(--color-error)] pl-7">
+              {t('profile.edit.socialUrlError', {
+                defaultValue: 'Entre un lien complet valide, par exemple https://...',
+              })}
+            </p>
+          )}
         </div>
 
-        {/* Facebook - URL ou pseudo */}
-        <div className="flex items-center gap-2">
-          <Facebook className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
-          <input
-            type="text"
-            value={facebook}
-            onChange={(e) => setFacebook(e.target.value)}
-            placeholder={t('profile.edit.facebookPlaceholder', {
-              defaultValue: 'naturegraph ou URL',
-            })}
-            maxLength={200}
-            aria-label="Facebook"
-            className={`${INPUT_PILL_CLASS} flex-1 min-w-0`}
-          />
-          <ClearButton value={facebook} onClear={() => setFacebook('')} label="Effacer Facebook" />
+        {/* Facebook - URL complete */}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <Facebook className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
+            <input
+              type="url"
+              inputMode="url"
+              value={facebook}
+              onChange={(e) => {
+                setFacebook(e.target.value)
+                if (socialErrors.facebook) setSocialErrors((s) => ({ ...s, facebook: false }))
+              }}
+              placeholder={t('profile.edit.facebookPlaceholder', {
+                defaultValue: 'https://facebook.com/ta-page',
+              })}
+              maxLength={200}
+              aria-label="Facebook"
+              aria-invalid={socialErrors.facebook || undefined}
+              className={`${INPUT_PILL_CLASS} flex-1 min-w-0 ${
+                socialErrors.facebook ? '!border-[var(--color-error)] !ring-0' : ''
+              }`}
+            />
+            <ClearButton
+              value={facebook}
+              onClear={() => {
+                setFacebook('')
+                setSocialErrors((s) => ({ ...s, facebook: false }))
+              }}
+              label="Effacer Facebook"
+            />
+          </div>
+          {socialErrors.facebook && (
+            <p className="text-xs text-[var(--color-error)] pl-7">
+              {t('profile.edit.socialUrlError', {
+                defaultValue: 'Entre un lien complet valide, par exemple https://...',
+              })}
+            </p>
+          )}
         </div>
 
         {/* Site personnel - URL complete */}
-        <div className="flex items-center gap-2">
-          <Globe className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
-          <input
-            type="url"
-            value={website}
-            onChange={(e) => setWebsite(e.target.value)}
-            placeholder={t('profile.edit.websitePlaceholder', {
-              defaultValue: 'https://mon-site.fr',
-            })}
-            maxLength={200}
-            aria-label={t('profile.edit.website', { defaultValue: 'Site web' })}
-            className={`${INPUT_PILL_CLASS} flex-1 min-w-0`}
-          />
-          <ClearButton value={website} onClear={() => setWebsite('')} label="Effacer site web" />
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <Globe className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
+            <input
+              type="url"
+              inputMode="url"
+              value={website}
+              onChange={(e) => {
+                setWebsite(e.target.value)
+                if (socialErrors.website) setSocialErrors((s) => ({ ...s, website: false }))
+              }}
+              placeholder={t('profile.edit.websitePlaceholder', {
+                defaultValue: 'https://mon-site.fr',
+              })}
+              maxLength={200}
+              aria-label={t('profile.edit.website', { defaultValue: 'Site web' })}
+              aria-invalid={socialErrors.website || undefined}
+              className={`${INPUT_PILL_CLASS} flex-1 min-w-0 ${
+                socialErrors.website ? '!border-[var(--color-error)] !ring-0' : ''
+              }`}
+            />
+            <ClearButton
+              value={website}
+              onClear={() => {
+                setWebsite('')
+                setSocialErrors((s) => ({ ...s, website: false }))
+              }}
+              label="Effacer site web"
+            />
+          </div>
+          {socialErrors.website && (
+            <p className="text-xs text-[var(--color-error)] pl-7">
+              {t('profile.edit.socialUrlError', {
+                defaultValue: 'Entre un lien complet valide, par exemple https://...',
+              })}
+            </p>
+          )}
         </div>
       </div>
 

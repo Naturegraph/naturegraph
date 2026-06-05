@@ -27,6 +27,38 @@ interface ProfileAboutCardProps {
  * Formate "Migrateur depuis janvier 2026" à partir d'un ISO date.
  * Locale FR — à passer via i18n quand on aura plus de langues.
  */
+/**
+ * Garantit un href cliquable. Les liens sont stockes en URL complete depuis
+ * V1.1.6, mais on reste tolerant si une ancienne valeur sans schema traine.
+ */
+function ensureHttp(url: string): string {
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`
+}
+
+/** Libelle propre pour un site web : hostname sans "www.". */
+function hostLabel(url: string): string {
+  try {
+    return new URL(ensureHttp(url)).hostname.replace(/^www\./, '')
+  } catch {
+    return url
+  }
+}
+
+/**
+ * Libelle propre pour un reseau social : "@pseudo" derive du 1er segment de
+ * path (ex: https://instagram.com/naturegraph -> @naturegraph). Fallback sur
+ * le hostname si pas de segment exploitable.
+ */
+function handleLabel(url: string): string {
+  try {
+    const u = new URL(ensureHttp(url))
+    const seg = u.pathname.split('/').filter(Boolean)[0]
+    return seg ? `@${seg}` : u.hostname.replace(/^www\./, '')
+  } catch {
+    return url
+  }
+}
+
 function formatMemberSince(isoDate: string): string {
   const d = new Date(isoDate)
   const months = [
@@ -99,41 +131,45 @@ export function ProfileAboutCard({ profile, compact = false }: ProfileAboutCardP
         {/* Lien site web — group entièrement en primary violet (icône + texte). */}
         {profile.website && (
           <a
-            href={
-              profile.website.startsWith('http') ? profile.website : `https://${profile.website}`
-            }
+            href={ensureHttp(profile.website)}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-primary hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
           >
             <Globe className="size-[18px] shrink-0" aria-hidden="true" />
-            <span className="font-bold underline underline-offset-2">{profile.website}</span>
+            <span className="font-bold underline underline-offset-2">
+              {hostLabel(profile.website)}
+            </span>
           </a>
         )}
 
         {/* Lien Instagram — group entièrement en primary violet (icône + texte). */}
         {profile.instagram && (
           <a
-            href={`https://instagram.com/${profile.instagram}`}
+            href={ensureHttp(profile.instagram)}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-primary hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
           >
             <Instagram className="size-[18px] shrink-0" aria-hidden="true" />
-            <span className="font-bold underline underline-offset-2">@{profile.instagram}</span>
+            <span className="font-bold underline underline-offset-2">
+              {handleLabel(profile.instagram)}
+            </span>
           </a>
         )}
 
         {/* NG-011 (2026-05-31) : lien Facebook (Twitter retire, peu d usage naturaliste). */}
         {profile.facebook && (
           <a
-            href={`https://facebook.com/${profile.facebook}`}
+            href={ensureHttp(profile.facebook)}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-primary hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
           >
             <Facebook className="size-[18px] shrink-0" aria-hidden="true" />
-            <span className="font-bold underline underline-offset-2">@{profile.facebook}</span>
+            <span className="font-bold underline underline-offset-2">
+              {handleLabel(profile.facebook)}
+            </span>
           </a>
         )}
       </div>
