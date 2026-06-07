@@ -13,7 +13,7 @@
  * TAXREF/INPN retiré du produit (cf. PRD_SPECIES_DATABASE.md).
  */
 
-import { useState, useId, useEffect, useMemo } from 'react'
+import { useState, useId, useEffect, useMemo, useRef } from 'react'
 import { Search, Trash2, Plus, Minus, HelpCircle, Filter, X, Check, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
@@ -121,11 +121,15 @@ const CLASS_TO_GROUP: Record<string, TaxonomicGroup> = {
 function SpeciesSearchBar({
   onAdd,
   onSearchActiveChange,
+  inputRef,
 }: {
   onAdd: (species: ObservationEntry['species']) => void
   /** Fire avec true des que l user tape (query non vide), false quand vide.
    *  Permet au parent de masquer le placeholder "Aucun résultat" pendant la recherche. */
   onSearchActiveChange?: (active: boolean) => void
+  /** Ref optionnelle vers l'input — permet au parent (bouton "Ajouter une
+   *  espèce") de redonner le focus a la barre de recherche. */
+  inputRef?: React.RefObject<HTMLInputElement | null>
 }) {
   const { t } = useTranslation()
   const listId = useId()
@@ -294,6 +298,7 @@ function SpeciesSearchBar({
           <div className="flex items-center gap-2 h-12 px-5 rounded-full border border-border bg-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors">
             <Search className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
             <input
+              ref={inputRef}
               type="search"
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
@@ -765,11 +770,19 @@ export function EncounterStep2({
   // Masque le placeholder "Aucun résultat" pendant que l user tape une recherche
   // (sinon il s affichait sous les suggestions, paradoxal — feedback Nicolas 2026-05-26).
   const [isSearching, setIsSearching] = useState(false)
+  // Ref vers l'input de recherche : le bouton "Ajouter une espèce" y redonne
+  // le focus (V1.2.0 — affordance multi-espèces claire sur desktop, Nicolas
+  // 2026-06-06, l'ajout multi se faisant via la barre de recherche).
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   return (
     <div className="flex flex-col gap-4">
       {/* Barre de recherche */}
-      <SpeciesSearchBar onAdd={handleAddSpecies} onSearchActiveChange={setIsSearching} />
+      <SpeciesSearchBar
+        onAdd={handleAddSpecies}
+        onSearchActiveChange={setIsSearching}
+        inputRef={searchInputRef}
+      />
 
       {/* État vide — carte blanche bordurée (Figma Frame 4621) :
           hermine + pill menthe "Aucun résultat" + hint en Quicksand Bold.
@@ -805,21 +818,24 @@ export function EncounterStep2({
         </div>
       )}
 
-      {/* Ajouter une nouvelle observation — désactivé "Bientôt" pour MVP
-          (logique multi-observation pas encore branchée côté backend). */}
+      {/* Ajouter une nouvelle observation — V1.2.0 (Nicolas 2026-06-06) :
+          activé. L'ajout multi-espèces se fait via la barre de recherche ;
+          ce bouton y redonne le focus (et la fait défiler à l'écran) pour une
+          affordance claire "ajoute une autre espèce", surtout sur desktop. */}
       {hasObservations && (
         <button
           type="button"
-          disabled
-          aria-disabled="true"
-          title={t('home.filters.comingSoon')}
-          className="flex items-center gap-2 text-sm text-muted-foreground font-medium opacity-60 cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+          onClick={() => {
+            const el = searchInputRef.current
+            if (!el) return
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            // Léger délai pour laisser le scroll se faire avant le focus (mobile).
+            window.setTimeout(() => el.focus(), 150)
+          }}
+          className="flex items-center gap-2 text-sm text-primary font-semibold hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded self-start"
         >
           <Plus className="size-4" aria-hidden="true" />
           {t('contribute.panel.addObservation')}
-          <span className="inline-flex items-center justify-center h-5 px-2 rounded-full bg-primary-light text-primary text-[10px] font-bold uppercase tracking-wide ml-1">
-            {t('home.filters.comingSoon')}
-          </span>
         </button>
       )}
 
