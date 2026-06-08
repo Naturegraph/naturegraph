@@ -21,7 +21,14 @@
 -- (nkgdgxwejqqnqmwqwegy) le 2026-06-06.
 -- =============================================================================
 
-CREATE OR REPLACE VIEW public.posts_public AS
+-- IMPORTANT : security_invoker = true OBLIGATOIRE. Sans cette option, la vue
+-- s'execute avec les droits du proprietaire et CONTOURNE les RLS de `posts`
+-- (le filtre NOT is_internal_user + visibilite/statut ne s'appliquent plus) ->
+-- posts internes/prives exposes publiquement. Toujours la conserver lors d'un
+-- CREATE OR REPLACE VIEW (l'option n'est PAS preservee automatiquement).
+CREATE OR REPLACE VIEW public.posts_public
+  WITH (security_invoker = true)
+AS
  SELECT id,
     short_id,
     user_id,
