@@ -24,7 +24,7 @@
 
 import { useEffect, useId, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Info, Loader2, MapPin, Pause, Play, Search, Trash2, X } from 'lucide-react'
+import { Funnel, Info, Loader2, MapPin, Pause, Play, Search, Trash2, X } from 'lucide-react'
 import { useNotebook } from '@/contexts/NotebookContext'
 import { searchTaxonomy, type TaxonomyHit } from '@/services/searchService'
 import { NotebookSpeciesList } from './NotebookSpeciesList'
@@ -203,7 +203,7 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
 
               {activeNotebook!.species_count > 0 && (
                 <div className="flex flex-col gap-3">
-                  <h3 className="font-title font-bold text-base text-foreground">
+                  <h3 className="font-body text-base text-foreground">
                     Carnet d&apos;observations ({activeNotebook!.species_count})
                   </h3>
                   <NotebookSpeciesList
@@ -475,24 +475,37 @@ function SpeciesSearch({
       <label htmlFor={inputId} className="sr-only">
         Rechercher une espèce
       </label>
-      <div className="flex items-center gap-2 h-12 px-4 rounded-full border border-border bg-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors">
-        <Search className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
-        <input
-          id={inputId}
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Nom de l'espèce…"
-          autoComplete="off"
-          disabled={isMutating}
-          className="flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
-        />
-        {isLoading && (
-          <Loader2
-            className="size-4 text-primary motion-safe:animate-spin shrink-0"
-            aria-hidden="true"
+      {/* Recherche + filtre (Figma Frame 4505) : input pill + bouton entonnoir 48px */}
+      <div className="flex items-center gap-4">
+        <div className="flex flex-1 min-w-0 items-center gap-2 h-12 px-5 rounded-full border border-border bg-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors">
+          <Search className="size-6 text-muted-foreground shrink-0" aria-hidden="true" />
+          <input
+            id={inputId}
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Nom de l'espèce…"
+            autoComplete="off"
+            disabled={isMutating}
+            className="flex-1 min-w-0 bg-transparent text-base text-foreground placeholder:text-[var(--color-text-secondary)]/60 focus:outline-none"
           />
-        )}
+          {isLoading && (
+            <Loader2
+              className="size-4 text-primary motion-safe:animate-spin shrink-0"
+              aria-hidden="true"
+            />
+          )}
+        </div>
+        {/* Bouton filtre — 48px, bordure 1px #C4C4CC, rounded-full (Figma).
+            Filtre par groupe a cabler ultérieurement. */}
+        <button
+          type="button"
+          aria-label="Filtrer par groupe"
+          title="Filtrer par groupe (à venir)"
+          className="size-12 shrink-0 rounded-full border border-border bg-background flex items-center justify-center text-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <Funnel className="size-6" aria-hidden="true" />
+        </button>
       </div>
 
       {/* Resultats de recherche (clic -> ajout au carnet) */}
