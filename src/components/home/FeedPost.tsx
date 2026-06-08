@@ -372,8 +372,13 @@ export function FeedPost({
 
       <div className="flex flex-col gap-5 md:p-6 px-5 py-8">
         {/* Header : auteur */}
-        <div className="flex items-start justify-between">
-          <div className="flex gap-5 items-center">
+        <div className="flex items-start justify-between gap-2">
+          {/* min-w-0 OBLIGATOIRE : complete la chaine de troncature jusqu'a la
+              rangee meta (flex-nowrap). Sans lui, "date • lieu" (nom de ville
+              long) ne se tronque pas et POUSSE la largeur au-dela de la carte
+              -> scroll horizontal de toute la page + bottom nav qui deborde sur
+              mobile (Nicolas 2026-06-08, regression du passage en flex-nowrap). */}
+          <div className="flex gap-5 items-center min-w-0">
             {/* Avatar — Figma 48px, badge 24px (Background/Neutral/Secondary).
                 Wrapped Link → navigation vers le profil de l'auteur. */}
             <Link
