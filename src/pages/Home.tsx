@@ -74,33 +74,47 @@ export default function Home() {
     }
   }, [feedViewMode])
 
-  // Restauration de la position de scroll au RETOUR (back/forward navigateur).
-  // Nicolas 2026-06-06 : après un clic galerie -> page détail -> retour, on
-  // ramène l'utilisateur exactement où il était (le feed revient du cache React
-  // Query, donc la hauteur est identique). On ne restaure QUE sur navigation
-  // POP (retour) pour ne pas perturber un accès direct/clic logo.
+  // Restauration de la position de scroll au RETOUR vers le feed.
+  // Nicolas 2026-06-06 : après un clic post -> page détail -> retour, on ramène
+  // l'utilisateur exactement où il était (feed liste ET galerie). Le feed
+  // revient du cache React Query, donc la hauteur est identique.
   const navigationType = useNavigationType()
   useEffect(() => {
+    // 1) Sauvegarde CONTINUE de la position pendant qu'on est sur le feed.
+    //    Race-free : la page détail fait un scrollTo(0,0) à son montage ; si on
+    //    ne sauvait qu'au démontage de Home, on risquait de capturer 0. Ici la
+    //    dernière position réelle du feed est toujours enregistrée.
+    let rafSave = 0
+    const onScroll = () => {
+      if (rafSave) return
+      rafSave = requestAnimationFrame(() => {
+        rafSave = 0
+        try {
+          sessionStorage.setItem('ng:feedScrollY', String(window.scrollY))
+        } catch {
+          /* no-op */
+        }
+      })
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+
+    // 2) Restauration sur navigation POP : bouton retour navigateur OU bouton
+    //    "Retour au fil" (qui fait navigate(-1)). Pas sur un accès direct / clic
+    //    logo (PUSH) pour ne pas perturber ces entrées.
     if (navigationType === 'POP') {
       try {
         const saved = sessionStorage.getItem('ng:feedScrollY')
         const y = saved ? parseInt(saved, 10) : NaN
         if (!Number.isNaN(y) && y > 0) {
-          // Restauration robuste : en vue LISTE, les cartes ont des images qui
-          // se chargent progressivement -> au 1er frame la page n'est pas encore
-          // assez haute pour atteindre `y` (le scroll retombait en haut). On
-          // ré-essaie sur plusieurs frames jusqu'à ce que la hauteur du document
-          // permette d'atteindre la cible (ou ~1s max). En galerie ça marchait
-          // déjà car les cellules ont une hauteur fixe (layout immédiat).
+          // Robuste : en liste, les images chargent progressivement -> au 1er
+          // frame la page n'est pas assez haute pour atteindre `y`. On ré-essaie
+          // sur plusieurs frames jusqu'à atteindre la cible (~1s max). En galerie
+          // ça marche aussi (cellules à hauteur fixe).
           let tries = 0
           const restore = () => {
             window.scrollTo(0, y)
             tries += 1
-            // Tant qu'on n'a pas atteint la cible (page encore trop courte) et
-            // dans la limite de ~60 frames (~1s), on retente au frame suivant.
-            if (window.scrollY < y - 2 && tries < 60) {
-              requestAnimationFrame(restore)
-            }
+            if (window.scrollY < y - 2 && tries < 60) requestAnimationFrame(restore)
           }
           requestAnimationFrame(restore)
         }
@@ -108,13 +122,10 @@ export default function Home() {
         /* no-op */
       }
     }
-    // Sauvegarde la position quand on quitte le feed (démontage Home).
+
     return () => {
-      try {
-        sessionStorage.setItem('ng:feedScrollY', String(window.scrollY))
-      } catch {
-        /* no-op */
-      }
+      window.removeEventListener('scroll', onScroll)
+      if (rafSave) cancelAnimationFrame(rafSave)
     }
     // Lecture unique au montage (navigationType reflète l'action de navigation).
     // eslint-disable-next-line react-hooks/exhaustive-deps
