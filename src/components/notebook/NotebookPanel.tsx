@@ -130,16 +130,26 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
   // ── Handlers gestion ──────────────────────────────────────────────────────
 
   async function handleContinue(nb: Notebook) {
-    await resumeNotebook(nb.id)
-    setView('edit')
+    try {
+      await resumeNotebook(nb.id)
+      setView('edit')
+    } catch (err) {
+      console.error('[NotebookPanel] resumeNotebook failed', err)
+      toast.error('Impossible d’ouvrir ce carnet', 'Réessaie dans un instant.')
+    }
   }
 
   async function handleDeleteNotebook(nb: Notebook) {
     if (!window.confirm('Supprimer ce carnet et toutes ses observations ? Action irréversible.')) {
       return
     }
-    await deleteNotebook(nb.id)
-    await reloadList()
+    try {
+      await deleteNotebook(nb.id)
+      await reloadList()
+    } catch (err) {
+      console.error('[NotebookPanel] deleteNotebook failed', err)
+      toast.error('Suppression impossible', 'Réessaie dans un instant.')
+    }
   }
 
   // ── Handlers creation ─────────────────────────────────────────────────────
@@ -147,32 +157,49 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
   async function handleStart() {
     // Titre par defaut "Carnet #N" si vide, pour faciliter le suivi (Nicolas).
     const fallbackTitle = `Carnet #${notebooks.length + 1}`
-    await startNotebook({
-      title: startTitle.trim() || fallbackTitle,
-      location_name: startLocation.trim() || null,
-    })
-    setView('edit')
+    try {
+      await startNotebook({
+        title: startTitle.trim() || fallbackTitle,
+        location_name: startLocation.trim() || null,
+      })
+      setView('edit')
+    } catch (err) {
+      // Ne JAMAIS echouer en silence (ex: tables carnet absentes sur la base
+      // ciblee). Toast explicite + log pour diagnostic.
+      console.error('[NotebookPanel] startNotebook failed', err)
+      toast.error('Impossible de démarrer le carnet', 'Réessaie dans un instant.')
+    }
   }
 
   // ── Handlers edition ──────────────────────────────────────────────────────
 
   async function handleFinish() {
     // "Terminer" ENREGISTRE le carnet (status=finished), ne publie jamais.
-    const saved = await finishNotebook()
-    toast.success(
-      'Carnet enregistré',
-      `Ton carnet « ${saved.title?.trim() || 'sans titre'} » est sauvegardé. Tu pourras l'ajouter à une prochaine Rencontre nature ou le modifier quand tu veux.`,
-    )
-    onClose()
+    try {
+      const saved = await finishNotebook()
+      toast.success(
+        'Carnet enregistré',
+        `Ton carnet « ${saved.title?.trim() || 'sans titre'} » est sauvegardé. Tu pourras l'ajouter à une prochaine Rencontre nature ou le modifier quand tu veux.`,
+      )
+      onClose()
+    } catch (err) {
+      console.error('[NotebookPanel] finishNotebook failed', err)
+      toast.error('Enregistrement impossible', 'Réessaie dans un instant.')
+    }
   }
 
   async function handleDiscard() {
     if (!window.confirm('Supprimer ce carnet et toutes ses observations ? Action irréversible.')) {
       return
     }
-    await discardNotebook()
-    await reloadList()
-    setView('manage')
+    try {
+      await discardNotebook()
+      await reloadList()
+      setView('manage')
+    } catch (err) {
+      console.error('[NotebookPanel] discardNotebook failed', err)
+      toast.error('Suppression impossible', 'Réessaie dans un instant.')
+    }
   }
 
   // ── Rendu ─────────────────────────────────────────────────────────────────
@@ -355,10 +382,8 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
                 onClick={handleStart}
               >
                 <span className="inline-flex items-center gap-2">
-                  {isMutating ? (
+                  {isMutating && (
                     <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Play className="size-4" aria-hidden="true" />
                   )}
                   Continuer
                 </span>
@@ -547,8 +572,7 @@ function StartView({
           type="text"
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
-          placeholder="ex : Sortie matinale en forêt"
-          className="w-full h-12 px-5 rounded-full border border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base"
+          className="w-full h-12 px-5 rounded-full border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base"
         />
       </div>
 
@@ -568,8 +592,7 @@ function StartView({
             type="text"
             value={location}
             onChange={(e) => onLocationChange(e.target.value)}
-            placeholder="ex : Forêt de Brocéliande, Bretagne"
-            className="w-full pl-11 pr-4 h-12 rounded-full border border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base"
+            className="w-full pl-11 pr-4 h-12 rounded-full border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base"
           />
         </div>
 
