@@ -254,7 +254,9 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
 
         {/* ── Contenu scrollable ─────────────────────────────────────────── */}
         <div className="flex-1 overflow-y-auto px-5 pt-5 pb-4">
-          <h2 className="font-title font-bold text-lg text-foreground mb-4">{headerTitle}</h2>
+          {/* mb-2 (8px) : espacement titre/sous-titre conforme Figma carnet
+              (avant mb-4/16px, juge trop grand par Nicolas 2026-06-08). */}
+          <h2 className="font-title font-bold text-lg text-foreground mb-2">{headerTitle}</h2>
 
           {view === 'manage' && (
             <ManageView
@@ -422,7 +424,7 @@ function ManageView({
 }) {
   // Sous-titre commun (explique la nature de la liste).
   const subtitle = (
-    <p className="text-sm text-[var(--color-text-secondary)] leading-normal -mt-2 mb-4">
+    <p className="text-sm text-[var(--color-text-secondary)] leading-normal mb-4">
       Retrouve tes sorties enregistrées : reprends-en une pour la compléter, ou démarre un nouveau
       carnet. Tu pourras les rattacher à une Rencontre nature quand tu veux.
     </p>
