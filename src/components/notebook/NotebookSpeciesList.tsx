@@ -19,12 +19,13 @@
  *   - compact : true -> rendu condense (chips emoji, feed lecture seule)
  */
 
-import { Minus, Plus, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import {
   classDisplayConfig,
   groupObservationsByClass,
   type NotebookObservation,
 } from '@/services/notebookService'
+import { CountStepper } from '@/components/ui/CountStepper'
 
 interface NotebookSpeciesListProps {
   observations: NotebookObservation[]
@@ -127,28 +128,11 @@ export function NotebookSpeciesList({
                   {editable && (
                     <div className="flex items-center gap-2 shrink-0">
                       {onCountChange && (
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => onCountChange(obs, -1)}
-                            disabled={obs.individuals_count <= 1}
-                            aria-label={`Diminuer ${obs.species_name}`}
-                            className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                          >
-                            <Minus className="size-5" aria-hidden="true" />
-                          </button>
-                          <span className="min-w-[1.5rem] text-center text-base tabular-nums text-foreground">
-                            {obs.individuals_count}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => onCountChange(obs, +1)}
-                            aria-label={`Ajouter ${obs.species_name}`}
-                            className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                          >
-                            <Plus className="size-5" aria-hidden="true" />
-                          </button>
-                        </div>
+                        <CountStepper
+                          value={obs.individuals_count}
+                          onChange={(next) => onCountChange(obs, next - obs.individuals_count)}
+                          label={`Nombre de ${obs.species_name}`}
+                        />
                       )}
                       {onRemove && (
                         <button

@@ -132,7 +132,9 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
   useEffect(() => {
     if (!user?.id) return
     let cancelled = false
-    listUserNotebooks(user.id, { statuses: ['draft', 'active'], limit: 10 })
+    // 'finished' inclus : un carnet "Termine" est un enregistrement prive que
+    // l'user vient justement rattacher ici a sa Rencontre (Nicolas 2026-06-08).
+    listUserNotebooks(user.id, { statuses: ['draft', 'active', 'finished'], limit: 10 })
       .then((nbs) => {
         if (!cancelled) setAvailableNotebooks(nbs)
       })

@@ -14,12 +14,13 @@
  */
 
 import { useState, useId, useEffect, useMemo, useRef } from 'react'
-import { Search, Trash2, Plus, Minus, HelpCircle, Filter, X, Check, Loader2 } from 'lucide-react'
+import { Search, Trash2, Plus, HelpCircle, Filter, X, Check, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
 import { searchTaxonomy, type TaxonomyHit } from '@/services/searchService'
 import { highlightMatch } from '@/utils/highlightMatch'
 import { Button } from '@/components/ui/Button'
+import { CountStepper } from '@/components/ui/CountStepper'
 import { TAXONOMIC_GROUP_CONFIG } from '@/constants/commonSpecies'
 import hermineImg from '@/assets/images/hermine-empty-state.png'
 
@@ -719,33 +720,12 @@ function ObservationRow({
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
-        {/* Compteur — boutons cercles 32px bordes 0.5px */}
-        <div
-          className="flex items-center gap-1"
-          role="group"
-          aria-label={t('contribute.panel.individualCount')}
-        >
-          <button
-            type="button"
-            onClick={() => onCountChange(entry.id, -1)}
-            disabled={entry.count <= 1}
-            aria-label="Diminuer"
-            className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <Minus className="size-5" aria-hidden="true" />
-          </button>
-          <span className="min-w-[1.5rem] text-center text-base tabular-nums text-foreground">
-            {entry.count}
-          </span>
-          <button
-            type="button"
-            onClick={() => onCountChange(entry.id, +1)}
-            aria-label="Augmenter"
-            className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <Plus className="size-5" aria-hidden="true" />
-          </button>
-        </div>
+        {/* Compteur — saisie directe possible (CountStepper, identique carnet) */}
+        <CountStepper
+          value={entry.count}
+          onChange={(next) => onCountChange(entry.id, next - entry.count)}
+          label={t('contribute.panel.individualCount')}
+        />
 
         {/* Supprimer — neutre (pas de rouge, coherence carnet) */}
         <button

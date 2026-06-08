@@ -23,12 +23,10 @@
  */
 
 import { useEffect, useId, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Funnel, Info, Loader2, MapPin, Play, Save, Search, Trash2, X } from 'lucide-react'
 import { useNotebook } from '@/contexts/NotebookContext'
 import { searchTaxonomy, type TaxonomyHit } from '@/services/searchService'
 import { NotebookSpeciesList } from './NotebookSpeciesList'
-import { NotebookPublishDialog } from './NotebookPublishDialog'
 import { Button } from '@/components/ui/Button'
 import hermineImg from '@/assets/images/hermine-empty-state.png'
 
@@ -39,11 +37,11 @@ interface NotebookPanelProps {
 }
 
 export function NotebookPanel({ onClose }: NotebookPanelProps) {
-  const navigate = useNavigate()
   const {
     activeNotebook,
     isMutating,
     startNotebook,
+    finishNotebook,
     discardNotebook,
     addSpecies,
     removeSpecies,
@@ -57,11 +55,9 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
   // Etat etape 1 (formulaire de demarrage).
   const [startTitle, setStartTitle] = useState('')
   const [startLocation, setStartLocation] = useState('')
-  // Switch "rendre la localisation publique" (ON = publique). Le carnet ne
-  // stocke pas encore ce flag ; il sera applique a la publication (dialog).
+  // Switch "rendre la localisation publique" (ON = publique). Conserve avec le
+  // carnet, applique lors de la publication via une Rencontre nature.
   const [locationPublic, setLocationPublic] = useState(true)
-
-  const [publishOpen, setPublishOpen] = useState(false)
 
   // Fermer sur Escape (coherence avec ContributeEncounterForm).
   useEffect(() => {
@@ -87,9 +83,13 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
     })
   }
 
-  function handleFinish() {
-    // Ouvre le dialog publication (Phase 4) plutot que de finir directement.
-    setPublishOpen(true)
+  async function handleFinish() {
+    // Nicolas 2026-06-08 : "Terminer" ENREGISTRE le carnet (status=finished),
+    // il ne PUBLIE JAMAIS sur la plateforme. C'est un enregistrement prive : le
+    // carnet pourra ensuite etre rattache a une "Rencontre nature" (via le
+    // picker "reprends un carnet") qui, elle, declenche la publication.
+    await finishNotebook()
+    onClose()
   }
 
   async function handleDiscard() {
@@ -275,17 +275,6 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
           )}
         </div>
       </div>
-
-      {publishOpen && activeNotebook && (
-        <NotebookPublishDialog
-          onClose={() => setPublishOpen(false)}
-          onPublished={async (postId) => {
-            setPublishOpen(false)
-            onClose()
-            navigate(`/post/${postId}`)
-          }}
-        />
-      )}
     </>
   )
 }
