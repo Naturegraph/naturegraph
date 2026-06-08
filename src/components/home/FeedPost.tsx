@@ -413,7 +413,11 @@ export function FeedPost({
               >
                 {author.name}
               </Link>
-              <div className="flex flex-wrap gap-2 items-center">
+              {/* Rangee meta sur UNE seule ligne (Nicolas 2026-06-06) : date +
+                  lieu ne doivent pas passer sur 2 lignes meme avec un nom de
+                  ville long. nowrap + min-w-0 ; la date reste entiere (shrink-0)
+                  et c'est le LIEU qui se tronque avec "…" si necessaire. */}
+              <div className="flex flex-nowrap gap-2 items-center min-w-0">
                 {(() => {
                   // Règle globale (second-agent/04) : icône + couleur par type.
                   const cfg = POST_TYPE_ICON[postType] ?? POST_TYPE_ICON.nature_encounter
@@ -434,22 +438,26 @@ export function FeedPost({
                     aria-label={t('home.post.openDetail', {
                       defaultValue: 'Voir le détail de l’observation',
                     })}
-                    className="text-sm text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded"
+                    className="text-sm text-foreground shrink-0 whitespace-nowrap hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded"
                   >
                     {date}
                   </Link>
                 ) : (
-                  <span className="text-sm text-foreground">{date}</span>
+                  <span className="text-sm text-foreground shrink-0 whitespace-nowrap">{date}</span>
                 )}
                 {/* Localisation : affichée uniquement si publique ET si la
                     ville est connue (second-agent/29). Sinon le post n'affiche
                     que la date — pas de bullet orphelin. */}
                 {location && (
                   <>
-                    <span aria-hidden="true" className="text-foreground text-xs">
+                    <span aria-hidden="true" className="text-foreground text-xs shrink-0">
                       •
                     </span>
-                    <span className="text-sm text-foreground">{location}</span>
+                    {/* Le lieu se tronque (truncate + min-w-0) pour tenir sur une
+                        ligne ; title= expose le nom complet au survol/lecteur. */}
+                    <span className="text-sm text-foreground truncate min-w-0" title={location}>
+                      {location}
+                    </span>
                   </>
                 )}
               </div>
