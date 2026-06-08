@@ -128,7 +128,8 @@ export function NotebookResumePicker({
                       {nb.observations_count} observation
                       {nb.observations_count > 1 ? 's' : ''} ·{' '}
                       <span className="capitalize">
-                        {nb.status === 'active' ? 'En cours' : 'Brouillon'}
+                        {/* draft + active fusionnes en 'En cours' (Nicolas 2026-06-08) */}
+                        {nb.status === 'finished' ? 'Terminé' : 'En cours'}
                       </span>
                     </p>
                   </div>

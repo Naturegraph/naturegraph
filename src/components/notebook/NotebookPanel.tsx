@@ -55,9 +55,12 @@ const SEARCH_GROUP_FILTERS: { key: string; label: string; class: string }[] = [
   { key: 'fish', label: 'Poissons', class: 'Actinopterygii' },
 ]
 
+// 'draft' et 'active' fusionnes visuellement en 'En cours' (Nicolas 2026-06-08).
+// La distinction (un seul carnet actif a la fois) reste geree en interne mais
+// n'est plus exposee a l'utilisateur : plus simple a comprendre.
 const STATUS_LABEL: Record<string, string> = {
   active: 'En cours',
-  draft: 'Brouillon',
+  draft: 'En cours',
   finished: 'Terminé',
   published: 'Publié',
 }
