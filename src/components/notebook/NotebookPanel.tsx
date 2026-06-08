@@ -167,7 +167,7 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
       // Ne JAMAIS echouer en silence (ex: tables carnet absentes sur la base
       // ciblee). Toast explicite + log pour diagnostic.
       console.error('[NotebookPanel] startNotebook failed', err)
-      toast.error('Impossible de démarrer le carnet', 'Réessaie dans un instant.')
+      toast.error('Impossible de continuer le carnet à ce stade', 'Réessaie dans un instant.')
     }
   }
 

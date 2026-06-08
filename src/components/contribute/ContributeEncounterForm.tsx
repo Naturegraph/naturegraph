@@ -688,7 +688,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
             className="px-5 pt-5 pb-4 flex flex-col gap-1"
           >
             {/* Titre de l'étape */}
-            <h2 className="font-title font-bold text-lg text-foreground mb-4">
+            <h2 className="font-title font-bold text-lg text-foreground mb-1">
               {stepTitles[step]}
             </h2>
 
