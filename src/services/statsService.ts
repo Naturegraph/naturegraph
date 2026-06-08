@@ -194,18 +194,24 @@ export async function getImpactStats(period: StatsPeriod = 'month'): Promise<Imp
         .lt('created_at', current),
     ),
 
-    // Migrateurs (comptes créés), période courante, exclut les is_internal
+    // Migrateurs (comptes créés), période courante, exclut les is_internal.
+    // Nicolas 2026-06-06 : on ne compte QUE les comptes réellement finalisés.
+    // Un pseudo auto "user_xxxxxxxx" = onboarding non terminé (compte créé via
+    // invitation mais étape pseudo non validée) -> exclu, pour un chiffre réel.
+    // Finir l'onboarding implique d'avoir choisi un pseudo ET d'être connecté.
     c
       .from('profiles')
       .select('id', { count: 'exact', head: true })
       .eq('is_internal', false)
+      .not('username', 'like', 'user\\_%')
       .gte('created_at', current),
 
-    // Migrateurs, période précédente
+    // Migrateurs, période précédente (même filtre pour cohérence du trend)
     c
       .from('profiles')
       .select('id', { count: 'exact', head: true })
       .eq('is_internal', false)
+      .not('username', 'like', 'user\\_%')
       .gte('created_at', oldest)
       .lt('created_at', current),
   ])

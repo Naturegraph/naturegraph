@@ -1105,7 +1105,15 @@ export default function AdminBeta() {
                   {waitlist.map((entry, idx) => {
                     // Statut dérivé de l'état réel (cf. helper waitlistStatus).
                     const registered = registeredByEmail[entry.email.toLowerCase()]
-                    const status = waitlistStatus(entry, !!registered)
+                    // Nicolas 2026-06-06 : un profil au pseudo auto "user_xxxxxxxx"
+                    // = compte créé mais onboarding NON terminé. On ne le considère
+                    // pas comme "inscrit" → on garde le bouton "Renvoyer" (relance
+                    // avec le MÊME code via l'edge function) au lieu de "Voir le
+                    // profil". Permet de relancer les invités restés en chemin.
+                    const isAutoUsername =
+                      !!registered && /^user_[0-9a-f]+$/i.test(registered.username)
+                    const isFullyRegistered = !!registered && !isAutoUsername
+                    const status = waitlistStatus(entry, isFullyRegistered)
                     const isInvited = !!entry.invited_at
                     const isProcessing = processingId === entry.id
                     return (
@@ -1171,7 +1179,7 @@ export default function AdminBeta() {
                         {/* Actions, dépendent du statut */}
                         <td className="px-5 py-3 text-right align-top">
                           <div className="inline-flex items-center gap-1">
-                            {registered ? (
+                            {isFullyRegistered && registered ? (
                               /* Inscrit : accès direct à son profil de migrateur */
                               <Link
                                 to={`/profile/${registered.username}`}
