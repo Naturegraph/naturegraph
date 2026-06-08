@@ -113,6 +113,11 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
         statuses: ['draft', 'active', 'finished', 'published'],
         limit: 50,
       })
+      // 'En cours' (draft/active) toujours en premier, puis Termine, puis Publie
+      // (Nicolas 2026-06-08). Tri stable -> ordre recent conserve dans chaque
+      // groupe.
+      const rank = (s: string) => (s === 'active' || s === 'draft' ? 0 : s === 'finished' ? 1 : 2)
+      nbs.sort((a, b) => rank(a.status) - rank(b.status))
       setNotebooks(nbs)
     } catch {
       setNotebooks([])
