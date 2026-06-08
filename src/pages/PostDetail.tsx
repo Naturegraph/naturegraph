@@ -30,7 +30,7 @@
  *     d'écran.
  */
 
-import { Suspense, lazy, useRef } from 'react'
+import { Suspense, lazy, useRef, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -116,6 +116,15 @@ export default function PostDetail() {
   //   - un slug-uuid (« grand-duc-amerique-{uuid} ») → on extrait l'UUID en fin
   // extractPostId() gère les deux cas via regex.
   const postId = extractPostId(routeParam)
+
+  // Nicolas 2026-06-06 : forcer le scroll en HAUT a l'ouverture de la page
+  // detail. Sans ca, en SPA, la fenetre garde la position de scroll de la page
+  // precedente (ex: galerie scrollee tout en bas) -> on arrivait en bas de la
+  // page detail. On reset aussi au changement de post (clic sur une
+  // recommandation "Observations susceptibles de t'interesser").
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [postId])
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['post', postId],
