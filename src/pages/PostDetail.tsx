@@ -31,7 +31,7 @@
  */
 
 import { Suspense, lazy, useRef, useEffect } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useNavigate, useNavigationType } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -125,6 +125,18 @@ export default function PostDetail() {
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [postId])
+
+  // « Retour au fil » : on fait un VRAI retour (navigate(-1)) quand on est
+  // arrive depuis l'app (clic feed/galerie/reco = navigation PUSH). Cela
+  // declenche un POP -> Home restaure la position de scroll ET la vue galerie.
+  // En acces direct / deep-link (pas d'historique app), on va simplement au
+  // feed. cameFromApp est capture une seule fois (au montage).
+  const navigate = useNavigate()
+  const cameFromAppRef = useRef(useNavigationType() === 'PUSH')
+  function handleBackToFeed() {
+    if (cameFromAppRef.current) navigate(-1)
+    else navigate('/home')
+  }
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['post', postId],
@@ -243,7 +255,7 @@ export default function PostDetail() {
                 navbar reprend ce role). */}
             <div className="sticky top-0 z-30 bg-cream-lighter/95 backdrop-blur-sm px-4 pt-4 pb-3 md:static md:bg-transparent md:backdrop-blur-none md:px-0 md:pt-0 md:pb-0">
               <Button
-                to="/home"
+                onClick={handleBackToFeed}
                 variant="secondary"
                 size="sm"
                 icon={<ArrowLeft size={16} aria-hidden="true" />}
