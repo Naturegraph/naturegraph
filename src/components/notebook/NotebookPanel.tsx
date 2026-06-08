@@ -33,6 +33,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { searchTaxonomy, type TaxonomyHit } from '@/services/searchService'
 import { listUserNotebooks, deleteNotebook, type Notebook } from '@/services/notebookService'
+import { useLocationAutocomplete } from '@/hooks/useLocationAutocomplete'
+import type { CityResult } from '@/types/location'
 import { NotebookSpeciesList } from './NotebookSpeciesList'
 import { Button } from '@/components/ui/Button'
 import hermineImg from '@/assets/images/hermine-empty-state.png'
@@ -90,6 +92,8 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
   const [startTitle, setStartTitle] = useState('')
   const [startLocation, setStartLocation] = useState('')
   const [locationPublic, setLocationPublic] = useState(true)
+  // Ville choisie dans l'autocomplete (coords/region/pays) ou null si saisie libre.
+  const [startCity, setStartCity] = useState<CityResult | null>(null)
 
   const reloadList = useCallback(async () => {
     if (!user?.id) {
@@ -157,10 +161,18 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
   async function handleStart() {
     // Titre par defaut "Carnet #N" si vide, pour faciliter le suivi (Nicolas).
     const fallbackTitle = `Carnet #${notebooks.length + 1}`
+    // Coords/region/pays uniquement si la ville choisie correspond au texte
+    // courant (sinon saisie libre -> pas de coordonnees).
+    const city = startCity && startCity.name === startLocation.trim() ? startCity : null
     try {
       await startNotebook({
         title: startTitle.trim() || fallbackTitle,
         location_name: startLocation.trim() || null,
+        latitude: city?.centroidLat ?? null,
+        longitude: city?.centroidLng ?? null,
+        city: city?.name ?? null,
+        region: city?.regionName ?? null,
+        country: city?.country ?? null,
       })
       setView('edit')
     } catch (err) {
@@ -303,6 +315,7 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
               onTitleChange={setStartTitle}
               onLocationChange={setStartLocation}
               onLocationPublicChange={setLocationPublic}
+              onCityPick={setStartCity}
             />
           )}
 
@@ -352,6 +365,7 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
                 setStartTitle('')
                 setStartLocation('')
                 setLocationPublic(true)
+                setStartCity(null)
                 setView('create')
               }}
             >
@@ -393,20 +407,28 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
 
           {view === 'edit' && (
             <>
-              <div className="flex items-center gap-4">
-                <Button
+              <div className="flex items-center gap-3">
+                {/* Retour a la liste des carnets, toujours accessible (Nicolas
+                    2026-06-08). Le carnet reste sauvegarde (auto-save), on ne
+                    supprime rien : on revient juste a la gestion. */}
+                <button
                   type="button"
-                  variant="secondary"
-                  size="md"
-                  className="flex-1"
-                  disabled={isMutating}
-                  onClick={handleDiscard}
+                  onClick={() => setView('manage')}
+                  aria-label="Retour à mes carnets"
+                  className="size-11 shrink-0 rounded-full btn-press btn-press-secondary bg-transparent flex items-center justify-center text-[var(--color-text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action-default)]"
                 >
-                  <span className="inline-flex items-center gap-2">
-                    <Trash2 className="size-4" aria-hidden="true" />
-                    Abandonner
-                  </span>
-                </Button>
+                  <ArrowLeft className="size-4" aria-hidden="true" />
+                </button>
+                {/* Abandonner = supprime le carnet (corbeille neutre) */}
+                <button
+                  type="button"
+                  onClick={handleDiscard}
+                  disabled={isMutating}
+                  aria-label="Abandonner le carnet"
+                  className="size-11 shrink-0 rounded-full btn-press btn-press-secondary bg-transparent flex items-center justify-center text-[var(--color-text-primary)] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action-default)]"
+                >
+                  <Trash2 className="size-4" aria-hidden="true" />
+                </button>
                 <Button
                   type="button"
                   variant="primary"
@@ -417,7 +439,7 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
                 >
                   <span className="inline-flex items-center gap-2">
                     <Save className="size-4" aria-hidden="true" />
-                    Terminer
+                    Sauvegarder
                   </span>
                 </Button>
               </div>
@@ -544,6 +566,7 @@ function StartView({
   onTitleChange,
   onLocationChange,
   onLocationPublicChange,
+  onCityPick,
 }: {
   title: string
   location: string
@@ -551,10 +574,26 @@ function StartView({
   onTitleChange: (v: string) => void
   onLocationChange: (v: string) => void
   onLocationPublicChange: (v: boolean) => void
+  /** Ville choisie dans l'autocomplete (coords/region/pays) ou null si saisie libre */
+  onCityPick: (city: CityResult | null) => void
 }) {
   const titleId = useId()
   const locId = useId()
   const switchId = useId()
+
+  // Autocomplete ville FR + QC, identique a Rencontre nature (API Adresse +
+  // fallback RPC search_cities). Nicolas 2026-06-08.
+  const { suggestions, isLoading: locLoading } = useLocationAutocomplete(location)
+  const [showSuggestions, setShowSuggestions] = useState(false)
+
+  function handlePickCity(city: CityResult) {
+    onLocationChange(city.name)
+    onCityPick(city)
+    setShowSuggestions(false)
+  }
+
+  const suggestionsVisible =
+    showSuggestions && location.trim().length >= 2 && suggestions.length > 0
 
   return (
     <div className="flex flex-col gap-6">
@@ -591,9 +630,54 @@ function StartView({
             id={locId}
             type="text"
             value={location}
-            onChange={(e) => onLocationChange(e.target.value)}
-            className="w-full pl-11 pr-4 h-12 rounded-full border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base"
+            autoComplete="off"
+            onChange={(e) => {
+              onLocationChange(e.target.value)
+              // Saisie libre : on invalide la ville choisie (coords obsoletes).
+              onCityPick(null)
+              setShowSuggestions(true)
+            }}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => {
+              // Laisse le temps au clic sur une suggestion (mousedown) de passer.
+              window.setTimeout(() => setShowSuggestions(false), 120)
+            }}
+            className="w-full pl-11 pr-10 h-12 rounded-full border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base"
           />
+          {locLoading && location.trim().length >= 2 && (
+            <Loader2
+              className="absolute right-4 top-1/2 -translate-y-1/2 size-4 text-primary motion-safe:animate-spin"
+              aria-hidden="true"
+            />
+          )}
+
+          {/* Suggestions de villes (FR + QC), comme Rencontre nature */}
+          {suggestionsVisible && (
+            <ul
+              role="listbox"
+              aria-label="Suggestions de localisation"
+              className="absolute z-30 left-0 right-0 top-full mt-1 rounded-md border border-border bg-background shadow-xl overflow-hidden divide-y divide-border max-h-60 overflow-y-auto"
+            >
+              {suggestions.map((city) => (
+                <li key={`${city.name}-${city.regionName}-${city.centroidLat}-${city.centroidLng}`}>
+                  <button
+                    type="button"
+                    // mousedown (avant blur) pour ne pas fermer la liste avant le clic
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handlePickCity(city)}
+                    className="w-full text-left px-4 py-2.5 hover:bg-muted/50 focus-visible:outline-none focus-visible:bg-muted/50"
+                  >
+                    <span className="text-sm font-medium text-foreground">{city.name}</span>
+                    <span className="block text-xs text-muted-foreground truncate">
+                      {[city.regionName, city.country !== 'France' ? city.country : null]
+                        .filter(Boolean)
+                        .join(', ')}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <label
