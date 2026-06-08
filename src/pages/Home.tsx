@@ -85,7 +85,25 @@ export default function Home() {
       try {
         const saved = sessionStorage.getItem('ng:feedScrollY')
         const y = saved ? parseInt(saved, 10) : NaN
-        if (!Number.isNaN(y)) requestAnimationFrame(() => window.scrollTo(0, y))
+        if (!Number.isNaN(y) && y > 0) {
+          // Restauration robuste : en vue LISTE, les cartes ont des images qui
+          // se chargent progressivement -> au 1er frame la page n'est pas encore
+          // assez haute pour atteindre `y` (le scroll retombait en haut). On
+          // ré-essaie sur plusieurs frames jusqu'à ce que la hauteur du document
+          // permette d'atteindre la cible (ou ~1s max). En galerie ça marchait
+          // déjà car les cellules ont une hauteur fixe (layout immédiat).
+          let tries = 0
+          const restore = () => {
+            window.scrollTo(0, y)
+            tries += 1
+            // Tant qu'on n'a pas atteint la cible (page encore trop courte) et
+            // dans la limite de ~60 frames (~1s), on retente au frame suivant.
+            if (window.scrollY < y - 2 && tries < 60) {
+              requestAnimationFrame(restore)
+            }
+          }
+          requestAnimationFrame(restore)
+        }
       } catch {
         /* no-op */
       }
