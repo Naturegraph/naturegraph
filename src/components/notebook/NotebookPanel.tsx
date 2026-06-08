@@ -17,15 +17,14 @@
 import { useCallback, useEffect, useId, useState } from 'react'
 import {
   ArrowLeft,
-  ChevronRight,
   Funnel,
   Info,
   Loader2,
   MapPin,
   Play,
-  Plus,
   Save,
   Search,
+  SquarePen,
   Trash2,
   X,
 } from 'lucide-react'
@@ -183,7 +182,7 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
   const step = view === 'create' ? 1 : 2
   const headerTitle =
     view === 'manage'
-      ? 'Tes carnets'
+      ? 'Tes carnets d’observations'
       : view === 'create'
         ? 'Démarre ta sortie nature'
         : "Qu'as-tu observé ?"
@@ -328,8 +327,8 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
               }}
             >
               <span className="inline-flex items-center gap-2">
-                <Plus className="size-4" aria-hidden="true" />
-                Créer un nouveau carnet
+                <Play className="size-4" aria-hidden="true" />
+                Démarrer un nouveau carnet
               </span>
             </Button>
           )}
@@ -421,73 +420,91 @@ function ManageView({
   onContinue: (nb: Notebook) => void
   onDelete: (nb: Notebook) => void
 }) {
+  // Sous-titre commun (explique la nature de la liste).
+  const subtitle = (
+    <p className="text-sm text-[var(--color-text-secondary)] leading-normal -mt-2 mb-4">
+      Retrouve tes sorties enregistrées : reprends-en une pour la compléter, ou démarre un nouveau
+      carnet. Tu pourras les rattacher à une Rencontre nature quand tu veux.
+    </p>
+  )
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-10 text-muted-foreground">
-        <Loader2 className="size-5 motion-safe:animate-spin" aria-hidden="true" />
-      </div>
+      <>
+        {subtitle}
+        <div className="flex items-center justify-center py-10 text-muted-foreground">
+          <Loader2 className="size-5 motion-safe:animate-spin" aria-hidden="true" />
+        </div>
+      </>
     )
   }
 
   if (notebooks.length === 0) {
     return (
-      <div className="rounded-md border-[0.5px] border-border bg-background flex flex-col items-center overflow-hidden">
-        <img src={hermineImg} alt="" width={230} height={128} className="mt-6" loading="lazy" />
-        <div className="flex flex-col items-center gap-3 p-6 w-full text-center">
-          <p className="font-title font-bold text-lg text-foreground">
-            Aucun carnet pour le moment
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Crée ton premier carnet pour noter les espèces observées au fil de tes sorties.
-          </p>
+      <>
+        {subtitle}
+        <div className="rounded-md border-[0.5px] border-border bg-background flex flex-col items-center overflow-hidden">
+          <img src={hermineImg} alt="" width={230} height={128} className="mt-6" loading="lazy" />
+          <div className="flex flex-col items-center gap-3 p-6 w-full text-center">
+            <p className="font-title font-bold text-lg text-foreground">
+              Aucun carnet pour le moment
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Crée ton premier carnet pour noter les espèces observées au fil de tes sorties.
+            </p>
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
   return (
-    <ul className="flex flex-col gap-3">
-      {notebooks.map((nb) => (
-        <li key={nb.id}>
-          <div className="flex items-center gap-2 p-3 rounded-md border-[0.5px] border-border bg-background">
-            {/* Zone cliquable : continuer / consulter le carnet */}
-            <button
-              type="button"
-              onClick={() => onContinue(nb)}
-              disabled={isMutating}
-              className="flex-1 min-w-0 text-left flex items-center gap-3 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-foreground truncate">
-                    {nb.title?.trim() || 'Carnet sans titre'}
-                  </span>
-                  <span className="shrink-0 inline-flex items-center h-5 px-2 rounded-full bg-[#e7e9f7] text-[var(--color-text-secondary)] text-[11px] font-medium leading-none">
-                    {STATUS_LABEL[nb.status] ?? nb.status}
-                  </span>
+    <>
+      {subtitle}
+      <ul className="flex flex-col gap-3">
+        {notebooks.map((nb) => (
+          <li key={nb.id}>
+            <div className="flex items-center gap-2 p-3 rounded-md border-[0.5px] border-border bg-background">
+              {/* Zone cliquable : continuer / consulter le carnet */}
+              <button
+                type="button"
+                onClick={() => onContinue(nb)}
+                disabled={isMutating}
+                className="flex-1 min-w-0 text-left flex items-center gap-3 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground truncate">
+                      {nb.title?.trim() || 'Carnet sans titre'}
+                    </span>
+                    <span className="shrink-0 inline-flex items-center h-5 px-2 rounded-full bg-[#e7e9f7] text-[var(--color-text-secondary)] text-[11px] font-medium leading-none">
+                      {STATUS_LABEL[nb.status] ?? nb.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">
+                    {nb.species_count} espèce{nb.species_count > 1 ? 's' : ''}
+                    {nb.location_name ? ` · ${nb.location_name}` : ''}
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground truncate mt-0.5">
-                  {nb.species_count} espèce{nb.species_count > 1 ? 's' : ''}
-                  {nb.location_name ? ` · ${nb.location_name}` : ''}
-                </p>
-              </div>
-              <ChevronRight className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
-            </button>
+                {/* Icône édition : ouvrir / continuer le carnet */}
+                <SquarePen className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
+              </button>
 
-            {/* Supprimer — neutre */}
-            <button
-              type="button"
-              onClick={() => onDelete(nb)}
-              disabled={isMutating}
-              aria-label={`Supprimer ${nb.title?.trim() || 'ce carnet'}`}
-              className="size-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <Trash2 className="size-5" aria-hidden="true" />
-            </button>
-          </div>
-        </li>
-      ))}
-    </ul>
+              {/* Supprimer — neutre */}
+              <button
+                type="button"
+                onClick={() => onDelete(nb)}
+                disabled={isMutating}
+                aria-label={`Supprimer ${nb.title?.trim() || 'ce carnet'}`}
+                className="size-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <Trash2 className="size-5" aria-hidden="true" />
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </>
   )
 }
 
