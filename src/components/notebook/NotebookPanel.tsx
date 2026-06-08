@@ -1,46 +1,78 @@
 /**
  * NotebookPanel, V1.2.0 (NG-005/006)
  *
- * Panneau "Carnet d'observations" (mode terrain). Reprend EXACTEMENT le shell
- * visuel des panneaux Rencontre/Instant (ContributeEncounterForm) pour la
- * coherence produit :
- *   - panneau droit fixe (desktop) / plein ecran (mobile), z-[60]
- *   - header : pill teal "Carnet d'observations" + "Etape X/2" + close rond
- *     #f0f0f5 + barre de progression a 2 segments
- *   - contenu scrollable avec titre d'etape (h2)
- *   - footer sticky avec CTA principal (effet btn-press via Button DS)
+ * Panneau "Carnet d'observations". 3 vues enchainees :
+ *   - 'manage' : vue de GESTION (liste des carnets enregistres : consulter /
+ *     continuer / supprimer) + bouton "Creer un nouveau carnet". C'est l'ecran
+ *     d'entree (Nicolas 2026-06-08).
+ *   - 'create' : titre + localisation -> bouton "Continuer" (cree le carnet).
+ *   - 'edit'   : "Qu'as-tu observe ?" (recherche + filtre + liste especes) ->
+ *     "Abandonner" / "Terminer". "Terminer" ENREGISTRE le carnet (jamais de
+ *     publication) : il pourra etre rattache plus tard a une Rencontre nature.
  *
- * Wizard 2 etapes (conforme Figma 6768-11833 / 6768-12287) :
- *   - Etape 1 "Demarre ta sortie nature" : titre + localisation (+ switch
- *     public) -> bouton "Demarrer le carnet" (cree le carnet).
- *   - Etape 2 "Qu'as-tu observe ?" : recherche espece + liste regroupee par
- *     classe (NotebookSpeciesList) -> "En pause" (draft) ou "Terminer"
- *     (-> dialog publication).
- *
- * Le carnet etant un objet persiste en continu, l'etape courante est DERIVEE
- * de l'existence d'un carnet actif (pas un simple compteur local) : pas de
- * carnet -> etape 1 ; carnet actif -> etape 2 (reprise naturelle apres pause).
+ * Habillage strictement aligne sur les panneaux Rencontre/Instant
+ * (ContributeEncounterForm) pour la coherence produit.
  */
 
-import { useEffect, useId, useState } from 'react'
-import { Funnel, Info, Loader2, MapPin, Play, Save, Search, Trash2, X } from 'lucide-react'
+import { useCallback, useEffect, useId, useState } from 'react'
+import {
+  ArrowLeft,
+  ChevronRight,
+  Funnel,
+  Info,
+  Loader2,
+  MapPin,
+  Play,
+  Plus,
+  Save,
+  Search,
+  Trash2,
+  X,
+} from 'lucide-react'
 import { useNotebook } from '@/contexts/NotebookContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/contexts/ToastContext'
 import { searchTaxonomy, type TaxonomyHit } from '@/services/searchService'
+import { listUserNotebooks, deleteNotebook, type Notebook } from '@/services/notebookService'
 import { NotebookSpeciesList } from './NotebookSpeciesList'
 import { Button } from '@/components/ui/Button'
 import hermineImg from '@/assets/images/hermine-empty-state.png'
 
 const TOTAL_STEPS = 2
 
+// Groupes filtrables dans la recherche (aligne sur Rencontre nature). Le filtre
+// envoie la classe iNat correspondante a searchTaxonomy (p_class_filter).
+const SEARCH_GROUP_FILTERS: { key: string; label: string; class: string }[] = [
+  { key: 'birds', label: 'Oiseaux', class: 'Aves' },
+  { key: 'mammals', label: 'Mammifères', class: 'Mammalia' },
+  { key: 'insects', label: 'Insectes', class: 'Insecta' },
+  { key: 'amphibians', label: 'Amphibiens', class: 'Amphibia' },
+  { key: 'reptiles', label: 'Reptiles', class: 'Reptilia' },
+  { key: 'arachnids', label: 'Arachnides', class: 'Arachnida' },
+  { key: 'mollusks', label: 'Mollusques', class: 'Mollusca' },
+  { key: 'fish', label: 'Poissons', class: 'Actinopterygii' },
+]
+
+const STATUS_LABEL: Record<string, string> = {
+  active: 'En cours',
+  draft: 'Brouillon',
+  finished: 'Terminé',
+}
+
 interface NotebookPanelProps {
   onClose: () => void
 }
 
+type View = 'manage' | 'create' | 'edit'
+
 export function NotebookPanel({ onClose }: NotebookPanelProps) {
+  const { user } = useAuth()
+  const toast = useToast()
   const {
     activeNotebook,
     isMutating,
     startNotebook,
+    resumeNotebook,
     finishNotebook,
     discardNotebook,
     addSpecies,
@@ -48,47 +80,90 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
     setSpeciesCount,
   } = useNotebook()
 
-  // Etape DERIVEE : pas de carnet -> 1 (demarrage) ; carnet actif -> 2 (especes).
-  const isStartView = !activeNotebook
-  const step = isStartView ? 1 : 2
+  // Vue courante. On entre TOUJOURS par la gestion (Nicolas 2026-06-08).
+  const [view, setView] = useState<View>('manage')
 
-  // Etat etape 1 (formulaire de demarrage).
+  // Liste des carnets enregistres (gestion).
+  const [notebooks, setNotebooks] = useState<Notebook[]>([])
+  const [listLoading, setListLoading] = useState(true)
+
+  // Etat formulaire de creation (vue 'create').
   const [startTitle, setStartTitle] = useState('')
   const [startLocation, setStartLocation] = useState('')
-  // Switch "rendre la localisation publique" (ON = publique). Conserve avec le
-  // carnet, applique lors de la publication via une Rencontre nature.
   const [locationPublic, setLocationPublic] = useState(true)
 
-  // Fermer sur Escape (coherence avec ContributeEncounterForm).
+  const reloadList = useCallback(async () => {
+    if (!user?.id) {
+      setListLoading(false)
+      return
+    }
+    setListLoading(true)
+    try {
+      const nbs = await listUserNotebooks(user.id, {
+        statuses: ['draft', 'active', 'finished'],
+        limit: 50,
+      })
+      setNotebooks(nbs)
+    } catch {
+      setNotebooks([])
+    } finally {
+      setListLoading(false)
+    }
+  }, [user?.id])
+
+  useEffect(() => {
+    void reloadList()
+  }, [reloadList])
+
+  // Fermer sur Escape + bloquer le scroll body (coherence Encounter).
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
     document.addEventListener('keydown', fn)
-    return () => document.removeEventListener('keydown', fn)
-  }, [onClose])
-
-  // Bloque le scroll du body tant que le panneau est ouvert.
-  useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => {
+      document.removeEventListener('keydown', fn)
       document.body.style.overflow = ''
     }
-  }, [])
+  }, [onClose])
 
-  async function handleStart() {
-    await startNotebook({
-      title: startTitle.trim() || null,
-      location_name: startLocation.trim() || null,
-    })
+  // ── Handlers gestion ──────────────────────────────────────────────────────
+
+  async function handleContinue(nb: Notebook) {
+    await resumeNotebook(nb.id)
+    setView('edit')
   }
 
+  async function handleDeleteNotebook(nb: Notebook) {
+    if (!window.confirm('Supprimer ce carnet et toutes ses observations ? Action irréversible.')) {
+      return
+    }
+    await deleteNotebook(nb.id)
+    await reloadList()
+  }
+
+  // ── Handlers creation ─────────────────────────────────────────────────────
+
+  async function handleStart() {
+    // Titre par defaut "Carnet #N" si vide, pour faciliter le suivi (Nicolas).
+    const fallbackTitle = `Carnet #${notebooks.length + 1}`
+    await startNotebook({
+      title: startTitle.trim() || fallbackTitle,
+      location_name: startLocation.trim() || null,
+    })
+    setView('edit')
+  }
+
+  // ── Handlers edition ──────────────────────────────────────────────────────
+
   async function handleFinish() {
-    // Nicolas 2026-06-08 : "Terminer" ENREGISTRE le carnet (status=finished),
-    // il ne PUBLIE JAMAIS sur la plateforme. C'est un enregistrement prive : le
-    // carnet pourra ensuite etre rattache a une "Rencontre nature" (via le
-    // picker "reprends un carnet") qui, elle, declenche la publication.
-    await finishNotebook()
+    // "Terminer" ENREGISTRE le carnet (status=finished), ne publie jamais.
+    const saved = await finishNotebook()
+    toast.success(
+      'Carnet enregistré',
+      `Ton carnet « ${saved.title?.trim() || 'sans titre'} » est sauvegardé. Tu pourras l'ajouter à une prochaine Rencontre nature ou le modifier quand tu veux.`,
+    )
     onClose()
   }
 
@@ -97,14 +172,24 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
       return
     }
     await discardNotebook()
-    onClose()
+    await reloadList()
+    setView('manage')
   }
 
-  const stepTitle = isStartView ? 'Démarre ta sortie nature' : "Qu'as-tu observé ?"
+  // ── Rendu ─────────────────────────────────────────────────────────────────
+
+  // L'indicateur d'etape ne s'affiche que dans le wizard create/edit.
+  const showSteps = view === 'create' || view === 'edit'
+  const step = view === 'create' ? 1 : 2
+  const headerTitle =
+    view === 'manage'
+      ? 'Tes carnets'
+      : view === 'create'
+        ? 'Démarre ta sortie nature'
+        : "Qu'as-tu observé ?"
 
   return (
     <>
-      {/* Backdrop desktop — clic ferme le panneau (identique Encounter). */}
       <div
         className="fixed inset-0 z-40 bg-foreground/30 backdrop-blur-sm md:block hidden"
         aria-hidden="true"
@@ -117,22 +202,22 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
         aria-label="Carnet d'observations"
         className="fixed inset-y-0 right-0 z-[60] w-full md:w-[440px] bg-background flex flex-col shadow-2xl"
       >
-        {/* ── Header sticky (shell partage Rencontre/Instant) ─────────────── */}
+        {/* ── Header sticky ──────────────────────────────────────────────── */}
         <div className="shrink-0 pt-6 px-4 pb-3 flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
-            {/* Badge type — pill bleu nuit (couleur d'identite du Carnet,
-                #20203D = Content/Neutral/Secondary ; cf carte ContributeModal). */}
             <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-[#20203d] text-[#f0f0f5] text-sm leading-none">
               <span className="font-body">Carnet d&apos;observations</span>
             </span>
 
             <div className="flex items-center gap-4">
-              <span
-                className="font-body text-base text-foreground whitespace-nowrap"
-                aria-live="polite"
-              >
-                Étape {step}/{TOTAL_STEPS}
-              </span>
+              {showSteps && (
+                <span
+                  className="font-body text-base text-foreground whitespace-nowrap"
+                  aria-live="polite"
+                >
+                  Étape {step}/{TOTAL_STEPS}
+                </span>
+              )}
               <button
                 type="button"
                 onClick={onClose}
@@ -144,33 +229,45 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
             </div>
           </div>
 
-          {/* Barre de progression — 2 segments h-1.5 rounded-full */}
-          <div
-            className="flex gap-1"
-            role="progressbar"
-            aria-valuenow={step}
-            aria-valuemin={1}
-            aria-valuemax={TOTAL_STEPS}
-            aria-label={`Étape ${step} sur ${TOTAL_STEPS}`}
-          >
-            {[1, 2].map((i) => (
-              <div
-                key={i}
-                className={[
-                  'h-1.5 flex-1 rounded-full transition-colors duration-300',
-                  step >= i ? 'bg-[#20203d]' : 'bg-border',
-                ].join(' ')}
-                aria-hidden="true"
-              />
-            ))}
-          </div>
+          {/* Barre de progression — uniquement dans le wizard */}
+          {showSteps && (
+            <div
+              className="flex gap-1"
+              role="progressbar"
+              aria-valuenow={step}
+              aria-valuemin={1}
+              aria-valuemax={TOTAL_STEPS}
+              aria-label={`Étape ${step} sur ${TOTAL_STEPS}`}
+            >
+              {[1, 2].map((i) => (
+                <div
+                  key={i}
+                  className={[
+                    'h-1.5 flex-1 rounded-full transition-colors duration-300',
+                    step >= i ? 'bg-[#20203d]' : 'bg-border',
+                  ].join(' ')}
+                  aria-hidden="true"
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Contenu scrollable ─────────────────────────────────────────── */}
         <div className="flex-1 overflow-y-auto px-5 pt-5 pb-4">
-          <h2 className="font-title font-bold text-lg text-foreground mb-4">{stepTitle}</h2>
+          <h2 className="font-title font-bold text-lg text-foreground mb-4">{headerTitle}</h2>
 
-          {isStartView ? (
+          {view === 'manage' && (
+            <ManageView
+              notebooks={notebooks}
+              loading={listLoading}
+              isMutating={isMutating}
+              onContinue={handleContinue}
+              onDelete={handleDeleteNotebook}
+            />
+          )}
+
+          {view === 'create' && (
             <StartView
               title={startTitle}
               location={startLocation}
@@ -179,10 +276,13 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
               onLocationChange={setStartLocation}
               onLocationPublicChange={setLocationPublic}
             />
-          ) : (
+          )}
+
+          {view === 'edit' && activeNotebook && (
             <div className="flex flex-col gap-4">
               <SpeciesSearch
-                hasSpecies={activeNotebook!.species_count > 0}
+                hasSpecies={activeNotebook.species_count > 0}
+                isMutating={isMutating}
                 onAdd={async (hit) => {
                   await addSpecies({
                     taxref_id: hit.taxonomy_node_id,
@@ -192,16 +292,15 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
                     individuals_count: 1,
                   })
                 }}
-                isMutating={isMutating}
               />
 
-              {activeNotebook!.species_count > 0 && (
+              {activeNotebook.species_count > 0 && (
                 <div className="flex flex-col gap-3">
                   <h3 className="font-body text-base text-foreground">
-                    Carnet d&apos;observations ({activeNotebook!.species_count})
+                    Carnet d&apos;observations ({activeNotebook.species_count})
                   </h3>
                   <NotebookSpeciesList
-                    observations={activeNotebook!.observations}
+                    observations={activeNotebook.observations}
                     onRemove={(obs) => removeSpecies(obs.taxref_id)}
                     onCountChange={(obs, delta) =>
                       setSpeciesCount(obs.id, Math.max(1, obs.individuals_count + delta))
@@ -215,30 +314,60 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
 
         {/* ── Footer sticky ──────────────────────────────────────────────── */}
         <div className="shrink-0 border-t border-border bg-background px-5 py-4 flex flex-col gap-2">
-          {isStartView ? (
+          {view === 'manage' && (
             <Button
               type="button"
               variant="primary"
               size="md"
               className="w-full"
-              disabled={isMutating}
-              aria-busy={isMutating}
-              onClick={handleStart}
+              onClick={() => {
+                setStartTitle('')
+                setStartLocation('')
+                setLocationPublic(true)
+                setView('create')
+              }}
             >
               <span className="inline-flex items-center gap-2">
-                {isMutating ? (
-                  <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
-                ) : (
-                  <Play className="size-4" aria-hidden="true" />
-                )}
-                Démarrer le carnet
+                <Plus className="size-4" aria-hidden="true" />
+                Créer un nouveau carnet
               </span>
             </Button>
-          ) : (
+          )}
+
+          {view === 'create' && (
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setView('manage')}
+                aria-label="Retour à mes carnets"
+                className="size-11 shrink-0 rounded-full btn-press btn-press-secondary bg-transparent flex items-center justify-center text-[var(--color-text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action-default)]"
+              >
+                <ArrowLeft className="size-4" aria-hidden="true" />
+              </button>
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                className="flex-1"
+                disabled={isMutating}
+                aria-busy={isMutating}
+                onClick={handleStart}
+              >
+                <span className="inline-flex items-center gap-2">
+                  {isMutating ? (
+                    <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Play className="size-4" aria-hidden="true" />
+                  )}
+                  Continuer
+                </span>
+              </Button>
+            </div>
+          )}
+
+          {view === 'edit' && (
             <>
               <div className="flex items-center gap-4">
-                {/* Abandonner — secondaire, supprime le brouillon (Nicolas
-                    2026-06-08 : 2 boutons suffisent, on retire 'En pause'). */}
                 <Button
                   type="button"
                   variant="secondary"
@@ -252,13 +381,12 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
                     Abandonner
                   </span>
                 </Button>
-                {/* Terminer — CTA principal (ouvre le dialog de publication) */}
                 <Button
                   type="button"
                   variant="primary"
                   size="md"
                   className="flex-1"
-                  disabled={isMutating || activeNotebook!.species_count === 0}
+                  disabled={isMutating || !activeNotebook || activeNotebook.species_count === 0}
                   onClick={handleFinish}
                 >
                   <span className="inline-flex items-center gap-2">
@@ -267,7 +395,6 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
                   </span>
                 </Button>
               </div>
-              {/* Attribution sources donnees especes (coherence EncounterStep2) */}
               <p className="text-[10px] text-muted-foreground text-center mt-1">
                 Données espèces : iNaturalist (CC-BY) + GBIF + Wikidata
               </p>
@@ -279,7 +406,92 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
   )
 }
 
-// ─── Etape 1 : demarrage du carnet ───────────────────────────────────────────
+// ─── Vue GESTION : liste des carnets enregistres ─────────────────────────────
+
+function ManageView({
+  notebooks,
+  loading,
+  isMutating,
+  onContinue,
+  onDelete,
+}: {
+  notebooks: Notebook[]
+  loading: boolean
+  isMutating: boolean
+  onContinue: (nb: Notebook) => void
+  onDelete: (nb: Notebook) => void
+}) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-10 text-muted-foreground">
+        <Loader2 className="size-5 motion-safe:animate-spin" aria-hidden="true" />
+      </div>
+    )
+  }
+
+  if (notebooks.length === 0) {
+    return (
+      <div className="rounded-md border-[0.5px] border-border bg-background flex flex-col items-center overflow-hidden">
+        <img src={hermineImg} alt="" width={230} height={128} className="mt-6" loading="lazy" />
+        <div className="flex flex-col items-center gap-3 p-6 w-full text-center">
+          <p className="font-title font-bold text-lg text-foreground">
+            Aucun carnet pour le moment
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Crée ton premier carnet pour noter les espèces observées au fil de tes sorties.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <ul className="flex flex-col gap-3">
+      {notebooks.map((nb) => (
+        <li key={nb.id}>
+          <div className="flex items-center gap-2 p-3 rounded-md border-[0.5px] border-border bg-background">
+            {/* Zone cliquable : continuer / consulter le carnet */}
+            <button
+              type="button"
+              onClick={() => onContinue(nb)}
+              disabled={isMutating}
+              className="flex-1 min-w-0 text-left flex items-center gap-3 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-foreground truncate">
+                    {nb.title?.trim() || 'Carnet sans titre'}
+                  </span>
+                  <span className="shrink-0 inline-flex items-center h-5 px-2 rounded-full bg-[#e7e9f7] text-[var(--color-text-secondary)] text-[11px] font-medium leading-none">
+                    {STATUS_LABEL[nb.status] ?? nb.status}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground truncate mt-0.5">
+                  {nb.species_count} espèce{nb.species_count > 1 ? 's' : ''}
+                  {nb.location_name ? ` · ${nb.location_name}` : ''}
+                </p>
+              </div>
+              <ChevronRight className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
+            </button>
+
+            {/* Supprimer — neutre */}
+            <button
+              type="button"
+              onClick={() => onDelete(nb)}
+              disabled={isMutating}
+              aria-label={`Supprimer ${nb.title?.trim() || 'ce carnet'}`}
+              className="size-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <Trash2 className="size-5" aria-hidden="true" />
+            </button>
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+// ─── Vue CREATION : titre + localisation ─────────────────────────────────────
 
 function StartView({
   title,
@@ -302,13 +514,11 @@ function StartView({
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Description — Paragraph/Base 16px, Content/Neutral/Secondary #20203D */}
       <p className="text-base text-[var(--color-text-secondary)] leading-normal">
         Ajoute les espèces que tu observes au fil de ta sortie. Ton carnet est sauvegardé en
         continu, tu pourras le publier quand tu veux.
       </p>
 
-      {/* Titre de la sortie — input pill 48px, Stroke/Light #C4C4CC */}
       <div className="flex flex-col gap-1">
         <label htmlFor={titleId} className="text-sm text-[var(--color-text-secondary)]">
           Titre de ta sortie
@@ -323,7 +533,6 @@ function StartView({
         />
       </div>
 
-      {/* Localisation + switch public (markup identique a EncounterStep3) */}
       <div className="flex flex-col gap-1">
         <span className="inline-flex items-center gap-1 text-sm text-[var(--color-text-secondary)]">
           Localisation
@@ -345,7 +554,6 @@ function StartView({
           />
         </div>
 
-        {/* Switch : label avant, toggle apres — ON = publique (Caption 12px) */}
         <label
           htmlFor={switchId}
           className="flex items-center justify-between gap-3 cursor-pointer pt-2"
@@ -362,7 +570,6 @@ function StartView({
               onChange={(e) => onLocationPublicChange(e.target.checked)}
               className="sr-only peer"
             />
-            {/* Switch 40x20 (Figma) — track + pastille 16px, ON = #5F5DD8 */}
             <span
               aria-hidden="true"
               className={[
@@ -385,14 +592,13 @@ function StartView({
   )
 }
 
-// ─── Etape 2 : recherche + ajout d'espece ────────────────────────────────────
+// ─── Recherche + ajout d'espece (vue edition) ────────────────────────────────
 
 function SpeciesSearch({
   hasSpecies,
   onAdd,
   isMutating,
 }: {
-  /** true si le carnet contient deja des especes (masque l'empty-state hermine). */
   hasSpecies: boolean
   onAdd: (hit: TaxonomyHit) => Promise<void>
   isMutating: boolean
@@ -401,9 +607,15 @@ function SpeciesSearch({
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<TaxonomyHit[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  // Filtre par groupe (entonnoir) — meme principe que Rencontre nature.
+  const [groupKey, setGroupKey] = useState<string | null>(null)
+  const [filterOpen, setFilterOpen] = useState(false)
 
   const trimmed = query.trim()
   const hasQuery = trimmed.length >= 1
+  const classFilter = groupKey
+    ? (SEARCH_GROUP_FILTERS.find((g) => g.key === groupKey)?.class ?? null)
+    : null
 
   useEffect(() => {
     if (!hasQuery) {
@@ -416,7 +628,11 @@ function SpeciesSearch({
       if (cancelled) return
       setIsLoading(true)
       try {
-        const hits = await searchTaxonomy(trimmed, { ranks: ['species'], limit: 12 })
+        const hits = await searchTaxonomy(trimmed, {
+          ranks: ['species'],
+          classFilter: classFilter ?? undefined,
+          limit: 12,
+        })
         if (cancelled) return
         setResults(hits)
       } catch {
@@ -430,7 +646,7 @@ function SpeciesSearch({
       cancelled = true
       clearTimeout(timer)
     }
-  }, [trimmed, hasQuery])
+  }, [trimmed, hasQuery, classFilter])
 
   async function handlePick(hit: TaxonomyHit) {
     await onAdd(hit)
@@ -440,8 +656,6 @@ function SpeciesSearch({
 
   const showResults = hasQuery && results.length > 0
   const showInlineEmpty = hasQuery && !isLoading && results.length === 0
-  // Empty-state hermine : seulement si rien n'est tape ET aucune espece encore
-  // ajoutee (sinon la liste du carnet prend le relais visuel).
   const showHermine = !hasQuery && !hasSpecies
 
   return (
@@ -449,8 +663,7 @@ function SpeciesSearch({
       <label htmlFor={inputId} className="sr-only">
         Rechercher une espèce
       </label>
-      {/* Recherche + filtre (Figma Frame 4505) : input pill + bouton entonnoir 48px */}
-      <div className="flex items-center gap-4">
+      <div className="relative flex items-center gap-4">
         <div className="flex flex-1 min-w-0 items-center gap-2 h-12 px-5 rounded-full border border-border bg-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors">
           <Search className="size-6 text-muted-foreground shrink-0" aria-hidden="true" />
           <input
@@ -470,19 +683,76 @@ function SpeciesSearch({
             />
           )}
         </div>
-        {/* Bouton filtre — 48px, bordure 1px #C4C4CC, rounded-full (Figma).
-            Filtre par groupe a cabler ultérieurement. */}
+
+        {/* Bouton filtre par groupe (fonctionnel, comme Rencontre nature) */}
         <button
           type="button"
+          onClick={() => setFilterOpen((o) => !o)}
           aria-label="Filtrer par groupe"
-          title="Filtrer par groupe (à venir)"
-          className="size-12 shrink-0 rounded-full border border-border bg-background flex items-center justify-center text-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          aria-expanded={filterOpen}
+          className={[
+            'relative size-12 shrink-0 rounded-full border flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+            groupKey
+              ? 'border-primary text-primary bg-primary-light/40'
+              : 'border-border text-foreground bg-background hover:bg-muted/50',
+          ].join(' ')}
         >
           <Funnel className="size-6" aria-hidden="true" />
+          {groupKey && (
+            <span
+              aria-hidden="true"
+              className="absolute -top-1 -right-1 size-3 rounded-full bg-primary border border-background"
+            />
+          )}
         </button>
+
+        {/* Popover filtre — chips de groupe (single-select) */}
+        {filterOpen && (
+          <div className="absolute right-0 top-full mt-2 z-20 w-64 rounded-md border-[0.5px] border-border bg-background p-3 shadow-xl flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-bold text-foreground">Filtrer par groupe</span>
+              <button
+                type="button"
+                onClick={() => setFilterOpen(false)}
+                aria-label="Fermer"
+                className="size-7 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <X className="size-4" aria-hidden="true" />
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {SEARCH_GROUP_FILTERS.map((g) => {
+                const active = groupKey === g.key
+                return (
+                  <button
+                    key={g.key}
+                    type="button"
+                    onClick={() => setGroupKey(active ? null : g.key)}
+                    className={[
+                      'h-8 px-3 rounded-full text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                      active
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-[#e7e9f7] text-foreground hover:opacity-80',
+                    ].join(' ')}
+                  >
+                    {g.label}
+                  </button>
+                )
+              })}
+            </div>
+            {groupKey && (
+              <button
+                type="button"
+                onClick={() => setGroupKey(null)}
+                className="self-start text-xs text-muted-foreground hover:text-foreground underline focus-visible:outline-none"
+              >
+                Réinitialiser le filtre
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Resultats de recherche (clic -> ajout au carnet) */}
       {showResults && (
         <ul
           role="listbox"
@@ -509,15 +779,12 @@ function SpeciesSearch({
         </ul>
       )}
 
-      {/* Aucun resultat pour la recherche en cours */}
       {showInlineEmpty && (
         <p className="text-xs text-muted-foreground text-center py-2">
           Aucun résultat pour « {trimmed} »
         </p>
       )}
 
-      {/* Empty-state hermine (carnet vide, pas de recherche) — identique a
-          EncounterStep2 pour la coherence visuelle. */}
       {showHermine && (
         <div className="rounded-md border-[0.5px] border-border bg-background flex flex-col items-center overflow-hidden">
           <img src={hermineImg} alt="" width={230} height={128} className="mt-6" loading="lazy" />

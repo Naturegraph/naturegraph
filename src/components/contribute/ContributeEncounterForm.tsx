@@ -771,7 +771,22 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
                         },
                       }),
                     )
-                    setForm((prev) => ({ ...prev, observations: entries }))
+                    // Prefill titre + localisation depuis le carnet repris si
+                    // l'utilisateur n'a pas deja saisi ces champs (Nicolas
+                    // 2026-06-08 : ne pas reperdre les infos du carnet).
+                    const nb = availableNotebooks.find((n) => n.id === notebookId)
+                    setForm((prev) => ({
+                      ...prev,
+                      observations: entries,
+                      title: prev.title.trim() ? prev.title : (nb?.title?.trim() ?? prev.title),
+                      locationName: prev.locationName.trim()
+                        ? prev.locationName
+                        : (nb?.location_name ?? prev.locationName),
+                      locationLat: prev.locationLat ?? nb?.latitude ?? null,
+                      locationLng: prev.locationLng ?? nb?.longitude ?? null,
+                      locationCountry: prev.locationCountry ?? nb?.country ?? null,
+                      locationRegion: prev.locationRegion ?? nb?.region ?? null,
+                    }))
                   }}
                 />
                 <EncounterStep2
