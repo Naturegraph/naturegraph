@@ -37,6 +37,28 @@ function groupConfig(group: string | null): { emoji: string; label: string } {
 }
 
 /**
+ * Regroupe les observations par groupe taxonomique (sections + pill de classe),
+ * pour un affichage strictement aligne sur le Carnet d'observations
+ * (NotebookSpeciesList). Especes non determinees -> groupe "Autre". L'ordre
+ * suit la premiere apparition de chaque groupe.
+ */
+function groupObservations(
+  entries: ObservationEntry[],
+): { key: string; label: string; items: ObservationEntry[] }[] {
+  const order: string[] = []
+  const map = new Map<string, { key: string; label: string; items: ObservationEntry[] }>()
+  for (const e of entries) {
+    const key = e.isUnknown || !e.species ? 'other' : e.species.group
+    if (!map.has(key)) {
+      map.set(key, { key, label: groupConfig(key === 'other' ? null : key).label, items: [] })
+      order.push(key)
+    }
+    map.get(key)!.items.push(e)
+  }
+  return order.map((k) => map.get(k)!)
+}
+
+/**
  * Icône catégorie espèce — emoji du groupe dans un cercle violet clair.
  * Composant local pour rester DRY avec `SearchPanel.SpeciesCategoryIcon`
  * (même dimensions, même tokens DS — pas de duplication visuelle entre
@@ -664,71 +686,78 @@ function ObservationRow({
   const { t } = useTranslation()
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-background">
-      {/* Icône espèce — emoji du groupe taxonomique pour cohérence avec le
-          dropdown de recherche et SearchPanel (Nicolas 2026-05-21). */}
-      <div
-        className="size-9 rounded-full bg-primary-light flex items-center justify-center shrink-0 text-base leading-none"
-        aria-hidden="true"
-      >
-        {entry.isUnknown ? (
-          <HelpCircle className="size-4 text-primary" />
-        ) : (
-          <span>{groupConfig(entry.species?.group ?? null).emoji}</span>
-        )}
-      </div>
-
-      {/* Nom + groupe */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground truncate">
-          {entry.isUnknown ? t('contribute.panel.unknownSpecies') : entry.species?.commonName}
-          {entry.species?.rank === 'family' && (
-            <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-primary-light text-primary align-middle">
-              {t('contribute.panel.familyBadge', { defaultValue: 'Famille' })}
-            </span>
+    // Ligne alignee sur le carnet (NotebookSpeciesList) pour une coherence
+    // d'affichage totale entre Rencontre nature et Carnet d'observations.
+    <li className="flex items-center gap-2">
+      {/* Identite : avatar emoji 40px (#E7E9F7) + nom + nom latin */}
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <span
+          className="size-10 shrink-0 rounded-full bg-[#e7e9f7] flex items-center justify-center text-lg leading-none"
+          aria-hidden="true"
+        >
+          {entry.isUnknown ? (
+            <HelpCircle className="size-5 text-primary" />
+          ) : (
+            groupConfig(entry.species?.group ?? null).emoji
           )}
-        </p>
-        <p className="text-xs text-muted-foreground italic truncate">
-          {entry.isUnknown ? t('contribute.panel.unknownSubtitle') : entry.species?.scientificName}
-        </p>
+        </span>
+        <div className="flex flex-col min-w-0">
+          <span className="text-sm font-bold text-foreground truncate">
+            {entry.isUnknown ? t('contribute.panel.unknownSpecies') : entry.species?.commonName}
+            {entry.species?.rank === 'family' && (
+              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-[#e7e9f7] text-primary align-middle">
+                {t('contribute.panel.familyBadge', { defaultValue: 'Famille' })}
+              </span>
+            )}
+          </span>
+          <span className="text-xs italic text-[var(--color-text-secondary)] truncate tracking-wide">
+            {entry.isUnknown
+              ? t('contribute.panel.unknownSubtitle')
+              : entry.species?.scientificName}
+          </span>
+        </div>
       </div>
 
-      {/* Compteur individus */}
-      <div
-        className="flex items-center gap-1.5 shrink-0"
-        role="group"
-        aria-label={t('contribute.panel.individualCount')}
-      >
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Compteur — boutons cercles 32px bordes 0.5px */}
+        <div
+          className="flex items-center gap-1"
+          role="group"
+          aria-label={t('contribute.panel.individualCount')}
+        >
+          <button
+            type="button"
+            onClick={() => onCountChange(entry.id, -1)}
+            disabled={entry.count <= 1}
+            aria-label="Diminuer"
+            className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <Minus className="size-5" aria-hidden="true" />
+          </button>
+          <span className="min-w-[1.5rem] text-center text-base tabular-nums text-foreground">
+            {entry.count}
+          </span>
+          <button
+            type="button"
+            onClick={() => onCountChange(entry.id, +1)}
+            aria-label="Augmenter"
+            className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <Plus className="size-5" aria-hidden="true" />
+          </button>
+        </div>
+
+        {/* Supprimer — neutre (pas de rouge, coherence carnet) */}
         <button
           type="button"
-          onClick={() => onCountChange(entry.id, -1)}
-          disabled={entry.count <= 1}
-          aria-label="Diminuer"
-          className="size-6 rounded-full border border-border flex items-center justify-center hover:border-primary/60 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          onClick={() => onRemove(entry.id)}
+          aria-label={`Supprimer ${entry.species?.commonName ?? 'cette observation'}`}
+          className="size-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <Minus className="size-3" aria-hidden="true" />
-        </button>
-        <span className="text-sm font-medium w-5 text-center tabular-nums">{entry.count}</span>
-        <button
-          type="button"
-          onClick={() => onCountChange(entry.id, +1)}
-          aria-label="Augmenter"
-          className="size-6 rounded-full border border-border flex items-center justify-center hover:border-primary/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          <Plus className="size-3" aria-hidden="true" />
+          <Trash2 className="size-5" aria-hidden="true" />
         </button>
       </div>
-
-      {/* Supprimer */}
-      <button
-        type="button"
-        onClick={() => onRemove(entry.id)}
-        aria-label={`Supprimer ${entry.species?.commonName ?? 'cette observation'}`}
-        className="size-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
-      >
-        <Trash2 className="size-3.5" aria-hidden="true" />
-      </button>
-    </div>
+    </li>
   )
 }
 
@@ -801,19 +830,30 @@ export function EncounterStep2({
         </div>
       )}
 
-      {/* Carnet d'observations */}
+      {/* Carnet d'observations — groupe par classe (pills) + lignes, aligne
+          sur NotebookSpeciesList pour une coherence d'affichage totale. */}
       {hasObservations && (
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+        <div className="flex flex-col gap-4">
+          <p className="font-body text-base text-foreground">
             {t('contribute.panel.notebook')} ({observations.length})
           </p>
-          {observations.map((entry) => (
-            <ObservationRow
-              key={entry.id}
-              entry={entry}
-              onCountChange={onCountChange}
-              onRemove={onRemove}
-            />
+          {groupObservations(observations).map((grp) => (
+            <section key={grp.key} aria-label={grp.label} className="flex flex-col gap-4">
+              {/* Pill de groupe — bg #E7E9F7, label 14px bold */}
+              <span className="inline-flex items-center self-start h-8 px-3 rounded-full bg-[#e7e9f7] text-foreground text-sm font-bold">
+                {grp.label}
+              </span>
+              <ul className="flex flex-col gap-4">
+                {grp.items.map((entry) => (
+                  <ObservationRow
+                    key={entry.id}
+                    entry={entry}
+                    onCountChange={onCountChange}
+                    onRemove={onRemove}
+                  />
+                ))}
+              </ul>
+            </section>
           ))}
         </div>
       )}
