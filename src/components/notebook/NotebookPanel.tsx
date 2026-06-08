@@ -24,7 +24,7 @@
 
 import { useEffect, useId, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Funnel, Info, Loader2, MapPin, Pause, Play, Search, Trash2, X } from 'lucide-react'
+import { Funnel, Info, Loader2, MapPin, Play, Save, Search, Trash2, X } from 'lucide-react'
 import { useNotebook } from '@/contexts/NotebookContext'
 import { searchTaxonomy, type TaxonomyHit } from '@/services/searchService'
 import { NotebookSpeciesList } from './NotebookSpeciesList'
@@ -44,7 +44,6 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
     activeNotebook,
     isMutating,
     startNotebook,
-    pauseNotebook,
     discardNotebook,
     addSpecies,
     removeSpecies,
@@ -86,11 +85,6 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
       title: startTitle.trim() || null,
       location_name: startLocation.trim() || null,
     })
-  }
-
-  async function handlePause() {
-    await pauseNotebook()
-    onClose()
   }
 
   function handleFinish() {
@@ -213,19 +207,6 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
                       setSpeciesCount(obs.id, Math.max(1, obs.individuals_count + delta))
                     }
                   />
-
-                  {/* Abandonner — discret (le footer Figma ne garde que
-                      En pause / Terminer). Reste accessible pour ne pas perdre
-                      la fonction de suppression du brouillon. */}
-                  <button
-                    type="button"
-                    onClick={handleDiscard}
-                    disabled={isMutating}
-                    className="self-center inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-[var(--color-error)] disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:underline"
-                  >
-                    <Trash2 className="size-3.5" aria-hidden="true" />
-                    Abandonner ce carnet
-                  </button>
                 </div>
               )}
             </div>
@@ -255,19 +236,20 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
             </Button>
           ) : (
             <>
-              <div className="flex items-center gap-3">
-                {/* En pause — variante secondaire (sauvegarde en draft) */}
+              <div className="flex items-center gap-4">
+                {/* Abandonner — secondaire, supprime le brouillon (Nicolas
+                    2026-06-08 : 2 boutons suffisent, on retire 'En pause'). */}
                 <Button
                   type="button"
                   variant="secondary"
                   size="md"
                   className="flex-1"
                   disabled={isMutating}
-                  onClick={handlePause}
+                  onClick={handleDiscard}
                 >
                   <span className="inline-flex items-center gap-2">
-                    <Pause className="size-4" aria-hidden="true" />
-                    En pause
+                    <Trash2 className="size-4" aria-hidden="true" />
+                    Abandonner
                   </span>
                 </Button>
                 {/* Terminer — CTA principal (ouvre le dialog de publication) */}
@@ -279,7 +261,10 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
                   disabled={isMutating || activeNotebook!.species_count === 0}
                   onClick={handleFinish}
                 >
-                  Terminer
+                  <span className="inline-flex items-center gap-2">
+                    <Save className="size-4" aria-hidden="true" />
+                    Terminer
+                  </span>
                 </Button>
               </div>
               {/* Attribution sources donnees especes (coherence EncounterStep2) */}

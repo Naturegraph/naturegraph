@@ -155,8 +155,8 @@ export function NotebookSpeciesList({
                           type="button"
                           onClick={() => onRemove(obs)}
                           aria-label={`Retirer ${obs.species_name}`}
-                          /* Semantic/Background/Negative #FCCDD5 + icone #9E0F22 */
-                          className="size-8 rounded-full bg-[#fccdd5] text-[#9e0f22] flex items-center justify-center hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e0f22]"
+                          /* Neutre (Nicolas 2026-06-08 : pas de rouge, trop agressif) */
+                          className="size-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         >
                           <Trash2 className="size-5" aria-hidden="true" />
                         </button>
