@@ -17,7 +17,8 @@
  * Meme behavior dans Home, Profile et PostDetail (coherence produit V1.1.3).
  */
 
-import { useState, lazy, Suspense } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
+import { useNavigationType } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -53,8 +54,53 @@ export default function Home() {
   // panelNode -> a rendre dans le composant racine.
   const { onEditPost, openCreate, panelNode } = useEditPostFlow()
 
-  // État partagé feed — contrôlable depuis la navbar mobile ET le header desktop
-  const [feedViewMode, setFeedViewMode] = useState<'list' | 'grid'>('list')
+  // État partagé feed — contrôlable depuis la navbar mobile ET le header desktop.
+  // Nicolas 2026-06-06 : on PERSISTE le mode (liste/galerie) en sessionStorage
+  // pour qu'un retour depuis une page détail (clic galerie -> post -> back) garde
+  // la vue galerie active au lieu de retomber en liste. Survit le temps de
+  // l'onglet, sans polluer un nouveau lancement (sessionStorage, pas local).
+  const [feedViewMode, setFeedViewMode] = useState<'list' | 'grid'>(() => {
+    try {
+      return sessionStorage.getItem('ng:feedViewMode') === 'grid' ? 'grid' : 'list'
+    } catch {
+      return 'list'
+    }
+  })
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('ng:feedViewMode', feedViewMode)
+    } catch {
+      /* mode privé / quota : on accepte la perte */
+    }
+  }, [feedViewMode])
+
+  // Restauration de la position de scroll au RETOUR (back/forward navigateur).
+  // Nicolas 2026-06-06 : après un clic galerie -> page détail -> retour, on
+  // ramène l'utilisateur exactement où il était (le feed revient du cache React
+  // Query, donc la hauteur est identique). On ne restaure QUE sur navigation
+  // POP (retour) pour ne pas perturber un accès direct/clic logo.
+  const navigationType = useNavigationType()
+  useEffect(() => {
+    if (navigationType === 'POP') {
+      try {
+        const saved = sessionStorage.getItem('ng:feedScrollY')
+        const y = saved ? parseInt(saved, 10) : NaN
+        if (!Number.isNaN(y)) requestAnimationFrame(() => window.scrollTo(0, y))
+      } catch {
+        /* no-op */
+      }
+    }
+    // Sauvegarde la position quand on quitte le feed (démontage Home).
+    return () => {
+      try {
+        sessionStorage.setItem('ng:feedScrollY', String(window.scrollY))
+      } catch {
+        /* no-op */
+      }
+    }
+    // Lecture unique au montage (navigationType reflète l'action de navigation).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [feedShowFilters, setFeedShowFilters] = useState(false)
   // V1.1.4 QA round 4 : compteur de filtres actifs (0..N), pour le badge chiffre
   const [feedActiveFiltersCount, setFeedActiveFiltersCount] = useState(0)
