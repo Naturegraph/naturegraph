@@ -126,8 +126,9 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
         {/* ── Header sticky (shell partage Rencontre/Instant) ─────────────── */}
         <div className="shrink-0 pt-6 px-4 pb-3 flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
-            {/* Badge type — pill teal */}
-            <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-teal-dark text-white text-sm leading-none">
+            {/* Badge type — pill bleu nuit (couleur d'identite du Carnet,
+                #20203D = Content/Neutral/Secondary ; cf carte ContributeModal). */}
+            <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-[#20203d] text-[#f0f0f5] text-sm leading-none">
               <span className="font-body">Carnet d&apos;observations</span>
             </span>
 
@@ -163,7 +164,7 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
                 key={i}
                 className={[
                   'h-1.5 flex-1 rounded-full transition-colors duration-300',
-                  step >= i ? 'bg-teal-dark' : 'bg-border',
+                  step >= i ? 'bg-[#20203d]' : 'bg-border',
                 ].join(' ')}
                 aria-hidden="true"
               />
@@ -326,15 +327,16 @@ function StartView({
   const switchId = useId()
 
   return (
-    <div className="flex flex-col gap-5">
-      <p className="text-sm text-muted-foreground leading-relaxed">
+    <div className="flex flex-col gap-6">
+      {/* Description — Paragraph/Base 16px, Content/Neutral/Secondary #20203D */}
+      <p className="text-base text-[var(--color-text-secondary)] leading-normal">
         Ajoute les espèces que tu observes au fil de ta sortie. Ton carnet est sauvegardé en
         continu, tu pourras le publier quand tu veux.
       </p>
 
-      {/* Titre de la sortie */}
-      <div className="flex flex-col gap-2">
-        <label htmlFor={titleId} className="text-sm font-semibold text-foreground">
+      {/* Titre de la sortie — input pill 48px, Stroke/Light #C4C4CC */}
+      <div className="flex flex-col gap-1">
+        <label htmlFor={titleId} className="text-sm text-[var(--color-text-secondary)]">
           Titre de ta sortie
         </label>
         <input
@@ -343,20 +345,20 @@ function StartView({
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
           placeholder="ex : Sortie matinale en forêt"
-          className="w-full h-12 px-4 rounded-full border border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+          className="w-full h-12 px-5 rounded-full border border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base"
         />
       </div>
 
       {/* Localisation + switch public (markup identique a EncounterStep3) */}
-      <div className="flex flex-col gap-3">
-        <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
+      <div className="flex flex-col gap-1">
+        <span className="inline-flex items-center gap-1 text-sm text-[var(--color-text-secondary)]">
           Localisation
-          <Info className="size-4 text-muted-foreground" aria-hidden="true" />
+          <Info className="size-4 text-primary" aria-hidden="true" />
         </span>
 
         <div className="relative">
           <MapPin
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-primary pointer-events-none"
+            className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-foreground pointer-events-none"
             aria-hidden="true"
           />
           <input
@@ -365,16 +367,16 @@ function StartView({
             value={location}
             onChange={(e) => onLocationChange(e.target.value)}
             placeholder="ex : Forêt de Brocéliande, Bretagne"
-            className="w-full pl-10 pr-4 h-12 rounded-full border border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+            className="w-full pl-11 pr-4 h-12 rounded-full border border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base"
           />
         </div>
 
-        {/* Switch : label avant, toggle apres — ON = publique */}
+        {/* Switch : label avant, toggle apres — ON = publique (Caption 12px) */}
         <label
           htmlFor={switchId}
-          className="flex items-center justify-between gap-3 cursor-pointer pt-1"
+          className="flex items-center justify-between gap-3 cursor-pointer pt-2"
         >
-          <span className="text-sm text-foreground">
+          <span className="text-xs text-[var(--color-text-secondary)] tracking-wide">
             Activer pour rendre la localisation publique
           </span>
           <span className="relative inline-flex shrink-0">
@@ -386,10 +388,11 @@ function StartView({
               onChange={(e) => onLocationPublicChange(e.target.checked)}
               className="sr-only peer"
             />
+            {/* Switch 40x20 (Figma) — track + pastille 16px, ON = #5F5DD8 */}
             <span
               aria-hidden="true"
               className={[
-                'w-10 h-6 rounded-full transition-colors',
+                'w-10 h-5 rounded-full transition-colors',
                 'peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-1',
                 locationPublic ? 'bg-primary' : 'bg-border',
               ].join(' ')}
@@ -397,8 +400,8 @@ function StartView({
             <span
               aria-hidden="true"
               className={[
-                'absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform',
-                locationPublic ? 'translate-x-4' : 'translate-x-0',
+                'absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform',
+                locationPublic ? 'translate-x-5' : 'translate-x-0',
               ].join(' ')}
             />
           </span>
@@ -497,7 +500,7 @@ function SpeciesSearch({
         <ul
           role="listbox"
           aria-label="Résultats de recherche"
-          className="rounded-xl border border-border bg-background overflow-hidden divide-y divide-border"
+          className="rounded-md border border-border bg-background overflow-hidden divide-y divide-border"
         >
           {results.map((hit) => (
             <li key={hit.taxonomy_node_id}>
@@ -529,7 +532,7 @@ function SpeciesSearch({
       {/* Empty-state hermine (carnet vide, pas de recherche) — identique a
           EncounterStep2 pour la coherence visuelle. */}
       {showHermine && (
-        <div className="rounded-xl border-[0.5px] border-border bg-background flex flex-col items-center overflow-hidden">
+        <div className="rounded-md border-[0.5px] border-border bg-background flex flex-col items-center overflow-hidden">
           <img src={hermineImg} alt="" width={230} height={128} className="mt-6" loading="lazy" />
           <div className="flex flex-col items-center gap-3 p-6 w-full">
             <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-primary-light text-[var(--color-action-default)] text-sm font-body font-medium leading-none">

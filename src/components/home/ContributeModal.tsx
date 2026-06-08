@@ -199,7 +199,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
                 key={type.id}
                 role="menuitem"
                 aria-disabled="true"
-                className="flex items-center gap-4 p-3 rounded-xl opacity-60 cursor-not-allowed select-none"
+                className="flex items-center gap-4 p-3 rounded-md opacity-60 cursor-not-allowed select-none"
                 style={{ backgroundColor: type.cardBg }}
               >
                 {/* Cercle icône — 48px (Figma Frame 4448) */}
@@ -235,7 +235,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
               type="button"
               role="menuitem"
               onClick={() => handleSelect(type)}
-              className="w-full flex items-center gap-4 p-3 rounded-xl text-left transition-opacity hover:opacity-90 active:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+              className="w-full flex items-center gap-4 p-3 rounded-md text-left transition-opacity hover:opacity-90 active:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
               style={{ backgroundColor: type.cardBg }}
             >
               {/* Cercle icône — 48px (Figma Frame 4448) */}
@@ -278,7 +278,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
         role="dialog"
         aria-modal="true"
         aria-label="Partager une contribution"
-        className="hidden md:block absolute top-[calc(100%+8px)] right-0 w-[400px] max-w-[calc(100vw-24px)] bg-[var(--color-bg-primary)] border-[0.5px] border-border rounded-lg shadow-[0px_6px_16px_-4px_rgba(0,0,0,0.1)] z-50 overflow-hidden p-1"
+        className="hidden md:block absolute top-[calc(100%+8px)] right-0 w-[400px] max-w-[calc(100vw-24px)] bg-[var(--color-bg-primary)] border-[0.5px] border-border rounded-sm shadow-[0px_6px_16px_-4px_rgba(0,0,0,0.1)] z-50 overflow-hidden p-1"
       >
         {renderCards(desktopOrder, true)}
       </div>
