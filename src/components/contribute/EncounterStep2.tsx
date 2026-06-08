@@ -13,8 +13,8 @@
  * TAXREF/INPN retiré du produit (cf. PRD_SPECIES_DATABASE.md).
  */
 
-import { useState, useId, useEffect, useMemo, useRef } from 'react'
-import { Search, Trash2, Plus, HelpCircle, Filter, X, Check, Loader2 } from 'lucide-react'
+import { useState, useId, useEffect, useMemo } from 'react'
+import { Search, Trash2, HelpCircle, Filter, X, Check, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
 import { searchTaxonomy, type TaxonomyHit } from '@/services/searchService'
@@ -779,19 +779,10 @@ export function EncounterStep2({
   // Masque le placeholder "Aucun résultat" pendant que l user tape une recherche
   // (sinon il s affichait sous les suggestions, paradoxal — feedback Nicolas 2026-05-26).
   const [isSearching, setIsSearching] = useState(false)
-  // Ref vers l'input de recherche : le bouton "Ajouter une espèce" y redonne
-  // le focus (V1.2.0 — affordance multi-espèces claire sur desktop, Nicolas
-  // 2026-06-06, l'ajout multi se faisant via la barre de recherche).
-  const searchInputRef = useRef<HTMLInputElement>(null)
-
   return (
     <div className="flex flex-col gap-4">
       {/* Barre de recherche */}
-      <SpeciesSearchBar
-        onAdd={handleAddSpecies}
-        onSearchActiveChange={setIsSearching}
-        inputRef={searchInputRef}
-      />
+      <SpeciesSearchBar onAdd={handleAddSpecies} onSearchActiveChange={setIsSearching} />
 
       {/* État vide — carte blanche bordurée (Figma Frame 4621) :
           hermine + pill menthe "Aucun résultat" + hint en Quicksand Bold.
@@ -838,26 +829,8 @@ export function EncounterStep2({
         </div>
       )}
 
-      {/* Ajouter une nouvelle observation — V1.2.0 (Nicolas 2026-06-06) :
-          activé. L'ajout multi-espèces se fait via la barre de recherche ;
-          ce bouton y redonne le focus (et la fait défiler à l'écran) pour une
-          affordance claire "ajoute une autre espèce", surtout sur desktop. */}
-      {hasObservations && (
-        <button
-          type="button"
-          onClick={() => {
-            const el = searchInputRef.current
-            if (!el) return
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            // Léger délai pour laisser le scroll se faire avant le focus (mobile).
-            window.setTimeout(() => el.focus(), 150)
-          }}
-          className="flex items-center gap-2 text-sm text-primary font-semibold hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded self-start"
-        >
-          <Plus className="size-4" aria-hidden="true" />
-          {t('contribute.panel.addObservation')}
-        </button>
-      )}
+      {/* Bouton "Ajouter une nouvelle observation" RETIRE (Nicolas 2026-06-08) :
+          redondant avec la barre de recherche, toujours accessible en haut. */}
 
       {/* Toggle "Activer l'aide à l'identification" — masqué pour le moment,
           sera retravaillé plus tard (workflow d'aide collaborative en P2).
