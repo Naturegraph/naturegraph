@@ -19,6 +19,7 @@ import {
   ArrowLeft,
   Funnel,
   Info,
+  Link2,
   Loader2,
   MapPin,
   Play,
@@ -58,6 +59,7 @@ const STATUS_LABEL: Record<string, string> = {
   active: 'En cours',
   draft: 'Brouillon',
   finished: 'Terminé',
+  published: 'Publié',
 }
 
 interface NotebookPanelProps {
@@ -103,7 +105,9 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
     setListLoading(true)
     try {
       const nbs = await listUserNotebooks(user.id, {
-        statuses: ['draft', 'active', 'finished'],
+        // 'published' inclus pour montrer les carnets deja lies a une Rencontre
+        // (avec badge + indicateur lien), Nicolas 2026-06-08.
+        statuses: ['draft', 'active', 'finished', 'published'],
         limit: 50,
       })
       setNotebooks(nbs)
@@ -144,7 +148,13 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
   }
 
   async function handleDeleteNotebook(nb: Notebook) {
-    if (!window.confirm('Supprimer ce carnet et toutes ses observations ? Action irréversible.')) {
+    // Carnet lie a une Rencontre publiee : la suppression ne touche PAS le post
+    // (FK ON DELETE SET NULL). Message rassurant dedie.
+    const linked = nb.status === 'published' || !!nb.post_id
+    const message = linked
+      ? "Ce carnet est lié à une Rencontre nature déjà publiée. Le supprimer n'affecte PAS la publication (elle conserve ses propres données). Supprimer le carnet quand même ?"
+      : 'Supprimer ce carnet et toutes ses observations ? Action irréversible.'
+    if (!window.confirm(message)) {
       return
     }
     try {
@@ -511,47 +521,70 @@ function ManageView({
     <>
       {subtitle}
       <ul className="flex flex-col gap-3">
-        {notebooks.map((nb) => (
-          <li key={nb.id}>
-            <div className="flex items-center gap-2 p-3 rounded-md border-[0.5px] border-border bg-background">
-              {/* Zone cliquable : continuer / consulter le carnet */}
-              <button
-                type="button"
-                onClick={() => onContinue(nb)}
-                disabled={isMutating}
-                className="flex-1 min-w-0 text-left flex items-center gap-3 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-foreground truncate">
-                      {nb.title?.trim() || 'Carnet sans titre'}
-                    </span>
-                    <span className="shrink-0 inline-flex items-center h-5 px-2 rounded-full bg-[#e7e9f7] text-[var(--color-text-secondary)] text-[11px] font-medium leading-none">
-                      {STATUS_LABEL[nb.status] ?? nb.status}
-                    </span>
+        {notebooks.map((nb) => {
+          // Carnet deja rattache a une Rencontre publiee : le post existe et
+          // possede sa PROPRE copie des donnees. On ne le reedite donc pas (ca
+          // n'impacterait pas la publication), mais il reste supprimable sans
+          // risque pour la Rencontre (FK posts.notebook_id ON DELETE SET NULL).
+          const linked = nb.status === 'published' || !!nb.post_id
+          const statusStyle = linked
+            ? 'bg-[#e5f7f7] text-[#006666]'
+            : 'bg-[#e7e9f7] text-[var(--color-text-secondary)]'
+          return (
+            <li key={nb.id}>
+              <div className="flex items-center gap-2 p-3 rounded-md border-[0.5px] border-border bg-background">
+                {/* Zone cliquable : continuer/consulter (desactivee si publie) */}
+                <button
+                  type="button"
+                  onClick={() => onContinue(nb)}
+                  disabled={isMutating || linked}
+                  className="flex-1 min-w-0 text-left flex items-center gap-3 disabled:cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-foreground truncate">
+                        {nb.title?.trim() || 'Carnet sans titre'}
+                      </span>
+                      <span
+                        className={`shrink-0 inline-flex items-center h-5 px-2 rounded-full ${statusStyle} text-[11px] font-medium leading-none`}
+                      >
+                        {STATUS_LABEL[nb.status] ?? nb.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">
+                      {nb.species_count} espèce{nb.species_count > 1 ? 's' : ''}
+                      {nb.location_name ? ` · ${nb.location_name}` : ''}
+                      {linked ? ' · Lié à une Rencontre' : ''}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">
-                    {nb.species_count} espèce{nb.species_count > 1 ? 's' : ''}
-                    {nb.location_name ? ` · ${nb.location_name}` : ''}
-                  </p>
-                </div>
-                {/* Icône édition : ouvrir / continuer le carnet */}
-                <SquarePen className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
-              </button>
+                  {/* Lié = icône lien (lecture seule) ; sinon crayon (éditer) */}
+                  {linked ? (
+                    <Link2
+                      className="size-5 text-[#006666] shrink-0"
+                      aria-label="Lié à une Rencontre publiée"
+                    />
+                  ) : (
+                    <SquarePen
+                      className="size-5 text-muted-foreground shrink-0"
+                      aria-hidden="true"
+                    />
+                  )}
+                </button>
 
-              {/* Supprimer — neutre */}
-              <button
-                type="button"
-                onClick={() => onDelete(nb)}
-                disabled={isMutating}
-                aria-label={`Supprimer ${nb.title?.trim() || 'ce carnet'}`}
-                className="size-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                <Trash2 className="size-5" aria-hidden="true" />
-              </button>
-            </div>
-          </li>
-        ))}
+                {/* Supprimer — neutre (sans danger pour la Rencontre liée) */}
+                <button
+                  type="button"
+                  onClick={() => onDelete(nb)}
+                  disabled={isMutating}
+                  aria-label={`Supprimer ${nb.title?.trim() || 'ce carnet'}`}
+                  className="size-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <Trash2 className="size-5" aria-hidden="true" />
+                </button>
+              </div>
+            </li>
+          )
+        })}
       </ul>
     </>
   )
