@@ -13,12 +13,11 @@
  * (préféré à une solution JS — RGESN, sobriété numérique).
  */
 
-import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Images } from 'lucide-react'
 import type { MockPost } from './FeedPost'
 import hermineIcon from '@/assets/images/hermine-icon.png'
-import { PhotoLightbox } from './PhotoLightbox'
-import type { LightboxData } from './PhotoLightbox'
+import { buildPostPath } from '@/lib/postSlug'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -87,35 +86,19 @@ interface FeedGalleryProps {
 
 export function FeedGallery({ posts }: FeedGalleryProps) {
   const items = buildGalleryItems(posts)
-  const [lightbox, setLightbox] = useState<LightboxData | null>(null)
-
-  /** Ouvre la lightbox avec toutes les photos du post parent, départ sur la cover */
-  function openLightbox(item: GalleryItem) {
-    const post = posts.find((p) => p.id === item.postId)
-    if (!post) return
-
-    setLightbox({
-      images: post.images.map((img) => ({ url: img.url, alt: img.alt })),
-      currentIndex: 0,
-      authorName: post.author.name,
-      authorAvatar: post.author.avatar,
-      // Format propagé : la lightbox respecte le ratio choisi à la création
-      // (second-agent/18). post.format est toujours '16:9' | 'portrait' | '1:1'.
-      format: post.format,
-      // Identité du post pour activer le bouton Partager (second-agent/20)
-      postId: post.id,
-      postTitle: post.title,
-    })
-  }
 
   return (
     <>
       <div className="gallery-masonry" role="grid" aria-label="Galerie des observations">
         {items.map((item) => (
-          <button
+          // Nicolas 2026-06-06 : un clic galerie ouvre la PAGE DÉTAIL du post
+          // (plus logique/conforme qu'un agrandissement d'image). On utilise un
+          // <Link> (navigation réelle) pour que le bouton retour du navigateur
+          // ramène l'utilisateur exactement à sa place dans la galerie (la vue
+          // galerie + la position de scroll sont restaurées côté Home).
+          <Link
             key={item.id}
-            type="button"
-            onClick={() => openLightbox(item)}
+            to={buildPostPath(item.postId, { title: item.postTitle })}
             className="gallery-item group block relative overflow-hidden w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             role="gridcell"
             aria-label={
@@ -172,18 +155,9 @@ export function FeedGallery({ posts }: FeedGalleryProps) {
                 </div>
               </div>
             </div>
-          </button>
+          </Link>
         ))}
       </div>
-
-      {/* Lightbox plein écran */}
-      {lightbox && (
-        <PhotoLightbox
-          data={lightbox}
-          onClose={() => setLightbox(null)}
-          onNavigate={(i) => setLightbox((prev) => (prev ? { ...prev, currentIndex: i } : null))}
-        />
-      )}
     </>
   )
 }
