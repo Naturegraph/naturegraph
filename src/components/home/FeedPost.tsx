@@ -31,6 +31,7 @@ import { ImagePresets } from '@/lib/supabaseImage'
 import type { ReactionType } from '@/types/database'
 import { useSpecies } from '@/contexts/SpeciesContext'
 import { TAXONOMIC_GROUP_CONFIG } from '@/constants/commonSpecies'
+import { buildPostPath } from '@/lib/postSlug'
 import { NotebookCardInFeed } from '@/components/notebook/NotebookCardInFeed'
 
 // ─── Type UI pour les posts du feed ──────────────────────────────────────────
@@ -229,6 +230,12 @@ interface FeedPostProps extends MockPost {
    */
   hideEndBorder?: boolean
   /**
+   * V1.1.5 NG-028 : titre cliquable vers la page detail /post/:id.
+   * true par defaut (feed, profil) ; false sur PostDetail (on est deja sur
+   * la page, pas de lien vers soi-meme).
+   */
+  linkToDetail?: boolean
+  /**
    * Callback édition post — remonté jusqu'à Home pour rouvrir le panel de
    * création (Encounter/Instant) pré-rempli. Affiche le bouton « Modifier »
    * dans le PostOptionsMenu uniquement si défini ET si isOwnPost.
@@ -240,6 +247,19 @@ interface FeedPostProps extends MockPost {
    * fourni (Profile, PostDetail), le chip categorie reste passif.
    */
   onSelectCategory?: (group: string) => void
+  /**
+   * V1.1.5 (Nicolas 2026-06-04) : sur la page detail, on affiche TOUTE la
+   * description d'emblee (pas de clamp 2 lignes ni de bouton "Voir plus") :
+   * l'utilisateur est deja sur la page du post, il doit tout voir sans clic
+   * supplementaire.
+   */
+  expandContent?: boolean
+  /**
+   * V1.1.5 (Nicolas 2026-06-04) : rend les chips categorie ET espece PASSIFS
+   * (non cliquables). Utilise sur le post principal de PostDetail : on est
+   * deja sur la page du post, le filtre espece/categorie n'a pas de sens ici.
+   */
+  disableChipFilters?: boolean
 }
 
 export function FeedPost({
@@ -273,11 +293,14 @@ export function FeedPost({
   userReaction,
   totalReactions,
   canInteract = true,
+  linkToDetail = true,
   isOwnPost = false,
   onReact,
   hideEndBorder = false,
   onEditPost,
   onSelectCategory,
+  expandContent = false,
+  disableChipFilters = false,
 }: FeedPostProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -360,8 +383,13 @@ export function FeedPost({
 
       <div className="flex flex-col gap-5 md:p-6 px-5 py-8">
         {/* Header : auteur */}
-        <div className="flex items-start justify-between">
-          <div className="flex gap-5 items-center">
+        <div className="flex items-start justify-between gap-2">
+          {/* min-w-0 OBLIGATOIRE : complete la chaine de troncature jusqu'a la
+              rangee meta (flex-nowrap). Sans lui, "date • lieu" (nom de ville
+              long) ne se tronque pas et POUSSE la largeur au-dela de la carte
+              -> scroll horizontal de toute la page + bottom nav qui deborde sur
+              mobile (Nicolas 2026-06-08, regression du passage en flex-nowrap). */}
+          <div className="flex gap-5 items-center min-w-0">
             {/* Avatar — Figma 48px, badge 24px (Background/Neutral/Secondary).
                 Wrapped Link → navigation vers le profil de l'auteur. */}
             <Link
@@ -401,7 +429,11 @@ export function FeedPost({
               >
                 {author.name}
               </Link>
-              <div className="flex flex-wrap gap-2 items-center">
+              {/* Rangee meta sur UNE seule ligne (Nicolas 2026-06-06) : date +
+                  lieu ne doivent pas passer sur 2 lignes meme avec un nom de
+                  ville long. nowrap + min-w-0 ; la date reste entiere (shrink-0)
+                  et c'est le LIEU qui se tronque avec "…" si necessaire. */}
+              <div className="flex flex-nowrap gap-2 items-center min-w-0">
                 {(() => {
                   // Règle globale (second-agent/04) : icône + couleur par type.
                   const cfg = POST_TYPE_ICON[postType] ?? POST_TYPE_ICON.nature_encounter
@@ -410,16 +442,38 @@ export function FeedPost({
                     <Icon className={`size-[18px] shrink-0 ${cfg.colorClass}`} aria-hidden="true" />
                   )
                 })()}
-                <span className="text-sm text-foreground">{date}</span>
+                {/* Date = permalien vers la page detail (Nicolas 2026-06-04).
+                    Garantit un point d'entree vers /post/:id meme quand le post
+                    n'a PAS de titre (sinon ces posts, ~19% en beta, etaient
+                    totalement inaccessibles : le titre etait le seul lien).
+                    Pattern type reseau social. Inactif sur PostDetail
+                    (linkToDetail=false) pour ne pas lier vers soi-meme. */}
+                {linkToDetail ? (
+                  <Link
+                    to={buildPostPath(id, { title, species })}
+                    aria-label={t('home.post.openDetail', {
+                      defaultValue: 'Voir le détail de l’observation',
+                    })}
+                    className="text-sm text-foreground shrink-0 whitespace-nowrap hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded"
+                  >
+                    {date}
+                  </Link>
+                ) : (
+                  <span className="text-sm text-foreground shrink-0 whitespace-nowrap">{date}</span>
+                )}
                 {/* Localisation : affichée uniquement si publique ET si la
                     ville est connue (second-agent/29). Sinon le post n'affiche
                     que la date — pas de bullet orphelin. */}
                 {location && (
                   <>
-                    <span aria-hidden="true" className="text-foreground text-xs">
+                    <span aria-hidden="true" className="text-foreground text-xs shrink-0">
                       •
                     </span>
-                    <span className="text-sm text-foreground">{location}</span>
+                    {/* Le lieu se tronque (truncate + min-w-0) pour tenir sur une
+                        ligne ; title= expose le nom complet au survol/lecteur. */}
+                    <span className="text-sm text-foreground truncate min-w-0" title={location}>
+                      {location}
+                    </span>
                   </>
                 )}
               </div>
@@ -471,47 +525,66 @@ export function FeedPost({
             naturellement vers les meta/chips/image sous le pseudo). */}
         {(title?.trim() || content?.trim()) && (
           <div className="flex flex-col gap-2">
-            {title?.trim() && (
-              <h3 className="text-lg font-bold leading-[1.2] text-foreground">{title}</h3>
-            )}
+            {title?.trim() &&
+              (linkToDetail ? (
+                // V1.1.5 NG-028 : titre cliquable -> page detail /post/:id.
+                <Link
+                  to={buildPostPath(id, { title, species })}
+                  className="w-fit rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <h3 className="text-lg font-bold leading-[1.2] text-foreground hover:underline">
+                    {title}
+                  </h3>
+                </Link>
+              ) : (
+                <h3 className="text-lg font-bold leading-[1.2] text-foreground">{title}</h3>
+              ))}
 
             {/*
              * Description : line-clamp-2 + bouton "Voir plus" affiché UNIQUEMENT
              * si le texte déborde réellement après mesure DOM (Nicolas 2026-05-01).
              * Évite "Voir plus" sur des textes qui tiennent en 2 lignes naturellement.
              */}
-            {content?.trim() && (
-              <div className="flex flex-col gap-1">
-                <p
-                  ref={contentRef}
-                  className={`text-sm text-foreground leading-relaxed whitespace-pre-line ${
-                    isExpanded
-                      ? ''
-                      : 'overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]'
-                  }`}
-                >
+            {content?.trim() &&
+              // V1.1.5 (Nicolas) : sur PostDetail (expandContent), on affiche
+              // toute la description, sans clamp ni "Voir plus" : l'utilisateur
+              // doit voir l'integralite du post sans clic supplementaire.
+              (expandContent ? (
+                <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">
                   {content}
                 </p>
-                {isOverflowing && !isExpanded && (
-                  <button
-                    type="button"
-                    onClick={() => setIsExpanded(true)}
-                    className="self-start text-sm text-primary underline decoration-solid focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+              ) : (
+                <div className="flex flex-col gap-1">
+                  <p
+                    ref={contentRef}
+                    className={`text-sm text-foreground leading-relaxed whitespace-pre-line ${
+                      isExpanded
+                        ? ''
+                        : 'overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]'
+                    }`}
                   >
-                    {t('home.post.seeMore')}
-                  </button>
-                )}
-                {isExpanded && (
-                  <button
-                    type="button"
-                    onClick={() => setIsExpanded(false)}
-                    className="self-start text-sm text-primary underline decoration-solid focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-                  >
-                    {t('home.post.seeLess')}
-                  </button>
-                )}
-              </div>
-            )}
+                    {content}
+                  </p>
+                  {isOverflowing && !isExpanded && (
+                    <button
+                      type="button"
+                      onClick={() => setIsExpanded(true)}
+                      className="self-start text-sm text-primary underline decoration-solid focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                    >
+                      {t('home.post.seeMore')}
+                    </button>
+                  )}
+                  {isExpanded && (
+                    <button
+                      type="button"
+                      onClick={() => setIsExpanded(false)}
+                      className="self-start text-sm text-primary underline decoration-solid focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                    >
+                      {t('home.post.seeLess')}
+                    </button>
+                  )}
+                </div>
+              ))}
           </div>
         )}
 
@@ -604,7 +677,9 @@ export function FeedPost({
           <NotebookCardInFeed
             notebookId={notebookId}
             speciesCount={notebookSpeciesCount ?? undefined}
-            defaultOpen={true}
+            // Ferme par defaut DANS LE FIL (Nicolas 2026-06-08), ouvert sur la
+            // page detail immersive (expandContent).
+            defaultOpen={expandContent}
           />
         )}
 
@@ -626,7 +701,9 @@ export function FeedPost({
               // permet de reset au feed global.
               const speciesName = species || scientific_name || null
               const hasIdentifiedSpecies = !!speciesName
-              const isSpeciesClickable = !!taxref_id
+              // V1.1.5 (Nicolas) : disableChipFilters rend le chip espece passif
+              // (post principal de PostDetail).
+              const isSpeciesClickable = !!taxref_id && !disableChipFilters
               const unknownLabel = t('home.post.unknownSpecies', {
                 defaultValue: 'Espèce non déterminée',
               })
@@ -646,7 +723,8 @@ export function FeedPost({
               // coche la categorie dans FeedFilterPanel (badge "1" naturel).
               // L user reset via le panneau filtres standard. Sur Profile et
               // PostDetail (onSelectCategory undefined), le chip reste passif.
-              const isCategoryClickable = !!onSelectCategory && !!taxonomic_group
+              const isCategoryClickable =
+                !!onSelectCategory && !!taxonomic_group && !disableChipFilters
               const categoryChip = categoryLabel ? (
                 isCategoryClickable ? (
                   <button

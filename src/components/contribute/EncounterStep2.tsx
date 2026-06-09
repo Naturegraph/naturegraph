@@ -14,12 +14,14 @@
  */
 
 import { useState, useId, useEffect, useMemo } from 'react'
-import { Search, Trash2, Plus, Minus, HelpCircle, Filter, X, Check, Loader2 } from 'lucide-react'
+import { Search, Trash2, HelpCircle, Filter, X, Check, Loader2, BookOpen } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
 import { searchTaxonomy, type TaxonomyHit } from '@/services/searchService'
+import type { Notebook } from '@/services/notebookService'
 import { highlightMatch } from '@/utils/highlightMatch'
 import { Button } from '@/components/ui/Button'
+import { CountStepper } from '@/components/ui/CountStepper'
 import { TAXONOMIC_GROUP_CONFIG } from '@/constants/commonSpecies'
 import hermineImg from '@/assets/images/hermine-empty-state.png'
 
@@ -34,6 +36,28 @@ import hermineImg from '@/assets/images/hermine-empty-state.png'
 function groupConfig(group: string | null): { emoji: string; label: string } {
   const key = (group ?? 'other').toLowerCase()
   return TAXONOMIC_GROUP_CONFIG[key] ?? TAXONOMIC_GROUP_CONFIG.other
+}
+
+/**
+ * Regroupe les observations par groupe taxonomique (sections + pill de classe),
+ * pour un affichage strictement aligne sur le Carnet d'observations
+ * (NotebookSpeciesList). Especes non determinees -> groupe "Autre". L'ordre
+ * suit la premiere apparition de chaque groupe.
+ */
+function groupObservations(
+  entries: ObservationEntry[],
+): { key: string; label: string; items: ObservationEntry[] }[] {
+  const order: string[] = []
+  const map = new Map<string, { key: string; label: string; items: ObservationEntry[] }>()
+  for (const e of entries) {
+    const key = e.isUnknown || !e.species ? 'other' : e.species.group
+    if (!map.has(key)) {
+      map.set(key, { key, label: groupConfig(key === 'other' ? null : key).label, items: [] })
+      order.push(key)
+    }
+    map.get(key)!.items.push(e)
+  }
+  return order.map((k) => map.get(k)!)
 }
 
 /**
@@ -69,6 +93,10 @@ export interface ObservationEntry {
   /** true = espèce non déterminée (mystère) */
   isUnknown: boolean
   count: number
+  /** Si l'espèce vient d'un carnet importé : id du carnet source. Permet de
+   *  remplacer uniquement les espèces du carnet (et garder les ajouts manuels)
+   *  quand l'user change de carnet (Nicolas 2026-06-08). Absent = ajout manuel. */
+  sourceNotebookId?: string
 }
 
 // ─── Sous-composants ──────────────────────────────────────────────────────────
@@ -121,11 +149,21 @@ const CLASS_TO_GROUP: Record<string, TaxonomicGroup> = {
 function SpeciesSearchBar({
   onAdd,
   onSearchActiveChange,
+  inputRef,
+  notebooks,
+  onPickNotebook,
 }: {
   onAdd: (species: ObservationEntry['species']) => void
   /** Fire avec true des que l user tape (query non vide), false quand vide.
    *  Permet au parent de masquer le placeholder "Aucun résultat" pendant la recherche. */
   onSearchActiveChange?: (active: boolean) => void
+  /** Ref optionnelle vers l'input — permet au parent (bouton "Ajouter une
+   *  espèce") de redonner le focus a la barre de recherche. */
+  inputRef?: React.RefObject<HTMLInputElement | null>
+  /** Carnets existants selectionnables (bouton livre + dropdown). */
+  notebooks: Notebook[]
+  /** Ajoute toutes les especes d'un carnet existant aux observations. */
+  onPickNotebook: (notebookId: string) => Promise<void> | void
 }) {
   const { t } = useTranslation()
   const listId = useId()
@@ -133,6 +171,19 @@ function SpeciesSearchBar({
   // Filtres par groupe taxonomique — Set vide = tous les groupes acceptés.
   const [groupFilters, setGroupFilters] = useState<Set<TaxonomicGroup>>(new Set())
   const [filterOpen, setFilterOpen] = useState(false)
+  // Dropdown "carnet existant" (bouton livre, a droite du filtre).
+  const [notebookOpen, setNotebookOpen] = useState(false)
+  const [pickingId, setPickingId] = useState<string | null>(null)
+
+  async function handlePickNotebook(notebookId: string) {
+    setPickingId(notebookId)
+    try {
+      await onPickNotebook(notebookId)
+      setNotebookOpen(false)
+    } finally {
+      setPickingId(null)
+    }
+  }
   const [results, setResults] = useState<TaxonomyHit[]>([])
   // V1.1.0 (Nicolas 2026-05-26) : toggles precision identification cumulatifs.
   // L user peut cocher les 2 pour cumuler les resultats (especes + familles
@@ -289,11 +340,15 @@ function SpeciesSearchBar({
           pas sous le listbox de resultats. Sinon le panel se decalait
           sous les resultats (feedback Nicolas 2026-05-26). z-30 le passe
           au-dessus du listbox (z auto). */}
-      <div className="relative z-30 flex items-center gap-4">
-        <div className="relative flex-1">
-          <div className="flex items-center gap-2 h-12 px-5 rounded-full border border-border bg-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors">
+      {/* gap reduit + min-w-0 sur l'input : sur mobile etroit, le champ se
+          retrecit pour que les 2 boutons (filtre + livre) restent visibles
+          sans scroll horizontal (Nicolas 2026-06-09). */}
+      <div className="relative z-30 flex items-center gap-2 sm:gap-4">
+        <div className="relative flex-1 min-w-0">
+          <div className="flex items-center gap-2 h-12 px-4 sm:px-5 rounded-full border border-border bg-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors">
             <Search className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
             <input
+              ref={inputRef}
               type="search"
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
@@ -319,7 +374,10 @@ function SpeciesSearchBar({
         {/* Bouton filtre — BATCH 99 : border ajoutée pour cohérence avec autres icon buttons */}
         <button
           type="button"
-          onClick={() => setFilterOpen((v) => !v)}
+          onClick={() => {
+            setFilterOpen((v) => !v)
+            setNotebookOpen(false)
+          }}
           aria-label={t('contribute.panel.filterSpecies', { defaultValue: 'Filtrer' })}
           aria-expanded={filterOpen}
           className={[
@@ -344,6 +402,70 @@ function SpeciesSearchBar({
             </span>
           )}
         </button>
+
+        {/* Bouton "carnet existant" — meme DS que le filtre (icone livre).
+            Ouvre un dropdown des carnets enregistres ; en choisir un injecte
+            toutes ses especes dans les observations (Nicolas 2026-06-08). */}
+        <button
+          type="button"
+          onClick={() => {
+            setNotebookOpen((v) => !v)
+            setFilterOpen(false)
+          }}
+          aria-label="Ajouter un carnet existant"
+          aria-expanded={notebookOpen}
+          className={[
+            'relative size-12 shrink-0 rounded-full flex items-center justify-center',
+            'border border-[var(--color-border)]',
+            'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+            notebookOpen
+              ? 'bg-primary text-primary-foreground border-primary'
+              : 'text-foreground hover:bg-muted/50 hover:border-foreground/40',
+          ].join(' ')}
+        >
+          <BookOpen className="size-5" aria-hidden="true" />
+        </button>
+
+        {/* Dropdown carnets existants — meme ancrage que le panel filtres */}
+        {notebookOpen && (
+          <div className="absolute left-0 right-0 top-full mt-3 z-20 rounded-2xl border-[0.5px] border-border bg-background shadow-xl overflow-hidden">
+            {notebooks.length === 0 ? (
+              <p className="px-5 py-4 text-sm text-muted-foreground text-center">
+                Aucun carnet enregistré pour le moment.
+              </p>
+            ) : (
+              <ul
+                role="listbox"
+                aria-label="Carnets existants"
+                className="max-h-64 overflow-y-auto"
+              >
+                {notebooks.map((nb) => (
+                  <li key={nb.id}>
+                    <button
+                      type="button"
+                      onClick={() => handlePickNotebook(nb.id)}
+                      disabled={pickingId !== null}
+                      className="w-full flex items-center justify-between gap-3 px-5 py-3 text-left hover:bg-muted/50 disabled:opacity-50 focus-visible:outline-none focus-visible:bg-muted/50 border-b border-border last:border-b-0"
+                    >
+                      <span className="font-bold text-sm text-foreground truncate">
+                        {nb.title?.trim() || 'Carnet sans titre'}
+                      </span>
+                      <span className="shrink-0 flex items-center gap-2 text-sm text-muted-foreground">
+                        {nb.species_count} espèce{nb.species_count > 1 ? 's' : ''}
+                        {pickingId === nb.id && (
+                          <Loader2
+                            className="size-4 text-primary motion-safe:animate-spin"
+                            aria-hidden="true"
+                          />
+                        )}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         {/* Panel filtres — ancre `top-full` dans la row (parent relative z-30)
             pour etre un vrai dropdown overlay au-dessus du listbox de
@@ -659,71 +781,57 @@ function ObservationRow({
   const { t } = useTranslation()
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-background">
-      {/* Icône espèce — emoji du groupe taxonomique pour cohérence avec le
-          dropdown de recherche et SearchPanel (Nicolas 2026-05-21). */}
-      <div
-        className="size-9 rounded-full bg-primary-light flex items-center justify-center shrink-0 text-base leading-none"
-        aria-hidden="true"
-      >
-        {entry.isUnknown ? (
-          <HelpCircle className="size-4 text-primary" />
-        ) : (
-          <span>{groupConfig(entry.species?.group ?? null).emoji}</span>
-        )}
-      </div>
-
-      {/* Nom + groupe */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground truncate">
-          {entry.isUnknown ? t('contribute.panel.unknownSpecies') : entry.species?.commonName}
-          {entry.species?.rank === 'family' && (
-            <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-primary-light text-primary align-middle">
-              {t('contribute.panel.familyBadge', { defaultValue: 'Famille' })}
-            </span>
+    // Ligne alignee sur le carnet (NotebookSpeciesList) pour une coherence
+    // d'affichage totale entre Rencontre nature et Carnet d'observations.
+    <li className="flex items-center gap-2">
+      {/* Identite : avatar emoji 40px (#E7E9F7) + nom + nom latin */}
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <span
+          className="size-10 shrink-0 rounded-full bg-[#e7e9f7] flex items-center justify-center text-lg leading-none"
+          aria-hidden="true"
+        >
+          {entry.isUnknown ? (
+            <HelpCircle className="size-5 text-primary" />
+          ) : (
+            groupConfig(entry.species?.group ?? null).emoji
           )}
-        </p>
-        <p className="text-xs text-muted-foreground italic truncate">
-          {entry.isUnknown ? t('contribute.panel.unknownSubtitle') : entry.species?.scientificName}
-        </p>
+        </span>
+        <div className="flex flex-col min-w-0">
+          <span className="text-sm font-bold text-foreground truncate">
+            {entry.isUnknown ? t('contribute.panel.unknownSpecies') : entry.species?.commonName}
+            {entry.species?.rank === 'family' && (
+              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-[#e7e9f7] text-primary align-middle">
+                {t('contribute.panel.familyBadge', { defaultValue: 'Famille' })}
+              </span>
+            )}
+          </span>
+          <span className="text-xs italic text-[var(--color-text-secondary)] truncate tracking-wide">
+            {entry.isUnknown
+              ? t('contribute.panel.unknownSubtitle')
+              : entry.species?.scientificName}
+          </span>
+        </div>
       </div>
 
-      {/* Compteur individus */}
-      <div
-        className="flex items-center gap-1.5 shrink-0"
-        role="group"
-        aria-label={t('contribute.panel.individualCount')}
-      >
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Compteur — saisie directe possible (CountStepper, identique carnet) */}
+        <CountStepper
+          value={entry.count}
+          onChange={(next) => onCountChange(entry.id, next - entry.count)}
+          label={t('contribute.panel.individualCount')}
+        />
+
+        {/* Supprimer — neutre (pas de rouge, coherence carnet) */}
         <button
           type="button"
-          onClick={() => onCountChange(entry.id, -1)}
-          disabled={entry.count <= 1}
-          aria-label="Diminuer"
-          className="size-6 rounded-full border border-border flex items-center justify-center hover:border-primary/60 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          onClick={() => onRemove(entry.id)}
+          aria-label={`Supprimer ${entry.species?.commonName ?? 'cette observation'}`}
+          className="size-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <Minus className="size-3" aria-hidden="true" />
-        </button>
-        <span className="text-sm font-medium w-5 text-center tabular-nums">{entry.count}</span>
-        <button
-          type="button"
-          onClick={() => onCountChange(entry.id, +1)}
-          aria-label="Augmenter"
-          className="size-6 rounded-full border border-border flex items-center justify-center hover:border-primary/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          <Plus className="size-3" aria-hidden="true" />
+          <Trash2 className="size-5" aria-hidden="true" />
         </button>
       </div>
-
-      {/* Supprimer */}
-      <button
-        type="button"
-        onClick={() => onRemove(entry.id)}
-        aria-label={`Supprimer ${entry.species?.commonName ?? 'cette observation'}`}
-        className="size-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0"
-      >
-        <Trash2 className="size-3.5" aria-hidden="true" />
-      </button>
-    </div>
+    </li>
   )
 }
 
@@ -736,6 +844,10 @@ interface EncounterStep2Props {
   onCountChange: (id: string, delta: number) => void
   helpIdentification: boolean
   onHelpIdentificationChange: (v: boolean) => void
+  /** Carnets existants selectionnables via le bouton livre. */
+  notebooks: Notebook[]
+  /** Injecte toutes les especes d'un carnet existant dans les observations. */
+  onPickNotebook: (notebookId: string) => Promise<void> | void
 }
 
 export function EncounterStep2({
@@ -748,6 +860,8 @@ export function EncounterStep2({
   // été masqué (workflow aide collaborative reporté en P2).
   helpIdentification: _helpIdentification,
   onHelpIdentificationChange: _onHelpIdentificationChange,
+  notebooks,
+  onPickNotebook,
 }: EncounterStep2Props) {
   const { t } = useTranslation()
 
@@ -765,11 +879,15 @@ export function EncounterStep2({
   // Masque le placeholder "Aucun résultat" pendant que l user tape une recherche
   // (sinon il s affichait sous les suggestions, paradoxal — feedback Nicolas 2026-05-26).
   const [isSearching, setIsSearching] = useState(false)
-
   return (
     <div className="flex flex-col gap-4">
       {/* Barre de recherche */}
-      <SpeciesSearchBar onAdd={handleAddSpecies} onSearchActiveChange={setIsSearching} />
+      <SpeciesSearchBar
+        onAdd={handleAddSpecies}
+        onSearchActiveChange={setIsSearching}
+        notebooks={notebooks}
+        onPickNotebook={onPickNotebook}
+      />
 
       {/* État vide — carte blanche bordurée (Figma Frame 4621) :
           hermine + pill menthe "Aucun résultat" + hint en Quicksand Bold.
@@ -788,40 +906,36 @@ export function EncounterStep2({
         </div>
       )}
 
-      {/* Carnet d'observations */}
+      {/* Carnet d'observations — groupe par classe (pills) + lignes, aligne
+          sur NotebookSpeciesList pour une coherence d'affichage totale. */}
       {hasObservations && (
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+        <div className="flex flex-col gap-4">
+          <p className="font-body text-base text-foreground">
             {t('contribute.panel.notebook')} ({observations.length})
           </p>
-          {observations.map((entry) => (
-            <ObservationRow
-              key={entry.id}
-              entry={entry}
-              onCountChange={onCountChange}
-              onRemove={onRemove}
-            />
+          {groupObservations(observations).map((grp) => (
+            <section key={grp.key} aria-label={grp.label} className="flex flex-col gap-4">
+              {/* Pill de groupe — bg #E7E9F7, label 14px bold */}
+              <span className="inline-flex items-center self-start h-8 px-3 rounded-full bg-[#e7e9f7] text-foreground text-sm font-bold">
+                {grp.label}
+              </span>
+              <ul className="flex flex-col gap-4">
+                {grp.items.map((entry) => (
+                  <ObservationRow
+                    key={entry.id}
+                    entry={entry}
+                    onCountChange={onCountChange}
+                    onRemove={onRemove}
+                  />
+                ))}
+              </ul>
+            </section>
           ))}
         </div>
       )}
 
-      {/* Ajouter une nouvelle observation — désactivé "Bientôt" pour MVP
-          (logique multi-observation pas encore branchée côté backend). */}
-      {hasObservations && (
-        <button
-          type="button"
-          disabled
-          aria-disabled="true"
-          title={t('home.filters.comingSoon')}
-          className="flex items-center gap-2 text-sm text-muted-foreground font-medium opacity-60 cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-        >
-          <Plus className="size-4" aria-hidden="true" />
-          {t('contribute.panel.addObservation')}
-          <span className="inline-flex items-center justify-center h-5 px-2 rounded-full bg-primary-light text-primary text-[10px] font-bold uppercase tracking-wide ml-1">
-            {t('home.filters.comingSoon')}
-          </span>
-        </button>
-      )}
+      {/* Bouton "Ajouter une nouvelle observation" RETIRE (Nicolas 2026-06-08) :
+          redondant avec la barre de recherche, toujours accessible en haut. */}
 
       {/* Toggle "Activer l'aide à l'identification" — masqué pour le moment,
           sera retravaillé plus tard (workflow d'aide collaborative en P2).

@@ -24,15 +24,17 @@
  * ancre a midi UTC, pret a etre stocke dans la colonne timestamptz sans
  * risque de decalage de jour.
  *
+ * Retourne TOUJOURS une string (jamais undefined) : si l'entree est vide ou
+ * invalide, on retombe sur aujourd'hui (midi UTC). Le formulaire garantit
+ * deja une date par defaut, ce fallback n'est qu'un filet de securite et
+ * permet de typer la colonne encounter_date (NOT NULL) sans gymnastique.
+ *
  * @example toStorageTimestamp('2026-04-08') -> '2026-04-08T12:00:00.000Z'
  */
-export function toStorageTimestamp(dateOnly: string | null | undefined): string | undefined {
-  if (!dateOnly) return undefined
-  // On ne garde que la partie calendaire au cas ou une valeur complete
-  // arriverait (idempotent).
-  const day = dateOnly.slice(0, 10)
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return undefined
-  return `${day}T12:00:00.000Z`
+export function toStorageTimestamp(dateOnly: string | null | undefined): string {
+  const day = (dateOnly ?? '').slice(0, 10)
+  const valid = /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : new Date().toISOString().slice(0, 10)
+  return `${valid}T12:00:00.000Z`
 }
 
 /**

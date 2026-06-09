@@ -275,29 +275,30 @@ export function EncounterStep3({
           {/* Asterisque retiré (second-agent/30 — phase test) : on laisse libre
               pour analyser qui complète quoi avant de rendre obligatoire. */}
         </label>
-        <div className="relative">
-          <textarea
-            id={descId}
-            value={description}
-            onChange={(e) => onDescriptionChange(e.target.value)}
-            placeholder={t('contribute.description.placeholder', { defaultValue: '' })}
-            rows={5}
-            // Phase test : description non obligatoire (second-agent/30).
-            aria-invalid={!!(submitAttempted && errors.description)}
-            aria-describedby={submitAttempted && errors.description ? `${descId}-error` : undefined}
-            className="w-full px-4 py-3 pb-7 rounded-2xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
-          />
-          {/* Compteur ancré en bas à droite du textarea (Figma) */}
-          <span
-            aria-live="polite"
-            className={[
-              'absolute bottom-2 right-3 text-xs tabular-nums pointer-events-none',
-              description.length > MAX_DESC ? 'text-[var(--color-error)]' : 'text-muted-foreground',
-            ].join(' ')}
-          >
-            {description.length}/{MAX_DESC}
-          </span>
-        </div>
+        <textarea
+          id={descId}
+          value={description}
+          onChange={(e) => onDescriptionChange(e.target.value)}
+          placeholder={t('contribute.description.placeholder', { defaultValue: '' })}
+          rows={5}
+          // Phase test : description non obligatoire (second-agent/30).
+          aria-invalid={!!(submitAttempted && errors.description)}
+          aria-describedby={submitAttempted && errors.description ? `${descId}-error` : undefined}
+          // resize-y : l'utilisateur peut agrandir la boite en hauteur (Nicolas
+          // 2026-06-09). min-h garde une taille confortable par defaut.
+          className="w-full px-4 py-3 rounded-2xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-y text-sm min-h-[120px]"
+        />
+        {/* Compteur SOUS la zone de saisie (plus de chevauchement avec le texte
+            en bout de ligne sur mobile, Nicolas 2026-06-09). */}
+        <span
+          aria-live="polite"
+          className={[
+            'self-end text-xs tabular-nums',
+            description.length > MAX_DESC ? 'text-[var(--color-error)]' : 'text-muted-foreground',
+          ].join(' ')}
+        >
+          {description.length}/{MAX_DESC}
+        </span>
         {/* Erreur affichée UNIQUEMENT après une tentative de soumission ratée
             — sinon le label "*" suffit à signaler le caractère obligatoire
             (second-agent/30). */}

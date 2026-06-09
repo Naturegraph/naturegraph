@@ -50,54 +50,48 @@ interface ContributionType {
   Icon: React.ElementType
   /** Si true, carte grisée + badge "Bientôt" — non cliquable */
   disabled: boolean
-  /** V1.2.0 : si true, la carte n est rendue que sur mobile (md:hidden).
-   *  Utilise pour le carnet d observations, dont le mode terrain n a de
-   *  sens que sur smartphone. */
-  mobileOnly?: boolean
 }
 
+// Ordre Figma 6385:97403 (Nicolas 2026-06-08) : Carnet -> Instant -> Rencontre.
 const CONTRIBUTION_TYPES: ContributionType[] = [
   {
-    id: 'nature_encounter',
-    title: 'Rencontre nature',
-    description: 'Contribue en ajoutant une observation animale, avec ou sans photo.',
-    /** Teal-50 du design system ($brand-highlight-50 = #e5f7f7) */
-    cardBg: '#e5f7f7',
-    /** Teal-500 via CSS var (--color-highlight-primary = #006666) */
-    iconBg: 'var(--color-highlight-primary)',
-    Icon: Bird,
+    // V1.2.0 (NG-005/006) : carnet d'observations.
+    // Nicolas 2026-06-08 : disponible PARTOUT (desktop, tablette, mobile). Deux
+    // usages : (1) mode terrain au fil d'une sortie sur smartphone, (2) saisie
+    // au calme sur PC pour reporter des notes papier. On ne restreint plus au
+    // mobile pour couvrir l'ensemble des cas d'usage.
+    id: 'nature_notebook',
+    title: "Carnet d'observations",
+    description: 'Démarre une sortie nature : ajoute progressivement les espèces observées.',
+    /** Background/Neutral/Secondary — gris clair (#F4F4F4, Figma Frame 2985). */
+    cardBg: '#f4f4f4',
+    /** Content/Neutral/Secondary — bleu nuit (#20203D = $greyscale-800). */
+    iconBg: '#20203d',
+    Icon: BookOpen,
     disabled: false,
   },
   {
     id: 'nature_instant',
     title: 'Instant nature',
     description: "Partage un paysage ou un phénomène naturel qui t'a marqué.",
-    /** Warm-bg-tertiary via CSS var (--color-bg-tertiary = #fff4e0) */
+    /** Background/Neutral/Tertiary (--color-bg-tertiary = #FFF4E0). */
     cardBg: 'var(--color-bg-tertiary)',
-    /** Amber brand primary — token CSS (BATCH 42 — _light/_dark theme). */
+    /** Amber brand primary (--color-amber-primary = #CC7A00). */
     iconBg: 'var(--color-amber-primary)',
     Icon: MountainSnow,
     // Nicolas 2026-05-23 : activé en preview, branche feat/instant-nature-preview.
     disabled: false,
   },
   {
-    // V1.2.0 (NG-005/006) : mode terrain dedie. MOBILE-ONLY.
-    // Decision Nicolas 2026-06-02 : un PC ne se balade pas en nature, le
-    // mode terrain (timer + brouillon persistant + ajout rapide d especes)
-    // n a de sens que sur smartphone. Sur desktop, l user peut quand meme
-    // creer un post multi-especes via "Rencontre nature" (qui pourra
-    // reprendre un carnet entame sur mobile, Phase 4+).
-    // Rendu visuel : la carte est filtree au render via mobileOnly = true.
-    id: 'nature_notebook',
-    title: "Carnet d'observations",
-    description: 'Démarre une sortie nature : ajoute progressivement les espèces observées.',
-    /** Primary-light du design system (violet brand pale) */
-    cardBg: 'var(--color-primary-light)',
-    /** Primary brand */
-    iconBg: 'var(--color-primary)',
-    Icon: BookOpen,
+    id: 'nature_encounter',
+    title: 'Rencontre nature',
+    description: 'Contribue en ajoutant une observation animale, avec ou sans photo.',
+    /** Background/Highlight/Secondary — teal-50 (#E5F7F7, $brand-highlight-50). */
+    cardBg: '#e5f7f7',
+    /** Background/Highlight/Primary (--color-highlight-primary = #006666). */
+    iconBg: 'var(--color-highlight-primary)',
+    Icon: Bird,
     disabled: false,
-    mobileOnly: true,
   },
 ]
 
@@ -174,84 +168,100 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
     }
   }
 
-  /** Rendu des cartes — partagé entre dropdown et bottom sheet */
-  const cards = (
-    <div role="menu" aria-label="Type de contribution" className="flex flex-col gap-1">
-      {CONTRIBUTION_TYPES.map((type, i) => {
-        const { Icon } = type
+  // Ordre Figma selon le viewport (Nicolas 2026-06-08) — le Carnet est
+  // desormais disponible PARTOUT (desktop, tablette, mobile) pour couvrir les
+  // deux usages : mode terrain sur smartphone OU saisie au calme sur PC.
+  //  - Mobile (bottom sheet) : Carnet -> Instant -> Rencontre (terrain en 1er,
+  //    pouce a portee).
+  //  - Desktop / tablette (dropdown) : Rencontre -> Instant -> Carnet (l'action
+  //    de contribution principale en haut).
+  const mobileOrder = CONTRIBUTION_TYPES
+  const desktopOrder = [...CONTRIBUTION_TYPES].reverse()
 
-        // V1.2.0 : carte cachee sur desktop (md+) si mobileOnly = true
-        const mobileOnlyClass = type.mobileOnly ? 'md:hidden' : ''
+  /**
+   * Rendu des cartes pour un ordre donné.
+   * @param types - liste ordonnée à afficher
+   * @param attachRef - place le focus initial sur le 1er item actif. Activé
+   *   uniquement côté desktop (le dropdown mobile est aussi monté dans le DOM ;
+   *   un seul des deux doit porter le ref pour éviter un focus sur un nœud caché).
+   */
+  function renderCards(types: ContributionType[], attachRef: boolean) {
+    const firstFocusableIndex = types.findIndex((t) => !t.disabled)
+    return (
+      <div role="menu" aria-label="Type de contribution" className="flex flex-col gap-1">
+        {types.map((type, i) => {
+          const { Icon } = type
 
-        // Carte désactivée (bientôt disponible) — rendu en <div> non cliquable
-        if (type.disabled) {
+          // Carte désactivée (bientôt disponible) — rendu en <div> non cliquable
+          if (type.disabled) {
+            return (
+              <div
+                key={type.id}
+                role="menuitem"
+                aria-disabled="true"
+                className="flex items-center gap-4 p-3 rounded-md opacity-60 cursor-not-allowed select-none"
+                style={{ backgroundColor: type.cardBg }}
+              >
+                {/* Cercle icône — 48px (Figma Frame 4448) */}
+                <div
+                  className="size-12 rounded-full flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: type.iconBg }}
+                  aria-hidden="true"
+                >
+                  <Icon className="size-6 text-white" strokeWidth={2} />
+                </div>
+
+                {/* Texte */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-title font-bold text-base leading-[1.2] text-foreground">
+                      {type.title}
+                    </p>
+                    <SoonBadge />
+                  </div>
+                  <p className="text-sm text-[var(--color-text-secondary)] mt-1 leading-normal">
+                    {type.description}
+                  </p>
+                </div>
+              </div>
+            )
+          }
+
+          // Carte active — bouton cliquable
           return (
-            <div
+            <button
               key={type.id}
+              ref={attachRef && i === firstFocusableIndex ? firstItemRef : undefined}
+              type="button"
               role="menuitem"
-              aria-disabled="true"
-              className={`flex items-center gap-5 p-4 rounded-lg opacity-60 cursor-not-allowed select-none ${mobileOnlyClass}`}
+              onClick={() => handleSelect(type)}
+              className="w-full flex items-center gap-4 p-3 rounded-md text-left transition-opacity hover:opacity-90 active:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
               style={{ backgroundColor: type.cardBg }}
             >
-              {/* Cercle icône */}
+              {/* Cercle icône — 48px (Figma Frame 4448) */}
               <div
-                className="size-14 rounded-full flex items-center justify-center shrink-0"
+                className="size-12 rounded-full flex items-center justify-center shrink-0"
                 style={{ backgroundColor: type.iconBg }}
                 aria-hidden="true"
               >
-                <Icon className="size-7 text-white" strokeWidth={1.75} />
+                <Icon className="size-6 text-white" strokeWidth={2} />
               </div>
 
               {/* Texte */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-title font-bold text-[17px] leading-snug text-foreground">
-                    {type.title}
-                  </p>
-                  <SoonBadge />
-                </div>
-                <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">
+                <p className="font-title font-bold text-base leading-[1.2] text-foreground">
+                  {type.title}
+                </p>
+                <p className="text-sm text-[var(--color-text-secondary)] mt-1 leading-normal">
                   {type.description}
                 </p>
               </div>
-            </div>
+            </button>
           )
-        }
-
-        // Carte active — bouton cliquable
-        return (
-          <button
-            key={type.id}
-            ref={i === 0 ? firstItemRef : undefined}
-            type="button"
-            role="menuitem"
-            onClick={() => handleSelect(type)}
-            className={`w-full flex items-center gap-5 p-4 rounded-lg text-left transition-opacity hover:opacity-90 active:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${mobileOnlyClass}`}
-            style={{ backgroundColor: type.cardBg }}
-          >
-            {/* Cercle icône */}
-            <div
-              className="size-14 rounded-full flex items-center justify-center shrink-0"
-              style={{ backgroundColor: type.iconBg }}
-              aria-hidden="true"
-            >
-              <Icon className="size-7 text-white" strokeWidth={1.75} />
-            </div>
-
-            {/* Texte */}
-            <div className="flex-1 min-w-0">
-              <p className="font-title font-bold text-[17px] leading-snug text-foreground">
-                {type.title}
-              </p>
-              <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">
-                {type.description}
-              </p>
-            </div>
-          </button>
-        )
-      })}
-    </div>
-  )
+        })}
+      </div>
+    )
+  }
 
   return (
     <>
@@ -268,9 +278,9 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
         role="dialog"
         aria-modal="true"
         aria-label="Partager une contribution"
-        className="hidden md:block absolute top-[calc(100%+8px)] right-0 w-[400px] max-w-[calc(100vw-24px)] bg-[var(--color-bg-primary)] border border-border/70 rounded-lg shadow-xl z-50 overflow-hidden p-1"
+        className="hidden md:block absolute top-[calc(100%+8px)] right-0 w-[400px] max-w-[calc(100vw-24px)] bg-[var(--color-bg-primary)] border-[0.5px] border-border rounded-sm shadow-[0px_6px_16px_-4px_rgba(0,0,0,0.1)] z-50 overflow-hidden p-1"
       >
-        {cards}
+        {renderCards(desktopOrder, true)}
       </div>
 
       {/* ── Mobile : bottom sheet positionné au-dessus de la MobileBottomNav
@@ -289,7 +299,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
         </div>
         {/* Titre "Partager" retiré sur mobile (Nicolas 2026-05-19) — pas
             d'intérêt sur sheet compacte, les cartes parlent d'elles-mêmes. */}
-        <div className="px-2 pt-2 pb-4">{cards}</div>
+        <div className="px-2 pt-2 pb-4">{renderCards(mobileOrder, false)}</div>
       </div>
     </>
   )

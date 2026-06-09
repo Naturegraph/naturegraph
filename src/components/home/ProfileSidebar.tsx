@@ -96,7 +96,9 @@ export function ProfileSidebar() {
     region,
   )
 
-  const observations = userStats?.postsCount ?? profile?.posts_count ?? 0
+  // Obs = CUMUL d'observations d'especes (carnets inclus), Nicolas 2026-06-09.
+  // Fallback posts_count si la stat n'est pas encore chargee.
+  const observations = userStats?.obsCount ?? profile?.posts_count ?? 0
   const species = userStats?.uniqueSpeciesCount ?? 0
   const streakDays = streak ?? 0
 

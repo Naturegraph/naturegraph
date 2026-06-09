@@ -10,7 +10,6 @@ import { AccessibilityProvider } from '@/contexts/AccessibilityContext'
 import { NotebookProvider } from '@/contexts/NotebookContext'
 import { CookieBanner } from '@/components/layout/CookieBanner'
 import { InstallPromptBanner } from '@/components/layout/InstallPromptBanner'
-import { NotebookBanner } from '@/components/notebook/NotebookBanner'
 import loadingVideo from '@/assets/branding/app-loading.webm'
 
 /**
@@ -140,9 +139,10 @@ export default function App() {
                     {/* BootSplash : loader Naturegraph visible 900ms au tout premier
                       mount (cohérent avec branding sur boot PWA / mobile web). */}
                     <BootSplash>
-                      {/* Bandeau sticky mode carnet actif (NG-006). Visible partout
-                        dans l app pour rester dans le contexte terrain. */}
-                      <NotebookBanner />
+                      {/* Bandeau sticky mode carnet (NG-006) RETIRE le 2026-06-08
+                          (Nicolas : peu utile + visuellement lourd ; refonte
+                          produit a venir). Le carnet reste accessible via le
+                          menu "+ Contribuer". Composant conserve pour reprise. */}
                       <Outlet />
                     </BootSplash>
                     {/* InstallPromptBanner — propose l'installation PWA en haut

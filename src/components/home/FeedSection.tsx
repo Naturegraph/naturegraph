@@ -224,6 +224,10 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
     // V1.2.0 (NG-005/006) : si le post est issu d un carnet, FeedPost rendra
     // la carte enrichie au lieu des chips espece/categorie standard.
     notebookId: (item as { notebook_id?: string | null }).notebook_id ?? null,
+    // Compteur d'especes du carnet lie (pre-charge via posts_public) -> affiche
+    // "Especes (N)" dans le feed sans fetch (carte repliee).
+    notebookSpeciesCount:
+      (item as { notebook_species_count?: number | null }).notebook_species_count ?? null,
     scientific_name: item.scientific_name ?? null,
     taxref_id: item.taxref_id ?? null,
     taxonomic_group: item.taxonomic_group ?? null,

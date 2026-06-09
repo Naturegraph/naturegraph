@@ -25,9 +25,23 @@ export interface PlatformStats {
 
 export interface UserStats {
   postsCount: number
+  /** Obs = CUMUL d'observations d'especes (carnets inclus). Nicolas 2026-06-09. */
+  obsCount: number
   uniqueSpeciesCount: number
   followersCount: number
   followingCount: number
+}
+
+/** Stats d'observation d'un user (carnets inclus), via RPC get_user_observation_stats. */
+export interface UserObservationStats {
+  /** Cumul d'observations d'especes (chaque espece de chaque post compte). */
+  obsTotal: number
+  /** Especes distinctes (ne grossit pas si meme espece re-observee). */
+  speciesTotal: number
+  /** Cumul d'especes observees depuis le debut de semaine (si fourni). */
+  obsWeek: number
+  /** Repartition par groupe app (birds/mammals/...) pour l'ADN observateur. */
+  classes: Record<string, number>
 }
 
 export type StatsPeriod = 'week' | 'month' | 'quarter'
@@ -50,8 +64,12 @@ export interface TrendingSpecies {
   observations: number
   /** URL de la dernière photo associée (null si aucune) */
   imageUrl: string | null
-  /** Groupe taxonomique (sert de fallback emoji si imageUrl est null) */
+  /** Groupe taxonomique */
   category: string | null
+  /** V1.1.5 NG-032 : taxref_id + scientific_name pour activer le MEME filtre
+   *  espece que le chip d'un post (Species Context Layer) au clic. */
+  taxrefId: string | null
+  scientificName: string | null
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -162,52 +180,49 @@ export async function getPlatformStats(): Promise<PlatformStats> {
 export async function getImpactStats(period: StatsPeriod = 'month'): Promise<ImpactStats> {
   const c = ensureClient()
   const { current, oldest } = getPeriodBounds(period)
-  const internalIds = await getInternalUserIds()
-  const internalClause = notInClause(internalIds)
 
-  // Helper pour appliquer le filtre is_internal sur les requetes posts
-  const filterPosts = <T extends { not: (col: string, op: string, val: string) => T }>(q: T) =>
-    internalClause ? q.not('user_id', 'in', internalClause) : q
+  // Observations = CUMUL D'ESPECES (RPC get_observations_count), pas le nombre
+  // de posts (Nicolas 2026-06-08 : vrai nombre d'observations reel). Un post
+  // carnet a 3 especes compte pour 3, un partage mono-espece pour 1, un Instant
+  // nature (sans espece) pour 0. La RPC exclut deja les comptes internes.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rpc = (c as any).rpc.bind(c) as (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ data: number | string | null }>
 
   // Requêtes en parallèle : observations courante + précédente, migrateurs courant + précédent
   const [obsCurrent, obsPrevious, migCurrent, migPrevious] = await Promise.all([
-    // Observations (posts publiés), période courante, exclut les is_internal
-    filterPosts(
-      c
-        .from('posts')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'published')
-        .gte('created_at', current),
-    ),
+    // Observations (cumul d'especes), période courante
+    rpc('get_observations_count', { p_start: current }),
 
     // Observations, période précédente
-    filterPosts(
-      c
-        .from('posts')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'published')
-        .gte('created_at', oldest)
-        .lt('created_at', current),
-    ),
+    rpc('get_observations_count', { p_start: oldest, p_end: current }),
 
-    // Migrateurs (comptes créés), période courante, exclut les is_internal
+    // Migrateurs (comptes créés), période courante, exclut les is_internal.
+    // Nicolas 2026-06-06 : on ne compte QUE les comptes réellement finalisés.
+    // Un pseudo auto "user_xxxxxxxx" = onboarding non terminé (compte créé via
+    // invitation mais étape pseudo non validée) -> exclu, pour un chiffre réel.
+    // Finir l'onboarding implique d'avoir choisi un pseudo ET d'être connecté.
     c
       .from('profiles')
       .select('id', { count: 'exact', head: true })
       .eq('is_internal', false)
+      .not('username', 'like', 'user\\_%')
       .gte('created_at', current),
 
-    // Migrateurs, période précédente
+    // Migrateurs, période précédente (même filtre pour cohérence du trend)
     c
       .from('profiles')
       .select('id', { count: 'exact', head: true })
       .eq('is_internal', false)
+      .not('username', 'like', 'user\\_%')
       .gte('created_at', oldest)
       .lt('created_at', current),
   ])
 
-  const obsCount = obsCurrent.count ?? 0
-  const obsPrev = obsPrevious.count ?? 0
+  const obsCount = Number(obsCurrent.data ?? 0)
+  const obsPrev = Number(obsPrevious.data ?? 0)
   const migCount = migCurrent.count ?? 0
   const migPrev = migPrevious.count ?? 0
 
@@ -237,106 +252,171 @@ export async function getTrendingSpecies(
   const c = ensureClient()
   const { current } = getPeriodBounds(period)
 
-  /** Requête + agrégation pour une zone donnée (ou globale si region = null). */
-  async function queryZone(zoneRegion: string | null): Promise<TrendingSpecies[]> {
+  /**
+   * Requête + agrégation pour une zone donnée (ou globale si region = null).
+   * V1.1.5 NG-032 : `withDateFilter` permet un fallback all-time quand la
+   * periode courante ne donne pas assez de tendances (beta faible volume),
+   * pour que la section ne paraisse jamais morte.
+   */
+  async function queryZone(
+    zoneRegion: string | null,
+    withDateFilter = true,
+  ): Promise<TrendingSpecies[]> {
     let q = c
       .from('posts')
-      .select('species_name, id, created_at, taxonomic_group')
+      .select('species_name, scientific_name, taxref_id, id, created_at, taxonomic_group')
       .eq('status', 'published')
       .not('species_name', 'is', null)
-      .gte('created_at', current)
       .order('created_at', { ascending: false })
 
+    if (withDateFilter) q = q.gte('created_at', current)
     if (zoneRegion) q = q.eq('region', zoneRegion)
 
     const { data: rows, error } = await q
     if (error) throw new Error(error.message)
     if (!rows || rows.length === 0) return []
 
-    // Agrégat espèce → count + id du post le plus récent + groupe taxonomique
-    // (fallback emoji quand aucune photo n'est disponible)
-    const countMap = new Map<string, { count: number; postId: string; category: string | null }>()
+    // Agrégat espèce → count + TOUS les postIds (par récence) + identite
+    // taxonomique. On garde tous les postIds pour pouvoir trouver une photo
+    // meme si le post le plus recent n'en a pas (cf regle NG-032 ci-dessous).
+    type Agg = {
+      count: number
+      postIds: string[]
+      category: string | null
+      scientificName: string | null
+      taxrefId: string | null
+    }
+    const countMap = new Map<string, Agg>()
     for (const row of rows) {
       const name = row.species_name as string
       const existing = countMap.get(name)
       if (existing) {
         existing.count++
+        existing.postIds.push(row.id as string)
       } else {
         countMap.set(name, {
           count: 1,
-          postId: row.id as string,
+          postIds: [row.id as string],
           category: (row.taxonomic_group as string | null) ?? null,
+          scientificName: (row.scientific_name as string | null) ?? null,
+          taxrefId: (row.taxref_id as string | null) ?? null,
         })
       }
     }
 
-    // Tri par count décroissant, top 3
-    const sorted = [...countMap.entries()].sort((a, b) => b[1].count - a[1].count).slice(0, 3)
+    // Tri par count décroissant (toutes especes — le filtre photo se fait
+    // ensuite, donc on ne slice pas encore a 3 ici).
+    const sorted = [...countMap.entries()].sort((a, b) => b[1].count - a[1].count)
 
-    // Dernière photo du post le plus récent (image réelle uniquement)
-    const postIds = sorted.map(([, v]) => v.postId)
-    const { data: mediaRows } = await c
-      .from('media')
-      .select('post_id, url, display_order')
-      .in('post_id', postIds)
-      .eq('status', 'ready')
-      // Colonne reelle = display_order (table media). 'position' n existait
-      // pas en DB et generait un 400 silencieux dans la console (Nicolas
-      // 2026-05-31 audit console).
-      .order('display_order', { ascending: true })
-
+    // Recupere les photos de TOUS les posts candidats (image reelle prete).
+    const allPostIds = sorted.flatMap(([, v]) => v.postIds)
     const imageMap = new Map<string, string>()
-    for (const m of mediaRows ?? []) {
-      if (!imageMap.has(m.post_id)) imageMap.set(m.post_id, m.url)
+    if (allPostIds.length > 0) {
+      const { data: mediaRows } = await c
+        .from('media')
+        .select('post_id, url, display_order')
+        .in('post_id', allPostIds)
+        .eq('status', 'ready')
+        .order('display_order', { ascending: true })
+      for (const m of mediaRows ?? []) {
+        if (!imageMap.has(m.post_id)) imageMap.set(m.post_id, m.url)
+      }
     }
 
-    return sorted.map(([name, { count, postId, category }]) => ({
-      name,
-      observations: count,
-      imageUrl: imageMap.get(postId) ?? null,
-      category,
-    }))
+    // Regle NG-032 (Nicolas 2026-06-03) : une espece n'apparait dans les
+    // tendances QUE si au moins une de ses observations possede une photo.
+    // On cherche la 1ere photo dispo parmi les posts de l'espece (du plus
+    // recent au plus ancien). Aucune photo -> espece exclue. On s'arrete a 3.
+    const result: TrendingSpecies[] = []
+    for (const [name, agg] of sorted) {
+      if (result.length >= 3) break
+      const photoUrl = agg.postIds.map((id) => imageMap.get(id)).find((u): u is string => !!u)
+      if (!photoUrl) continue // pas de photo -> on ne comptabilise pas (regle stricte)
+      result.push({
+        name,
+        observations: agg.count,
+        imageUrl: photoUrl,
+        category: agg.category,
+        taxrefId: agg.taxrefId,
+        scientificName: agg.scientificName,
+      })
+    }
+    return result
   }
 
-  // 1. Tentative locale si région fournie
+  // 1. Tentative locale si région fournie (sur la période)
   if (region) {
     const local = await queryZone(region)
     if (local.length >= 3) return local
     // Fallback : la zone n'a pas assez de données, on bascule en global
   }
 
-  // 2. Global plateforme
-  return queryZone(null)
+  // 2. Global plateforme (sur la période)
+  const global = await queryZone(null)
+  if (global.length > 0) return global
+
+  // 3. V1.1.5 NG-032 : fallback all-time (sans filtre de date). En beta, une
+  // periode courte peut etre vide ; on remonte alors les dernieres especes
+  // identifiees toutes periodes confondues pour garder la section vivante.
+  return queryZone(null, false)
 }
 
 // ─── Stats utilisateur ──────────────────────────────────────────────────────
 
 /** Stats d'un utilisateur (profil sidebar). */
+/**
+ * Stats d'observation cumulatives d'un user, CARNETS INCLUS (Nicolas
+ * 2026-06-09). Une espece de carnet compte comme une observation a part
+ * entiere. Obs = cumul ; Especes = distinctes. Via la RPC
+ * get_user_observation_stats (SECURITY INVOKER, observations publiques des
+ * carnets publies lisibles -> coherent quel que soit le viewer).
+ *
+ * @param weekStart si fourni (ISO), obsWeek = cumul d'especes depuis cette date.
+ */
+export async function getUserObservationStats(
+  userId: string,
+  weekStart?: string,
+): Promise<UserObservationStats> {
+  const c = ensureClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (c as any).rpc('get_user_observation_stats', {
+    p_user_id: userId,
+    p_week_start: weekStart ?? null,
+  })
+  if (error) throw new Error(error.message)
+  const j = (data ?? {}) as {
+    obs_total?: number
+    species_total?: number
+    obs_week?: number
+    classes?: Record<string, number>
+  }
+  return {
+    obsTotal: Number(j.obs_total ?? 0),
+    speciesTotal: Number(j.species_total ?? 0),
+    obsWeek: Number(j.obs_week ?? 0),
+    classes: j.classes ?? {},
+  }
+}
+
 export async function getUserStats(userId: string): Promise<UserStats> {
   const c = ensureClient()
 
-  // 1. Compteurs dénormalisés depuis profiles
-  const { data: profile, error: pErr } = await c
-    .from('profiles')
-    .select('posts_count, followers_count, following_count')
-    .eq('id', userId)
-    .maybeSingle()
+  // Compteurs dénormalisés (followers/following/posts) + stats d'observation
+  // CARNETS INCLUS (cumul especes + especes distinctes) en parallele.
+  const [{ data: profile, error: pErr }, obs] = await Promise.all([
+    c
+      .from('profiles')
+      .select('posts_count, followers_count, following_count')
+      .eq('id', userId)
+      .maybeSingle(),
+    getUserObservationStats(userId),
+  ])
   if (pErr) throw new Error(pErr.message)
-
-  // 2. Espèces uniques (taxref_id distincts dans ses posts publiés)
-  const { data: speciesRows, error: sErr } = await c
-    .from('posts')
-    .select('taxref_id')
-    .eq('user_id', userId)
-    .eq('status', 'published')
-    .not('taxref_id', 'is', null)
-  if (sErr) throw new Error(sErr.message)
-
-  const uniqueSpecies = new Set((speciesRows ?? []).map((r) => r.taxref_id as string))
 
   return {
     postsCount: profile?.posts_count ?? 0,
-    uniqueSpeciesCount: uniqueSpecies.size,
+    obsCount: obs.obsTotal,
+    uniqueSpeciesCount: obs.speciesTotal,
     followersCount: profile?.followers_count ?? 0,
     followingCount: profile?.following_count ?? 0,
   }
@@ -442,21 +522,15 @@ export async function getWeekProgress(userId: string): Promise<WeekProgress> {
   const monday = new Date(now.getTime() - mondayOffset * 86_400_000)
   monday.setHours(0, 0, 0, 0)
 
-  // Requêtes en parallèle : posts cette semaine + objectif depuis profiles
-  const [postsResult, profileResult] = await Promise.all([
-    c
-      .from('posts')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('status', 'published')
-      .gte('created_at', monday.toISOString()),
+  // Cumul d'ESPECES observees cette semaine (carnets inclus : 4 especes dans un
+  // post = 4 obs cette semaine), Nicolas 2026-06-09. + objectif depuis profiles.
+  const [obs, profileResult] = await Promise.all([
+    getUserObservationStats(userId, monday.toISOString()),
     c.from('profiles').select('week_goal').eq('id', userId).maybeSingle(),
   ])
 
-  if (postsResult.error) throw new Error(postsResult.error.message)
-
   return {
-    current: postsResult.count ?? 0,
+    current: obs.obsWeek,
     goal: (profileResult.data as { week_goal?: number | null } | null)?.week_goal ?? 5,
   }
 }

@@ -18,6 +18,7 @@
  */
 
 import { useState, useEffect, lazy, Suspense } from 'react'
+import { useNavigationType } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -46,9 +47,8 @@ export default function Home() {
   // BATCH 10 / QW-UX1 : titre dynamique pour onglet navigateur (SEO + UX)
   usePageTitle(t('nav.home'))
   const [showContributeModal, setShowContributeModal] = useState(false)
-  // V1.2.0 (NG-005/006) : panneau Carnet d observations (mode terrain).
-  // Ouvert depuis le menu Contribute OU depuis le NotebookBanner sticky
-  // (via l event 'naturegraph:open-notebook').
+  // V1.2.0 (NG-005/006) : panneau Carnet d observations.
+  // Ouvert depuis le menu Contribute (via l event 'naturegraph:open-notebook').
   const [showNotebookPanel, setShowNotebookPanel] = useState(false)
 
   // Ecoute l ouverture du panneau carnet depuis le bandeau sticky global.
@@ -64,8 +64,82 @@ export default function Home() {
   // panelNode -> a rendre dans le composant racine.
   const { onEditPost, openCreate, panelNode } = useEditPostFlow()
 
-  // État partagé feed — contrôlable depuis la navbar mobile ET le header desktop
-  const [feedViewMode, setFeedViewMode] = useState<'list' | 'grid'>('list')
+  // État partagé feed — contrôlable depuis la navbar mobile ET le header desktop.
+  // Nicolas 2026-06-06 : on PERSISTE le mode (liste/galerie) en sessionStorage
+  // pour qu'un retour depuis une page détail (clic galerie -> post -> back) garde
+  // la vue galerie active au lieu de retomber en liste. Survit le temps de
+  // l'onglet, sans polluer un nouveau lancement (sessionStorage, pas local).
+  const [feedViewMode, setFeedViewMode] = useState<'list' | 'grid'>(() => {
+    try {
+      return sessionStorage.getItem('ng:feedViewMode') === 'grid' ? 'grid' : 'list'
+    } catch {
+      return 'list'
+    }
+  })
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('ng:feedViewMode', feedViewMode)
+    } catch {
+      /* mode privé / quota : on accepte la perte */
+    }
+  }, [feedViewMode])
+
+  // Restauration de la position de scroll au RETOUR vers le feed.
+  // Nicolas 2026-06-06 : après un clic post -> page détail -> retour, on ramène
+  // l'utilisateur exactement où il était (feed liste ET galerie). Le feed
+  // revient du cache React Query, donc la hauteur est identique.
+  const navigationType = useNavigationType()
+  useEffect(() => {
+    // 1) Sauvegarde CONTINUE de la position pendant qu'on est sur le feed.
+    //    Race-free : la page détail fait un scrollTo(0,0) à son montage ; si on
+    //    ne sauvait qu'au démontage de Home, on risquait de capturer 0. Ici la
+    //    dernière position réelle du feed est toujours enregistrée.
+    let rafSave = 0
+    const onScroll = () => {
+      if (rafSave) return
+      rafSave = requestAnimationFrame(() => {
+        rafSave = 0
+        try {
+          sessionStorage.setItem('ng:feedScrollY', String(window.scrollY))
+        } catch {
+          /* no-op */
+        }
+      })
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+
+    // 2) Restauration sur navigation POP : bouton retour navigateur OU bouton
+    //    "Retour au fil" (qui fait navigate(-1)). Pas sur un accès direct / clic
+    //    logo (PUSH) pour ne pas perturber ces entrées.
+    if (navigationType === 'POP') {
+      try {
+        const saved = sessionStorage.getItem('ng:feedScrollY')
+        const y = saved ? parseInt(saved, 10) : NaN
+        if (!Number.isNaN(y) && y > 0) {
+          // Robuste : en liste, les images chargent progressivement -> au 1er
+          // frame la page n'est pas assez haute pour atteindre `y`. On ré-essaie
+          // sur plusieurs frames jusqu'à atteindre la cible (~1s max). En galerie
+          // ça marche aussi (cellules à hauteur fixe).
+          let tries = 0
+          const restore = () => {
+            window.scrollTo(0, y)
+            tries += 1
+            if (window.scrollY < y - 2 && tries < 60) requestAnimationFrame(restore)
+          }
+          requestAnimationFrame(restore)
+        }
+      } catch {
+        /* no-op */
+      }
+    }
+
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (rafSave) cancelAnimationFrame(rafSave)
+    }
+    // Lecture unique au montage (navigationType reflète l'action de navigation).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [feedShowFilters, setFeedShowFilters] = useState(false)
   // V1.1.4 QA round 4 : compteur de filtres actifs (0..N), pour le badge chiffre
   const [feedActiveFiltersCount, setFeedActiveFiltersCount] = useState(0)

@@ -282,7 +282,7 @@ export function ContributeInstantForm() {
               aria-required="true"
               aria-invalid={!!errors.description}
               aria-describedby={errors.description ? 'instant-desc-error' : undefined}
-              className="w-full px-4 py-3 rounded-xl border border-border bg-cream-lighter text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
+              className="w-full px-4 py-3 rounded-xl border border-border bg-cream-lighter text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-y text-sm min-h-[110px]"
             />
             {errors.description && (
               <p id="instant-desc-error" role="alert" className="text-xs text-[var(--color-error)]">

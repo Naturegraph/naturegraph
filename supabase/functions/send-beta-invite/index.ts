@@ -10,10 +10,11 @@
  * Flow :
  *   1. Vérifie que l'appelant est un admin actif (JWT → admin_users)
  *   2. Charge l'entrée waitlist (email)
- *   3. Génère une clé beta personnelle (batch 99, max_uses=1, exp 365j) et
- *      l'INSERT dans beta_access_keys. Le code est passé via data.beta_code
- *      pour affichage dans le template ({{ .Data.beta_code }}) — l'invité peut
- *      le conserver pour reentrer dans la beta si sa session est perdue.
+ *   3. Clé beta personnelle (batch 99, max_uses=1, exp 365j) passée via
+ *      data.beta_code pour affichage dans le template ({{ .Data.beta_code }}).
+ *      RENVOI (Nicolas 2026-06-06) : si une clé non consommée existe déjà pour
+ *      cet email, on la RÉUTILISE (même code à chaque relance) ; sinon on en
+ *      génère/INSERT une nouvelle (1er envoi, comportement inchangé).
  *   4. inviteUserByEmail → crée le compte + envoie l'email d'invitation
  *      (template Supabase « Invite user », lien d'activation cliquable)
  *      Rollback de la clé si l'envoi échoue ou si le user est déjà membre.
@@ -190,24 +191,52 @@ Deno.serve(async (req: Request) => {
     // Au clic du lien de l'email, l'invité est redirigé ici (session créée).
     const redirectTo = `${appOrigin}/onboarding`
 
-    // ── 4. Génère une clé beta personnelle pour cet invité ───────────────────
-    // Demande Nicolas 2026-05-20 : chaque invité doit recevoir SA clé beta dans
-    // l'email, pour qu'il puisse re-rentrer dans la beta s'il perd sa session
-    // (le BetaAccessGuard demanderait alors une clé via l'écran /welcome).
-    // INSERT direct (vs RPC generate_beta_keys qui crée en batch).
-    const inviteeBetaCode = generateBetaCode()
-    const { error: keyErr } = await admin.from('beta_access_keys').insert({
-      code: inviteeBetaCode,
-      batch_number: WAITLIST_INVITE_BATCH,
-      max_uses: 1,
-      expires_at: new Date(Date.now() + INVITE_KEY_EXPIRES_DAYS * 86_400_000).toISOString(),
-      notes: `Invitation waitlist: ${entry.email}`,
-    })
-    if (keyErr) {
-      // Très improbable (collision UNIQUE sur code) — on log et on bascule
-      // l'invitation sans code (l'email partira mais sans {{ .Data.beta_code }}).
-      // Le user pourra toujours reentrer via login OTP — fail soft.
-      console.error('[send-beta-invite] beta key insert failed:', keyErr.message)
+    // ── 4. Clé beta personnelle pour cet invité ──────────────────────────────
+    // Demande Nicolas 2026-05-20 : chaque invité reçoit SA clé beta dans l'email
+    // pour pouvoir re-rentrer dans la beta s'il perd sa session.
+    //
+    // Nicolas 2026-06-06 (relance) : au RENVOI, on réutilise la clé déjà émise
+    // pour cet email si elle n'a jamais été consommée (current_uses = 0). Ainsi
+    // un user relancé reçoit le MÊME code qu'à la 1re invitation (cohérence +
+    // pas de prolifération de clés orphelines). Premier envoi : aucune clé
+    // existante -> on en génère une (comportement inchangé, donc zéro impact
+    // sur les nouveaux invités).
+    const inviteNote = `Invitation waitlist: ${entry.email}`
+    let inviteeBetaCode: string
+    let reusedExistingKey = false
+    let keyErr: { message: string } | null = null
+
+    const { data: existingKey } = await admin
+      .from('beta_access_keys')
+      .select('code')
+      .eq('notes', inviteNote)
+      .eq('current_uses', 0)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (existingKey?.code) {
+      // Relance : on réutilise la clé non consommée déjà associée à cet email.
+      inviteeBetaCode = existingKey.code
+      reusedExistingKey = true
+    } else {
+      // Premier envoi (ou clé précédente déjà consommée) : nouvelle clé.
+      inviteeBetaCode = generateBetaCode()
+      const insertRes = await admin.from('beta_access_keys').insert({
+        code: inviteeBetaCode,
+        batch_number: WAITLIST_INVITE_BATCH,
+        max_uses: 1,
+        expires_at: new Date(Date.now() + INVITE_KEY_EXPIRES_DAYS * 86_400_000).toISOString(),
+        notes: inviteNote,
+      })
+      keyErr = insertRes.error
+      if (keyErr) {
+        // Très improbable (collision UNIQUE sur code) — on log et on bascule
+        // l'invitation sans code (l'email partira mais sans {{ .Data.beta_code }}).
+        // Le user pourra toujours reentrer via login OTP — fail soft.
+        console.error('[send-beta-invite] beta key insert failed:', keyErr.message)
+      }
     }
 
     const inviteOptions = {
@@ -241,8 +270,9 @@ Deno.serve(async (req: Request) => {
         )
         if (existing?.email_confirmed_at) {
           // Déjà membre actif → rien à envoyer, on ne touche pas la waitlist.
-          // On supprime la clé qu'on venait de créer (orpheline).
-          if (!keyErr) {
+          // On supprime la clé qu'on venait de créer (orpheline) — mais JAMAIS
+          // une clé réutilisée (pré-existante), qui doit rester valide.
+          if (!keyErr && !reusedExistingKey) {
             await admin.from('beta_access_keys').delete().eq('code', inviteeBetaCode)
           }
           return json({ ok: false, sent: false, reason: 'already_member' }, 200)
@@ -260,8 +290,10 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Si l'envoi a échoué : on supprime la clé créée pour rien.
-    if (!sent && !keyErr) {
+    // Si l'envoi a échoué : on supprime la clé créée pour rien — mais jamais
+    // une clé réutilisée (pré-existante), qui doit rester valide pour un
+    // prochain renvoi.
+    if (!sent && !keyErr && !reusedExistingKey) {
       await admin.from('beta_access_keys').delete().eq('code', inviteeBetaCode)
     }
 
