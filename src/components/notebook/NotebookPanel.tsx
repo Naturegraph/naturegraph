@@ -81,6 +81,7 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
     resumeNotebook,
     finishNotebook,
     discardNotebook,
+    patchNotebook,
     addSpecies,
     removeSpecies,
     setSpeciesCount,
@@ -99,6 +100,9 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
   const [locationPublic, setLocationPublic] = useState(true)
   // Ville choisie dans l'autocomplete (coords/region/pays) ou null si saisie libre.
   const [startCity, setStartCity] = useState<CityResult | null>(null)
+  // Mode de l'etape 1 : 'new' = nouveau carnet (startNotebook) ; 'edit' = etape
+  // 1 d'un carnet deja actif (patchNotebook). Nicolas 2026-06-08.
+  const [createMode, setCreateMode] = useState<'new' | 'edit'>('new')
 
   const reloadList = useCallback(async () => {
     if (!user?.id) {
@@ -146,9 +150,21 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
   // ── Handlers gestion ──────────────────────────────────────────────────────
 
   async function handleContinue(nb: Notebook) {
+    const wasInProgress = nb.status === 'active' || nb.status === 'draft'
     try {
       await resumeNotebook(nb.id)
-      setView('edit')
+      if (wasInProgress) {
+        // 'En cours' -> on reprend directement a l'etape 2 (especes), la ou
+        // l'utilisateur en etait (Nicolas 2026-06-08).
+        setView('edit')
+      } else {
+        // Carnet 'Termine' re-ouvert -> etape 1 par defaut (revue titre/lieu).
+        setStartTitle(nb.title ?? '')
+        setStartLocation(nb.location_name ?? '')
+        setStartCity(null)
+        setCreateMode('edit')
+        setView('create')
+      }
     } catch (err) {
       console.error('[NotebookPanel] resumeNotebook failed', err)
       toast.error('Impossible d’ouvrir ce carnet', 'Réessaie dans un instant.')
@@ -182,16 +198,27 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
     // Coords/region/pays uniquement si la ville choisie correspond au texte
     // courant (sinon saisie libre -> pas de coordonnees).
     const city = startCity && startCity.name === startLocation.trim() ? startCity : null
+    const locationFields = {
+      location_name: startLocation.trim() || null,
+      latitude: city?.centroidLat ?? null,
+      longitude: city?.centroidLng ?? null,
+      city: city?.name ?? null,
+      region: city?.regionName ?? null,
+      country: city?.country ?? null,
+    }
     try {
-      await startNotebook({
-        title: startTitle.trim() || fallbackTitle,
-        location_name: startLocation.trim() || null,
-        latitude: city?.centroidLat ?? null,
-        longitude: city?.centroidLng ?? null,
-        city: city?.name ?? null,
-        region: city?.regionName ?? null,
-        country: city?.country ?? null,
-      })
+      if (createMode === 'edit' && activeNotebook) {
+        // Etape 1 d'un carnet deja actif -> mise a jour (pas de nouveau carnet).
+        await patchNotebook({
+          title: startTitle.trim() || activeNotebook.title || fallbackTitle,
+          ...locationFields,
+        })
+      } else {
+        await startNotebook({
+          title: startTitle.trim() || fallbackTitle,
+          ...locationFields,
+        })
+      }
       setView('edit')
     } catch (err) {
       // Ne JAMAIS echouer en silence (ex: tables carnet absentes sur la base
@@ -384,6 +411,7 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
                 setStartLocation('')
                 setLocationPublic(true)
                 setStartCity(null)
+                setCreateMode('new')
                 setView('create')
               }}
             >
@@ -426,13 +454,18 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
           {view === 'edit' && (
             <>
               <div className="flex items-center gap-3">
-                {/* Retour a la liste des carnets, toujours accessible (Nicolas
-                    2026-06-08). Le carnet reste sauvegarde (auto-save), on ne
-                    supprime rien : on revient juste a la gestion. */}
+                {/* Retour a l'etape 1 (titre/localisation du carnet actif),
+                    Nicolas 2026-06-08. Le carnet reste sauvegarde (auto-save). */}
                 <button
                   type="button"
-                  onClick={() => setView('manage')}
-                  aria-label="Retour à mes carnets"
+                  onClick={() => {
+                    setStartTitle(activeNotebook?.title ?? '')
+                    setStartLocation(activeNotebook?.location_name ?? '')
+                    setStartCity(null)
+                    setCreateMode('edit')
+                    setView('create')
+                  }}
+                  aria-label="Retour à l'étape précédente"
                   className="size-11 shrink-0 rounded-full btn-press btn-press-secondary bg-transparent flex items-center justify-center text-[var(--color-text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action-default)]"
                 >
                   <ArrowLeft className="size-4" aria-hidden="true" />
