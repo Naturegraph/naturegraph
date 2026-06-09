@@ -79,17 +79,20 @@ export function NotebookSpeciesList({
                   <li key={obs.id} className="flex items-baseline gap-2 text-base leading-normal">
                     <span
                       aria-hidden="true"
-                      className="relative top-[-3px] size-1.5 shrink-0 rounded-full bg-[var(--color-action-default)]"
+                      className="relative top-[8px] size-1.5 shrink-0 rounded-full bg-[var(--color-action-default)]"
                     />
-                    <span className="font-bold text-foreground">
-                      {obs.species_name} ({obs.individuals_count})
-                    </span>
-                    {obs.scientific_name && (
-                      <span className="text-[var(--color-text-secondary)]">
-                        {' '}
-                        - {obs.scientific_name}
+                    {/* Nom sur la ligne 1, nom latin sur la ligne 2 (Nicolas
+                        2026-06-09 : sur mobile le tout-en-ligne etait decale). */}
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-bold text-foreground">
+                        {obs.species_name} ({obs.individuals_count})
                       </span>
-                    )}
+                      {obs.scientific_name && (
+                        <span className="text-sm italic text-[var(--color-text-secondary)]">
+                          {obs.scientific_name}
+                        </span>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
