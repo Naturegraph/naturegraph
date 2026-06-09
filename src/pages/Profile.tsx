@@ -12,7 +12,7 @@
  * jusqu'à l'implémentation du statsService (Sprint 4).
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
@@ -20,6 +20,7 @@ import { usePageTitle } from '@/hooks/usePageTitle'
 import { useProfile, useProfileByUsername, useUpdateProfile } from '@/hooks/useProfile'
 // V1.1.4 NG-026 (Nicolas 2026-06-03) : Profile en scroll infini.
 import { useInfiniteUserPosts } from '@/hooks/usePost'
+import { useUserObservationStats } from '@/hooks/useStats'
 import { useSavedPostsPage } from '@/hooks/useSavedPosts'
 import { useToast } from '@/contexts/ToastContext'
 import { HomeNavbar } from '@/components/home/HomeNavbar'
@@ -31,6 +32,7 @@ import { ProfileAboutCard } from '@/components/profile/ProfileAboutCard'
 import { ProfileDNACard } from '@/components/profile/ProfileDNACard'
 import { EditProfilePanel } from '@/components/profile/EditProfilePanel'
 import { ContributeModal } from '@/components/home/ContributeModal'
+import { NotebookPanel } from '@/components/notebook/NotebookPanel'
 import { SettingsPanel } from '@/components/settings/SettingsPanel'
 // SharePopover du feed réutilisé pour cohérence (Nicolas 2026-05-01).
 import { SharePopover } from '@/components/home/SharePopover'
@@ -128,7 +130,13 @@ export default function Profile() {
   // pour que l user puisse choisir entre Rencontre Nature et Instant Nature
   // (avant : openCreate ouvrait directement la Rencontre, pas de choix).
   const [showContributeModal, setShowContributeModal] = useState(false)
-  // V1.2.0 carnets (mode terrain) retire de cette release : feature gelee.
+  // V1.2.0 NG-005/006 : panneau Carnet d observations (mode terrain)
+  const [showNotebookPanel, setShowNotebookPanel] = useState(false)
+  useEffect(() => {
+    const handler = () => setShowNotebookPanel(true)
+    window.addEventListener('naturegraph:open-notebook', handler)
+    return () => window.removeEventListener('naturegraph:open-notebook', handler)
+  }, [])
 
   // NG-002 (2026-05-31 retour QA) : panel d edition d observation rendu
   // directement dans le profil pour eviter le redirect vers /. L user reste
@@ -183,31 +191,29 @@ export default function Profile() {
     fetchNextPage: fetchMoreUserPosts,
   } = useInfiniteUserPosts(profileId)
   const userPosts: MockPost[] = userPostsRaw.map((p, i) => postFeedItemToMockPost(p, i))
+  // Stats d'observation CARNETS INCLUS (repartition par groupe pour l'ADN),
+  // Nicolas 2026-06-09. Cumul d'especes -> reflete les carnets multi-especes.
+  const { data: obsStats } = useUserObservationStats(profileId)
 
   // ── Calcul ADN d'observateur ──────────────────────────────────────────────
-  // Pourcentages calculés côté client depuis les posts réels (taxonomic_group)
-  // — Nicolas 2026-05-24 : sans ça, la card ADN affichait toujours « Aucune
-  // observation » car les `percent` étaient hardcodés à 0. Désormais la
-  // première observation déclenche l'apparition d'une barre.
-  if (profileData && userPostsRaw && userPostsRaw.length > 0) {
-    const counts = new Map<string, number>()
-    for (const p of userPostsRaw) {
-      const g = p.taxonomic_group ?? 'other'
-      counts.set(g, (counts.get(g) ?? 0) + 1)
-    }
-    const total = userPostsRaw.length
+  // V1.2.0 (Nicolas 2026-06-09) : repartition par groupe sur le CUMUL D'ESPECES
+  // (carnets inclus), via la RPC get_user_observation_stats. Avant : 1 par post
+  // (les especes des carnets etaient ignorees). Desormais un carnet multi-
+  // especes pese correctement dans l'ADN.
+  const dnaCounts = obsStats?.classes ?? {}
+  const dnaTotal = Object.values(dnaCounts).reduce((sum, n) => sum + n, 0)
+  if (profileData && dnaTotal > 0) {
     // On garde les intérêts déclarés à l'onboarding ET on ajoute les groupes
-    // observés effectivement mais non déclarés (utile : un user peut observer
-    // des oiseaux sans l'avoir coché à l'onboarding). Tri par % décroissant
-    // côté ProfileDNACard.
+    // observés effectivement mais non déclarés. Tri par % décroissant côté
+    // ProfileDNACard.
     const declared = new Set(profileData.interests.map((i) => i.id))
     const merged: typeof profileData.interests = profileData.interests.map((i) => ({
       id: i.id,
-      percent: Math.round(((counts.get(i.id) ?? 0) / total) * 100),
+      percent: Math.round(((dnaCounts[i.id] ?? 0) / dnaTotal) * 100),
     }))
-    for (const [id, count] of counts) {
+    for (const [id, count] of Object.entries(dnaCounts)) {
       if (!declared.has(id)) {
-        merged.push({ id, percent: Math.round((count / total) * 100) })
+        merged.push({ id, percent: Math.round((count / dnaTotal) * 100) })
       }
     }
     profileData = { ...profileData, interests: merged }
@@ -333,6 +339,8 @@ export default function Profile() {
     setShowContributeModal(false)
     if (type === 'nature_encounter' || type === 'nature_instant') {
       openCreate(type)
+    } else if (type === 'nature_notebook') {
+      setShowNotebookPanel(true)
     }
   }
 
@@ -390,6 +398,9 @@ export default function Profile() {
           onTypeSelect={handleContributeTypeSelect}
         />
       )}
+
+      {/* V1.2.0 : panneau Carnet d observations */}
+      {showNotebookPanel && <NotebookPanel onClose={() => setShowNotebookPanel(false)} />}
 
       {showEditPanel && (
         <EditProfilePanel

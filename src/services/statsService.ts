@@ -25,9 +25,23 @@ export interface PlatformStats {
 
 export interface UserStats {
   postsCount: number
+  /** Obs = CUMUL d'observations d'especes (carnets inclus). Nicolas 2026-06-09. */
+  obsCount: number
   uniqueSpeciesCount: number
   followersCount: number
   followingCount: number
+}
+
+/** Stats d'observation d'un user (carnets inclus), via RPC get_user_observation_stats. */
+export interface UserObservationStats {
+  /** Cumul d'observations d'especes (chaque espece de chaque post compte). */
+  obsTotal: number
+  /** Especes distinctes (ne grossit pas si meme espece re-observee). */
+  speciesTotal: number
+  /** Cumul d'especes observees depuis le debut de semaine (si fourni). */
+  obsWeek: number
+  /** Repartition par groupe app (birds/mammals/...) pour l'ADN observateur. */
+  classes: Record<string, number>
 }
 
 export type StatsPeriod = 'week' | 'month' | 'quarter'
@@ -166,33 +180,24 @@ export async function getPlatformStats(): Promise<PlatformStats> {
 export async function getImpactStats(period: StatsPeriod = 'month'): Promise<ImpactStats> {
   const c = ensureClient()
   const { current, oldest } = getPeriodBounds(period)
-  const internalIds = await getInternalUserIds()
-  const internalClause = notInClause(internalIds)
 
-  // Helper pour appliquer le filtre is_internal sur les requetes posts
-  const filterPosts = <T extends { not: (col: string, op: string, val: string) => T }>(q: T) =>
-    internalClause ? q.not('user_id', 'in', internalClause) : q
+  // Observations = CUMUL D'ESPECES (RPC get_observations_count), pas le nombre
+  // de posts (Nicolas 2026-06-08 : vrai nombre d'observations reel). Un post
+  // carnet a 3 especes compte pour 3, un partage mono-espece pour 1, un Instant
+  // nature (sans espece) pour 0. La RPC exclut deja les comptes internes.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rpc = (c as any).rpc.bind(c) as (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ data: number | string | null }>
 
   // Requêtes en parallèle : observations courante + précédente, migrateurs courant + précédent
   const [obsCurrent, obsPrevious, migCurrent, migPrevious] = await Promise.all([
-    // Observations (posts publiés), période courante, exclut les is_internal
-    filterPosts(
-      c
-        .from('posts')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'published')
-        .gte('created_at', current),
-    ),
+    // Observations (cumul d'especes), période courante
+    rpc('get_observations_count', { p_start: current }),
 
     // Observations, période précédente
-    filterPosts(
-      c
-        .from('posts')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'published')
-        .gte('created_at', oldest)
-        .lt('created_at', current),
-    ),
+    rpc('get_observations_count', { p_start: oldest, p_end: current }),
 
     // Migrateurs (comptes créés), période courante, exclut les is_internal.
     // Nicolas 2026-06-06 : on ne compte QUE les comptes réellement finalisés.
@@ -216,8 +221,8 @@ export async function getImpactStats(period: StatsPeriod = 'month'): Promise<Imp
       .lt('created_at', current),
   ])
 
-  const obsCount = obsCurrent.count ?? 0
-  const obsPrev = obsPrevious.count ?? 0
+  const obsCount = Number(obsCurrent.data ?? 0)
+  const obsPrev = Number(obsPrevious.data ?? 0)
   const migCount = migCurrent.count ?? 0
   const migPrev = migPrevious.count ?? 0
 
@@ -359,31 +364,59 @@ export async function getTrendingSpecies(
 // ─── Stats utilisateur ──────────────────────────────────────────────────────
 
 /** Stats d'un utilisateur (profil sidebar). */
+/**
+ * Stats d'observation cumulatives d'un user, CARNETS INCLUS (Nicolas
+ * 2026-06-09). Une espece de carnet compte comme une observation a part
+ * entiere. Obs = cumul ; Especes = distinctes. Via la RPC
+ * get_user_observation_stats (SECURITY INVOKER, observations publiques des
+ * carnets publies lisibles -> coherent quel que soit le viewer).
+ *
+ * @param weekStart si fourni (ISO), obsWeek = cumul d'especes depuis cette date.
+ */
+export async function getUserObservationStats(
+  userId: string,
+  weekStart?: string,
+): Promise<UserObservationStats> {
+  const c = ensureClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (c as any).rpc('get_user_observation_stats', {
+    p_user_id: userId,
+    p_week_start: weekStart ?? null,
+  })
+  if (error) throw new Error(error.message)
+  const j = (data ?? {}) as {
+    obs_total?: number
+    species_total?: number
+    obs_week?: number
+    classes?: Record<string, number>
+  }
+  return {
+    obsTotal: Number(j.obs_total ?? 0),
+    speciesTotal: Number(j.species_total ?? 0),
+    obsWeek: Number(j.obs_week ?? 0),
+    classes: j.classes ?? {},
+  }
+}
+
 export async function getUserStats(userId: string): Promise<UserStats> {
   const c = ensureClient()
 
-  // 1. Compteurs dénormalisés depuis profiles
-  const { data: profile, error: pErr } = await c
-    .from('profiles')
-    .select('posts_count, followers_count, following_count')
-    .eq('id', userId)
-    .maybeSingle()
+  // Compteurs dénormalisés (followers/following/posts) + stats d'observation
+  // CARNETS INCLUS (cumul especes + especes distinctes) en parallele.
+  const [{ data: profile, error: pErr }, obs] = await Promise.all([
+    c
+      .from('profiles')
+      .select('posts_count, followers_count, following_count')
+      .eq('id', userId)
+      .maybeSingle(),
+    getUserObservationStats(userId),
+  ])
   if (pErr) throw new Error(pErr.message)
-
-  // 2. Espèces uniques (taxref_id distincts dans ses posts publiés)
-  const { data: speciesRows, error: sErr } = await c
-    .from('posts')
-    .select('taxref_id')
-    .eq('user_id', userId)
-    .eq('status', 'published')
-    .not('taxref_id', 'is', null)
-  if (sErr) throw new Error(sErr.message)
-
-  const uniqueSpecies = new Set((speciesRows ?? []).map((r) => r.taxref_id as string))
 
   return {
     postsCount: profile?.posts_count ?? 0,
-    uniqueSpeciesCount: uniqueSpecies.size,
+    obsCount: obs.obsTotal,
+    uniqueSpeciesCount: obs.speciesTotal,
     followersCount: profile?.followers_count ?? 0,
     followingCount: profile?.following_count ?? 0,
   }
@@ -489,21 +522,15 @@ export async function getWeekProgress(userId: string): Promise<WeekProgress> {
   const monday = new Date(now.getTime() - mondayOffset * 86_400_000)
   monday.setHours(0, 0, 0, 0)
 
-  // Requêtes en parallèle : posts cette semaine + objectif depuis profiles
-  const [postsResult, profileResult] = await Promise.all([
-    c
-      .from('posts')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('status', 'published')
-      .gte('created_at', monday.toISOString()),
+  // Cumul d'ESPECES observees cette semaine (carnets inclus : 4 especes dans un
+  // post = 4 obs cette semaine), Nicolas 2026-06-09. + objectif depuis profiles.
+  const [obs, profileResult] = await Promise.all([
+    getUserObservationStats(userId, monday.toISOString()),
     c.from('profiles').select('week_goal').eq('id', userId).maybeSingle(),
   ])
 
-  if (postsResult.error) throw new Error(postsResult.error.message)
-
   return {
-    current: postsResult.count ?? 0,
+    current: obs.obsWeek,
     goal: (profileResult.data as { week_goal?: number | null } | null)?.week_goal ?? 5,
   }
 }

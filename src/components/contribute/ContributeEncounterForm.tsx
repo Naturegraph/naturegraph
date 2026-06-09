@@ -22,6 +22,8 @@ import { EncounterStep1 } from './EncounterStep1'
 import { EncounterStep2 } from './EncounterStep2'
 import { EncounterStep3 } from './EncounterStep3'
 import type { ObservationEntry } from './EncounterStep2'
+import type { NotebookObservation } from '@/services/notebookService'
+import type { TaxonomicGroup } from '@/types/database'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import { toStorageTimestamp, toDateInputValue } from '@/utils/observationDate'
 import { useAuth } from '@/contexts/AuthContext'
@@ -34,8 +36,30 @@ import { useContributePostSubmit } from '@/hooks/useContributePostSubmit'
 import { readDraft, useDraftAutoSave, clearDraft } from '@/hooks/useContributeDraft'
 import { createProposal } from '@/services/identificationService'
 import { Button } from '@/components/ui/Button'
+// V1.2.0 NG-005 : sauvegarde reelle multi-especes via carnet.
+import {
+  createPublishedNotebookFromEncounter,
+  publishExistingNotebookForPost,
+  replaceNotebookObservations,
+  listUserNotebooks,
+  getNotebookWithObservations,
+  type Notebook,
+} from '@/services/notebookService'
 
 // V1.2.0 : mapping interne TaxonomicGroup -> iNat class pour vernacular_class.
+// Symetrique au CLASS_TO_GROUP de EncounterStep2 mais en sens inverse.
+const GROUP_TO_INAT_CLASS: Record<string, string> = {
+  birds: 'Aves',
+  mammals: 'Mammalia',
+  insects: 'Insecta',
+  amphibians: 'Amphibia',
+  reptiles: 'Reptilia',
+  fish: 'Actinopterygii',
+  arachnids: 'Arachnida',
+  mollusks: 'Mollusca',
+  plants: 'Plantae',
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /**
@@ -100,7 +124,31 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
   const { submit, isSubmitting, uploadProgress, uploadError, clearError } =
     useContributePostSubmit('ContributeEncounterForm')
 
-  // V1.2.0 carnets (reprise multi-especes via carnet) retire de cette release.
+  // V1.2.0 (Nicolas 2026-06-09) : carnet PUBLIE dedie du post, uniquement en
+  // mode EDITION (= post.notebook_id charge au mount). Sert a re-synchroniser
+  // CE carnet en place au save. Les carnets de travail importes via le bouton
+  // livre NE sont PAS lies au post : leurs especes sont COPIEES dans le post
+  // (donnees independantes, comme une saisie manuelle). Donc supprimer un
+  // carnet de travail n'impacte jamais le post.
+  const [editingNotebookId, setEditingNotebookId] = useState<string | null>(null)
+  // Liste des carnets draft/active du user pour le picker (lazy fetch au mount).
+  const [availableNotebooks, setAvailableNotebooks] = useState<Notebook[]>([])
+  useEffect(() => {
+    if (!user?.id) return
+    let cancelled = false
+    // 'finished' inclus : un carnet "Termine" est un enregistrement prive que
+    // l'user vient justement rattacher ici a sa Rencontre (Nicolas 2026-06-08).
+    listUserNotebooks(user.id, { statuses: ['draft', 'active', 'finished'], limit: 10 })
+      .then((nbs) => {
+        if (!cancelled) setAvailableNotebooks(nbs)
+      })
+      .catch(() => {
+        if (!cancelled) setAvailableNotebooks([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [user?.id])
 
   const isEditing = !!editingPostId
 
@@ -179,7 +227,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
       const { data: postRaw, error } = await (supabase as any)
         .from('posts')
         .select(
-          'title, description, encounter_date, time_of_day, weather, habitat, location_name, latitude, longitude, country, region, city, location_hidden, species_name, scientific_name, taxonomic_group, taxref_id, individuals_count, display_format',
+          'title, description, encounter_date, time_of_day, weather, habitat, location_name, latitude, longitude, country, region, city, location_hidden, species_name, scientific_name, taxonomic_group, taxref_id, individuals_count, display_format, notebook_id',
         )
         .eq('id', editingPostId)
         .maybeSingle()
@@ -237,6 +285,49 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
         displayFormat: (post.display_format ?? '16:9') as DisplayFormat,
         observations: initialObs,
       }))
+
+      // V1.2.0 : post issu d'un carnet -> on charge TOUTES ses especes (pas
+      // seulement species_name) pour permettre l'edition complete de la liste,
+      // et on memorise le carnet DEDIE du post (editingNotebookId) pour le
+      // re-synchroniser en place a la sauvegarde.
+      if (post.notebook_id) {
+        setEditingNotebookId(post.notebook_id)
+        try {
+          const full = await getNotebookWithObservations(post.notebook_id)
+          if (!cancelled && full && full.observations.length > 0) {
+            const nbEntries: ObservationEntry[] = full.observations.map((obs) => ({
+              id: obs.id,
+              isUnknown: false,
+              count: obs.individuals_count,
+              sourceNotebookId: post.notebook_id,
+              species: {
+                id: obs.taxref_id,
+                commonName: obs.species_name,
+                scientificName: obs.scientific_name ?? '',
+                group: (() => {
+                  const cls = obs.vernacular_class ?? ''
+                  const map: Record<string, TaxonomicGroup> = {
+                    Aves: 'birds',
+                    Mammalia: 'mammals',
+                    Insecta: 'insects',
+                    Amphibia: 'amphibians',
+                    Reptilia: 'reptiles',
+                    Actinopterygii: 'fish',
+                    Arachnida: 'arachnids',
+                    Mollusca: 'mollusks',
+                    Plantae: 'plants',
+                  }
+                  return map[cls] ?? ('other' as TaxonomicGroup)
+                })(),
+                rank: 'species',
+              },
+            }))
+            setForm((prev) => ({ ...prev, observations: nbEntries }))
+          }
+        } catch (e) {
+          console.warn('[ContributeEncounterForm] chargement especes carnet (edit) échoué', e)
+        }
+      }
 
       // V1.1.4 NG-024 : charge aussi les medias existants pour les afficher
       // dans l UI d edition. Sans ce fetch, l user voyait son post sans
@@ -472,10 +563,71 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
           }
         }
 
-        // V1.2.0 carnets (sauvegarde multi-especes via carnet) retire de cette
-        // release. On revient au comportement V1.1.x : seule l'espece
-        // principale (firstKnown) est persistee sur le post. La sauvegarde
-        // multi-especes reviendra avec V1.2.0 (mode terrain / carnets).
+        // V1.2.0 (Nicolas 2026-06-09) : sauvegarde multi-especes DECOUPLEE.
+        // Le post possede son PROPRE carnet publie dedie, alimente par
+        // form.observations (= ce que l'user a valide, qu'il vienne d'une saisie
+        // manuelle OU de l'import d'un carnet de travail via le bouton livre).
+        // Les carnets de travail ne sont JAMAIS lies au post : leurs especes
+        // sont copiees -> donnees independantes. Supprimer un carnet de travail
+        // n'impacte donc jamais un post deja publie.
+        //
+        // Cas :
+        //  - Edition d'un post deja multi-espece (editingNotebookId) -> resync
+        //    en place de SON carnet dedie.
+        //  - Nouveau post (ou mono->multi) avec > 1 espece -> creation d'un
+        //    carnet publie dedie au post.
+        //  - 1 seule espece -> post mono-espece classique (rien a faire).
+        try {
+          if (user?.id && supabase) {
+            const knownEntries = form.observations.filter((o) => !o.isUnknown && o.species)
+            const speciesPayload = knownEntries.map((entry) => {
+              const sp = entry.species!
+              return {
+                taxref_id: sp.id,
+                species_name: sp.commonName,
+                scientific_name: sp.scientificName,
+                vernacular_class: GROUP_TO_INAT_CLASS[sp.group] ?? null,
+                individuals_count: entry.count > 0 ? entry.count : 1,
+              }
+            })
+            const nbMeta = {
+              title: form.title.trim() || null,
+              location_name: form.locationName || null,
+              city: cityFromInput ?? null,
+              region:
+                form.locationRegion ??
+                (regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : null),
+              country: form.locationCountry ?? null,
+              latitude: form.locationLat ?? null,
+              longitude: form.locationLng ?? null,
+            }
+
+            if (editingNotebookId) {
+              // Edition : on met a jour EN PLACE le carnet dedie du post.
+              await publishExistingNotebookForPost(editingNotebookId, post.id, nbMeta)
+              await replaceNotebookObservations(editingNotebookId, speciesPayload)
+              await supabase
+                .from('posts')
+                .update({ notebook_id: editingNotebookId })
+                .eq('id', post.id)
+            } else if (knownEntries.length > 1) {
+              // Nouveau post multi-especes -> carnet publie DEDIE au post (copie
+              // independante des especes validees).
+              const newNotebook = await createPublishedNotebookFromEncounter(
+                user.id,
+                { postId: post.id, started_at: new Date().toISOString(), ...nbMeta },
+                speciesPayload,
+              )
+              await supabase.from('posts').update({ notebook_id: newNotebook.id }).eq('id', post.id)
+            }
+            // 1 seule espece -> mono-espece classique (rien a faire).
+          }
+        } catch (err) {
+          // Best-effort : si le carnet echoue, le post est quand meme cree.
+          // L user voit son post (mono-espece via firstKnown) sans la carte
+          // carnet enrichie, ce qui est moins pire qu une publication ratee.
+          console.warn('[ContributeEncounterForm] carnet save failed:', err)
+        }
 
         // NG-004 : succes -> purge le brouillon (on a publie, plus besoin).
         clearDraft(DRAFT_KEY)
@@ -576,7 +728,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
             className="px-5 pt-5 pb-4 flex flex-col gap-1"
           >
             {/* Titre de l'étape */}
-            <h2 className="font-title font-bold text-lg text-foreground mb-4">
+            <h2 className="font-title font-bold text-lg text-foreground mb-1">
               {stepTitles[step]}
             </h2>
 
@@ -613,17 +765,82 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
             )}
 
             {step === 2 && (
-              <div className="flex flex-col gap-4">
-                {/* V1.2.0 carnets (NotebookResumePicker) retire de cette release. */}
-                <EncounterStep2
-                  observations={form.observations}
-                  onAdd={handleAddObservation}
-                  onRemove={handleRemoveObservation}
-                  onCountChange={handleCountChange}
-                  helpIdentification={form.helpIdentification}
-                  onHelpIdentificationChange={(v) => set('helpIdentification', v)}
-                />
-              </div>
+              <EncounterStep2
+                observations={form.observations}
+                onAdd={handleAddObservation}
+                onRemove={handleRemoveObservation}
+                onCountChange={handleCountChange}
+                helpIdentification={form.helpIdentification}
+                onHelpIdentificationChange={(v) => set('helpIdentification', v)}
+                notebooks={availableNotebooks}
+                onPickNotebook={async (notebookId) => {
+                  // V1.2.0 NG-005/006 (Nicolas 2026-06-08) : "ajouter un carnet
+                  // existant" via le bouton livre. On charge ses observations et
+                  // on les FUSIONNE (dedup par espece) avec les especes deja
+                  // saisies -> l'user voit tout pour validation, sans rien faire
+                  // d'autre. Memorise le carnet pour le lier au post a la
+                  // publication (publishExistingNotebookForPost, inchange).
+                  const full = await getNotebookWithObservations(notebookId)
+                  if (!full) return
+                  const entries: ObservationEntry[] = full.observations.map(
+                    (obs: NotebookObservation) => ({
+                      id: obs.id,
+                      isUnknown: false,
+                      count: obs.individuals_count,
+                      // Marque l'origine carnet -> on pourra remplacer ces
+                      // especes (et garder les ajouts manuels) au changement.
+                      sourceNotebookId: notebookId,
+                      species: {
+                        id: obs.taxref_id,
+                        commonName: obs.species_name,
+                        scientificName: obs.scientific_name ?? '',
+                        // best-effort : remap vernacular_class -> TaxonomicGroup
+                        group: (() => {
+                          const cls = obs.vernacular_class ?? ''
+                          const map: Record<string, TaxonomicGroup> = {
+                            Aves: 'birds',
+                            Mammalia: 'mammals',
+                            Insecta: 'insects',
+                            Amphibia: 'amphibians',
+                            Reptilia: 'reptiles',
+                            Actinopterygii: 'fish',
+                            Arachnida: 'arachnids',
+                            Mollusca: 'mollusks',
+                            Plantae: 'plants',
+                          }
+                          return map[cls] ?? ('other' as TaxonomicGroup)
+                        })(),
+                        rank: 'species',
+                      },
+                    }),
+                  )
+                  const nb = availableNotebooks.find((n) => n.id === notebookId)
+                  // Decouplage (Nicolas 2026-06-09) : on NE lie PAS le carnet de
+                  // travail au post. On COPIE seulement ses especes dans le
+                  // formulaire -> a la publication elles deviennent les donnees
+                  // independantes du post (carnet supprimable sans impact).
+                  setForm((prev) => ({
+                    ...prev,
+                    // On retire les especes issues d'un carnet precedent et on
+                    // garde les ajouts MANUELS (sans sourceNotebookId), puis on
+                    // ajoute le carnet choisi. Changer de carnet remplace donc
+                    // uniquement la partie carnet, jamais les ajouts manuels
+                    // (Nicolas 2026-06-08 ; a l'user de les retirer s'il veut).
+                    observations: [
+                      ...prev.observations.filter((o) => !o.sourceNotebookId),
+                      ...entries,
+                    ],
+                    title: prev.title.trim() ? prev.title : (nb?.title?.trim() ?? prev.title),
+                    locationName: prev.locationName.trim()
+                      ? prev.locationName
+                      : (nb?.location_name ?? prev.locationName),
+                    locationLat: prev.locationLat ?? nb?.latitude ?? null,
+                    locationLng: prev.locationLng ?? nb?.longitude ?? null,
+                    locationCountry: prev.locationCountry ?? nb?.country ?? null,
+                    locationRegion: prev.locationRegion ?? nb?.region ?? null,
+                  }))
+                }}
+              />
             )}
 
             {step === 3 && (

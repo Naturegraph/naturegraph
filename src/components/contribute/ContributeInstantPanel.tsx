@@ -789,29 +789,29 @@ function InstantStep2({
         <label htmlFor={descId} className="text-sm text-foreground">
           {t('contribute.description.label', { defaultValue: 'Description' })}
         </label>
-        <div className="relative">
-          <textarea
-            id={descId}
-            value={description}
-            onChange={(e) => onDescriptionChange(e.target.value)}
-            rows={4}
-            maxLength={MAX_DESC}
-            placeholder={t('contribute.description.instantPlaceholder', {
-              defaultValue: 'Décris ce moment de nature…',
-            })}
-            aria-invalid={!!(submitAttempted && errors.description)}
-            className="w-full px-4 py-3 pb-7 rounded-2xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
-          />
-          <span
-            aria-live="polite"
-            className={[
-              'absolute bottom-2 right-3 text-xs tabular-nums pointer-events-none',
-              description.length > MAX_DESC ? 'text-[var(--color-error)]' : 'text-muted-foreground',
-            ].join(' ')}
-          >
-            {description.length}/{MAX_DESC}
-          </span>
-        </div>
+        <textarea
+          id={descId}
+          value={description}
+          onChange={(e) => onDescriptionChange(e.target.value)}
+          rows={4}
+          maxLength={MAX_DESC}
+          placeholder={t('contribute.description.instantPlaceholder', {
+            defaultValue: 'Décris ce moment de nature…',
+          })}
+          aria-invalid={!!(submitAttempted && errors.description)}
+          // resize-y + min-h : boite agrandissable ; compteur deplace sous la
+          // zone (plus de chevauchement avec le texte, Nicolas 2026-06-09).
+          className="w-full px-4 py-3 rounded-2xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-y text-sm min-h-[120px]"
+        />
+        <span
+          aria-live="polite"
+          className={[
+            'self-end text-xs tabular-nums',
+            description.length > MAX_DESC ? 'text-[var(--color-error)]' : 'text-muted-foreground',
+          ].join(' ')}
+        >
+          {description.length}/{MAX_DESC}
+        </span>
         {submitAttempted && errors.description && (
           <p role="alert" className="text-xs text-[var(--color-error)]">
             {errors.description}

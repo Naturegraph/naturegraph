@@ -8,7 +8,7 @@
  * Flux :
  *   1. UI (SettingsExportRgpd) appelle `requestDataExport()`
  *   2. Edge Function génère un JSON exhaustif (profile + settings + posts +
- *      media + comments + reactions + follows)
+ *      media + comments + reactions + follows + notebooks)
  *   3. Upload dans bucket privé `exports/{userId}/export-{timestamp}.json`
  *   4. Retourne une URL signée valable 24h
  *   5. Le client lance le téléchargement automatiquement

@@ -25,6 +25,10 @@
  *                           table: `identifications` (post_id, proposer_id, species, status)
  *                           Ref: NotificationsPanel (type 'identification')
  *
+ *   notebookService       — carnets d'observations partagés
+ *                           table: `notebooks` + `notebook_members`
+ *                           Ref: NotificationsPanel (type 'notebook')
+ *
  *   searchService         — recherche espèces dans species_master (GBIF + Wikidata,
  *                           Phase 1). Voir PRD_SPECIES_DATABASE.md.
  *                           Ref: SearchPanel, EncounterStep2 (autocomplete espèces).
@@ -36,5 +40,6 @@ export * from './notificationService'
 export * from './mediaService'
 export * from './settingsService'
 export * from './searchService'
+export * from './notebookService'
 export * from './identificationService'
 export * from './statsService'
