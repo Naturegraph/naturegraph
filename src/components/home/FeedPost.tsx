@@ -677,7 +677,9 @@ export function FeedPost({
           <NotebookCardInFeed
             notebookId={notebookId}
             speciesCount={notebookSpeciesCount ?? undefined}
-            defaultOpen={true}
+            // Ferme par defaut DANS LE FIL (Nicolas 2026-06-08), ouvert sur la
+            // page detail immersive (expandContent).
+            defaultOpen={expandContent}
           />
         )}
 
