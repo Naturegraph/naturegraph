@@ -124,10 +124,13 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
   const { submit, isSubmitting, uploadProgress, uploadError, clearError } =
     useContributePostSubmit('ContributeEncounterForm')
 
-  // V1.2.0 NG-005 : si l user a "repris un carnet en cours" via le picker en
-  // haut de Step2, on garde l id ici. Au submit, on linkera le post a ce
-  // carnet au lieu d en creer un nouveau.
-  const [resumedNotebookId, setResumedNotebookId] = useState<string | null>(null)
+  // V1.2.0 (Nicolas 2026-06-09) : carnet PUBLIE dedie du post, uniquement en
+  // mode EDITION (= post.notebook_id charge au mount). Sert a re-synchroniser
+  // CE carnet en place au save. Les carnets de travail importes via le bouton
+  // livre NE sont PAS lies au post : leurs especes sont COPIEES dans le post
+  // (donnees independantes, comme une saisie manuelle). Donc supprimer un
+  // carnet de travail n'impacte jamais le post.
+  const [editingNotebookId, setEditingNotebookId] = useState<string | null>(null)
   // Liste des carnets draft/active du user pour le picker (lazy fetch au mount).
   const [availableNotebooks, setAvailableNotebooks] = useState<Notebook[]>([])
   useEffect(() => {
@@ -285,10 +288,10 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
 
       // V1.2.0 : post issu d'un carnet -> on charge TOUTES ses especes (pas
       // seulement species_name) pour permettre l'edition complete de la liste,
-      // et on memorise le carnet (resumedNotebookId) pour le re-synchroniser a
-      // la sauvegarde (CASE A). Evite aussi de creer un carnet orphelin.
+      // et on memorise le carnet DEDIE du post (editingNotebookId) pour le
+      // re-synchroniser en place a la sauvegarde.
       if (post.notebook_id) {
-        setResumedNotebookId(post.notebook_id)
+        setEditingNotebookId(post.notebook_id)
         try {
           const full = await getNotebookWithObservations(post.notebook_id)
           if (!cancelled && full && full.observations.length > 0) {
@@ -560,86 +563,64 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
           }
         }
 
-        // V1.2.0 NG-005 : sauvegarde reelle multi-especes via carnet.
-        // Avant V1.2.0 : seule firstKnown etait persistee, les autres entries
-        // de form.observations etaient perdues. Maintenant on cree un carnet
-        // automatique en arriere-plan + on lie le post via posts.notebook_id.
+        // V1.2.0 (Nicolas 2026-06-09) : sauvegarde multi-especes DECOUPLEE.
+        // Le post possede son PROPRE carnet publie dedie, alimente par
+        // form.observations (= ce que l'user a valide, qu'il vienne d'une saisie
+        // manuelle OU de l'import d'un carnet de travail via le bouton livre).
+        // Les carnets de travail ne sont JAMAIS lies au post : leurs especes
+        // sont copiees -> donnees independantes. Supprimer un carnet de travail
+        // n'impacte donc jamais un post deja publie.
         //
-        // 3 cas :
-        //  A. Carnet repris en cours (resumedNotebookId) -> on publie ce carnet
-        //  B. Plus d 1 espece identifiee -> on cree un carnet auto
-        //  C. 1 seule espece -> comportement V1.1.x (rien a faire)
+        // Cas :
+        //  - Edition d'un post deja multi-espece (editingNotebookId) -> resync
+        //    en place de SON carnet dedie.
+        //  - Nouveau post (ou mono->multi) avec > 1 espece -> creation d'un
+        //    carnet publie dedie au post.
+        //  - 1 seule espece -> post mono-espece classique (rien a faire).
         try {
           if (user?.id && supabase) {
             const knownEntries = form.observations.filter((o) => !o.isUnknown && o.species)
+            const speciesPayload = knownEntries.map((entry) => {
+              const sp = entry.species!
+              return {
+                taxref_id: sp.id,
+                species_name: sp.commonName,
+                scientific_name: sp.scientificName,
+                vernacular_class: GROUP_TO_INAT_CLASS[sp.group] ?? null,
+                individuals_count: entry.count > 0 ? entry.count : 1,
+              }
+            })
+            const nbMeta = {
+              title: form.title.trim() || null,
+              location_name: form.locationName || null,
+              city: cityFromInput ?? null,
+              region:
+                form.locationRegion ??
+                (regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : null),
+              country: form.locationCountry ?? null,
+              latitude: form.locationLat ?? null,
+              longitude: form.locationLng ?? null,
+            }
 
-            if (resumedNotebookId) {
-              // CAS A : on finalise le carnet entame en mode terrain
-              await publishExistingNotebookForPost(resumedNotebookId, post.id, {
-                title: form.title.trim() || null,
-                location_name: form.locationName || null,
-                city: cityFromInput,
-                region:
-                  form.locationRegion ??
-                  (regionFromInput && regionFromInput !== cityFromInput
-                    ? regionFromInput
-                    : undefined) ??
-                  null,
-                country: form.locationCountry ?? null,
-                latitude: form.locationLat ?? null,
-                longitude: form.locationLng ?? null,
-              })
+            if (editingNotebookId) {
+              // Edition : on met a jour EN PLACE le carnet dedie du post.
+              await publishExistingNotebookForPost(editingNotebookId, post.id, nbMeta)
+              await replaceNotebookObservations(editingNotebookId, speciesPayload)
               await supabase
                 .from('posts')
-                .update({ notebook_id: resumedNotebookId })
+                .update({ notebook_id: editingNotebookId })
                 .eq('id', post.id)
-              // Re-synchronise les especes du carnet avec ce que l'utilisateur
-              // a valide dans le formulaire (ajouts manuels + edition d'un post
-              // carnet). knownEntries = source de verite. Sans ca, le carnet
-              // gardait ses especes d'origine -> carte feed desynchronisee.
-              const resyncSpecies = knownEntries.map((entry) => {
-                const sp = entry.species!
-                return {
-                  taxref_id: sp.id,
-                  species_name: sp.commonName,
-                  scientific_name: sp.scientificName,
-                  vernacular_class: GROUP_TO_INAT_CLASS[sp.group] ?? null,
-                  individuals_count: entry.count > 0 ? entry.count : 1,
-                }
-              })
-              await replaceNotebookObservations(resumedNotebookId, resyncSpecies)
             } else if (knownEntries.length > 1) {
-              // CAS B : creation auto carnet a partir des entries Step2
-              const speciesPayload = knownEntries.map((entry) => {
-                const sp = entry.species!
-                return {
-                  taxref_id: sp.id,
-                  species_name: sp.commonName,
-                  scientific_name: sp.scientificName,
-                  vernacular_class: GROUP_TO_INAT_CLASS[sp.group] ?? null,
-                  individuals_count: entry.count > 0 ? entry.count : 1,
-                }
-              })
+              // Nouveau post multi-especes -> carnet publie DEDIE au post (copie
+              // independante des especes validees).
               const newNotebook = await createPublishedNotebookFromEncounter(
                 user.id,
-                {
-                  postId: post.id,
-                  title: form.title.trim() || null,
-                  location_name: form.locationName || null,
-                  city: cityFromInput ?? null,
-                  region:
-                    form.locationRegion ??
-                    (regionFromInput && regionFromInput !== cityFromInput ? regionFromInput : null),
-                  country: form.locationCountry ?? null,
-                  latitude: form.locationLat ?? null,
-                  longitude: form.locationLng ?? null,
-                  started_at: new Date().toISOString(),
-                },
+                { postId: post.id, started_at: new Date().toISOString(), ...nbMeta },
                 speciesPayload,
               )
               await supabase.from('posts').update({ notebook_id: newNotebook.id }).eq('id', post.id)
             }
-            // CAS C : aucune action, le post est mono-espece comme avant.
+            // 1 seule espece -> mono-espece classique (rien a faire).
           }
         } catch (err) {
           // Best-effort : si le carnet echoue, le post est quand meme cree.
@@ -834,7 +815,10 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
                     }),
                   )
                   const nb = availableNotebooks.find((n) => n.id === notebookId)
-                  setResumedNotebookId(notebookId)
+                  // Decouplage (Nicolas 2026-06-09) : on NE lie PAS le carnet de
+                  // travail au post. On COPIE seulement ses especes dans le
+                  // formulaire -> a la publication elles deviennent les donnees
+                  // independantes du post (carnet supprimable sans impact).
                   setForm((prev) => ({
                     ...prev,
                     // On retire les especes issues d'un carnet precedent et on

@@ -118,9 +118,11 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
     setListLoading(true)
     try {
       const nbs = await listUserNotebooks(user.id, {
-        // 'published' inclus pour montrer les carnets deja lies a une Rencontre
-        // (avec badge + indicateur lien), Nicolas 2026-06-08.
-        statuses: ['draft', 'active', 'finished', 'published'],
+        // Carnets de TRAVAIL uniquement (Nicolas 2026-06-09). Les carnets
+        // 'published' sont les donnees dediees des posts (independantes) : ils
+        // ne sont pas geres ici (sinon liste infinie + risque de supprimer les
+        // donnees d'un post). Ils s'editent/suppriment via la publication.
+        statuses: ['draft', 'active', 'finished'],
         limit: 50,
       })
       // 'En cours' (draft/active) toujours en premier, puis Termine, puis Publie

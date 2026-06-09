@@ -211,34 +211,37 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
           aria-describedby={formatError ? 'edit-username-error' : undefined}
           className={INPUT_PILL_CLASS}
         />
-        {formatError ? (
-          <p id="edit-username-error" role="alert" className="text-xs text-[var(--color-error)]">
-            {formatError === 'tooShort'
-              ? t('profile.edit.usernameTooShort', {
-                  defaultValue: 'Pseudo trop court (min {{min}} caractères)',
-                  min: USERNAME_MIN_LENGTH,
-                })
-              : formatError === 'tooLong'
-                ? t('profile.edit.usernameTooLong', {
-                    defaultValue: 'Pseudo trop long (max {{max}} caractères)',
-                    max: USERNAME_MAX_LENGTH,
+        {/* Helper/erreur a gauche + compteur a droite sur la MEME ligne
+            (Nicolas 2026-06-09 : evite le decalage du compteur isole). */}
+        <div className="flex items-start justify-between gap-3">
+          {formatError ? (
+            <p id="edit-username-error" role="alert" className="text-xs text-[var(--color-error)]">
+              {formatError === 'tooShort'
+                ? t('profile.edit.usernameTooShort', {
+                    defaultValue: 'Pseudo trop court (min {{min}} caractères)',
+                    min: USERNAME_MIN_LENGTH,
                   })
-                : t('profile.edit.usernameInvalid', {
-                    defaultValue:
-                      'Lettres, chiffres, « . » ou « _ » uniquement. Pas de doublons « .. » ou « __ ».',
-                  })}
-          </p>
-        ) : (
-          <p className="text-xs italic text-muted-foreground">
-            {t('profile.edit.usernameHelper', {
-              defaultValue: 'Lettres, chiffres, « . » et « _ » autorisés.',
-            })}
-          </p>
-        )}
-        {/* Compteur sous le champ (Nicolas 2026-06-09) */}
-        <span className="self-end text-xs tabular-nums text-muted-foreground">
-          {username.length}/{USERNAME_MAX_LENGTH}
-        </span>
+                : formatError === 'tooLong'
+                  ? t('profile.edit.usernameTooLong', {
+                      defaultValue: 'Pseudo trop long (max {{max}} caractères)',
+                      max: USERNAME_MAX_LENGTH,
+                    })
+                  : t('profile.edit.usernameInvalid', {
+                      defaultValue:
+                        'Lettres, chiffres, « . » ou « _ » uniquement. Pas de doublons « .. » ou « __ ».',
+                    })}
+            </p>
+          ) : (
+            <p className="text-xs italic text-muted-foreground">
+              {t('profile.edit.usernameHelper', {
+                defaultValue: 'Lettres, chiffres, « . » et « _ » autorisés.',
+              })}
+            </p>
+          )}
+          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+            {username.length}/{USERNAME_MAX_LENGTH}
+          </span>
+        </div>
       </div>
 
       {/* ── Bio / Présentation ── */}
