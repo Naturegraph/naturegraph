@@ -501,6 +501,42 @@ export async function publishExistingNotebookForPost(
 }
 
 /**
+ * Remplace INTEGRALEMENT les observations d'un carnet par la liste fournie.
+ * Utilise a la publication/edition d'une Rencontre nature liee a un carnet :
+ * le carnet doit refleter exactement ce que l'utilisateur a valide dans le
+ * formulaire (ajouts manuels d'especes + edition d'un post carnet existant).
+ * Sans ca, le carnet gardait ses especes d'origine -> carte feed desynchronisee.
+ *
+ * Les triggers PostgreSQL recalculent species_count / observations_count.
+ * No-op protege : si `species` est vide, on ne supprime RIEN (un carnet publie
+ * doit garder au moins ses especes ; on evite de le vider par accident).
+ */
+export async function replaceNotebookObservations(
+  notebookId: string,
+  species: Array<AddObservationPayload>,
+): Promise<void> {
+  if (species.length === 0) return
+  const c = client()
+  const { error: delErr } = await c
+    .from('notebook_observations')
+    .delete()
+    .eq('notebook_id', notebookId)
+  if (delErr) throw new Error(delErr.message)
+  const rows = species.map((s, idx) => ({
+    notebook_id: notebookId,
+    taxref_id: s.taxref_id,
+    species_name: s.species_name,
+    scientific_name: s.scientific_name ?? null,
+    vernacular_class: s.vernacular_class ?? null,
+    individuals_count: s.individuals_count ?? 1,
+    notes: s.notes ?? null,
+    rank: idx,
+  }))
+  const { error: insErr } = await c.from('notebook_observations').insert(rows)
+  if (insErr) throw new Error(insErr.message)
+}
+
+/**
  * Calcule "il y a X minutes" pour le bandeau mode actif (NG-006 "Debut: 08h14").
  * Format compact pour bandeau sticky : "12 min", "1 h 24", "3 h 02".
  */

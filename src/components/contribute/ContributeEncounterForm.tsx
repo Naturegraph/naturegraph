@@ -40,6 +40,7 @@ import { Button } from '@/components/ui/Button'
 import {
   createPublishedNotebookFromEncounter,
   publishExistingNotebookForPost,
+  replaceNotebookObservations,
   listUserNotebooks,
   getNotebookWithObservations,
   type Notebook,
@@ -223,7 +224,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
       const { data: postRaw, error } = await (supabase as any)
         .from('posts')
         .select(
-          'title, description, encounter_date, time_of_day, weather, habitat, location_name, latitude, longitude, country, region, city, location_hidden, species_name, scientific_name, taxonomic_group, taxref_id, individuals_count, display_format',
+          'title, description, encounter_date, time_of_day, weather, habitat, location_name, latitude, longitude, country, region, city, location_hidden, species_name, scientific_name, taxonomic_group, taxref_id, individuals_count, display_format, notebook_id',
         )
         .eq('id', editingPostId)
         .maybeSingle()
@@ -281,6 +282,49 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
         displayFormat: (post.display_format ?? '16:9') as DisplayFormat,
         observations: initialObs,
       }))
+
+      // V1.2.0 : post issu d'un carnet -> on charge TOUTES ses especes (pas
+      // seulement species_name) pour permettre l'edition complete de la liste,
+      // et on memorise le carnet (resumedNotebookId) pour le re-synchroniser a
+      // la sauvegarde (CASE A). Evite aussi de creer un carnet orphelin.
+      if (post.notebook_id) {
+        setResumedNotebookId(post.notebook_id)
+        try {
+          const full = await getNotebookWithObservations(post.notebook_id)
+          if (!cancelled && full && full.observations.length > 0) {
+            const nbEntries: ObservationEntry[] = full.observations.map((obs) => ({
+              id: obs.id,
+              isUnknown: false,
+              count: obs.individuals_count,
+              sourceNotebookId: post.notebook_id,
+              species: {
+                id: obs.taxref_id,
+                commonName: obs.species_name,
+                scientificName: obs.scientific_name ?? '',
+                group: (() => {
+                  const cls = obs.vernacular_class ?? ''
+                  const map: Record<string, TaxonomicGroup> = {
+                    Aves: 'birds',
+                    Mammalia: 'mammals',
+                    Insecta: 'insects',
+                    Amphibia: 'amphibians',
+                    Reptilia: 'reptiles',
+                    Actinopterygii: 'fish',
+                    Arachnida: 'arachnids',
+                    Mollusca: 'mollusks',
+                    Plantae: 'plants',
+                  }
+                  return map[cls] ?? ('other' as TaxonomicGroup)
+                })(),
+                rank: 'species',
+              },
+            }))
+            setForm((prev) => ({ ...prev, observations: nbEntries }))
+          }
+        } catch (e) {
+          console.warn('[ContributeEncounterForm] chargement especes carnet (edit) échoué', e)
+        }
+      }
 
       // V1.1.4 NG-024 : charge aussi les medias existants pour les afficher
       // dans l UI d edition. Sans ce fetch, l user voyait son post sans
@@ -549,6 +593,21 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
                 .from('posts')
                 .update({ notebook_id: resumedNotebookId })
                 .eq('id', post.id)
+              // Re-synchronise les especes du carnet avec ce que l'utilisateur
+              // a valide dans le formulaire (ajouts manuels + edition d'un post
+              // carnet). knownEntries = source de verite. Sans ca, le carnet
+              // gardait ses especes d'origine -> carte feed desynchronisee.
+              const resyncSpecies = knownEntries.map((entry) => {
+                const sp = entry.species!
+                return {
+                  taxref_id: sp.id,
+                  species_name: sp.commonName,
+                  scientific_name: sp.scientificName,
+                  vernacular_class: GROUP_TO_INAT_CLASS[sp.group] ?? null,
+                  individuals_count: entry.count > 0 ? entry.count : 1,
+                }
+              })
+              await replaceNotebookObservations(resumedNotebookId, resyncSpecies)
             } else if (knownEntries.length > 1) {
               // CAS B : creation auto carnet a partir des entries Step2
               const speciesPayload = knownEntries.map((entry) => {
