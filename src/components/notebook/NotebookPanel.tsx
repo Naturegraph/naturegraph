@@ -38,6 +38,7 @@ import { useLocationAutocomplete } from '@/hooks/useLocationAutocomplete'
 import type { CityResult } from '@/types/location'
 import { NotebookSpeciesList } from './NotebookSpeciesList'
 import { Button } from '@/components/ui/Button'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import hermineImg from '@/assets/images/hermine-empty-state.png'
 
 const TOTAL_STEPS = 2
@@ -103,6 +104,11 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
   // Mode de l'etape 1 : 'new' = nouveau carnet (startNotebook) ; 'edit' = etape
   // 1 d'un carnet deja actif (patchNotebook). Nicolas 2026-06-08.
   const [createMode, setCreateMode] = useState<'new' | 'edit'>('new')
+  // Action destructive en attente de confirmation (modal DS, comme la
+  // suppression d'un post). 'delete' = depuis la liste, 'discard' = Abandonner.
+  const [pending, setPending] = useState<
+    { kind: 'delete'; nb: Notebook } | { kind: 'discard' } | null
+  >(null)
 
   const reloadList = useCallback(async () => {
     if (!user?.id) {
@@ -171,23 +177,10 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
     }
   }
 
-  async function handleDeleteNotebook(nb: Notebook) {
-    // Carnet lie a une Rencontre publiee : la suppression ne touche PAS le post
-    // (FK ON DELETE SET NULL). Message rassurant dedie.
-    const linked = nb.status === 'published' || !!nb.post_id
-    const message = linked
-      ? "Ce carnet est lié à une Rencontre nature déjà publiée. Le supprimer n'affecte PAS la publication (elle conserve ses propres données). Supprimer le carnet quand même ?"
-      : 'Supprimer ce carnet et toutes ses observations ? Action irréversible.'
-    if (!window.confirm(message)) {
-      return
-    }
-    try {
-      await deleteNotebook(nb.id)
-      await reloadList()
-    } catch (err) {
-      console.error('[NotebookPanel] deleteNotebook failed', err)
-      toast.error('Suppression impossible', 'Réessaie dans un instant.')
-    }
+  function handleDeleteNotebook(nb: Notebook) {
+    // Ouvre la modal de double confirmation (style DS, comme la suppression
+    // d'un post). La suppression effective se fait dans confirmPending().
+    setPending({ kind: 'delete', nb })
   }
 
   // ── Handlers creation ─────────────────────────────────────────────────────
@@ -245,17 +238,28 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
     }
   }
 
-  async function handleDiscard() {
-    if (!window.confirm('Supprimer ce carnet et toutes ses observations ? Action irréversible.')) {
-      return
-    }
+  function handleDiscard() {
+    setPending({ kind: 'discard' })
+  }
+
+  // Confirme l'action destructive en attente (modal DS).
+  async function confirmPending() {
+    const action = pending
+    if (!action) return
     try {
-      await discardNotebook()
-      await reloadList()
-      setView('manage')
+      if (action.kind === 'delete') {
+        await deleteNotebook(action.nb.id)
+        await reloadList()
+      } else {
+        await discardNotebook()
+        await reloadList()
+        setView('manage')
+      }
     } catch (err) {
-      console.error('[NotebookPanel] discardNotebook failed', err)
+      console.error('[NotebookPanel] suppression carnet échouée', err)
       toast.error('Suppression impossible', 'Réessaie dans un instant.')
+    } finally {
+      setPending(null)
     }
   }
 
@@ -501,6 +505,24 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
           )}
         </div>
       </div>
+
+      {/* Double confirmation de suppression (style DS, comme la suppression
+          d'un post). Couvre la suppression depuis la liste + l'abandon. */}
+      {pending && (
+        <ConfirmModal
+          variant="danger"
+          title="Supprimer définitivement ce carnet ?"
+          description={
+            pending.kind === 'delete' && (pending.nb.status === 'published' || !!pending.nb.post_id)
+              ? "Cette action est définitive. Elle n'aura aucun impact sur la publication associée à ce carnet : elle conserve ses propres données."
+              : 'Cette action est définitive : le carnet et toutes ses observations seront supprimés.'
+          }
+          confirmLabel="Confirmer"
+          cancelLabel="Annuler"
+          onCancel={() => setPending(null)}
+          onConfirm={confirmPending}
+        />
+      )}
     </>
   )
 }

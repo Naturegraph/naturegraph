@@ -71,7 +71,7 @@ function ClearButton({
 }
 
 const TEXTAREA_CLASS =
-  'w-full px-4 py-3 rounded-2xl border-[0.5px] border-border bg-background text-sm text-foreground placeholder:text-muted-foreground resize-none transition-colors focus:outline-none focus:bg-primary-light focus:border-primary focus:ring-2 focus:ring-primary'
+  'w-full px-4 py-3 rounded-2xl border-[0.5px] border-border bg-background text-sm text-foreground placeholder:text-muted-foreground resize-y min-h-[110px] transition-colors focus:outline-none focus:bg-primary-light focus:border-primary focus:ring-2 focus:ring-primary'
 
 /**
  * Normalise et valide un lien social / site web saisi par l'utilisateur.
@@ -235,6 +235,10 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
             })}
           </p>
         )}
+        {/* Compteur sous le champ (Nicolas 2026-06-09) */}
+        <span className="self-end text-xs tabular-nums text-muted-foreground">
+          {username.length}/{USERNAME_MAX_LENGTH}
+        </span>
       </div>
 
       {/* ── Bio / Présentation ── */}
@@ -250,6 +254,10 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
           maxLength={300}
           className={TEXTAREA_CLASS}
         />
+        {/* Compteur sous le champ (Nicolas 2026-06-09) */}
+        <span className="self-end text-xs tabular-nums text-muted-foreground">
+          {bio.length}/300
+        </span>
       </div>
 
       {/* ── NG-011 Reseaux sociaux et lien externe ──
