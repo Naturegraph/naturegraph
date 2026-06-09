@@ -54,27 +54,38 @@ export function NotebookSpeciesList({
     )
   }
 
-  // ── Mode COMPACT (feed lecture seule) : chips condensees, inchange ─────────
+  // ── Mode COMPACT (feed, post publie) ──────────────────────────────────────
+  // Conforme Figma 1171276288 : pills de groupe #E7E9F7, puce 6px #5F5DD8, nom
+  // bold + (n) + nom latin #20203D, separateur 0.5px entre groupes.
   if (compact) {
     return (
-      <div className="flex flex-col gap-4">
-        {groups.map(({ vernacularClass, items }) => {
+      <div className="flex flex-col">
+        {groups.map(({ vernacularClass, items }, i) => {
           const cfg = classDisplayConfig(vernacularClass)
           return (
-            <section key={vernacularClass} aria-label={cfg.label}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full bg-[#e7e9f7] text-foreground text-xs font-bold">
+            <section
+              key={vernacularClass}
+              aria-label={cfg.label}
+              className={i > 0 ? 'border-t border-border pt-4 mt-4' : ''}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-[#e7e9f7] text-foreground text-base font-bold leading-none">
                   <span aria-hidden="true">{cfg.emoji}</span>
                   <span>{cfg.label}</span>
                 </span>
               </div>
-              <ul className="flex flex-col gap-1 pl-1">
+              <ul className="flex flex-col gap-2">
                 {items.map((obs) => (
-                  <li key={obs.id} className="flex items-baseline gap-1 text-sm">
-                    <span className="font-semibold text-foreground">{obs.species_name}</span>
-                    <span className="font-semibold text-foreground">({obs.individuals_count})</span>
+                  <li key={obs.id} className="flex items-baseline gap-2 text-base leading-normal">
+                    <span
+                      aria-hidden="true"
+                      className="relative top-[-3px] size-1.5 shrink-0 rounded-full bg-[var(--color-action-default)]"
+                    />
+                    <span className="font-bold text-foreground">
+                      {obs.species_name} ({obs.individuals_count})
+                    </span>
                     {obs.scientific_name && (
-                      <span className="text-muted-foreground italic truncate">
+                      <span className="text-[var(--color-text-secondary)]">
                         {' '}
                         - {obs.scientific_name}
                       </span>

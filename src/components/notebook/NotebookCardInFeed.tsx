@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useState } from 'react'
-import { ChevronDown, ChevronUp, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { listNotebookObservations, type NotebookObservation } from '@/services/notebookService'
 import { NotebookSpeciesList } from './NotebookSpeciesList'
 
@@ -19,14 +19,15 @@ interface NotebookCardInFeedProps {
   /** Compteur d especes pre-charge (depuis notebooks.species_count) pour eviter
    *  un fetch supplementaire avant l ouverture du bloc. Sinon affiche "?". */
   speciesCount?: number
-  /** Par defaut deplie. Si false, replie. */
+  /** Par defaut REPLIE (Nicolas 2026-06-08 : ne pas derouler 80 especes
+   *  d'office, l'user choisit de deplier le carnet du post). */
   defaultOpen?: boolean
 }
 
 export function NotebookCardInFeed({
   notebookId,
   speciesCount,
-  defaultOpen = true,
+  defaultOpen = false,
 }: NotebookCardInFeedProps) {
   const [open, setOpen] = useState(defaultOpen)
   const [observations, setObservations] = useState<NotebookObservation[] | null>(null)
@@ -64,31 +65,41 @@ export function NotebookCardInFeed({
 
   const count = speciesCount ?? observations?.length ?? null
 
+  // Structure conforme Figma : entete (Especes (N) + toggle "Carnet
+  // d'observations") HORS carte, puis la carte bordee qui contient la liste,
+  // affichee uniquement quand le carnet est deplie.
   return (
-    <div className="border border-border rounded-xl overflow-hidden bg-background">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
-      >
-        <span className="font-title font-bold text-base">
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-body font-bold text-base text-foreground">
           Espèces{count !== null ? ` (${count})` : ''}
         </span>
-        <span className="inline-flex items-center gap-2">
-          <span className="text-sm font-medium text-primary border-b border-primary">
+
+        {/* Toggle : label "Carnet d'observations" (souligne, action) + bouton X
+            rond quand c'est deplie (= replier). Toute la zone toggle. */}
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-label={open ? 'Replier le carnet' : 'Déplier le carnet'}
+          className="inline-flex items-center gap-2 shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <span className="text-base font-bold leading-tight text-[var(--color-action-default)] border-b-[1.5px] border-[var(--color-action-default)]">
             Carnet d&apos;observations
           </span>
-          {open ? (
-            <ChevronUp className="size-4 text-muted-foreground" aria-hidden="true" />
-          ) : (
-            <ChevronDown className="size-4 text-muted-foreground" aria-hidden="true" />
+          {open && (
+            <span
+              aria-hidden="true"
+              className="size-6 shrink-0 rounded-full bg-[#f0f0f5] flex items-center justify-center"
+            >
+              <X className="size-[18px] text-foreground" strokeWidth={1.5} aria-hidden="true" />
+            </span>
           )}
-        </span>
-      </button>
+        </button>
+      </div>
 
       {open && (
-        <div className="px-4 pb-4 pt-1">
+        <div className="rounded-md border-[0.5px] border-border bg-background p-4">
           {isLoading && (
             <div className="text-center py-4 text-sm text-muted-foreground">Chargement…</div>
           )}
