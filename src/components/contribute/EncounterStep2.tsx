@@ -340,9 +340,12 @@ function SpeciesSearchBar({
           pas sous le listbox de resultats. Sinon le panel se decalait
           sous les resultats (feedback Nicolas 2026-05-26). z-30 le passe
           au-dessus du listbox (z auto). */}
-      <div className="relative z-30 flex items-center gap-4">
-        <div className="relative flex-1">
-          <div className="flex items-center gap-2 h-12 px-5 rounded-full border border-border bg-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors">
+      {/* gap reduit + min-w-0 sur l'input : sur mobile etroit, le champ se
+          retrecit pour que les 2 boutons (filtre + livre) restent visibles
+          sans scroll horizontal (Nicolas 2026-06-09). */}
+      <div className="relative z-30 flex items-center gap-2 sm:gap-4">
+        <div className="relative flex-1 min-w-0">
+          <div className="flex items-center gap-2 h-12 px-4 sm:px-5 rounded-full border border-border bg-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors">
             <Search className="size-5 text-muted-foreground shrink-0" aria-hidden="true" />
             <input
               ref={inputRef}
