@@ -69,9 +69,10 @@ export function NotebookSpeciesList({
               className={i > 0 ? 'border-t border-border pt-4 mt-4' : ''}
             >
               <div className="flex items-center gap-2 mb-3">
-                <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-[#e7e9f7] text-foreground text-base font-bold leading-none">
-                  <span aria-hidden="true">{cfg.emoji}</span>
-                  <span>{cfg.label}</span>
+                {/* Pas d'emoji de categorie (coherence avec les chips prod,
+                    Nicolas 2026-06-08). */}
+                <span className="inline-flex items-center h-8 px-3 rounded-full bg-[#e7e9f7] text-foreground text-base font-bold leading-none">
+                  {cfg.label}
                 </span>
               </div>
               <ul className="flex flex-col gap-2">
