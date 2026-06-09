@@ -5,7 +5,6 @@
  * (Mammiferes, Oiseaux, Insectes...). Reutilise :
  *   - dans NotebookPanel (mode terrain edition) -> rendu COMPLET (Figma)
  *   - dans NotebookCardInFeed (post publie, lecture seule) -> rendu COMPACT
- *   - dans NotebookPublishDialog (recap avant publication) -> rendu COMPLET
  *
  * Rendu COMPLET conforme Figma 6771-12164 :
  *   - pill de groupe (bg #E7E9F7 Content/Action/Light, label Muli 700 14px)

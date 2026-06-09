@@ -47,9 +47,8 @@ export default function Home() {
   // BATCH 10 / QW-UX1 : titre dynamique pour onglet navigateur (SEO + UX)
   usePageTitle(t('nav.home'))
   const [showContributeModal, setShowContributeModal] = useState(false)
-  // V1.2.0 (NG-005/006) : panneau Carnet d observations (mode terrain).
-  // Ouvert depuis le menu Contribute OU depuis le NotebookBanner sticky
-  // (via l event 'naturegraph:open-notebook').
+  // V1.2.0 (NG-005/006) : panneau Carnet d observations.
+  // Ouvert depuis le menu Contribute (via l event 'naturegraph:open-notebook').
   const [showNotebookPanel, setShowNotebookPanel] = useState(false)
 
   // Ecoute l ouverture du panneau carnet depuis le bandeau sticky global.
