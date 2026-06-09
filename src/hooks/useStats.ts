@@ -11,12 +11,14 @@ import {
   getImpactStats,
   getTrendingSpecies,
   getUserStats,
+  getUserObservationStats,
   getUserStreak,
   getWeekProgress,
   type StatsPeriod,
   type ImpactStats,
   type TrendingSpecies,
   type UserStats,
+  type UserObservationStats,
   type WeekProgress,
 } from '@/services/statsService'
 
@@ -61,6 +63,20 @@ export function useUserStats(userId: string | undefined) {
   return useQuery<UserStats, Error>({
     queryKey: ['userStats', userId],
     queryFn: () => getUserStats(userId!),
+    enabled: !!userId,
+    staleTime: STATS_STALE_TIME,
+  })
+}
+
+/**
+ * Hook pour les stats d'observation cumulatives (carnets inclus) :
+ * obs cumul, especes distinctes, repartition par groupe pour l'ADN.
+ * @param userId - ID de l'utilisateur (undefined = désactivé)
+ */
+export function useUserObservationStats(userId: string | undefined) {
+  return useQuery<UserObservationStats, Error>({
+    queryKey: ['userObservationStats', userId],
+    queryFn: () => getUserObservationStats(userId!),
     enabled: !!userId,
     staleTime: STATS_STALE_TIME,
   })
