@@ -773,28 +773,21 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
                   )
                   const nb = availableNotebooks.find((n) => n.id === notebookId)
                   setResumedNotebookId(notebookId)
-                  setForm((prev) => {
-                    // Fusion : on n'ajoute que les especes pas deja presentes.
-                    const existingIds = new Set(
-                      prev.observations.map((o) => o.species?.id).filter(Boolean),
-                    )
-                    const merged = [
-                      ...prev.observations,
-                      ...entries.filter((e) => !e.species || !existingIds.has(e.species.id)),
-                    ]
-                    return {
-                      ...prev,
-                      observations: merged,
-                      title: prev.title.trim() ? prev.title : (nb?.title?.trim() ?? prev.title),
-                      locationName: prev.locationName.trim()
-                        ? prev.locationName
-                        : (nb?.location_name ?? prev.locationName),
-                      locationLat: prev.locationLat ?? nb?.latitude ?? null,
-                      locationLng: prev.locationLng ?? nb?.longitude ?? null,
-                      locationCountry: prev.locationCountry ?? nb?.country ?? null,
-                      locationRegion: prev.locationRegion ?? nb?.region ?? null,
-                    }
-                  })
+                  setForm((prev) => ({
+                    ...prev,
+                    // Remplace TOTALEMENT la liste par les especes du carnet
+                    // choisi (Nicolas 2026-06-08) : on ne cumule pas plusieurs
+                    // carnets. Choisir un autre carnet remplace le precedent.
+                    observations: entries,
+                    title: prev.title.trim() ? prev.title : (nb?.title?.trim() ?? prev.title),
+                    locationName: prev.locationName.trim()
+                      ? prev.locationName
+                      : (nb?.location_name ?? prev.locationName),
+                    locationLat: prev.locationLat ?? nb?.latitude ?? null,
+                    locationLng: prev.locationLng ?? nb?.longitude ?? null,
+                    locationCountry: prev.locationCountry ?? nb?.country ?? null,
+                    locationRegion: prev.locationRegion ?? nb?.region ?? null,
+                  }))
                 }}
               />
             )}
