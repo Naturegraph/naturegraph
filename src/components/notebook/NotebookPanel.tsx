@@ -585,10 +585,11 @@ function ManageView({
       {subtitle}
       <ul className="flex flex-col gap-3">
         {notebooks.map((nb) => {
-          // Carnet deja rattache a une Rencontre publiee : le post existe et
-          // possede sa PROPRE copie des donnees. On ne le reedite donc pas (ca
-          // n'impacterait pas la publication), mais il reste supprimable sans
-          // risque pour la Rencontre (FK posts.notebook_id ON DELETE SET NULL).
+          // Carnet rattache a une Rencontre publiee : ses observations SONT le
+          // contenu multi-especes du post (la carte feed les lit via
+          // notebook_id). Le supprimer detruirait donc les especes du post
+          // (Nicolas 2026-06-09). -> lecture seule + PAS de suppression ici :
+          // pour le retirer, l'utilisateur supprime la publication elle-meme.
           const linked = nb.status === 'published' || !!nb.post_id
           const statusStyle = linked
             ? 'bg-[#e5f7f7] text-[#006666]'
@@ -634,16 +635,20 @@ function ManageView({
                   )}
                 </button>
 
-                {/* Supprimer — neutre (sans danger pour la Rencontre liée) */}
-                <button
-                  type="button"
-                  onClick={() => onDelete(nb)}
-                  disabled={isMutating}
-                  aria-label={`Supprimer ${nb.title?.trim() || 'ce carnet'}`}
-                  className="size-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                >
-                  <Trash2 className="size-5" aria-hidden="true" />
-                </button>
+                {/* Supprimer — UNIQUEMENT pour les carnets non publies (un carnet
+                    publie = donnees du post, non supprimable ici, Nicolas
+                    2026-06-09). */}
+                {!linked && (
+                  <button
+                    type="button"
+                    onClick={() => onDelete(nb)}
+                    disabled={isMutating}
+                    aria-label={`Supprimer ${nb.title?.trim() || 'ce carnet'}`}
+                    className="size-8 shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <Trash2 className="size-5" aria-hidden="true" />
+                  </button>
+                )}
               </div>
             </li>
           )
