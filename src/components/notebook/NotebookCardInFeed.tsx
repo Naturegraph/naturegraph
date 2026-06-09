@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useState } from 'react'
-import { X } from 'lucide-react'
+import { ChevronDown, ChevronUp, X } from 'lucide-react'
 import { listNotebookObservations, type NotebookObservation } from '@/services/notebookService'
 import { NotebookSpeciesList } from './NotebookSpeciesList'
 
@@ -87,13 +87,11 @@ export function NotebookCardInFeed({
           <span className="text-base font-bold leading-tight text-[var(--color-action-default)] border-b-[1.5px] border-[var(--color-action-default)]">
             Carnet d&apos;observations
           </span>
-          {open && (
-            <span
-              aria-hidden="true"
-              className="size-6 shrink-0 rounded-full bg-[#f0f0f5] flex items-center justify-center"
-            >
-              <X className="size-[18px] text-foreground" strokeWidth={1.5} aria-hidden="true" />
-            </span>
+          {/* Chevron (plus clair que le X pour ouvrir/fermer), Nicolas 2026-06-08 */}
+          {open ? (
+            <ChevronUp className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+          ) : (
+            <ChevronDown className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
           )}
         </button>
       </div>
