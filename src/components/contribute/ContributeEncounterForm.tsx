@@ -22,7 +22,6 @@ import { EncounterStep1 } from './EncounterStep1'
 import { EncounterStep2 } from './EncounterStep2'
 import { EncounterStep3 } from './EncounterStep3'
 import type { ObservationEntry } from './EncounterStep2'
-import { NotebookResumePicker } from '@/components/notebook/NotebookResumePicker'
 import type { NotebookObservation } from '@/services/notebookService'
 import type { TaxonomicGroup } from '@/types/database'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
@@ -42,6 +41,7 @@ import {
   createPublishedNotebookFromEncounter,
   publishExistingNotebookForPost,
   listUserNotebooks,
+  getNotebookWithObservations,
   type Notebook,
 } from '@/services/notebookService'
 
@@ -725,59 +725,66 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
             )}
 
             {step === 2 && (
-              <div className="flex flex-col gap-4">
-                {/* V1.2.0 NG-005/006 : picker carnet entame (mobile + desktop).
-                    Permet a l user de reprendre un carnet draft/active demarre
-                    via le mode terrain. Si selectionne, les observations du
-                    carnet sont injectees dans le formulaire. */}
-                <NotebookResumePicker
-                  notebooks={availableNotebooks}
-                  resumedNotebookId={resumedNotebookId}
-                  onResume={(notebookId, observations) => {
-                    if (!notebookId) {
-                      // Annulation de la reprise -> vide observations
-                      setResumedNotebookId(null)
-                      setForm((prev) => ({ ...prev, observations: [] }))
-                      return
-                    }
-                    setResumedNotebookId(notebookId)
-                    // Convertit NotebookObservation -> ObservationEntry pour Step2
-                    const entries: ObservationEntry[] = observations.map(
-                      (obs: NotebookObservation) => ({
-                        id: obs.id,
-                        isUnknown: false,
-                        count: obs.individuals_count,
-                        species: {
-                          id: obs.taxref_id,
-                          commonName: obs.species_name,
-                          scientificName: obs.scientific_name ?? '',
-                          // best-effort : remap vernacular_class -> TaxonomicGroup
-                          group: (() => {
-                            const cls = obs.vernacular_class ?? ''
-                            const map: Record<string, TaxonomicGroup> = {
-                              Aves: 'birds',
-                              Mammalia: 'mammals',
-                              Insecta: 'insects',
-                              Amphibia: 'amphibians',
-                              Reptilia: 'reptiles',
-                              Actinopterygii: 'fish',
-                              Arachnida: 'arachnids',
-                              Mollusca: 'mollusks',
-                              Plantae: 'plants',
-                            }
-                            return map[cls] ?? ('other' as TaxonomicGroup)
-                          })(),
-                          rank: 'species',
-                        },
-                      }),
+              <EncounterStep2
+                observations={form.observations}
+                onAdd={handleAddObservation}
+                onRemove={handleRemoveObservation}
+                onCountChange={handleCountChange}
+                helpIdentification={form.helpIdentification}
+                onHelpIdentificationChange={(v) => set('helpIdentification', v)}
+                notebooks={availableNotebooks}
+                onPickNotebook={async (notebookId) => {
+                  // V1.2.0 NG-005/006 (Nicolas 2026-06-08) : "ajouter un carnet
+                  // existant" via le bouton livre. On charge ses observations et
+                  // on les FUSIONNE (dedup par espece) avec les especes deja
+                  // saisies -> l'user voit tout pour validation, sans rien faire
+                  // d'autre. Memorise le carnet pour le lier au post a la
+                  // publication (publishExistingNotebookForPost, inchange).
+                  const full = await getNotebookWithObservations(notebookId)
+                  if (!full) return
+                  const entries: ObservationEntry[] = full.observations.map(
+                    (obs: NotebookObservation) => ({
+                      id: obs.id,
+                      isUnknown: false,
+                      count: obs.individuals_count,
+                      species: {
+                        id: obs.taxref_id,
+                        commonName: obs.species_name,
+                        scientificName: obs.scientific_name ?? '',
+                        // best-effort : remap vernacular_class -> TaxonomicGroup
+                        group: (() => {
+                          const cls = obs.vernacular_class ?? ''
+                          const map: Record<string, TaxonomicGroup> = {
+                            Aves: 'birds',
+                            Mammalia: 'mammals',
+                            Insecta: 'insects',
+                            Amphibia: 'amphibians',
+                            Reptilia: 'reptiles',
+                            Actinopterygii: 'fish',
+                            Arachnida: 'arachnids',
+                            Mollusca: 'mollusks',
+                            Plantae: 'plants',
+                          }
+                          return map[cls] ?? ('other' as TaxonomicGroup)
+                        })(),
+                        rank: 'species',
+                      },
+                    }),
+                  )
+                  const nb = availableNotebooks.find((n) => n.id === notebookId)
+                  setResumedNotebookId(notebookId)
+                  setForm((prev) => {
+                    // Fusion : on n'ajoute que les especes pas deja presentes.
+                    const existingIds = new Set(
+                      prev.observations.map((o) => o.species?.id).filter(Boolean),
                     )
-                    // Prefill titre + localisation depuis le carnet repris si
-                    // l'utilisateur n'a pas deja saisi ces champs (Nicolas
-                    // 2026-06-08 : ne pas reperdre les infos du carnet).
-                    const nb = availableNotebooks.find((n) => n.id === notebookId)
-                    setForm((prev) => ({
+                    const merged = [
+                      ...prev.observations,
+                      ...entries.filter((e) => !e.species || !existingIds.has(e.species.id)),
+                    ]
+                    return {
                       ...prev,
-                      observations: entries,
+                      observations: merged,
                       title: prev.title.trim() ? prev.title : (nb?.title?.trim() ?? prev.title),
                       locationName: prev.locationName.trim()
                         ? prev.locationName
@@ -786,18 +793,10 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
                       locationLng: prev.locationLng ?? nb?.longitude ?? null,
                       locationCountry: prev.locationCountry ?? nb?.country ?? null,
                       locationRegion: prev.locationRegion ?? nb?.region ?? null,
-                    }))
-                  }}
-                />
-                <EncounterStep2
-                  observations={form.observations}
-                  onAdd={handleAddObservation}
-                  onRemove={handleRemoveObservation}
-                  onCountChange={handleCountChange}
-                  helpIdentification={form.helpIdentification}
-                  onHelpIdentificationChange={(v) => set('helpIdentification', v)}
-                />
-              </div>
+                    }
+                  })
+                }}
+              />
             )}
 
             {step === 3 && (

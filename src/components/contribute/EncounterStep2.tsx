@@ -14,10 +14,11 @@
  */
 
 import { useState, useId, useEffect, useMemo } from 'react'
-import { Search, Trash2, HelpCircle, Filter, X, Check, Loader2 } from 'lucide-react'
+import { Search, Trash2, HelpCircle, Filter, X, Check, Loader2, BookOpen } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
 import { searchTaxonomy, type TaxonomyHit } from '@/services/searchService'
+import type { Notebook } from '@/services/notebookService'
 import { highlightMatch } from '@/utils/highlightMatch'
 import { Button } from '@/components/ui/Button'
 import { CountStepper } from '@/components/ui/CountStepper'
@@ -145,6 +146,8 @@ function SpeciesSearchBar({
   onAdd,
   onSearchActiveChange,
   inputRef,
+  notebooks,
+  onPickNotebook,
 }: {
   onAdd: (species: ObservationEntry['species']) => void
   /** Fire avec true des que l user tape (query non vide), false quand vide.
@@ -153,6 +156,10 @@ function SpeciesSearchBar({
   /** Ref optionnelle vers l'input — permet au parent (bouton "Ajouter une
    *  espèce") de redonner le focus a la barre de recherche. */
   inputRef?: React.RefObject<HTMLInputElement | null>
+  /** Carnets existants selectionnables (bouton livre + dropdown). */
+  notebooks: Notebook[]
+  /** Ajoute toutes les especes d'un carnet existant aux observations. */
+  onPickNotebook: (notebookId: string) => Promise<void> | void
 }) {
   const { t } = useTranslation()
   const listId = useId()
@@ -160,6 +167,19 @@ function SpeciesSearchBar({
   // Filtres par groupe taxonomique — Set vide = tous les groupes acceptés.
   const [groupFilters, setGroupFilters] = useState<Set<TaxonomicGroup>>(new Set())
   const [filterOpen, setFilterOpen] = useState(false)
+  // Dropdown "carnet existant" (bouton livre, a droite du filtre).
+  const [notebookOpen, setNotebookOpen] = useState(false)
+  const [pickingId, setPickingId] = useState<string | null>(null)
+
+  async function handlePickNotebook(notebookId: string) {
+    setPickingId(notebookId)
+    try {
+      await onPickNotebook(notebookId)
+      setNotebookOpen(false)
+    } finally {
+      setPickingId(null)
+    }
+  }
   const [results, setResults] = useState<TaxonomyHit[]>([])
   // V1.1.0 (Nicolas 2026-05-26) : toggles precision identification cumulatifs.
   // L user peut cocher les 2 pour cumuler les resultats (especes + familles
@@ -347,7 +367,10 @@ function SpeciesSearchBar({
         {/* Bouton filtre — BATCH 99 : border ajoutée pour cohérence avec autres icon buttons */}
         <button
           type="button"
-          onClick={() => setFilterOpen((v) => !v)}
+          onClick={() => {
+            setFilterOpen((v) => !v)
+            setNotebookOpen(false)
+          }}
           aria-label={t('contribute.panel.filterSpecies', { defaultValue: 'Filtrer' })}
           aria-expanded={filterOpen}
           className={[
@@ -372,6 +395,70 @@ function SpeciesSearchBar({
             </span>
           )}
         </button>
+
+        {/* Bouton "carnet existant" — meme DS que le filtre (icone livre).
+            Ouvre un dropdown des carnets enregistres ; en choisir un injecte
+            toutes ses especes dans les observations (Nicolas 2026-06-08). */}
+        <button
+          type="button"
+          onClick={() => {
+            setNotebookOpen((v) => !v)
+            setFilterOpen(false)
+          }}
+          aria-label="Ajouter un carnet existant"
+          aria-expanded={notebookOpen}
+          className={[
+            'relative size-12 shrink-0 rounded-full flex items-center justify-center',
+            'border border-[var(--color-border)]',
+            'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+            notebookOpen
+              ? 'bg-primary text-primary-foreground border-primary'
+              : 'text-foreground hover:bg-muted/50 hover:border-foreground/40',
+          ].join(' ')}
+        >
+          <BookOpen className="size-5" aria-hidden="true" />
+        </button>
+
+        {/* Dropdown carnets existants — meme ancrage que le panel filtres */}
+        {notebookOpen && (
+          <div className="absolute left-0 right-0 top-full mt-3 z-20 rounded-2xl border-[0.5px] border-border bg-background shadow-xl overflow-hidden">
+            {notebooks.length === 0 ? (
+              <p className="px-5 py-4 text-sm text-muted-foreground text-center">
+                Aucun carnet enregistré pour le moment.
+              </p>
+            ) : (
+              <ul
+                role="listbox"
+                aria-label="Carnets existants"
+                className="max-h-64 overflow-y-auto"
+              >
+                {notebooks.map((nb) => (
+                  <li key={nb.id}>
+                    <button
+                      type="button"
+                      onClick={() => handlePickNotebook(nb.id)}
+                      disabled={pickingId !== null}
+                      className="w-full flex items-center justify-between gap-3 px-5 py-3 text-left hover:bg-muted/50 disabled:opacity-50 focus-visible:outline-none focus-visible:bg-muted/50 border-b border-border last:border-b-0"
+                    >
+                      <span className="font-bold text-sm text-foreground truncate">
+                        {nb.title?.trim() || 'Carnet sans titre'}
+                      </span>
+                      <span className="shrink-0 flex items-center gap-2 text-sm text-muted-foreground">
+                        {nb.species_count} espèce{nb.species_count > 1 ? 's' : ''}
+                        {pickingId === nb.id && (
+                          <Loader2
+                            className="size-4 text-primary motion-safe:animate-spin"
+                            aria-hidden="true"
+                          />
+                        )}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         {/* Panel filtres — ancre `top-full` dans la row (parent relative z-30)
             pour etre un vrai dropdown overlay au-dessus du listbox de
@@ -750,6 +837,10 @@ interface EncounterStep2Props {
   onCountChange: (id: string, delta: number) => void
   helpIdentification: boolean
   onHelpIdentificationChange: (v: boolean) => void
+  /** Carnets existants selectionnables via le bouton livre. */
+  notebooks: Notebook[]
+  /** Injecte toutes les especes d'un carnet existant dans les observations. */
+  onPickNotebook: (notebookId: string) => Promise<void> | void
 }
 
 export function EncounterStep2({
@@ -762,6 +853,8 @@ export function EncounterStep2({
   // été masqué (workflow aide collaborative reporté en P2).
   helpIdentification: _helpIdentification,
   onHelpIdentificationChange: _onHelpIdentificationChange,
+  notebooks,
+  onPickNotebook,
 }: EncounterStep2Props) {
   const { t } = useTranslation()
 
@@ -782,7 +875,12 @@ export function EncounterStep2({
   return (
     <div className="flex flex-col gap-4">
       {/* Barre de recherche */}
-      <SpeciesSearchBar onAdd={handleAddSpecies} onSearchActiveChange={setIsSearching} />
+      <SpeciesSearchBar
+        onAdd={handleAddSpecies}
+        onSearchActiveChange={setIsSearching}
+        notebooks={notebooks}
+        onPickNotebook={onPickNotebook}
+      />
 
       {/* État vide — carte blanche bordurée (Figma Frame 4621) :
           hermine + pill menthe "Aucun résultat" + hint en Quicksand Bold.
