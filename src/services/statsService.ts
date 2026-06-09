@@ -166,33 +166,24 @@ export async function getPlatformStats(): Promise<PlatformStats> {
 export async function getImpactStats(period: StatsPeriod = 'month'): Promise<ImpactStats> {
   const c = ensureClient()
   const { current, oldest } = getPeriodBounds(period)
-  const internalIds = await getInternalUserIds()
-  const internalClause = notInClause(internalIds)
 
-  // Helper pour appliquer le filtre is_internal sur les requetes posts
-  const filterPosts = <T extends { not: (col: string, op: string, val: string) => T }>(q: T) =>
-    internalClause ? q.not('user_id', 'in', internalClause) : q
+  // Observations = CUMUL D'ESPECES (RPC get_observations_count), pas le nombre
+  // de posts (Nicolas 2026-06-08 : vrai nombre d'observations reel). Un post
+  // carnet a 3 especes compte pour 3, un partage mono-espece pour 1, un Instant
+  // nature (sans espece) pour 0. La RPC exclut deja les comptes internes.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rpc = (c as any).rpc.bind(c) as (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ data: number | string | null }>
 
   // Requêtes en parallèle : observations courante + précédente, migrateurs courant + précédent
   const [obsCurrent, obsPrevious, migCurrent, migPrevious] = await Promise.all([
-    // Observations (posts publiés), période courante, exclut les is_internal
-    filterPosts(
-      c
-        .from('posts')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'published')
-        .gte('created_at', current),
-    ),
+    // Observations (cumul d'especes), période courante
+    rpc('get_observations_count', { p_start: current }),
 
     // Observations, période précédente
-    filterPosts(
-      c
-        .from('posts')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'published')
-        .gte('created_at', oldest)
-        .lt('created_at', current),
-    ),
+    rpc('get_observations_count', { p_start: oldest, p_end: current }),
 
     // Migrateurs (comptes créés), période courante, exclut les is_internal.
     // Nicolas 2026-06-06 : on ne compte QUE les comptes réellement finalisés.
@@ -216,8 +207,8 @@ export async function getImpactStats(period: StatsPeriod = 'month'): Promise<Imp
       .lt('created_at', current),
   ])
 
-  const obsCount = obsCurrent.count ?? 0
-  const obsPrev = obsPrevious.count ?? 0
+  const obsCount = Number(obsCurrent.data ?? 0)
+  const obsPrev = Number(obsPrevious.data ?? 0)
   const migCount = migCurrent.count ?? 0
   const migPrev = migPrevious.count ?? 0
 
