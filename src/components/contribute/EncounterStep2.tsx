@@ -93,6 +93,10 @@ export interface ObservationEntry {
   /** true = espèce non déterminée (mystère) */
   isUnknown: boolean
   count: number
+  /** Si l'espèce vient d'un carnet importé : id du carnet source. Permet de
+   *  remplacer uniquement les espèces du carnet (et garder les ajouts manuels)
+   *  quand l'user change de carnet (Nicolas 2026-06-08). Absent = ajout manuel. */
+  sourceNotebookId?: string
 }
 
 // ─── Sous-composants ──────────────────────────────────────────────────────────

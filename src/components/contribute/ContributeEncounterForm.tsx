@@ -747,6 +747,9 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
                       id: obs.id,
                       isUnknown: false,
                       count: obs.individuals_count,
+                      // Marque l'origine carnet -> on pourra remplacer ces
+                      // especes (et garder les ajouts manuels) au changement.
+                      sourceNotebookId: notebookId,
                       species: {
                         id: obs.taxref_id,
                         commonName: obs.species_name,
@@ -775,10 +778,15 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
                   setResumedNotebookId(notebookId)
                   setForm((prev) => ({
                     ...prev,
-                    // Remplace TOTALEMENT la liste par les especes du carnet
-                    // choisi (Nicolas 2026-06-08) : on ne cumule pas plusieurs
-                    // carnets. Choisir un autre carnet remplace le precedent.
-                    observations: entries,
+                    // On retire les especes issues d'un carnet precedent et on
+                    // garde les ajouts MANUELS (sans sourceNotebookId), puis on
+                    // ajoute le carnet choisi. Changer de carnet remplace donc
+                    // uniquement la partie carnet, jamais les ajouts manuels
+                    // (Nicolas 2026-06-08 ; a l'user de les retirer s'il veut).
+                    observations: [
+                      ...prev.observations.filter((o) => !o.sourceNotebookId),
+                      ...entries,
+                    ],
                     title: prev.title.trim() ? prev.title : (nb?.title?.trim() ?? prev.title),
                     locationName: prev.locationName.trim()
                       ? prev.locationName
