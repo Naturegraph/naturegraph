@@ -27,6 +27,8 @@ import { EncounterStep1 } from './EncounterStep1'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import { useContributePostSubmit } from '@/hooks/useContributePostSubmit'
 import { readDraft, useDraftAutoSave, clearDraft } from '@/hooks/useContributeDraft'
+// NG-038 : persistance des PHOTOS de brouillon via IndexedDB.
+import { loadDraftPhotos, saveDraftPhotos, clearDraftPhotos } from '@/lib/draftPhotoStore'
 import { useToast } from '@/contexts/ToastContext'
 import { toStorageTimestamp, toDateInputValue } from '@/utils/observationDate'
 import { supabase } from '@/lib/supabase'
@@ -243,6 +245,36 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
     !editingPostId,
   )
 
+  // NG-038 : restauration des photos de brouillon (IndexedDB) au mount.
+  useEffect(() => {
+    if (editingPostId) return
+    let cancelled = false
+    loadDraftPhotos(DRAFT_KEY)
+      .then((files) => {
+        if (!cancelled && files.length > 0) {
+          setForm((prev) => (prev.files.length > 0 ? prev : { ...prev, files }))
+        }
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // NG-038 : sauvegarde des photos en IndexedDB des qu'elles changent. On SAUTE
+  // le premier run (mount) pour ne pas effacer les photos avant que la
+  // restauration au mount ne les lise (race).
+  const skipFirstPhotoSaveRef = useRef(true)
+  useEffect(() => {
+    if (editingPostId) return
+    if (skipFirstPhotoSaveRef.current) {
+      skipFirstPhotoSaveRef.current = false
+      return
+    }
+    void saveDraftPhotos(DRAFT_KEY, form.files)
+  }, [form.files, editingPostId, DRAFT_KEY])
+
   // Escape ferme le panneau
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
@@ -358,6 +390,8 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
         onSuccess: async () => {
           // NG-004 : succes -> purge le brouillon.
           clearDraft(DRAFT_KEY)
+          // NG-038 : purge aussi les photos de brouillon (IndexedDB).
+          void clearDraftPhotos(DRAFT_KEY)
           onClose()
         },
       })

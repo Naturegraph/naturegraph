@@ -14,7 +14,7 @@
  *   3. queryClient.invalidateQueries({ queryKey: ['feed'] })
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, X, ImageOff, RotateCcw, ImageUp, Loader2 } from 'lucide-react'
 import type { TimeOfDay, WeatherCondition, HabitatType, DisplayFormat } from '@/types/database'
@@ -34,6 +34,9 @@ import { supabase } from '@/lib/supabase'
 // upload, watchdog, rollback).
 import { useContributePostSubmit } from '@/hooks/useContributePostSubmit'
 import { readDraft, useDraftAutoSave, clearDraft } from '@/hooks/useContributeDraft'
+// NG-038 : persistance des PHOTOS de brouillon via IndexedDB (les File ne
+// tiennent pas en localStorage -> photos perdues au refresh sans ce store).
+import { loadDraftPhotos, saveDraftPhotos, clearDraftPhotos } from '@/lib/draftPhotoStore'
 import { createProposal } from '@/services/identificationService'
 import { Button } from '@/components/ui/Button'
 // V1.2.0 NG-005 : sauvegarde reelle multi-especes via carnet.
@@ -392,6 +395,39 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
     !isEditing,
   )
 
+  // NG-038 : restauration des photos de brouillon (IndexedDB) au mount.
+  // Uniquement hors edition + si le form n'a pas deja des photos (evite
+  // d'ecraser une saisie en cours). Best-effort.
+  useEffect(() => {
+    if (isEditing) return
+    let cancelled = false
+    loadDraftPhotos(DRAFT_KEY)
+      .then((files) => {
+        if (!cancelled && files.length > 0) {
+          setForm((prev) => (prev.files.length > 0 ? prev : { ...prev, files }))
+        }
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // NG-038 : sauvegarde des photos en IndexedDB des qu'elles changent (hors
+  // edition). Complete l'auto-save texte (localStorage) qui ne porte pas les File.
+  // On SAUTE le tout premier run (mount) : sinon il sauvegarderait files=[] ->
+  // effacerait les photos AVANT que la restauration au mount ne les lise (race).
+  const skipFirstPhotoSaveRef = useRef(true)
+  useEffect(() => {
+    if (isEditing) return
+    if (skipFirstPhotoSaveRef.current) {
+      skipFirstPhotoSaveRef.current = false
+      return
+    }
+    void saveDraftPhotos(DRAFT_KEY, form.files)
+  }, [form.files, isEditing, DRAFT_KEY])
+
   // Fermer sur Escape
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
@@ -631,6 +667,8 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
 
         // NG-004 : succes -> purge le brouillon (on a publie, plus besoin).
         clearDraft(DRAFT_KEY)
+        // NG-038 : purge aussi les photos de brouillon (IndexedDB).
+        void clearDraftPhotos(DRAFT_KEY)
         onClose()
       },
     })
