@@ -14,6 +14,34 @@
  *   puis définir VITE_SENTRY_DSN dans Vercel.
  */
 
+// Référence Sentry mémorisée après init (le SDK est chargé dynamiquement, donc
+// non importable statiquement ailleurs). Permet à authBreadcrumb() d'envoyer des
+// fils d'Ariane sans recharger le module.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let sentryRef: any = null
+
+/**
+ * Fil d'Ariane « auth » (NG-038 Phase 0 — instrumentation).
+ *
+ * Trace chaque transition d'authentification / boot pour pouvoir diagnostiquer
+ * les vrais echecs en prod (faux etat deconnecte, session perdue, boot lent)
+ * AU LIEU de corriger a l'aveugle. Toujours loggue en console (dev + prod), et
+ * envoie un breadcrumb Sentry si le monitoring est actif. No-op safe sinon.
+ */
+export function authBreadcrumb(message: string, data?: Record<string, unknown>): void {
+  try {
+    // eslint-disable-next-line no-console
+    console.debug(`[auth] ${message}`, data ?? '')
+  } catch {
+    /* console indispo : ignore */
+  }
+  try {
+    sentryRef?.addBreadcrumb?.({ category: 'auth', level: 'info', message, data })
+  } catch {
+    /* Sentry absent ou erreur : ignore */
+  }
+}
+
 export async function initMonitoring(): Promise<void> {
   const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined
   if (!dsn) return
@@ -29,6 +57,7 @@ export async function initMonitoring(): Promise<void> {
       console.warn('[monitoring] @sentry/react absent — skip')
       return
     }
+    sentryRef = Sentry
     Sentry.init({
       dsn,
       environment: import.meta.env.VITE_APP_ENV ?? 'development',

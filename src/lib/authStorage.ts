@@ -153,6 +153,21 @@ export const authStorage = {
 }
 
 /**
+ * NG-038 : détecte SYNCHRONEMENT la présence d'une session persistée
+ * (localStorage ou sessionStorage), sans réseau.
+ *
+ * Sert au boot d'auth : tant qu'un token existe, on ne doit JAMAIS conclure
+ * « déconnecté » (cause racine du faux état déconnecté / Landing avant feed).
+ * On attend / on réessaie la restauration au lieu d'afficher la Landing.
+ */
+export function hasStoredAuthToken(): boolean {
+  if (typeof window === 'undefined') return false
+  const raw = safeLocalGet('naturegraph-auth') ?? safeSessionGet('naturegraph-auth')
+  // Un blob de session valide contient au minimum un access_token.
+  return !!raw && raw.includes('access_token')
+}
+
+/**
  * Purge totale côté client — à appeler depuis signOut() en complément
  * de supabase.auth.signOut() (qui lui révoque aussi côté serveur).
  */
