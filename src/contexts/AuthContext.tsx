@@ -468,6 +468,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // getSession recupere la vraie session. En laissant getSession seul
       // gerer le boot, l'utilisateur deja connecte arrive directement sur le feed.
       if (event === 'INITIAL_SESSION') return
+      authBreadcrumb(`event.${event.toLowerCase()}`, { hasSession: !!session })
 
       // BATCH 103 : SIGNED_OUT déclenché par un refresh fail -> purge propre
       if (event === 'SIGNED_OUT') {
@@ -478,18 +479,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // profil, notifications). C est une des sources principales de la
         // sensation "app cassee, faut refresh" rapportee par les beta-testers.
         queryClient.clear()
+        setState(
+          deriveState({
+            user: null,
+            session: null,
+            profile: null,
+            isLoading: false,
+            isAuthenticated: false,
+          }),
+        )
+        return
       }
+
       const user = session?.user ?? null
-      const profile = user ? await fetchProfile(user.id) : null
-      setState(deriveState({ user, session, profile, isLoading: false, isAuthenticated: !!user }))
-      // NG-004 : au login fresh, invalide aussi les queries pour repartir
-      // sur des donnees propres (au cas ou un cache fantome aurait survecu).
-      if (event === 'SIGNED_IN') {
-        queryClient.invalidateQueries()
+      if (!user) {
+        setState(
+          deriveState({
+            user: null,
+            session: null,
+            profile: null,
+            isLoading: false,
+            isAuthenticated: false,
+          }),
+        )
+        return
       }
-      // V1.1.1 : pre-chauffe RPC search_taxonomy apres login pour eviter le
-      // cold start serverless lors de la 1ere recherche d especes. Best-effort.
-      if (user && event === 'SIGNED_IN') {
+
+      // NG-038 : la rotation reguliere du token (TOKEN_REFRESHED, ~1h via
+      // autoRefresh) ne doit PAS re-fetcher le profil a chaque fois (couteux,
+      // inutile). On met a jour la session en gardant le profil existant ; on
+      // ne le recupere que s'il manque encore (cas boot optimistic sans reseau).
+      if (event === 'TOKEN_REFRESHED') {
+        setState((prev) =>
+          prev.user?.id === user.id && prev.profile
+            ? deriveState({ ...prev, user, session, isAuthenticated: true })
+            : deriveState({
+                user,
+                session,
+                profile: null,
+                isLoading: false,
+                isAuthenticated: true,
+              }),
+        )
+        fetchProfile(user.id)
+          .then((profile) => {
+            if (profile)
+              setState((prev) =>
+                prev.user?.id === user.id && !prev.profile
+                  ? deriveState({ ...prev, profile })
+                  : prev,
+              )
+          })
+          .catch(() => {})
+        return
+      }
+
+      // SIGNED_IN, USER_UPDATED, etc. -> on hydrate le profil frais.
+      const profile = await fetchProfile(user.id)
+      setState(deriveState({ user, session, profile, isLoading: false, isAuthenticated: true }))
+      if (event === 'SIGNED_IN') {
+        // NG-004 : au login fresh, invalide les queries (evite un cache fantome
+        // de l'ancien user). + pre-chauffe la RPC search_taxonomy (cold start).
+        queryClient.invalidateQueries()
         import('@/services/searchService')
           .then(({ warmupTaxonomySearch }) => warmupTaxonomySearch())
           .catch(() => {})
@@ -540,11 +591,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const elapsed = Date.now() - lastSessionCheck
       if (elapsed < 10 * 60 * 1000) return
       lastSessionCheck = Date.now()
+      authBreadcrumb('refresh.visibility', { elapsedMin: Math.round(elapsed / 60000) })
       supabase?.auth.refreshSession().catch(async (err) => {
+        // NG-038 : on ne signOut QUE si le refresh token est reellement mort.
+        // Un echec reseau transitoire (retour de veille, reseau pas encore
+        // remonte) NE doit PAS deconnecter : autoRefreshToken + le prochain
+        // visibility/intervalle re-tenteront.
         if (isInvalidRefreshTokenError(err)) {
-          console.warn('[Auth] Refresh token mort au retour de tab -> signOut')
+          authBreadcrumb('refresh.visibility.dead-token -> signOut')
           clearAuthStorage()
           await supabase!.auth.signOut({ scope: 'local' }).catch(() => {})
+        } else {
+          authBreadcrumb('refresh.visibility.transient-fail (kept session)', { err: String(err) })
         }
       })
     }
