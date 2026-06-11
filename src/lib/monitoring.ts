@@ -47,12 +47,17 @@ export async function initMonitoring(): Promise<void> {
   if (!dsn) return
 
   try {
-    // Chemin fragmenté pour éviter l'analyse statique de Vite en dev
-    // (le package n'est pas installé — chargé uniquement en prod via VITE_SENTRY_DSN)
-    const sentryPkg = '@sentry' + '/react'
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore — import dynamique optionnel, non résolu en dev
-    const Sentry = await import(sentryPkg).catch(() => null)
+    // NG-006B : @sentry/react est en dependance -> import dynamique STATIQUE
+    // pour que Vite le bundle dans un chunk lazy (telecharge uniquement quand
+    // VITE_SENTRY_DSN est defini, donc jamais en local/dev sans DSN).
+    // L'ancien import concatene ('@sentry'+'/react') n'etait PAS analysable par
+    // Vite -> le SDK n'etait pas bundle -> l'import echouait en prod et Sentry
+    // ne s'initialisait jamais (seuls les breadcrumbs console marchaient).
+    // Cast `any` volontaire : module optionnel charge dynamiquement, et la
+    // signature exacte de Sentry.init/beforeSend bouge entre versions (bumps
+    // Dependabot). On garde quand meme le scrubbing PII ci-dessous.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const Sentry = (await import('@sentry/react').catch(() => null)) as any
     if (!Sentry) {
       console.warn('[monitoring] @sentry/react absent — skip')
       return
