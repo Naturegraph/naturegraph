@@ -583,15 +583,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Symptome NG-004 #2/#3 : session instable apres 30 min usage / perte
     // d etat authentifie. Cause probable : token expire pendant l absence
     // mais le refresh interval ne se declenche que toutes les 30 min.
-    // Solution : au visibility change visible, on force un refresh session
-    // si la derniere mise a jour date de > 10 min.
+    // Solution : au visibility change visible, on force un refresh session.
+    // NG-006B (2026-06-09) : seuil abaisse de 10 min -> 60 s. En sortie terrain
+    // le tel se met en veille toutes les quelques minutes ; avec 10 min, le
+    // token restait expire au retour -> recherche/ajout/sauvegarde carnet
+    // casses jusqu'au refresh manuel. A 60 s, le token est rafraichi AVANT que
+    // l'user n'agisse, meme apres une courte veille. (Le refresh est cheap et
+    // l'echec transitoire ne deconnecte pas, cf. plus bas.)
+    const VISIBILITY_REFRESH_THRESHOLD_MS = 60 * 1000
     let lastSessionCheck = Date.now()
     function handleVisibility() {
       if (document.visibilityState !== 'visible') return
       const elapsed = Date.now() - lastSessionCheck
-      if (elapsed < 10 * 60 * 1000) return
+      if (elapsed < VISIBILITY_REFRESH_THRESHOLD_MS) return
       lastSessionCheck = Date.now()
-      authBreadcrumb('refresh.visibility', { elapsedMin: Math.round(elapsed / 60000) })
+      authBreadcrumb('refresh.visibility', { elapsedSec: Math.round(elapsed / 1000) })
       supabase?.auth.refreshSession().catch(async (err) => {
         // NG-038 : on ne signOut QUE si le refresh token est reellement mort.
         // Un echec reseau transitoire (retour de veille, reseau pas encore

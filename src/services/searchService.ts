@@ -135,6 +135,21 @@ export async function warmupTaxonomySearch(): Promise<void> {
  * d une session. On retry 1 fois si la 1ere echoue par timeout, ce qui
  * laisse 30s total pour eviter qu un user voie un "loader infini".
  */
+/**
+ * NG-006B : detecte une erreur de token expire / non authentifie.
+ * Apres une mise en veille mobile, l'access token expire et la requete part
+ * avec ce token -> PostgREST renvoie 401 / PGRST301 (JWT expired). On veut
+ * alors forcer un refresh de session puis rejouer (fix "recherche cassee apres
+ * veille en sortie terrain").
+ */
+function isAuthExpiredError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false
+  const e = err as { code?: string; message?: string; status?: number }
+  if (e.code === 'PGRST301') return true
+  if (e.status === 401) return true
+  return /jwt (expired|invalid)|invalid token|not authenticated|401/i.test(String(e.message ?? ''))
+}
+
 async function rpcWithRetry(
   rpcFn: () => PromiseLike<{ data: unknown; error: unknown }>,
   timeoutMs: number,
@@ -149,12 +164,24 @@ async function rpcWithRetry(
     )
     return Promise.race([rpcFn() as Promise<{ data: unknown; error: unknown }>, timeoutPromise])
   }
-  const first = await tryOnce()
-  if (first.error && /timeout/i.test((first.error as Error).message ?? '')) {
+  let result = await tryOnce()
+  // Retry 1 : cold start serverless (timeout).
+  if (result.error && /timeout/i.test((result.error as Error).message ?? '')) {
     console.info(`[searchService] ${label} retry after timeout (cold start ?)`)
-    return await tryOnce()
+    result = await tryOnce()
   }
-  return first
+  // Retry 2 (NG-006B) : token expire apres veille -> refresh session + rejoue.
+  // Corrige "recherche espece morte apres veille" sans refresh manuel.
+  if (result.error && isAuthExpiredError(result.error)) {
+    console.info(`[searchService] ${label} token expire -> refresh session + retry`)
+    try {
+      await supabase?.auth.refreshSession()
+    } catch {
+      /* best-effort */
+    }
+    result = await tryOnce()
+  }
+  return result
 }
 
 export async function searchSpecies(
