@@ -673,7 +673,13 @@ export function FeedPost({
             remplace les chips espece/categorie classiques par la carte
             carnet d observations avec la liste categorisee par classe
             taxonomique. */}
-        {postType !== 'nature_instant' && notebookId && (
+        {/* NG-006B #7 (fallback) : on affiche la carte carnet UNIQUEMENT si le
+            carnet a > 1 espece. Avec 0 ou 1 espece, le carnet n'a plus de sens
+            -> on retombe sur le chip espece standard (bloc ci-dessous), le post
+            portant deja son espece representative. Garde-fou : count inconnu
+            (null) => on garde la carte (?? 2) pour ne pas masquer un vrai carnet
+            dont le compteur n'aurait pas charge. */}
+        {postType !== 'nature_instant' && notebookId && (notebookSpeciesCount ?? 2) > 1 && (
           <NotebookCardInFeed
             notebookId={notebookId}
             speciesCount={notebookSpeciesCount ?? undefined}
@@ -687,7 +693,9 @@ export function FeedPost({
             — un instant nature ne décrit pas une observation d'espèce
             (Nicolas 2026-05-23). On masque toute la rangée pour éviter
             le « Espèce non déterminée » qui n'a pas de sens ici. */}
-        {postType !== 'nature_instant' && !notebookId && (
+        {/* NG-006B #7 : chips standard si PAS de carte carnet (donc : post sans
+            carnet, OU carnet retombe a <=1 espece). */}
+        {postType !== 'nature_instant' && !(notebookId && (notebookSpeciesCount ?? 2) > 1) && (
           <div className="flex flex-wrap gap-2">
             {(() => {
               const taxonomicCfg = taxonomic_group ? TAXONOMIC_GROUP_CONFIG[taxonomic_group] : null
