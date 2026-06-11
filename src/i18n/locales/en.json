@@ -861,7 +861,9 @@
     "errors": {
       "mediaRequired": "Add at least one photo",
       "descriptionRequired": "Description is required",
-      "descriptionTooLong": "Maximum {{max}} characters"
+      "descriptionTooLong": "Maximum {{max}} characters",
+      "titleTooLong": "The title cannot exceed {{max}} characters",
+      "emptyPost": "Add at least a photo, a species or a description before publishing."
     }
   },
 

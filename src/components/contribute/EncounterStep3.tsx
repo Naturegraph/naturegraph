@@ -23,6 +23,7 @@ import { Calendar, Info, MapPin, X } from 'lucide-react'
 import type { TimeOfDay, WeatherCondition, HabitatType } from '@/types/database'
 import { useLocationAutocomplete } from '@/hooks/useLocationAutocomplete'
 import type { CityResult } from '@/types/location'
+import { POST_LIMITS } from '@/lib/postValidation'
 
 // ─── Constantes UI — labels emoji mappés aux énumérations DB ────────────────
 
@@ -136,7 +137,10 @@ interface EncounterStep3Props {
   onLocationHiddenChange: (v: boolean) => void
 }
 
-const MAX_DESC = 1500
+// Bornes alignees sur la source de verite partagee (postValidation) =
+// memes valeurs que le service createPost + la colonne DB varchar(160).
+const MAX_TITLE = POST_LIMITS.TITLE_MAX
+const MAX_DESC = POST_LIMITS.DESCRIPTION_MAX
 
 /** ISO (YYYY-MM-DD) du jour — borne max du champ date. */
 function todayISO() {
@@ -263,9 +267,33 @@ export function EncounterStep3({
           type="text"
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
+          // Cap dur cote saisie (retour testeur 2026-06-11) : empeche de taper
+          // ou coller au-dela de la limite DB (varchar 160). Le service revalide
+          // quand meme (defense en profondeur), et le compteur previent l'user.
+          maxLength={MAX_TITLE}
+          aria-invalid={!!(submitAttempted && errors.title)}
+          aria-describedby={submitAttempted && errors.title ? `${titleId}-error` : undefined}
           placeholder={t('contribute.panel.obsTitlePlaceholder', { defaultValue: '' })}
           className="w-full h-11 px-4 rounded-full border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
         />
+        {/* Compteur affiche seulement quand on approche de la limite (>=80%)
+            pour ne pas alourdir l'UI sur un titre court. */}
+        {title.length >= MAX_TITLE * 0.8 && (
+          <span
+            aria-live="polite"
+            className={[
+              'self-end text-xs tabular-nums',
+              title.length >= MAX_TITLE ? 'text-[var(--color-error)]' : 'text-muted-foreground',
+            ].join(' ')}
+          >
+            {title.length}/{MAX_TITLE}
+          </span>
+        )}
+        {submitAttempted && errors.title && (
+          <p id={`${titleId}-error`} role="alert" className="text-xs text-[var(--color-error)]">
+            {errors.title}
+          </p>
+        )}
       </div>
 
       {/* ── 2. Description* ────────────────────────────────────────────── */}
@@ -425,6 +453,8 @@ export function EncounterStep3({
             aria-controls={`${locId}-listbox`}
             aria-autocomplete="list"
             autoComplete="off"
+            // Cap aligne sur la colonne DB posts.location_name varchar(255).
+            maxLength={255}
             className="w-full h-11 pl-10 pr-4 rounded-full border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
           />
 

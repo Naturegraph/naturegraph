@@ -714,6 +714,9 @@ function StartView({
           type="text"
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
+          // Cap aligne sur la colonne DB notebooks.title varchar(120) : empeche
+          // de heurter une erreur SQL « value too long » (retour testeur).
+          maxLength={120}
           className="w-full h-12 px-5 rounded-full border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base"
         />
       </div>
@@ -745,6 +748,8 @@ function StartView({
               // Laisse le temps au clic sur une suggestion (mousedown) de passer.
               window.setTimeout(() => setShowSuggestions(false), 120)
             }}
+            // Cap aligne sur la colonne DB notebooks.location_name varchar(255).
+            maxLength={255}
             className="w-full pl-11 pr-10 h-12 rounded-full border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base"
           />
           {locLoading && location.trim().length >= 2 && (
