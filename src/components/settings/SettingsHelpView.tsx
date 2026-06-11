@@ -61,6 +61,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
+import { safeDetail } from '@/lib/sanitizeError'
 import { useSubmitHelpRequest } from '@/hooks/useSupport'
 import type { SupportSubject } from '@/services/supportService'
 import { CONTACT_EMAIL } from '@/constants/contact'
@@ -149,7 +150,7 @@ export function SettingsHelpView() {
         t('settings.help.errorSubmit', {
           defaultValue: "Impossible d'envoyer le message pour l'instant.",
         }),
-        err instanceof Error ? err.message : undefined,
+        safeDetail(err),
       )
     }
   }

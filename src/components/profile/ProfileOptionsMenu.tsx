@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next'
 import { Link2, Flag, Ban, Pencil, Check } from 'lucide-react'
 import { useBlock } from '@/hooks/useBlocks'
 import { useToast } from '@/contexts/ToastContext'
+import { safeDetail } from '@/lib/sanitizeError'
 
 interface ProfileOptionsMenuProps {
   /** UUID du profil cible, requis pour le block (visiteur uniquement). */
@@ -105,7 +106,7 @@ export function ProfileOptionsMenu({
       } catch (err) {
         toast.error(
           t('profile.blockError', { defaultValue: 'Impossible de bloquer ce compte.' }),
-          err instanceof Error ? err.message : String(err),
+          safeDetail(err),
         )
       }
     }

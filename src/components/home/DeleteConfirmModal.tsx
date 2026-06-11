@@ -14,6 +14,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
+import { toSafeMessage } from '@/lib/sanitizeError'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -43,10 +44,10 @@ export function DeleteConfirmModal({ onClose, onConfirm }: DeleteConfirmModalPro
       await onConfirm()
       onClose()
     } catch (err) {
-      // Conserve la modale ouverte pour réessayer + affiche le message brut
-      // (utile en debug RLS / FK ; en prod on pourra filtrer si besoin).
-      const msg = err instanceof Error ? err.message : String(err)
-      setDeleteError(msg || 'Suppression impossible, réessaye dans un instant.')
+      // Jamais de message technique brut (RLS / FK / SQL) a l'ecran : on
+      // assainit via toSafeMessage (log console garde le detail pour le debug).
+      console.error('[DeleteConfirmModal] delete failed', err)
+      setDeleteError(toSafeMessage(err, 'Suppression impossible, réessaye dans un instant.'))
       setIsDeleting(false)
     }
   }

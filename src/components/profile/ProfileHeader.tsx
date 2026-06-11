@@ -30,6 +30,7 @@ import { getBadgeEmoji } from '@/utils/badgeHelpers'
 import { ProfileOptionsMenu } from './ProfileOptionsMenu'
 import { useIsFollowing, useToggleFollow } from '@/hooks/useFollow'
 import { useToast } from '@/contexts/ToastContext'
+import { safeDetail } from '@/lib/sanitizeError'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -114,7 +115,7 @@ export function ProfileHeader({
         t('profile.followError', {
           defaultValue: 'Action impossible pour le moment, reessaie.',
         }),
-        err instanceof Error ? err.message : String(err),
+        safeDetail(err),
       )
     }
   }

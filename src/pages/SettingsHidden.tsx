@@ -28,6 +28,7 @@ import { useTranslation } from 'react-i18next'
 import { ArrowLeft, EyeOff, Eye } from 'lucide-react'
 import { useHiddenPostsList, useUnhidePost } from '@/hooks/useHiddenPosts'
 import { useToast } from '@/contexts/ToastContext'
+import { safeDetail } from '@/lib/sanitizeError'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { ImagePresets } from '@/lib/supabaseImage'
 import hermineIcon from '@/assets/images/hermine-icon.png'
@@ -57,7 +58,7 @@ export default function SettingsHidden() {
         t('settings.hidden.unhideError', {
           defaultValue: 'Impossible de reafficher cette publication.',
         }),
-        err instanceof Error ? err.message : String(err),
+        safeDetail(err),
       )
     }
   }
