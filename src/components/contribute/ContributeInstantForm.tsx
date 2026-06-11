@@ -26,6 +26,7 @@ import { useCreatePost } from '@/hooks/usePost'
 import { FEED_QUERY_KEY } from '@/hooks/useFeed'
 import { uploadPostMedia } from '@/services/mediaService'
 import { supabase } from '@/lib/supabase'
+import { toSafeMessage } from '@/lib/sanitizeError'
 import { useQueryClient } from '@tanstack/react-query'
 // V1.1.4 NG-025 (Nicolas 2026-06-03) : pipeline unifie. Aligne avec
 // useContributePostSubmit pour eviter d uploader des HEIC bruts (rejetes
@@ -180,7 +181,7 @@ export function ContributeInstantForm() {
           /* swallow rollback error */
         }
       }
-      setErrors({ files: err instanceof Error ? err.message : 'Erreur lors de la publication' })
+      setErrors({ files: toSafeMessage(err, 'Erreur lors de la publication') })
     } finally {
       setIsSubmitting(false)
     }
