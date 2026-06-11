@@ -312,6 +312,9 @@ export function LocationModal({ onClose }: LocationModalProps) {
               setTimeout(() => setInputFocused(false), 200)
             }}
             placeholder="Rechercher une ville…"
+            // Garde-fou : recherche ville en lecture seule (Nominatim/RPC), on
+            // borne la saisie par robustesse.
+            maxLength={120}
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             role="combobox"
             aria-label="Rechercher une localisation"

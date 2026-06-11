@@ -42,6 +42,7 @@ import hermineIcon from '@/assets/images/hermine-icon.png'
 import { useToast } from '@/contexts/ToastContext'
 import { uploadImage } from '@/services/storageService'
 import { isSupabaseConfigured } from '@/lib/supabase'
+import { safeDetail } from '@/lib/sanitizeError'
 import { sanitizeImageUrl } from '@/lib/sanitize'
 // V1.1.4 NG-025 (Nicolas 2026-06-03) : compressPhoto retire.
 // storageService.uploadImage appelle directement processMediaForUpload qui
@@ -245,7 +246,7 @@ export function EditPhotoTab({ profile, onSave }: EditPhotoTabProps) {
         t('profile.edit.uploadError', {
           defaultValue: "Impossible d'envoyer l'image pour l'instant.",
         }),
-        err instanceof Error ? err.message : undefined,
+        safeDetail(err),
       )
     } finally {
       setIsUploading(null)

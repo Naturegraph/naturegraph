@@ -26,6 +26,7 @@ import { useTranslation } from 'react-i18next'
 import { ArrowLeft, ShieldOff, ShieldCheck } from 'lucide-react'
 import { useBlockedUsers, useUnblock } from '@/hooks/useBlocks'
 import { useToast } from '@/contexts/ToastContext'
+import { safeDetail } from '@/lib/sanitizeError'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { ImagePresets } from '@/lib/supabaseImage'
 import hermineIcon from '@/assets/images/hermine-icon.png'
@@ -55,7 +56,7 @@ export default function SettingsBlocked() {
         t('settings.blocked.unblockError', {
           defaultValue: 'Impossible de debloquer ce compte.',
         }),
-        err instanceof Error ? err.message : String(err),
+        safeDetail(err),
       )
     }
   }

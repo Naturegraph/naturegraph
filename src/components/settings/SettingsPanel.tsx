@@ -44,6 +44,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
+import { safeDetail } from '@/lib/sanitizeError'
 import { useDeleteAccount } from '@/hooks/useAccountDeletion'
 import { useDataExport } from '@/hooks/useDataExport'
 import { useHiddenPostIds } from '@/hooks/useHiddenPosts'
@@ -171,7 +172,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
         t('rgpd.export.error', {
           defaultValue: "Échec de l'export. Réessaie plus tard.",
         }),
-        err instanceof Error ? err.message : undefined,
+        safeDetail(err),
       )
     }
   }
@@ -203,7 +204,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
         t('settings.delete.error', {
           defaultValue: 'Impossible de supprimer le compte pour l’instant.',
         }),
-        err instanceof Error ? err.message : undefined,
+        safeDetail(err),
       )
     }
   }

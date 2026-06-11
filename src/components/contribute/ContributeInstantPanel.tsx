@@ -30,6 +30,7 @@ import { readDraft, useDraftAutoSave, clearDraft } from '@/hooks/useContributeDr
 // NG-038 : persistance des PHOTOS de brouillon via IndexedDB.
 import { loadDraftPhotos, saveDraftPhotos, clearDraftPhotos } from '@/lib/draftPhotoStore'
 import { useToast } from '@/contexts/ToastContext'
+import { safeDetail } from '@/lib/sanitizeError'
 import { toStorageTimestamp, toDateInputValue } from '@/utils/observationDate'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
@@ -420,7 +421,7 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
         t('contribute.errors.submitFailed', {
           defaultValue: 'Impossible de publier pour le moment.',
         }),
-        err instanceof Error ? err.message : String(err),
+        safeDetail(err),
       )
     }
   }

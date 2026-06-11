@@ -51,6 +51,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { supabase } from '@/lib/supabase'
+import { isTechnicalMessage } from '@/lib/sanitizeError'
 import {
   INPUT_PILL_CLASS,
   INPUT_READONLY_CLASS,
@@ -126,7 +127,9 @@ export function SettingsSecurityView() {
         t('settings.security.emailUpdateError', {
           defaultValue: "Impossible de modifier l'email pour l'instant.",
         }),
-        err instanceof Error ? err.message : undefined,
+        // N'affiche le detail QUE s'il est propre (les erreurs Supabase Auth
+        // sont en general claires) ; jamais de message technique brut.
+        err instanceof Error && !isTechnicalMessage(err.message) ? err.message : undefined,
       )
     } finally {
       setIsSubmitting(false)
@@ -174,6 +177,9 @@ export function SettingsSecurityView() {
             defaultValue: 'Adresse email...',
           })}
           autoComplete="email"
+          // Borne standard d'une adresse email (RFC 5321) : evite une saisie
+          // aberrante avant l'appel a Supabase Auth.
+          maxLength={254}
           className={INPUT_PILL_CLASS}
         />
       </div>

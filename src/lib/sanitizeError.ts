@@ -53,3 +53,17 @@ export function toSafeMessage(err: unknown, fallback: string = GENERIC_ERROR_MES
   if (!raw || isTechnicalMessage(raw)) return fallback
   return raw
 }
+
+/**
+ * Variante pour les DETAILS secondaires de toast (le titre porte deja le sens) :
+ * retourne le message SEULEMENT s'il est propre, sinon `undefined` (on n'affiche
+ * alors rien de plus que le titre). Evite d'inventer un libelle generique
+ * redondant tout en bloquant les fuites techniques.
+ *
+ * Usage : `toast.error('Action impossible', safeDetail(err))`.
+ */
+export function safeDetail(err: unknown): string | undefined {
+  const raw = err instanceof Error ? err.message : typeof err === 'string' ? err : ''
+  if (!raw || isTechnicalMessage(raw)) return undefined
+  return raw
+}
