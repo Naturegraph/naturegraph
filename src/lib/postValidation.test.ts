@@ -60,6 +60,28 @@ describe('validatePostContent', () => {
     }
   })
 
+  it('rejette une Rencontre "Je ne sais pas" sans photo ni texte (bug prod 2026-06-11)', () => {
+    // Payload final d'une Rencontre ou l'user a clique "Je ne sais pas" (obs
+    // inconnue -> pas de species_name) sans photo ni texte. Le hook submit doit
+    // la rejeter (hasSpecies=false car une obs inconnue ne remplit pas
+    // species_name ; hasMedia=false).
+    expect(() =>
+      validatePostContent({
+        title: undefined,
+        description: '',
+        hasSpecies: false,
+        hasMedia: false,
+        enforceNonEmpty: true,
+      }),
+    ).toThrow(PostValidationError)
+  })
+
+  it('accepte une obs inconnue accompagnee d une photo (hasMedia)', () => {
+    expect(() =>
+      validatePostContent({ hasSpecies: false, hasMedia: true, enforceNonEmpty: true }),
+    ).not.toThrow()
+  })
+
   it('NE rejette PAS le vide quand enforceNonEmpty=false (cas service)', () => {
     // Le service createPost ne connait pas les photos -> il ne juge que la
     // longueur, jamais le vide.
