@@ -90,6 +90,10 @@ export interface CreatePostPayload {
   species_name?: string
   scientific_name?: string
   taxonomic_group?: Post['taxonomic_group']
+  /** NG-039 : l'auteur sollicite l'aide de la communaute pour l'identification. */
+  identification_help?: boolean
+  /** NG-039 : niveau de confiance auteur 1..4 (Cas 2 : espece proposee mais doute). */
+  identification_confidence?: number
   taxref_id?: string
   /** Nombre d'individus observés (1+). Nicolas 2026-05-22 : ajout de
    *  posts.individuals_count en DB pour afficher « (N) » sur le chip espèce. */

@@ -212,6 +212,10 @@ export interface Post {
   scientific_name: string | null
   taxonomic_group: TaxonomicGroup | null
   identification_status: IdentificationStatus
+  /** NG-039 : true si l'auteur demande l'aide de la communaute pour identifier. */
+  identification_help: boolean
+  /** NG-039 : niveau de confiance auteur 1=pas sur .. 4=certain (Cas 2), null sinon. */
+  identification_confidence: number | null
   taxref_id: string | null
   taxref_rank: string | null
   taxref_source: string | null

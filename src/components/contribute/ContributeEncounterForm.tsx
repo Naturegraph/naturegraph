@@ -38,7 +38,6 @@ import { readDraft, useDraftAutoSave, clearDraft } from '@/hooks/useContributeDr
 // tiennent pas en localStorage -> photos perdues au refresh sans ce store).
 import { loadDraftPhotos, saveDraftPhotos, clearDraftPhotos } from '@/lib/draftPhotoStore'
 import { POST_LIMITS } from '@/lib/postValidation'
-import { createProposal } from '@/services/identificationService'
 import { Button } from '@/components/ui/Button'
 // V1.2.0 NG-005 : sauvegarde reelle multi-especes via carnet.
 import {
@@ -608,26 +607,18 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
         taxonomic_group: firstKnown?.species?.group ?? undefined,
         taxref_id: firstKnown?.species?.id ?? undefined,
         individuals_count: firstKnown?.count && firstKnown.count > 0 ? firstKnown.count : undefined,
+        // NG-039 : l'auteur sollicite l'aide de la communaute pour identifier
+        // (Cas 1 espece inconnue, ou Cas 2 doute). Le post est alors mis en
+        // avant dans le feed et ouvert aux propositions/votes.
+        identification_help: form.helpIdentification || undefined,
         display_format: form.displayFormat,
       },
       files: form.files,
       editingPostId,
       onSuccess: async (post) => {
-        // Aide à l'identification : crée une proposition vide pour signaler
-        // que le post attend une identification collaborative.
-        if (form.helpIdentification && !firstKnown && user?.id) {
-          try {
-            await createProposal(user.id, {
-              post_id: post.id,
-              species_name: '?',
-              notes: "Aide à l'identification demandée par l'auteur",
-            })
-          } catch (err) {
-            // Best-effort — l'utilisateur pourra renouveler la demande
-            // depuis le post si la proposition n'a pas été créée.
-            console.warn('[ContributeEncounterForm] createProposal failed:', err)
-          }
-        }
+        // NG-039 : l'aide a l'identification est desormais portee par le champ
+        // post.identification_help (pas par une proposition vide '?'). Les
+        // propositions/votes sont crees par la communaute depuis le post.
 
         // V1.2.0 (Nicolas 2026-06-09) : sauvegarde multi-especes DECOUPLEE.
         // Le post possede son PROPRE carnet publie dedie, alimente par

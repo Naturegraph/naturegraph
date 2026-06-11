@@ -585,6 +585,7 @@ export type Database = {
           confidence: string | null
           created_at: string | null
           id: string
+          is_undetermined: boolean
           notes: string | null
           post_id: string
           scientific_name: string | null
@@ -598,6 +599,7 @@ export type Database = {
           confidence?: string | null
           created_at?: string | null
           id?: string
+          is_undetermined?: boolean
           notes?: string | null
           post_id: string
           scientific_name?: string | null
@@ -611,6 +613,7 @@ export type Database = {
           confidence?: string | null
           created_at?: string | null
           id?: string
+          is_undetermined?: boolean
           notes?: string | null
           post_id?: string
           scientific_name?: string | null
@@ -646,6 +649,42 @@ export type Database = {
             columns: ['post_id']
             isOneToOne: false
             referencedRelation: 'posts_public'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      identification_votes: {
+        Row: {
+          created_at: string
+          id: string
+          proposal_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          proposal_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          proposal_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'identification_votes_proposal_id_fkey'
+            columns: ['proposal_id']
+            isOneToOne: false
+            referencedRelation: 'identification_proposals'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'identification_votes_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
         ]
@@ -1119,6 +1158,8 @@ export type Database = {
           habitat: string | null
           id: string
           identification_status: string | null
+          identification_help: boolean | null
+          identification_confidence: number | null
           individuals_count: number | null
           latitude: number | null
           likes_count: number | null
@@ -1166,6 +1207,8 @@ export type Database = {
           habitat?: string | null
           id?: string
           identification_status?: string | null
+          identification_help?: boolean | null
+          identification_confidence?: number | null
           individuals_count?: number | null
           latitude?: number | null
           likes_count?: number | null
@@ -1213,6 +1256,8 @@ export type Database = {
           habitat?: string | null
           id?: string
           identification_status?: string | null
+          identification_help?: boolean | null
+          identification_confidence?: number | null
           individuals_count?: number | null
           latitude?: number | null
           likes_count?: number | null
@@ -2009,6 +2054,8 @@ export type Database = {
           habitat: string | null
           id: string | null
           identification_status: string | null
+          identification_help: boolean | null
+          identification_confidence: number | null
           individuals_count: number | null
           latitude: number | null
           likes_count: number | null
@@ -2053,6 +2100,8 @@ export type Database = {
           habitat?: string | null
           id?: string | null
           identification_status?: string | null
+          identification_help?: boolean | null
+          identification_confidence?: number | null
           individuals_count?: number | null
           latitude?: never
           likes_count?: number | null
@@ -2097,6 +2146,8 @@ export type Database = {
           habitat?: string | null
           id?: string | null
           identification_status?: string | null
+          identification_help?: boolean | null
+          identification_confidence?: number | null
           individuals_count?: number | null
           latitude?: never
           likes_count?: number | null
