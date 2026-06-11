@@ -12,6 +12,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronDown, ChevronUp, X } from 'lucide-react'
 import { listNotebookObservations, type NotebookObservation } from '@/services/notebookService'
+import { toSafeMessage } from '@/lib/sanitizeError'
 import { NotebookSpeciesList } from './NotebookSpeciesList'
 
 interface NotebookCardInFeedProps {
@@ -52,7 +53,9 @@ export function NotebookCardInFeed({
         })
         .catch((e) => {
           if (cancelled) return
-          setError(e instanceof Error ? e.message : String(e))
+          // Jamais de message technique brut a l'ecran : on assainit.
+          console.error('[NotebookCardInFeed] chargement observations echoue', e)
+          setError(toSafeMessage(e, 'Impossible de charger ce carnet pour le moment.'))
         })
         .finally(() => {
           if (!cancelled) setIsLoading(false)
