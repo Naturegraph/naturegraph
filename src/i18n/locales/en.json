@@ -1099,7 +1099,7 @@
   "legal": {
     "privacy": {
       "title": "Privacy Policy",
-      "lastUpdated": "Last updated: May 21, 2026",
+      "lastUpdated": "Last updated: June 10, 2026",
       "section0Title": "⚠️ Private beta status",
       "section0Content": "Naturegraph is currently in a private closed beta. The service is operated personally and non-commercially by Nicolas Douaron from Quebec (Canada).\n\nConcretely:\n\n• Access is restricted to people who received an invitation with a personal access key.\n• No service level agreement (SLA) is guaranteed during the beta.\n• Data collected is minimal and retained only as long as needed for the beta.\n• The service may be interrupted, modified or reset at any time without notice to improve the platform.\n• Your data can be deleted at any time on simple request to naturegraph.fr@gmail.com.\n• No monetization during the beta: no payment, no advertising, no commercial sharing.\n\nBy joining the beta with your access key, you accept to test the service under these conditions.",
       "section1Title": "Preamble",
@@ -1119,7 +1119,7 @@
       "section8Title": "Security",
       "section8Content": "We implement the following technical measures:\n\n• encryption of data in transit (HTTPS / TLS)\n• strict access control at the database level (PostgreSQL Row Level Security)\n• secure storage via Supabase\n• secure account deletion (full cascade + storage cleanup)\n• automatic removal of location metadata (EXIF) from photos before upload\n• automatic compression and resizing of photos to limit stored data",
       "section9Title": "Hosting and international transfers",
-      "section9Content": "Your data is processed by our technical service providers:\n\n• Frontend: Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, USA (vercel.com)\n• Database and storage: Supabase Inc., AWS us-east-2 region in Ohio, USA (supabase.com)\n\nYour data is therefore hosted in the United States. For users in the European Union, the transfer is based on Standard Contractual Clauses of the European Commission, in accordance with Article 46 of the GDPR. For Quebec users, this transfer complies with the requirements of Law 25: informed consent and equivalent protection measures.",
+      "section9Content": "Your data is processed by our technical service providers:\n\n• Frontend: Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, USA (vercel.com)\n• Database and storage: Supabase Inc., AWS us-east-2 region in Ohio, USA (supabase.com)\n• Technical monitoring (error and stability detection): Sentry (Functional Software, Inc.), European Union hosting region (Germany). Sentry only receives technical data (error type, browser, anonymized navigation path): neither your email address nor your IP address is sent to it, in accordance with our data minimization settings.\n\nCore and storage data is hosted in the United States; technical monitoring data stays within the European Union. For users in the European Union, the transfer is based on Standard Contractual Clauses of the European Commission, in accordance with Article 46 of the GDPR. For Quebec users, this transfer complies with the requirements of Law 25: informed consent and equivalent protection measures.",
       "section10Title": "Contact",
       "section10Content": "Privacy contact: naturegraph.fr@gmail.com\n\nData controller: Nicolas Douaron, Quebec resident (Canada). Naturegraph is operated in a personal capacity during the private beta phase.\n\nNo postal address is published during the private beta. For any official correspondence requiring an address, contact us first by email. We will provide the appropriate address based on the nature of your request.",
       "section12Title": "Third-party sources and data processors",
@@ -1130,7 +1130,7 @@
     },
     "terms": {
       "title": "Legal Notice",
-      "lastUpdated": "Last updated: May 21, 2026",
+      "lastUpdated": "Last updated: June 10, 2026",
       "section0Title": "⚠️ Private beta status",
       "section0Content": "Naturegraph is operated personally and non-commercially by Nicolas Douaron, Quebec resident (Canada). The service is in private closed beta.\n\nNo commercial legal structure (company, NEQ, SIRET) is associated with the service during this phase. Access is restricted to invited people who hold a personal access key.\n\nThe service is provided \"as-is\", without guarantee of accuracy, availability or fitness for a particular purpose. Use is voluntary and experimental.\n\nThis status will be updated if Naturegraph evolves into a commercial structure. Users will be notified before any such change.",
       "section1Title": "Service publisher",
