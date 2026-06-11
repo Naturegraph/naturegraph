@@ -32,7 +32,7 @@ import { supabase } from '@/lib/supabase'
 import { assertActiveSession, SessionExpiredError } from '@/lib/authGuard'
 import type { CreatePostPayload } from '@/services/postService'
 import { processMediaForUpload, isProcessMediaError } from '@/utils/processMediaForUpload'
-import { PostValidationError } from '@/lib/postValidation'
+import { PostValidationError, validatePostContent } from '@/lib/postValidation'
 import { isTechnicalMessage } from '@/lib/sanitizeError'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -181,6 +181,31 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
           t('contribute.errors.notAuthenticated', { defaultValue: 'Connecte-toi pour publier' }),
         )
         return
+      }
+
+      // Garde-fou "post vide" INFRANCHISSABLE (BUGFIX 2026-06-11 : Nicolas a pu
+      // publier une Rencontre sans rien en prod, le check du formulaire etant
+      // contourne par l'observation "Je ne sais pas"). Ici on a le payload FINAL
+      // + les fichiers : on valide via la source de verite unitairement testee.
+      // hasSpecies derive de species_name (rempli uniquement par une espece
+      // IDENTIFIEE, pas par une obs inconnue). En creation seulement (l'edition
+      // d'un post existant peut legitimement ne porter que des champs partiels).
+      if (!editingPostId) {
+        try {
+          validatePostContent({
+            title: payload.title,
+            description: payload.description,
+            hasSpecies: !!payload.species_name,
+            hasMedia: files.length > 0,
+            enforceNonEmpty: true,
+          })
+        } catch (err) {
+          if (err instanceof PostValidationError) {
+            setUploadError(err.message)
+            return
+          }
+          throw err
+        }
       }
 
       // Nicolas 2026-05-25 : verifie que la session est vraiment vivante cote

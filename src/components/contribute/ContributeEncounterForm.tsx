@@ -495,14 +495,20 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
         max: POST_LIMITS.DESCRIPTION_MAX,
       })
 
-    // Post vide : au moins UN parmi { photo, observation (connue ou inconnue),
-    // titre, description }. En mode EDITION on ne verifie pas (le post existant
-    // porte deja ses photos/especes en DB, pas dans form.files -> faux positif).
+    // Post vide : au moins UN parmi { photo, espece IDENTIFIEE, titre, description }.
+    // BUGFIX 2026-06-11 (Nicolas a pu publier "sans rien" en prod) : pour
+    // atteindre l'etape 3 sans saisir d'espece, l'user clique "Je ne sais pas"
+    // qui ajoute une observation `isUnknown`. On ne peut donc PAS compter
+    // observations.length (toujours >= 1 ici) -> le check ne se declenchait
+    // jamais. Une obs "inconnue" SANS photo ni texte n'a aucun contenu reel
+    // (rien a identifier), donc on ne la compte pas. Une obs inconnue AVEC photo
+    // reste valide via hasMedia. En EDITION on ne verifie pas (photos/especes en
+    // DB, hors form.files -> faux positif).
     if (!isEditing) {
       const hasMedia = form.files.length > 0
-      const hasObservation = form.observations.length > 0
+      const hasIdentifiedSpecies = form.observations.some((o) => !o.isUnknown && o.species)
       const hasText = form.title.trim().length > 0 || form.description.trim().length > 0
-      if (!hasMedia && !hasObservation && !hasText)
+      if (!hasMedia && !hasIdentifiedSpecies && !hasText)
         e.empty = t('contribute.errors.emptyPost', {
           defaultValue:
             'Ajoute au moins une photo, une espèce ou une description avant de publier.',
