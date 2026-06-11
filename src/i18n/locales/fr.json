@@ -1099,7 +1099,7 @@
   "legal": {
     "privacy": {
       "title": "Politique de confidentialité",
-      "lastUpdated": "Dernière mise à jour : 21 mai 2026",
+      "lastUpdated": "Dernière mise à jour : 10 juin 2026",
       "section0Title": "⚠️ Statut beta privée",
       "section0Content": "Naturegraph est actuellement en beta privée fermée. Le service est opéré à titre personnel et non commercial par Nicolas Douaron depuis le Québec (Canada).\n\nConcrètement :\n\n• L'accès est réservé aux personnes ayant reçu une invitation avec une clé personnelle.\n• Aucun engagement de niveau de service (SLA) n'est garanti pendant la beta.\n• Les données collectées sont minimales et conservées le temps nécessaire à la beta.\n• Le service peut être interrompu, modifié ou réinitialisé à tout moment sans préavis pour améliorer la plateforme.\n• Vos données peuvent être supprimées à tout moment sur simple demande à naturegraph.fr@gmail.com.\n• Aucune monétisation pendant la beta : pas de paiement, pas de publicité, pas de partage commercial.\n\nEn rejoignant la beta avec votre clé, vous acceptez de tester le service dans ces conditions.",
       "section1Title": "Préambule",
@@ -1119,7 +1119,7 @@
       "section8Title": "Sécurité",
       "section8Content": "Plusieurs mesures techniques protègent vos données :\n\n• chiffrement des données en transit (HTTPS / TLS)\n• contrôle d'accès strict en base (Row Level Security PostgreSQL)\n• stockage sécurisé via Supabase\n• suppression sécurisée des comptes (cascade complète + nettoyage du stockage)\n• retrait automatique des métadonnées de localisation EXIF sur les photos avant upload\n• compression et redimensionnement automatiques des photos pour limiter les données stockées",
       "section9Title": "Hébergement et transferts internationaux",
-      "section9Content": "Vos données sont traitées par nos prestataires techniques :\n\n• Frontend : Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, USA (vercel.com)\n• Base de données et stockage : Supabase Inc., région AWS us-east-2 à Ohio, États-Unis (supabase.com)\n\nLes données sont donc hébergées aux États-Unis. Pour les utilisateurs de l'Union européenne, le transfert s'effectue sur la base des Clauses Contractuelles Types de la Commission européenne, conformément à l'Article 46 du RGPD. Pour les utilisateurs québécois, ce transfert respecte les exigences de la Loi 25 : consentement éclairé et mesures de protection équivalentes.",
+      "section9Content": "Vos données sont traitées par nos prestataires techniques :\n\n• Frontend : Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, USA (vercel.com)\n• Base de données et stockage : Supabase Inc., région AWS us-east-2 à Ohio, États-Unis (supabase.com)\n• Supervision technique (détection des erreurs et de la stabilité) : Sentry (Functional Software, Inc.), région d'hébergement Union européenne (Allemagne). Sentry reçoit uniquement des données techniques (type d'erreur, navigateur, parcours anonymisé) : ni votre adresse e-mail ni votre adresse IP ne lui sont transmises, conformément à notre paramétrage de minimisation des données.\n\nLes données de base et de stockage sont hébergées aux États-Unis ; les données de supervision technique restent dans l'Union européenne. Pour les utilisateurs de l'Union européenne, le transfert s'effectue sur la base des Clauses Contractuelles Types de la Commission européenne, conformément à l'Article 46 du RGPD. Pour les utilisateurs québécois, ce transfert respecte les exigences de la Loi 25 : consentement éclairé et mesures de protection équivalentes.",
       "section10Title": "Contact",
       "section10Content": "Contact vie privée : naturegraph.fr@gmail.com\n\nResponsable du traitement : Nicolas Douaron, résident du Québec (Canada). Naturegraph est opéré à titre personnel pendant la phase de beta privée.\n\nAucune adresse postale n'est publiée pendant la beta. Pour toute correspondance officielle nécessitant une adresse, contactez-nous d'abord par email. Nous transmettrons l'adresse appropriée selon la nature de la demande.",
       "section12Title": "Sources tierces et sous-traitants de données",
@@ -1130,7 +1130,7 @@
     },
     "terms": {
       "title": "Mentions légales",
-      "lastUpdated": "Dernière mise à jour : 21 mai 2026",
+      "lastUpdated": "Dernière mise à jour : 10 juin 2026",
       "section0Title": "⚠️ Statut beta privée",
       "section0Content": "Naturegraph est opéré à titre personnel et non commercial par Nicolas Douaron, résident du Québec (Canada). Le service est en phase de beta privée fermée.\n\nAucune structure juridique commerciale (entreprise, NEQ, SIRET) n'est associée au service pendant cette phase. L'accès est réservé aux personnes invitées qui disposent d'une clé personnelle.\n\nLe service est fourni « tel quel », sans garantie d'exactitude, de disponibilité ou d'adéquation à un usage particulier. L'utilisation est volontaire et expérimentale.\n\nCe statut sera mis à jour si Naturegraph évolue vers une structure commerciale. Les utilisateurs seront prévenus avant ce changement.",
       "section1Title": "Éditeur du service",
