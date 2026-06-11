@@ -37,6 +37,7 @@ import { readDraft, useDraftAutoSave, clearDraft } from '@/hooks/useContributeDr
 // NG-038 : persistance des PHOTOS de brouillon via IndexedDB (les File ne
 // tiennent pas en localStorage -> photos perdues au refresh sans ce store).
 import { loadDraftPhotos, saveDraftPhotos, clearDraftPhotos } from '@/lib/draftPhotoStore'
+import { POST_LIMITS } from '@/lib/postValidation'
 import { createProposal } from '@/services/identificationService'
 import { Button } from '@/components/ui/Button'
 // V1.2.0 NG-005 : sauvegarde reelle multi-especes via carnet.
@@ -479,11 +480,34 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
 
   /** Validation step 3 avant soumission.
    *  Phase test (second-agent/30) : description NON obligatoire.
-   *  Seul le dépassement de longueur reste bloquant. */
+   *  Retour testeur 2026-06-11 : on borne aussi le titre (160 = colonne DB) et
+   *  on bloque la publication d'un post strictement vide. Defense en profondeur
+   *  alignee sur POST_LIMITS (memes bornes que le service createPost). */
   function validateStep3() {
     const e: Record<string, string> = {}
-    if (form.description.length > 1500)
-      e.description = t('contribute.errors.descriptionTooLong', { max: 1500 })
+    if (form.title.trim().length > POST_LIMITS.TITLE_MAX)
+      e.title = t('contribute.errors.titleTooLong', {
+        max: POST_LIMITS.TITLE_MAX,
+        defaultValue: `Le titre ne peut pas dépasser ${POST_LIMITS.TITLE_MAX} caractères.`,
+      })
+    if (form.description.length > POST_LIMITS.DESCRIPTION_MAX)
+      e.description = t('contribute.errors.descriptionTooLong', {
+        max: POST_LIMITS.DESCRIPTION_MAX,
+      })
+
+    // Post vide : au moins UN parmi { photo, observation (connue ou inconnue),
+    // titre, description }. En mode EDITION on ne verifie pas (le post existant
+    // porte deja ses photos/especes en DB, pas dans form.files -> faux positif).
+    if (!isEditing) {
+      const hasMedia = form.files.length > 0
+      const hasObservation = form.observations.length > 0
+      const hasText = form.title.trim().length > 0 || form.description.trim().length > 0
+      if (!hasMedia && !hasObservation && !hasText)
+        e.empty = t('contribute.errors.emptyPost', {
+          defaultValue:
+            'Ajoute au moins une photo, une espèce ou une description avant de publier.',
+        })
+    }
     return e
   }
 
@@ -1002,6 +1026,13 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
 
         {/* ── Footer sticky ──────────────────────────────────────────────── */}
         <div className="shrink-0 border-t border-border bg-background px-5 py-4 flex flex-col gap-2">
+          {/* Erreur « post vide » (retour testeur 2026-06-11) — affichee apres
+              une tentative de publication d'un post sans aucun contenu. */}
+          {submitAttempted && errors.empty && (
+            <p role="alert" className="text-xs text-[var(--color-error)] text-center">
+              {errors.empty}
+            </p>
+          )}
           <div className="flex items-center gap-3">
             {/* Bouton retour — BATCH 99 : style btn-press-secondary (cohérence DS) */}
             <button

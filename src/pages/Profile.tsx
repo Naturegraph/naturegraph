@@ -23,6 +23,7 @@ import { useInfiniteUserPosts } from '@/hooks/usePost'
 import { useUserObservationStats } from '@/hooks/useStats'
 import { useSavedPostsPage } from '@/hooks/useSavedPosts'
 import { useToast } from '@/contexts/ToastContext'
+import { isTechnicalMessage } from '@/lib/sanitizeError'
 import { HomeNavbar } from '@/components/home/HomeNavbar'
 import { MobileNavLayer } from '@/components/home/MobileNavLayer'
 import { ProfileHeader } from '@/components/profile/ProfileHeader'
@@ -267,7 +268,9 @@ export default function Profile() {
         t('profile.edit.saveError', {
           defaultValue: "Impossible d'enregistrer pour l'instant.",
         }),
-        err instanceof Error ? err.message : undefined,
+        // Ne jamais exposer un message technique (ex: « duplicate key » si le
+        // pseudo est deja pris) : on n'affiche le detail QUE s'il est propre.
+        err instanceof Error && !isTechnicalMessage(err.message) ? err.message : undefined,
       )
     }
   }
