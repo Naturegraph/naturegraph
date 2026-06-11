@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, CheckCircle } from 'lucide-react'
 import { createReport } from '@/services/reportService'
+import { toSafeMessage } from '@/lib/sanitizeError'
 import type { ReportReason } from '@/types/database'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -77,12 +78,16 @@ export function ReportModal({ postId, onClose }: ReportModalProps) {
       setSubmitted(true)
       setTimeout(() => onClose(), 2000)
     } catch (err) {
+      // Jamais de message technique brut (fuite schema) : toSafeMessage remonte
+      // le detail seulement s'il est propre, sinon un libelle generique.
+      console.error('[ReportModal] createReport failed', err)
       setErrorMsg(
-        err instanceof Error
-          ? err.message
-          : t('home.post.reportModal.errorGeneric', {
-              defaultValue: 'Une erreur est survenue. Réessaie.',
-            }),
+        toSafeMessage(
+          err,
+          t('home.post.reportModal.errorGeneric', {
+            defaultValue: 'Une erreur est survenue. Réessaie.',
+          }),
+        ),
       )
     } finally {
       setSubmitting(false)

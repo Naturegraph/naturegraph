@@ -10,6 +10,7 @@
 
 import { supabase } from '@/lib/supabase'
 import type { Post, PostFeedItem, ReactionType } from '@/types/database'
+import { validatePostContent } from '@/lib/postValidation'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -409,6 +410,22 @@ export async function getRelatedPosts(opts: {
 export async function createPost(userId: string, payload: CreatePostPayload): Promise<Post> {
   if (!supabase) throw new Error('Supabase non configuré')
 
+  // Gate « backend » (retour testeur 2026-06-11) : on valide la LONGUEUR du
+  // contenu AVANT de pinguer la DB. Evite la fuite de l'erreur SQL brute
+  // « value too long for type character varying(160) » : validatePostContent
+  // leve une PostValidationError au message FR sur, interceptee par le hook.
+  // Le titre est aussi borne cote front (maxLength) = defense en profondeur ;
+  // ce check reste le dernier rempart applicatif avant le INSERT.
+  // enforceNonEmpty:false -> le service ne juge pas du « vide » (il ignore les
+  // photos, uploadees apres) ; ce rempart vit dans le hook submit qui, lui,
+  // connait files.length.
+  validatePostContent({
+    title: payload.title,
+    description: payload.description,
+    hasSpecies: !!payload.species_name,
+    enforceNonEmpty: false,
+  })
+
   const insertPayload = {
     user_id: userId,
     ...payload,
@@ -420,7 +437,15 @@ export async function createPost(userId: string, payload: CreatePostPayload): Pr
   }
 
   const { data, error } = await supabase.from('posts').insert(insertPayload).select().single()
-  if (error) throw new Error(error.message)
+  if (error) {
+    // Ne JAMAIS propager le message Postgres/PostgREST brut au client (fuite
+    // d'info schema = surface d'attaque, et incomprehensible pour l'user). On
+    // logge le detail technique en console pour le debug, et on remonte un
+    // message generique. Les vraies regles de contenu sont deja verifiees
+    // au-dessus (PostValidationError, message sur).
+    console.error('[postService.createPost] erreur DB:', error.message, error)
+    throw new Error('La publication a echoue. Verifie ta connexion et reessaie.')
+  }
   return data as Post
 }
 
@@ -453,13 +478,28 @@ export async function updatePost(
   payload: Partial<CreatePostPayload>,
 ): Promise<Post> {
   if (!supabase) throw new Error('Supabase non configuré')
+
+  // Meme gate qu'a la creation : valide la LONGUEUR avant l'UPDATE pour ne pas
+  // pinguer la DB avec un titre/description trop long (et eviter la fuite de
+  // l'erreur SQL brute). On ne valide une borne que si le champ est present
+  // dans le payload partiel (edition de champs cibles). enforceNonEmpty:false
+  // car l'edition partielle ne porte pas forcement le contenu complet.
+  validatePostContent({
+    title: payload.title,
+    description: payload.description,
+    enforceNonEmpty: false,
+  })
+
   const { data, error } = await supabase
     .from('posts')
     .update(payload)
     .eq('id', postId)
     .select()
     .single()
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error('[postService.updatePost] erreur DB:', error.message, error)
+    throw new Error('La mise a jour a echoue. Verifie ta connexion et reessaie.')
+  }
   return data as Post
 }
 

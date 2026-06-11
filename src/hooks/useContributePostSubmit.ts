@@ -32,6 +32,8 @@ import { supabase } from '@/lib/supabase'
 import { assertActiveSession, SessionExpiredError } from '@/lib/authGuard'
 import type { CreatePostPayload } from '@/services/postService'
 import { processMediaForUpload, isProcessMediaError } from '@/utils/processMediaForUpload'
+import { PostValidationError } from '@/lib/postValidation'
+import { isTechnicalMessage } from '@/lib/sanitizeError'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -48,10 +50,15 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   ])
 }
 
-/** Filtre les messages d'erreur SQL Postgres brut pour éviter de les afficher. */
+/**
+ * Filtre les messages d'erreur techniques (SQL / PostgREST / stack) pour ne
+ * jamais les afficher tels quels. Retourne le message d'origine UNIQUEMENT s'il
+ * est « propre » (un de nos libelles FR), sinon le `fallback` generique.
+ * Delegue la detection « technique » au module partage sanitizeError.
+ */
 function friendlyError(rawMessage: string, fallback: string): string {
   if (!rawMessage) return fallback
-  if (/violates|constraint|relation|null value|duplicate key/i.test(rawMessage)) return fallback
+  if (isTechnicalMessage(rawMessage)) return fallback
   return rawMessage
 }
 
@@ -373,17 +380,25 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
             /* swallow */
           }
         }
-        const raw = err instanceof Error ? err.message : ''
-        setUploadError(
-          friendlyError(
-            raw,
-            t('contribute.media.uploadError', {
-              defaultValue:
-                'Vérifie ta connexion ou réessaye un peu plus tard pour importer tes photos.',
-            }),
-          ),
-        )
-        console.error(`[${formLabel}] submit failed:`, err)
+        // Erreur de validation metier (titre trop long, post vide...) : son
+        // message est ECRIT PAR NOUS, donc sur et utile -> on l'affiche tel quel
+        // sans passer par le filtre technique.
+        if (err instanceof PostValidationError) {
+          setUploadError(err.message)
+          console.warn(`[${formLabel}] validation refusee:`, err.code)
+        } else {
+          const raw = err instanceof Error ? err.message : ''
+          setUploadError(
+            friendlyError(
+              raw,
+              t('contribute.media.uploadError', {
+                defaultValue:
+                  'Vérifie ta connexion ou réessaye un peu plus tard pour importer tes photos.',
+              }),
+            ),
+          )
+          console.error(`[${formLabel}] submit failed:`, err)
+        }
       } finally {
         clearTimeout(watchdog)
         setIsSubmitting(false)

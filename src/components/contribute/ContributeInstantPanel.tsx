@@ -302,8 +302,27 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
 
   function validateStep2() {
     const e: Record<string, string> = {}
+    if (form.title.trim().length > MAX_TITLE) {
+      e.title = t('contribute.errors.titleTooLong', {
+        max: MAX_TITLE,
+        defaultValue: `Le titre ne peut pas dépasser ${MAX_TITLE} caractères.`,
+      })
+    }
     if (form.description.length > MAX_DESC) {
       e.description = t('contribute.errors.descriptionTooLong', { max: MAX_DESC })
+    }
+    // Post vide (retour testeur 2026-06-11) : un Instant doit avoir au moins une
+    // photo, un titre ou une description. Pas de check en mode EDITION (le post
+    // existant porte deja ses photos en DB, hors de form.files).
+    if (!editingPostId) {
+      const hasMedia = form.files.length > 0
+      const hasText = form.title.trim().length > 0 || form.description.trim().length > 0
+      if (!hasMedia && !hasText) {
+        e.empty = t('contribute.errors.emptyPost', {
+          defaultValue:
+            'Ajoute au moins une photo, une espèce ou une description avant de publier.',
+        })
+      }
     }
     return e
   }
@@ -619,6 +638,12 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
 
         {/* Footer sticky — boutons + hint « sans photo » en dessous (cohérent Encounter) */}
         <div className="shrink-0 border-t border-border bg-background px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] md:pb-4 flex flex-col gap-2">
+          {/* Erreur « post vide » (retour testeur 2026-06-11). */}
+          {submitAttempted && errors.empty && (
+            <p role="alert" className="text-xs text-[var(--color-error)] text-center">
+              {errors.empty}
+            </p>
+          )}
           <div className="flex items-center gap-3">
             <button
               type="button"
