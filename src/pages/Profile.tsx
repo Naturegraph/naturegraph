@@ -34,6 +34,7 @@ import { ProfileDNACard } from '@/components/profile/ProfileDNACard'
 import { EditProfilePanel } from '@/components/profile/EditProfilePanel'
 import { ContributeModal } from '@/components/home/ContributeModal'
 import { NotebookPanel } from '@/components/notebook/NotebookPanel'
+import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
 import { SettingsPanel } from '@/components/settings/SettingsPanel'
 // SharePopover du feed réutilisé pour cohérence (Nicolas 2026-05-01).
 import { SharePopover } from '@/components/home/SharePopover'
@@ -402,8 +403,11 @@ export default function Profile() {
         />
       )}
 
-      {/* V1.2.0 : panneau Carnet d observations */}
-      {showNotebookPanel && <NotebookPanel onClose={() => setShowNotebookPanel(false)} />}
+      {/* V1.2.0 : panneau Carnet d observations.
+          NG (2026-06-11) : masque en prod (NOTEBOOKS_ENABLED), garde defensive. */}
+      {NOTEBOOKS_ENABLED && showNotebookPanel && (
+        <NotebookPanel onClose={() => setShowNotebookPanel(false)} />
+      )}
 
       {showEditPanel && (
         <EditProfilePanel

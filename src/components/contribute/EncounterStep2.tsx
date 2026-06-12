@@ -15,6 +15,7 @@
 
 import { useState, useId, useEffect, useMemo } from 'react'
 import { Search, Trash2, HelpCircle, Filter, X, Check, Loader2, BookOpen } from 'lucide-react'
+import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
 import { searchTaxonomy, type TaxonomyHit } from '@/services/searchService'
@@ -405,26 +406,30 @@ function SpeciesSearchBar({
 
         {/* Bouton "carnet existant" — meme DS que le filtre (icone livre).
             Ouvre un dropdown des carnets enregistres ; en choisir un injecte
-            toutes ses especes dans les observations (Nicolas 2026-06-08). */}
-        <button
-          type="button"
-          onClick={() => {
-            setNotebookOpen((v) => !v)
-            setFilterOpen(false)
-          }}
-          aria-label="Ajouter un carnet existant"
-          aria-expanded={notebookOpen}
-          className={[
-            'relative size-12 shrink-0 rounded-full flex items-center justify-center',
-            'border border-[var(--color-border)]',
-            'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-            notebookOpen
-              ? 'bg-primary text-primary-foreground border-primary'
-              : 'text-foreground hover:bg-muted/50 hover:border-foreground/40',
-          ].join(' ')}
-        >
-          <BookOpen className="size-5" aria-hidden="true" />
-        </button>
+            toutes ses especes dans les observations (Nicolas 2026-06-08).
+            NG (2026-06-11) : masque en prod (NOTEBOOKS_ENABLED) -> pas d'import
+            de carnet dans une Rencontre. */}
+        {NOTEBOOKS_ENABLED && (
+          <button
+            type="button"
+            onClick={() => {
+              setNotebookOpen((v) => !v)
+              setFilterOpen(false)
+            }}
+            aria-label="Ajouter un carnet existant"
+            aria-expanded={notebookOpen}
+            className={[
+              'relative size-12 shrink-0 rounded-full flex items-center justify-center',
+              'border border-[var(--color-border)]',
+              'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+              notebookOpen
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'text-foreground hover:bg-muted/50 hover:border-foreground/40',
+            ].join(' ')}
+          >
+            <BookOpen className="size-5" aria-hidden="true" />
+          </button>
+        )}
 
         {/* Dropdown carnets existants — meme ancrage que le panel filtres */}
         {notebookOpen && (
@@ -881,13 +886,19 @@ export function EncounterStep2({
   const [isSearching, setIsSearching] = useState(false)
   return (
     <div className="flex flex-col gap-4">
-      {/* Barre de recherche */}
-      <SpeciesSearchBar
-        onAdd={handleAddSpecies}
-        onSearchActiveChange={setIsSearching}
-        notebooks={notebooks}
-        onPickNotebook={onPickNotebook}
-      />
+      {/* Barre de recherche.
+          NG (Nicolas 2026-06-11) : sur le site public (mono-espece), on la
+          masque des qu'une espece est ajoutee -> pas de multi-especes/carnet.
+          Remplacee par un encart "Bientot" (ci-dessous). En dev/staging :
+          comportement multi-especes complet inchange. */}
+      {(NOTEBOOKS_ENABLED || !hasObservations) && (
+        <SpeciesSearchBar
+          onAdd={handleAddSpecies}
+          onSearchActiveChange={setIsSearching}
+          notebooks={notebooks}
+          onPickNotebook={onPickNotebook}
+        />
+      )}
 
       {/* État vide — carte blanche bordurée (Figma Frame 4621) :
           hermine + pill menthe "Aucun résultat" + hint en Quicksand Bold.
@@ -936,6 +947,23 @@ export function EncounterStep2({
 
       {/* Bouton "Ajouter une nouvelle observation" RETIRE (Nicolas 2026-06-08) :
           redondant avec la barre de recherche, toujours accessible en haut. */}
+
+      {/* NG (Nicolas 2026-06-11) : sur le site public, le multi-especes (carnet)
+          n'est pas encore ouvert. Une fois la 1re espece ajoutee, on propose un
+          encart desactive "Bientot" au lieu de la recherche. */}
+      {!NOTEBOOKS_ENABLED && hasObservations && (
+        <div
+          className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-dashed border-border bg-muted/30 select-none"
+          aria-disabled="true"
+        >
+          <span className="text-sm text-muted-foreground">
+            Ajouter d&apos;autres espèces à cette rencontre
+          </span>
+          <span className="shrink-0 inline-flex items-center h-7 px-3 rounded-full bg-primary-light text-[var(--color-action-default)] text-xs font-bold">
+            Bientôt
+          </span>
+        </div>
+      )}
 
       {/* Toggle "Activer l'aide à l'identification" — masqué pour le moment,
           sera retravaillé plus tard (workflow d'aide collaborative en P2).
