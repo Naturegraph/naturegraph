@@ -33,6 +33,7 @@ import { useSpecies } from '@/contexts/SpeciesContext'
 import { TAXONOMIC_GROUP_CONFIG } from '@/constants/commonSpecies'
 import { buildPostPath } from '@/lib/postSlug'
 import { NotebookCardInFeed } from '@/components/notebook/NotebookCardInFeed'
+import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
 
 // ─── Type UI pour les posts du feed ──────────────────────────────────────────
 // Bridge entre le type DB (PostFeedItem) et le composant FeedPost.
@@ -679,15 +680,21 @@ export function FeedPost({
             portant deja son espece representative. Garde-fou : count inconnu
             (null) => on garde la carte (?? 2) pour ne pas masquer un vrai carnet
             dont le compteur n'aurait pas charge. */}
-        {postType !== 'nature_instant' && notebookId && (notebookSpeciesCount ?? 2) > 1 && (
-          <NotebookCardInFeed
-            notebookId={notebookId}
-            speciesCount={notebookSpeciesCount ?? undefined}
-            // Ferme par defaut DANS LE FIL (Nicolas 2026-06-08), ouvert sur la
-            // page detail immersive (expandContent).
-            defaultOpen={expandContent}
-          />
-        )}
+        {/* NG (Nicolas 2026-06-11) : carnets masques en prod (NOTEBOOKS_ENABLED).
+            Les Rencontres multi-especes deja publiees s'affichent alors comme des
+            posts standards (chips espece ci-dessous). Reversible via le flag. */}
+        {postType !== 'nature_instant' &&
+          NOTEBOOKS_ENABLED &&
+          notebookId &&
+          (notebookSpeciesCount ?? 2) > 1 && (
+            <NotebookCardInFeed
+              notebookId={notebookId}
+              speciesCount={notebookSpeciesCount ?? undefined}
+              // Ferme par defaut DANS LE FIL (Nicolas 2026-06-08), ouvert sur la
+              // page detail immersive (expandContent).
+              defaultOpen={expandContent}
+            />
+          )}
 
         {/* Pour les posts nature_instant : pas de chips espèce/catégorie
             — un instant nature ne décrit pas une observation d'espèce
@@ -695,128 +702,133 @@ export function FeedPost({
             le « Espèce non déterminée » qui n'a pas de sens ici. */}
         {/* NG-006B #7 : chips standard si PAS de carte carnet (donc : post sans
             carnet, OU carnet retombe a <=1 espece). */}
-        {postType !== 'nature_instant' && !(notebookId && (notebookSpeciesCount ?? 2) > 1) && (
-          <div className="flex flex-wrap gap-2">
-            {(() => {
-              const taxonomicCfg = taxonomic_group ? TAXONOMIC_GROUP_CONFIG[taxonomic_group] : null
-              const categoryLabel = taxonomicCfg?.label ?? null
+        {postType !== 'nature_instant' &&
+          !(NOTEBOOKS_ENABLED && notebookId && (notebookSpeciesCount ?? 2) > 1) && (
+            <div className="flex flex-wrap gap-2">
+              {(() => {
+                const taxonomicCfg = taxonomic_group
+                  ? TAXONOMIC_GROUP_CONFIG[taxonomic_group]
+                  : null
+                const categoryLabel = taxonomicCfg?.label ?? null
 
-              // Espèce identifiée = on a au moins le nom commun OU scientifique.
-              // V1.1.4 NG-023 (Nicolas 2026-06-01) : reactivation du chip
-              // cliquable maintenant que NG-022 a connecte le Species Context
-              // Layer au backend (filter par taxref_id). Cliquer sur l espece
-              // dans un post -> feed filtre par cette espece + bandeau qui
-              // permet de reset au feed global.
-              const speciesName = species || scientific_name || null
-              const hasIdentifiedSpecies = !!speciesName
-              // V1.1.5 (Nicolas) : disableChipFilters rend le chip espece passif
-              // (post principal de PostDetail).
-              const isSpeciesClickable = !!taxref_id && !disableChipFilters
-              const unknownLabel = t('home.post.unknownSpecies', {
-                defaultValue: 'Espèce non déterminée',
-              })
+                // Espèce identifiée = on a au moins le nom commun OU scientifique.
+                // V1.1.4 NG-023 (Nicolas 2026-06-01) : reactivation du chip
+                // cliquable maintenant que NG-022 a connecte le Species Context
+                // Layer au backend (filter par taxref_id). Cliquer sur l espece
+                // dans un post -> feed filtre par cette espece + bandeau qui
+                // permet de reset au feed global.
+                const speciesName = species || scientific_name || null
+                const hasIdentifiedSpecies = !!speciesName
+                // V1.1.5 (Nicolas) : disableChipFilters rend le chip espece passif
+                // (post principal de PostDetail).
+                const isSpeciesClickable = !!taxref_id && !disableChipFilters
+                const unknownLabel = t('home.post.unknownSpecies', {
+                  defaultValue: 'Espèce non déterminée',
+                })
 
-              // Suffixe "({count})" SEULEMENT si on a un nombre exact > 1.
-              // Pas de "(plusieurs)" — toujours un chiffre exact (Nicolas
-              // 2026-05-01) ou rien.
-              // TODO Phase 2 backend : exposer `posts.individuals_count` pour
-              // que le compteur soit toujours disponible.
-              const multipleSuffix =
-                individualsCount && individualsCount > 1 ? ` (${individualsCount})` : ''
+                // Suffixe "({count})" SEULEMENT si on a un nombre exact > 1.
+                // Pas de "(plusieurs)" — toujours un chiffre exact (Nicolas
+                // 2026-05-01) ou rien.
+                // TODO Phase 2 backend : exposer `posts.individuals_count` pour
+                // que le compteur soit toujours disponible.
+                const multipleSuffix =
+                  individualsCount && individualsCount > 1 ? ` (${individualsCount})` : ''
 
-              // Chip catégorie — texte uniquement, pas d'emoji (règle DS Nicolas
-              // 2026-05-02 : alléger le design, jamais d'emoji dans les chips
-              // pour garder la cohérence visuelle avec le reste du produit).
-              // V1.1.4 NG-023 ext final (Nicolas 2026-06-01) : click chip cat ->
-              // coche la categorie dans FeedFilterPanel (badge "1" naturel).
-              // L user reset via le panneau filtres standard. Sur Profile et
-              // PostDetail (onSelectCategory undefined), le chip reste passif.
-              const isCategoryClickable =
-                !!onSelectCategory && !!taxonomic_group && !disableChipFilters
-              const categoryChip = categoryLabel ? (
-                isCategoryClickable ? (
-                  <button
-                    type="button"
-                    onClick={() => onSelectCategory!(taxonomic_group!)}
-                    aria-label={t('home.post.filterByCategory', {
-                      defaultValue: 'Filtrer par {{category}}',
-                      category: categoryLabel,
-                    })}
-                    className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}
-                  >
-                    <span>{categoryLabel}</span>
-                  </button>
-                ) : (
-                  <span className={CHIP_BASE_CLASS}>
-                    <span>{categoryLabel}</span>
+                // Chip catégorie — texte uniquement, pas d'emoji (règle DS Nicolas
+                // 2026-05-02 : alléger le design, jamais d'emoji dans les chips
+                // pour garder la cohérence visuelle avec le reste du produit).
+                // V1.1.4 NG-023 ext final (Nicolas 2026-06-01) : click chip cat ->
+                // coche la categorie dans FeedFilterPanel (badge "1" naturel).
+                // L user reset via le panneau filtres standard. Sur Profile et
+                // PostDetail (onSelectCategory undefined), le chip reste passif.
+                const isCategoryClickable =
+                  !!onSelectCategory && !!taxonomic_group && !disableChipFilters
+                const categoryChip = categoryLabel ? (
+                  isCategoryClickable ? (
+                    <button
+                      type="button"
+                      onClick={() => onSelectCategory!(taxonomic_group!)}
+                      aria-label={t('home.post.filterByCategory', {
+                        defaultValue: 'Filtrer par {{category}}',
+                        category: categoryLabel,
+                      })}
+                      className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}
+                    >
+                      <span>{categoryLabel}</span>
+                    </button>
+                  ) : (
+                    <span className={CHIP_BASE_CLASS}>
+                      <span>{categoryLabel}</span>
+                    </span>
+                  )
+                ) : null
+
+                // ─── Cas 1 : catégorie + espèce identifiée → 2 chips séparés ───
+                // Si taxref_id présent → chip cliquable (filtre). Sinon → chip
+                // passif qui affiche quand même le nom (anciens posts).
+                if (hasIdentifiedSpecies) {
+                  return (
+                    <>
+                      {categoryChip}
+                      {isSpeciesClickable ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveSpecies({
+                              taxref_id: taxref_id!,
+                              scientific_name: scientific_name ?? speciesName!,
+                              common_name:
+                                speciesName !== scientific_name ? (speciesName ?? null) : null,
+                              group_label: taxonomic_group ?? null,
+                            })
+                            // QA Nicolas : scroll up auto, coherence avec chip categorie
+                            window.scrollTo({ top: 0, behavior: 'auto' })
+                          }}
+                          aria-label={t('home.post.filterBySpecies', {
+                            species: speciesName ?? '',
+                          })}
+                          className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}
+                        >
+                          <span>
+                            {speciesName}
+                            {multipleSuffix}
+                          </span>
+                        </button>
+                      ) : (
+                        <span className={CHIP_BASE_CLASS}>
+                          <span>
+                            {speciesName}
+                            {multipleSuffix}
+                          </span>
+                        </span>
+                      )}
+                    </>
+                  )
+                }
+
+                // ─── Cas 2 : catégorie connue + espèce non identifiée → 2 chips ──
+                if (categoryLabel) {
+                  return (
+                    <>
+                      {categoryChip}
+                      <span className={CHIP_PASSIVE_CLASS}>
+                        {unknownLabel}
+                        {multipleSuffix}
+                      </span>
+                    </>
+                  )
+                }
+
+                // ─── Cas 3 : rien d'identifié → 1 chip neutre (non cliquable) ───
+                return (
+                  <span className={CHIP_PASSIVE_CLASS}>
+                    {unknownLabel}
+                    {multipleSuffix}
                   </span>
                 )
-              ) : null
-
-              // ─── Cas 1 : catégorie + espèce identifiée → 2 chips séparés ───
-              // Si taxref_id présent → chip cliquable (filtre). Sinon → chip
-              // passif qui affiche quand même le nom (anciens posts).
-              if (hasIdentifiedSpecies) {
-                return (
-                  <>
-                    {categoryChip}
-                    {isSpeciesClickable ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveSpecies({
-                            taxref_id: taxref_id!,
-                            scientific_name: scientific_name ?? speciesName!,
-                            common_name:
-                              speciesName !== scientific_name ? (speciesName ?? null) : null,
-                            group_label: taxonomic_group ?? null,
-                          })
-                          // QA Nicolas : scroll up auto, coherence avec chip categorie
-                          window.scrollTo({ top: 0, behavior: 'auto' })
-                        }}
-                        aria-label={t('home.post.filterBySpecies', { species: speciesName ?? '' })}
-                        className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}
-                      >
-                        <span>
-                          {speciesName}
-                          {multipleSuffix}
-                        </span>
-                      </button>
-                    ) : (
-                      <span className={CHIP_BASE_CLASS}>
-                        <span>
-                          {speciesName}
-                          {multipleSuffix}
-                        </span>
-                      </span>
-                    )}
-                  </>
-                )
-              }
-
-              // ─── Cas 2 : catégorie connue + espèce non identifiée → 2 chips ──
-              if (categoryLabel) {
-                return (
-                  <>
-                    {categoryChip}
-                    <span className={CHIP_PASSIVE_CLASS}>
-                      {unknownLabel}
-                      {multipleSuffix}
-                    </span>
-                  </>
-                )
-              }
-
-              // ─── Cas 3 : rien d'identifié → 1 chip neutre (non cliquable) ───
-              return (
-                <span className={CHIP_PASSIVE_CLASS}>
-                  {unknownLabel}
-                  {multipleSuffix}
-                </span>
-              )
-            })()}
-          </div>
-        )}
+              })()}
+            </div>
+          )}
 
         {/* Images — clic ouvre la lightbox plein écran */}
         <ImageSlider

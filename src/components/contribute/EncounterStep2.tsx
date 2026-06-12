@@ -15,6 +15,7 @@
 
 import { useState, useId, useEffect, useMemo } from 'react'
 import { Search, Trash2, HelpCircle, Filter, X, Check, Loader2, BookOpen } from 'lucide-react'
+import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
 import { searchTaxonomy, type TaxonomyHit } from '@/services/searchService'
@@ -405,26 +406,30 @@ function SpeciesSearchBar({
 
         {/* Bouton "carnet existant" — meme DS que le filtre (icone livre).
             Ouvre un dropdown des carnets enregistres ; en choisir un injecte
-            toutes ses especes dans les observations (Nicolas 2026-06-08). */}
-        <button
-          type="button"
-          onClick={() => {
-            setNotebookOpen((v) => !v)
-            setFilterOpen(false)
-          }}
-          aria-label="Ajouter un carnet existant"
-          aria-expanded={notebookOpen}
-          className={[
-            'relative size-12 shrink-0 rounded-full flex items-center justify-center',
-            'border border-[var(--color-border)]',
-            'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-            notebookOpen
-              ? 'bg-primary text-primary-foreground border-primary'
-              : 'text-foreground hover:bg-muted/50 hover:border-foreground/40',
-          ].join(' ')}
-        >
-          <BookOpen className="size-5" aria-hidden="true" />
-        </button>
+            toutes ses especes dans les observations (Nicolas 2026-06-08).
+            NG (2026-06-11) : masque en prod (NOTEBOOKS_ENABLED) -> pas d'import
+            de carnet dans une Rencontre. */}
+        {NOTEBOOKS_ENABLED && (
+          <button
+            type="button"
+            onClick={() => {
+              setNotebookOpen((v) => !v)
+              setFilterOpen(false)
+            }}
+            aria-label="Ajouter un carnet existant"
+            aria-expanded={notebookOpen}
+            className={[
+              'relative size-12 shrink-0 rounded-full flex items-center justify-center',
+              'border border-[var(--color-border)]',
+              'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+              notebookOpen
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'text-foreground hover:bg-muted/50 hover:border-foreground/40',
+            ].join(' ')}
+          >
+            <BookOpen className="size-5" aria-hidden="true" />
+          </button>
+        )}
 
         {/* Dropdown carnets existants — meme ancrage que le panel filtres */}
         {notebookOpen && (
