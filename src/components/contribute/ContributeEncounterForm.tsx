@@ -37,6 +37,7 @@ import { readDraft, useDraftAutoSave, clearDraft } from '@/hooks/useContributeDr
 // NG-038 : persistance des PHOTOS de brouillon via IndexedDB (les File ne
 // tiennent pas en localStorage -> photos perdues au refresh sans ce store).
 import { loadDraftPhotos, saveDraftPhotos, clearDraftPhotos } from '@/lib/draftPhotoStore'
+import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
 import { POST_LIMITS } from '@/lib/postValidation'
 import { createProposal } from '@/services/identificationService'
 import { Button } from '@/components/ui/Button'
@@ -644,7 +645,10 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
         //    carnet publie dedie au post.
         //  - 1 seule espece -> post mono-espece classique (rien a faire).
         try {
-          if (user?.id && supabase) {
+          // NG (Nicolas 2026-06-11) : carnets masques en prod -> on ne cree
+          // JAMAIS de carnet publie multi-especes. Le post reste mono-espece
+          // (species_name = firstKnown, deja dans le payload). Reversible (flag).
+          if (NOTEBOOKS_ENABLED && user?.id && supabase) {
             const knownEntries = form.observations.filter((o) => !o.isUnknown && o.species)
             const speciesPayload = knownEntries.map((entry) => {
               const sp = entry.species!

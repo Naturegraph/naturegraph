@@ -52,6 +52,8 @@ interface ContributionType {
   disabled: boolean
 }
 
+import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
+
 // Ordre Figma 6385:97403 (Nicolas 2026-06-08) : Carnet -> Instant -> Rencontre.
 const CONTRIBUTION_TYPES: ContributionType[] = [
   {
@@ -175,8 +177,13 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
   //    pouce a portee).
   //  - Desktop / tablette (dropdown) : Rencontre -> Instant -> Carnet (l'action
   //    de contribution principale en haut).
-  const mobileOrder = CONTRIBUTION_TYPES
-  const desktopOrder = [...CONTRIBUTION_TYPES].reverse()
+  // NG (Nicolas 2026-06-11) : carnets masques en prod -> on retire l'option
+  // "Carnet d'observations" du menu de contribution (reversible via le flag).
+  const availableTypes = NOTEBOOKS_ENABLED
+    ? CONTRIBUTION_TYPES
+    : CONTRIBUTION_TYPES.filter((t) => t.id !== 'nature_notebook')
+  const mobileOrder = availableTypes
+  const desktopOrder = [...availableTypes].reverse()
 
   /**
    * Rendu des cartes pour un ordre donné.
