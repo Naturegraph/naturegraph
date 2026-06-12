@@ -21,6 +21,23 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 export const notificationsQueryKey = (userId: string) => ['notifications', userId] as const
 export const unreadCountQueryKey = (userId: string) => ['notifications', userId, 'unread'] as const
 
+/**
+ * Compteur module-level : garantit un topic de canal Realtime UNIQUE par
+ * abonnement (et pas seulement par userId).
+ *
+ * Bug prod 2026-06-12 : la cloche notifications crashait avec
+ * "cannot add `postgres_changes` callbacks for realtime:notif:<id> after
+ * `subscribe()`". Cause : HomeNavbar monte DEUX `NotificationsPanel` (desktop +
+ * mobile) gates par le meme etat, tous deux presents dans le DOM (masques par
+ * CSS, mais montes cote React). Chacun appelle useNotifications(userId) et
+ * creait le meme canal `notif:${userId}`. Le client Supabase dedupe les canaux
+ * par topic : la 2e instance recuperait un canal deja `subscribe()`, et son
+ * `.on('postgres_changes')` jetait (comportement devenu strict depuis
+ * @supabase/supabase-js >= 2.108). Un suffixe unique par abonnement supprime
+ * toute collision sans changer le filtre (toujours sur user_id).
+ */
+let realtimeSubSeq = 0
+
 /** Liste des notifications du user + subscription Realtime. */
 export function useNotifications(userId: string | undefined) {
   const qc = useQueryClient()
@@ -34,8 +51,11 @@ export function useNotifications(userId: string | undefined) {
 
   useEffect(() => {
     if (!userId || !isSupabaseConfigured || !supabase) return
+    // Topic unique par abonnement -> jamais de reutilisation d'un canal deja
+    // souscrit (cf. note sur realtimeSubSeq ci-dessus).
+    realtimeSubSeq += 1
     const channel = supabase
-      .channel(`notif:${userId}`)
+      .channel(`notif:${userId}:${realtimeSubSeq}`)
       .on(
         'postgres_changes',
         {
