@@ -687,6 +687,13 @@ export type Database = {
             referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
+          {
+            foreignKeyName: 'identification_votes_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
         ]
       }
       media: {
@@ -1157,9 +1164,9 @@ export type Database = {
           encounter_date: string
           habitat: string | null
           id: string
-          identification_status: string | null
-          identification_help: boolean | null
           identification_confidence: number | null
+          identification_help: boolean
+          identification_status: string | null
           individuals_count: number | null
           latitude: number | null
           likes_count: number | null
@@ -1206,9 +1213,9 @@ export type Database = {
           encounter_date: string
           habitat?: string | null
           id?: string
-          identification_status?: string | null
-          identification_help?: boolean | null
           identification_confidence?: number | null
+          identification_help?: boolean
+          identification_status?: string | null
           individuals_count?: number | null
           latitude?: number | null
           likes_count?: number | null
@@ -1255,9 +1262,9 @@ export type Database = {
           encounter_date?: string
           habitat?: string | null
           id?: string
-          identification_status?: string | null
-          identification_help?: boolean | null
           identification_confidence?: number | null
+          identification_help?: boolean
+          identification_status?: string | null
           individuals_count?: number | null
           latitude?: number | null
           likes_count?: number | null
@@ -2053,9 +2060,9 @@ export type Database = {
           encounter_date: string | null
           habitat: string | null
           id: string | null
-          identification_status: string | null
-          identification_help: boolean | null
           identification_confidence: number | null
+          identification_help: boolean | null
+          identification_status: string | null
           individuals_count: number | null
           latitude: number | null
           likes_count: number | null
@@ -2064,6 +2071,8 @@ export type Database = {
           location_point: unknown
           longitude: number | null
           multiple_observations: boolean | null
+          notebook_id: string | null
+          notebook_species_count: number | null
           phenomenon: string | null
           published_at: string | null
           region: string | null
@@ -2099,9 +2108,9 @@ export type Database = {
           encounter_date?: string | null
           habitat?: string | null
           id?: string | null
-          identification_status?: string | null
-          identification_help?: boolean | null
           identification_confidence?: number | null
+          identification_help?: boolean | null
+          identification_status?: string | null
           individuals_count?: number | null
           latitude?: never
           likes_count?: number | null
@@ -2110,6 +2119,8 @@ export type Database = {
           location_point?: never
           longitude?: never
           multiple_observations?: boolean | null
+          notebook_id?: string | null
+          notebook_species_count?: never
           phenomenon?: string | null
           published_at?: string | null
           region?: never
@@ -2145,9 +2156,9 @@ export type Database = {
           encounter_date?: string | null
           habitat?: string | null
           id?: string | null
-          identification_status?: string | null
-          identification_help?: boolean | null
           identification_confidence?: number | null
+          identification_help?: boolean | null
+          identification_status?: string | null
           individuals_count?: number | null
           latitude?: never
           likes_count?: number | null
@@ -2156,6 +2167,8 @@ export type Database = {
           location_point?: never
           longitude?: never
           multiple_observations?: boolean | null
+          notebook_id?: string | null
+          notebook_species_count?: never
           phenomenon?: string | null
           published_at?: string | null
           region?: never
@@ -2182,6 +2195,13 @@ export type Database = {
           weather?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: 'posts_notebook_id_fkey'
+            columns: ['notebook_id']
+            isOneToOne: false
+            referencedRelation: 'notebooks'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'posts_user_id_fkey'
             columns: ['user_id']
@@ -2387,9 +2407,6 @@ export type Database = {
             }
             Returns: string
           }
-      anonymize_beta_signup_log: { Args: never; Returns: number }
-      anonymize_orphan_audit_logs: { Args: never; Returns: number }
-      can_see_notebook: { Args: { p_notebook_id: string }; Returns: boolean }
       can_see_post: { Args: { p_post_id: string }; Returns: boolean }
       check_beta_access_key_validity: {
         Args: { p_code: string }
@@ -2563,6 +2580,14 @@ export type Database = {
         Returns: boolean
       }
       geomfromewkt: { Args: { '': string }; Returns: unknown }
+      get_observations_count: {
+        Args: { p_end?: string; p_start: string }
+        Returns: number
+      }
+      get_user_observation_stats: {
+        Args: { p_user_id: string; p_week_start?: string }
+        Returns: Json
+      }
       gettransactionid: { Args: never; Returns: unknown }
       immutable_unaccent: { Args: { '': string }; Returns: string }
       increment_beta_user_count: { Args: never; Returns: undefined }

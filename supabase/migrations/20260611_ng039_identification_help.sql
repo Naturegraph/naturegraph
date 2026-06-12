@@ -144,9 +144,6 @@ SELECT
   scientific_name,
   taxonomic_group,
   identification_status,
-  -- NG-039 : aide a l'identification demandee + niveau de confiance auteur.
-  identification_help,
-  identification_confidence,
   taxref_id,
   taxref_rank,
   taxref_source,
@@ -188,5 +185,16 @@ SELECT
     ELSE location_point
   END AS location_point,
   notebook_id,
-  (SELECT n.species_count FROM public.notebooks n WHERE n.id = posts.notebook_id) AS notebook_species_count
+  (SELECT n.species_count FROM public.notebooks n WHERE n.id = posts.notebook_id) AS notebook_species_count,
+  -- NG-039 : ajoutees A LA FIN. CREATE OR REPLACE VIEW interdit d'inserer/
+  -- reordonner une colonne au milieu (ERREUR 42P16) -> on append uniquement.
+  identification_help,
+  identification_confidence
 FROM posts;
+
+-- ─── 7. Securite : la fonction trigger n'a pas a etre appelable en RPC ───────
+-- (advisor security) Elle s'execute dans le contexte du trigger (proprietaire) ;
+-- on retire son exposition /rest/v1/rpc aux roles API.
+REVOKE ALL ON FUNCTION public.sync_proposal_votes_up() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.sync_proposal_votes_up() FROM anon;
+REVOKE ALL ON FUNCTION public.sync_proposal_votes_up() FROM authenticated;
