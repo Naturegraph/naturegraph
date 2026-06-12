@@ -30,6 +30,7 @@ import { MobileNavLayer } from '@/components/home/MobileNavLayer'
 import { ContributeModal } from '@/components/home/ContributeModal'
 import { useEditPostFlow } from '@/hooks/useEditPostFlow'
 import { NotebookPanel } from '@/components/notebook/NotebookPanel'
+import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
 
 // StatsSidebar lazy (QW-I2 / T-082) — affichée uniquement xl:block (>=1280px).
 // Avant : 311 lignes chargees dans le bundle initial meme sur mobile/tablet.
@@ -226,8 +227,11 @@ export default function Home() {
       {/* Panneau Contribuer (Encounter ou Instant selon le type actif) */}
       {panelNode}
 
-      {/* V1.2.0 : panneau Carnet d observations (mode terrain) */}
-      {showNotebookPanel && <NotebookPanel onClose={() => setShowNotebookPanel(false)} />}
+      {/* V1.2.0 : panneau Carnet d observations (mode terrain).
+          NG (2026-06-11) : masque en prod (NOTEBOOKS_ENABLED), garde defensive. */}
+      {NOTEBOOKS_ENABLED && showNotebookPanel && (
+        <NotebookPanel onClose={() => setShowNotebookPanel(false)} />
+      )}
     </div>
   )
 }
