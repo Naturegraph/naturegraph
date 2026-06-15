@@ -50,6 +50,7 @@ import {
   Info,
   ShieldCheck,
   Trash2,
+  Code2,
   Users as UsersIcon,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
@@ -57,7 +58,7 @@ import { Button } from '@/components/ui/Button'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 import { useToast } from '@/contexts/ToastContext'
-import { useIsAdmin } from '@/hooks/useIsAdmin'
+import { useIsAdmin, type AdminRole } from '@/hooks/useIsAdmin'
 import { useAdminAction } from '@/hooks/useAdminAction'
 import type { Json } from '@/types/supabase'
 
@@ -81,7 +82,7 @@ interface UserRow {
   admin_is_active: boolean | null
 }
 
-type ActionType = 'promote' | 'demote' | 'suspend' | 'ban' | 'delete' | null
+type ActionType = 'set_role' | 'suspend' | 'ban' | 'delete' | null
 
 interface PendingAction {
   type: ActionType
@@ -89,6 +90,39 @@ interface PendingAction {
 }
 
 const PAGE_SIZE = PAGE_SIZES.ADMIN_DEFAULT
+
+/**
+ * Libelle + style de badge par role (RBAC). Cf. migration 20260612_rbac_roles.sql
+ * et hook useIsAdmin. developpeur = tag technique sans acces panneau.
+ */
+const ROLE_META: Record<string, { label: string; className: string }> = {
+  super_admin: { label: 'Super-admin', className: 'bg-primary-light text-primary' },
+  moderator: {
+    label: 'Modérateur',
+    className: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
+  },
+  support: { label: 'Support', className: 'bg-[var(--color-info-bg)] text-[var(--color-info)]' },
+  equipe_produit: {
+    label: 'Équipe produit',
+    className: 'bg-[var(--color-action-soft)] text-[var(--color-action-default)]',
+  },
+  developpeur: {
+    label: 'Développeur',
+    className: 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)]',
+  },
+}
+
+/** Roles assignables via l'UI (super_admin reserve, non assignable depuis cette liste). */
+const ASSIGNABLE_ROLES: { value: AdminRole; label: string; hint: string }[] = [
+  { value: 'moderator', label: 'Modérateur', hint: 'modération + beta + suspension' },
+  { value: 'support', label: 'Support', hint: 'panneau en lecture seule' },
+  {
+    value: 'equipe_produit',
+    label: 'Équipe produit',
+    hint: 'panneau en lecture (dashboard, analytics)',
+  },
+  { value: 'developpeur', label: 'Développeur', hint: 'AUCUN accès admin, tag technique' },
+]
 
 // ─── Helpers date (BATCH 107) ────────────────────────────────────────────
 
@@ -140,7 +174,7 @@ export default function AdminUsers() {
   const { t } = useTranslation()
   const toast = useToast()
   const queryClient = useQueryClient()
-  const { adminUser, isSuperAdmin } = useIsAdmin()
+  const { adminUser, isSuperAdmin, canModerate } = useIsAdmin()
   // BATCH 36 : hook centralise pour audit log (DRY, strategy ligne 562).
   const { logAction } = useAdminAction()
 
@@ -150,7 +184,7 @@ export default function AdminUsers() {
   //   moderator    → admin_role IN ('moderator', 'support')
   //   migrateur    → admin_role IS NULL (utilisateurs normaux)
   const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState<'all' | 'super_admin' | 'moderator' | 'migrateur'>('all')
+  const [filter, setFilter] = useState<'all' | 'staff' | 'developpeur' | 'migrateur'>('all')
   // BATCH 105c : 4 tri simples (created_at desc/asc, posts_count desc, username asc)
   const [sortMode, setSortMode] = useState<'newest' | 'oldest' | 'posts' | 'name'>('newest')
   const [page, setPage] = useState(0)
@@ -162,6 +196,8 @@ export default function AdminUsers() {
   const menuTriggerRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
   const [pending, setPending] = useState<PendingAction>({ type: null, user: null })
   const [reason, setReason] = useState('')
+  // Role choisi dans la modale "Gérer le rôle" ('remove' = retirer tout role).
+  const [roleChoice, setRoleChoice] = useState<AdminRole | 'remove'>('moderator')
 
   // Debounce search (300ms), eviter spam queries (BATCH 41 : hook DRY)
   const debouncedSearch = useDebouncedValue(search.trim(), 300)
@@ -229,15 +265,18 @@ export default function AdminUsers() {
         admin_is_active: adminMap.get(p.id)?.is_active ?? null,
       })) as UserRow[]
 
-      // BATCH 104 : filtre par role precis (4 tabs)
-      if (filter === 'super_admin') {
-        rows = rows.filter((r) => r.admin_role === 'super_admin' && r.admin_is_active)
-      } else if (filter === 'moderator') {
+      // Filtre par categorie de role (RBAC) :
+      //   staff       = role panneau actif (super_admin/moderator/support/equipe_produit)
+      //   developpeur = role developpeur actif (tag technique, hors panneau)
+      //   migrateur   = aucun role admin actif
+      if (filter === 'staff') {
         rows = rows.filter(
-          (r) => (r.admin_role === 'moderator' || r.admin_role === 'support') && r.admin_is_active,
+          (r) => !!r.admin_role && r.admin_is_active === true && r.admin_role !== 'developpeur',
         )
+      } else if (filter === 'developpeur') {
+        rows = rows.filter((r) => r.admin_role === 'developpeur' && r.admin_is_active === true)
       } else if (filter === 'migrateur') {
-        rows = rows.filter((r) => r.admin_role === null || !r.admin_is_active)
+        rows = rows.filter((r) => !r.admin_role || !r.admin_is_active)
       }
 
       return { rows, total: count ?? 0 }
@@ -260,6 +299,15 @@ export default function AdminUsers() {
     setOpenMenuId(null)
     setPending({ type, user })
     setReason('')
+    if (type === 'set_role') {
+      // Pre-selectionne le role actuel s'il est assignable, sinon Modérateur.
+      const assignable = ASSIGNABLE_ROLES.map((r) => r.value as string)
+      setRoleChoice(
+        user.admin_role && assignable.includes(user.admin_role)
+          ? (user.admin_role as AdminRole)
+          : 'moderator',
+      )
+    }
   }
 
   function closeAction() {
@@ -273,26 +321,22 @@ export default function AdminUsers() {
 
     try {
       switch (pending.type) {
-        case 'promote': {
-          const { error } = await supabase.from('admin_users').insert({
-            user_id: user.id,
-            role: 'moderator',
-            is_active: true,
-            notes: reason || `Promu via /admin/users par ${adminUser?.user_id}`,
+        // Assignation / changement / retrait de role (super_admin uniquement, RLS).
+        case 'set_role': {
+          // RPC atomique : verifie super_admin cote serveur, upsert (1 row/user),
+          // anti-lockout. La RLS reste un second filet de securite.
+          const { error } = await supabase.rpc('admin_set_user_role', {
+            p_target: user.id,
+            p_role: roleChoice === 'remove' ? 'none' : roleChoice,
           })
           if (error) throw error
-          await logAudit('user.promote', user.id, { role: 'moderator', reason })
-          toast.success(`${user.username} promu moderateur`)
-          break
-        }
-        case 'demote': {
-          const { error } = await supabase
-            .from('admin_users')
-            .update({ is_active: false, notes: reason || 'Demote via /admin/users' })
-            .eq('user_id', user.id)
-          if (error) throw error
-          await logAudit('user.demote', user.id, { reason })
-          toast.success(`${user.username} retire des admins`)
+          if (roleChoice === 'remove') {
+            await logAudit('user.role_remove', user.id, { reason })
+            toast.success(`Rôle retiré pour @${user.username}`)
+          } else {
+            await logAudit('user.role_set', user.id, { role: roleChoice, reason })
+            toast.success(`@${user.username} : ${ROLE_META[roleChoice]?.label ?? roleChoice}`)
+          }
           break
         }
         case 'suspend': {
@@ -372,8 +416,8 @@ export default function AdminUsers() {
   // BATCH 104 : configuration des 4 tabs (style ProfileTabs)
   const TABS = [
     { key: 'all' as const, label: 'Tous', icon: UsersIcon },
-    { key: 'super_admin' as const, label: 'Administrateurs', icon: ShieldCheck },
-    { key: 'moderator' as const, label: 'Modérateurs', icon: Shield },
+    { key: 'staff' as const, label: 'Équipe', icon: ShieldCheck },
+    { key: 'developpeur' as const, label: 'Développeurs', icon: Code2 },
     { key: 'migrateur' as const, label: 'Migrateurs', icon: UsersIcon },
   ]
 
@@ -430,11 +474,10 @@ export default function AdminUsers() {
                   className="size-4 text-[var(--color-action-default)]"
                   aria-hidden="true"
                 />
-                Administrateur
+                Super-admin
               </p>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Accès complet : gestion utilisateurs, modération, beta, audit, configuration
-                système. Peut promouvoir / révoquer d'autres admins.
+                Accès complet : gestion des rôles, modération, beta, suppression, taxonomie, audit.
               </p>
             </li>
             <li className="bg-[var(--color-bg-primary)] rounded-lg p-3 border border-[var(--color-border)]">
@@ -443,8 +486,40 @@ export default function AdminUsers() {
                 Modérateur
               </p>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Modération du contenu : signalements, suspensions temporaires (7j), masquage posts.
-                Ne peut pas bannir définitivement ni gérer les rôles.
+                Modération (signalements, suspension 7j) + gestion beta. Pas de ban définitif ni de
+                gestion des rôles.
+              </p>
+            </li>
+            <li className="bg-[var(--color-bg-primary)] rounded-lg p-3 border border-[var(--color-border)]">
+              <p className="font-semibold text-foreground inline-flex items-center gap-1.5 mb-1">
+                <Shield className="size-4 text-[var(--color-info)]" aria-hidden="true" />
+                Support
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Accès au panneau en lecture seule. Aucune action destructive.
+              </p>
+            </li>
+            <li className="bg-[var(--color-bg-primary)] rounded-lg p-3 border border-[var(--color-border)]">
+              <p className="font-semibold text-foreground inline-flex items-center gap-1.5 mb-1">
+                <ShieldCheck
+                  className="size-4 text-[var(--color-action-default)]"
+                  aria-hidden="true"
+                />
+                Équipe produit
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Panneau en lecture (dashboard, analytics, beta, feedbacks). Aucune action
+                destructive.
+              </p>
+            </li>
+            <li className="bg-[var(--color-bg-primary)] rounded-lg p-3 border border-[var(--color-border)]">
+              <p className="font-semibold text-foreground inline-flex items-center gap-1.5 mb-1">
+                <Code2 className="size-4 text-[var(--color-text-secondary)]" aria-hidden="true" />
+                Développeur
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Tag technique pour les tests en profondeur. <strong>Aucun accès admin.</strong>{' '}
+                Souvent couplé à un profil masqué de la communauté.
               </p>
             </li>
             <li className="bg-[var(--color-bg-primary)] rounded-lg p-3 border border-[var(--color-border)]">
@@ -456,8 +531,8 @@ export default function AdminUsers() {
                 Migrateur
               </p>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Utilisateur standard : observe, partage, interagit avec la communauté. Aucun accès
-                admin. Représente la majorité des comptes.
+                Utilisateur standard : observe, partage, interagit. Aucun accès admin. La majorité
+                des comptes.
               </p>
             </li>
           </ul>
@@ -598,12 +673,14 @@ export default function AdminUsers() {
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                             u.admin_is_active
-                              ? 'bg-primary-light text-primary'
+                              ? (ROLE_META[u.admin_role]?.className ??
+                                'bg-primary-light text-primary')
                               : 'bg-muted text-muted-foreground'
                           }`}
                         >
                           <Shield className="size-3" aria-hidden="true" />
-                          {u.admin_role}
+                          {ROLE_META[u.admin_role]?.label ?? u.admin_role}
+                          {!u.admin_is_active && ' (inactif)'}
                         </span>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
@@ -637,6 +714,7 @@ export default function AdminUsers() {
                         <UserActionMenu
                           user={u}
                           isSuperAdmin={isSuperAdmin}
+                          canModerate={canModerate}
                           onAction={openAction}
                           onClose={() => {
                             setOpenMenuId(null)
@@ -701,37 +779,33 @@ export default function AdminUsers() {
       {pending.type && pending.user && (
         <ConfirmModal
           title={
-            pending.type === 'promote'
-              ? `Promouvoir @${pending.user.username} ?`
-              : pending.type === 'demote'
-                ? `Retirer @${pending.user.username} des admins ?`
-                : pending.type === 'suspend'
-                  ? `Suspendre @${pending.user.username} 7 jours ?`
-                  : pending.type === 'delete'
-                    ? `Supprimer définitivement @${pending.user.username} ?`
-                    : `Bannir @${pending.user.username} definitivement ?`
+            pending.type === 'set_role'
+              ? `Gérer le rôle de @${pending.user.username}`
+              : pending.type === 'suspend'
+                ? `Suspendre @${pending.user.username} 7 jours ?`
+                : pending.type === 'delete'
+                  ? `Supprimer définitivement @${pending.user.username} ?`
+                  : `Bannir @${pending.user.username} definitivement ?`
           }
           description={
-            pending.type === 'promote'
-              ? 'Cet utilisateur aura acces a /admin (role moderator).'
-              : pending.type === 'demote'
-                ? "L'acces /admin sera revoque. Action reversible."
-                : pending.type === 'suspend'
-                  ? 'Suspension de 7 jours. Reversible. Loggue dans admin_actions.'
-                  : pending.type === 'delete'
-                    ? "⚠️ SUPPRESSION TOTALE, IRRÉVERSIBLE.\nLe compte, le profil, les posts, les carnets, les médias et toutes les données associées seront définitivement supprimés. Cette action est conforme RGPD (droit à l'oubli)."
-                    : '⚠️ BAN PERMANENT. Action IRREVERSIBLE. Loggue dans admin_actions.'
+            pending.type === 'set_role'
+              ? 'Développeur = aucun accès admin (tag technique). Support et Équipe produit = panneau en lecture seule. Modérateur = modération + beta + suspension. Action loggée dans l’audit.'
+              : pending.type === 'suspend'
+                ? 'Suspension de 7 jours. Reversible. Loggue dans admin_actions.'
+                : pending.type === 'delete'
+                  ? "⚠️ SUPPRESSION TOTALE, IRRÉVERSIBLE.\nLe compte, le profil, les posts, les carnets, les médias et toutes les données associées seront définitivement supprimés. Cette action est conforme RGPD (droit à l'oubli)."
+                  : '⚠️ BAN PERMANENT. Action IRREVERSIBLE. Loggue dans admin_actions.'
           }
           confirmLabel={
-            pending.type === 'ban'
-              ? 'Bannir definitivement'
-              : pending.type === 'suspend'
-                ? 'Suspendre'
-                : pending.type === 'demote'
-                  ? 'Retirer'
+            pending.type === 'set_role'
+              ? 'Appliquer le rôle'
+              : pending.type === 'ban'
+                ? 'Bannir definitivement'
+                : pending.type === 'suspend'
+                  ? 'Suspendre'
                   : pending.type === 'delete'
                     ? 'Supprimer définitivement'
-                    : 'Promouvoir'
+                    : 'Bannir'
           }
           variant={
             pending.type === 'ban' || pending.type === 'suspend' || pending.type === 'delete'
@@ -745,6 +819,42 @@ export default function AdminUsers() {
             reason.trim().length < 10
           }
         >
+          {pending.type === 'set_role' && (
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1">
+                <label htmlFor="role-choice" className="text-xs font-medium text-foreground">
+                  Rôle
+                </label>
+                <select
+                  id="role-choice"
+                  value={roleChoice}
+                  onChange={(e) => setRoleChoice(e.target.value as AdminRole | 'remove')}
+                  className="w-full h-10 px-3 rounded-md border border-border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  {ASSIGNABLE_ROLES.map((r) => (
+                    <option key={r.value} value={r.value}>
+                      {r.label} — {r.hint}
+                    </option>
+                  ))}
+                  <option value="remove">Retirer le rôle (redevient migrateur)</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="role-reason" className="text-xs font-medium text-foreground">
+                  Note (optionnel, audit log)
+                </label>
+                <textarea
+                  id="role-reason"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  rows={2}
+                  maxLength={500}
+                  placeholder="Ex: teste les nouvelles features en profondeur"
+                  className="w-full px-3 py-2 rounded-md border border-border bg-background text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                />
+              </div>
+            </div>
+          )}
           {(pending.type === 'suspend' || pending.type === 'ban' || pending.type === 'delete') && (
             <div className="flex flex-col gap-1">
               <label htmlFor="action-reason" className="text-xs font-medium text-foreground">
@@ -777,6 +887,7 @@ export default function AdminUsers() {
 interface UserActionMenuProps {
   user: UserRow
   isSuperAdmin: boolean
+  canModerate: boolean
   onAction: (type: Exclude<ActionType, null>, user: UserRow) => void
   onClose: () => void
   /** Rect du bouton trigger pour positionner le menu via portal (BATCH 105a). */
@@ -786,6 +897,7 @@ interface UserActionMenuProps {
 function UserActionMenu({
   user,
   isSuperAdmin,
+  canModerate,
   onAction,
   onClose,
   anchorRect,
@@ -798,8 +910,6 @@ function UserActionMenu({
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [onClose])
-
-  const isAlreadyAdmin = user.admin_role !== null && user.admin_is_active
 
   // BATCH 105a : positionnement fixed via getBoundingClientRect du bouton parent
   // (rendu via Portal au body pour eviter clip par overflow-x-auto de la table).
@@ -828,38 +938,33 @@ function UserActionMenu({
           <ExternalLink className="size-3.5" aria-hidden="true" />
           Voir profil
         </Link>
-        {isSuperAdmin && !isAlreadyAdmin && (
+        {/* Gestion des roles : super_admin uniquement (RLS l'impose aussi). */}
+        {isSuperAdmin && (
           <button
             type="button"
             role="menuitem"
-            onClick={() => onAction('promote', user)}
+            onClick={() => onAction('set_role', user)}
             className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/30 focus-visible:outline-none focus-visible:bg-muted/30 text-left"
           >
             <Shield className="size-3.5" aria-hidden="true" />
-            Promouvoir moderateur
+            Gérer le rôle
           </button>
         )}
-        {isSuperAdmin && isAlreadyAdmin && (
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => onAction('demote', user)}
-            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/30 focus-visible:outline-none focus-visible:bg-muted/30 text-left"
-          >
-            <ShieldOff className="size-3.5" aria-hidden="true" />
-            Retirer admin
-          </button>
+        {/* Suspension : moderation (super_admin ou moderator). */}
+        {canModerate && (
+          <>
+            <div className="my-1 border-t border-border" aria-hidden="true" />
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => onAction('suspend', user)}
+              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--color-warning,#ca8a04)]/10 focus-visible:outline-none focus-visible:bg-[var(--color-warning,#ca8a04)]/10 text-left text-[var(--color-warning,#ca8a04)]"
+            >
+              <ShieldOff className="size-3.5" aria-hidden="true" />
+              Suspendre 7 jours
+            </button>
+          </>
         )}
-        <div className="my-1 border-t border-border" aria-hidden="true" />
-        <button
-          type="button"
-          role="menuitem"
-          onClick={() => onAction('suspend', user)}
-          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--color-warning,#ca8a04)]/10 focus-visible:outline-none focus-visible:bg-[var(--color-warning,#ca8a04)]/10 text-left text-[var(--color-warning,#ca8a04)]"
-        >
-          <ShieldOff className="size-3.5" aria-hidden="true" />
-          Suspendre 7 jours
-        </button>
         {isSuperAdmin && (
           <button
             type="button"
