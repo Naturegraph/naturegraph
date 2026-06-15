@@ -89,7 +89,11 @@ export function RevealableText({ text, className = '' }: RevealableTextProps) {
 
   return (
     <span
-      className={`relative inline-block min-w-0 max-w-full align-middle ${className}`}
+      className={`relative inline-block min-w-0 max-w-full select-none align-middle ${className}`}
+      // Sur tactile, le clic long declenche par defaut la selection de texte + le
+      // menu natif (copier / loupe iOS), ce qui ecrase notre revelation. On bloque
+      // donc selection et callout pour que le clic long ne fasse QUE reveler le texte.
+      style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none', userSelect: 'none' }}
       onMouseEnter={() => isTruncated && setVisible(true)}
       onMouseLeave={() => setVisible(false)}
       onFocus={() => isTruncated && setVisible(true)}
