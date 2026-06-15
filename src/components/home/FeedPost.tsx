@@ -705,7 +705,9 @@ export function FeedPost({
             carnet, OU carnet retombe a <=1 espece). */}
         {postType !== 'nature_instant' &&
           !(NOTEBOOKS_ENABLED && notebookId && (notebookSpeciesCount ?? 2) > 1) && (
-            <div className="flex flex-wrap gap-2">
+            // nowrap : categorie + espece restent sur UNE ligne (l'espece se tronque
+            // pour tenir, cf. RevealableText), au lieu de passer a la ligne sur mobile.
+            <div className="flex flex-nowrap items-center gap-2">
               {(() => {
                 const taxonomicCfg = taxonomic_group
                   ? TAXONOMIC_GROUP_CONFIG[taxonomic_group]
@@ -753,12 +755,12 @@ export function FeedPost({
                         defaultValue: 'Filtrer par {{category}}',
                         category: categoryLabel,
                       })}
-                      className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}
+                      className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS} shrink-0`}
                     >
                       <span>{categoryLabel}</span>
                     </button>
                   ) : (
-                    <span className={CHIP_BASE_CLASS}>
+                    <span className={`${CHIP_BASE_CLASS} shrink-0`}>
                       <span>{categoryLabel}</span>
                     </span>
                   )
