@@ -112,6 +112,47 @@ CREATE POLICY admin_write_taxonomy ON public.taxonomy_nodes
   FOR ALL USING (public.is_super_admin(( SELECT auth.uid() )))
   WITH CHECK (public.is_super_admin(( SELECT auth.uid() )));
 
+-- 7) Attribution directe de role par le super_admin (RPC atomique + audit) ----------
+
+-- Un seul role admin par utilisateur (permet un vrai UPSERT, evite les rows en double).
+ALTER TABLE public.admin_users DROP CONSTRAINT IF EXISTS admin_users_user_id_key;
+ALTER TABLE public.admin_users ADD CONSTRAINT admin_users_user_id_key UNIQUE (user_id);
+
+-- admin_set_user_role : assigne / change / retire le role d'un utilisateur.
+--   p_role IN (...roles...) pour assigner, ou 'none' pour retirer (is_active=false).
+--   Seul un super_admin actif peut l'appeler ; un super_admin ne peut pas se retirer
+--   son propre super_admin (anti-lockout). SECURITY DEFINER : la logique d'autorisation
+--   est dans la fonction, pas seulement dans la RLS.
+CREATE OR REPLACE FUNCTION public.admin_set_user_role(p_target uuid, p_role text)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
+AS $$
+DECLARE
+  v_actor uuid := ( SELECT auth.uid() );
+BEGIN
+  IF NOT public.is_super_admin(v_actor) THEN
+    RAISE EXCEPTION 'forbidden: role super_admin requis';
+  END IF;
+
+  IF p_target = v_actor AND p_role <> 'super_admin' THEN
+    RAISE EXCEPTION 'interdit: un super_admin ne peut pas retirer son propre acces';
+  END IF;
+
+  IF p_role = 'none' THEN
+    UPDATE public.admin_users SET is_active = FALSE WHERE user_id = p_target;
+    RETURN 'none';
+  ELSIF p_role IN ('super_admin','moderator','support','equipe_produit','developpeur') THEN
+    INSERT INTO public.admin_users (user_id, role, is_active, created_by)
+    VALUES (p_target, p_role, TRUE, v_actor)
+    ON CONFLICT (user_id) DO UPDATE
+      SET role = EXCLUDED.role, is_active = TRUE;
+    RETURN p_role;
+  ELSE
+    RAISE EXCEPTION 'role invalide: %', p_role;
+  END IF;
+END;
+$$;
+
 -- Note : les helpers (current_admin_role / is_super_admin / can_moderate / is_admin)
 -- restent executables par authenticated, car les policies RLS les appellent dans le
 -- contexte de l'utilisateur. Ils sont SECURITY DEFINER + search_path fixe (surface reduite).

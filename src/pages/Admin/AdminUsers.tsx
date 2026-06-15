@@ -323,37 +323,17 @@ export default function AdminUsers() {
       switch (pending.type) {
         // Assignation / changement / retrait de role (super_admin uniquement, RLS).
         case 'set_role': {
+          // RPC atomique : verifie super_admin cote serveur, upsert (1 row/user),
+          // anti-lockout. La RLS reste un second filet de securite.
+          const { error } = await supabase.rpc('admin_set_user_role', {
+            p_target: user.id,
+            p_role: roleChoice === 'remove' ? 'none' : roleChoice,
+          })
+          if (error) throw error
           if (roleChoice === 'remove') {
-            const { error } = await supabase
-              .from('admin_users')
-              .update({ is_active: false, notes: reason || 'Rôle retiré via /admin/users' })
-              .eq('user_id', user.id)
-            if (error) throw error
             await logAudit('user.role_remove', user.id, { reason })
             toast.success(`Rôle retiré pour @${user.username}`)
           } else {
-            // Reactive/maj si une row existe deja (meme inactive), sinon insert.
-            const hadRow = user.admin_role !== null
-            if (hadRow) {
-              const { error } = await supabase
-                .from('admin_users')
-                .update({
-                  role: roleChoice,
-                  is_active: true,
-                  notes: reason || `Rôle ${roleChoice}`,
-                })
-                .eq('user_id', user.id)
-              if (error) throw error
-            } else {
-              const { error } = await supabase.from('admin_users').insert({
-                user_id: user.id,
-                role: roleChoice,
-                is_active: true,
-                created_by: adminUser?.user_id ?? null,
-                notes: reason || `Rôle ${roleChoice} via /admin/users`,
-              })
-              if (error) throw error
-            }
             await logAudit('user.role_set', user.id, { role: roleChoice, reason })
             toast.success(`@${user.username} : ${ROLE_META[roleChoice]?.label ?? roleChoice}`)
           }
