@@ -227,14 +227,48 @@ export default function AdminUsers() {
       if (!supabase) return { rows: [] as UserRow[], total: 0 }
 
       const sort = sortConfig[sortMode]
+
+      // 1) Charger tous les roles admin ACTIFS d'abord (table minuscule : quelques lignes).
+      //    Indispensable : le filtrage par role doit se faire au niveau SQL AVANT la
+      //    pagination. Filtrer cote client apres avoir pagine 20 profils ne verrait que
+      //    les admins presents dans la page courante (un developpeur ancien/masque
+      //    n'apparaitrait jamais dans son onglet). Sert aussi a afficher les badges.
+      const { data: admins } = await supabase
+        .from('admin_users')
+        .select('user_id, role, is_active')
+        .eq('is_active', true)
+      const adminMap = new Map<string, { role: string; is_active: boolean }>()
+      const staffIds: string[] = []
+      const developerIds: string[] = []
+      for (const a of admins ?? []) {
+        adminMap.set(a.user_id, { role: a.role, is_active: a.is_active })
+        if (a.role === 'developpeur') developerIds.push(a.user_id)
+        else staffIds.push(a.user_id)
+      }
+      const adminIds = [...adminMap.keys()]
+
+      // 2) Requete profils, filtree par categorie de role au niveau SQL :
+      //   staff       = role panneau actif (super_admin/moderator/support/equipe_produit)
+      //   developpeur = role developpeur actif (tag technique, hors panneau)
+      //   migrateur   = aucun role admin actif
+      //   all         = tous
       let query = supabase
         .from('profiles')
         .select(
           'id, username, email, first_name, last_name, avatar_url, posts_count, followers_count, created_at, last_login_at, updated_at',
           { count: 'exact' },
         )
-        .order(sort.column, { ascending: sort.ascending })
-        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
+
+      if (filter === 'staff') {
+        if (staffIds.length === 0) return { rows: [], total: 0 }
+        query = query.in('id', staffIds)
+      } else if (filter === 'developpeur') {
+        if (developerIds.length === 0) return { rows: [], total: 0 }
+        query = query.in('id', developerIds)
+      } else if (filter === 'migrateur' && adminIds.length > 0) {
+        // Exclure tous les comptes ayant un role admin actif.
+        query = query.not('id', 'in', `(${adminIds.join(',')})`)
+      }
 
       if (debouncedSearch) {
         // OR ilike sur 4 champs : username, email, first_name, last_name
@@ -243,41 +277,18 @@ export default function AdminUsers() {
         )
       }
 
+      query = query
+        .order(sort.column, { ascending: sort.ascending })
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
+
       const { data: profiles, count, error } = await query
       if (error) throw error
 
-      // Fetch admin_users en parallel pour cette page
-      const userIds = (profiles ?? []).map((p) => p.id)
-      const adminMap = new Map<string, { role: string; is_active: boolean }>()
-      if (userIds.length > 0) {
-        const { data: admins } = await supabase
-          .from('admin_users')
-          .select('user_id, role, is_active')
-          .in('user_id', userIds)
-        for (const a of admins ?? []) {
-          adminMap.set(a.user_id, { role: a.role, is_active: a.is_active })
-        }
-      }
-
-      let rows = (profiles ?? []).map((p) => ({
+      const rows = (profiles ?? []).map((p) => ({
         ...p,
         admin_role: adminMap.get(p.id)?.role ?? null,
         admin_is_active: adminMap.get(p.id)?.is_active ?? null,
       })) as UserRow[]
-
-      // Filtre par categorie de role (RBAC) :
-      //   staff       = role panneau actif (super_admin/moderator/support/equipe_produit)
-      //   developpeur = role developpeur actif (tag technique, hors panneau)
-      //   migrateur   = aucun role admin actif
-      if (filter === 'staff') {
-        rows = rows.filter(
-          (r) => !!r.admin_role && r.admin_is_active === true && r.admin_role !== 'developpeur',
-        )
-      } else if (filter === 'developpeur') {
-        rows = rows.filter((r) => r.admin_role === 'developpeur' && r.admin_is_active === true)
-      } else if (filter === 'migrateur') {
-        rows = rows.filter((r) => !r.admin_role || !r.admin_is_active)
-      }
 
       return { rows, total: count ?? 0 }
     },
