@@ -34,6 +34,7 @@ import { TAXONOMIC_GROUP_CONFIG } from '@/constants/commonSpecies'
 import { buildPostPath } from '@/lib/postSlug'
 import { NotebookCardInFeed } from '@/components/notebook/NotebookCardInFeed'
 import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
+import { RevealableText } from '@/components/ui/RevealableText'
 
 // ─── Type UI pour les posts du feed ──────────────────────────────────────────
 // Bridge entre le type DB (PostFeedItem) et le composant FeedPost.
@@ -787,19 +788,19 @@ export function FeedPost({
                           aria-label={t('home.post.filterBySpecies', {
                             species: speciesName ?? '',
                           })}
-                          className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS}`}
+                          className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS} max-w-full`}
                         >
-                          <span>
-                            {speciesName}
-                            {multipleSuffix}
-                          </span>
+                          <RevealableText
+                            text={`${speciesName}${multipleSuffix}`}
+                            className="max-w-[55vw] sm:max-w-[240px]"
+                          />
                         </button>
                       ) : (
-                        <span className={CHIP_BASE_CLASS}>
-                          <span>
-                            {speciesName}
-                            {multipleSuffix}
-                          </span>
+                        <span className={`${CHIP_BASE_CLASS} max-w-full`}>
+                          <RevealableText
+                            text={`${speciesName}${multipleSuffix}`}
+                            className="max-w-[55vw] sm:max-w-[240px]"
+                          />
                         </span>
                       )}
                     </>
