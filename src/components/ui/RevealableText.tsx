@@ -109,7 +109,7 @@ export function RevealableText({ text, className = '' }: RevealableTextProps) {
       {visible && isTruncated && (
         <span
           role="tooltip"
-          className="pointer-events-none absolute bottom-full left-0 z-50 mb-2 max-w-[260px] whitespace-normal break-words rounded-md bg-[var(--color-text-primary)] px-2.5 py-1.5 text-xs font-medium normal-case text-[var(--color-text-inverse)] shadow-lg"
+          className="pointer-events-none absolute bottom-full left-0 z-50 mb-2 max-w-[92vw] whitespace-nowrap rounded-md bg-[var(--color-text-primary)] px-2.5 py-1.5 text-xs font-medium normal-case text-[var(--color-text-inverse)] shadow-lg"
         >
           {text}
         </span>
