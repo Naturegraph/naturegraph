@@ -788,19 +788,13 @@ export function FeedPost({
                           aria-label={t('home.post.filterBySpecies', {
                             species: speciesName ?? '',
                           })}
-                          className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS} max-w-full`}
+                          className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS} min-w-0 max-w-full`}
                         >
-                          <RevealableText
-                            text={`${speciesName}${multipleSuffix}`}
-                            className="max-w-[55vw] sm:max-w-[240px]"
-                          />
+                          <RevealableText text={`${speciesName}${multipleSuffix}`} />
                         </button>
                       ) : (
-                        <span className={`${CHIP_BASE_CLASS} max-w-full`}>
-                          <RevealableText
-                            text={`${speciesName}${multipleSuffix}`}
-                            className="max-w-[55vw] sm:max-w-[240px]"
-                          />
+                        <span className={`${CHIP_BASE_CLASS} min-w-0 max-w-full`}>
+                          <RevealableText text={`${speciesName}${multipleSuffix}`} />
                         </span>
                       )}
                     </>

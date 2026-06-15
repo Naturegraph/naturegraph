@@ -6,11 +6,13 @@
  * sont trop longs pour le chip espece et debordaient sur deux lignes serrees.
  *
  * Comportement (demande Nicolas / testeur 2026-06-15) :
- *   - Affichage sur UNE seule ligne, tronque avec ellipsis (largeur max via className).
- *   - Le texte complet se revele :
+ *   - Le texte s'affiche EN ENTIER tant qu'il tient dans l'espace disponible.
+ *   - S'il deborde (ecran etroit), il passe sur UNE seule ligne tronquee (ellipsis),
+ *     borne par la largeur du conteneur (chaine min-w-0), pas par une largeur fixe.
+ *   - Le texte complet se revele alors UNIQUEMENT s'il est tronque :
  *       * au survol souris + au focus clavier (desktop),
  *       * au clic long (~450ms) sur ecran tactile (smartphone).
- *   - La revelation ne s'active que si le texte est reellement tronque.
+ *   - Pas de survol / pas de troncature quand le texte tient : affichage simple.
  *
  * Accessibilite : le noeud texte contient toujours le libelle complet (la troncature
  * est purement CSS), donc les lecteurs d'ecran lisent l'integralite.
@@ -21,7 +23,7 @@ import { useCallback, useEffect, useRef, useState, type TouchEvent } from 'react
 interface RevealableTextProps {
   /** Texte a afficher (et a reveler en entier si tronque). */
   text: string
-  /** Classes utilitaires pour le texte tronque, notamment la largeur max. */
+  /** Classes utilitaires optionnelles (la largeur est geree par le conteneur, pas ici). */
   className?: string
 }
 
@@ -87,7 +89,7 @@ export function RevealableText({ text, className = '' }: RevealableTextProps) {
 
   return (
     <span
-      className="relative inline-flex min-w-0 max-w-full"
+      className={`relative inline-block min-w-0 max-w-full align-middle ${className}`}
       onMouseEnter={() => isTruncated && setVisible(true)}
       onMouseLeave={() => setVisible(false)}
       onFocus={() => isTruncated && setVisible(true)}
@@ -97,7 +99,7 @@ export function RevealableText({ text, className = '' }: RevealableTextProps) {
       onTouchCancel={handleTouchEnd}
       onTouchMove={handleTouchMove}
     >
-      <span ref={labelRef} className={`block truncate ${className}`}>
+      <span ref={labelRef} className="block truncate">
         {text}
       </span>
       {visible && isTruncated && (
