@@ -2209,6 +2209,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_set_user_role: {
+        Args: { p_target: string; p_role: string }
+        Returns: string
+      }
       _postgis_deprecate: {
         Args: { newname: string; oldname: string; version: string }
         Returns: undefined
