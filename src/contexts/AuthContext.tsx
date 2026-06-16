@@ -17,6 +17,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import type { User } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { setRememberMe, clearAuthStorage, hasStoredAuthToken } from '@/lib/authStorage'
+import { markSessionExpired } from '@/lib/sessionExpiredFlag'
 import { authBreadcrumb } from '@/lib/monitoring'
 import { generateAndStoreOtp, validateOtp } from '@/lib/demoAuth'
 import type { Profile } from '@/types/database'
@@ -299,6 +300,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Purge propre d'un token mort -> etat anonyme deterministe.
     async function purgeAndAnonymous() {
+      // NG-003 : token mort au boot = session expiree involontairement -> message
+      // clair sur l'ecran de connexion (consomme par Welcome).
+      markSessionExpired()
       clearAuthStorage()
       await supabase!.auth.signOut({ scope: 'local' }).catch(() => {})
       clearTimeout(bootTimeout)
@@ -568,6 +572,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         supabase?.auth.refreshSession().catch(async (err) => {
           if (isInvalidRefreshTokenError(err)) {
             console.warn('[Auth] Refresh token mort -> signOut local')
+            markSessionExpired()
             clearAuthStorage()
             await supabase!.auth.signOut({ scope: 'local' }).catch(() => {})
           } else {
@@ -605,6 +610,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // visibility/intervalle re-tenteront.
         if (isInvalidRefreshTokenError(err)) {
           authBreadcrumb('refresh.visibility.dead-token -> signOut')
+          markSessionExpired()
           clearAuthStorage()
           await supabase!.auth.signOut({ scope: 'local' }).catch(() => {})
         } else {

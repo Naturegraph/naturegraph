@@ -30,6 +30,9 @@ export function safeExternalUrl(raw: string | null | undefined): string | null {
     const url = new URL(candidate)
     if (!SAFE_PROTOCOLS.has(url.protocol)) return null
     if (!url.hostname.includes('.')) return null
+    // NG-004 : rejette les domaines punycode/IDN (xn--), vecteur de spoofing
+    // visuel (faux "gоogle" en cyrillique). Aucun usage legitime attendu ici.
+    if (/(^|\.)xn--/i.test(url.hostname)) return null
     return url.toString()
   } catch {
     return null
