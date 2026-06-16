@@ -16,6 +16,7 @@
 import { useTranslation } from 'react-i18next'
 import { Calendar, Facebook, Globe, Instagram, UserRound } from 'lucide-react'
 import type { ProfileDisplayData } from './ProfileHeader'
+import { safeExternalUrl } from '@/lib/url'
 
 interface ProfileAboutCardProps {
   profile: ProfileDisplayData
@@ -82,6 +83,12 @@ export function ProfileAboutCard({ profile, compact = false }: ProfileAboutCardP
   const { t } = useTranslation()
   const memberSince = formatMemberSince(profile.created_at)
 
+  // NG-004 : garde-fou XSS/redirect. On ne rend un lien que si la valeur stockee
+  // est une URL http(s) sure (les schemas dangereux comme javascript: -> null).
+  const websiteHref = safeExternalUrl(profile.website)
+  const instagramHref = safeExternalUrl(profile.instagram)
+  const facebookHref = safeExternalUrl(profile.facebook)
+
   return (
     <section
       aria-labelledby="profile-about-heading"
@@ -129,46 +136,44 @@ export function ProfileAboutCard({ profile, compact = false }: ProfileAboutCardP
         </div>
 
         {/* Lien site web — group entièrement en primary violet (icône + texte). */}
-        {profile.website && (
+        {websiteHref && (
           <a
-            href={ensureHttp(profile.website)}
+            href={websiteHref}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-primary hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
           >
             <Globe className="size-[18px] shrink-0" aria-hidden="true" />
-            <span className="font-bold underline underline-offset-2">
-              {hostLabel(profile.website)}
-            </span>
+            <span className="font-bold underline underline-offset-2">{hostLabel(websiteHref)}</span>
           </a>
         )}
 
         {/* Lien Instagram — group entièrement en primary violet (icône + texte). */}
-        {profile.instagram && (
+        {instagramHref && (
           <a
-            href={ensureHttp(profile.instagram)}
+            href={instagramHref}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-primary hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
           >
             <Instagram className="size-[18px] shrink-0" aria-hidden="true" />
             <span className="font-bold underline underline-offset-2">
-              {handleLabel(profile.instagram)}
+              {handleLabel(instagramHref)}
             </span>
           </a>
         )}
 
         {/* NG-011 (2026-05-31) : lien Facebook (Twitter retire, peu d usage naturaliste). */}
-        {profile.facebook && (
+        {facebookHref && (
           <a
-            href={ensureHttp(profile.facebook)}
+            href={facebookHref}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-primary hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
           >
             <Facebook className="size-[18px] shrink-0" aria-hidden="true" />
             <span className="font-bold underline underline-offset-2">
-              {handleLabel(profile.facebook)}
+              {handleLabel(facebookHref)}
             </span>
           </a>
         )}
