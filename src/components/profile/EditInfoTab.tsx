@@ -85,7 +85,10 @@ const TEXTAREA_CLASS =
  * @returns value = URL complete normalisee (ou null si champ vide),
  *          error = true si la saisie n'est pas une URL exploitable.
  */
-function normalizeSocialUrl(raw: string): { value: string | null; error: boolean } {
+function normalizeSocialUrl(
+  raw: string,
+  allowedHosts?: string[],
+): { value: string | null; error: boolean } {
   const trimmed = raw.trim()
   if (!trimmed) return { value: null, error: false }
   const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
@@ -93,6 +96,13 @@ function normalizeSocialUrl(raw: string): { value: string | null; error: boolean
     const url = new URL(candidate)
     // http(s) uniquement + hostname plausible (doit contenir au moins un point).
     if ((url.protocol === 'https:' || url.protocol === 'http:') && url.hostname.includes('.')) {
+      // NG-004 (2026-06-16) : impose le bon domaine par champ si fourni
+      // (instagram.com, facebook.com...). www./m. tolere. Meme controle backend.
+      if (allowedHosts && allowedHosts.length > 0) {
+        const host = url.hostname.toLowerCase().replace(/^(www|m)\./, '')
+        const ok = allowedHosts.some((h) => host === h || host.endsWith(`.${h}`))
+        if (!ok) return { value: null, error: true }
+      }
       return { value: url.toString(), error: false }
     }
   } catch {
@@ -100,6 +110,10 @@ function normalizeSocialUrl(raw: string): { value: string | null; error: boolean
   }
   return { value: null, error: true }
 }
+
+/** Domaines autorises par champ (NG-004). Le site web reste libre (tout http(s)). */
+const INSTAGRAM_HOSTS = ['instagram.com']
+const FACEBOOK_HOSTS = ['facebook.com', 'fb.com', 'fb.me']
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 
@@ -145,8 +159,8 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
         // chaque champ ; si une saisie n'est pas une URL exploitable, on bloque
         // la sauvegarde et on affiche l'erreur inline (pas de save silencieux
         // partiel qui ferait croire "mon lien ne se garde pas").
-        const ig = normalizeSocialUrl(instagram)
-        const fb = normalizeSocialUrl(facebook)
+        const ig = normalizeSocialUrl(instagram, INSTAGRAM_HOSTS)
+        const fb = normalizeSocialUrl(facebook, FACEBOOK_HOSTS)
         const web = normalizeSocialUrl(website)
         if (ig.error || fb.error || web.error) {
           setSocialErrors({ instagram: ig.error, facebook: fb.error, website: web.error })
@@ -312,8 +326,8 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
           </div>
           {socialErrors.instagram && (
             <p className="text-xs text-[var(--color-error)] pl-7">
-              {t('profile.edit.socialUrlError', {
-                defaultValue: 'Entre un lien complet valide, par exemple https://...',
+              {t('profile.edit.instagramUrlError', {
+                defaultValue: 'Entre un lien Instagram valide (https://instagram.com/ton-compte).',
               })}
             </p>
           )}
@@ -352,8 +366,8 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
           </div>
           {socialErrors.facebook && (
             <p className="text-xs text-[var(--color-error)] pl-7">
-              {t('profile.edit.socialUrlError', {
-                defaultValue: 'Entre un lien complet valide, par exemple https://...',
+              {t('profile.edit.facebookUrlError', {
+                defaultValue: 'Entre un lien Facebook valide (https://facebook.com/ta-page).',
               })}
             </p>
           )}
