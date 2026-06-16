@@ -96,6 +96,9 @@ function normalizeSocialUrl(
     const url = new URL(candidate)
     // http(s) uniquement + hostname plausible (doit contenir au moins un point).
     if ((url.protocol === 'https:' || url.protocol === 'http:') && url.hostname.includes('.')) {
+      // NG-004 (2026-06-16) : rejette les domaines punycode/IDN (xn--), spoofing
+      // visuel de marques. Vaut pour tous les champs, y compris le site web.
+      if (/(^|\.)xn--/i.test(url.hostname)) return { value: null, error: true }
       // NG-004 (2026-06-16) : impose le bon domaine par champ si fourni
       // (instagram.com, facebook.com...). www./m. tolere. Meme controle backend.
       if (allowedHosts && allowedHosts.length > 0) {
