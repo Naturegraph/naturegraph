@@ -1,7 +1,12 @@
 # Release Process Naturegraph
 
-> Norme officielle V1.0.0+ (decision Nicolas 2026-05-25).
+> Decision Nicolas 2026-05-25, mis a jour 2026-06-17 (NG-025).
 > S applique a TOUTES les MAJ qui partent en prod (main).
+>
+> **Numerotation** : la norme de versioning (SemVer, Conventional Commits, tags,
+> Releases, suivi Notion, jalons) vit dans `VERSIONING.md`. La phase de prelancement
+> repart a V0.0.1 (cf. NG-025). Les exemples `V1.X.Y` ci-dessous illustrent le
+> mecanisme PATCH/MINOR/MAJOR ; transposer au track courant `V0.0.x`.
 
 ---
 
@@ -233,6 +238,8 @@ La production doit etre un sanctuaire :
 ---
 
 ## Versioning officiel
+
+> Norme detaillee : `VERSIONING.md` (NG-025). Resume ci-dessous.
 
 ```
 V[MAJOR].[MINOR].[PATCH]
