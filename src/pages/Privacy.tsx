@@ -1,10 +1,10 @@
 /**
- * Privacy — Politique de confidentialité (RGPD + Loi 25)
+ * Privacy : Politique de confidentialité (RGPD + Loi 25)
  *
  * BATCH 68 : style aligné sur Welcome/Waitlist via <BetaInfoLayout>
  * (background teal-dark + pattern dots + orbes en md+, card cream centrée).
  *
- * Page publique accessible sans authentification — obligatoire pour la
+ * Page publique accessible sans authentification, obligatoire pour la
  * conformité RGPD (Art. 12-13 transparence) et Loi 25 (Art. 8.3).
  *
  * Structure 11 sections (MVP) :
@@ -70,7 +70,7 @@ export default function Privacy() {
           </p>
         </header>
 
-        {/* Statut beta privée — placé avant les sections numérotées pour
+        {/* Statut beta privée, placé avant les sections numérotées pour
             informer immédiatement l'utilisateur du contexte expérimental. */}
         <BetaStatusCallout i18nNamespace="legal.privacy" id="privacy-beta-status" />
 

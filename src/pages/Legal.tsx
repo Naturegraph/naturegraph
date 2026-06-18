@@ -1,10 +1,10 @@
 /**
- * Legal — Mentions légales (LCEN + Loi 25)
+ * Legal : Mentions légales (LCEN + Loi 25)
  *
  * BATCH 68 : style aligné sur Welcome/Waitlist via <BetaInfoLayout>
  * (background teal-dark + pattern dots + orbes en md+, card cream centrée).
  *
- * Page publique accessible sans authentification — obligatoire pour la
+ * Page publique accessible sans authentification, obligatoire pour la
  * conformité LCEN Art. 6 III.
  *
  * Structure 6 sections (MVP) :
@@ -59,7 +59,7 @@ export default function Legal() {
           </p>
         </header>
 
-        {/* Statut beta privée — affiché avant les sections numérotées. */}
+        {/* Statut beta privée, affiché avant les sections numérotées. */}
         <BetaStatusCallout i18nNamespace="legal.terms" id="legal-beta-status" />
 
         <div className="flex flex-col gap-8">
