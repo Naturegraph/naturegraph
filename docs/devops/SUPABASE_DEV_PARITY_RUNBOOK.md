@@ -108,7 +108,40 @@ confirmer que `app_config` existe et que `species_master` est seede, avant le re
 Apres l'etape 3-4, on verifie ensemble le bundle du preview develop (il doit contenir
 `nkgdgxwejqqnqmwqwegy`, pas `hrxgduvworofnrjmgpcj`).
 
-## Methode de reprise RECOMMANDEE (a froid) : dump du schema prod -> dev
+## Reprise via le runner Node (le plus avance, deja construit 2026-06-17)
+
+Un runner a ete construit et fonctionne (connexion dev OK, BOM gere). Etat a la coupure :
+le rebuild se lance mais reste a finir (un BOM dans `20260519_species_master_seed_v2.sql` a ete
+trouve et est desormais strippe automatiquement par le runner ; il restait a relancer pour aller
+au bout). Le dev est donc en etat partiel (re-jouable, le script repart d'un DROP SCHEMA).
+
+Pour reprendre (tout sur le DEV uniquement, jamais la prod) :
+
+```bash
+# 1. (si besoin) installer pg sans toucher package.json
+npm i pg --no-save
+
+# 2. regenerer le SQL de rebuild (concatenation des migrations dans l'ordre)
+{ echo "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;"; \
+  echo "GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;"; \
+  echo "GRANT ALL ON SCHEMA public TO postgres, service_role;"; \
+  for f in $(ls supabase/migrations/*.sql | sort); do echo; echo "-- $(basename "$f")"; cat "$f"; echo; done; \
+} > scripts/dev-rebuild.sql
+```
+
+```powershell
+# 3. connection string DEV (Session pooler, IPv4), mot de passe DB dev substitue
+$env:DEV_DB_URL = "postgresql://postgres.nkgdgxwejqqnqmwqwegy:<MDP_DEV>@aws-1-ca-central-1.pooler.supabase.com:5432/postgres"
+node scripts/run-dev-rebuild.mjs
+```
+
+Le runner (`scripts/run-dev-rebuild.mjs`) a un garde-fou : il REFUSE de tourner si la cible n'est pas
+le dev (`nkgdgxwejqqnqmwqwegy`). Si une migration echoue (ordre intra-journee, dependance), corriger
+puis relancer (rejouable). Une fois `OK : rebuild applique SANS erreur` : seed `species_master`, puis
+repoint Vercel Preview, puis valider develop. NB : `scripts/dev-rebuild.sql` (genere, 360 Ko) n'est PAS
+committe.
+
+## Methode de reprise ALTERNATIVE (a froid) : dump du schema prod -> dev
 
 Vu le blocker (versions de migration dupliquees), NE PAS reessayer `db push`/`db reset`. Approche
 fiable qui contourne le probleme : repartir du schema PROD (connu-bon, complet) via un dump, et
