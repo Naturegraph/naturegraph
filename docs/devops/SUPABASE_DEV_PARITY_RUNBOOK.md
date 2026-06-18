@@ -10,6 +10,26 @@
 > **Action externe** : etapes CLI/dashboard a executer par le fondateur. Claude prepare et verifie
 > (mon acces MCP Supabase est branche sur la PROD, je ne peux pas appliquer sur le dev).
 
+## BLOCKER decouvert (2026-06-17) : versions de migration non uniques
+
+Tentative de `supabase db reset --linked` sur le dev : echec a la 2e migration avec
+`duplicate key value violates unique constraint "schema_migrations_pkey" Key (version)=(20260320)`.
+
+Cause racine : les 80 fichiers `supabase/migrations/` n'ont que **34 versions uniques** (format
+`YYYYMMDD`, non horodate). 46 migrations partagent un meme prefixe de date. La table de suivi
+`supabase_migrations.schema_migrations` exige des versions uniques, donc la CLI (`db push`/`db reset`)
+NE PEUT PAS gerer ces migrations. C'est pourquoi elles ont toujours ete appliquees manuellement sur
+la prod, et pourquoi le dev avait un historique CLI separe (timestamps).
+
+Impact de la tentative : la prod n'a RIEN subi (jamais ciblee). develop/staging tournent toujours sur
+la prod (Preview pas encore repointe), donc rien de vivant n'est casse. Le projet dev (jetable) est
+par contre a moitie vide (seul `20260320_initial_schema.sql` applique).
+
+PRE-REQUIS avant de pouvoir cloisonner via CLI : **renommer les migrations en versions uniques**
+(format `YYYYMMDDHHMMSS_nom.sql`, en preservant l'ordre d'application). Tache dediee, a faire avec soin
+(verifier l'ordre intra-journee), PAS en reactif. Ensuite seulement : reset/push dev propre, seed,
+repoint Preview. En attendant, Preview reste sur la prod (deviation documentee, a corriger avant lancement).
+
 ## Etat constate (sonde du 2026-06-17)
 
 Le projet dev est ACTIF mais PAS a parite :
