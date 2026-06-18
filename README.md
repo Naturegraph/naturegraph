@@ -219,4 +219,4 @@ Detail technique : [`docs/backend/TAXONOMY_DATABASE_DESIGN.md`](docs/backend/TAX
 
 ## Partenaires
 
-Naturegraph est soutenu par [Paloume](https://paloume.org), [Hub Environnement](https://hub-environnement.fr) et [Kreapulse](https://kreapulse.fr).
+Naturegraph est soutenu par [Paloume](https://www.paloume.fr/page/2020316-accueil), [E-Hub Enerco](https://www.hubenerco.bzh/) et [Kréa'Pulse](https://www.ploermelcommunaute.bzh/kreapulse/).
