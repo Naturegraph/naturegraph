@@ -34,7 +34,7 @@ assignees: ''
 - **Navigateur** : [ex: Chrome 120, Firefox 121, Safari 17]
 - **Device** : [Desktop / Mobile / Tablet]
 - **Résolution écran** : [ex: 1920x1080, mobile 390x844]
-- **URL** : [naturegraph.fr / staging / localhost]
+- **URL** : [naturegraph.ca / staging / localhost]
 
 ## Logs / erreurs console
 

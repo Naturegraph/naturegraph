@@ -2,35 +2,35 @@
 # Documentation : https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 #
 # Usage : tout fichier modifié dans une PR auto-assigne le owner correspondant.
-# Convention : owner doit être un username GitHub précédé de @
+# Convention : owner doit être un username GitHub précédé de @ (handle valide avec acces au repo)
 
 # Tout par défaut → Nicolas
-* @nicolas-douaron
+* @Naturegraph
 
 # Documentation
-/docs/                 @nicolas-douaron
-*.md                   @nicolas-douaron
-CLAUDE.md              @nicolas-douaron
-GUIDELINES.md          @nicolas-douaron
+/docs/                 @Naturegraph
+*.md                   @Naturegraph
+CLAUDE.md              @Naturegraph
+GUIDELINES.md          @Naturegraph
 
 # Backend Supabase (critique)
-/supabase/migrations/  @nicolas-douaron
-/supabase/functions/   @nicolas-douaron
+/supabase/migrations/  @Naturegraph
+/supabase/functions/   @Naturegraph
 
 # Frontend critique
-/src/services/         @nicolas-douaron
-/src/components/ui/    @nicolas-douaron
-/src/contexts/         @nicolas-douaron
-/src/lib/              @nicolas-douaron
+/src/services/         @Naturegraph
+/src/components/ui/    @Naturegraph
+/src/contexts/         @Naturegraph
+/src/lib/              @Naturegraph
 
 # Tests
-/src/test/             @nicolas-douaron
-**/*.test.ts           @nicolas-douaron
-**/*.test.tsx          @nicolas-douaron
+/src/test/             @Naturegraph
+**/*.test.ts           @Naturegraph
+**/*.test.tsx          @Naturegraph
 
 # Config repo
-/.github/              @nicolas-douaron
-/.husky/               @nicolas-douaron
-package.json           @nicolas-douaron
-tsconfig.json          @nicolas-douaron
-vite.config.ts         @nicolas-douaron
+/.github/              @Naturegraph
+/.husky/               @Naturegraph
+package.json           @Naturegraph
+tsconfig.json          @Naturegraph
+vite.config.ts         @Naturegraph

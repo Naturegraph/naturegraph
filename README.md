@@ -14,14 +14,14 @@ Le document central du projet est **[`PROJECT_MASTER.md`](PROJECT_MASTER.md)**. 
 
 | Document                                 | Quand le lire                                                    |
 | ---------------------------------------- | ---------------------------------------------------------------- |
-| [`PROJECT_MASTER.md`](PROJECT_MASTER.md) | **Vue d ensemble**, vision, état V1.0.0, roadmap, TODO, workflow |
+| [`PROJECT_MASTER.md`](PROJECT_MASTER.md) | **Vue d ensemble**, vision, état V0.0.1, roadmap, TODO, workflow |
 | [`CHANGELOG.md`](CHANGELOG.md)           | Historique des versions, ce qui change a chaque release          |
 | [`CLAUDE.md`](CLAUDE.md)                 | Instructions Claude Code + règles permanentes                    |
 | [`GUIDELINES.md`](GUIDELINES.md)         | Budgets eco-conception + accessibilité WCAG AA                   |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md)     | Comment contribuer                                               |
 | [`docs/README.md`](docs/README.md)       | Index des docs techniques détaillées                             |
 
-**Version actuelle** : V1.0.0 (2026-05-25)
+**Version actuelle** : V0.0.1 (2026-06-17)
 
 ---
 

@@ -14,7 +14,7 @@
 
 ### Procédure
 
-1. **Email confidentiel** à : `privacy@naturegraph.fr`
+1. **Email confidentiel** à : `security@naturegraph.ca` (en cours de configuration, cf. NG-009 ; domaine principal .ca)
 2. **Sujet** : `[SECURITY] Vulnérabilité - <courte description>`
 3. **Contenu** :
    - Description technique
