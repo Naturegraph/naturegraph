@@ -108,9 +108,32 @@ confirmer que `app_config` existe et que `species_master` est seede, avant le re
 Apres l'etape 3-4, on verifie ensemble le bundle du preview develop (il doit contenir
 `nkgdgxwejqqnqmwqwegy`, pas `hrxgduvworofnrjmgpcj`).
 
+## Methode de reprise RECOMMANDEE (a froid) : dump du schema prod -> dev
+
+Vu le blocker (versions de migration dupliquees), NE PAS reessayer `db push`/`db reset`. Approche
+fiable qui contourne le probleme : repartir du schema PROD (connu-bon, complet) via un dump, et
+l'appliquer sur le dev. Ne touche JAMAIS la prod en ecriture (uniquement une lecture/dump).
+
+1. Relier la CLI a la PROD (pour le dump uniquement) :
+   `npx supabase link --project-ref hrxgduvworofnrjmgpcj` (mot de passe DB prod via `$env:SUPABASE_DB_PASSWORD`).
+   ⚠️ TANT QU'ON EST LIE A LA PROD : NE JAMAIS lancer `db reset`/`db push`. UNIQUEMENT `db dump`.
+2. Dumper le schema prod (lecture seule, schema SEUL, pas de donnees prod) :
+   `npx supabase db dump --schema public -f prod_schema.sql`
+3. Relier au DEV : `npx supabase link --project-ref nkgdgxwejqqnqmwqwegy` (mot de passe DB dev).
+4. Repartir d'un `public` propre sur le DEV (SQL editor du projet dev) :
+   `drop schema public cascade; create schema public;`
+   `grant usage on schema public to postgres, anon, authenticated, service_role;`
+   `grant all on schema public to postgres, service_role;`
+5. Appliquer `prod_schema.sql` sur le DEV (SQL editor du dev, ou psql avec la connection string dev).
+6. Seed `species_master` (+ taxonomy si besoin) sur le dev.
+7. Repointer les variables Vercel Preview -> dev, redeploy develop, valider.
+
+A faire posement, verif a chaque etape. Alternative long terme (pour CI/CLI) : renommer les migrations
+en versions uniques `YYYYMMDDHHMMSS`, mais le dump prod->dev suffit pour cloisonner sans ce chantier.
+
 ## Definition of Done
 
-- [ ] `npx supabase db push` applique sur dev (app_config presente)
+- [ ] Dev rebuild a partir du schema prod (ou migrations renommees) : `app_config` presente
 - [ ] `species_master` seede sur dev
 - [ ] Variables Vercel Preview repointees sur le projet dev
 - [ ] Preview develop valide (app OK, donnees de test dev, zero donnee prod)
