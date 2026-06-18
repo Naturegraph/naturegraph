@@ -159,14 +159,43 @@ https://*.supabase.co …; connect-src 'self' https://*.supabase.co wss://*.supa
 
 ## 6. Verdict Vercel
 
-| Domaine               | État                                              |
-| --------------------- | ------------------------------------------------- |
-| Headers HTTP sécurité | ✅ complets (CSP, HSTS, X-Frame-Options…)         |
-| CSP                   | 🟡 `'unsafe-inline'` : durcir en Phase 2          |
-| Variables d'env       | 🟠 vérifier cloisonnement prod/preview + 0 secret |
-| Preview protection    | ✅ Vercel Auth (anti-leak)                        |
-| Accès testeurs        | 🟡 désactiver Auth sur prod uniquement            |
-| Accès équipe          | 🟡 moindre privilège + 2FA                        |
+| Domaine               | État                                                                    |
+| --------------------- | ----------------------------------------------------------------------- |
+| Headers HTTP sécurité | ✅ complets (CSP, HSTS, X-Frame-Options…)                               |
+| CSP                   | 🟡 `'unsafe-inline'` : durcir en Phase 2                                |
+| Variables d'env       | 🔴 cloisonnement KO : Preview tape la prod (cf. addendum) ; 0 secret OK |
+| Preview protection    | ✅ Vercel Auth (anti-leak)                                              |
+| Accès testeurs        | 🟡 désactiver Auth sur prod uniquement                                  |
+| Accès équipe          | 🟡 moindre privilège + 2FA                                              |
 
 **Vercel est bien configuré.** Action principale avant prod : vérifier le
 cloisonnement des variables d'environnement (prod vs preview) et l'accès des testeurs.
+
+---
+
+## Addendum 2026-06-17 : cloisonnement vérifié (finding confirmé, NG-007)
+
+Vérification effectuée. Constats :
+
+- **Aucun secret côté Vercel** : toutes les variables sont `VITE_*` (publiques par design),
+  aucune `service_role`. OK.
+- `VITE_APP_ENV` : Production = `production`, Preview = `staging`. OK.
+- **🔴 Cloisonnement Supabase KO** : `VITE_SUPABASE_URL` vaut le projet **prod**
+  (`hrxgduvworofnrjmgpcj`) **en Production ET en Preview**. Comme `vercel.json` déploie
+  `develop` et `staging` en environnement Preview, ces deux branches lisent/écrivent
+  actuellement dans la **base de production**. Risque : pollution des données prod par les
+  tests, exposition de données réelles sur des URLs preview.
+- Nettoyé : 2 variables résiduelles scopées sur la branche morte `feat/v1.2.0-carnets`
+  supprimées.
+
+**Pourquoi non corrigé immédiatement** : la sonde du projet dev (`nkgdgxwejqqnqmwqwegy`)
+montre qu'il n'est pas à parité (table `app_config` manquante, `species_master` vide,
+`taxonomy_nodes` partielle). Repointer Preview vers dev maintenant casserait develop/staging.
+
+**Remédiation obligatoire avant lancement public** :
+
+1. Mettre le projet dev à parité (appliquer toutes les migrations `supabase/migrations/`,
+   au moins `app_config` ; seeder `species_master`).
+2. Repointer les variables Vercel Preview vers le projet dev (`VITE_SUPABASE_URL` +
+   `VITE_SUPABASE_ANON_KEY` format legacy JWT).
+3. Redéployer `develop` et valider l'app sur la base dev.
