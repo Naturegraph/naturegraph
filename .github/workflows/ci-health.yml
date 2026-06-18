@@ -1,20 +1,20 @@
-# CI Health Check — exécution automatique toutes les 4 heures
+# CI Health Check : exécution automatique toutes les 4 heures
 #
 # Non-destructif : ne commit, push, pull, ou merge JAMAIS.
 # Ouvre automatiquement une issue GitHub si un check critique échoue.
 #
 # Secrets attendus (à configurer dans Settings > Secrets and variables > Actions) :
-#   SUPABASE_URL       — URL projet Supabase (ex: https://xxx.supabase.co)
-#   SUPABASE_ANON_KEY  — clé anon publique (safe à exposer, mais préférable en secret)
+#   SUPABASE_URL       : URL projet Supabase (ex: https://xxx.supabase.co)
+#   SUPABASE_ANON_KEY  : clé anon publique (safe à exposer, mais préférable en secret)
 #
 # Variables repository (facultatives, sinon les defaults du script sont utilisés) :
-#   STAGING_URL        — URL du staging (défaut: preview Vercel branch staging)
-#   PROD_URL           — URL de la prod   (défaut: https://naturegraph.ca)
+#   STAGING_URL        : URL du staging (défaut: preview Vercel branch staging)
+#   PROD_URL           : URL de la prod   (défaut: https://naturegraph.ca)
 
 name: CI Health
 
 on:
-  # Cron UTC — toutes les 4 heures (00:00, 04:00, 08:00, 12:00, 16:00, 20:00)
+  # Cron UTC : toutes les 4 heures (00:00, 04:00, 08:00, 12:00, 16:00, 20:00)
   schedule:
     - cron: '0 */4 * * *'
   # Permet aussi un déclenchement manuel depuis l'onglet Actions
@@ -28,7 +28,7 @@ permissions:
 jobs:
   health:
     runs-on: ubuntu-latest
-    # Timeout global — un check figé ne doit pas bloquer le runner
+    # Timeout global : un check figé ne doit pas bloquer le runner
     timeout-minutes: 5
 
     steps:
@@ -76,7 +76,7 @@ jobs:
             const summary = fs.readFileSync('health-summary.txt', 'utf8')
             const title = `[ci-health] Anomalie detectee ${new Date().toISOString().slice(0, 16)}`
             const body = [
-              '## CI Health Check — echec',
+              '## CI Health Check : echec',
               '',
               'Le check automatique a detecte une erreur critique.',
               '',

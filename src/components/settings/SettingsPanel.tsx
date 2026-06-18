@@ -1,11 +1,11 @@
 /**
- * SettingsPanel — Panneau "Paramètres" (owner only)
+ * SettingsPanel : Panneau "Paramètres" (owner only)
  *
  * Pixel-perfect Figma 6385:175483 (desktop) / 6385:175242 (mobile).
  * Ouvert depuis le bouton "Paramètres" du ProfileHeader (mode owner).
  *
  * Layout :
- *   - Mobile : full-page (fixed inset-0) — comme EditProfilePanel
+ *   - Mobile : full-page (fixed inset-0) : comme EditProfilePanel
  *   - Desktop : panneau latéral droit 420px
  *   - Backdrop cliquable + ESC pour fermer
  *
@@ -20,7 +20,7 @@
  *
  * Footer : CGU + Politique de confidentialité + version app.
  *
- * TODO [BACKEND] Phase 2 — voir second-agent/03-profil-backend-notes.md §15.
+ * TODO [BACKEND] Phase 2 : voir second-agent/03-profil-backend-notes.md §15.
  */
 
 import { useEffect, useRef, useState } from 'react'
@@ -57,7 +57,7 @@ import { SettingsHelpView } from './SettingsHelpView'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-/** ID des sous-vues — chaque section ouvre une sous-vue interne au panel. */
+/** ID des sous-vues : chaque section ouvre une sous-vue interne au panel. */
 type SettingsSection =
   | 'security'
   | 'blocking'
@@ -72,19 +72,19 @@ interface SettingsPanelProps {
   onClose: () => void
 }
 
-// ─── URL Discord — communauté + retours produit ──────────────────────────────
+// ─── URL Discord : communauté + retours produit ──────────────────────────────
 // Le bouton "Partage tes idées et retours" ouvre directement le Discord
 // Naturegraph : permet aux utilisateurs de rejoindre la communauté et
 // d'échanger en direct avec l'équipe sur le produit.
 //
-// TODO — exposer via `VITE_DISCORD_INVITE_URL` dans `.env` pour rotation
+// TODO : exposer via `VITE_DISCORD_INVITE_URL` dans `.env` pour rotation
 // des invites (les liens Discord peuvent expirer ou être révoqués).
 const FEEDBACK_URL = 'https://discord.gg/naturegraph'
 
 // ─── Version app ─────────────────────────────────────────────────────────────
 // Lecture dynamique depuis `package.json` au build time. Vite tree-shake
 // l'import JSON pour ne garder que la valeur `version` dans le bundle final
-// — pas de surpoids. Mise à jour automatique à chaque release.
+// : pas de surpoids. Mise à jour automatique à chaque release.
 import { version as APP_VERSION } from '../../../package.json'
 
 // ─── Composant principal ──────────────────────────────────────────────────────
@@ -115,7 +115,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
   // ── Fermer avec Escape ───────────────────────────────────────────────────
   // Ordre de priorité : modal logout/delete > sous-vue > fermeture panel.
-  // Les modals gèrent leur propre Escape interne — ce listener ne s'exécute
+  // Les modals gèrent leur propre Escape interne : ce listener ne s'exécute
   // que si aucun handler enfant ne stoppe la propagation (ce qui est le cas).
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -152,7 +152,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   }
 
   /**
-   * Export RGPD — déclenche la génération + téléchargement automatique du JSON.
+   * Export RGPD : déclenche la génération + téléchargement automatique du JSON.
    * RGPD Art. 20 (portabilité) + Loi 25 Art. 27.3.
    * L'Edge Function `export-data` génère un export complet (profile, settings,
    * posts, media, comments, reactions, follows, notebooks) puis retourne une
@@ -218,7 +218,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
         onClick={onClose}
       />
 
-      {/* Panel — full page mobile, latéral droit 448px desktop (Figma).
+      {/* Panel : full page mobile, latéral droit 448px desktop (Figma).
           bg #FFFDF8 (Background/Neutral/Primary), shadow 0 6px 16px -4px rgba(0,0,0,0.1).
           Padding 24px (md:p-6) hors mobile (qui respecte safe-area). */}
       <div
@@ -230,11 +230,11 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
         className="fixed inset-0 z-50 bg-[var(--color-bg-primary)] flex flex-col focus-visible:outline-none shadow-[0_6px_16px_-4px_rgba(0,0,0,0.1)] md:inset-x-auto md:right-0 md:top-0 md:bottom-0 md:w-[448px] md:rounded-l-2xl"
       >
         {/* ── Header ── Figma Frame 625795 :
-            Titre "Paramètres" — Quicksand bold 32px (Title/H3, line-height 38px).
+            Titre "Paramètres" : Quicksand bold 32px (Title/H3, line-height 38px).
             Bouton X 24px à droite. Padding 24px sur le container, mobile
             ajoute safe-area-inset-top. */}
         <div className="flex items-center justify-between gap-6 px-6 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] md:pt-6 shrink-0">
-          {/* Bouton back si dans une sous-vue — cercle bordured (Figma). */}
+          {/* Bouton back si dans une sous-vue : cercle bordured (Figma). */}
           {section !== null ? (
             <button
               type="button"
@@ -281,7 +281,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
             color #424747). Hauteur 52px, centré.
             Visible uniquement sur la liste principale.
 
-            Les liens CGU/Politique sont stylés mais inactifs pour le MVP —
+            Les liens CGU/Politique sont stylés mais inactifs pour le MVP -
             le contenu juridique sera ajouté ultérieurement (cf. Phase 3).
             On utilise des <button type="button"> pour rester accessibles
             au clavier sans déclencher de navigation. */}
@@ -330,7 +330,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
       {/* Modal de confirmation déconnexion (variant default).
           Réutilise <ConfirmModal /> directement (pas de wrapper dédié car
-          un seul usage — code minimal sans abstraction inutile). */}
+          un seul usage : code minimal sans abstraction inutile). */}
       {showLogoutModal && (
         <ConfirmModal
           title={t('settings.logout.title', {
@@ -417,7 +417,7 @@ function SettingsList({
         })}
         onClick={() => onOpenSection('license')}
       />
-      {/* Export RGPD — droit à la portabilité (Art. 20 / Loi 25 Art. 27.3).
+      {/* Export RGPD : droit à la portabilité (Art. 20 / Loi 25 Art. 27.3).
           Téléchargement d'un JSON complet de toutes les données de l'utilisateur
           via l'Edge Function `export-data`. URL signée 24h, bucket privé. */}
       <SettingsItem
@@ -465,7 +465,7 @@ interface SettingsItemProps {
   noTrailing?: boolean
   /** Si true, label + icône en rouge (Suppression compte). */
   danger?: boolean
-  /** Si true, item désactivé (en cours d'opération asynchrone — ex: export RGPD). */
+  /** Si true, item désactivé (en cours d'opération asynchrone : ex: export RGPD). */
   disabled?: boolean
   /**
    * Compteur affiche en pill avant le chevron (Confidentialite).
@@ -487,10 +487,10 @@ function SettingsItem({
 }: SettingsItemProps) {
   // Figma Frame 4707 : item h-14 (56px), gap 32px entre contenu gauche
   // (icon+label) et trailing icon. Gap 16px entre icon et label. Séparateur
-  // 1px #C4C4CC (Stroke/Light) sous chaque item — `border-b` sur le <li>
+  // 1px #C4C4CC (Stroke/Light) sous chaque item : `border-b` sur le <li>
   // évite le dernier via `last:border-b-0`.
   //
-  // Hover : pas de background — on change uniquement la couleur du texte +
+  // Hover : pas de background : on change uniquement la couleur du texte +
   // icônes en violet (action-default). Les SVG Lucide héritent de
   // `currentColor` donc le changement de `text-*` propage à l'icône et au
   // chevron automatiquement. L'item danger reste rouge (pas de hover violet).
@@ -562,7 +562,7 @@ function SettingsItem({
 
 // ─── Sous-composant : sous-vue Bientôt / Licence ─────────────────────────────
 
-// Type minimal pour la signature de `t` qu'on passe ici — on n'utilise que la
+// Type minimal pour la signature de `t` qu'on passe ici : on n'utilise que la
 // forme `(key, { defaultValue }) => string`. Évite le typing complet TFunction
 // qui casserait sur l'inférence des namespaces i18next v25.
 type SimpleT = (key: string, options: { defaultValue: string }) => string
@@ -610,10 +610,10 @@ function SettingsSubView({ section, onSectionChange }: SettingsSubViewProps) {
     return <SettingsLicenseView onOpenTerms={() => onSectionChange?.('terms')} />
   }
 
-  // BATCH 97 : sous-vues CGU + Politique de confidentialité — réutilisent le
+  // BATCH 97 : sous-vues CGU + Politique de confidentialité : réutilisent le
   // même contenu i18n que les pages publiques /legal et /privacy. Le retour
   // remet le SettingsPanel en mode liste principale (pas de navigation
-  // externe) — pas de conflit avec l'état ouvert du panel.
+  // externe) : pas de conflit avec l'état ouvert du panel.
   if (section === 'terms') {
     return <SettingsLegalDocView kind="terms" />
   }
@@ -716,7 +716,7 @@ function SettingsBlockingView() {
 // ─── Sous-vue : Licence et droits d'auteur ────────────────────────────────────
 
 /**
- * Texte légal sur les droits d'auteur et sources tierces — pixel-perfect Figma.
+ * Texte légal sur les droits d'auteur et sources tierces : pixel-perfect Figma.
  *
  * 5 sections séparées par dividers (1px bg-border) :
  *   1. Utilisation des contenus (intro)
@@ -828,7 +828,7 @@ function SettingsLicenseView({ onOpenTerms }: { onOpenTerms?: () => void }) {
             {' : '}
             {t('settings.license.gbifDesc', {
               defaultValue:
-                'référentiel taxonomique international (Global Biodiversity Information Facility) — CC0 domaine public.',
+                'référentiel taxonomique international (Global Biodiversity Information Facility) : CC0 domaine public.',
             })}
           </li>
           <li>
@@ -842,7 +842,7 @@ function SettingsLicenseView({ onOpenTerms }: { onOpenTerms?: () => void }) {
             </a>
             {' : '}
             {t('settings.license.wikidataDesc', {
-              defaultValue: 'noms vernaculaires en français et en québécois — CC0 domaine public.',
+              defaultValue: 'noms vernaculaires en français et en québécois : CC0 domaine public.',
             })}
           </li>
         </ul>
@@ -891,7 +891,7 @@ function SettingsLicenseView({ onOpenTerms }: { onOpenTerms?: () => void }) {
             defaultValue:
               "Un doute sur l'utilisation de vos photos ou des données ? Consultez nos ",
           })}
-          {/* Lien actif vers la sous-vue CGU du SettingsPanel — ouvre la
+          {/* Lien actif vers la sous-vue CGU du SettingsPanel : ouvre la
               section 'terms' avec le contenu i18n partagé avec /legal
               (Nicolas 2026-05-22). */}
           <button

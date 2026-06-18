@@ -1,5 +1,5 @@
 /**
- * Tests unitaires — groupNotifications
+ * Tests unitaires : groupNotifications
  *
  * Couvre :
  *   - Regroupement identiques < 24h

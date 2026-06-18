@@ -1,5 +1,5 @@
 /**
- * Tests unit — badgeHelpers
+ * Tests unit : badgeHelpers
  *
  * Couvre `getBadgeEmoji` (lookup par ID ou texte FR + fallback plants).
  *

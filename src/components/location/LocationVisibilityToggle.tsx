@@ -1,5 +1,5 @@
 /**
- * LocationVisibilityToggle — Choix de la visibilité de localisation
+ * LocationVisibilityToggle : Choix de la visibilité de localisation
  * ==================================================================
  * 3 options : privé / région / ville+région
  *

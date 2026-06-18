@@ -1,5 +1,5 @@
 /**
- * SocialButton — Bouton d'authentification via un fournisseur social
+ * SocialButton : Bouton d'authentification via un fournisseur social
  * Affiche l'icône SVG officielle du provider (Google, Apple, Facebook).
  */
 

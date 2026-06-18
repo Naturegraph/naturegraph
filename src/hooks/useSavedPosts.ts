@@ -1,5 +1,5 @@
 /**
- * useSavedPosts — Hooks React Query pour les posts sauvegardés
+ * useSavedPosts : Hooks React Query pour les posts sauvegardés
  *
  * Voir second-agent/13 et savedPostsService.
  */

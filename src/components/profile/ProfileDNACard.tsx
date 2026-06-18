@@ -1,5 +1,5 @@
 /**
- * ProfileDNACard — Carte "ADN de l'observateur"
+ * ProfileDNACard : Carte "ADN de l'observateur"
  * ==============================================
  *
  * Design Figma 6385:74429 (desktop) / 6385:71694 (mobile, dans tab) :
@@ -22,7 +22,7 @@ import { CATEGORY_EMOJIS } from '@/utils/badgeHelpers'
 import type { ProfileDisplayData } from './ProfileHeader'
 
 interface ProfileDNACardProps {
-  /** Liste des catégories avec % — vient de profile.interests */
+  /** Liste des catégories avec % : vient de profile.interests */
   interests: ProfileDisplayData['interests']
   /** Si true, padding réduit (utilisé dans le tab mobile) */
   compact?: boolean
@@ -62,7 +62,7 @@ export function ProfileDNACard({ interests, compact = false, maxItems = 3 }: Pro
         compact ? 'p-4' : 'p-5'
       } flex flex-col gap-3`}
     >
-      {/* Header card — Paragraph/Base 16px Bold (Figma 6385:74488 ; var
+      {/* Header card : Paragraph/Base 16px Bold (Figma 6385:74488 ; var
           Body/Bold/Size = 16). Le titre tient sur 1 ligne dans la card 320px. */}
       <div className="flex items-center gap-3">
         <span
@@ -79,7 +79,7 @@ export function ProfileDNACard({ interests, compact = false, maxItems = 3 }: Pro
         </h2>
       </div>
 
-      {/* Liste catégories + barres — gap-3 = Grid/sp-12 */}
+      {/* Liste catégories + barres : gap-3 = Grid/sp-12 */}
       {top.length === 0 ? (
         <p className="text-sm text-muted-foreground italic">
           {t('profile.dna.empty', {
@@ -100,7 +100,7 @@ export function ProfileDNACard({ interests, compact = false, maxItems = 3 }: Pro
                   </span>
                   <span className="font-bold text-foreground tabular-nums">{item.percent}%</span>
                 </div>
-                {/* Barre de progression — h-2 (Grid/sp-8). Track = blanc/cream
+                {/* Barre de progression : h-2 (Grid/sp-8). Track = blanc/cream
                     avec border discrète (Figma 6385:74495 Container neutre).
                     Fill = teal CLAIR Background/Highlight/Tertiary #33B6B6. */}
                 <div

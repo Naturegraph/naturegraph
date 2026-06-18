@@ -1,5 +1,5 @@
 /**
- * authStorage — Storage adapter dynamique pour Supabase Auth
+ * authStorage : Storage adapter dynamique pour Supabase Auth
  * ===========================================================
  *
  * Implémente le comportement "Se souvenir de moi" côté SPA :
@@ -8,14 +8,14 @@
  *   - remember = false → session écrite dans sessionStorage (effacée à la
  *                        fermeture du navigateur → reconnexion = nouveau OTP)
  *
- * BATCH 115 — Safety iOS Safari Private Mode :
+ * BATCH 115 : Safety iOS Safari Private Mode :
  *   Tous les accès localStorage/sessionStorage sont enveloppés dans try/catch.
  *   iOS Safari Private Mode lève QUOTA_EXCEEDED_ERR sur setItem au-delà de 0-5 MB.
  *   Sans try/catch, l'auth crash silencieusement et le user ne peut pas se logger.
  *   Fallback : memoire en cours (objet `memoryStorage`) → la session existe
  *   uniquement le temps de l'onglet (acceptable en mode privé).
  *
- * Limite connue — cookies HttpOnly impossibles en SPA pur :
+ * Limite connue : cookies HttpOnly impossibles en SPA pur :
  *   Un vrai stockage HttpOnly nécessiterait un backend proxy (Next.js SSR,
  *   edge function) émettant des cookies côté serveur. Ici on utilise le
  *   meilleur compromis possible en Vite SPA.
@@ -122,7 +122,7 @@ export function isRememberMeActive(): boolean {
  * Lecture : cherche dans les deux storages (permet de lire une session
  * existante sans connaître son origine).
  *
- * Écriture : route selon le flag — localStorage si "remember" actif,
+ * Écriture : route selon le flag : localStorage si "remember" actif,
  * sessionStorage sinon. Nettoie systématiquement l'autre storage pour
  * éviter les doublons/sessions orphelines.
  *
@@ -168,7 +168,7 @@ export function hasStoredAuthToken(): boolean {
 }
 
 /**
- * Purge totale côté client — à appeler depuis signOut() en complément
+ * Purge totale côté client : à appeler depuis signOut() en complément
  * de supabase.auth.signOut() (qui lui révoque aussi côté serveur).
  */
 export function clearAuthStorage(): void {

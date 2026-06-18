@@ -1,12 +1,12 @@
 /**
- * badgeHelpers — Emojis centralisés pour les catégories de biodiversité
+ * badgeHelpers : Emojis centralisés pour les catégories de biodiversité
  *                + emojis météo (Figma 6385:55806).
  *
  * SOURCE DE VÉRITÉ pour tous les emojis catégorie/météo dans l'application.
  * Utilisé dans l'onboarding, les badges profil, les posts, le formulaire
  * de contribution, etc.
  *
- * Les emojis doivent rester cohérents partout — ne jamais les dupliquer.
+ * Les emojis doivent rester cohérents partout : ne jamais les dupliquer.
  * Voir second-agent/09 et second-agent/11 pour le contexte.
  */
 
@@ -46,9 +46,9 @@ export function getBadgeEmoji(badge: string): string {
 }
 
 /**
- * Emojis météo — alignés Figma 6385:55806 (second-agent/11).
+ * Emojis météo : alignés Figma 6385:55806 (second-agent/11).
  * Utilisés dans FeedPost (affichage post) ET EncounterStep3 (formulaire de
- * contribution) — source de vérité unique pour rester cohérent.
+ * contribution) : source de vérité unique pour rester cohérent.
  */
 export const WEATHER_EMOJIS = {
   sunny: '☀️',

@@ -1,4 +1,4 @@
-# CODEOWNERS — Auto-assignation reviewers
+# CODEOWNERS : Auto-assignation reviewers
 # Documentation : https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 #
 # Usage : tout fichier modifié dans une PR auto-assigne le owner correspondant.

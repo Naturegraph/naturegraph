@@ -1,22 +1,22 @@
 /**
- * import-taxref.mjs — Import bulk du référentiel TAXREF dans taxref_cache
+ * import-taxref.mjs : Import bulk du référentiel TAXREF dans taxref_cache
  * =========================================================================
  * Lit le fichier CSV TAXREF officiel (INPN), filtre les 5 groupes cibles
  * du MVP, puis insère par batch dans Supabase.
  *
  * Source : https://inpn.mnhn.fr/telechargement/cadreReglementaire/referentielEspece/TAXREF
- * Licence : CC-BY (mention obligatoire dans l'UI — voir TaxrefCredit.tsx)
+ * Licence : CC-BY (mention obligatoire dans l'UI : voir TaxrefCredit.tsx)
  *
  * Usage :
  *   node scripts/import-taxref.mjs --file ./TAXREF_v18_0.csv [--dry-run] [--batch 500]
  *
  * Variables d'environnement requises (.env.local) :
  *   SUPABASE_URL=https://xxx.supabase.co
- *   SUPABASE_SERVICE_KEY=eyJ...  (service_role — jamais la clé anon)
+ *   SUPABASE_SERVICE_KEY=eyJ...  (service_role : jamais la clé anon)
  *
  * Groupes importés (MVP France) :
  *   Oiseaux | Mammifères | Insectes | Amphibiens | Reptiles
- *   → ~25 000–35 000 taxa selon la version TAXREF
+ *   → ~25 000-35 000 taxa selon la version TAXREF
  *
  * Format CSV TAXREF attendu (séparateur tabulation) :
  *   CD_NOM | CD_REF | RANG | LB_NOM | LB_AUTEUR | NOM_COMPLET |
@@ -44,7 +44,7 @@ const TARGET_GROUPS = new Map([
 /** TTL du cache : 90 jours */
 const CACHE_TTL_DAYS = 90
 
-/** Version TAXREF importée — mettre à jour à chaque nouvel import */
+/** Version TAXREF importée : mettre à jour à chaque nouvel import */
 const TAXREF_VERSION = 'v18'
 
 /** Taille des batches pour les inserts (évite les timeouts Supabase) */
@@ -164,7 +164,7 @@ function parseTsvLine(line, headers) {
  */
 async function insertBatch(batch, batchIndex) {
   if (DRY_RUN) {
-    console.log(`  [dry-run] batch ${batchIndex} — ${batch.length} lignes (non insérées)`)
+    console.log(`  [dry-run] batch ${batchIndex} : ${batch.length} lignes (non insérées)`)
     return { error: null }
   }
 

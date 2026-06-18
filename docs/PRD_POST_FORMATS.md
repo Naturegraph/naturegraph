@@ -1,9 +1,9 @@
-# PRD — Format des posts & composant FeedPost (Naturegraph)
+# PRD : Format des posts & composant FeedPost (Naturegraph)
 
-> **Statut** : Validé — MVP Sprint 2
+> **Statut** : Validé : MVP Sprint 2
 > **Auteur** : Nicolas Larrousse
 > **Date** : 2026-04-02
-> **Version** : 2.0 — Consolidation anatomie composant + specs images + data
+> **Version** : 2.0 : Consolidation anatomie composant + specs images + data
 
 ---
 
@@ -16,7 +16,7 @@ Naturegraph distingue deux formats de posts. Chaque format a ses propres champs 
 | **Rencontre nature** | `nature_encounter` | Observation documentée d'une ou plusieurs espèces | `Bird`     | `--color-success` | ✅ MVP      |
 | **Instant nature**   | `nature_instant`   | Capture spontanée : paysage, phénomène, ambiance  | `Mountain` | `--color-warning` | 🔜 Sprint 3 |
 
-> **Design tokens** — ne jamais utiliser de couleurs en dur :
+> **Design tokens** : ne jamais utiliser de couleurs en dur :
 >
 > - Rencontre nature : fond `var(--color-success-bg)` · icône `var(--color-success)` · #00673F / #C7F2DF
 > - Instant nature : fond `var(--color-warning-bg)` · icône `var(--color-warning)` · #6C350D / #FEE1C8
@@ -59,7 +59,7 @@ Le composant `FeedPost` est la brique centrale du feed. Il est composé de 3 zon
 | **Intérêt principal**  | Badge discret avec emoji de catégorie (ex : 🦅 Oiseaux)                            |
 | **Badge type de post** | Icône + label textuel (ex : "Rencontre nature"), fond coloré selon token DS        |
 | **Date**               | Format relatif (ex : "il y a 2 jours"), `<time datetime="...">` pour a11y          |
-| **Localisation**       | Affichée uniquement si `location_hidden = false` — texte "Lieu approximatif" sinon |
+| **Localisation**       | Affichée uniquement si `location_hidden = false` : texte "Lieu approximatif" sinon |
 | **Menu actions**       | Icône `···` (Ellipsis), ouvre bottom sheet : Signaler, Masquer, Partager           |
 
 > **Accessibilité** : le badge type de post doit toujours avoir un label textuel visible, pas seulement une icône.
@@ -82,7 +82,7 @@ Affichées uniquement si renseignées (chips discrets) :
 #### Badges espèces (`nature_encounter` uniquement)
 
 - 1 espèce → badge unique avec nom vernaculaire + nombre d'individus si > 1
-- 2–3 espèces → badges côte à côte (max 3 visibles)
+- 2-3 espèces → badges côte à côte (max 3 visibles)
 - 4+ espèces → "3 espèces + N autres"
 - Espèce inconnue → badge "Mystère 🔍" + badge "Aide demandée" si `helpIdentification = true`
 - `aria-label` avec nom complet sur chaque badge
@@ -95,7 +95,7 @@ Catégorie taxonomique · Nom vernaculaire (FR) · Nombre d'individus
 
 | Zone       | Contenu                                                        |
 | ---------- | -------------------------------------------------------------- |
-| **Gauche** | Réactions : ❤ (love) · ⭐ (admire) · 🔥 (fire) — avec compteur |
+| **Gauche** | Réactions : ❤ (love) · ⭐ (admire) · 🔥 (fire) : avec compteur |
 | **Centre** | Commentaires : icône `MessageCircle` + compteur                |
 | **Droite** | Enregistrer (`Bookmark`) · Partager via lien (`Share2`)        |
 
@@ -103,12 +103,12 @@ Catégorie taxonomique · Nom vernaculaire (FR) · Nombre d'individus
 
 - Compteur toujours affiché (afficher "0", ne pas masquer)
 - État `aria-pressed` sur chaque bouton réaction
-- Animation scale + color change au clic — respecte `prefers-reduced-motion: reduce`
-- Icônes : `Heart` (love) · `Star` (admire) · `Flame` (fire) — lucide-react
+- Animation scale + color change au clic : respecte `prefers-reduced-motion: reduce`
+- Icônes : `Heart` (love) · `Star` (admire) · `Flame` (fire) : lucide-react
 
 ---
 
-## 3. ImageSlider — Spécifications complètes
+## 3. ImageSlider : Spécifications complètes
 
 ### 3.1 Formats disponibles
 
@@ -131,7 +131,7 @@ Sélectionné par l'utilisateur à l'étape 1 du formulaire :
 | **3**     | Grande gauche (2/3 largeur) + 2 petites droite (1/3) | Gap 2px                                   |
 | **4**     | Grille 2×2 égale · badge "+N" sur dernière si N > 4  | Gap 2px                                   |
 
-**Image unique — règles spécifiques :**
+**Image unique : règles spécifiques :**
 
 - Image centrée dans le composant (object-fit: cover, object-position: center)
 - Fond appliqué : `var(--color-bg-tertiary)` (#FFF4E0 light, adapté dark mode)
@@ -139,7 +139,7 @@ Sélectionné par l'utilisateur à l'étape 1 du formulaire :
 
 ### 3.3 Carrousel (mobile)
 
-- Implémentation CSS native (`scroll-snap`, `overflow-x: auto`) — zéro dépendance JS
+- Implémentation CSS native (`scroll-snap`, `overflow-x: auto`) : zéro dépendance JS
 - Prochaine image partiellement visible : `peek-width: 24px` (incitation à swiper)
 - `overflow-hidden` sur le conteneur parent
 - Indicateurs de position : dots ou trait en bas du carrousel
@@ -155,11 +155,11 @@ Format auto-généré si non fourni par l'utilisateur :
 "Photo {index+1} sur {total}"        // fallback ultime
 ```
 
-Le champ alt est **obligatoire** — WCAG AA exige qu'aucune image ne soit sans description.
+Le champ alt est **obligatoire** : WCAG AA exige qu'aucune image ne soit sans description.
 
 ---
 
-## 4. Formats de posts — Champs & validation
+## 4. Formats de posts : Champs & validation
 
 ### 4.1 Rencontre nature (`nature_encounter`)
 
@@ -167,52 +167,52 @@ Le champ alt est **obligatoire** — WCAG AA exige qu'aucune image ne soit sans 
 
 Documenter une sortie nature avec rigueur citoyenne : quand, où, quelles espèces, combien d'individus, dans quel contexte. Les données alimentent la base de biodiversité communautaire et peuvent être valorisées scientifiquement.
 
-#### Flow de création — 3 étapes
+#### Flow de création : 3 étapes
 
 ```
-Étape 1 — Photos        →  Étape 2 — Espèces       →  Étape 3 — Contexte
+Étape 1 : Photos        →  Étape 2 : Espèces       →  Étape 3 : Contexte
 (optionnel, max 4)          (≥ 1 observation)           (titre + lieu requis)
 ```
 
-#### Étape 1 — Photos
+#### Étape 1 : Photos
 
 | Champ          | Type   | Requis | Contraintes                         | Notes                           |
 | -------------- | ------ | ------ | ----------------------------------- | ------------------------------- |
 | `photos`       | File[] | Non    | Max 4 photos, max 10 MB/photo       | WebP/JPEG/PNG acceptés          |
 | `aspect_ratio` | enum   | Non    | `landscape` / `portrait` / `square` | Visible seulement si photos > 0 |
 
-#### Étape 2 — Espèces observées
+#### Étape 2 : Espèces observées
 
 | Champ                      | Type                | Requis | Contraintes              | Notes                                         |
 | -------------------------- | ------------------- | ------ | ------------------------ | --------------------------------------------- |
 | `observations`             | ObservationEntry[]  | Oui    | Min 1, max 10 espèces    | Au moins 1 entrée avant de passer à l'étape 3 |
 | `observations[].species`   | TaxrefMatch \| null | Non    | null si isUnknown = true | Recherche TAXREF (autocomplete)               |
 | `observations[].isUnknown` | boolean             | Non    | true = "Je ne sais pas"  | Déclenche badge "Mystère"                     |
-| `observations[].count`     | integer             | Non    | 1–999, défaut = 1        | Nombre d'individus observés                   |
+| `observations[].count`     | integer             | Non    | 1-999, défaut = 1        | Nombre d'individus observés                   |
 | `helpIdentification`       | boolean             | Non    | Défaut false             | Demande aide communauté                       |
 
-#### Étape 3 — Contexte & détails
+#### Étape 3 : Contexte & détails
 
 | Champ             | Type     | Requis | Contraintes                                  | Notes                           |
 | ----------------- | -------- | ------ | -------------------------------------------- | ------------------------------- |
-| `title`           | string   | Oui    | 3–100 caractères                             | Titre de la rencontre           |
+| `title`           | string   | Oui    | 3-100 caractères                             | Titre de la rencontre           |
 | `description`     | string   | Non    | Max 1500 caractères                          | Récit libre                     |
 | `encounter_date`  | date     | Non    | ≤ aujourd'hui                                | Défaut = aujourd'hui            |
-| `time_of_day`     | enum     | Non    | morning / afternoon / dusk / evening / night | —                               |
-| `weather`         | enum     | Non    | sunny / cloudy / rainy / windy / snowy       | —                               |
-| `habitat`         | enum     | Non    | Voir liste ci-dessous                        | —                               |
+| `time_of_day`     | enum     | Non    | morning / afternoon / dusk / evening / night | :                               |
+| `weather`         | enum     | Non    | sunny / cloudy / rainy / windy / snowy       | :                               |
+| `habitat`         | enum     | Non    | Voir liste ci-dessous                        | :                               |
 | `location_name`   | string   | Oui    | Saisie ou géolocalisation                    | Nom du lieu (ville, site, etc.) |
-| `latitude`        | decimal  | Non    | —                                            | Prérempli si géoloc acceptée    |
-| `longitude`       | decimal  | Non    | —                                            | —                               |
+| `latitude`        | decimal  | Non    | :                                            | Prérempli si géoloc acceptée    |
+| `longitude`       | decimal  | Non    | :                                            | :                               |
 | `location_hidden` | boolean  | Non    | Défaut false                                 | Masque les coordonnées exactes  |
-| `tags`            | string[] | Non    | Max 5 tags, max 30 chars/tag                 | —                               |
-| `visibility`      | enum     | Non    | public / followers / private, défaut public  | —                               |
+| `tags`            | string[] | Non    | Max 5 tags, max 30 chars/tag                 | :                               |
+| `visibility`      | enum     | Non    | public / followers / private, défaut public  | :                               |
 
 **Valeurs habitat :** `forest` | `park_garden` | `prairie_heath` | `urban` | `river` | `lake_wetland` | `mountain` | `sea_coast`
 
 ### 4.2 Instant nature (`nature_instant`)
 
-> **Statut** : Prévu Sprint 3 — form non implémenté (route disponible : `/contribute?type=nature_instant`)
+> **Statut** : Prévu Sprint 3 : form non implémenté (route disponible : `/contribute?type=nature_instant`)
 
 #### Intention UX
 
@@ -224,13 +224,13 @@ Partage rapide d'un moment nature sans identification d'espèce. Paysage, phéno
 | ----------------- | -------- | ------ | ------------------------------ |
 | `photos`          | File[]   | Non    | Max 4, même contraintes        |
 | `phenomenon`      | string   | Non    | Description libre du phénomène |
-| `title`           | string   | Oui    | 3–100 caractères               |
+| `title`           | string   | Oui    | 3-100 caractères               |
 | `description`     | string   | Non    | Max 1500 caractères            |
 | `encounter_date`  | date     | Non    | Défaut aujourd'hui             |
-| `location_name`   | string   | Oui    | —                              |
-| `location_hidden` | boolean  | Non    | —                              |
-| `tags`            | string[] | Non    | —                              |
-| `visibility`      | enum     | Non    | —                              |
+| `location_name`   | string   | Oui    | :                              |
+| `location_hidden` | boolean  | Non    | :                              |
+| `tags`            | string[] | Non    | :                              |
+| `visibility`      | enum     | Non    | :                              |
 
 **Pas de champ espèce, pas d'identification.** Pas de badge taxonomique dans le feed.
 
@@ -251,7 +251,7 @@ La compression est gérée côté serveur via **Supabase Storage Transform** (qu
 | Upload          | Client                 | Max 10 MB, WebP/JPEG/PNG acceptés         |
 | Stockage origin | Supabase Storage       | Fichier original conservé (non modifié)   |
 | Serving         | Supabase Transform URL | `?width=1200&quality=85&format=webp`      |
-| Résultat cible  | —                      | ≤ 800 KB par image, qualité haute visible |
+| Résultat cible  | :                      | ≤ 800 KB par image, qualité haute visible |
 
 **Paramètres Supabase Transform selon format :**
 
@@ -262,7 +262,7 @@ Carré   (1:1)  : width=1200, height=1200, quality=85, format=webp
 Miniature      : width=400,  height=auto, quality=80, format=webp
 ```
 
-> La compression doit être **invisible pour l'utilisateur** — aucune pixelisation ni dégradation visible.
+> La compression doit être **invisible pour l'utilisateur** : aucune pixelisation ni dégradation visible.
 
 ### 5.3 Responsive & lazy loading
 
@@ -279,12 +279,12 @@ Miniature      : width=400,  height=auto, quality=80, format=webp
 | ---------------- | --------------------------------------------------------- |
 | **Chargement**   | Skeleton loader (pulse animation) sur toutes les zones    |
 | **Erreur image** | Placeholder gris avec icône `ImageOff` lucide + texte alt |
-| **Vide (feed)**  | Composant non affiché — géré par le parent                |
+| **Vide (feed)**  | Composant non affiché : géré par le parent                |
 | **Sans photos**  | Body sans zone image, titre + description en premier      |
 
 ---
 
-## 7. Schéma DB — Delta requis (multi-observations)
+## 7. Schéma DB : Delta requis (multi-observations)
 
 ### 7.1 Problème actuel
 
@@ -299,7 +299,7 @@ taxref_id         VARCHAR(50)
 
 Le nouveau form `nature_encounter` (Sprint 2) supporte **plusieurs espèces par rencontre**. Il faut une table de jointure.
 
-### 7.2 Nouvelle table — `post_observations`
+### 7.2 Nouvelle table : `post_observations`
 
 ```sql
 CREATE TABLE post_observations (
@@ -356,16 +356,16 @@ CREATE POLICY "post_observations_delete" ON post_observations
 
 | Champ sur `posts`       | Action                                                | Raison                                           |
 | ----------------------- | ----------------------------------------------------- | ------------------------------------------------ |
-| `species_name`          | **Déprécié** — garder pour rétro-compat migration     | Remplacé par `post_observations`                 |
-| `scientific_name`       | **Déprécié** — idem                                   | —                                                |
-| `taxonomic_group`       | **Garder** — dénormalisé                              | Premier groupe taxonomique, pour filtres feed    |
-| `identification_status` | **Garder** — dénormalisé                              | Statut global du post (au moins 1 obs = pending) |
+| `species_name`          | **Déprécié** : garder pour rétro-compat migration     | Remplacé par `post_observations`                 |
+| `scientific_name`       | **Déprécié** : idem                                   | :                                                |
+| `taxonomic_group`       | **Garder** : dénormalisé                              | Premier groupe taxonomique, pour filtres feed    |
+| `identification_status` | **Garder** : dénormalisé                              | Statut global du post (au moins 1 obs = pending) |
 | `multiple_observations` | **Déprécié** → remplacer par COUNT(post_observations) | Redondant                                        |
-| `species_identified`    | **Garder** — dénormalisé                              | true si toutes obs identifiées, pour badge feed  |
+| `species_identified`    | **Garder** : dénormalisé                              | true si toutes obs identifiées, pour badge feed  |
 | `taxref_id`             | **Déprécié** sur `posts`                              | Porté par `post_observations`                    |
-| `phenomenon`            | **Garder** — nature_instant                           | Pas de table séparée nécessaire                  |
+| `phenomenon`            | **Garder** : nature_instant                           | Pas de table séparée nécessaire                  |
 
-### 7.4 Mise à jour TypeScript — `database.ts`
+### 7.4 Mise à jour TypeScript : `database.ts`
 
 ```typescript
 export interface PostObservation {
@@ -410,7 +410,7 @@ supabase/migrations/20260402_post_observations.sql
 
 ---
 
-## 9. Accessibilité — checklist
+## 9. Accessibilité : checklist
 
 - [ ] Photos : `alt` descriptif obligatoire (auto-généré : "Observation de {species} à {location}" si vide)
 - [ ] Carrousel : `aria-label="Galerie de N photos"` sur le conteneur
@@ -430,7 +430,7 @@ supabase/migrations/20260402_post_observations.sql
 Toute espèce identifiée via TAXREF doit afficher l'attribution INPN :
 
 ```
-Source : TAXREF v17 — INPN / Muséum national d'Histoire naturelle
+Source : TAXREF v17 : INPN / Muséum national d'Histoire naturelle
 Licence : CC-BY
 ```
 
@@ -456,7 +456,7 @@ Affiché dans la page détail du post. Non requis dans le feed (sobriété).
 | ---------------------------------- | ------ | ----------------------------------------- |
 | Instant nature form                | 3      | UI à concevoir, route déjà en place       |
 | Import EXIF → pré-remplissage      | 3      | Date, GPS depuis métadonnées photo        |
-| Identification collaborative       | 3–4    | Proposals + votes sur espèces inconnues   |
+| Identification collaborative       | 3-4    | Proposals + votes sur espèces inconnues   |
 | Export Darwin Core (GBIF)          | 4      | Format standard biodiversité              |
 | Vidéo (max 60s)                    | 4      | Type media `video`, transcode Supabase    |
 | Validation expert                  | 5      | Rôle "expert" peut valider identification |

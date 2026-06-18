@@ -54,7 +54,7 @@
 
 Naturegraph respecte :
 
-- **RGPD** (Règlement Général sur la Protection des Données — UE)
-- **Loi 25** (Loi modernisant des dispositions législatives en matière de protection des renseignements personnels — Québec)
+- **RGPD** (Règlement Général sur la Protection des Données : UE)
+- **Loi 25** (Loi modernisant des dispositions législatives en matière de protection des renseignements personnels : Québec)
 
 Pour exercer tes droits RGPD/Loi 25 : Settings → Export RGPD ou Suppression compte.

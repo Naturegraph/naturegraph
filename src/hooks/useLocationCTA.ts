@@ -1,5 +1,5 @@
 /**
- * useLocationCTA — Toast + modale localisation 1x par session
+ * useLocationCTA : Toast + modale localisation 1x par session
  * ============================================================
  * Déclenche automatiquement la modale d'invitation à la localisation
  * pour les utilisateurs connectés qui ne sont pas encore localisés.
@@ -7,7 +7,7 @@
  * Règles UX :
  *   - Affiché au maximum 1 fois par session (sessionStorage)
  *   - Délai de 3s après montage (ne pas interrompre le chargement)
- *   - Jamais bloquant — la modale peut être ignorée
+ *   - Jamais bloquant : la modale peut être ignorée
  *   - Réactivable manuellement via openModal()
  */
 
@@ -20,7 +20,7 @@ import { useLocation } from '@/contexts/LocationContext'
 /** Clé sessionStorage pour éviter d'afficher deux fois par session */
 const SESSION_SHOWN_KEY = 'loc_cta_shown'
 
-/** Délai avant affichage (ms) — laisse le temps à la page de charger */
+/** Délai avant affichage (ms) : laisse le temps à la page de charger */
 const DISPLAY_DELAY_MS = 3000
 
 // ─── Hook ─────────────────────────────────────────────────────

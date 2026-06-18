@@ -1,5 +1,5 @@
 /**
- * betaService — Client pour le systeme de cles d'acces beta
+ * betaService : Client pour le systeme de cles d'acces beta
  *
  * Refs : BETA_CLOSED_ACCESS_STRATEGY.md v2.0 + BATCH 30
  *
@@ -35,7 +35,7 @@ export interface BetaQuotaStatus {
   is_full: boolean
 }
 
-// ─── Validation READ-ONLY (BATCH 45 — welcome screen) ──────────────────────
+// ─── Validation READ-ONLY (BATCH 45 : welcome screen) ──────────────────────
 
 /**
  * Verifie la validite d'une cle beta SANS la consommer.
@@ -88,7 +88,7 @@ export async function checkBetaAccessKey(code: string): Promise<BetaKeyValidatio
  *
  * Si valid=true, le caller DOIT enchainer immediatement avec `signUp(email)`.
  * Si signup echoue ensuite, la cle reste "claimee" (perdue). Acceptable
- * pour MVP — Phase 2 pourra ajouter un timeout de claim.
+ * pour MVP : Phase 2 pourra ajouter un timeout de claim.
  */
 export async function validateBetaKey(code: string): Promise<BetaKeyValidation> {
   if (!supabase) {
@@ -102,7 +102,7 @@ export async function validateBetaKey(code: string): Promise<BetaKeyValidation> 
     )
 
     if (error) {
-      // Edge Function 4xx/5xx — erreur reseau ou serveur
+      // Edge Function 4xx/5xx : erreur reseau ou serveur
       return { valid: false, reason: 'server_error' }
     }
 
@@ -200,7 +200,7 @@ export interface BetaInviteResult {
  *
  * Invoque l'Edge Function `send-beta-invite` qui, côté serveur :
  *   - vérifie que l'appelant est un admin actif,
- *   - appelle `auth.admin.inviteUserByEmail` — Supabase Auth envoie lui-même
+ *   - appelle `auth.admin.inviteUserByEmail` : Supabase Auth envoie lui-même
  *     l'email d'invitation, par le même canal que les emails de login,
  *   - met à jour le suivi sur `beta_waitlist` (invited_at, email_status…).
  *
@@ -230,7 +230,7 @@ export async function sendBetaInvite(waitlistId: string): Promise<BetaInviteResu
         try {
           return (await ctx.json()) as BetaInviteResult
         } catch {
-          /* body non-JSON — on retombe sur server_error ci-dessous */
+          /* body non-JSON : on retombe sur server_error ci-dessous */
         }
       }
     }

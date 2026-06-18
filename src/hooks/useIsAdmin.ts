@@ -1,5 +1,5 @@
 /**
- * useIsAdmin — Role et permissions de l'utilisateur courant (RBAC)
+ * useIsAdmin : Role et permissions de l'utilisateur courant (RBAC)
  *
  * Lit la row active dans `admin_users` correspondant a l'`auth.uid()`.
  *

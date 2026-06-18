@@ -94,7 +94,7 @@ Deno.serve(async (req: Request) => {
         }
       } catch (err) {
         // Si un bucket n'existe pas (ex: migration pas appliquée sur cet env),
-        // on log mais on continue — la suppression des autres buckets ne doit
+        // on log mais on continue : la suppression des autres buckets ne doit
         // pas être bloquée par un seul bucket manquant.
         console.warn(`[delete-account] Failed to clean bucket "${bucket}":`, err)
       }

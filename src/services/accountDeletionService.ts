@@ -1,5 +1,5 @@
 /**
- * accountDeletionService — Suppression / anonymisation de compte
+ * accountDeletionService : Suppression / anonymisation de compte
  * ================================================================
  *
  * Wrapper TypeScript autour de l'Edge Function `delete-account` (RGPD).

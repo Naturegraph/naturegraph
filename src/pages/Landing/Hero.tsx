@@ -1,5 +1,5 @@
 /**
- * Hero — Section d'accueil principale
+ * Hero : Section d'accueil principale
  * =====================================
  * Design épuré : typographie forte centrée sur fond teal,
  * orbes de gradient animées (mint/violet) en arrière-plan.
@@ -59,7 +59,7 @@ const springConfig = { damping: 20, stiffness: 80, mass: 0.6 }
 /** Chaque orbe : apparence + position au repos + force de répulsion */
 const orbConfigs = [
   {
-    /* Grande orbe mint — bas gauche (BATCH 114 : scale mobile pour éviter overflow horizontal) */
+    /* Grande orbe mint : bas gauche (BATCH 114 : scale mobile pour éviter overflow horizontal) */
     size: 'w-[260px] h-[260px] sm:w-[420px] sm:h-[420px] md:w-[500px] md:h-[500px] lg:w-[700px] lg:h-[700px]',
     color1: 'var(--color-accent-mint)',
     color2: 'var(--hero-orb-mint-20)',
@@ -71,7 +71,7 @@ const orbConfigs = [
     strength: 80,
   },
   {
-    /* Orbe violette — haut droite */
+    /* Orbe violette : haut droite */
     size: 'w-[220px] h-[220px] sm:w-[340px] sm:h-[340px] md:w-[400px] md:h-[400px] lg:w-[600px] lg:h-[600px]',
     color1: 'var(--color-action-default)',
     color2: 'var(--hero-orb-action-15)',
@@ -83,7 +83,7 @@ const orbConfigs = [
     strength: 70,
   },
   {
-    /* Orbe mint — centre droite */
+    /* Orbe mint : centre droite */
     size: 'w-[140px] h-[140px] sm:w-[200px] sm:h-[200px] md:w-[250px] md:h-[250px] lg:w-[350px] lg:h-[350px]',
     color1: 'var(--color-accent-mint)',
     color2: 'var(--hero-orb-mint-12)',
@@ -95,7 +95,7 @@ const orbConfigs = [
     strength: 100,
   },
   {
-    /* Orbe teal — haut gauche */
+    /* Orbe teal : haut gauche */
     size: 'w-[160px] h-[160px] sm:w-[240px] sm:h-[240px] md:w-[300px] md:h-[300px]',
     color1: 'var(--color-highlight-tertiary)',
     color2: 'var(--hero-orb-teal-10)',
@@ -113,7 +113,7 @@ const orbConfigs = [
 /**
  * Chaque orbe a un "centre au repos" (anchorX/Y en %).
  * Quand la souris s'approche, l'orbe est repoussée dans la direction
- * opposée — comme de la mousse écartée par un doigt.
+ * opposée : comme de la mousse écartée par un doigt.
  * `strength` contrôle l'amplitude max du déplacement (en px).
  */
 function GradientOrb({
@@ -204,7 +204,7 @@ function GradientOrb({
   )
 }
 
-/* ── Spotlight curseur — halo lumineux qui suit la souris ─────────── */
+/* ── Spotlight curseur : halo lumineux qui suit la souris ─────────── */
 
 function CursorSpotlight({ mouse }: { mouse: MouseTracking }) {
   const { mouseXPx, mouseYPx, containerW, containerH } = mouse
@@ -219,7 +219,7 @@ function CursorSpotlight({ mouse }: { mouse: MouseTracking }) {
     ([my, ch]: number[]) => (ch > 0 ? `${(my / ch) * 100}%` : '50%'),
   )
 
-  /* Gradient radial qui suit la souris — utilise les tokens DS */
+  /* Gradient radial qui suit la souris : utilise les tokens DS */
   const spotlightBg = useTransform(
     [spotX, spotY] as MotionValue<string>[],
     ([x, y]: string[]) =>
@@ -270,7 +270,7 @@ function ScrollIndicator() {
   )
 }
 
-/* ── Hook — tracking souris relatif à un container ─────────────────── */
+/* ── Hook : tracking souris relatif à un container ─────────────────── */
 
 /**
  * Retourne les valeurs de motion (position + dimensions)
@@ -290,7 +290,7 @@ function useMouseTracking() {
 
   const mouse: MouseTracking = { mouseXPx, mouseYPx, containerW, containerH }
 
-  // Throttle via requestAnimationFrame (QW-I1 / T-074) — limite a ~60fps max.
+  // Throttle via requestAnimationFrame (QW-I1 / T-074) : limite a ~60fps max.
   // Avant : handleMouseMove fire a chaque pixel deplacé (potentiellement 200+ fois/sec
   // sur ecran haute frequence) → CPU + batterie mobile + bas de gamme.
   // Apres : 1 update par frame (RAF) → fluide visuellement, gain CPU significatif.
@@ -355,7 +355,7 @@ export function Hero({ onNavigate }: HeroProps) {
         {/*
           Effets décoratifs (spotlight + orbes) désactivés si l'utilisateur
           a activé prefers-reduced-motion. Le fond `hero-gradient-bg` reste
-          visible — seuls les calculs JS coûteux et les animations sont coupés.
+          visible : seuls les calculs JS coûteux et les animations sont coupés.
         */}
         {!prefersReducedMotion && (
           <>

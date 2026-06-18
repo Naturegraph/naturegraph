@@ -1,5 +1,5 @@
 /**
- * StepIndicator — Barre de progression segmentée
+ * StepIndicator : Barre de progression segmentée
  * ================================================
  * Affiche `current/total` étapes via une barre segmentée.
  * Utilisé dans l'onboarding (4 occurrences répétées avec dupplications).
@@ -12,7 +12,7 @@ export interface StepIndicatorProps {
   current: number
   /** Nombre total d'étapes */
   total: number
-  /** Texte ARIA descriptif (i18n) — ex: "Étape 2 sur 4" */
+  /** Texte ARIA descriptif (i18n) : ex: "Étape 2 sur 4" */
   ariaLabel?: string
   /** Classes additionnelles */
   className?: string

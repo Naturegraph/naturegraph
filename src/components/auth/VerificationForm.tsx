@@ -1,5 +1,5 @@
 /**
- * VerificationForm — Saisie du code OTP à 6 chiffres
+ * VerificationForm : Saisie du code OTP à 6 chiffres
  * Auto-avance entre les champs, auto-submit, copier/coller, timer 2 min.
  */
 
@@ -37,7 +37,7 @@ export function VerificationForm({
   const [isLoading, setIsLoading] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
-  // Hint OTP en mode démo — recalculé après chaque renvoi
+  // Hint OTP en mode démo : recalculé après chaque renvoi
   const [demoOtp, setDemoOtp] = useState<string | null>(() =>
     !isSupabaseConfigured ? getDemoOtp(email) : null,
   )
@@ -96,7 +96,7 @@ export function VerificationForm({
     if (isLoading) return
 
     setIsLoading(true)
-    // Routé via le contexte — fonctionne en mode démo ET avec Supabase réel
+    // Routé via le contexte : fonctionne en mode démo ET avec Supabase réel
     const { error: verifyError } = await verifyOtp(email, fullCode)
     setIsLoading(false)
 
@@ -115,7 +115,7 @@ export function VerificationForm({
     setTimer(TIMER_SECONDS)
     setError(null)
 
-    // Régénère le code OTP — fonctionne en mode démo et Supabase réel
+    // Régénère le code OTP : fonctionne en mode démo et Supabase réel
     const { error: resendError } = await signInWithOtp(email)
     if (resendError) {
       setError(resendError.message)
@@ -159,7 +159,7 @@ export function VerificationForm({
             {t('auth.verify.codeLabel')}
           </p>
 
-          {/* Inputs OTP — autocomplete one-time-code pour iOS auto-fill + aria-label (T-054) */}
+          {/* Inputs OTP : autocomplete one-time-code pour iOS auto-fill + aria-label (T-054) */}
           <div
             className="flex gap-2 mb-3"
             onPaste={handlePaste}
@@ -200,7 +200,7 @@ export function VerificationForm({
             </p>
           )}
 
-          {/* Timer — aria-live polite pour lecteurs d'ecran (T-055) */}
+          {/* Timer : aria-live polite pour lecteurs d'ecran (T-055) */}
           <p
             className="text-sm text-[var(--color-text-tertiary)] mb-4"
             aria-live="polite"
@@ -209,7 +209,7 @@ export function VerificationForm({
             {t('auth.verify.timer', { time: formatTime(timer) })}
           </p>
 
-          {/* Hint OTP — mode démo uniquement (Supabase non configuré).
+          {/* Hint OTP : mode démo uniquement (Supabase non configuré).
               BATCH 17 / T-105 : couleurs hardcodees remplacees par tokens DS. */}
           {!isSupabaseConfigured && demoOtp && (
             <div className="mb-6 flex items-center gap-2 px-4 py-3 rounded-lg bg-primary-light border border-primary/40">

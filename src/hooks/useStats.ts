@@ -1,8 +1,8 @@
 /**
- * useStats — Hooks React Query pour les stats Impact + Tendances
+ * useStats : Hooks React Query pour les stats Impact + Tendances
  *
  * Utilisé par StatsSidebar pour afficher les données réelles Supabase.
- * Cache invalidé quotidiennement (staleTime: 1 jour) — ces stats ne changent pas
+ * Cache invalidé quotidiennement (staleTime: 1 jour) : ces stats ne changent pas
  * assez souvent pour justifier des refetch fréquents.
  */
 
@@ -22,7 +22,7 @@ import {
   type WeekProgress,
 } from '@/services/statsService'
 
-/** Durée de fraîcheur du cache — 1 heure (compromis fraîcheur / sobriété réseau) */
+/** Durée de fraîcheur du cache : 1 heure (compromis fraîcheur / sobriété réseau) */
 const STATS_STALE_TIME = 60 * 60 * 1000
 
 /**

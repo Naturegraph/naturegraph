@@ -1,5 +1,5 @@
 /**
- * debugLog — Helper de log debug conditionné au mode dev
+ * debugLog : Helper de log debug conditionné au mode dev
  * ========================================================
  *
  * Le projet impose la règle ESLint `no-console` (sauf `warn` / `error`)
@@ -27,7 +27,7 @@
 /* eslint-disable no-console */
 
 /**
- * Logue un message debug avec un préfixe `[scope]` — visible UNIQUEMENT en dev.
+ * Logue un message debug avec un préfixe `[scope]` : visible UNIQUEMENT en dev.
  *
  * @param scope Préfixe pour grep (ex: 'onboarding', 'cookie-banner')
  * @param message Message principal

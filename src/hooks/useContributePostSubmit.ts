@@ -1,5 +1,5 @@
 /**
- * useContributePostSubmit — Pipeline de publication partagé Encounter + Instant
+ * useContributePostSubmit : Pipeline de publication partagé Encounter + Instant
  * ===========================================================================
  *
  * Factorise toute la logique de création + upload média + watchdog +
@@ -13,13 +13,13 @@
  *   3. Pour chaque photo :
  *      - detectPhotoFormat (dims)
  *      - compressPhoto (WebP q=82, max 2560 px)
- *      - stripExif (RGPD — retire GPS / device info)
+ *      - stripExif (RGPD : retire GPS / device info)
  *      - uploadPostMedia avec timeout 20 s
  *   4. invalidateQueries(['feed']) → le post apparaît immédiatement
  *   5. Rollback : delete du post orphelin si l'upload média échoue
  *
  * Le hook expose `submit()` + les états réactifs `isSubmitting`,
- * `uploadProgress`, `uploadError` — à câbler dans l'UI du caller.
+ * `uploadProgress`, `uploadError` : à câbler dans l'UI du caller.
  */
 
 import { useCallback, useState } from 'react'
@@ -38,7 +38,7 @@ import { isTechnicalMessage } from '@/lib/sanitizeError'
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Wrap une Promise avec un timeout — rejette explicitement avec un label
+ * Wrap une Promise avec un timeout : rejette explicitement avec un label
  * lisible si la promesse n'a pas résolu dans le délai imparti.
  */
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
@@ -123,17 +123,17 @@ function shouldRetry(kind: UploadErrorKind): boolean {
 export interface ContributeSubmitParams {
   /** Payload du post (type, description, location, etc.). */
   payload: CreatePostPayload
-  /** Fichiers photos à uploader (peut être vide — post texte uniquement). */
+  /** Fichiers photos à uploader (peut être vide : post texte uniquement). */
   files: File[]
   /**
    * Si défini, MODE ÉDITION : appelle updatePost(editingPostId, payload)
    * au lieu de createPost(). Les nouveaux fichiers (s'il y en a) sont
-   * ajoutés au post existant — on n'efface PAS les photos existantes
+   * ajoutés au post existant : on n'efface PAS les photos existantes
    * (l'user peut le faire à part via le menu PostOptionsMenu).
    */
   editingPostId?: string
   /**
-   * Callback succès — reçoit le post créé/mis à jour pour permettre des
+   * Callback succès : reçoit le post créé/mis à jour pour permettre des
    * actions dépendantes. Appelé APRÈS l'invalidation du cache feed.
    */
   onSuccess: (post: { id: string }) => void | Promise<void>
@@ -156,7 +156,7 @@ export interface UseContributePostSubmitResult {
 
 /**
  * Hook factorisé pour la publication d'un post (Encounter ou Instant).
- * Le label `formLabel` n'est utilisé QUE pour les logs / warnings — il aide
+ * Le label `formLabel` n'est utilisé QUE pour les logs / warnings : il aide
  * à distinguer la source dans la console quand on debug en prod.
  */
 export function useContributePostSubmit(formLabel: string): UseContributePostSubmitResult {
@@ -227,7 +227,7 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
       setUploadError(null)
       let createdPostId: string | null = null
 
-      // Watchdog 60 s — Nicolas 2026-05-24 : sur réseau mobile lent (3G/4G
+      // Watchdog 60 s : Nicolas 2026-05-24 : sur réseau mobile lent (3G/4G
       // rurale Québec) avec photo 2 Mo, le watchdog 30s déclenchait avant
       // que l'upload finisse → user voyait « délai dépassé » alors qu'on
       // était à 80% de l'upload. 60s laisse de la marge pour un mobile
@@ -245,7 +245,7 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
       }, 60_000)
 
       try {
-        // 1. Création OU mise à jour du post (timeout 10 s — opération SQL légère).
+        // 1. Création OU mise à jour du post (timeout 10 s : opération SQL légère).
         //    En mode édition on appelle updatePost(id, payload) ; aucune
         //    nouvelle row n'est créée donc pas de rollback nécessaire.
         const post = isEditing
@@ -259,7 +259,7 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         // d'upload (on garde le post existant tel quel).
         if (!isEditing) createdPostId = post.id
 
-        // 2. Upload des médias (si fournis) — pipeline robuste avec retry
+        // 2. Upload des médias (si fournis) : pipeline robuste avec retry
         //    exponentiel + tolérance aux échecs partiels.
         //    Nicolas 2026-05-24 (urgence prod) : avant un seul échec
         //    d'upload faisait tout planter. Désormais on retry 2x par
@@ -273,7 +273,7 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
             const rawFile = files[i]
             const sizeMo = rawFile.size / 1024 / 1024
             console.info(
-              `[${formLabel}] upload photo ${i + 1}/${files.length} — ${rawFile.name} (${sizeMo.toFixed(1)} Mo, ${rawFile.type})`,
+              `[${formLabel}] upload photo ${i + 1}/${files.length} : ${rawFile.name} (${sizeMo.toFixed(1)} Mo, ${rawFile.type})`,
             )
 
             // V1.1.4 NG-025 (Nicolas 2026-06-03) : pipeline unifie.
@@ -301,7 +301,7 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
             const displayOrder = isEditing ? Date.now() + i : i
             const isCover = !isEditing && i === 0
 
-            // Retry avec backoff exponentiel — 3 tentatives au total
+            // Retry avec backoff exponentiel : 3 tentatives au total
             // (initial + 2 retries). Délai 1s, 2s entre les retries.
             const MAX_ATTEMPTS = 3
             let succeeded = false
@@ -376,7 +376,7 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
             `[${formLabel}] ${failedUploads.length}/${files.length} photos n'ont pas pu être uploadées :`,
             failedUploads,
           )
-          // Toast warning non-bloquant — l'user voit le post publié mais
+          // Toast warning non-bloquant : l'user voit le post publié mais
           // sait qu'il manque des photos. Il peut les rajouter via Modifier.
           setUploadError(
             t('contribute.media.partialUploadError', {
@@ -386,7 +386,7 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         }
 
         // 3. Invalide TOUTES les variantes du feed (peu importe le contexte
-        //    actif — tabs, filtres, page, currentUserId). Le post apparaît
+        //    actif : tabs, filtres, page, currentUserId). Le post apparaît
         //    immédiatement dans la liste. On invalide aussi les posts du
         //    profil pour que l'ADN d'observateur + journal nature se
         //    rafraîchissent dès la première observation (Nicolas 2026-05-24).
@@ -395,9 +395,9 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
 
         await onSuccess(post)
       } catch (err) {
-        // Rollback best-effort — supprime le post orphelin si l'upload média
+        // Rollback best-effort : supprime le post orphelin si l'upload média
         // a planté APRÈS la création. On ignore les erreurs de rollback
-        // (problème secondaire — l'utilisateur verra juste le toast).
+        // (problème secondaire : l'utilisateur verra juste le toast).
         if (createdPostId && supabase) {
           try {
             await supabase.from('posts').delete().eq('id', createdPostId)

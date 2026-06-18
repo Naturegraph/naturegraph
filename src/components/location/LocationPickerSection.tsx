@@ -1,5 +1,5 @@
 /**
- * LocationPickerSection — Section localisation complète (picker + slider + toggle)
+ * LocationPickerSection : Section localisation complète (picker + slider + toggle)
  * ==================================================================================
  * Encapsule CityAutocomplete + LocationRadiusSlider + LocationVisibilityToggle
  * dans un panneau unique utilisé dans l'onboarding et les Settings.
@@ -224,7 +224,7 @@ function LocationPickerContent({
 
   return (
     <>
-      {/* Message RGPD — toujours visible, pas en tooltip */}
+      {/* Message RGPD : toujours visible, pas en tooltip */}
       <div className="flex items-start gap-2 p-3 rounded-lg bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
         <Shield
           size={14}

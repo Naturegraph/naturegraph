@@ -1,10 +1,10 @@
 /**
- * LocationModal — Sélection de la localisation et du rayon de filtre
+ * LocationModal : Sélection de la localisation et du rayon de filtre
  *
  * Fonctionnalités :
  *   - Recherche textuelle de ville via Nominatim OSM (debounce 300 ms)
  *   - Géolocalisation GPS + reverse geocoding
- *   - Slider de rayon 75–250 km avec tooltip flottant
+ *   - Slider de rayon 75-250 km avec tooltip flottant
  *   - Les modifications ne sont appliquées qu'au clic sur "Appliquer"
  *
  * Responsive :
@@ -84,7 +84,7 @@ function toLabel(p: NominatimResult): string {
 /**
  * Nicolas 2026-05-22 : la recherche est désormais déléguée au hook
  * `useLocationAutocomplete` (API Adresse data.gouv + Supabase RPC fr_cities
- * pour le Québec) — même source que le picker du formulaire de partage
+ * pour le Québec) : même source que le picker du formulaire de partage
  * observation. Cela garantit que l'utilisateur voit EXACTEMENT les mêmes
  * villes proposées partout dans l'app.
  *
@@ -117,11 +117,11 @@ interface LocationModalProps {
 export function LocationModal({ onClose }: LocationModalProps) {
   const { locationLabel, locationDistance, setLocation, setLocationDistance } = useLocation()
 
-  // Rayon minimum/maximum — au-delà de 250 km, autant afficher tout le contenu
+  // Rayon minimum/maximum : au-delà de 250 km, autant afficher tout le contenu
   const MIN_DISTANCE = 75
   const MAX_DISTANCE = 250
 
-  // État local (brouillon — appliqué seulement sur "Appliquer")
+  // État local (brouillon : appliqué seulement sur "Appliquer")
   const [query, setQuery] = useState(locationLabel)
   // S'assurer que la valeur initiale respecte le minimum de 75 km
   const [distance, setDistLocal] = useState(Math.max(MIN_DISTANCE, locationDistance))
@@ -131,7 +131,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
   const { suggestions, isLoading: isSearching } = useLocationAutocomplete(query)
   const [showSuggestions, setShowSuggestions] = useState(false)
   // L'historique des recherches récentes ne s'affiche que lorsque l'input
-  // a le focus — sinon il polluait visuellement la modal au repos (Nicolas
+  // a le focus : sinon il polluait visuellement la modal au repos (Nicolas
   // 2026-05-22).
   const [inputFocused, setInputFocused] = useState(false)
   const [isGps, setIsGps] = useState(false)
@@ -156,7 +156,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
    */
   const panelRef = useRef<HTMLDivElement>(null)
 
-  // Nicolas 2026-05-22 : on n'auto-focus PLUS l'input à l'ouverture — quand
+  // Nicolas 2026-05-22 : on n'auto-focus PLUS l'input à l'ouverture : quand
   // l'utilisateur ré-ouvre la modal il veut souvent juste revalider le rayon
   // sans déclencher le clavier mobile. L'input reste accessible au tap.
 
@@ -168,7 +168,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
     return () => document.removeEventListener('keydown', fn)
   }, [onClose])
 
-  // Click-outside — desktop dropdown (le backdrop s'en charge sur mobile)
+  // Click-outside : desktop dropdown (le backdrop s'en charge sur mobile)
   useEffect(() => {
     const fn = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose()
@@ -209,7 +209,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
       },
       (err) => {
         setIsGps(false)
-        // Code 1 = PERMISSION_DENIED — informer l'utilisateur
+        // Code 1 = PERMISSION_DENIED : informer l'utilisateur
         if (err.code === 1) setGpsState('denied')
       },
       { timeout: 10000 },
@@ -252,7 +252,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
   }, [query, locationLabel, tempCoords, distance, setLocation, setLocationDistance, onClose])
 
   /**
-   * Reset complet de la localisation — l'utilisateur revient à un état
+   * Reset complet de la localisation : l'utilisateur revient à un état
    * « non localisé ». Le feed retombe sur tous les posts publics (plus
    * de filtre rayon auto), l'icône Locate de la nav redevient outline.
    * Nicolas 2026-05-22 : demande explicite pour permettre de « désactiver »
@@ -379,7 +379,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
           </p>
         )}
 
-        {/* Suggestions CityResult — même format que le picker observation
+        {/* Suggestions CityResult : même format que le picker observation
             (Nicolas 2026-05-22) : ville en gras + dept code · région en
             sous-ligne. Cohérence visuelle garantie partout dans l'app. */}
         {showSuggestions && (suggestions.length > 0 || isSearching) && (
@@ -387,7 +387,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
             id="location-suggestions"
             className="absolute top-[calc(100%+4px)] left-0 right-0 bg-cream-lighter border border-border rounded-lg shadow-lg z-10 overflow-hidden"
           >
-            {/* Loader inline pendant la recherche — sans ça, le dropdown
+            {/* Loader inline pendant la recherche : sans ça, le dropdown
                 paraissait « tourner en rond » (vide visible) pendant que
                 le hook fetch les villes. Nicolas 2026-05-22. */}
             {isSearching && suggestions.length === 0 && (
@@ -421,7 +421,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
         )}
 
         {/*
-          Historique des recherches (BATCH 92) — affiche quand :
+          Historique des recherches (BATCH 92) : affiche quand :
           - L'utilisateur ne tape rien (query vide ou len < 2)
           - Pas de suggestions en cours d'affichage
           - On a des items en historique
@@ -524,7 +524,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
       <div className="h-px bg-border" aria-hidden="true" />
 
       {/* Lien reset déplacé sous l'input pour plus de visibilité
-          (Nicolas 2026-05-22 — il était trop caché ici en bas). */}
+          (Nicolas 2026-05-22 : il était trop caché ici en bas). */}
 
       {/* Actions */}
       <div className="flex gap-3">
@@ -540,7 +540,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
 
   return (
     <>
-      {/* ── Backdrop — mobile uniquement (desktop : click-outside via panelRef) ── */}
+      {/* ── Backdrop : mobile uniquement (desktop : click-outside via panelRef) ── */}
       <div
         className="md:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-50"
         aria-hidden="true"
@@ -548,7 +548,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
       />
 
       {/*
-       * ── Panel unique — position responsif via Tailwind ────────────────────
+       * ── Panel unique : position responsif via Tailwind ────────────────────
        *   Mobile  : fixed bottom sheet (inset-x-0 bottom-0, rounded-t-2xl)
        *   Desktop : absolute dropdown depuis le parent div.relative du header
        *
@@ -569,7 +569,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
           'bg-cream-lighter border border-border shadow-xl',
         ].join(' ')}
       >
-        {/* Handle bar — mobile uniquement */}
+        {/* Handle bar : mobile uniquement */}
         <div className="md:hidden flex justify-center pt-3 pb-1" aria-hidden="true">
           <div className="w-10 h-1 bg-border rounded-full" />
         </div>

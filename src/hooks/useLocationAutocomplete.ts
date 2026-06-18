@@ -1,5 +1,5 @@
 /**
- * useLocationAutocomplete — Autocomplete ville privacy-first
+ * useLocationAutocomplete : Autocomplete ville privacy-first
  * ===========================================================
  * Recherche de communes françaises via l'API Adresse (data.gouv.fr)
  * avec fallback sur la RPC Supabase search_cities (fr_cities en DB).
@@ -32,7 +32,7 @@ const CACHE_STALE_TIME = 24 * 60 * 60 * 1000 // 24 heures
 async function searchCitiesSupabase(query: string): Promise<CityResult[]> {
   if (!supabase || !isSupabaseConfigured) return []
 
-  // RPC non encore dans supabase.ts généré — cast any jusqu'à régénération
+  // RPC non encore dans supabase.ts généré : cast any jusqu'à régénération
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any).rpc('search_cities', {
     query,
@@ -69,11 +69,11 @@ async function searchCitiesSupabase(query: string): Promise<CityResult[]> {
 }
 
 /**
- * Recherche de ville FR + QC — fusion de deux sources.
+ * Recherche de ville FR + QC : fusion de deux sources.
  *
- * 1. API Adresse (data.gouv.fr) — communes FRANÇAISES officielles, fraîches,
+ * 1. API Adresse (data.gouv.fr) : communes FRANÇAISES officielles, fraîches,
  *    RGPD, sans clé. Mais FR-only : ne connaît pas le Québec.
- * 2. Supabase RPC search_cities (table fr_cities) — contient les villes FR
+ * 2. Supabase RPC search_cities (table fr_cities) : contient les villes FR
  *    ET les municipalités du QUÉBEC.
  *
  * Les deux sont interrogées en parallèle puis fusionnées. C'est indispensable
@@ -103,7 +103,7 @@ async function searchWithFallback(query: string): Promise<CityResult[]> {
   let apiResults: CityResult[] = []
   let dbResults: CityResult[] = []
   if (winner === 'timeout') {
-    // Au moins une source a dépassé le budget — on prend les résultats
+    // Au moins une source a dépassé le budget : on prend les résultats
     // disponibles individuellement (Promise.race ne consomme PAS les
     // promises lentes, on peut encore les await sans risque).
     apiResults = await Promise.race([apiPromise, Promise.resolve([] as CityResult[])])
@@ -154,7 +154,7 @@ export function useLocationAutocomplete(query: string): UseLocationAutocompleteR
   const [debouncedQuery, setDebouncedQuery] = useState(query)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Debounce — met à jour debouncedQuery 300ms après la dernière frappe
+  // Debounce : met à jour debouncedQuery 300ms après la dernière frappe
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => {
@@ -168,13 +168,13 @@ export function useLocationAutocomplete(query: string): UseLocationAutocompleteR
   const enabled = debouncedQuery.trim().length >= MIN_QUERY_LENGTH
 
   const { data, isLoading, error } = useQuery<CityResult[], Error>({
-    // Clé incluant la query debouncée — le cache est partagé entre appels identiques
+    // Clé incluant la query debouncée : le cache est partagé entre appels identiques
     queryKey: ['location', 'autocomplete', debouncedQuery.trim().toLowerCase()],
     queryFn: () => searchWithFallback(debouncedQuery.trim()),
     enabled,
     // 24h : les noms de communes changent rarement
     staleTime: CACHE_STALE_TIME,
-    // Ne pas retry si erreur réseau (API Adresse down — le fallback a déjà été tenté)
+    // Ne pas retry si erreur réseau (API Adresse down : le fallback a déjà été tenté)
     retry: false,
     // Garde les données précédentes pendant la nouvelle requête (évite le flash vide)
     placeholderData: (prev) => prev,

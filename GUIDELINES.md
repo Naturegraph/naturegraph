@@ -1,10 +1,10 @@
-# Naturegraph — Guidelines projet
+# Naturegraph : Guidelines projet
 
 > Référentiel interne du projet Naturegraph.
 > Ce document définit la vision produit, l'identité de marque, le design system,
 > les principes d'éco-conception, d'accessibilité et les standards de qualité.
 >
-> **Document vivant** — mis à jour à chaque évolution majeure.
+> **Document vivant** : mis à jour à chaque évolution majeure.
 > Source de vérité pour toute décision produit, design ou technique.
 
 ---
@@ -49,17 +49,17 @@ Naturegraph comble ce manque en proposant une solution qui :
 
 Naturegraph ne se limite pas à identifier des espèces. Le produit permet de :
 
-- **Essayer sans s'engager** — partager une première observation sans créer de compte, zéro friction
-- **Partager ses émotions** lors des rencontres nature — pas juste une donnée, une expérience
-- **Créer un Journal de la Nature personnel** — souvenirs, observations, évolution dans le temps
-- **Apprendre des autres** via une communauté bienveillante — aide à l'identification, échanges, transmission
-- **S'engager dans le temps** grâce à des mécaniques ludiques — défis, objectifs, progression naturelle
+- **Essayer sans s'engager** : partager une première observation sans créer de compte, zéro friction
+- **Partager ses émotions** lors des rencontres nature : pas juste une donnée, une expérience
+- **Créer un Journal de la Nature personnel** : souvenirs, observations, évolution dans le temps
+- **Apprendre des autres** via une communauté bienveillante : aide à l'identification, échanges, transmission
+- **S'engager dans le temps** grâce à des mécaniques ludiques : défis, objectifs, progression naturelle
 
 L'objectif : créer une expérience où l'utilisateur se **reconnecte à la nature** et à ses **propres souvenirs**.
 
 ### Philosophie d'accès
 
-> **L'expérience avant le formulaire.** Un visiteur doit pouvoir vivre Naturegraph avant de créer un compte. L'inscription n'est jamais un mur — c'est une invitation qui arrive quand l'utilisateur a déjà ressenti la valeur du produit.
+> **L'expérience avant le formulaire.** Un visiteur doit pouvoir vivre Naturegraph avant de créer un compte. L'inscription n'est jamais un mur : c'est une invitation qui arrive quand l'utilisateur a déjà ressenti la valeur du produit.
 
 L'accès visiteur (sans compte) est un **pilier produit**, pas un bonus :
 
@@ -74,15 +74,15 @@ L'accès visiteur (sans compte) est un **pilier produit**, pas un bonus :
 
 ### Personnalité
 
-Naturegraph s'exprime à travers cinq traits fondamentaux qui guident chaque décision — du choix d'un mot dans l'interface au design d'une fonctionnalité :
+Naturegraph s'exprime à travers cinq traits fondamentaux qui guident chaque décision : du choix d'un mot dans l'interface au design d'une fonctionnalité :
 
 | Trait          | Ce que ça signifie concrètement                                                                                     |
 | -------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **Accessible** | Simple et accueillant, pas intimidant — ouvert à tous les niveaux, du promeneur du dimanche au naturaliste confirmé |
-| **Inspirant**  | Donne envie de sortir, d'observer, de partager — chaque écran suscite la curiosité                                  |
-| **Humain**     | Centré sur l'émotion et le vécu, pas sur la data brute — le ressenti prime sur la taxonomie                         |
-| **Curieux**    | Encourage l'exploration et la découverte — toujours quelque chose de nouveau à voir, à apprendre                    |
-| **Engagé**     | Porté par des valeurs éco-responsables concrètes — pas du greenwashing, des actes (RGESN, WCAG, sobriété)           |
+| **Accessible** | Simple et accueillant, pas intimidant : ouvert à tous les niveaux, du promeneur du dimanche au naturaliste confirmé |
+| **Inspirant**  | Donne envie de sortir, d'observer, de partager : chaque écran suscite la curiosité                                  |
+| **Humain**     | Centré sur l'émotion et le vécu, pas sur la data brute : le ressenti prime sur la taxonomie                         |
+| **Curieux**    | Encourage l'exploration et la découverte : toujours quelque chose de nouveau à voir, à apprendre                    |
+| **Engagé**     | Porté par des valeurs éco-responsables concrètes : pas du greenwashing, des actes (RGESN, WCAG, sobriété)           |
 
 ### Animal totem : l'Hermine 🐾
 
@@ -104,9 +104,9 @@ Les couleurs de la marque reprennent directement la symbolique de l'Hermine :
 
 | Couleur           | Symbolique                        | Lien avec l'Hermine                                           |
 | ----------------- | --------------------------------- | ------------------------------------------------------------- |
-| **Teal / Vert**   | Croissance, découverte, immersion | L'habitat naturel — forêts, prairies, zones humides           |
-| **Écru / Warm**   | Chaleur, neutralité, proximité    | Le pelage d'été — doux, accueillant, familier                 |
-| **Violet Indigo** | Différenciation, identité forte   | L'élément distinctif — ce qui rend Naturegraph reconnaissable |
+| **Teal / Vert**   | Croissance, découverte, immersion | L'habitat naturel : forêts, prairies, zones humides           |
+| **Écru / Warm**   | Chaleur, neutralité, proximité    | Le pelage d'été : doux, accueillant, familier                 |
+| **Violet Indigo** | Différenciation, identité forte   | L'élément distinctif : ce qui rend Naturegraph reconnaissable |
 
 Cette identité crée un **univers accueillant et reconnaissable**, renforçant la marque et l'engagement envers la nature.
 
@@ -118,44 +118,44 @@ Cette identité crée un **univers accueillant et reconnaissable**, renforçant 
 
 ## 3. Cibles utilisateurs
 
-### Persona primaire — Le curieux de nature
+### Persona primaire : Le curieux de nature
 
 Le cœur de cible. C'est pour lui que Naturegraph est conçu en priorité.
 
 | Attribut            | Détail                                                                                        |
 | ------------------- | --------------------------------------------------------------------------------------------- |
-| **Âge**             | 20–40 ans                                                                                     |
-| **Profil**          | Grand public sensible à la nature — promeneurs, familles, voyageurs, photographes amateurs    |
-| **Niveau nature**   | Débutant à intermédiaire — curieux, pas expert, veut apprendre sans pression                  |
+| **Âge**             | 20-40 ans                                                                                     |
+| **Profil**          | Grand public sensible à la nature : promeneurs, familles, voyageurs, photographes amateurs    |
+| **Niveau nature**   | Débutant à intermédiaire : curieux, pas expert, veut apprendre sans pression                  |
 | **Niveau tech**     | Utilise régulièrement des apps modernes, attend une expérience fluide et agréable             |
 | **Motivation**      | _"Je veux me souvenir de cette rencontre et la partager"_                                     |
 | **Comportement**    | Sort régulièrement en nature, prend des photos, aime les apps bien conçues                    |
 | **Frustration**     | Les apps existantes sont trop scientifiques, froides, ou ne gardent pas de trace émotionnelle |
 | **Ce qu'il attend** | De l'émotion, de la simplicité, un endroit pour garder ses souvenirs nature                   |
 
-### Persona secondaire — Le naturaliste & transmetteur
+### Persona secondaire : Le naturaliste & transmetteur
 
 L'utilisateur avancé qui enrichit la communauté par son expertise.
 
 | Attribut            | Détail                                                                                                 |
 | ------------------- | ------------------------------------------------------------------------------------------------------ |
-| **Âge**             | 25–55 ans                                                                                              |
+| **Âge**             | 25-55 ans                                                                                              |
 | **Profil**          | Naturalistes amateurs ou confirmés, ornithologues, botanistes, entomologistes, éco-volontaires         |
-| **Niveau nature**   | Avancé à expert — identifie les espèces, connaît les écosystèmes, pratique le terrain régulièrement    |
-| **Niveau tech**     | Variable — certains très à l'aise, d'autres habitués à des outils datés (carnets papier, forums)       |
+| **Niveau nature**   | Avancé à expert : identifie les espèces, connaît les écosystèmes, pratique le terrain régulièrement    |
+| **Niveau tech**     | Variable : certains très à l'aise, d'autres habitués à des outils datés (carnets papier, forums)       |
 | **Motivation**      | _"Je veux transmettre mes connaissances et aider les autres à comprendre ce qu'ils voient"_            |
 | **Comportement**    | Documente rigoureusement ses observations, participe à des inventaires, forme des débutants            |
 | **Frustration**     | Les plateformes existantes sont centrées sur la donnée brute, pas sur l'échange humain ni la pédagogie |
 | **Ce qu'il attend** | Un espace où son expertise est valorisée et où il peut contribuer à la communauté                      |
 
-### Persona tertiaire — Le grand public occasionnel
+### Persona tertiaire : Le grand public occasionnel
 
 Un public plus large qui découvre Naturegraph par curiosité.
 
 | Attribut            | Détail                                                             |
 | ------------------- | ------------------------------------------------------------------ |
 | **Profil**          | Randonneurs occasionnels, parents en balade, touristes en vacances |
-| **Niveau nature**   | Novice — "c'est quoi cet oiseau ?"                                 |
+| **Niveau nature**   | Novice : "c'est quoi cet oiseau ?"                                 |
 | **Motivation**      | _"J'ai vu un truc incroyable, je veux savoir ce que c'est"_        |
 | **Ce qu'il attend** | Réponse rapide, expérience simple, pas d'engagement obligatoire    |
 
@@ -173,7 +173,7 @@ L'objectif produit est de **fluidifier ce parcours** : chaque novice peut deveni
 
 ### Ce qu'ils cherchent tous (en une phrase)
 
-Pouvoir **capturer, comprendre et revivre** leurs expériences nature, tout en les partageant avec une communauté qui enrichit ces moments — chacun à son niveau.
+Pouvoir **capturer, comprendre et revivre** leurs expériences nature, tout en les partageant avec une communauté qui enrichit ces moments : chacun à son niveau.
 
 ---
 
@@ -181,10 +181,10 @@ Pouvoir **capturer, comprendre et revivre** leurs expériences nature, tout en l
 
 ### Registre
 
-- **Tutoiement** — direct, humain, proche, jamais condescendant
+- **Tutoiement** : direct, humain, proche, jamais condescendant
 - Court, clair, axé sur **émotion et expérience**
-- Pédagogique sans complexité — expliquer sans jargon
-- Encourageant — chaque interaction valorise l'utilisateur
+- Pédagogique sans complexité : expliquer sans jargon
+- Encourageant : chaque interaction valorise l'utilisateur
 
 ### Exemples de ton
 
@@ -212,8 +212,8 @@ Architecture i18n : fichiers JSON séparés (`fr.json`, `en.json`), clés struct
 
 | Usage          | Police        | Graisses           | Intention                                          |
 | -------------- | ------------- | ------------------ | -------------------------------------------------- |
-| Titres (h1–h6) | **Quicksand** | 500, 600, 700      | Douce, accessible, humaine — émotion et découverte |
-| Corps de texte | **Mulish**    | 400, 500, 600, 700 | Lisibilité et clarté — structure et efficacité     |
+| Titres (h1-h6) | **Quicksand** | 500, 600, 700      | Douce, accessible, humaine : émotion et découverte |
+| Corps de texte | **Mulish**    | 400, 500, 600, 700 | Lisibilité et clarté : structure et efficacité     |
 
 Équilibre entre **émotion** (Quicksand) et **efficacité** (Mulish).
 
@@ -244,18 +244,18 @@ Architecture i18n : fichiers JSON séparés (`fr.json`, `en.json`), clés struct
 
 | Token CSS                     | Hex       | Rôle                            | Lien Hermine                    |
 | ----------------------------- | --------- | ------------------------------- | ------------------------------- |
-| `--color-action-default`      | `#5F5DD8` | Violet — CTA, actions, identité | Différenciation, reconnaissance |
-| `--color-action-hover`        | `#3C4380` | Violet foncé — hover            | —                               |
-| `--color-action-active`       | `#525AAA` | Violet — état actif             | —                               |
-| `--color-action-disabled`     | `#CED3F0` | Violet clair — désactivé        | —                               |
-| `--color-action-light`        | `#E7E9F7` | Violet très clair — fonds       | —                               |
-| `--color-highlight-primary`   | `#006666` | Teal — nature, immersion, hero  | Habitat naturel                 |
-| `--color-highlight-secondary` | `#005353` | Teal foncé — hover              | —                               |
-| `--color-highlight-tertiary`  | `#33B6B6` | Teal clair — accents            | —                               |
-| `--color-bg-primary`          | `#FFFDF8` | Écru — fond principal           | Pelage d'été                    |
-| `--color-bg-secondary`        | `#FFFAF0` | Écru — fond secondaire          | Chaleur, douceur                |
-| `--color-bg-tertiary`         | `#FFF4E0` | Écru — fond tertiaire           | —                               |
-| `--color-bg-menthe`           | `#99FFCC` | Menthe — accents décoratifs     | Fraîcheur printanière           |
+| `--color-action-default`      | `#5F5DD8` | Violet : CTA, actions, identité | Différenciation, reconnaissance |
+| `--color-action-hover`        | `#3C4380` | Violet foncé : hover            | :                               |
+| `--color-action-active`       | `#525AAA` | Violet : état actif             | :                               |
+| `--color-action-disabled`     | `#CED3F0` | Violet clair : désactivé        | :                               |
+| `--color-action-light`        | `#E7E9F7` | Violet très clair : fonds       | :                               |
+| `--color-highlight-primary`   | `#006666` | Teal : nature, immersion, hero  | Habitat naturel                 |
+| `--color-highlight-secondary` | `#005353` | Teal foncé : hover              | :                               |
+| `--color-highlight-tertiary`  | `#33B6B6` | Teal clair : accents            | :                               |
+| `--color-bg-primary`          | `#FFFDF8` | Écru : fond principal           | Pelage d'été                    |
+| `--color-bg-secondary`        | `#FFFAF0` | Écru : fond secondaire          | Chaleur, douceur                |
+| `--color-bg-tertiary`         | `#FFF4E0` | Écru : fond tertiaire           | :                               |
+| `--color-bg-menthe`           | `#99FFCC` | Menthe : accents décoratifs     | Fraîcheur printanière           |
 
 #### Couleurs de contenu
 
@@ -322,7 +322,7 @@ Architecture i18n : fichiers JSON séparés (`fr.json`, `en.json`), clés struct
 
 ### 5.5 Ombres & élévation
 
-Définies dans `_shadows.scss` — utiliser les tokens, jamais de valeurs en dur.
+Définies dans `_shadows.scss` : utiliser les tokens, jamais de valeurs en dur.
 
 ### 5.6 Iconographie
 
@@ -333,17 +333,17 @@ Définies dans `_shadows.scss` — utiliser les tokens, jamais de valeurs en dur
 
 ### 5.7 Photographie
 
-- **Immersive et qualitative** — respect des formats pour une bonne lisibilité
+- **Immersive et qualitative** : respect des formats pour une bonne lisibilité
 - Suscite **curiosité, évasion, envie d'explorer**
 - Types de photos : macro faune/flore, paysages, moments d'observation, ambiances de terrain
 - Compression obligatoire (< 100 KB par image affichée, format WebP/AVIF avec fallback)
 
 ### 5.8 Animations
 
-- Fluides et utiles, **jamais excessives** — chaque animation a une raison fonctionnelle
+- Fluides et utiles, **jamais excessives** : chaque animation a une raison fonctionnelle
 - Accompagnent : interactions, compréhension, sensation de progression (journal, défis)
 - **CSS-only** autant que possible (IntersectionObserver pour scroll reveal, transitions CSS)
-- Pas de librairie d'animation JS (framer-motion, GSAP) — sobriété numérique
+- Pas de librairie d'animation JS (framer-motion, GSAP) : sobriété numérique
 - `prefers-reduced-motion: reduce` **toujours** respecté
 
 ### 5.9 Thèmes
@@ -374,7 +374,7 @@ Le basculement se fait via l'attribut `data-theme` sur `<html>` et le signal `pr
 | Lint          | ESLint + Prettier          | Qualité et formatage automatique                  |
 | Git hooks     | Husky v9 + lint-staged     | Pre-commit : lint + format automatiques           |
 
-### Architecture CSS — Cohabitation SCSS / Tailwind v4
+### Architecture CSS : Cohabitation SCSS / Tailwind v4
 
 Le projet utilise deux systèmes CSS complémentaires qui cohabitent grâce au mécanisme `@layer` :
 
@@ -412,14 +412,14 @@ src/styles/
 │   └── _dark-theme.scss
 ├── utilities/       # Helpers, accessibilité (@layer base ou supprimés si Tailwind les couvre)
 │   ├── _accessibility.scss
-│   ├── _helpers.scss      # Vidé — Tailwind fournit ces utilitaires
-│   └── _visibility.scss   # Vidé — Tailwind fournit ces utilitaires
+│   ├── _helpers.scss      # Vidé : Tailwind fournit ces utilitaires
+│   └── _visibility.scss   # Vidé : Tailwind fournit ces utilitaires
 └── main.scss        # Point d'entrée, importe tout
 ```
 
 ### Navigateurs et devices cibles
 
-- **Mobile-first** — usage terrain prioritaire (en extérieur, une main, plein soleil)
+- **Mobile-first** : usage terrain prioritaire (en extérieur, une main, plein soleil)
 - Navigateurs modernes uniquement : Chrome/Edge 100+, Firefox 100+, Safari 15+
 - Pas de support IE11
 
@@ -429,7 +429,7 @@ src/styles/
 
 ### Principes fondamentaux
 
-- **Sobriété fonctionnelle** : chaque fonctionnalité répond à un besoin réel — pas de feature "nice-to-have" sans justification
+- **Sobriété fonctionnelle** : chaque fonctionnalité répond à un besoin réel : pas de feature "nice-to-have" sans justification
 - **Mobile-first** : concevoir d'abord pour mobile, enrichir progressivement pour desktop
 - **Budget performance** : chaque page reste sous les seuils définis ci-dessous
 - **Réduire l'obsolescence** : supporter les terminaux récents, limiter la consommation CPU/RAM
@@ -475,7 +475,7 @@ src/styles/
 
 ### Requêtes & données
 
-- **Pagination** obligatoire — pas de scroll infini
+- **Pagination** obligatoire : pas de scroll infini
 - Cache client via TanStack Query (`staleTime` adapté au type de données)
 - Pas de collecte de données inutile dans les formulaires
 - Compression gzip/brotli activée côté serveur
@@ -502,11 +502,11 @@ src/styles/
 
 ### Contexte terrain
 
-Naturegraph est utilisé en extérieur — en forêt, en montagne, en bord de mer. Cela implique des contraintes qui vont au-delà du web classique :
+Naturegraph est utilisé en extérieur : en forêt, en montagne, en bord de mer. Cela implique des contraintes qui vont au-delà du web classique :
 
-- **Lisibilité en plein jour** — contrastes élevés, texte suffisamment grand, couleurs lisibles sur écran en plein soleil
-- **Interactions simples** — utilisable en marchant, d'une seule main, avec des gants ou les doigts humides
-- **Connexion instable ou absente** — les zones naturelles ont souvent peu ou pas de réseau
+- **Lisibilité en plein jour** : contrastes élevés, texte suffisamment grand, couleurs lisibles sur écran en plein soleil
+- **Interactions simples** : utilisable en marchant, d'une seule main, avec des gants ou les doigts humides
+- **Connexion instable ou absente** : les zones naturelles ont souvent peu ou pas de réseau
 
 ### Mode hors-ligne (accessibilité terrain)
 
@@ -525,9 +525,9 @@ L'usage terrain rend le mode hors-ligne essentiel à l'accessibilité réelle du
 
 - **Service Worker** pour le cache des assets statiques et des données utilisateur
 - **IndexedDB** pour le stockage local des observations en brouillon
-- **Synchronisation différée** — les observations créées hors-ligne sont marquées "en attente" et synchronisées automatiquement dès le retour du réseau
-- **Indicateur visuel clair** — l'utilisateur sait toujours s'il est en ligne ou hors-ligne (badge discret, pas intrusif)
-- **Aucune perte de données** — tout ce qui est saisi hors-ligne est préservé, jamais perdu
+- **Synchronisation différée** : les observations créées hors-ligne sont marquées "en attente" et synchronisées automatiquement dès le retour du réseau
+- **Indicateur visuel clair** : l'utilisateur sait toujours s'il est en ligne ou hors-ligne (badge discret, pas intrusif)
+- **Aucune perte de données** : tout ce qui est saisi hors-ligne est préservé, jamais perdu
 
 > Le mode hors-ligne n'est pas un "nice-to-have" : c'est une **exigence d'accessibilité terrain**. Un utilisateur qui perd son observation parce qu'il n'avait pas de réseau ne reviendra pas.
 
@@ -564,14 +564,14 @@ L'usage terrain rend le mode hors-ligne essentiel à l'accessibilité réelle du
 ### TypeScript
 
 - Mode strict activé (`strict: true` dans `tsconfig.json`)
-- **Jamais de `any`** — utiliser `unknown` + type guards si le type est incertain
+- **Jamais de `any`** : utiliser `unknown` + type guards si le type est incertain
 - Types explicites sur les props de composants (interface ou type exporté)
 - Enums évités au profit des unions de types littéraux
 
 ### Composants React
 
-- **Un composant = un fichier** — nommé comme le composant (PascalCase)
-- **Maximum 200 lignes** par composant — au-delà, décomposer en sous-composants
+- **Un composant = un fichier** : nommé comme le composant (PascalCase)
+- **Maximum 200 lignes** par composant : au-delà, décomposer en sous-composants
 - Séparation logique (hooks custom) / présentation (JSX)
 - Props typées avec `interface` (préféré pour les composants) ou `type`
 - **Commentaires JSDoc** sur les composants et hooks exportés
@@ -590,7 +590,7 @@ L'usage terrain rend le mode hors-ligne essentiel à l'accessibilité réelle du
 - **Tailwind CSS v4** pour le layout et les utilitaires dans les composants → `@layer utilities`
 - **Pas de `!important`** sauf dans le reset `prefers-reduced-motion`
 - Pas de styles inline sauf cas dynamique justifié (valeur calculée en JS)
-- Les fichiers `_helpers.scss` et `_visibility.scss` sont **vidés** — Tailwind couvre ces utilitaires
+- Les fichiers `_helpers.scss` et `_visibility.scss` sont **vidés** : Tailwind couvre ces utilitaires
 
 ### Git
 
@@ -604,11 +604,11 @@ L'usage terrain rend le mode hors-ligne essentiel à l'accessibilité réelle du
 
 Le projet maintient **trois environnements séparés** pour garantir que la version en ligne n'est jamais cassée par un développement en cours :
 
-| Environnement              | Branche   | URL                    | Rôle                                                           |
-| -------------------------- | --------- | ---------------------- | -------------------------------------------------------------- |
-| **Développement**          | `develop` | localhost              | Travail quotidien, nouvelles features, expérimentation libre   |
+| Environnement              | Branche   | URL            | Rôle                                                           |
+| -------------------------- | --------- | -------------- | -------------------------------------------------------------- |
+| **Développement**          | `develop` | localhost      | Travail quotidien, nouvelles features, expérimentation libre   |
 | **Staging / Démo interne** | `staging` | naturegraph.ca | Tests équipe, validation avant mise en ligne, démo partenaires |
-| **Production**             | `main`    | naturegraph.ca         | Version publique — **jamais touchée directement**              |
+| **Production**             | `main`    | naturegraph.ca | Version publique : **jamais touchée directement**              |
 
 #### Flux de déploiement
 
@@ -622,8 +622,8 @@ main → production (mise en ligne)
 
 **Règles strictes** :
 
-- **Jamais de push direct sur `main`** — uniquement via PR depuis `staging`
-- **Jamais de push direct sur `staging`** — uniquement via PR depuis `develop` ou branches feature
+- **Jamais de push direct sur `main`** : uniquement via PR depuis `staging`
+- **Jamais de push direct sur `staging`** : uniquement via PR depuis `develop` ou branches feature
 - Chaque PR vers `staging` inclut une **description des changements** et une checklist de validation
 - Chaque mise en production génère un **changelog versioned** (SemVer : v0.x.y)
 - Les tests (lint, build, a11y) doivent passer avant toute fusion
@@ -647,13 +647,13 @@ Chaque mise à jour en production est accompagnée d'un **résumé des changemen
 
 ### Principe fondamental
 
-> **Sans la communauté, Naturegraph n'existe pas.** Les utilisateurs ne sont pas de simples consommateurs — ils sont **co-constructeurs** du produit. Leur engagement, leurs retours et leurs contributions façonnent chaque évolution.
+> **Sans la communauté, Naturegraph n'existe pas.** Les utilisateurs ne sont pas de simples consommateurs : ils sont **co-constructeurs** du produit. Leur engagement, leurs retours et leurs contributions façonnent chaque évolution.
 
 ### La communauté au cœur du produit
 
 | Dimension             | Comment la communauté participe                                                        |
 | --------------------- | -------------------------------------------------------------------------------------- |
-| **Contenu**           | Les observations des utilisateurs SONT le contenu — sans eux, l'app est vide           |
+| **Contenu**           | Les observations des utilisateurs SONT le contenu : sans eux, l'app est vide           |
 | **Identification**    | L'aide collaborative entre membres remplace un algorithme coûteux                      |
 | **Évolution produit** | Les retours terrain guident les prochaines fonctionnalités                             |
 | **Acquisition**       | Le bouche-à-oreille et le partage entre passionnés sont le premier canal de croissance |
@@ -663,14 +663,14 @@ Chaque mise à jour en production est accompagnée d'un **résumé des changemen
 
 | Canal             | Rôle                                                                  | Ton                             |
 | ----------------- | --------------------------------------------------------------------- | ------------------------------- |
-| **Discord**       | Cœur de la communauté — échanges, entraide, retours produit, annonces | Direct, convivial, participatif |
+| **Discord**       | Cœur de la communauté : échanges, entraide, retours produit, annonces | Direct, convivial, participatif |
 | **In-app (feed)** | Partage d'observations, commentaires, identification collaborative    | Bienveillant, encourageant      |
-| **Instagram**     | Vitrine — belles observations, coulisses du projet, nouveautés        | Visuel, inspirant, émotionnel   |
-| **LinkedIn**      | Crédibilité — vision, mission, partenariats, recrutement              | Professionnel, engagé           |
+| **Instagram**     | Vitrine : belles observations, coulisses du projet, nouveautés        | Visuel, inspirant, émotionnel   |
+| **LinkedIn**      | Crédibilité : vision, mission, partenariats, recrutement              | Professionnel, engagé           |
 
 ### Impliquer la communauté dans le développement
 
-La communauté n'est pas juste informée des évolutions — elle y **participe activement** :
+La communauté n'est pas juste informée des évolutions : elle y **participe activement** :
 
 | Mécanisme                   | Description                                                                                       |
 | --------------------------- | ------------------------------------------------------------------------------------------------- |
@@ -678,7 +678,7 @@ La communauté n'est pas juste informée des évolutions — elle y **participe 
 | **Vote de fonctionnalités** | Sondages Discord pour prioriser la roadmap selon les besoins réels                                |
 | **Retours terrain**         | Canal dédié pour remonter les bugs, suggestions et frictions vécues sur le terrain                |
 | **Changelog transparent**   | Chaque mise à jour crédite les retours communautaires qui l'ont motivée                           |
-| **Ambassadeurs**            | Les membres les plus actifs deviennent "Migrateurs" — un rôle reconnu avec accès anticipé         |
+| **Ambassadeurs**            | Les membres les plus actifs deviennent "Migrateurs" : un rôle reconnu avec accès anticipé         |
 
 ### Cercles d'engagement
 
@@ -695,7 +695,7 @@ Migrateur (ambassadeur)
     ↓  co-construit le produit, influence la roadmap
 ```
 
-Chaque cercle offre plus d'implication et de reconnaissance. La progression est **naturelle et volontaire** — jamais forcée.
+Chaque cercle offre plus d'implication et de reconnaissance. La progression est **naturelle et volontaire** : jamais forcée.
 
 ---
 
@@ -716,12 +716,12 @@ Chaque cercle offre plus d'implication et de reconnaissance. La progression est 
 
 ### Les 6 piliers différenciants
 
-1. **Zéro friction** — essayer sans compte, s'inscrire quand on est convaincu
-2. **Journal de la Nature personnel** — garder une trace dans le temps, visualiser son évolution
-3. **Émotions & souvenirs** — chaque observation est une expérience vécue, pas une donnée froide
-4. **Communauté co-constructrice** — les utilisateurs façonnent le produit, pas juste le consomment
-5. **Gamification douce** (roadmap) — défis, objectifs et participation active sans pression
-6. **Dimension temporelle** — relation durable avec la nature et le produit, qui s'enrichit au fil du temps
+1. **Zéro friction** : essayer sans compte, s'inscrire quand on est convaincu
+2. **Journal de la Nature personnel** : garder une trace dans le temps, visualiser son évolution
+3. **Émotions & souvenirs** : chaque observation est une expérience vécue, pas une donnée froide
+4. **Communauté co-constructrice** : les utilisateurs façonnent le produit, pas juste le consomment
+5. **Gamification douce** (roadmap) : défis, objectifs et participation active sans pression
+6. **Dimension temporelle** : relation durable avec la nature et le produit, qui s'enrichit au fil du temps
 
 ---
 
@@ -800,18 +800,18 @@ Vocabulaire propre à la marque, au produit et à la communauté. Ces termes son
 
 | Terme                     | Définition                                                                                                                                                                                                                                           | Contexte d'usage                                    |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| **Rencontre Nature**      | Une observation partagée sur Naturegraph — pas une "donnée" ou un "signalement", mais un moment vécu avec la nature. Le mot "rencontre" insiste sur la dimension émotionnelle et personnelle.                                                        | CTA hero, formulaire d'observation, feed            |
-| **Instant Nature**        | Une observation rapide, spontanée — une photo + un lieu + une émotion, sans nécessité d'identifier l'espèce. Le format le plus léger pour contribuer.                                                                                                | Formulaire simplifié, accès visiteur                |
-| **Journal de la Nature**  | L'espace personnel de chaque utilisateur. Il rassemble chronologiquement toutes ses rencontres, photos, émotions et découvertes. C'est un carnet de terrain numérique qui s'enrichit au fil du temps — pas un "historique" ou une "base de données". | Profil, navigation principale, argumentaire produit |
-| **Carnet d'observations** | Un regroupement thématique de rencontres — par lieu, par saison, par espèce, par sortie. L'utilisateur peut créer autant de carnets qu'il veut (privés, publics ou collaboratifs).                                                                   | Profil, organisation personnelle                    |
-| **Sortie**                | Une session d'exploration en nature — une balade, une randonnée, une pause au parc. Le mot "sortie" est volontairement large : pas besoin d'être un trek de 3 jours pour que ça compte.                                                              | Ton éditorial, descriptions, onboarding             |
+| **Rencontre Nature**      | Une observation partagée sur Naturegraph : pas une "donnée" ou un "signalement", mais un moment vécu avec la nature. Le mot "rencontre" insiste sur la dimension émotionnelle et personnelle.                                                        | CTA hero, formulaire d'observation, feed            |
+| **Instant Nature**        | Une observation rapide, spontanée : une photo + un lieu + une émotion, sans nécessité d'identifier l'espèce. Le format le plus léger pour contribuer.                                                                                                | Formulaire simplifié, accès visiteur                |
+| **Journal de la Nature**  | L'espace personnel de chaque utilisateur. Il rassemble chronologiquement toutes ses rencontres, photos, émotions et découvertes. C'est un carnet de terrain numérique qui s'enrichit au fil du temps : pas un "historique" ou une "base de données". | Profil, navigation principale, argumentaire produit |
+| **Carnet d'observations** | Un regroupement thématique de rencontres : par lieu, par saison, par espèce, par sortie. L'utilisateur peut créer autant de carnets qu'il veut (privés, publics ou collaboratifs).                                                                   | Profil, organisation personnelle                    |
+| **Sortie**                | Une session d'exploration en nature : une balade, une randonnée, une pause au parc. Le mot "sortie" est volontairement large : pas besoin d'être un trek de 3 jours pour que ça compte.                                                              | Ton éditorial, descriptions, onboarding             |
 
 ### Communauté
 
 | Terme                    | Définition                                                                                                                                                                                                                                 | Contexte d'usage                                                          |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
 | **Migrateur**            | Membre actif et engagé de la communauté Naturegraph. Le terme fait référence aux espèces migratrices : comme elles, les migrateurs parcourent, explorent et reviennent fidèlement. C'est un statut de reconnaissance, pas un grade imposé. | Discord (rôle), landing page, CTA "Devenir migrateur", section communauté |
-| **Devenir migrateur**    | L'invitation à rejoindre la communauté Discord. C'est le CTA communautaire principal — il évoque le voyage, l'appartenance et le mouvement collectif.                                                                                      | Bouton CTA, landing page, footer                                          |
+| **Devenir migrateur**    | L'invitation à rejoindre la communauté Discord. C'est le CTA communautaire principal : il évoque le voyage, l'appartenance et le mouvement collectif.                                                                                      | Bouton CTA, landing page, footer                                          |
 | **Rejoindre l'aventure** | L'invitation à créer un compte et devenir utilisateur. Le mot "aventure" positionne l'inscription comme le début d'un parcours, pas comme un formulaire administratif.                                                                     | CTA principal, hero, relances                                             |
 | **Explorateur**          | Utilisateur inscrit qui découvre le produit, commence à partager ses premières rencontres. Premier niveau d'engagement après l'inscription.                                                                                                | Gamification (roadmap), profil                                            |
 | **Observateur**          | Utilisateur régulier qui alimente son journal, contribue au feed et interagit avec la communauté. Niveau intermédiaire d'engagement.                                                                                                       | Gamification (roadmap), profil                                            |
@@ -822,16 +822,16 @@ Vocabulaire propre à la marque, au produit et à la communauté. Ces termes son
 | Terme           | Définition                                                                                                                                                                                                                                     | Contexte d'usage                                 |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | **L'Hermine**   | Animal totem de Naturegraph. Symbole de résilience, d'adaptabilité et de discrétion. Elle incarne la posture de l'utilisateur : observer, comprendre, évoluer avec la nature. Son pelage changeant inspire la palette de couleurs (écru/warm). | Storytelling, section Mission, identité visuelle |
-| **Naturegraph** | Le nom combine "Nature" (le sujet) et "graph" (la trace, le lien, le réseau). Chaque utilisateur dessine son propre graphe de rencontres nature — un réseau de souvenirs, de lieux et de découvertes qui se connectent au fil du temps.        | Partout                                          |
+| **Naturegraph** | Le nom combine "Nature" (le sujet) et "graph" (la trace, le lien, le réseau). Chaque utilisateur dessine son propre graphe de rencontres nature : un réseau de souvenirs, de lieux et de découvertes qui se connectent au fil du temps.        | Partout                                          |
 
 ### Fonctionnalités
 
 | Terme                            | Définition                                                                                                                                                                            | Contexte d'usage                        |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
 | **Identification collaborative** | Quand un utilisateur partage une observation sans connaître l'espèce, la communauté peut proposer des identifications. C'est de l'entraide, pas de la validation scientifique.        | Feed, détail observation, notifications |
-| **Feed**                         | Le fil d'actualité communautaire — les dernières rencontres partagées par les utilisateurs, accessible à tous (y compris les visiteurs sans compte).                                  | Navigation principale, accueil app      |
+| **Feed**                         | Le fil d'actualité communautaire : les dernières rencontres partagées par les utilisateurs, accessible à tous (y compris les visiteurs sans compte).                                  | Navigation principale, accueil app      |
 | **Carte des rencontres**         | La carte interactive qui géolocalise les observations de la communauté. Permet d'explorer la biodiversité par lieu et de découvrir ce qui a été observé autour de soi.                | Navigation principale, exploration      |
-| **Défis** (roadmap)              | Des objectifs ludiques proposés par Naturegraph ou la communauté — "Observer 5 espèces d'oiseaux ce mois-ci", "Partager une sortie en forêt". Gamification douce, jamais compétitive. | Gamification, engagement                |
+| **Défis** (roadmap)              | Des objectifs ludiques proposés par Naturegraph ou la communauté : "Observer 5 espèces d'oiseaux ce mois-ci", "Partager une sortie en forêt". Gamification douce, jamais compétitive. | Gamification, engagement                |
 
 ### Niveaux d'accès
 
@@ -841,7 +841,7 @@ Vocabulaire propre à la marque, au produit et à la communauté. Ces termes son
 | **Membre**    | Utilisateur inscrit avec un compte. Accès complet au Journal de la Nature, aux interactions et à la sauvegarde.        | Tout le produit                         |
 | **Migrateur** | Membre actif sur Discord, impliqué dans la vie du projet. Accès anticipé aux nouveautés, participation aux bêta-tests. | Discord + accès staging                 |
 
-### Ton éditorial — Mots à utiliser vs à éviter
+### Ton éditorial : Mots à utiliser vs à éviter
 
 | ✅ Vocabulaire Naturegraph | ❌ À éviter                  |
 | -------------------------- | ---------------------------- |
@@ -862,11 +862,11 @@ Vocabulaire propre à la marque, au produit et à la communauté. Ces termes son
 
 ## Références
 
-- [Guide d'éco-conception — Designers Éthiques](https://designersethiques.org/fr/thematiques/ecoconception/guide-d-ecoconception) (CC-BY)
-- [RGESN — Référentiel Général d'Écoconception](https://ecoresponsable.numerique.gouv.fr/publications/referentiel-general-ecoconception/)
-- [WCAG 2.1 — W3C](https://www.w3.org/WAI/WCAG21/quickref/)
-- [RGAA — Référentiel Général d'Amélioration de l'Accessibilité](https://accessibilite.numerique.gouv.fr/)
-- [Figma — Naturegraph Design System](https://www.figma.com/design/YNnsWRi3hSp5hWsUa0Tjr6/Naturegraph---Web-App--WIP-Nicolas-)
+- [Guide d'éco-conception : Designers Éthiques](https://designersethiques.org/fr/thematiques/ecoconception/guide-d-ecoconception) (CC-BY)
+- [RGESN : Référentiel Général d'Écoconception](https://ecoresponsable.numerique.gouv.fr/publications/referentiel-general-ecoconception/)
+- [WCAG 2.1 : W3C](https://www.w3.org/WAI/WCAG21/quickref/)
+- [RGAA : Référentiel Général d'Amélioration de l'Accessibilité](https://accessibilite.numerique.gouv.fr/)
+- [Figma : Naturegraph Design System](https://www.figma.com/design/YNnsWRi3hSp5hWsUa0Tjr6/Naturegraph---Web-App--WIP-Nicolas-)
 
 ---
 

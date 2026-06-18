@@ -1,5 +1,5 @@
 /**
- * LogoutModal — Modal de confirmation de déconnexion
+ * LogoutModal : Modal de confirmation de déconnexion
  *
  * BATCH 86 (Nicolas decision 2026-05-15) : redesign moderne.
  *   - Plus de gros emoji centré (était daté)
@@ -8,10 +8,10 @@
  *   - 2 boutons clairs (rester / déconnecter)
  *
  * Messages saisonniers par mois :
- *   Hiver (déc–fév) : hibernation
- *   Printemps (mars–mai) : floraison
- *   Été (juin–août) : exploration
- *   Automne (sept–nov) : feuilles
+ *   Hiver (déc-fév) : hibernation
+ *   Printemps (mars-mai) : floraison
+ *   Été (juin-août) : exploration
+ *   Automne (sept-nov) : feuilles
  *
  * Accessibilité :
  *   - role="dialog" + aria-modal + aria-labelledby
@@ -94,7 +94,7 @@ export function LogoutModal({ onConfirm, onCancel, isLoading = false }: LogoutMo
           onCancel()
       }}
     >
-      {/* Modal — design BATCH 86 : illustration discrete + card cohérente DS */}
+      {/* Modal : design BATCH 86 : illustration discrete + card cohérente DS */}
       <div
         role="dialog"
         aria-modal="true"
@@ -102,7 +102,7 @@ export function LogoutModal({ onConfirm, onCancel, isLoading = false }: LogoutMo
         className="w-full max-w-sm bg-[var(--color-bg-primary)] rounded-2xl shadow-2xl overflow-hidden motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:duration-200"
       >
         {/* Header : hermine officielle (illustration identitaire Naturegraph).
-            Remplace l'icône SVG saisonnière abstraite — Nicolas 2026-05-19. */}
+            Remplace l'icône SVG saisonnière abstraite : Nicolas 2026-05-19. */}
         <div className="flex flex-col items-center pt-7 pb-4 px-6">
           <img src={hermineEmptyState} alt="" aria-hidden="true" className="w-24 opacity-90 mb-4" />
           <h2
@@ -129,7 +129,7 @@ export function LogoutModal({ onConfirm, onCancel, isLoading = false }: LogoutMo
             Rester explorer
           </Button>
 
-          {/* CTA destructif : déconnexion (variant secondary du DS — Nicolas 2026-05-19) */}
+          {/* CTA destructif : déconnexion (variant secondary du DS : Nicolas 2026-05-19) */}
           <Button
             variant="secondary"
             size="md"

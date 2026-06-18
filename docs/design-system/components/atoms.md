@@ -54,4 +54,4 @@
 - **Props** : `icon: ReactNode`, `size?: 'sm'|'md'|'lg'|'xl'`, `color?: 'primary'|'highlight'|'soft'`
 - **Default** : md (48px), color primary
 - **Tokens** : `--color-action-light` (soft bg), `--color-action-default` (icône), `--color-highlight-primary` (variant teal)
-- **A11y** : `aria-hidden="true"` (toujours décoratif — le contexte porte le sens)
+- **A11y** : `aria-hidden="true"` (toujours décoratif : le contexte porte le sens)

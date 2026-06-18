@@ -1,11 +1,11 @@
 /**
- * ProfileTabs — Navigation horizontale scrollable et contenu des onglets du profil
+ * ProfileTabs : Navigation horizontale scrollable et contenu des onglets du profil
  *
  * Onglets Figma :
  *   - Mobile  (5) : À propos | Journal nature (count) | Inspirations (count) | Communauté | Statistiques
  *   - Desktop (4) : Journal nature | Inspirations | Communauté | Statistiques
- *     (le tab "À propos" est remplacé par 2 cards visibles directement —
- *      ProfileAboutCard + ProfileDNACard — au-dessus des tabs.)
+ *     (le tab "À propos" est remplacé par 2 cards visibles directement -
+ *      ProfileAboutCard + ProfileDNACard : au-dessus des tabs.)
  *
  * Accessibilité : role tablist/tab/tabpanel, aria-selected, navigation clavier.
  * L'onglet actif a un border-bottom primary + texte primary.
@@ -29,13 +29,13 @@ import { ProfileStats } from './tabs/ProfileStats'
 type TabId = 'about' | 'journal' | 'inspirations' | 'community' | 'stats'
 
 interface ProfileTabsProps {
-  /** ID du profil affiché — requis pour l'onglet Communauté (queries follows) */
+  /** ID du profil affiché : requis pour l'onglet Communauté (queries follows) */
   profileId: string
   /** Données complètes du profil affiché */
   profile: ProfileDisplayData
   /** Posts de cet utilisateur pour l'onglet Journal */
   userPosts: MockPost[]
-  /** Posts sauvegardés par l'utilisateur (collection — table saved_posts) */
+  /** Posts sauvegardés par l'utilisateur (collection : table saved_posts) */
   savedPosts: MockPost[]
   /** L'utilisateur connecté regarde-t-il son propre profil ?
    *  → propagé à ProfileFeed pour activer l'option "Supprimer" sur les posts. */
@@ -51,7 +51,7 @@ interface ProfileTabsProps {
 
 // ─── Configuration des onglets ────────────────────────────────────────────────
 
-/** Définition d'un onglet — icône, clé i18n, count optionnel, badge "Bientôt" */
+/** Définition d'un onglet : icône, clé i18n, count optionnel, badge "Bientôt" */
 interface TabDef {
   id: TabId
   labelKey: string
@@ -102,9 +102,9 @@ export function ProfileTabs({
   fetchMoreUserPosts,
 }: ProfileTabsProps) {
   const { t } = useTranslation()
-  // Tab par défaut : "journal" (Journal nature) — règle d'usage Nicolas
+  // Tab par défaut : "journal" (Journal nature) : règle d'usage Nicolas
   // 2026-05-01 : à l'arrivée sur un profil, l'onglet Journal doit toujours
-  // être actif (c'est le contenu principal attendu — la liste des observations).
+  // être actif (c'est le contenu principal attendu : la liste des observations).
   // Sur mobile l'utilisateur peut cliquer "À propos" pour voir les 2 cards.
   const [activeTab, setActiveTab] = useState<TabId>('journal')
 
@@ -124,7 +124,7 @@ export function ProfileTabs({
           const isActive = activeTab === tab.id
           const Icon = tab.icon
           const count = tab.getBadge?.({ userPosts, savedPosts }) ?? null
-          // Tab "À propos" masqué sur desktop (md+) — les 2 cards le remplacent
+          // Tab "À propos" masqué sur desktop (md+) : les 2 cards le remplacent
           const visibilityClass = tab.mobileOnly ? 'flex md:hidden' : 'flex'
 
           // Premier tab visible : son icône DOIT s'aligner avec l'avatar et la
@@ -141,7 +141,7 @@ export function ProfileTabs({
               ? 'pl-0 md:pl-4'
               : 'pl-4'
 
-          // Tab "Statistiques" Bientôt = disabled — pas cliquable, cursor not-allowed
+          // Tab "Statistiques" Bientôt = disabled : pas cliquable, cursor not-allowed
           const isDisabled = !!tab.soonBadge
 
           return (
@@ -186,7 +186,7 @@ export function ProfileTabs({
                 </span>
               )}
 
-              {/* Badge "Bientôt" — même style que MenuItem.disabled de ProfileMenu
+              {/* Badge "Bientôt" : même style que MenuItem.disabled de ProfileMenu
                   pour cohérence visuelle (primary light bg + primary text uppercase). */}
               {tab.soonBadge && (
                 <span
@@ -209,7 +209,7 @@ export function ProfileTabs({
         className="pt-4"
       >
         {activeTab === 'about' && (
-          // Tab "À propos" — MOBILE uniquement (sur desktop les cards sont au-dessus).
+          // Tab "À propos" : MOBILE uniquement (sur desktop les cards sont au-dessus).
           // On rend les 2 cards directement ici en vertical stack.
           <div className="md:hidden flex flex-col gap-4">
             <ProfileAboutCard profile={profile} compact />

@@ -5,7 +5,7 @@
 > Mis à jour à chaque release.
 
 **Version actuelle** : V1.1.0
-**Date de stabilisation** : 2026-05-25 (V1.0.0) — derniere release 2026-05-26 (V1.1.0)
+**Date de stabilisation** : 2026-05-25 (V1.0.0) : derniere release 2026-05-26 (V1.1.0)
 **Statut** : Beta privée Québec + France, BDD taxonomique complete (45 764 nodes) + family fallback
 
 **Historique recent** :
@@ -183,7 +183,7 @@ supabase/
 
 - TypeScript strict, jamais de `any`
 - Composants < 200 lignes
-- Pas d'em-dash (—) ni en-dash (–) (cf CLAUDE.md)
+- Pas d'em-dash (-) ni en-dash (-) (cf CLAUDE.md)
 - Commentaires obligatoires : header de fichier, JSDoc, logique métier expliquée
 - Commits : `feat:`, `fix:`, `refactor:`, `perf:`, `docs:`, `chore:`
 - Eco-conception : lazy loading, pagination, pas d'animation superflue, prefers-reduced-motion
@@ -247,7 +247,7 @@ Cette TODO remplace toutes les anciennes listes (MASTER_TODO, NEXT_TASKS, etc.).
 
 ### Bugs ouverts
 
-(aucun bug critique connu en V1.0.0 — les derniers ont été fixés le 2026-05-25)
+(aucun bug critique connu en V1.0.0 : les derniers ont été fixés le 2026-05-25)
 
 ### Améliorations UX
 
@@ -436,13 +436,13 @@ npm run dev         # Dev server
 
 ### Documents clés (par ordre d'importance)
 
-1. **`PROJECT_MASTER.md`** (ce document) — vue d ensemble
-2. **`CLAUDE.md`** — instructions Claude Code + règles permanentes
-3. **`GUIDELINES.md`** — budgets eco-conception + accessibilité
-4. **`README.md`** — entry point repo
-5. **`docs/devops/RELEASE_PROCESS.md`** — comment release
-6. **`docs/backend/database-architecture.md`** — schema DB
-7. **`docs/security/`** — RLS, RGPD, incident response
+1. **`PROJECT_MASTER.md`** (ce document) : vue d ensemble
+2. **`CLAUDE.md`** : instructions Claude Code + règles permanentes
+3. **`GUIDELINES.md`** : budgets eco-conception + accessibilité
+4. **`README.md`** : entry point repo
+5. **`docs/devops/RELEASE_PROCESS.md`** : comment release
+6. **`docs/backend/database-architecture.md`** : schema DB
+7. **`docs/security/`** : RLS, RGPD, incident response
 
 Tout le reste de `docs/` est de référence (consulter au besoin).
 

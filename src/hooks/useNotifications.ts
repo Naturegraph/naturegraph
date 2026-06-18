@@ -1,5 +1,5 @@
 /**
- * useNotifications — Hooks React Query + Realtime pour les notifications
+ * useNotifications : Hooks React Query + Realtime pour les notifications
  *
  * Ecoute les INSERT sur `notifications` via un channel `notif:${userId}`
  * et invalide la query pour refetch automatique.
@@ -119,7 +119,7 @@ export function useMarkManyAsRead(userId: string | undefined) {
 }
 
 /**
- * Supprime une notification — invalide la liste pour refresh immédiat.
+ * Supprime une notification : invalide la liste pour refresh immédiat.
  * Utilisé par le swipe-to-delete du NotificationsPanel.
  */
 export function useDeleteNotification(userId: string | undefined) {

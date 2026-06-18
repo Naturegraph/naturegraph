@@ -1,5 +1,5 @@
 /**
- * useBetaAccess — Gestion de l'acces beta cote client
+ * useBetaAccess : Gestion de l'acces beta cote client
  *
  * Refs : strategie revisee BETA GATE TOTAL (Nicolas BATCH 45)
  *

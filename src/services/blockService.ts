@@ -1,7 +1,7 @@
 /**
- * blockService — Blocage d'utilisateurs
+ * blockService : Blocage d'utilisateurs
  *
- * Table `blocks` (migration 20260420) — RLS : on ne peut bloquer que pour
+ * Table `blocks` (migration 20260420) : RLS : on ne peut bloquer que pour
  * soi-même, le bloqué ne peut pas voir le profil/posts du bloqueur.
  *
  * Utilisé par "Masquer @user" du PostOptionsMenu (second-agent/12).

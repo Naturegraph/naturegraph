@@ -1,5 +1,5 @@
 /**
- * Contact — Page de contact publique (BATCH 67)
+ * Contact : Page de contact publique (BATCH 67)
  *
  * Style : aligne sur /welcome et /waitlist via <BetaAuthLayout>.
  *   - Background teal-dark + pattern dots + orbes (md:)
@@ -71,7 +71,7 @@ export default function Contact() {
 
     // Construit l'email avec contexte (nom, email expediteur + sujet + message)
     const subjectLabel = SUBJECT_LABELS[subject]
-    const subjectLine = `[Naturegraph] ${subjectLabel} — ${name.trim()}`
+    const subjectLine = `[Naturegraph] ${subjectLabel} : ${name.trim()}`
     const body = [
       `Bonjour Naturegraph,`,
       ``,
@@ -205,7 +205,7 @@ export default function Contact() {
               />
             </div>
 
-            {/* Sujet — dropdown custom */}
+            {/* Sujet : dropdown custom */}
             <div className="flex flex-col gap-1.5 w-full">
               <label
                 htmlFor="contact-subject-trigger"

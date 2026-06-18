@@ -1,5 +1,5 @@
 /**
- * postValidation — Source de verite unique des regles de contenu d'un post
+ * postValidation : Source de verite unique des regles de contenu d'un post
  * =========================================================================
  *
  * Retour testeur (naelm_photo, 2026-06-11) : on pouvait

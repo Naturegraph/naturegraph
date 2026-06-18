@@ -1,7 +1,7 @@
 /**
- * Router — Configuration des routes de l'application Naturegraph
+ * Router : Configuration des routes de l'application Naturegraph
  *
- * Organisation (BATCH 62 — defense en profondeur Beta Gate, decision Nicolas) :
+ * Organisation (BATCH 62 : defense en profondeur Beta Gate, decision Nicolas) :
  *
  *   ┌─ PUBLIC (sans BetaAccessGuard) ──────────────────────────────────┐
  *   │  /welcome  : entry point beta (porte d'entree)                   │
@@ -20,7 +20,7 @@
  *
  * BATCH 62 : le `<BetaGatedLayout>` factorise <BetaAccessGuard> en parent
  * route. Toute nouvelle route ajoutee comme enfant herite automatiquement
- * du gate — il est STRUCTURELLEMENT IMPOSSIBLE d'oublier la protection.
+ * du gate : il est STRUCTURELLEMENT IMPOSSIBLE d'oublier la protection.
  *
  * Defense en profondeur :
  *   - Frontend : BetaAccessGuard (localStorage gate, TTL 30j)
@@ -66,7 +66,7 @@ const NotFound = lazy(() => import('./pages/NotFound'))
 const Waitlist = lazy(() => import('./pages/Waitlist'))
 const PostDetail = lazy(() => import('./pages/PostDetail'))
 
-// Admin (BATCH 31-32) — chunks separes (eco-conception : code admin lazy)
+// Admin (BATCH 31-32) : chunks separes (eco-conception : code admin lazy)
 const AdminLayout = lazy(() => import('./pages/Admin/AdminLayout'))
 const AdminDashboard = lazy(() => import('./pages/Admin/AdminDashboard'))
 const AdminBeta = lazy(() => import('./pages/Admin/AdminBeta'))
@@ -105,10 +105,10 @@ export const router = createBrowserRouter([
     element: <App />,
     children: [
       // ════════════════════════════════════════════════════════════════
-      // ROUTES PUBLIQUES (sans BetaAccessGuard — exceptions intentionnelles)
+      // ROUTES PUBLIQUES (sans BetaAccessGuard : exceptions intentionnelles)
       // ════════════════════════════════════════════════════════════════
 
-      // Welcome screen — entry point beta privee (BATCH 45)
+      // Welcome screen : entry point beta privee (BATCH 45)
       // Aucun guard : c'est la porte d'entree.
       {
         path: 'welcome',
@@ -119,7 +119,7 @@ export const router = createBrowserRouter([
         ),
       },
 
-      // Waitlist — accessible sans auth (BATCH 30 / BETA_STRATEGY Phase 1)
+      // Waitlist : accessible sans auth (BATCH 30 / BETA_STRATEGY Phase 1)
       // Affiche le formulaire d'inscription a la liste d'attente.
       {
         path: 'waitlist',
@@ -131,7 +131,7 @@ export const router = createBrowserRouter([
       },
 
       // ════════════════════════════════════════════════════════════════
-      // ADMIN — gate propre (AdminGuard + RLS), pas de BetaAccessGuard
+      // ADMIN : gate propre (AdminGuard + RLS), pas de BetaAccessGuard
       // L'admin a son systeme d'auth distinct, et la RLS bloque l'acces
       // aux donnees meme en cas de bypass cote client.
       // ════════════════════════════════════════════════════════════════
@@ -197,7 +197,7 @@ export const router = createBrowserRouter([
       },
 
       // ════════════════════════════════════════════════════════════════
-      // BETA GATED — toutes les autres routes
+      // BETA GATED : toutes les autres routes
       // <BetaGatedLayout> applique <BetaAccessGuard> sur tous les enfants.
       // Toute nouvelle route ajoutee ici herite automatiquement du gate.
       // ════════════════════════════════════════════════════════════════
@@ -222,7 +222,7 @@ export const router = createBrowserRouter([
             ),
           },
 
-          // Auth — signup et login
+          // Auth : signup et login
           // La verification OTP et l'onboarding sont geres en interne par AuthPage.
           {
             path: 'signup',
@@ -245,7 +245,7 @@ export const router = createBrowserRouter([
             ),
           },
 
-          // Onboarding standalone — fallback pour les acces directs
+          // Onboarding standalone : fallback pour les acces directs
           {
             path: 'onboarding',
             element: (
@@ -257,7 +257,7 @@ export const router = createBrowserRouter([
             ),
           },
 
-          // Home — accessible sans auth (mode invite), mais force l'onboarding
+          // Home : accessible sans auth (mode invite), mais force l'onboarding
           // pour les users authentifies. Le BetaAccessGuard parent garantit
           // qu'aucun mode invite ne peut bypasser la beta fermee.
           {
@@ -271,7 +271,7 @@ export const router = createBrowserRouter([
             ),
           },
 
-          // Contributions — authentification requise, layout autonome
+          // Contributions : authentification requise, layout autonome
           {
             path: 'contribute',
             element: (
@@ -283,7 +283,7 @@ export const router = createBrowserRouter([
             ),
           },
 
-          // Profil — layout autonome (header integre dans la page)
+          // Profil : layout autonome (header integre dans la page)
           {
             path: 'profile',
             element: (
@@ -305,7 +305,7 @@ export const router = createBrowserRouter([
             ),
           },
 
-          // Deep-link post — accessible aux utilisateurs ayant passé le beta
+          // Deep-link post : accessible aux utilisateurs ayant passé le beta
           // gate (route sous BetaGatedLayout). OnboardingGuard plutôt que
           // Nicolas 2026-05-25 : ProtectedRoute ajoute pour interdire l acces aux
           // non-authentifies. Avant, OnboardingGuard seul laissait un visiteur avec
@@ -323,7 +323,7 @@ export const router = createBrowserRouter([
             ),
           },
 
-          // Notifications — page dediee avec filtres + pagination curseur
+          // Notifications : page dediee avec filtres + pagination curseur
           {
             path: 'notifications',
             element: (
@@ -363,7 +363,7 @@ export const router = createBrowserRouter([
             ),
           },
 
-          // App principale — authentification requise + layout avec header/footer
+          // App principale : authentification requise + layout avec header/footer
           {
             element: (
               <ProtectedRoute>
@@ -382,7 +382,7 @@ export const router = createBrowserRouter([
             ],
           },
 
-          // Pages legales — gated par BetaAccessGuard (BATCH 45 — beta privee)
+          // Pages legales : gated par BetaAccessGuard (BATCH 45 : beta privee)
           // Note : si tu veux les rendre publiques au launch, sortir du groupe
           // <BetaGatedLayout> et les remettre au niveau racine.
           {
@@ -410,7 +410,7 @@ export const router = createBrowserRouter([
             ),
           },
 
-          // 404 — page non trouvee (BATCH 62 : gated pour eviter bypass)
+          // 404 : page non trouvee (BATCH 62 : gated pour eviter bypass)
           // Un user qui tape une URL random sans code beta est renvoye vers /welcome
           // au lieu de voir directement la 404.
           {

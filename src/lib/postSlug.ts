@@ -1,5 +1,5 @@
 /**
- * postSlug — URL canonique d'un post avec slug humain
+ * postSlug : URL canonique d'un post avec slug humain
  * ============================================================
  *
  * Pourquoi :
@@ -11,7 +11,7 @@
  *       liens `/post/{uuid}` continuent de fonctionner sans 404)
  *
  * Stratégie :
- *   - Le slug est calculé à l'affichage (pas stocké en DB) — pas de
+ *   - Le slug est calculé à l'affichage (pas stocké en DB) : pas de
  *     migration nécessaire.
  *   - L'extraction côté lecture utilise une regex UUID (toujours en fin
  *     de chemin) qui ignore le préfixe slug.
@@ -21,7 +21,7 @@
 
 /** Regex UUID v4 complète (capture à n'importe quelle position). */
 const UUID_REGEX = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
-/** Regex « short id » — 8 hex chars en fin de chaîne (préfixe UUID). */
+/** Regex « short id » : 8 hex chars en fin de chaîne (préfixe UUID). */
 const SHORT_ID_REGEX = /-([0-9a-f]{8})$/i
 
 /**
@@ -40,7 +40,7 @@ export function slugify(text: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .slice(0, 30) // Nicolas 2026-05-22 : 30 au lieu de 60 — URL plus courte
+    .slice(0, 30) // Nicolas 2026-05-22 : 30 au lieu de 60 : URL plus courte
     .replace(/-+$/, '') // pas de tiret final après troncature
 }
 
@@ -50,7 +50,7 @@ export function slugify(text: string): string {
  *   - `/post/{uuid}` en fallback (rétro-compatible)
  *
  * Nicolas 2026-05-22 : on utilise les 8 PREMIERS caractères de l'UUID au
- * lieu du UUID complet — quand un slug humain est présent, ces 8 chars
+ * lieu du UUID complet : quand un slug humain est présent, ces 8 chars
  * suffisent largement pour l'unicité (4³² combinaisons). URL beaucoup
  * plus courte et lisible : 38 chars au lieu de 78.
  */
@@ -75,7 +75,7 @@ export function buildPostPath(
  *   3. Slug + short ID (8 hex chars) : `grand-duc-d16d2fd1`
  *
  * Pour les cas 1 et 2 retourne l'UUID complet (à utiliser tel quel).
- * Pour le cas 3 retourne juste le short ID — postService.getPostById
+ * Pour le cas 3 retourne juste le short ID : postService.getPostById
  * fait alors une requête prefix LIKE pour retrouver le full UUID.
  */
 export function extractPostId(slugOrId: string | undefined): string | null {

@@ -1,5 +1,5 @@
 /**
- * Footer — Pied de page complet
+ * Footer : Pied de page complet
  * ===============================
  * 4 colonnes desktop : logo/description + produit + à propos + CTA card.
  * Responsive : empilé sur mobile/tablet.
@@ -64,7 +64,7 @@ export function Footer({ onNavigate }: FooterProps) {
           {/* ── Contenu principal (responsive unique) ──────────────── */}
           <div className="flex flex-col lg:flex-row lg:justify-between gap-16">
             {/* Col 1 : Logo + description + réseaux sociaux.
-                Logo et tagline groupés avec un gap serré (gap-2) — le logo SVG
+                Logo et tagline groupés avec un gap serré (gap-2) : le logo SVG
                 a déjà du blanc interne, gap-6 créait un trou visuel. Le gap-6
                 extérieur ne sépare plus que ce groupe des réseaux sociaux. */}
             <div className="flex flex-col gap-6 lg:w-80 shrink-0">

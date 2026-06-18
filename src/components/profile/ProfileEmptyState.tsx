@@ -1,5 +1,5 @@
 /**
- * ProfileEmptyState — État vide commun à tous les onglets du profil
+ * ProfileEmptyState : État vide commun à tous les onglets du profil
  * ===================================================================
  *
  * Card centrée bordered avec illustration hermine + titre H3 + sous-titre muted.

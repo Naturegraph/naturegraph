@@ -36,15 +36,15 @@ Plateforme web citoyenne biodiversite. React 19 + TypeScript + Vite + Tailwind +
 ### Design system
 
 - Utiliser les CSS custom properties (tokens Figma synchronises)
-- Jamais de couleurs en dur — toujours `var(--color-*)`
+- Jamais de couleurs en dur, toujours `var(--color-*)`
 - Fonts : Quicksand (titres) + Mulish (body)
 - Composants UI reutilisables dans `src/components/ui/`
 
 ### Architecture de donnees
 
 - Source de verite : `docs/backend/database-architecture.md` + `docs/backend/schema.sql`
-- Types TS : `src/types/supabase.ts` — generes via `npx supabase gen types typescript`, jamais edites a la main
-- Migrations SQL : `supabase/migrations/` — format timestamp YYYYMMDD_nom.sql (ex: 20260401_rls_fixes.sql)
+- Types TS : `src/types/supabase.ts` : generes via `npx supabase gen types typescript`, jamais edites a la main
+- Migrations SQL : `supabase/migrations/` : format timestamp YYYYMMDD_nom.sql (ex: 20260401_rls_fixes.sql)
 - Toute modification de schema doit mettre a jour : SQL, database.ts, docs/backend/database-architecture.md
 - Compteurs denormalises maintenus par triggers PostgreSQL (pas cote client)
 - PostGIS pour les requetes geographiques (ST_DWithin)
@@ -69,7 +69,7 @@ Plateforme web citoyenne biodiversite. React 19 + TypeScript + Vite + Tailwind +
 
 ### Style d ecriture (regle permanente)
 
-- INTERDIT d utiliser les em-dash (—) et en-dash (–) dans tout contenu : code, commentaires, JSDoc, strings UI, messages d erreur, commit messages, docs, reponses dans le chat.
+- INTERDIT d utiliser le tiret cadratin et le tiret demi-cadratin (les longs tirets de style anglosaxon, em dash et en dash) dans tout contenu : code, commentaires, JSDoc, strings UI, messages d erreur, commit messages, docs, reponses dans le chat.
 - Remplacer par virgule, deux-points, parentheses, ou point selon le contexte.
 - Cette regle vaut pour Nicolas (lassitude des marques IA) et pour la coherence FR (l em-dash est anglosaxon).
 - Si tu trouves des em-dash dans le code existant, les corriger au passage.
@@ -144,7 +144,7 @@ Cf. `docs/devops/environments.md` pour le detail complet.
 
 **URLs cibles :**
 
-- `naturegraph.ca` → main (production publique — Hostinger DNS + Vercel + Supabase prod)
+- `naturegraph.ca` → main (production publique, Hostinger DNS + Vercel + Supabase prod)
 - `staging-naturegraph-git-staging-*.vercel.app` → staging (URL Vercel auto, preview)
 - `naturegraph-eight.vercel.app` → URL Vercel auto pour les autres preview branches
 - Preview Vercel auto → feature branches (URL changeante, pour review interne uniquement)
@@ -153,4 +153,4 @@ Cf. `docs/devops/environments.md` pour le detail complet.
 
 `C:\Users\Freelance\Desktop\naturegraph-main` contient le code de l'ancienne app.
 Elements utiles : mock data, TAXREF service, mapping Supabase, assets photos.
-Ne pas copier le code tel quel — adapter a notre architecture.
+Ne pas copier le code tel quel, adapter a notre architecture.

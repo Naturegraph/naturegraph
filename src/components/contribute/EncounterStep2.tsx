@@ -1,5 +1,5 @@
 /**
- * EncounterStep2 — Étape 2 : Carnet d'observations
+ * EncounterStep2 : Étape 2 : Carnet d'observations
  *
  * Permet d'ajouter une ou plusieurs espèces observées à l'observation :
  *   - Recherche par nom commun ou scientifique dans species_master Supabase
@@ -27,11 +27,11 @@ import { TAXONOMIC_GROUP_CONFIG } from '@/constants/commonSpecies'
 import hermineImg from '@/assets/images/hermine-empty-state.png'
 
 /**
- * Emoji + libellé FR d'un groupe taxonomique — strictement aligné sur le
+ * Emoji + libellé FR d'un groupe taxonomique : strictement aligné sur le
  * rendu de `SearchPanel` côté Home (cohérence design produit demandée par
  * Nicolas 2026-05-21). Source de vérité unique : `TAXONOMIC_GROUP_CONFIG`.
  *
- * Fallback "Autre" (✨) si le groupe est null ou inconnu — évite l'emoji 🌍
+ * Fallback "Autre" (✨) si le groupe est null ou inconnu : évite l'emoji 🌍
  * générique des anciennes maps locales.
  */
 function groupConfig(group: string | null): { emoji: string; label: string } {
@@ -62,9 +62,9 @@ function groupObservations(
 }
 
 /**
- * Icône catégorie espèce — emoji du groupe dans un cercle violet clair.
+ * Icône catégorie espèce : emoji du groupe dans un cercle violet clair.
  * Composant local pour rester DRY avec `SearchPanel.SpeciesCategoryIcon`
- * (même dimensions, même tokens DS — pas de duplication visuelle entre
+ * (même dimensions, même tokens DS : pas de duplication visuelle entre
  * la recherche globale et le partage d'observation).
  */
 function SpeciesCategoryIcon({ group }: { group: string | null }) {
@@ -106,7 +106,7 @@ export interface ObservationEntry {
  * Groupes taxonomiques filtrables dans la recherche.
  * Aligné strictement sur `SPECIES_CATEGORIES` du `FeedFilterPanel` :
  * 5 catégories les plus courantes au MVP, sans emoji, pour cohérence
- * stricte produit (cf. second-agent/26 — itération Nicolas 2026-05-01).
+ * stricte produit (cf. second-agent/26 : itération Nicolas 2026-05-01).
  *
  * Les autres groupes (fish, plants, arachnids, mollusks, other) restent
  * supportés côté DB (`TaxonomicGroup`) mais ne sont pas exposés en filtre
@@ -131,7 +131,7 @@ const TAXONOMIC_FILTERS: { value: TaxonomicGroup; labelKey: string }[] = [
  * (~200 espèces FR+QC en seed initial, extension Phase 2 via GBIF script).
  * Debounce 250ms pour limiter les appels DB lors d'une saisie rapide.
  * Si zéro résultat : on n'affiche rien (pas de fallback "Ajouter" pour
- * éviter les erreurs de saisie libre — la communauté ajoutera les espèces
+ * éviter les erreurs de saisie libre : la communauté ajoutera les espèces
  * manquantes via le workflow d'identification collaborative en Phase 2).
  * La portion du texte qui matche la requête est mise en gras (highlightMatch).
  */
@@ -158,7 +158,7 @@ function SpeciesSearchBar({
   /** Fire avec true des que l user tape (query non vide), false quand vide.
    *  Permet au parent de masquer le placeholder "Aucun résultat" pendant la recherche. */
   onSearchActiveChange?: (active: boolean) => void
-  /** Ref optionnelle vers l'input — permet au parent (bouton "Ajouter une
+  /** Ref optionnelle vers l'input : permet au parent (bouton "Ajouter une
    *  espèce") de redonner le focus a la barre de recherche. */
   inputRef?: React.RefObject<HTMLInputElement | null>
   /** Carnets existants selectionnables (bouton livre + dropdown). */
@@ -169,7 +169,7 @@ function SpeciesSearchBar({
   const { t } = useTranslation()
   const listId = useId()
   const [query, setQuery] = useState('')
-  // Filtres par groupe taxonomique — Set vide = tous les groupes acceptés.
+  // Filtres par groupe taxonomique : Set vide = tous les groupes acceptés.
   const [groupFilters, setGroupFilters] = useState<Set<TaxonomicGroup>>(new Set())
   const [filterOpen, setFilterOpen] = useState(false)
   // Dropdown "carnet existant" (bouton livre, a droite du filtre).
@@ -361,7 +361,7 @@ function SpeciesSearchBar({
               autoComplete="off"
               className="flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
             />
-            {/* Spinner inline pendant le fetch — feedback immédiat à l'user
+            {/* Spinner inline pendant le fetch : feedback immédiat à l'user
                 qu'on cherche dans la base. */}
             {isLoading && (
               <Loader2
@@ -372,7 +372,7 @@ function SpeciesSearchBar({
           </div>
         </div>
 
-        {/* Bouton filtre — BATCH 99 : border ajoutée pour cohérence avec autres icon buttons */}
+        {/* Bouton filtre : BATCH 99 : border ajoutée pour cohérence avec autres icon buttons */}
         <button
           type="button"
           onClick={() => {
@@ -404,7 +404,7 @@ function SpeciesSearchBar({
           )}
         </button>
 
-        {/* Bouton "carnet existant" — meme DS que le filtre (icone livre).
+        {/* Bouton "carnet existant" : meme DS que le filtre (icone livre).
             Ouvre un dropdown des carnets enregistres ; en choisir un injecte
             toutes ses especes dans les observations (Nicolas 2026-06-08).
             NG (2026-06-11) : masque en prod (NOTEBOOKS_ENABLED) -> pas d'import
@@ -431,7 +431,7 @@ function SpeciesSearchBar({
           </button>
         )}
 
-        {/* Dropdown carnets existants — meme ancrage que le panel filtres */}
+        {/* Dropdown carnets existants : meme ancrage que le panel filtres */}
         {notebookOpen && (
           <div className="absolute left-0 right-0 top-full mt-3 z-20 rounded-2xl border-[0.5px] border-border bg-background shadow-xl overflow-hidden">
             {notebooks.length === 0 ? (
@@ -472,7 +472,7 @@ function SpeciesSearchBar({
           </div>
         )}
 
-        {/* Panel filtres — ancre `top-full` dans la row (parent relative z-30)
+        {/* Panel filtres : ancre `top-full` dans la row (parent relative z-30)
             pour etre un vrai dropdown overlay au-dessus du listbox de
             resultats, pas un bloc qui pousse le layout (feedback Nicolas
             2026-05-26). Structure : header + chips catégorie + checkboxes
@@ -494,7 +494,7 @@ function SpeciesSearchBar({
               </button>
             </div>
 
-            {/* Section 1 — Par catégorie d'espèces */}
+            {/* Section 1 : Par catégorie d'espèces */}
             <div className="flex flex-col gap-3">
               <p className="font-body text-base text-muted-foreground">
                 {t('contribute.panel.filterByCategory', {
@@ -535,7 +535,7 @@ function SpeciesSearchBar({
 
             <hr className="border-t-[0.5px] border-border" />
 
-            {/* Section 2 — Précision identification (V1.1.0 checkbox cumulatif) */}
+            {/* Section 2 : Précision identification (V1.1.0 checkbox cumulatif) */}
             <div className="flex flex-col gap-3">
               <p className="font-body text-base text-muted-foreground">
                 {t('contribute.panel.filterPrecisionTitle', {
@@ -613,7 +613,7 @@ function SpeciesSearchBar({
               </div>
             </div>
 
-            {/* Footer — Sauvegarder + Réinitialiser */}
+            {/* Footer : Sauvegarder + Réinitialiser */}
             <div className="flex flex-col items-center gap-3 pt-2">
               <Button
                 variant="primary"
@@ -639,7 +639,7 @@ function SpeciesSearchBar({
         )}
       </div>
 
-      {/* ── Résultats de recherche INLINE — Nicolas 2026-05-22 ──────────────
+      {/* ── Résultats de recherche INLINE : Nicolas 2026-05-22 ──────────────
           Avant : dropdown `absolute` au-dessus de la searchbar (caché par
           d'autres éléments en mobile et confusant car user n'avait aucun
           feedback). Maintenant : bloc inline qui pousse le contenu en
@@ -819,14 +819,14 @@ function ObservationRow({
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
-        {/* Compteur — saisie directe possible (CountStepper, identique carnet) */}
+        {/* Compteur : saisie directe possible (CountStepper, identique carnet) */}
         <CountStepper
           value={entry.count}
           onChange={(next) => onCountChange(entry.id, next - entry.count)}
           label={t('contribute.panel.individualCount')}
         />
 
-        {/* Supprimer — neutre (pas de rouge, coherence carnet) */}
+        {/* Supprimer : neutre (pas de rouge, coherence carnet) */}
         <button
           type="button"
           onClick={() => onRemove(entry.id)}
@@ -861,7 +861,7 @@ export function EncounterStep2({
   onRemove,
   onCountChange,
   // helpIdentification + onHelpIdentificationChange : props gardées dans
-  // l'interface pour ne pas casser ContributeEncounterForm — le toggle UI a
+  // l'interface pour ne pas casser ContributeEncounterForm : le toggle UI a
   // été masqué (workflow aide collaborative reporté en P2).
   helpIdentification: _helpIdentification,
   onHelpIdentificationChange: _onHelpIdentificationChange,
@@ -882,7 +882,7 @@ export function EncounterStep2({
 
   const hasObservations = observations.length > 0
   // Masque le placeholder "Aucun résultat" pendant que l user tape une recherche
-  // (sinon il s affichait sous les suggestions, paradoxal — feedback Nicolas 2026-05-26).
+  // (sinon il s affichait sous les suggestions, paradoxal : feedback Nicolas 2026-05-26).
   const [isSearching, setIsSearching] = useState(false)
   return (
     <div className="flex flex-col gap-4">
@@ -900,7 +900,7 @@ export function EncounterStep2({
         />
       )}
 
-      {/* État vide — carte blanche bordurée (Figma Frame 4621) :
+      {/* État vide : carte blanche bordurée (Figma Frame 4621) :
           hermine + pill menthe "Aucun résultat" + hint en Quicksand Bold.
           Masqué pendant la recherche active pour ne pas dupliquer le feedback. */}
       {!hasObservations && !isSearching && (
@@ -917,7 +917,7 @@ export function EncounterStep2({
         </div>
       )}
 
-      {/* Carnet d'observations — groupe par classe (pills) + lignes, aligne
+      {/* Carnet d'observations : groupe par classe (pills) + lignes, aligne
           sur NotebookSpeciesList pour une coherence d'affichage totale. */}
       {hasObservations && (
         <div className="flex flex-col gap-4">
@@ -926,7 +926,7 @@ export function EncounterStep2({
           </p>
           {groupObservations(observations).map((grp) => (
             <section key={grp.key} aria-label={grp.label} className="flex flex-col gap-4">
-              {/* Pill de groupe — bg #E7E9F7, label 14px bold */}
+              {/* Pill de groupe : bg #E7E9F7, label 14px bold */}
               <span className="inline-flex items-center self-start h-8 px-3 rounded-full bg-[#e7e9f7] text-foreground text-sm font-bold">
                 {grp.label}
               </span>
@@ -952,7 +952,7 @@ export function EncounterStep2({
           recherche est masquee des qu'une espece est ajoutee (cf. plus haut).
           Pas d'encart "Bientot" (eviter les faux espoirs, decision Nicolas). */}
 
-      {/* Toggle "Activer l'aide à l'identification" — masqué pour le moment,
+      {/* Toggle "Activer l'aide à l'identification" : masqué pour le moment,
           sera retravaillé plus tard (workflow d'aide collaborative en P2).
           Logique gardée côté state (helpIdentification + handlers) pour ne
           pas casser ContributeEncounterForm. JSX archivé dans le bloc JSDoc
@@ -972,7 +972,7 @@ export function EncounterStep2({
 
       {/* Attribution sources (GBIF + Wikidata) affichée dans le footer
           de ContributeEncounterForm (sous les boutons Annuler/Suivant)
-          — hiérarchie de l'info claire + visible en permanence. */}
+          : hiérarchie de l'info claire + visible en permanence. */}
     </div>
   )
 }

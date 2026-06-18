@@ -1,5 +1,5 @@
 /**
- * Contribute — Page shell des formulaires de contribution
+ * Contribute : Page shell des formulaires de contribution
  *
  * Lit le paramètre ?type pour rendre le formulaire adapté :
  *   - nature_instant   → ContributeInstantForm
@@ -15,7 +15,7 @@
 import { lazy, Suspense } from 'react'
 import { useSearchParams, Navigate, useNavigate } from 'react-router-dom'
 
-// Chargés à la demande — séparation de bundle pour l'éco-conception
+// Chargés à la demande : séparation de bundle pour l'éco-conception
 const ContributeInstantForm = lazy(() =>
   import('@/components/contribute/ContributeInstantForm').then((m) => ({
     default: m.ContributeInstantForm,

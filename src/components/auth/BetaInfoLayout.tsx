@@ -1,5 +1,5 @@
 /**
- * BetaInfoLayout — Layout pour pages de contenu long (Privacy, Legal, etc.)
+ * BetaInfoLayout : Layout pour pages de contenu long (Privacy, Legal, etc.)
  *
  * BATCH 68 (Nicolas decision 2026-05-15) : variante de BetaAuthLayout pour
  * pages de contenu long qui ont besoin de scroll. Conserve la cohereence

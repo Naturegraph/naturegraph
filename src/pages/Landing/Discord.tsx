@@ -1,5 +1,5 @@
 /**
- * Discord — Section communauté Discord
+ * Discord : Section communauté Discord
  * ======================================
  * Fond teal foncé, liste d'avantages, bouton Discord,
  * screenshot Discord dans un phone (placeholder) à droite.

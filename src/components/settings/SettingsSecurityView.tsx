@@ -1,8 +1,8 @@
 /**
- * SettingsSecurityView — Sous-vue "Sécurité" du SettingsPanel
+ * SettingsSecurityView : Sous-vue "Sécurité" du SettingsPanel
  * ============================================================
  *
- * Pixel-perfect Figma — section unique :
+ * Pixel-perfect Figma : section unique :
  *   Modifier le courriel de connexion
  *      - Champ "Ton ancien courriel" (read-only, valeur actuelle du compte)
  *      - Champ "Ton nouveau courriel" (input email)
@@ -10,16 +10,16 @@
  *
  * Note : la section "Modifier le mot de passe" du Figma initial a été
  * retirée car Naturegraph utilise un système d'authentification par
- * **lien magique (magic link)** uniquement — pas de mot de passe à gérer
+ * **lien magique (magic link)** uniquement : pas de mot de passe à gérer
  * (Nicolas 2026-05-02). Le code est gardé en commentaire au cas où l'auth
  * par mot de passe serait ré-introduite (Phase 3 : 2FA / TOTP).
  *
  * Style des inputs : pill (rounded-full) avec focus state primary-light, même
  * pattern que EditInfoTab (cohérence DS).
  *
- * TODO [BACKEND] Phase 2 — voir second-agent/03-profil-backend-notes.md §15
+ * TODO [BACKEND] Phase 2 : voir second-agent/03-profil-backend-notes.md §15
  *
- *   ## Changement d'email (Supabase Auth — magic link)
+ *   ## Changement d'email (Supabase Auth : magic link)
  *   1. UI bloque le bouton "Mettre à jour" si :
  *      - Format invalide (regex email)
  *      - Email = ancien email
@@ -144,7 +144,7 @@ export function SettingsSecurityView() {
         })}
       </h3>
 
-      {/* Ancien courriel — read-only */}
+      {/* Ancien courriel : read-only */}
       <div className="flex flex-col gap-2">
         <label htmlFor="security-email-old" className="text-sm font-medium text-foreground">
           {t('settings.security.emailOldLabel', {
@@ -184,7 +184,7 @@ export function SettingsSecurityView() {
         />
       </div>
 
-      {/* Actions email — boutons partagés via styles/inputs.ts */}
+      {/* Actions email : boutons partagés via styles/inputs.ts */}
       <div className="flex gap-3 mt-2">
         <button
           type="button"

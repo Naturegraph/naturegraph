@@ -1,5 +1,5 @@
 /**
- * Partners — Section des partenaires de Naturegraph
+ * Partners : Section des partenaires de Naturegraph
  * ====================================================
  * Logos des partenaires officiels cliquables (liens externes).
  * Grille 2x2 mobile, ligne horizontale desktop.
@@ -53,7 +53,7 @@ export function Partners() {
             {t('landing.partners.title')}
           </h2>
 
-          {/* Logos grid — BATCH 71 : tailles reduites sur mobile pour ne pas deborder */}
+          {/* Logos grid : BATCH 71 : tailles reduites sur mobile pour ne pas deborder */}
           <div className="grid grid-cols-2 md:flex md:flex-row items-center justify-center gap-6 md:gap-12 lg:gap-16 w-full max-w-5xl">
             {PARTNERS.map((partner) => (
               <a

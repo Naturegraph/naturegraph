@@ -1,5 +1,5 @@
 /**
- * Geocoding — Wrapper API Adresse (data.gouv.fr)
+ * Geocoding : Wrapper API Adresse (data.gouv.fr)
  * ================================================
  * Service public officiel, RGPD-compliant, sans clé API.
  * Données IGN/BAN (Base Adresse Nationale).
@@ -23,7 +23,7 @@ import type { AdresseFeature, AdresseSearchResponse, CityResult } from '@/types/
 
 const API_BASE = 'https://api-adresse.data.gouv.fr'
 const DEFAULT_LIMIT = 5
-// Timeout réduit à 4s — Nicolas 2026-05-24 : sur réseau mobile lent ou
+// Timeout réduit à 4s : Nicolas 2026-05-24 : sur réseau mobile lent ou
 // API Adresse lente, l'user voyait l'icône tourner 8s sans retour. À 4s
 // on tombe vite sur le fallback Supabase qui répond en <200ms en local.
 const FETCH_TIMEOUT_MS = 4000
@@ -112,7 +112,7 @@ export async function searchCities(query: string, limit = DEFAULT_LIMIT): Promis
     const data: AdresseSearchResponse = await response.json()
     return data.features.map(featureToCityResult)
   } catch (error) {
-    // Timeout ou erreur réseau — on retourne un tableau vide
+    // Timeout ou erreur réseau : on retourne un tableau vide
     // Le hook gère le fallback via Supabase RPC search_cities
     console.warn('[geocoding] API Adresse unavailable:', error)
     return []
@@ -171,7 +171,7 @@ export async function requestBrowserLocation(
         resolve(null)
       },
       {
-        // Timeout 10s — ne pas bloquer l'UX si le GPS est lent
+        // Timeout 10s : ne pas bloquer l'UX si le GPS est lent
         timeout: 10000,
         maximumAge: 300000, // Cache 5 min (même position si requête rapide)
         enableHighAccuracy: false, // Pas besoin de haute précision pour une ville

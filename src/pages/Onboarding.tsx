@@ -1,5 +1,5 @@
 /**
- * Onboarding (page) — Wrapper standalone du composant d'onboarding 4 étapes
+ * Onboarding (page) : Wrapper standalone du composant d'onboarding 4 étapes
  *
  * Cette route `/onboarding` est utilisée comme cible de redirection par
  * `OnboardingGuard` et `ProtectedRoute` pour les utilisateurs authentifiés

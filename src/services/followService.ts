@@ -1,7 +1,7 @@
 /**
- * followService — Suivi d'utilisateurs
+ * followService : Suivi d'utilisateurs
  *
- * Table `follows` — RLS : on ne peut suivre que pour soi-même.
+ * Table `follows` : RLS : on ne peut suivre que pour soi-même.
  * Utilisé par les boutons Migrer / Ne plus migrer et par "Ne plus migrer avec" du
  * PostOptionsMenu (second-agent/12).
  */
@@ -47,7 +47,7 @@ export async function unfollow(targetUserId: string): Promise<void> {
 
 /**
  * Profil minimal renvoyé par getFollowers / getFollowing.
- * Aligné avec `CommunityUser` (UI) — l'adaptateur dans le hook se charge
+ * Aligné avec `CommunityUser` (UI) : l'adaptateur dans le hook se charge
  * de mapper les noms de champs si besoin.
  */
 export interface CommunityProfile {
@@ -142,7 +142,7 @@ async function hydrateCommunityProfiles(ids: string[]): Promise<CommunityProfile
       avatar_url: p.avatar_url,
       banner_url: p.banner_url,
       // Coerce null → 0 (compteur denormalisé peut être null sur des profils
-      // anciens créés avant le trigger de maintenance — cas marginal).
+      // anciens créés avant le trigger de maintenance : cas marginal).
       followers_count: p.followers_count ?? 0,
       is_followed_by_me: followedSet.has(p.id),
     }))

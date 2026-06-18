@@ -1,13 +1,13 @@
 /**
- * DiscordIcon — Logo Discord SVG
+ * DiscordIcon : Logo Discord SVG
  * ================================
  * Icône partagée entre Footer, Discord section et tout autre lien Discord.
- * Décorative par défaut (aria-hidden) — le sens est porté par le label
+ * Décorative par défaut (aria-hidden) : le sens est porté par le label
  * du parent (SocialLink, Button, etc.).
  */
 
 interface DiscordIconProps {
-  /** Classes Tailwind appliquées au svg — défaut: size-6 */
+  /** Classes Tailwind appliquées au svg : défaut: size-6 */
   className?: string
 }
 

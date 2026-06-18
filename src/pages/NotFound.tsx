@@ -1,5 +1,5 @@
 /**
- * NotFound — Page 404 "Page introuvable"
+ * NotFound : Page 404 "Page introuvable"
  *
  * BATCH 116 (V1 patch) : refonte moderne mobile-first.
  *   - Illustration décorative (hermine + leaves) au lieu d'un simple "404" géant
@@ -39,7 +39,7 @@ export default function NotFound() {
       id="main-content"
       className="flex flex-col items-center justify-center min-h-screen min-h-[100svh] gap-8 px-4 py-12 text-center bg-[var(--color-bg-secondary)]"
     >
-      {/* Illustration décorative — hermine sur badge + orbe gradient.
+      {/* Illustration décorative : hermine sur badge + orbe gradient.
           aria-hidden car uniquement décoratif (le texte porte le sens). */}
       <motion.div
         initial={initial}
@@ -88,7 +88,7 @@ export default function NotFound() {
         </p>
       </motion.div>
 
-      {/* Actions principales — 2 CTA mobile-first */}
+      {/* Actions principales : 2 CTA mobile-first */}
       <motion.div
         initial={initial}
         animate="visible"
@@ -112,7 +112,7 @@ export default function NotFound() {
         </Link>
       </motion.div>
 
-      {/* Suggestions rapides — quick links pour ne pas laisser l'user sans option */}
+      {/* Suggestions rapides : quick links pour ne pas laisser l'user sans option */}
       <motion.nav
         initial={initial}
         animate="visible"

@@ -1,4 +1,4 @@
-# Naturegraph — robots.txt
+# Naturegraph : robots.txt
 # Refs : BATCH 36 pre-launch SEO
 
 User-agent: *

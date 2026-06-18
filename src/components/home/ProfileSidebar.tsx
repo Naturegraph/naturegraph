@@ -1,5 +1,5 @@
 /**
- * ProfileSidebar — Colonne gauche en mode connecté
+ * ProfileSidebar : Colonne gauche en mode connecté
  *
  * Layout pixel-perfect Figma (node 6385-92647) :
  *   - Avatar sur bannière + badge emoji du centre d'intérêt principal (absolute)
@@ -32,7 +32,7 @@ import { useSuggestedUsers } from '@/hooks/useProfile'
 // ─── Sous-composants ──────────────────────────────────────────────────────────
 
 /**
- * Stat card — fond blanc, icône colorée, valeur en gros, label discret.
+ * Stat card : fond blanc, icône colorée, valeur en gros, label discret.
  * Utilisée pour observations / espèces / streak.
  */
 function StatCard({
@@ -108,7 +108,7 @@ export function ProfileSidebar() {
     weekGoal > 0 ? Math.min(100, Math.round((weekCurrent / weekGoal) * 100)) : 0
 
   /**
-   * Gradient de chaleur — Figma : jaune → orange.
+   * Gradient de chaleur : Figma : jaune → orange.
    * Clip-path révèle le fill à `progressPercent%` ; la teinte au bord droit
    * du fill reflète l'intensité de progression vers l'objectif.
    *   0%   : jaune  (#FFDF20)
@@ -138,7 +138,7 @@ export function ProfileSidebar() {
                   className="size-full object-cover"
                 />
               </div>
-              {/* Badge centre d'intérêt #1 — toujours visible, jamais clippé */}
+              {/* Badge centre d'intérêt #1 : toujours visible, jamais clippé */}
               {primaryInterest && INTEREST_CONFIG[primaryInterest] && (
                 <span
                   aria-label={INTEREST_CONFIG[primaryInterest].label}
@@ -153,12 +153,12 @@ export function ProfileSidebar() {
         </div>
 
         <div className="pt-12 pb-6 px-6 flex flex-col gap-4">
-          {/* Nom (sans email) — H5 Quicksand 18px bold */}
+          {/* Nom (sans email) : H5 Quicksand 18px bold */}
           <p className="font-heading font-bold text-lg leading-tight text-foreground truncate">
             {profile?.username ?? 'Utilisateur'}
           </p>
 
-          {/* Centres d'intérêt secondaires (2 max) — bg action-light */}
+          {/* Centres d'intérêt secondaires (2 max) : bg action-light */}
           {secondaryInterests.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {secondaryInterests.map((id) => {
@@ -176,7 +176,7 @@ export function ProfileSidebar() {
             </div>
           )}
 
-          {/* Stats cards — fond cream-lighter, icône pastille + valeur + label */}
+          {/* Stats cards : fond cream-lighter, icône pastille + valeur + label */}
           <div className="grid grid-cols-3 gap-2">
             <StatCard
               icon={Bird}
@@ -199,7 +199,7 @@ export function ProfileSidebar() {
             />
           </div>
 
-          {/* Objectif semaine — carte cream-lighter contenant barre gradient */}
+          {/* Objectif semaine : carte cream-lighter contenant barre gradient */}
           <div className="bg-cream-lighter rounded-lg p-4 flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <p className="text-xs text-foreground tracking-[0.04em]">
@@ -237,7 +237,7 @@ export function ProfileSidebar() {
         </div>
       </div>
 
-      {/* ─── Migrateurs à suivre — suggestions personnalisées ───────────────
+      {/* ─── Migrateurs à suivre : suggestions personnalisées ───────────────
           Specs Figma node 6385-92712 :
            - Container : border 0.5px, rounded-card, padding 24px 0 (vertical)
              avec padding horizontal 24px appliqué au contenu uniquement.
@@ -257,7 +257,7 @@ export function ProfileSidebar() {
           <p className="text-base text-foreground">{t('home.sidebar.migratorsTitle')}</p>
         </div>
 
-        {/* Loader — skeleton 3 items, même layout que l'état rempli */}
+        {/* Loader : skeleton 3 items, même layout que l'état rempli */}
         {suggestionsLoading && (
           <div className="flex flex-col gap-4 px-6">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -335,7 +335,7 @@ export function ProfileSidebar() {
                       )}
                     </div>
 
-                    {/* Chevron — indicateur navigation vers profil */}
+                    {/* Chevron : indicateur navigation vers profil */}
                     <span
                       aria-hidden="true"
                       className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center shrink-0 text-foreground group-hover:bg-white transition-colors"
@@ -349,7 +349,7 @@ export function ProfileSidebar() {
           </ul>
         )}
 
-        {/* État vide — 0 migrateur (rare, seulement si DB vide) */}
+        {/* État vide : 0 migrateur (rare, seulement si DB vide) */}
         {!suggestionsLoading && (!suggestedUsers || suggestedUsers.length === 0) && (
           <p className="text-xs text-muted-foreground px-6">{t('home.sidebar.migratorsEmpty')}</p>
         )}

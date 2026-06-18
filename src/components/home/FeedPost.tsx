@@ -1,5 +1,5 @@
 /**
- * FeedPost — Carte d'un partage dans le feed
+ * FeedPost : Carte d'un partage dans le feed
  *
  * Reproduit le design Figma : header auteur, contenu, météo/moment,
  * badges catégorie/espèce, slider d'images, réactions, actions.
@@ -43,13 +43,13 @@ import { RevealableText } from '@/components/ui/RevealableText'
 export interface MockPost {
   id: string
   /**
-   * ID Supabase de l'auteur du post — utilisé pour calculer `isOwnPost` au
+   * ID Supabase de l'auteur du post : utilisé pour calculer `isOwnPost` au
    * niveau parent (FeedSection) et adapter le menu PostOptionsMenu en
    * conséquence (second-agent/12).
    */
   authorId: string
   /**
-   * Type du post DB — détermine l'icône d'en-tête (Bird vert / MountainSnow
+   * Type du post DB : détermine l'icône d'en-tête (Bird vert / MountainSnow
    * orange). Aligné sur Post['type'] de @/types/database.
    * Voir second-agent/04-feedpost-icon-color-by-type.md.
    */
@@ -57,7 +57,7 @@ export interface MockPost {
   /**
    * Auteur du post :
    * - `name`    : nom affiché (« first_name last_name » ou fallback username)
-   * - `username`: pseudo officiel — TOUJOURS utilisé pour les liens /profile/:username
+   * - `username`: pseudo officiel : TOUJOURS utilisé pour les liens /profile/:username
    *               (sinon les liens cassent quand un user change son pseudo).
    * - `avatar`  : URL avatar, fallback hermine côté composant
    * - `badge`   : emoji du centre d'intérêt #1 (décoratif)
@@ -71,25 +71,25 @@ export interface MockPost {
   location: string
   title: string
   content: string
-  /** Enum DB brut (`'sunny' | 'cloudy' | 'rainy' | 'windy' | 'snowy'`) — traduit côté composant. */
+  /** Enum DB brut (`'sunny' | 'cloudy' | 'rainy' | 'windy' | 'snowy'`) : traduit côté composant. */
   weather?: string
   clouds?: string
-  /** Enum DB brut (`'morning' | 'afternoon' | 'dusk' | 'evening' | 'night'`) — traduit côté composant. */
+  /** Enum DB brut (`'morning' | 'afternoon' | 'dusk' | 'evening' | 'night'`) : traduit côté composant. */
   timeOfDay?: string
-  /** Enum DB brut (`'forest' | 'sea_coast' | 'park_garden' | ...`) — traduit côté composant. */
+  /** Enum DB brut (`'forest' | 'sea_coast' | 'park_garden' | ...`) : traduit côté composant. */
   habitat?: string
   category: { icon: string; label: string }
-  /** Nom commun (si identifié) — sinon laisser undefined / null pour fallback i18n. */
+  /** Nom commun (si identifié) : sinon laisser undefined / null pour fallback i18n. */
   species?: string | null
-  /** Nom scientifique latin (optionnel — enrichit le SpeciesHit pour le filtre) */
+  /** Nom scientifique latin (optionnel : enrichit le SpeciesHit pour le filtre) */
   scientific_name?: string | null
-  /** Identifiant taxonomique (cd_nom legacy ou GBIF taxonKey — Phase 2). Optionnel. */
+  /** Identifiant taxonomique (cd_nom legacy ou GBIF taxonKey : Phase 2). Optionnel. */
   taxref_id?: string | null
-  /** Groupe taxonomique de l'espèce (optionnel — emoji dans le chip) */
+  /** Groupe taxonomique de l'espèce (optionnel : emoji dans le chip) */
   taxonomic_group?: string | null
   /**
    * Plusieurs individus observés (DB `posts.multiple_observations`).
-   * @deprecated Retiré 2026-05-02 — utiliser `individualsCount` exclusivement.
+   * @deprecated Retiré 2026-05-02 : utiliser `individualsCount` exclusivement.
    *   Le champ a été nettoyé des mocks et de FeedSection. Cette prop reste
    *   dans l'interface uniquement le temps de la migration backend (la colonne
    *   `posts.multiple_observations` peut encore exister côté DB).
@@ -114,7 +114,7 @@ export interface MockPost {
   images: Array<{
     url: string
     alt: string
-    /** Dimensions natives — déterminent l'aspect ratio dans le feed. */
+    /** Dimensions natives : déterminent l'aspect ratio dans le feed. */
     width?: number
     height?: number
   }>
@@ -129,7 +129,7 @@ export interface MockPost {
   userReaction: ReactionType | null
   /** Total des réactions (likes_count) */
   totalReactions: number
-  /** Nombre de commentaires (préservé pour usage post-MVP — non affiché en MVP). */
+  /** Nombre de commentaires (préservé pour usage post-MVP : non affiché en MVP). */
   comments: number
 }
 
@@ -140,7 +140,7 @@ export interface MockPost {
  * Doit rester alignée avec ReactionType dans @/types/database.
  *
  * Ordre Figma 6385:103293 : love → fire → admire → wow → curious.
- * Emoji curious = 🤨 (Figma) — était 🧐 avant.
+ * Emoji curious = 🤨 (Figma) : était 🧐 avant.
  *
  * Note : 'disappointed' (😕) existe encore dans ReactionType côté DB pour
  * compatibilité, mais n'est PLUS dans REACTION_CONFIG (pas dans le Figma).
@@ -149,7 +149,7 @@ export interface MockPost {
  * aussi 'disappointed' de ReactionType.
  *
  * Exporté pour réutilisation par d'autres composants (jamais redéfinir un
- * mapping local) — règle d'unification "source de vérité unique".
+ * mapping local) : règle d'unification "source de vérité unique".
  */
 export const REACTION_CONFIG = [
   { key: 'love' as const, emoji: '❤️', labelKey: 'home.post.reactions.love' },
@@ -160,10 +160,10 @@ export const REACTION_CONFIG = [
 ]
 
 /**
- * Emojis météo — conformes Figma 6385:55806 (second-agent/05).
+ * Emojis météo : conformes Figma 6385:55806 (second-agent/05).
  * Source unique : si modifié, mettre à jour aussi EncounterStep3.tsx.
  *
- * Note Figma : pas d'emoji pour le moment de la journée — uniquement le label.
+ * Note Figma : pas d'emoji pour le moment de la journée : uniquement le label.
  * Donc TIME_OF_DAY_EMOJI a été retiré pour rester conforme.
  */
 const WEATHER_EMOJI: Record<string, string> = {
@@ -174,7 +174,7 @@ const WEATHER_EMOJI: Record<string, string> = {
   snowy: '🌨️',
 }
 
-/** Emoji par type d'habitat — affiche en premier dans la rangee meta du post. */
+/** Emoji par type d'habitat : affiche en premier dans la rangee meta du post. */
 const HABITAT_EMOJI: Record<string, string> = {
   forest: '🌳',
   park_garden: '🌷',
@@ -199,26 +199,26 @@ const POST_TYPE_ICON: Record<MockPost['postType'], { Icon: typeof Bird; colorCla
   },
   nature_instant: {
     Icon: MountainSnow,
-    // Amber brand primary — token CSS (BATCH 42).
+    // Amber brand primary : token CSS (BATCH 42).
     colorClass: 'text-[var(--color-amber-primary)]',
   },
 }
 
-// Tailwind du chip Figma (node 6385:60456) — bg Content/Action/Light, h-32,
+// Tailwind du chip Figma (node 6385:60456) : bg Content/Action/Light, h-32,
 // px-12 py-8, rounded-99, Mulish Bold 16px. Réutilisé pour catégorie + espèce.
 const CHIP_BASE_CLASS =
   'bg-primary-light text-foreground text-base font-bold px-3 py-2 h-8 rounded-full leading-tight inline-flex items-center gap-2'
 const CHIP_INTERACTIVE_CLASS =
   'hover:bg-primary/15 transition-colors cursor-pointer ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1'
-// Variante neutre — utilisée pour "Espèce non déterminée" qui n'est PAS un filtre
+// Variante neutre : utilisée pour "Espèce non déterminée" qui n'est PAS un filtre
 // activable. Garde la hauteur/forme pour rester aligné avec les chips voisins,
 // mais retire le langage "bouton" (fond plein, texte gras).
 const CHIP_PASSIVE_CLASS =
   'bg-transparent border border-border text-muted-foreground text-base font-medium px-3 py-2 h-8 rounded-full leading-tight inline-flex items-center gap-2'
 
 interface FeedPostProps extends MockPost {
-  /** true = utilisateur connecté — boutons actifs. false = redirige /signup */
+  /** true = utilisateur connecté : boutons actifs. false = redirige /signup */
   canInteract?: boolean
   /** true = post de l'utilisateur connecté (Modifier / Supprimer) */
   isOwnPost?: boolean
@@ -238,7 +238,7 @@ interface FeedPostProps extends MockPost {
    */
   linkToDetail?: boolean
   /**
-   * Callback édition post — remonté jusqu'à Home pour rouvrir le panel de
+   * Callback édition post : remonté jusqu'à Home pour rouvrir le panel de
    * création (Encounter/Instant) pré-rempli. Affiche le bouton « Modifier »
    * dans le PostOptionsMenu uniquement si défini ET si isOwnPost.
    */
@@ -312,7 +312,7 @@ export function FeedPost({
   const [showReactionPicker, setShowReactionPicker] = useState(false)
   const [showShare, setShowShare] = useState(false)
   /**
-   * État sauvegarde — second-agent/13.
+   * État sauvegarde : second-agent/13.
    * Source de vérité : table `saved_posts` (Supabase) via useSavedPostIds.
    * Optimistic update via useToggleSavedPost.
    */
@@ -320,7 +320,7 @@ export function FeedPost({
   const isSaved = !!savedIds?.includes(id)
   const toggleSaved = useToggleSavedPost()
   /**
-   * Truncation 2 lignes — on mesure le DOM réel pour décider d'afficher
+   * Truncation 2 lignes : on mesure le DOM réel pour décider d'afficher
    * "Voir plus" UNIQUEMENT si le texte dépasse 2 lignes (Nicolas 2026-05-01).
    * Approche : line-clamp-2 CSS + comparaison scrollHeight vs clientHeight.
    */
@@ -371,7 +371,7 @@ export function FeedPost({
     // Centré (mx-auto) pour s'aligner dans la zone feed quel que soit son parent.
     // Sur mobile : pleine largeur (rounded-none, le cap ne joue pas).
     <article className="bg-background relative md:rounded-card rounded-none md:max-w-[704px] md:mx-auto w-full">
-      {/* Bordure de la carte — quand hideEndBorder=true on retire la
+      {/* Bordure de la carte : quand hideEndBorder=true on retire la
           bordure inférieure mobile (border-b-4) qui flotte dans le vide
           sur PostDetail ou en dernier item de feed. La border-[0.5px]
           desktop reste : c'est un cadre complet, pas une coupure visuelle. */}
@@ -392,7 +392,7 @@ export function FeedPost({
               -> scroll horizontal de toute la page + bottom nav qui deborde sur
               mobile (Nicolas 2026-06-08, regression du passage en flex-nowrap). */}
           <div className="flex gap-5 items-center min-w-0">
-            {/* Avatar — Figma 48px, badge 24px (Background/Neutral/Secondary).
+            {/* Avatar : Figma 48px, badge 24px (Background/Neutral/Secondary).
                 Wrapped Link → navigation vers le profil de l'auteur. */}
             <Link
               to={`/profile/${author.username}`}
@@ -422,7 +422,7 @@ export function FeedPost({
               )}
             </Link>
 
-            {/* Infos auteur — Figma : nom 18px Quicksand Bold, date 14px Mulish.
+            {/* Infos auteur : Figma : nom 18px Quicksand Bold, date 14px Mulish.
                 Nom cliquable → profil (cohérence avec l'avatar). */}
             <div className="flex flex-col gap-1 min-w-0">
               <Link
@@ -465,7 +465,7 @@ export function FeedPost({
                 )}
                 {/* Localisation : affichée uniquement si publique ET si la
                     ville est connue (second-agent/29). Sinon le post n'affiche
-                    que la date — pas de bullet orphelin. */}
+                    que la date : pas de bullet orphelin. */}
                 {location && (
                   <>
                     <span aria-hidden="true" className="text-foreground text-xs shrink-0">
@@ -521,7 +521,7 @@ export function FeedPost({
           </div>
         </div>
 
-        {/* Contenu — titre & description rendus UNIQUEMENT si non vides
+        {/* Contenu : titre & description rendus UNIQUEMENT si non vides
             (Nicolas 2026-05-22 : éviter un bloc blanc quand l'utilisateur
             n'a renseigné ni titre ni description, le post collapse alors
             naturellement vers les meta/chips/image sous le pseudo). */}
@@ -590,7 +590,7 @@ export function FeedPost({
           </div>
         )}
 
-        {/* Habitat / météo / moment — ordre demandé Nicolas 2026-05-04 :
+        {/* Habitat / météo / moment : ordre demandé Nicolas 2026-05-04 :
             1. Habitat (en premier si renseigné)
             2. Météo (avec emoji)
             3. Moment de la journée
@@ -658,7 +658,7 @@ export function FeedPost({
         })()}
 
         {/*
-         * Chips catégorie + espèce — règle Nicolas 2026-05-01 :
+         * Chips catégorie + espèce : règle Nicolas 2026-05-01 :
          * TOUJOURS 2 chips séparés (catégorie d'abord, espèce ensuite),
          * jamais une combinaison fusionnée. La catégorie est cliquable seule,
          * l'espèce identifiée est aussi cliquable seule.
@@ -698,7 +698,7 @@ export function FeedPost({
           )}
 
         {/* Pour les posts nature_instant : pas de chips espèce/catégorie
-            — un instant nature ne décrit pas une observation d'espèce
+            : un instant nature ne décrit pas une observation d'espèce
             (Nicolas 2026-05-23). On masque toute la rangée pour éviter
             le « Espèce non déterminée » qui n'a pas de sens ici. */}
         {/* NG-006B #7 : chips standard si PAS de carte carnet (donc : post sans
@@ -730,14 +730,14 @@ export function FeedPost({
                 })
 
                 // Suffixe "({count})" SEULEMENT si on a un nombre exact > 1.
-                // Pas de "(plusieurs)" — toujours un chiffre exact (Nicolas
+                // Pas de "(plusieurs)" : toujours un chiffre exact (Nicolas
                 // 2026-05-01) ou rien.
                 // TODO Phase 2 backend : exposer `posts.individuals_count` pour
                 // que le compteur soit toujours disponible.
                 const multipleSuffix =
                   individualsCount && individualsCount > 1 ? ` (${individualsCount})` : ''
 
-                // Chip catégorie — texte uniquement, pas d'emoji (règle DS Nicolas
+                // Chip catégorie : texte uniquement, pas d'emoji (règle DS Nicolas
                 // 2026-05-02 : alléger le design, jamais d'emoji dans les chips
                 // pour garder la cohérence visuelle avec le reste du produit).
                 // V1.1.4 NG-023 ext final (Nicolas 2026-06-01) : click chip cat ->
@@ -827,7 +827,7 @@ export function FeedPost({
             </div>
           )}
 
-        {/* Images — clic ouvre la lightbox plein écran */}
+        {/* Images : clic ouvre la lightbox plein écran */}
         <ImageSlider
           images={images}
           format={format}
@@ -836,7 +836,7 @@ export function FeedPost({
           postTitle={title}
         />
 
-        {/* Compteurs réactions (Figma node 6385:60468 — flex justify-between).
+        {/* Compteurs réactions (Figma node 6385:60468 : flex justify-between).
             Le slot droit accueillera le compteur commentaires en post-MVP. */}
         <div className="flex items-center justify-between">
           <div className="flex gap-1">
@@ -847,7 +847,7 @@ export function FeedPost({
                     key={key}
                     type="button"
                     onClick={() => handleReact(key)}
-                    aria-label={`${t(labelKey)} : ${reactions[key]}${userReaction === key ? ` — ${t('home.post.yourReaction')}` : ''}`}
+                    aria-label={`${t(labelKey)} : ${reactions[key]}${userReaction === key ? ` : ${t('home.post.yourReaction')}` : ''}`}
                     className={[
                       'flex gap-1 items-center h-6 px-1 rounded-full text-sm transition-colors duration-200',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
@@ -875,12 +875,12 @@ export function FeedPost({
         {/* Séparateur */}
         <hr className="border-border border-[0.5px]" />
 
-        {/* Actions — réagir, sauvegarder, partager. Slot "Commentaires"
+        {/* Actions : réagir, sauvegarder, partager. Slot "Commentaires"
             (Figma node 6385:60494) sera ajouté post-MVP entre Réagir et le
             groupe droit. */}
         <div className="flex items-center justify-between h-8">
           <div className="relative flex gap-1">
-            {/* Bouton React — affiche le picker d'emojis au clic */}
+            {/* Bouton React : affiche le picker d'emojis au clic */}
             <button
               type="button"
               onClick={(e) => {
@@ -893,14 +893,14 @@ export function FeedPost({
               aria-expanded={showReactionPicker}
               aria-label={
                 activeReaction
-                  ? `${t(activeReaction.labelKey)} — ${t('home.post.yourReaction')}`
+                  ? `${t(activeReaction.labelKey)} : ${t('home.post.yourReaction')}`
                   : t('home.post.react')
               }
               className={[
                 'flex gap-2 items-center h-8 px-3 rounded-full transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
                 // État actif (réaction posée) : fond primary-light + couleur primary +
-                // label toujours visible — second-agent/10 (Figma 6385:128317).
+                // label toujours visible : second-agent/10 (Figma 6385:128317).
                 activeReaction
                   ? 'bg-primary-light text-primary font-semibold'
                   : 'text-foreground hover:bg-muted/50',
@@ -933,7 +933,7 @@ export function FeedPost({
               </span>
             </button>
 
-            {/* Picker d'emojis — popup au-dessus du bouton */}
+            {/* Picker d'emojis : popup au-dessus du bouton */}
             {showReactionPicker && (
               <>
                 {/* Backdrop invisible pour fermer le picker */}
@@ -970,7 +970,7 @@ export function FeedPost({
           </div>
           <div className="flex gap-1">
             {/*
-              Bouton Sauvegarder — second-agent/13.
+              Bouton Sauvegarder : second-agent/13.
               État optimiste local, TODO BACKEND : câbler à `saved_posts`.
               Visuel actif : icône BookmarkCheck + couleur primary.
             */}
@@ -1001,11 +1001,11 @@ export function FeedPost({
             </button>
 
             {/*
-              Bouton Partager — second-agent/14.
+              Bouton Partager : second-agent/14.
               Ouvre SharePopover (popover desktop / bottom sheet mobile).
             */}
             {/*
-              Partage : accessible même aux invités — un lien public d'observation
+              Partage : accessible même aux invités : un lien public d'observation
               ne nécessite pas d'authentification (URL canonique).
               SharePopover est une modale centrée full-screen, pas besoin de
               wrapper `relative` autour du bouton.

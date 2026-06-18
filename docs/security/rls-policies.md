@@ -5,7 +5,7 @@
 ## Principes
 
 1. **Default deny** : `ENABLE ROW LEVEL SECURITY` + aucune policy = personne ne lit/écrit.
-2. **Une policy par opération** (`SELECT`, `INSERT`, `UPDATE`, `DELETE`) — pas de policy fourre-tout.
+2. **Une policy par opération** (`SELECT`, `INSERT`, `UPDATE`, `DELETE`) : pas de policy fourre-tout.
 3. **`auth.uid()`** est la fonction Supabase qui retourne l'UUID du user authentifié, ou `NULL` si anonymous.
 4. **Helpers `STABLE SECURITY DEFINER`** (cf. `schema.sql` §4.7) pour les checks complexes (visibilité, blocks).
 5. **Tester chaque policy** en se connectant comme 2 users différents + en anon.
@@ -206,7 +206,7 @@ CREATE POLICY notifications_update_read ON notifications
 CREATE POLICY reports_insert ON reports
   FOR INSERT WITH CHECK (auth.uid() = reporter_id);
 
--- SELECT : seuls les modérateurs (rôle custom — V1)
+-- SELECT : seuls les modérateurs (rôle custom : V1)
 -- pour MVP : aucun SELECT côté client
 ```
 
@@ -230,6 +230,7 @@ Pour chaque table, écrire un test SQL (ou Vitest avec 2 sessions) qui vérifie 
 4. `service_role` bypass tout (pour les jobs serveur)
 
 Template :
+
 ```sql
 SET LOCAL ROLE authenticated;
 SET LOCAL "request.jwt.claims" TO '{"sub":"<uuid-A>"}';

@@ -1,15 +1,15 @@
-# Backend Guidelines — Naturegraph
+# Backend Guidelines : Naturegraph
 
 > Document maître pour tout développeur (interne ou externe) qui touche au backend Supabase. À lire avant toute modification.
 
 ## 1. Règles d'or (non négociables)
 
-1. **RLS partout** — toute nouvelle table doit avoir `ENABLE ROW LEVEL SECURITY` + au moins une policy explicite **dans la même migration**.
-2. **Migrations forward-only** — jamais de modification rétroactive d'une migration mergée. Tout correctif = nouvelle migration.
-3. **Types TS générés, pas écrits à la main** — `npx supabase gen types typescript > src/types/supabase.ts` après chaque migration. Ne jamais éditer ce fichier manuellement.
-4. **Pas de `service_role` côté client** — jamais. Si tu en as besoin, c'est qu'il faut une Edge Function.
-5. **Pas de `COUNT(*)` côté frontend** — toujours passer par les compteurs dénormalisés (`*_count`).
-6. **Pagination obligatoire** — limit max 20 par requête. Pas de scroll infini sans cursor.
+1. **RLS partout** : toute nouvelle table doit avoir `ENABLE ROW LEVEL SECURITY` + au moins une policy explicite **dans la même migration**.
+2. **Migrations forward-only** : jamais de modification rétroactive d'une migration mergée. Tout correctif = nouvelle migration.
+3. **Types TS générés, pas écrits à la main** : `npx supabase gen types typescript > src/types/supabase.ts` après chaque migration. Ne jamais éditer ce fichier manuellement.
+4. **Pas de `service_role` côté client** : jamais. Si tu en as besoin, c'est qu'il faut une Edge Function.
+5. **Pas de `COUNT(*)` côté frontend** : toujours passer par les compteurs dénormalisés (`*_count`).
+6. **Pagination obligatoire** : limit max 20 par requête. Pas de scroll infini sans cursor.
 7. **`SET search_path = public`** sur toute fonction `SECURITY DEFINER`. Sinon Supabase Advisor warning = bloquant.
 8. **EXIF strippé** avant tout upload média.
 9. **Soft delete pour le contenu utilisateur** quand l'option « anonymiser » est choisie.
@@ -105,7 +105,7 @@ Toujours wrapper avec un type d'erreur custom pour Sentry.
 | Injection SQL via template strings                                 | Toujours `.eq()`, `.in()`, paramétré          |
 | Exposer `auth.users` directement                                   | Toujours passer par `profiles`                |
 
-## 6. Performance — réflexes
+## 6. Performance : réflexes
 
 - **Avant d'ajouter une requête** : peut-elle être servie par les compteurs dénormalisés ?
 - **Avant d'ajouter un index** : `EXPLAIN ANALYZE` la requête réelle, vérifier que l'index est utilisé.
@@ -113,7 +113,7 @@ Toujours wrapper avec un type d'erreur custom pour Sentry.
 - **Pour la géo** : toujours `ST_DWithin` (utilise GiST), jamais `ST_Distance() < x`.
 - **Pour les listes** : keyset pagination `(published_at, id)` plutôt que `OFFSET`.
 
-## 7. Sécurité — check-list par PR
+## 7. Sécurité : check-list par PR
 
 - [ ] Toute nouvelle table a RLS activée
 - [ ] Chaque opération (SELECT, INSERT, UPDATE, DELETE) a sa policy
@@ -124,7 +124,7 @@ Toujours wrapper avec un type d'erreur custom pour Sentry.
 - [ ] Validation côté serveur (CHECK ou trigger) en plus de la validation client
 - [ ] Supabase Advisors : 0 warning sécurité
 
-## 8. Documentation — chaque modification doit mettre à jour
+## 8. Documentation : chaque modification doit mettre à jour
 
 | Fichier                            | Quand                             |
 | ---------------------------------- | --------------------------------- |

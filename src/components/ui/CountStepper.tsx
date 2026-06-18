@@ -1,5 +1,5 @@
 /**
- * CountStepper — compteur d'individus reutilisable (− / champ editable / +)
+ * CountStepper : compteur d'individus reutilisable (− / champ editable / +)
  *
  * Utilise dans le Carnet d'observations (NotebookSpeciesList) ET dans Rencontre
  * nature (EncounterStep2) pour un comportement + visuel STRICTEMENT identiques

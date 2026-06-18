@@ -1,5 +1,5 @@
 /**
- * AdminAnalytics — Module 6 : Analytics produit approfondie
+ * AdminAnalytics : Module 6 : Analytics produit approfondie
  *
  * Page dédiée aux indicateurs métier et engagement, complémentaire du
  * Dashboard (qui reste un aperçu opérationnel). Cible : décisions produit
@@ -9,7 +9,7 @@
  *   1. KPIs phase courante vs objectifs (Phase 1 ou Phase 2 selon date)
  *   2. Top centres d'intérêt (% users avec interest X dans `interests[]`)
  *   3. Heatmap horaire des publications (heures de pointe partage)
- *   4. Heatmap horaire des connexions (last_login_at — heures de pointe app)
+ *   4. Heatmap horaire des connexions (last_login_at : heures de pointe app)
  *   5. Distribution observations / user (histogramme 0 / 1-2 / 3-5 / 6-10 / 10+)
  *   6. Répartition géographique des posts (FR / CA / autre)
  *
@@ -17,7 +17,7 @@
  *   - Aucune lib graphique externe (barres/heatmap CSS pur).
  *   - Cache React Query 5 min (les analytics tournent rarement).
  *   - Toutes les queries SELECT non-paginées sont sur des volumes
- *     < 10k rows en MVP — acceptable. À réviser quand on dépasse.
+ *     < 10k rows en MVP : acceptable. À réviser quand on dépasse.
  */
 
 import { useMemo, useState } from 'react'
@@ -79,7 +79,7 @@ interface AnalyticsData {
   uniqueSpeciesCount: number
   /** Nombre de groupes taxonomiques différents représentés. */
   uniqueTaxonomicGroups: number
-  /** Nombre d'observations moyennes par session — approxi : posts / users actifs 7j. */
+  /** Nombre d'observations moyennes par session : approxi : posts / users actifs 7j. */
   avgPostsPerSession: number
   interests: InterestStat[]
   postsByHour: HourlyPoint[]
@@ -90,10 +90,10 @@ interface AnalyticsData {
   countries: CountryStat[]
 }
 
-// ─── Objectifs produit — runbook Nicolas (Notion) ───────────────────────────
+// ─── Objectifs produit : runbook Nicolas (Notion) ───────────────────────────
 // Structurés en 4 catégories pour la Phase 1 (pré-lancement) et la Phase 2
 // (lancement public). Chaque KPI a son objectif + valeur courante calculée
-// quand on a la donnée, sinon « — » avec note explicative.
+// quand on a la donnée, sinon « : » avec note explicative.
 
 interface KpiRow {
   label: string
@@ -111,8 +111,8 @@ interface KpiCategory {
   rows: KpiRow[]
 }
 
-/** Phase 1 — Pré-lancement (juillet → début septembre 2025).
- *  120 pré-inscrits, accès fermé, durée 6–8 semaines. */
+/** Phase 1 : Pré-lancement (juillet → début septembre 2025).
+ *  120 pré-inscrits, accès fermé, durée 6-8 semaines. */
 const PHASE_1_CATEGORIES: KpiCategory[] = [
   {
     title: 'Utilisation & Engagement',
@@ -125,7 +125,7 @@ const PHASE_1_CATEGORIES: KpiCategory[] = [
       },
       {
         label: 'Taux de conversion pré-inscrit',
-        target: '75 – 80 %',
+        target: '75 : 80 %',
         note: '% des pré-inscrits qui téléchargent + créent un compte',
       },
       {
@@ -196,7 +196,7 @@ const PHASE_1_CATEGORIES: KpiCategory[] = [
       {
         label: 'Bugs signalés',
         target: '≥ 20',
-        note: 'Compteur manuel — à brancher sur GitHub Issues ou outil de support',
+        note: 'Compteur manuel : à brancher sur GitHub Issues ou outil de support',
       },
       {
         label: 'Améliorations proposées',
@@ -217,8 +217,8 @@ const PHASE_1_CATEGORIES: KpiCategory[] = [
   },
 ]
 
-/** Phase 2 — Lancement public (septembre → fin décembre 2025).
- *  Objectif 50–100 utilisateurs actifs mensuels. */
+/** Phase 2 : Lancement public (septembre → fin décembre 2025).
+ *  Objectif 50-100 utilisateurs actifs mensuels. */
 const PHASE_2_CATEGORIES: KpiCategory[] = [
   {
     title: 'Utilisation & Engagement',
@@ -230,7 +230,7 @@ const PHASE_2_CATEGORIES: KpiCategory[] = [
         reached: (a) => a.totalUsers >= 50,
       },
       { label: 'Sessions / utilisateur / semaine', target: '3 à 6' },
-      { label: 'Durée moyenne par session', target: '5 – 7 minutes' },
+      { label: 'Durée moyenne par session', target: '5 : 7 minutes' },
       { label: 'Taux de rétention à 7 jours', target: '> 35 %' },
       { label: 'Taux de rétention à 30 jours', target: 'À mesurer' },
       { label: 'Taux de rétention à 60 jours', target: 'À mesurer' },
@@ -241,7 +241,7 @@ const PHASE_2_CATEGORIES: KpiCategory[] = [
     rows: [
       {
         label: 'Nombre total d’observations',
-        target: '3 000 (sept. – déc.)',
+        target: '3 000 (sept. : déc.)',
         current: (a) => `${a.totalPosts}`,
         reached: (a) => a.totalPosts >= 3000,
       },
@@ -328,20 +328,20 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     supabase.from('comments').select('id', { count: 'exact', head: true }),
     // Auteurs distincts ayant publié sur les 7 derniers jours
     supabase.from('posts').select('user_id').gte('created_at', sevenDaysAgo),
-    // Heures de publication (30j) — on agrège côté client (< 1k rows attendus)
+    // Heures de publication (30j) : on agrège côté client (< 1k rows attendus)
     supabase.from('posts').select('created_at').gte('created_at', thirtyDaysAgo),
     // last_login_at récents (30j)
     supabase.from('profiles').select('last_login_at').gte('last_login_at', thirtyDaysAgo),
     // Posts par pays
     supabase.from('posts').select('country'),
-    // Médias (post_id) — pour calculer le nombre de photos par observation.
+    // Médias (post_id) : pour calculer le nombre de photos par observation.
     // Plus simple et précis qu'un agrégat SQL : on group by côté client.
     supabase.from('media').select('post_id'),
     // Espèces + groupes taxonomiques sur tous les posts (Phase 1 KPI).
     supabase.from('posts').select('species_name, taxonomic_group'),
   ])
 
-  // Surfaçage explicite des erreurs RLS/réseau — sans ça, un échec d'une
+  // Surfaçage explicite des erreurs RLS/réseau : sans ça, un échec d'une
   // des 10 queries produit une page vide silencieuse.
   const queryErrors = [
     ['profiles', profilesRes],
@@ -394,9 +394,9 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
   // ── Distribution posts par user ────────────────────────────────────────
   const buckets = [
     { label: '0', min: 0, max: 0 },
-    { label: '1–2', min: 1, max: 2 },
-    { label: '3–5', min: 3, max: 5 },
-    { label: '6–10', min: 6, max: 10 },
+    { label: '1-2', min: 1, max: 2 },
+    { label: '3-5', min: 3, max: 5 },
+    { label: '6-10', min: 6, max: 10 },
     { label: '10+', min: 11, max: Infinity },
   ]
   const postsDistribution: DistributionBucket[] = buckets.map((b) => {
@@ -552,7 +552,7 @@ function StatTile({
 }
 
 /**
- * Échelle de chaleur **absolue** par seuils — pas de normalisation locale.
+ * Échelle de chaleur **absolue** par seuils : pas de normalisation locale.
  *
  * Nicolas 2026-05-24 : auparavant on normalisait `count / max`, ce qui rendait
  * 1 obs = violet foncé quand max = 1. Visuellement trompeur (laissait croire
@@ -565,7 +565,7 @@ function StatTile({
  *   11-20   → très fort
  *   21+     → max (« beaucoup »)
  *
- * Les seuils sont calibrés pour la beta (~50 users) — quand la prod scalera,
+ * Les seuils sont calibrés pour la beta (~50 users) : quand la prod scalera,
  * on relèvera les paliers (cf. TODO Phase 2 dans AUDIT_ADMIN).
  */
 function heatIntensity(count: number): number {
@@ -598,7 +598,7 @@ function HourlyHeatmap({ data, label }: { data: HourlyPoint[]; label: string }) 
           return (
             <div
               key={d.hour}
-              title={`${d.hour}h — ${d.count}`}
+              title={`${d.hour}h : ${d.count}`}
               className="aspect-square rounded-md ring-1 ring-inset ring-[var(--color-border)]/30"
               style={{ background: bg }}
               aria-label={`${d.hour}h ${d.count}`}
@@ -613,7 +613,7 @@ function HourlyHeatmap({ data, label }: { data: HourlyPoint[]; label: string }) 
         <span>18h</span>
         <span>23h</span>
       </div>
-      {/* Légende avec les vrais seuils en tooltip — alignée sur heatIntensity(). */}
+      {/* Légende avec les vrais seuils en tooltip : alignée sur heatIntensity(). */}
       <div className="flex items-center justify-end gap-1.5 mt-3 text-[10px] text-[var(--color-text-secondary)]">
         <span title="0 événement">Peu</span>
         <span
@@ -693,7 +693,7 @@ export default function AdminAnalytics() {
     queryKey: ['admin-analytics'],
     queryFn: fetchAnalytics,
     staleTime: 5 * 60 * 1000,
-    // Une seule retry — au-delà c'est un vrai problème qu'on veut surfacer.
+    // Une seule retry : au-delà c'est un vrai problème qu'on veut surfacer.
     retry: 1,
   })
 
@@ -777,7 +777,7 @@ export default function AdminAnalytics() {
           icon={Sparkles}
           label="Obs. moy / actif (7j)"
           value={data.avgPostsPerActiveUser.toFixed(1)}
-          hint="objectif P1 : 2–5"
+          hint="objectif P1 : 2-5"
         />
         <StatTile
           icon={Heart}
@@ -865,7 +865,7 @@ export default function AdminAnalytics() {
           </div>
         </div>
 
-        {/* Distribution photos par post — nouveau widget (Nicolas 2026-05-24 :
+        {/* Distribution photos par post : nouveau widget (Nicolas 2026-05-24 :
             savoir combien de photos les users joignent en moyenne). */}
         <div className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg p-5">
           <div className="flex items-center justify-between gap-2 mb-4">
@@ -927,7 +927,7 @@ export default function AdminAnalytics() {
           </h2>
         </div>
 
-        {/* Onglets : Phase 1 / Phase 2 — décision Nicolas 2026-05-24 :
+        {/* Onglets : Phase 1 / Phase 2 : décision Nicolas 2026-05-24 :
             organiser le runbook en 2 vues distinctes plutôt qu'une longue
             table mélangée. */}
         <div
@@ -946,7 +946,7 @@ export default function AdminAnalytics() {
                 : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
             }`}
           >
-            Phase 1 — Pré-lancement
+            Phase 1 : Pré-lancement
           </button>
           <button
             type="button"
@@ -959,7 +959,7 @@ export default function AdminAnalytics() {
                 : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
             }`}
           >
-            Phase 2 — Lancement public
+            Phase 2 : Lancement public
           </button>
         </div>
 
@@ -968,17 +968,17 @@ export default function AdminAnalytics() {
           {activePhase === 'p1' ? (
             <div className="rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)] px-4 py-3 text-sm">
               <p className="font-semibold text-[var(--color-text-primary)] mb-1">
-                Phase 1 — Pré-lancement (juillet → début septembre 2025)
+                Phase 1 : Pré-lancement (juillet → début septembre 2025)
               </p>
               <p className="text-xs text-[var(--color-text-secondary)]">
-                120 pré-inscrits · accès fermé · durée 6–8 semaines · cible 40 % d&apos;actifs
+                120 pré-inscrits · accès fermé · durée 6-8 semaines · cible 40 % d&apos;actifs
                 hebdomadaires (~48 users)
               </p>
             </div>
           ) : (
             <div className="rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)] px-4 py-3 text-sm">
               <p className="font-semibold text-[var(--color-text-primary)] mb-1">
-                Phase 2 — Lancement public (septembre → fin décembre 2025)
+                Phase 2 : Lancement public (septembre → fin décembre 2025)
               </p>
               <p className="text-xs text-[var(--color-text-secondary)]">
                 50 à 100 utilisateurs actifs mensuels · analyse rétention 7/30/60 jours
@@ -1003,7 +1003,7 @@ export default function AdminAnalytics() {
                   </thead>
                   <tbody>
                     {cat.rows.map((row) => {
-                      const current = row.current?.(data) ?? '—'
+                      const current = row.current?.(data) ?? '-'
                       const reached = row.reached?.(data) ?? null
                       return (
                         <tr
@@ -1045,8 +1045,8 @@ export default function AdminAnalytics() {
           ))}
 
           <p className="text-xs text-[var(--color-text-secondary)]">
-            Les métriques marquées « — » nécessitent du tracking analytics côté client (PostHog,
-            Plausible, etc.) — à mettre en place Phase 2.
+            Les métriques marquées « : » nécessitent du tracking analytics côté client (PostHog,
+            Plausible, etc.) : à mettre en place Phase 2.
           </p>
         </div>
       </section>

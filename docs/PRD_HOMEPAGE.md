@@ -1,9 +1,9 @@
-# PRD — Homepage Naturegraph (Etat connecte & non connecte)
+# PRD : Homepage Naturegraph (Etat connecte & non connecte)
 
 > Product Requirements Document
-> Version : 1.2 — 2026-04-01 (audit Figma complet)
+> Version : 1.2 : 2026-04-01 (audit Figma complet)
 > Auteur : Nicolas (Lead Product Designer) + Claude (PM/Dev/UX/UI)
-> Statut : Reference active — guide d'implementation
+> Statut : Reference active : guide d'implementation
 
 ---
 
@@ -54,13 +54,13 @@ Elle sert egalement de page d'accueil pour les visiteurs non connectes, qui deco
 
 | Source    | Role                                                                                                                |
 | --------- | ------------------------------------------------------------------------------------------------------------------- |
-| **Figma** | Design de reference — [Homepage App Light](https://www.figma.com/design/YNnsWRi3hSp5hWsUa0Tjr6/?node-id=6385-79299) |
+| **Figma** | Design de reference : [Homepage App Light](https://www.figma.com/design/YNnsWRi3hSp5hWsUa0Tjr6/?node-id=6385-79299) |
 | **Figma** | [Dark mode](https://www.figma.com/design/YNnsWRi3hSp5hWsUa0Tjr6/?node-id=6385-37942)                                |
 | **Figma** | [Formats photo](https://www.figma.com/design/YNnsWRi3hSp5hWsUa0Tjr6/?node-id=6385-58353)                            |
 | **Figma** | [Types de posts](https://www.figma.com/design/YNnsWRi3hSp5hWsUa0Tjr6/?node-id=6385-61170)                           |
 | **Code**  | `src/pages/Home.tsx` + `src/components/home/` (19 composants)                                                       |
-| **Types** | `src/types/database.ts` — schema Supabase                                                                           |
-| **Mock**  | `src/data/mock/` — 100+ posts, 25 users                                                                             |
+| **Types** | `src/types/database.ts` : schema Supabase                                                                           |
+| **Mock**  | `src/data/mock/` : 100+ posts, 25 users                                                                             |
 
 ---
 
@@ -99,7 +99,7 @@ Quand l'utilisateur n'a pas autorise la geolocalisation :
 
 ### 2.2 Carte des interactions (12 etats)
 
-Depuis la Figma (node `6385:79299`) — chaque etat est un ecran distinct :
+Depuis la Figma (node `6385:79299`) : chaque etat est un ecran distinct :
 
 | #   | Etat             | Declencheur                   | Composant                         |
 | --- | ---------------- | ----------------------------- | --------------------------------- |
@@ -136,7 +136,7 @@ Gutter:  32px (XL) / 24px (Desktop) / 16px (Mobile)
 
 ### 3.2 Structure par breakpoint
 
-#### XL Desktop (>= 1280px) — Layout 3 colonnes
+#### XL Desktop (>= 1280px) : Layout 3 colonnes
 
 ```
 ┌────────────────────────────────────────────────────────────┐
@@ -154,11 +154,11 @@ Gutter:  32px (XL) / 24px (Desktop) / 16px (Mobile)
 └──────────┴─────────────────────────────────┴───────────────┘
 ```
 
-#### Desktop (1024-1279px) — 3 colonnes (confirmee Figma)
+#### Desktop (1024-1279px) : 3 colonnes (confirmee Figma)
 
 ```
 ┌────────────────────────────────────────────────────────────┐
-│  NAVBAR (sticky, h-[72px], z-50 — full elements)           │
+│  NAVBAR (sticky, h-[72px], z-50 : full elements)           │
 ├──────────┬─────────────────────────────────┬───────────────┤
 │ LEFT     │ CENTER                          │ RIGHT         │
 │ SIDEBAR  │ [Tabs] [View] [Filter]          │ SIDEBAR       │
@@ -170,7 +170,7 @@ Gutter:  32px (XL) / 24px (Desktop) / 16px (Mobile)
 > **Note (audit Figma 2026-04-01)** : Figma confirme les sidebars visibles a Desktop (1024px+).
 > Le breakpoint de masquage est Tablet (< 1024px), pas Desktop.
 
-#### Tablet (768-1023px) — 1 colonne, pas de sidebars
+#### Tablet (768-1023px) : 1 colonne, pas de sidebars
 
 ```
 ┌─────────────────────────────────┐
@@ -185,7 +185,7 @@ Gutter:  32px (XL) / 24px (Desktop) / 16px (Mobile)
 └─────────────────────────────────┘
 ```
 
-#### Mobile (< 768px) — 1 colonne + bottom nav
+#### Mobile (< 768px) : 1 colonne + bottom nav
 
 ```
 ┌──────────────────┐
@@ -269,7 +269,7 @@ Gutter:  32px (XL) / 24px (Desktop) / 16px (Mobile)
 
 ## 5. Sidebar gauche
 
-### 5.1 Utilisateur connecte — ProfileSidebar
+### 5.1 Utilisateur connecte : ProfileSidebar
 
 #### Fichier : `src/components/home/ProfileSidebar.tsx`
 
@@ -322,12 +322,12 @@ Gutter:  32px (XL) / 24px (Desktop) / 16px (Mobile)
 
 #### Migrateurs a suivre
 
-- **Source** : `getSuggestedUsersByInterests()` — utilisateurs partageant les memes centres d'interet
+- **Source** : `getSuggestedUsersByInterests()` : utilisateurs partageant les memes centres d'interet
 - **Nombre** : 3 utilisateurs max
 - **Clic** : navigate vers `/profile/:username`
 - **TODO [BACKEND]** : `profileService.getSuggestedUsers()` base sur interests + proximite geographique
 
-### 5.2 Visiteur non connecte — GuestSidebar
+### 5.2 Visiteur non connecte : GuestSidebar
 
 #### Fichier : `src/components/home/GuestSidebar.tsx`
 
@@ -354,7 +354,7 @@ Gutter:  32px (XL) / 24px (Desktop) / 16px (Mobile)
 | Utilisateur geolocalise     | Top utilisateurs actifs dans le territoire (region) |
 | Utilisateur non geolocalise | Rotation quotidienne des plus populaires globaux    |
 
-- **Rotation** : `getDailyRotation()` — seed base sur le jour
+- **Rotation** : `getDailyRotation()` : seed base sur le jour
 - **Detection geolocalisation** : silencieuse (check `navigator.permissions` sans prompt)
 - **Nombre** : 3 utilisateurs max
 - **Clic** : navigate vers `/profile/:username`
@@ -402,11 +402,11 @@ Gutter:  32px (XL) / 24px (Desktop) / 16px (Mobile)
 - Etat actif (filtres appliques) : `bg-primary text-white` + badge count "Filtres (N)"
 - Clic : ouvre `FeedFilterPanel` (panel lateral desktop / bottom sheet mobile)
 
-### 6.2 Vue liste — FeedPost
+### 6.2 Vue liste : FeedPost
 
 Voir section [7. Carte de post](#7-carte-de-post-feedpost)
 
-### 6.3 Vue galerie — FeedGallery
+### 6.3 Vue galerie : FeedGallery
 
 #### Fichier : `src/components/home/FeedGallery.tsx`
 
@@ -445,13 +445,13 @@ Gap : var(--sp-16) (16px)
 | Overlay           | gradient bottom-to-top (rgba(0,0,0,0.75) → transparent), opacity 0 → 1 au hover |
 | Titre             | Mulish Bold 14px, white, line-clamp-1                                           |
 | Avatar + username | size-6 avatar + Mulish 400 12px, white                                          |
-| Hover             | `@media (hover: hover)` — pas de hover sur mobile/tactile                       |
+| Hover             | `@media (hover: hover)` : pas de hover sur mobile/tactile                       |
 | Transition        | opacity 200ms ease                                                              |
 | Clic              | ouvre PhotoLightbox sur la photo                                                |
 
 ### 6.4 Pagination
 
-**Regle absolue (CLAUDE.md) : PAS de scroll infini — pagination obligatoire.**
+**Regle absolue (CLAUDE.md) : PAS de scroll infini : pagination obligatoire.**
 
 ```
 FEED_PAGE_SIZE = 20       // max items par page
@@ -472,7 +472,7 @@ FEED_PAGE_SIZE = 20       // max items par page
 ┌──────────────────────────────┐
 │                              │
 │  [Illustration hermine +     │
-│   papillon — mascotte        │
+│   papillon : mascotte        │
 │   Naturegraph, style line    │
 │   art bleu/gris]             │
 │                              │
@@ -531,7 +531,7 @@ Panel lateral droit (desktop) / Bottom sheet (mobile).
 └────────────────────────────────┘
 ```
 
-#### Variante mobile — section supplementaire
+#### Variante mobile : section supplementaire
 
 Sur mobile, le panel filtres integre le **tri du feed** en premiere section
 (car les tabs ne sont pas visibles dans le header mobile) :
@@ -552,7 +552,7 @@ Sur mobile, le panel filtres integre le **tri du feed** en premiere section
 | ---------------- | ------------------------------------------------------------------ |
 | Dropdown "Trier" | select natif, bg-white, border-border, rounded-card, w-full        |
 | Options          | "Recent" (defaut), "Pour vous", "Populaire", "Tendances"           |
-| Visibilite       | **Mobile uniquement** — masque sur desktop/tablet qui ont les tabs |
+| Visibilite       | **Mobile uniquement** : masque sur desktop/tablet qui ont les tabs |
 
 #### Interface filtres
 
@@ -655,7 +655,7 @@ const DEFAULT_FILTERS: FeedFilters = {
 
 | Element       | Spec                                                     |
 | ------------- | -------------------------------------------------------- |
-| Emoji + count | flex gap-1, text-sm — ex: `❤️ 19 😍 14 🔥 42 😱 7 🧐 19` |
+| Emoji + count | flex gap-1, text-sm : ex: `❤️ 19 😍 14 🔥 42 😱 7 🧐 19` |
 | Comment count | right-aligned, 💬 icone + count, text-sm text-secondary  |
 
 #### Barre d'actions
@@ -678,8 +678,8 @@ Avant:
 
 Apres:
   ❤️19 😍14 🔥42 😱7 🧐19              💬 8     (reactions)
-  [❤️] [🔥] [😍] [😱] [🧐] [😕]                 (picker — nouvelle ligne)
-  ♡ Reagir    💬 Commentaires           🔖 ↗    (actions — inchangee)
+  [❤️] [🔥] [😍] [😱] [🧐] [😕]                 (picker : nouvelle ligne)
+  ♡ Reagir    💬 Commentaires           🔖 ↗    (actions : inchangee)
 ```
 
 > **Correction audit Figma** : Le picker s'affiche comme une **ligne supplementaire**
@@ -700,13 +700,13 @@ Apres:
 - `canInteract: false` passe en prop
 - Clic sur Reagir / Commenter / Sauvegarder → redirect `/signup` avec message
 - Feed visible en lecture seule complete
-- Limite : `GUEST_MAX_POSTS = 20` — mur d'inscription apres la 20e carte
+- Limite : `GUEST_MAX_POSTS = 20` : mur d'inscription apres la 20e carte
 
 ---
 
 ## 8. Types de posts
 
-Depuis la Figma (node `6385:61170`) — **5 variantes visuelles**.
+Depuis la Figma (node `6385:61170`) : **5 variantes visuelles**.
 
 ### 8.1 Types definis
 
@@ -747,10 +747,10 @@ Partage d'un moment/paysage sans observation detaillee.
 Sommet sous la neige
 Description du paysage...
 ● Ensoleille • Nuageux • Apres-midi
-[Photo plein format — paysage ou portrait]
+[Photo plein format : paysage ou portrait]
 ```
 
-- **Pas de badges especes** — pas d'obligation d'identifier
+- **Pas de badges especes** : pas d'obligation d'identifier
 - Photos : 1-4 images (photo principale obligatoire)
 - Champs : title, description, photos, weather, moment
 
@@ -765,7 +765,7 @@ Rencontre matinale en foret
 ...
 ```
 
-- **Sous-titre** : "avec [Username] • N Amis" — affiché sous le username
+- **Sous-titre** : "avec [Username] • N Amis" : affiché sous le username
 - Clic sur le collaborateur → navigate vers `/profile/:username`
 - Memes champs que Rencontre nature + `collaborators: User[]`
 
@@ -814,7 +814,7 @@ Quelqu'un peut m'aider a identifier cet animal ?
 
 ## 9. Formats photo
 
-Depuis la Figma (node `6385:58353`) — **4 layouts** selon le nombre de photos.
+Depuis la Figma (node `6385:58353`) : **4 layouts** selon le nombre de photos.
 
 ### 9.1 Logique de layout
 
@@ -830,7 +830,7 @@ function getPhotoLayout(count: number): 'single' | 'double' | 'triple' | 'mosaic
 
 ### 9.2 Specs par layout
 
-#### 1 photo — `single`
+#### 1 photo : `single`
 
 ```
 ┌──────────────────────────────┐
@@ -845,7 +845,7 @@ function getPhotoLayout(count: number): 'single' | 'double' | 'triple' | 'mosaic
 - Border-radius : rounded-card (12px) sur les 4 coins
 - Clic : ouvre PhotoLightbox
 
-#### 2 photos — `double`
+#### 2 photos : `double`
 
 ```
 ┌──────────────┬──────────────┐
@@ -860,7 +860,7 @@ function getPhotoLayout(count: number): 'single' | 'double' | 'triple' | 'mosaic
 - object-fit: cover
 - Coins externes arrondis, coins internes droits
 
-#### 3 photos — `triple`
+#### 3 photos : `triple`
 
 ```
 ┌──────────────┬──────────────┐
@@ -875,7 +875,7 @@ function getPhotoLayout(count: number): 'single' | 'double' | 'triple' | 'mosaic
 - Photos 2 et 3 : empilees a droite (50%, half height chacune)
 - Gap : 4px
 
-#### 4 photos — `mosaic`
+#### 4 photos : `mosaic`
 
 ```
 ┌──────────────┬──────────────┐
@@ -960,7 +960,7 @@ type MediaFormat = 'square' | 'portrait' | 'landscape' | 'free'
 | Espece row        | h-16 (64px), flex items-center gap-3, hover:bg-cream, cursor-pointer                                   |
 | Photo espece      | size-12 (48px), rounded-card                                                                           |
 | Nom espece        | Mulish Bold, text-sm                                                                                   |
-| Count             | Mulish 400, text-xs, text-secondary — "24 observations"                                                |
+| Count             | Mulish 400, text-xs, text-secondary : "24 observations"                                                |
 | Chevron           | size-4, text-muted, right side                                                                         |
 | CTA "Voir toutes" | w-full, h-10, rounded-full, border-[0.5px] border-border, bg-white, hover:bg-cream, Mulish 600 text-sm |
 
@@ -1320,7 +1320,7 @@ Modale centree (desktop) / bottom sheet (mobile).
 
 **Decision :** Le dark mode est reporte a plus tard. Implementation non prioritaire pour le MVP. Les specs ci-dessous sont conservees comme reference pour le futur sprint dark mode.
 
-Le dark mode reprend la **meme structure et le meme layout** — seules les couleurs changent via CSS custom properties.
+Le dark mode reprend la **meme structure et le meme layout** : seules les couleurs changent via CSS custom properties.
 
 ### 12.1 Tokens dark mode
 
@@ -1343,7 +1343,7 @@ Le dark mode reprend la **meme structure et le meme layout** — seules les coul
   --border-light: #22223a;
 
   // Actions (invariants)
-  --color-primary: #5f5dd8; // violet — identique light/dark
+  --color-primary: #5f5dd8; // violet : identique light/dark
   --color-primary-light: #2a2870; // version sombre du primary-light
 
   // Teal (invariant)
@@ -1738,7 +1738,7 @@ interface SearchService {
 ### 19.2 React Query hooks a creer
 
 ```typescript
-// src/hooks/useFeed.ts — TanStack Query
+// src/hooks/useFeed.ts : TanStack Query
 useInfiniteQuery({ queryKey: ['feed', sort, filters], ... })
 
 // src/hooks/useReaction.ts
@@ -1770,7 +1770,7 @@ useQuery + useMutation (markAsRead)
 
 ## 20. Roadmap d'implementation
 
-### Sprint 1 — Conformite Figma & navigation (P1)
+### Sprint 1 : Conformite Figma & navigation (P1)
 
 | #   | Tache                                                          | Fichier                   | Type    |
 | --- | -------------------------------------------------------------- | ------------------------- | ------- |
@@ -1781,7 +1781,7 @@ useQuery + useMutation (markAsRead)
 | 1.5 | Verifier FeedPost vs Figma (5 types de posts, 4 formats photo) | FeedPost.tsx              | Audit   |
 | 1.6 | Verifier StatsSidebar vs Figma (Impact + Tendances)            | StatsSidebar.tsx          | Audit   |
 
-### Sprint 2 — Experience core feed (P2)
+### Sprint 2 : Experience core feed (P2)
 
 | #   | Tache                                                         | Fichier                | Type    |
 | --- | ------------------------------------------------------------- | ---------------------- | ------- |
@@ -1793,7 +1793,7 @@ useQuery + useMutation (markAsRead)
 | 2.6 | Verifier PhotoLightbox vs Figma (thumbnails, counter, author) | PhotoLightbox.tsx      | Audit   |
 | 2.7 | Creer ShareModal                                              | ShareModal.tsx         | Feature |
 
-### Sprint 3 — Interactions enrichies (P3)
+### Sprint 3 : Interactions enrichies (P3)
 
 | #   | Tache                                              | Fichier          | Type    |
 | --- | -------------------------------------------------- | ---------------- | ------- |
@@ -1802,7 +1802,7 @@ useQuery + useMutation (markAsRead)
 | 3.3 | Badge filtres actifs "Filtres (N)"                 | FeedSection.tsx  | Feature |
 | 3.4 | Scroll restoration apres lightbox/navigation       | Home.tsx         | Feature |
 
-### Sprint 4 — Backend (P4)
+### Sprint 4 : Backend (P4)
 
 | #   | Tache                                             | Type    |
 | --- | ------------------------------------------------- | ------- |
@@ -1816,7 +1816,7 @@ useQuery + useMutation (markAsRead)
 
 ---
 
-## Annexe A — Design tokens reference
+## Annexe A : Design tokens reference
 
 ### Couleurs light mode
 
@@ -1838,10 +1838,10 @@ useQuery + useMutation (markAsRead)
 ### Typographie
 
 ```
-Titres:   Quicksand Bold  — H4: 24px / H5: 18px — lineHeight: 1.2
-Body:     Mulish 400/700   — 16px — lineHeight: 1.5
-Small:    Mulish 400/700   — 14px — lineHeight: 1.5
-Caption:  Mulish 400       — 12px — lineHeight: 1.2, letterSpacing: 4
+Titres:   Quicksand Bold  : H4: 24px / H5: 18px : lineHeight: 1.2
+Body:     Mulish 400/700   : 16px : lineHeight: 1.5
+Small:    Mulish 400/700   : 14px : lineHeight: 1.5
+Caption:  Mulish 400       : 12px : lineHeight: 1.2, letterSpacing: 4
 ```
 
 ### Spacing
@@ -1871,9 +1871,9 @@ Gutter:  32px (XL) / 24px (Desktop) / 16px (Mobile)
 
 ---
 
-## Annexe B — Mapping reactions Figma ↔ Code
+## Annexe B : Mapping reactions Figma ↔ Code
 
-> **Statut : RÉSOLU (v1.3)** — `database.ts`, `FeedPost.tsx` et `mockPosts.ts` sont maintenant alignés.
+> **Statut : RÉSOLU (v1.3)** : `database.ts`, `FeedPost.tsx` et `mockPosts.ts` sont maintenant alignés.
 
 | Emoji Figma | ReactionType (database.ts) | Label FR   | Label EN      |
 | ----------- | -------------------------- | ---------- | ------------- |
@@ -1891,7 +1891,7 @@ Gutter:  32px (XL) / 24px (Desktop) / 16px (Mobile)
 
 ---
 
-## Annexe C — Audit technique (v1.3)
+## Annexe C : Audit technique (v1.3)
 
 ### C.1 Corrections appliquées (v1.3)
 
@@ -1904,7 +1904,7 @@ Gutter:  32px (XL) / 24px (Desktop) / 16px (Mobile)
 | `src/i18n/locales/fr.json`                   | Clé `home.post.reactions.disappointed` manquante | Ajoutée : "Décevant"                                            |
 | `src/i18n/locales/en.json`                   | Clé `home.post.reactions.disappointed` manquante | Ajoutée : "Disappointing"                                       |
 
-### C.2 Chaînes i18n manquantes (à traduire — Sprint 2)
+### C.2 Chaînes i18n manquantes (à traduire : Sprint 2)
 
 Ces chaînes sont hardcodées en français dans le code et doivent migrer vers `i18n/locales/*.json` :
 
@@ -1917,7 +1917,7 @@ Ces chaînes sont hardcodées en français dans le code et doivent migrer vers `
 | LocationModal      | `home/LocationModal.tsx`      | "Localisation", "Utiliser ma position", "Rayon de recherche"                       |
 | CommentsSection    | `home/CommentsSection.tsx`    | "Commentaires", "Ajouter un commentaire...", "Envoyer"                             |
 
-**Estimation : ~25 chaînes à migrer** — travail mécanique, peut être fait en Sprint 2.
+**Estimation : ~25 chaînes à migrer** : travail mécanique, peut être fait en Sprint 2.
 
 ### C.3 État de préparation des composants
 
@@ -1935,7 +1935,7 @@ Ces chaînes sont hardcodées en français dans le code et doivent migrer vers `
 > Toute modification doit etre refletee ici avant d'etre codee.
 > Derniere mise a jour : 2026-04-01
 >
-> **v1.3 — Audit technique Dev + corrections code (2026-04-01)**
+> **v1.3 : Audit technique Dev + corrections code (2026-04-01)**
 >
 > - ReactionType aligné : `hands|trophy|star` → `admire|wow|curious` + ajout `disappointed`
 > - Annexe B réécrite avec le mapping correct et les labels i18n
@@ -1943,7 +1943,7 @@ Ces chaînes sont hardcodées en français dans le code et doivent migrer vers `
 > - Couleurs hex hardcodées corrigées dans StatsSidebar et NotificationsPanel
 > - Clés i18n `disappointed` ajoutées FR + EN
 >
-> **v1.2 — Audit Figma complet (2026-04-01)**
+> **v1.2 : Audit Figma complet (2026-04-01)**
 > Corrections issues de l'audit pixel-perfect de toutes les frames Figma :
 >
 > - Sidebars visibles des 1024px (Desktop), pas masquees
@@ -1958,7 +1958,7 @@ Ces chaînes sont hardcodées en français dans le code et doivent migrer vers `
 > - Bottom nav : hamburger menu (pas Explorer), avatar (pas icone User)
 > - Badge compteur sur icone filtre quand filtres actifs
 >
-> **v1.1 — Decisions Nicolas (2026-04-01)**
+> **v1.1 : Decisions Nicolas (2026-04-01)**
 >
 > - Ajouter emoji 😕 `disappointed` au ReactionType
 > - `nature_instant` reste masque dans ContributeModal

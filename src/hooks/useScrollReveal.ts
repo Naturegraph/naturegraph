@@ -1,5 +1,5 @@
 /**
- * useScrollReveal — Hook CSS-only pour animations au scroll
+ * useScrollReveal : Hook CSS-only pour animations au scroll
  * =========================================================
  * Utilise IntersectionObserver (natif, performant) pour déclencher
  * des animations CSS au défilement. Respecte prefers-reduced-motion

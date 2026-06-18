@@ -1,5 +1,5 @@
 /**
- * E2E tests — Flow beta fermee
+ * E2E tests : Flow beta fermee
  * ============================================================================
  *
  * Refs : ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md v2.0 + BETA_CLOSED_ACCESS_STRATEGY.md v2.0 + BATCH 34
@@ -24,7 +24,7 @@
 
 import { test, expect } from '@playwright/test'
 
-test.describe('Beta flow — UX cote front', () => {
+test.describe('Beta flow : UX cote front', () => {
   test('Page /waitlist se charge avec le formulaire', async ({ page }) => {
     await page.goto('/waitlist')
 
@@ -62,7 +62,7 @@ test.describe('Beta flow — UX cote front', () => {
   test('/signup affiche soit le BetaGate soit le SignupForm', async ({ page }) => {
     await page.goto('/signup')
     // Selon VITE_BETA_GATE_ENABLED, on a soit le gate (input cle), soit le form classique
-    // Les deux scenarios sont valides — on verifie juste que la page se charge
+    // Les deux scenarios sont valides : on verifie juste que la page se charge
     const body = page.locator('body')
     await expect(body).toContainText(/inscription|signup|beta|sign.?up|cle/i, {
       timeout: 5000,
@@ -90,14 +90,14 @@ test.describe('Beta flow — UX cote front', () => {
     const noKeyLink = page.getByRole('button', { name: /pas de cle|rejoindre la waitlist/i })
     const count = await noKeyLink.count()
 
-    test.skip(count === 0, 'BetaGate desactive — pas de bouton waitlist')
+    test.skip(count === 0, 'BetaGate desactive : pas de bouton waitlist')
 
     await noKeyLink.click()
     await expect(page).toHaveURL(/\/waitlist/)
   })
 })
 
-test.describe('Beta flow — pages publiques liees', () => {
+test.describe('Beta flow : pages publiques liees', () => {
   test('Page Contact accessible (pour demande cle)', async ({ page }) => {
     await page.goto('/contact')
     await expect(page.locator('body')).toContainText(/contact|message|email/i)

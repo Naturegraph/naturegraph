@@ -1,7 +1,7 @@
 /**
- * SearchPanel — Overlay de recherche globale
+ * SearchPanel : Overlay de recherche globale
  * ============================================
- * PRD Recherche §3 — multi-entités : Espèces + Comptes.
+ * PRD Recherche §3 : multi-entités : Espèces + Comptes.
  *
  * Filtres (§3.2) :
  *   - Tous      : espèces + comptes simultanément (défaut)
@@ -14,14 +14,14 @@
  *
  * Icônes espèces :
  *   - Emoji associé à la catégorie taxonomique (oiseau, mammifère…)
- *   - Pas de photo — trop lourd pour la BDD (MVP)
+ *   - Pas de photo : trop lourd pour la BDD (MVP)
  *
  * Positionnement :
  *   - Mobile  : bottom sheet fixed (slide depuis le bas) + backdrop
  *   - Desktop : dropdown absolue ancrée au bouton dans le parent div.relative
  *
  * Historique (§3.5) :
- *   - localStorage v2 — items typés RecentItem (type + label + meta)
+ *   - localStorage v2 : items typés RecentItem (type + label + meta)
  *   - Max 5 items, suppression individuelle + effacer tout
  *
  * Accessibilité (WCAG AA) :
@@ -50,7 +50,7 @@ const MAX_RECENT = 5
 /**
  * Emoji + libellé FR d'un groupe taxonomique.
  *
- * On s'appuie sur `TAXONOMIC_GROUP_CONFIG` (source de vérité partagée —
+ * On s'appuie sur `TAXONOMIC_GROUP_CONFIG` (source de vérité partagée -
  * clés au PLURIEL : birds / mammals / insects…, alignées sur la colonne
  * `species_master.taxonomic_group`). Les anciennes maps locales avaient
  * des clés au SINGULIER → labels en anglais + emoji 🌍 par défaut
@@ -110,7 +110,7 @@ function saveRecent(list: RecentItem[]) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-/** Skeleton d'une ligne de résultat — affiché pendant le chargement */
+/** Skeleton d'une ligne de résultat : affiché pendant le chargement */
 function SkeletonRow() {
   return (
     <div className="flex items-center gap-3 px-5 py-3" aria-hidden="true">
@@ -124,7 +124,7 @@ function SkeletonRow() {
 }
 
 /**
- * Icône catégorie espèce — emoji du groupe taxonomique dans un cercle coloré.
+ * Icône catégorie espèce : emoji du groupe taxonomique dans un cercle coloré.
  * Délibérément léger (pas d'image) pour le MVP.
  */
 function SpeciesCategoryIcon({ group }: { group: string | null }) {
@@ -226,7 +226,7 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
   // ── Actions ───────────────────────────────────────────────────────────────
 
   /**
-   * Sélection espèce — PRD §3.3 Cas 2 : active le Species Context Layer
+   * Sélection espèce : PRD §3.3 Cas 2 : active le Species Context Layer
    * → le feed se contextualise automatiquement, pas de navigation vers /species/:id.
    */
   function handleSelectSpecies(species: SpeciesHit) {
@@ -330,7 +330,7 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
         </div>
       </div>
 
-      {/* Filtres — Tous / Espèces / Comptes */}
+      {/* Filtres : Tous / Espèces / Comptes */}
       <div className="px-5 pb-3 flex gap-2">
         {FILTERS.map((f) => (
           <button
@@ -541,7 +541,7 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
   return (
     <>
       {/*
-       * ── Panel unique — position responsif via Tailwind ────────────────────
+       * ── Panel unique : position responsif via Tailwind ────────────────────
        *   Mobile  : FULL PAGE (inset-0). Évite le mouvement du sheet quand le
        *             clavier mobile s'ouvre. Plus lisible, plus conforme.
        *   Desktop : dropdown ancré au bouton (md:absolute + top/right).

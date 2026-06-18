@@ -1,5 +1,5 @@
 /**
- * BetaKeyGate — Formulaire de validation cle d'acces beta
+ * BetaKeyGate : Formulaire de validation cle d'acces beta
  *
  * Refs : BETA_CLOSED_ACCESS_STRATEGY.md v2.0 + BATCH 30
  *
@@ -106,7 +106,7 @@ export function BetaKeyGate({ onValidated, onSwitchToLogin }: BetaKeyGateProps) 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Auto-focus l'input au mount (UX) — seulement si pas de code pre-rempli
+  // Auto-focus l'input au mount (UX) : seulement si pas de code pre-rempli
   useEffect(() => {
     if (!storedCode) {
       const input = document.getElementById('beta-key-input')
@@ -212,7 +212,7 @@ export function BetaKeyGate({ onValidated, onSwitchToLogin }: BetaKeyGateProps) 
           )}
         </div>
 
-        {/* Consentement beta (BATCH 36 — strategy ligne 643) */}
+        {/* Consentement beta (BATCH 36 : strategy ligne 643) */}
         <label className="flex items-start gap-3 text-sm text-foreground cursor-pointer select-none">
           <input
             type="checkbox"

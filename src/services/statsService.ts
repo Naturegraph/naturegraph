@@ -304,7 +304,7 @@ export async function getTrendingSpecies(
       }
     }
 
-    // Tri par count décroissant (toutes especes — le filtre photo se fait
+    // Tri par count décroissant (toutes especes : le filtre photo se fait
     // ensuite, donc on ne slice pas encore a 3 ici).
     const sorted = [...countMap.entries()].sort((a, b) => b[1].count - a[1].count)
 

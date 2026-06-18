@@ -1,12 +1,12 @@
 /**
- * Types de localisation — Naturegraph
+ * Types de localisation : Naturegraph
  * =====================================
  * Modèle privacy-first : on distingue explicitement
  * ce que l'utilisateur déclare, ce qu'on stocke en DB,
  * et ce qu'on expose aux autres utilisateurs.
  *
  * ⚠️  location_point (geography PostGIS) n'existe PAS dans
- *     ces types clients — il est géré côté serveur uniquement.
+ *     ces types clients : il est géré côté serveur uniquement.
  */
 
 // ─── Enums ──────────────────────────────────────────────────
@@ -33,7 +33,7 @@ export type LocationRadius = 75 | 100 | 150 | 250
 // ─── Données ville ───────────────────────────────────────────
 
 /**
- * Résultat de l'autocomplete — données publiques d'une commune.
+ * Résultat de l'autocomplete : données publiques d'une commune.
  * Retourné par la RPC search_cities ou l'API Adresse.
  */
 export interface CityResult {
@@ -49,11 +49,11 @@ export interface CityResult {
   departmentCode: string
   /** Population (pour tri des suggestions grandes villes en premier) */
   population: number | null
-  /** Centroïde — envoyé au serveur pour update_user_location, jamais affiché */
+  /** Centroïde : envoyé au serveur pour update_user_location, jamais affiché */
   centroidLat: number
   centroidLng: number
   /**
-   * Pays (déduit de la source autocomplete) — « France » pour API Adresse
+   * Pays (déduit de la source autocomplete) : « France » pour API Adresse
    * data.gouv.fr, « Canada » pour les villes québécoises remontées par
    * search_cities. Persisté avec le post pour qu'on puisse afficher « France »
    * ou « Canada » en fallback quand la localisation est privée
@@ -84,9 +84,9 @@ export interface UserLocationData {
 export interface PublicLocationLabel {
   /** "Grenoble · Auvergne-Rhône-Alpes" ou "Auvergne-Rhône-Alpes" ou null */
   locationLabel: string | null
-  /** Code pays ISO (ex: "FR") — null si visibility=private */
+  /** Code pays ISO (ex: "FR") : null si visibility=private */
   countryCode: string | null
-  /** Rayon déclaré — null si visibility=private */
+  /** Rayon déclaré : null si visibility=private */
   locationRadiusKm: LocationRadius | null
   locationVisibility: LocationVisibility
 }
@@ -121,7 +121,7 @@ export interface AdresseFeature {
     name: string // nom commune
     city: string // même que name pour municipality
     context: string // "38, Isère, Auvergne-Rhône-Alpes"
-    score: number // score de pertinence 0–1
+    score: number // score de pertinence 0-1
     population: number
     type: 'municipality'
     label: string // "Grenoble (38000)"

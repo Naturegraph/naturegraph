@@ -9,8 +9,8 @@
  * automatiquement quand l'utilisateur a réglé reduce-motion à l'OS).
  */
 
-/* Slide-in depuis le haut — utilisé par InstallPromptBanner.
-   200 ms ease-out — assez court pour ne pas paraître intrusif. */
+/* Slide-in depuis le haut : utilisé par InstallPromptBanner.
+   200 ms ease-out : assez court pour ne pas paraître intrusif. */
 @keyframes slide-in-top {
   from {
     transform: translateY(-100%);

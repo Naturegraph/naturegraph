@@ -1,5 +1,5 @@
 /**
- * StatsSheet — Tiroir latéral droit qui expose la StatsSidebar
+ * StatsSheet : Tiroir latéral droit qui expose la StatsSidebar
  * ====================================================================
  *
  * Nicolas 2026-05-22 : sur les écrans entre 1024 et 1279 px (lg) la
@@ -24,7 +24,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-// Lazy load — la sidebar contient des hooks Supabase et fait du fetch ;
+// Lazy load : la sidebar contient des hooks Supabase et fait du fetch ;
 // on ne paye le chunk que si l'utilisateur ouvre réellement le sheet.
 const StatsSidebar = lazy(() => import('./StatsSidebar').then((m) => ({ default: m.StatsSidebar })))
 
@@ -54,14 +54,14 @@ export function StatsSheet({ onClose }: StatsSheetProps) {
 
   return (
     <>
-      {/* Backdrop — clic ferme */}
+      {/* Backdrop : clic ferme */}
       <div
         className="fixed inset-0 z-40 bg-foreground/30 backdrop-blur-sm"
         aria-hidden="true"
         onClick={onClose}
       />
 
-      {/* Tiroir droit — w-full sur mobile fallback, contraint à 360 px sur md+ */}
+      {/* Tiroir droit : w-full sur mobile fallback, contraint à 360 px sur md+ */}
       <aside
         role="dialog"
         aria-modal="true"
@@ -83,7 +83,7 @@ export function StatsSheet({ onClose }: StatsSheetProps) {
           </button>
         </div>
 
-        {/* Contenu scrollable — StatsSidebar lazy-loaded */}
+        {/* Contenu scrollable : StatsSidebar lazy-loaded */}
         <div className="flex-1 overflow-y-auto p-5">
           <Suspense fallback={<div className="w-full h-96 bg-muted/20 rounded-lg animate-pulse" />}>
             {/* V1.1.5 NG-032 : clic sur une tendance applique le filtre espece

@@ -1,19 +1,19 @@
 /**
- * InstallPromptBanner — Proposer l'installation de Naturegraph en PWA
+ * InstallPromptBanner : Proposer l'installation de Naturegraph en PWA
  *
  * Affiche une petite bannière en haut de l'écran qui invite l'utilisateur à
  * « ajouter Naturegraph à son écran d'accueil » comme une app native.
  *
  * Deux cas selon le navigateur :
  *
- * 1. Chrome / Edge / Brave (Android et desktop) — supporte l'API
+ * 1. Chrome / Edge / Brave (Android et desktop) : supporte l'API
  *    `beforeinstallprompt` :
  *      - L'event est capturé au mount.
  *      - Cliquer sur « Installer » appelle `event.prompt()` qui déclenche le
  *        dialog d'installation natif du navigateur.
  *      - Réponse user (accepté / refusé) loggée dans console pour analytics.
  *
- * 2. Safari iOS — n'expose PAS `beforeinstallprompt`. Le seul moyen
+ * 2. Safari iOS : n'expose PAS `beforeinstallprompt`. Le seul moyen
  *    d'installer une PWA est manuel :
  *      Partager → « Sur l'écran d'accueil ».
  *    On affiche donc une mini explication illustrée plutôt qu'un bouton qui
@@ -21,7 +21,7 @@
  *
  * Comportement dismissal :
  *   - Le banner ne réapparaît PAS dans la session courante après dismiss.
- *   - Stocké en localStorage avec TTL 30 jours — passé ce délai on re-tente
+ *   - Stocké en localStorage avec TTL 30 jours : passé ce délai on re-tente
  *     une fois (l'utilisateur a peut-être changé d'avis).
  *   - Détecte si l'app tourne déjà en mode standalone (déjà installée) → ne
  *     s'affiche pas dans ce cas.
@@ -44,7 +44,7 @@ const DISMISS_KEY = 'naturegraph-install-prompt-dismissed-at'
 const DISMISS_TTL_MS = 30 * 24 * 60 * 60 * 1000 // 30 jours
 
 /**
- * Event Chrome `beforeinstallprompt` — typé manuellement car non standardisé
+ * Event Chrome `beforeinstallprompt` : typé manuellement car non standardisé
  * dans lib.dom.d.ts. Le browser le fournit avec `prompt()` et `userChoice`.
  */
 interface BeforeInstallPromptEvent extends Event {
@@ -91,7 +91,7 @@ function markDismissed(): void {
   try {
     localStorage.setItem(DISMISS_KEY, String(Date.now()))
   } catch {
-    /* private mode iOS — pas grave, ré-affichage au prochain visit */
+    /* private mode iOS : pas grave, ré-affichage au prochain visit */
   }
 }
 
@@ -111,7 +111,7 @@ export function InstallPromptBanner() {
 
     // iOS Safari : pas d'event beforeinstallprompt, on montre le guide manuel
     if (isIos) {
-      // Délai pour ne pas être agressif dès la 1ʳᵉ seconde — laisse la
+      // Délai pour ne pas être agressif dès la 1ʳᵉ seconde : laisse la
       // première impression au contenu, propose l'installation après 3 s.
       const timer = setTimeout(() => setShowBanner(true), 3000)
       return () => clearTimeout(timer)
@@ -173,7 +173,7 @@ export function InstallPromptBanner() {
           {isIos ? (
             <p className="text-xs leading-snug mt-0.5 opacity-90">
               {t('pwa.installIosHint', {
-                defaultValue: 'Appuie sur Partager puis « Sur l\'écran d\'accueil ».',
+                defaultValue: "Appuie sur Partager puis « Sur l'écran d'accueil ».",
               })}
             </p>
           ) : (
@@ -185,7 +185,7 @@ export function InstallPromptBanner() {
           )}
         </div>
 
-        {/* Action principale — uniquement pour Chrome/Edge (iOS = guide manuel) */}
+        {/* Action principale : uniquement pour Chrome/Edge (iOS = guide manuel) */}
         {!isIos && deferredPrompt && (
           <button
             type="button"
@@ -196,7 +196,7 @@ export function InstallPromptBanner() {
           </button>
         )}
 
-        {/* Bouton dismiss — toujours présent */}
+        {/* Bouton dismiss : toujours présent */}
         <button
           type="button"
           onClick={handleDismiss}

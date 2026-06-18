@@ -1,4 +1,4 @@
-# SECURITY_GITHUB.md — Audit sécurité du dépôt GitHub
+# SECURITY_GITHUB.md : Audit sécurité du dépôt GitHub
 
 > Audit réalisé le 2026-05-20 · Dépôt `Naturegraph/naturegraph`
 
@@ -30,14 +30,14 @@ l'historique git.** Le point structurant : le dépôt est **public**.
   fonctions RPC, logique des policies RLS, structure des Edge Functions. Le « security
   through obscurity » est nul → **toute la sécurité repose sur la robustesse réelle**
   (RLS, autorisations), pas sur le secret du code.
-- **Impact** : indirect — pas une faille en soi, mais ça relève le niveau d'exigence :
+- **Impact** : indirect : pas une faille en soi, mais ça relève le niveau d'exigence :
   aucune erreur RLS n'est « cachée ».
-- **Scénario** : reconnaissance — l'attaquant lit `supabase/migrations/` pour cartographier
+- **Scénario** : reconnaissance : l'attaquant lit `supabase/migrations/` pour cartographier
   la DB et cibler les RPC.
 - **Difficulté** : nulle (lecture publique).
-- **Priorité** : importante — **décision à prendre consciemment**.
-- **Mitigation** : deux options légitimes —
-  1. **Garder public** (open-source, transparence — cohérent avec une plateforme
+- **Priorité** : importante : **décision à prendre consciemment**.
+- **Mitigation** : deux options légitimes -
+  1. **Garder public** (open-source, transparence : cohérent avec une plateforme
      citoyenne) : alors RLS et autorisations doivent être **irréprochables** (c'est le
      cas aujourd'hui) + ne JAMAIS commiter de secret.
   2. **Passer en privé** jusqu'à maturité : réduit la reconnaissance, recommandé si on
@@ -46,7 +46,7 @@ l'historique git.** Le point structurant : le dépôt est **public**.
      décision explicite à acter par Nicolas. Si public : désactiver le **forking** non
      nécessaire.
 - **Effort** : 0 (décision) / 1 clic (forking, visibilité).
-- **Avant prod ?** OUI — trancher consciemment public vs privé.
+- **Avant prod ?** OUI : trancher consciemment public vs privé.
 
 ### 🟡 `allow_forking: true`
 
@@ -64,21 +64,21 @@ l'historique git.** Le point structurant : le dépôt est **public**.
 | Branche   | enforce_admins | linear history | force push | conv. resolution | status checks | reviews requises |
 | --------- | :------------: | :------------: | :--------: | :--------------: | :-----------: | :--------------: |
 | `main`    |       ✅       |       ✅       | ❌ bloqué  |        ✅        |  CI + CodeQL  |      **0**       |
-| `staging` |       ❌       |       —        | ❌ bloqué  |        ✅        |  CI + CodeQL  |        0         |
-| `develop` |       ❌       |       —        | ❌ bloqué  |        ✅        |  CI + CodeQL  |        0         |
+| `staging` |       ❌       |       :        | ❌ bloqué  |        ✅        |  CI + CodeQL  |        0         |
+| `develop` |       ❌       |       :        | ❌ bloqué  |        ✅        |  CI + CodeQL  |        0         |
 
 ### 🟡 0 review requise sur `main`
 
 - **Description** : aucune approbation de PR n'est obligatoire pour merger sur `main`.
 - **Risque réel** : un compte GitHub compromis (ou une erreur) peut merger n'importe
   quoi en production sans 4-yeux.
-- **Impact** : modéré — mais le projet est mono-mainteneur (Nicolas), donc « 1 review
+- **Impact** : modéré : mais le projet est mono-mainteneur (Nicolas), donc « 1 review
   requise » serait auto-bloquant. Les status checks (CI + CodeQL) compensent
   partiellement (le code doit passer lint/test/build/SAST).
 - **Scénario** : compromission du compte GitHub de Nicolas → push direct impossible
   (`main` protégée) mais merge de PR malveillante possible.
 - **Difficulté** : nécessite de compromettre le compte fondateur.
-- **Priorité** : moyenne — la vraie mitigation est la **2FA GitHub** (cf. §3).
+- **Priorité** : moyenne : la vraie mitigation est la **2FA GitHub** (cf. §3).
 - **Mitigation** : garder 0 review tant que mono-mainteneur (sinon blocage). Dès qu'un
   2ᵉ contributeur arrive → passer à 1 review obligatoire. **2FA GitHub obligatoire**
   entre-temps.
@@ -95,14 +95,14 @@ l'historique git.** Le point structurant : le dépôt est **public**.
 
 ## 3. Comptes, accès, 2FA, commits signés
 
-### 🟠 2FA & commits signés — à confirmer
+### 🟠 2FA & commits signés : à confirmer
 
 - **Description** : `web_commit_signoff_required: false`, et la signature GPG des
   commits n'est pas imposée. Le statut 2FA du compte Nicolas n'est pas vérifiable par
   l'audit code.
 - **Risque réel** : sans 2FA, le compte fondateur (= accès total : repo, secrets,
   déploiements) est vulnérable au phishing / réutilisation de mot de passe.
-- **Impact** : **élevé** — un compte compromis = contrôle du code de production.
+- **Impact** : **élevé** : un compte compromis = contrôle du code de production.
 - **Scénario** : phishing du compte GitHub → merge de code malveillant → déployé par
   Vercel.
 - **Difficulté** : dépend de l'hygiène du compte.
@@ -112,7 +112,7 @@ l'historique git.** Le point structurant : le dépôt est **public**.
      pas SMS).
   2. Activer **« Require 2FA »** au niveau de l'organisation `Naturegraph` (Settings →
      Authentication security).
-  3. Optionnel : signature des commits (gpg/ssh) — confort, non bloquant MVP.
+  3. Optionnel : signature des commits (gpg/ssh) : confort, non bloquant MVP.
 - **Effort** : 30 min.
 - **Avant prod ?** OUI (action organisationnelle).
 
@@ -130,9 +130,9 @@ l'historique git.** Le point structurant : le dépôt est **public**.
 - **Secret scanning** : activé ✅
 - **Secret scanning push protection** : activé ✅ (bloque un push contenant un secret)
 - **Dependabot security updates** : activé ✅
-- `secret_scanning_non_provider_patterns` : désactivé — 🟡 mineur, à activer pour
+- `secret_scanning_non_provider_patterns` : désactivé : 🟡 mineur, à activer pour
   détecter aussi les patterns de secrets génériques (clés custom). 1 clic.
-- `secret_scanning_validity_checks` : désactivé — 🟡 mineur, à activer (vérifie si un
+- `secret_scanning_validity_checks` : désactivé : 🟡 mineur, à activer (vérifie si un
   secret détecté est encore actif). 1 clic.
 
 ### 🟢 Historique git propre
@@ -143,7 +143,7 @@ l'historique git.** Le point structurant : le dépôt est **public**.
 
 ### 🟡 Secrets de dépôt / Actions
 
-- `gh secret list` n'a rien renvoyé — soit aucun secret de dépôt, soit secrets au
+- `gh secret list` n'a rien renvoyé : soit aucun secret de dépôt, soit secrets au
   niveau organisation/environnement. Les workflows CI (ci.yml) qui touchent Supabase
   utilisent probablement des secrets d'environnement GitHub.
 - **Mitigation** : vérifier que les secrets CI (clés Supabase de test, tokens) sont

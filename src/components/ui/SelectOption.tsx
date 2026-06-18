@@ -1,5 +1,5 @@
 /**
- * SelectOption — Option sélectionnable type radio/checkbox
+ * SelectOption : Option sélectionnable type radio/checkbox
  * =========================================================
  * Pattern récurrent dans l'onboarding (6 occurrences) :
  * carte cliquable avec état sélectionné, indicateur visuel et label.
@@ -17,7 +17,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react'
 export interface SelectOptionProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** État sélectionné */
   selected: boolean
-  /** Mode visuel — défaut: radio */
+  /** Mode visuel : défaut: radio */
   mode?: 'radio' | 'checkbox'
   /** Label principal (titre de l'option) */
   label: ReactNode
@@ -61,7 +61,7 @@ export function SelectOption({
           {description && <p className="text-[var(--color-text-secondary)]">{description}</p>}
         </div>
 
-        {/* Indicateur visuel — décoratif (aria-pressed porte l'état) */}
+        {/* Indicateur visuel : décoratif (aria-pressed porte l'état) */}
         {mode === 'radio' ? (
           <div
             aria-hidden="true"

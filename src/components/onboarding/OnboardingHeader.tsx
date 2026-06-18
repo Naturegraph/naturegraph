@@ -1,5 +1,5 @@
 /**
- * OnboardingHeader — Header partagé du flow d'onboarding
+ * OnboardingHeader : Header partagé du flow d'onboarding
  * ========================================================
  * Regroupe le pattern dupliqué dans les 4 étapes :
  *   - badge catégorie (gauche)
@@ -20,7 +20,7 @@ export interface OnboardingHeaderProps {
   current: number
   /** Nombre total d'étapes */
   total: number
-  /** Clé i18n du label de catégorie — défaut: 'onboarding.categories.profile' */
+  /** Clé i18n du label de catégorie : défaut: 'onboarding.categories.profile' */
   categoryKey?: string
   /** Callback du bouton de sortie. Si absent, le bouton n'est pas rendu. */
   onExit?: () => void

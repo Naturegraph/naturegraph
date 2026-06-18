@@ -1,9 +1,9 @@
-# PRD — Page Profil Naturegraph (Visiteur & Owner)
+# PRD : Page Profil Naturegraph (Visiteur & Owner)
 
 > Product Requirements Document
-> Version : 1.0 — 2026-05-02
+> Version : 1.0 : 2026-05-02
 > Auteur : Nicolas (Lead Product Designer) + Claude (PM/Dev/UX/UI)
-> Statut : Référence active — guide d'implémentation
+> Statut : Référence active : guide d'implémentation
 > Sources : Figma `6385:74429` (visiteur desktop), `6385:70500` (visiteur mobile), `6385:77470` (owner desktop), `6385:77493` (boutons owner)
 
 ---
@@ -68,7 +68,7 @@ et d'**espace personnel** pour retrouver ses propres observations et inspiration
 | **Figma** | [Tab Inspirations](https://www.figma.com/design/YNnsWRi3hSp5hWsUa0Tjr6/?node-id=6385-76765)        |
 | **Figma** | [Tab Communauté](https://www.figma.com/design/YNnsWRi3hSp5hWsUa0Tjr6/?node-id=6385-76903)          |
 | **Code**  | `src/pages/Profile.tsx` + `src/components/profile/` (~12 composants)                               |
-| **Mock**  | `src/data/mock/profileMock.ts` — profil visiteur + saved posts + followers                         |
+| **Mock**  | `src/data/mock/profileMock.ts` : profil visiteur + saved posts + followers                         |
 | **Notes** | `second-agent/03-profil-backend-notes.md` (architecture backend Phase 2)                           |
 
 ### Décisions clés
@@ -95,7 +95,7 @@ et d'**espace personnel** pour retrouver ses propres observations et inspiration
 
 #### Visiteur (`isOwnProfile: false`)
 
-L'utilisateur connecté visite **un autre** profil — ou un visiteur non-connecté
+L'utilisateur connecté visite **un autre** profil : ou un visiteur non-connecté
 visite n'importe quel profil public.
 
 ```
@@ -179,7 +179,7 @@ faille (cf. audit 2026-05-02).
 
 ### 3.3 Comportement mobile
 
-- Tab "À propos" mobile-only — affiche `<ProfileAboutCard compact />` + `<ProfileDNACard compact />`
+- Tab "À propos" mobile-only : affiche `<ProfileAboutCard compact />` + `<ProfileDNACard compact />`
   empilées dans un tabpanel dédié
 - Tabs scrollables horizontalement (`overflow-x-auto scrollbar-none touch-pan-x`)
 - Le premier tab visible (`tab.id === 'about'` mobile, `tab.id === 'journal'` desktop)
@@ -251,7 +251,7 @@ fond `cream-lighter border` ; sinon → fond primary, texte primary-foreground.
 <button>{Settings} Paramètres</button>             // outlined, h-10 px-5
 ```
 
-Pas de menu 3-pts ni de share — les actions block/report n'ont pas de sens
+Pas de menu 3-pts ni de share : les actions block/report n'ont pas de sens
 sur son propre profil ; le partage est accessible via le SharePopover du
 contenu (à venir).
 
@@ -297,7 +297,7 @@ sur mobile (mode `compact`).
 └──────────────────────────────────────────────────────────────┘
 ```
 
-- **Titre** : "À propos" — `font-body font-bold text-base` + icône `UserRound`
+- **Titre** : "À propos" : `font-body font-bold text-base` + icône `UserRound`
   dans un container `size-8 rounded-full bg-[--color-highlight-primary]`
 - **Bio** : multiline, `text-sm text-foreground`
 - **Footer** : date d'inscription + liens externes (website + instagram) sur
@@ -316,7 +316,7 @@ si l'utilisateur le saisit, sinon URL invalide.
 
 ### 5.3 Date d'inscription
 
-Format : `Migrateur depuis {mois} {année}` — utiliser `Intl.DateTimeFormat`
+Format : `Migrateur depuis {mois} {année}` : utiliser `Intl.DateTimeFormat`
 pour i18n native (FR + EN). Actuellement les mois sont en dur en français
 (à corriger).
 
@@ -374,10 +374,10 @@ _"Cette section s'enrichira au fil des observations partagées."_
 
 | Tab            | Icône     | i18n key                    | Badge count         | Visible     |
 | -------------- | --------- | --------------------------- | ------------------- | ----------- |
-| À propos       | UserRound | `profile.tabs.about`        | —                   | mobile only |
+| À propos       | UserRound | `profile.tabs.about`        | :                   | mobile only |
 | Journal nature | Camera    | `profile.tabs.journal`      | `userPosts.length`  | toujours    |
 | Inspirations   | Bookmark  | `profile.tabs.inspirations` | `savedPosts.length` | toujours    |
-| Communauté     | Users     | `profile.tabs.community`    | —                   | toujours    |
+| Communauté     | Users     | `profile.tabs.community`    | :                   | toujours    |
 | Statistiques   | BarChart2 | `profile.tabs.stats`        | "Bientôt" badge     | toujours    |
 
 ### 7.2 Comportement par défaut
@@ -428,7 +428,7 @@ Pas de scrollbar visible. Sur mobile, les 5 tabs (À propos + Journal + Inspirat
 ```
 
 - Header row : segmented `Récent | Populaire` (gauche) + view toggle `list/grid/filter` (droite)
-- View toggle masqué sur mobile (`hidden md:inline-flex`) — la HomeNavbar mobile expose déjà ces contrôles
+- View toggle masqué sur mobile (`hidden md:inline-flex`) : la HomeNavbar mobile expose déjà ces contrôles
 - Layout list : grid 1 col mobile (edge-to-edge `-mx-4`) / 2 cols desktop (`gap-6`)
 - Layout grid : `<FeedGallery>` masonry (CSS columns 2/3/4 selon breakpoint)
 
@@ -467,7 +467,7 @@ appliqués localement uniquement (pas envoyés au query). À brancher Phase 2.
 ### 9.1 Concept produit
 
 L'onglet Inspirations affiche la **collection** d'observations sauvegardées
-(bookmarks) — les posts d'**autres** utilisateurs que ce profil a marqués
+(bookmarks) : les posts d'**autres** utilisateurs que ce profil a marqués
 comme inspiration.
 
 ### 9.2 Implémentation
@@ -547,7 +547,7 @@ _"laisser en noir le label et avoir 40px minimum de height"_).
 - Bouton Migrer circulaire, icône `TreeDeciduous`
   - Non suivi : `bg-background border-border`, arbre creux
   - Suivi : `bg-primary text-primary-foreground`, arbre **plein** (`fill="currentColor"`)
-    — décision Nicolas 2026-05-02 : _"on peut mettre un arbre plein plutôt et
+    : décision Nicolas 2026-05-02 : _"on peut mettre un arbre plein plutôt et
     pas juste avec border pour montrer qu'on a follow la personne ?"_
 
 ### 10.4 Grille responsive
@@ -580,13 +580,13 @@ ORDER BY f.created_at DESC LIMIT 20 OFFSET $cursor;
 
 ### 11.1 État Phase 1 (actuel)
 
-Placeholder "Bientôt" — `<ProfileEmptyState compact>` avec :
+Placeholder "Bientôt" : `<ProfileEmptyState compact>` avec :
 
 - Titre : "Statistiques arrivent bientôt"
 - Sous-titre : "On prépare les graphiques de tes observations, espèces rencontrées et migrations dans le temps."
 - Badge `Bientôt` (primary-light, uppercase)
 
-### 11.2 Phase 3 — Contenu prévu
+### 11.2 Phase 3 : Contenu prévu
 
 - **Graphique d'observations** : heatmap calendaire (style GitHub contributions)
 - **Diversité d'espèces** : top 10 + nombre total
@@ -606,7 +606,7 @@ Tous les empty states utilisent le composant unifié `<ProfileEmptyState />` :
 <ProfileEmptyState
   title="Titre H3"
   subtitle="Description courte muted"
-  compact={false} // optionnel — réduit padding et taille hermine
+  compact={false} // optionnel : réduit padding et taille hermine
 >
   {/* children optionnels (CTA, badge, etc.) */}
 </ProfileEmptyState>
@@ -627,7 +627,7 @@ Tous les empty states utilisent le composant unifié `<ProfileEmptyState />` :
 
 ### 13.1 Déclencheur
 
-Owner only — clic sur le bouton "Modifier" dans le ProfileHeader.
+Owner only : clic sur le bouton "Modifier" dans le ProfileHeader.
 
 ### 13.2 Champs éditables
 
@@ -657,9 +657,9 @@ de focus trap**. À implémenter Phase 2 (cf. audit §11).
 
 ### 14.1 Visiteur
 
-- **Copier le lien** — copie l'URL `${origin}/profile/${username}` dans presse-papier
-- **Bloquer cet utilisateur** — TODO `moderationService.blockUser(targetId)`
-- **Signaler ce profil** — TODO `moderationService.reportProfile(targetId, reason)`
+- **Copier le lien** : copie l'URL `${origin}/profile/${username}` dans presse-papier
+- **Bloquer cet utilisateur** : TODO `moderationService.blockUser(targetId)`
+- **Signaler ce profil** : TODO `moderationService.reportProfile(targetId, reason)`
 
 ### 14.2 Owner
 
@@ -670,7 +670,7 @@ remplacent cette logique. À reconsidérer Phase 2 si on veut un menu rapide.)
 
 - Position : `absolute right-0 top-full mt-2`
 - Fermeture : Escape, click outside, click sur un item (avec délai 1200ms pour
-  feedback visuel — Check icon vert sur l'item activé)
+  feedback visuel : Check icon vert sur l'item activé)
 - Hover items : `hover:bg-muted/40` pour normal, `hover:bg-red-50 text-red-600`
   pour danger (Signaler)
 
@@ -896,9 +896,9 @@ src/services/
 
 ```
 src/hooks/
-├── useProfile.ts              (étendre — useFollowers, useFollowing, useToggleFollow)
+├── useProfile.ts              (étendre : useFollowers, useFollowing, useToggleFollow)
 ├── useSavedPosts.ts           (nouveau)
-└── useObserverDNA.ts          (nouveau — RPC get_observer_dna, staleTime 1h)
+└── useObserverDNA.ts          (nouveau : RPC get_observer_dna, staleTime 1h)
 ```
 
 ### 20.4 Cleanup au switch
@@ -916,7 +916,7 @@ src/hooks/
 
 ## 21. Roadmap d'implémentation
 
-### Phase 1 — UI complète (terminée 2026-05-02) ✅
+### Phase 1 : UI complète (terminée 2026-05-02) ✅
 
 - [x] ProfileHeader desktop horizontal + mobile centré (Figma 6385:74429 / 6385:70500)
 - [x] Cards À propos & ADN observateur
@@ -932,7 +932,7 @@ src/hooks/
 - [x] Audit + corrections (sécurité isOwnProfile, perf banner, robustesse tabs)
 - [x] Notes backend complètes (`second-agent/03`)
 
-### Phase 2 — Backend Supabase
+### Phase 2 : Backend Supabase
 
 - [ ] Appliquer les 6 migrations SQL
 - [ ] Créer profileService, savedPostService, moderationService
@@ -942,14 +942,14 @@ src/hooks/
 - [ ] RLS sur toutes les nouvelles tables
 - [ ] Triggers compteurs dénormalisés
 
-### Phase 3 — Statistiques + Paramètres
+### Phase 3 : Statistiques + Paramètres
 
 - [ ] Page `/settings` (notifs, langue, confidentialité, sécurité, suppression compte)
 - [ ] Tab Statistiques activé : graphiques observations/espèces/streak
 - [ ] RPC `get_profile_stats` côté Postgres
 - [ ] Export données utilisateur (RGPD)
 
-### Phase 4 — Polish a11y / i18n / perf
+### Phase 4 : Polish a11y / i18n / perf
 
 - [ ] Focus trap dans EditProfilePanel + ProfileOptionsMenu
 - [ ] Navigation flèches WAI-ARIA dans ProfileTabs
@@ -968,7 +968,7 @@ src/hooks/
 - [Backend notes (second-agent/03)](../second-agent/03-profil-backend-notes.md)
 - [Tracking front (second-agent/README)](../second-agent/README.md)
 - [GUIDELINES.md (éco-conception, a11y)](../GUIDELINES.md)
-- [PRD Homepage](./PRD_HOMEPAGE.md) — pour la cohérence avec le feed
+- [PRD Homepage](./PRD_HOMEPAGE.md) : pour la cohérence avec le feed
 
 ### B. Glossaire branding
 

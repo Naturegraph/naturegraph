@@ -318,7 +318,7 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
             </div>
           </div>
 
-          {/* Barre de progression — uniquement dans le wizard */}
+          {/* Barre de progression : uniquement dans le wizard */}
           {showSteps && (
             <div
               className="flex gap-1"
@@ -637,7 +637,7 @@ function ManageView({
                   )}
                 </button>
 
-                {/* Supprimer — UNIQUEMENT pour les carnets non publies (un carnet
+                {/* Supprimer : UNIQUEMENT pour les carnets non publies (un carnet
                     publie = donnees du post, non supprimable ici, Nicolas
                     2026-06-09). */}
                 {!linked && (
@@ -841,7 +841,7 @@ function SpeciesSearch({
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<TaxonomyHit[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  // Filtre par groupe (entonnoir) — meme principe que Rencontre nature.
+  // Filtre par groupe (entonnoir) : meme principe que Rencontre nature.
   const [groupKey, setGroupKey] = useState<string | null>(null)
   const [filterOpen, setFilterOpen] = useState(false)
 
@@ -940,7 +940,7 @@ function SpeciesSearch({
           )}
         </button>
 
-        {/* Popover filtre — chips de groupe (single-select) */}
+        {/* Popover filtre : chips de groupe (single-select) */}
         {filterOpen && (
           <div className="absolute right-0 top-full mt-2 z-20 w-64 rounded-md border-[0.5px] border-border bg-background p-3 shadow-xl flex flex-col gap-3">
             <div className="flex items-center justify-between">

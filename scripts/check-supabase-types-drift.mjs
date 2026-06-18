@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * check-supabase-types-drift.mjs — CI gate drift detection (T-003)
+ * check-supabase-types-drift.mjs : CI gate drift detection (T-003)
  * ============================================================================
  *
  * Compare `src/types/supabase.ts` au schema actuel de la DB Supabase distante.
@@ -80,7 +80,7 @@ const gen = spawnSync(
 )
 
 if (gen.status !== 0) {
-  // En CI le login Supabase peut manquer — on skip plutot que fail
+  // En CI le login Supabase peut manquer : on skip plutot que fail
   // (le check est best-effort, pas un blocker absolu).
   skip(`Generation echec (exit ${gen.status}). Probablement pas authentifie en CI. stderr: ${gen.stderr?.slice(0, 200)}`)
 }

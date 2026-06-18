@@ -1,4 +1,4 @@
-# Contributing — Naturegraph
+# Contributing : Naturegraph
 
 ## Stratégie de branches
 
@@ -61,9 +61,9 @@ Format : `type: description courte`
 
 ### Versions prévues
 
-- `v0.1.0` — Setup initial du projet
-- `v0.2.0` — Design system + composants UI
-- `v0.3.0` — Onboarding flow
-- `v0.4.0` — Feed & contributions
-- `v0.5.0` — Profil utilisateur
-- `v1.0.0` — MVP public
+- `v0.1.0` : Setup initial du projet
+- `v0.2.0` : Design system + composants UI
+- `v0.3.0` : Onboarding flow
+- `v0.4.0` : Feed & contributions
+- `v0.5.0` : Profil utilisateur
+- `v1.0.0` : MVP public

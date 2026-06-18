@@ -1,5 +1,5 @@
 /**
- * SharePopover — Modal de partage d'un post (second-agent/14)
+ * SharePopover : Modal de partage d'un post (second-agent/14)
  *
  * Design Figma 6385:99713 (desktop) / 6385:100360 (mobile) :
  *   - Modal centrée (desktop) ou bottom sheet (mobile)
@@ -7,7 +7,7 @@
  *   - Rangée de 4 services : WhatsApp, Instagram, Messenger, Gmail
  *   - Section "Copier le lien :" avec URL + bouton copy
  *
- * Note : Instagram n'a pas d'API publique de partage de lien — l'icône
+ * Note : Instagram n'a pas d'API publique de partage de lien : l'icône
  * redirige vers le profil utilisateur Instagram.com (à configurer plus tard).
  *
  * Accessibilité : role="dialog", aria-modal, focus initial sur X, Escape ferme.
@@ -18,7 +18,7 @@ import { useTranslation } from 'react-i18next'
 import { X, Copy, Check } from 'lucide-react'
 
 /*
- * Logos officiels des réseaux — Nicolas dépose les fichiers ici :
+ * Logos officiels des réseaux : Nicolas dépose les fichiers ici :
  *   src/assets/images/social/{whatsapp,instagram,messenger,gmail}.png
  * Format : PNG transparent 512×512 minimum recommandé.
  */
@@ -31,16 +31,16 @@ import { buildPostPath } from '@/lib/postSlug'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SharePopoverProps {
-  /** ID du post — si fourni (et que `shareUrl` ne l'est pas), construit
+  /** ID du post : si fourni (et que `shareUrl` ne l'est pas), construit
    *  l'URL canonique `/post/{slug}-{postId}`. Optionnel si `shareUrl` est fourni. */
   postId?: string
   /** URL custom à partager. Override `postId`. Utilisé pour partager
    *  d'autres entités (profil utilisateur, etc.). */
   shareUrl?: string
-  /** Titre/objet — utilisé dans subject email & body de partage,
+  /** Titre/objet : utilisé dans subject email & body de partage,
    *  ET comme base du slug URL si `species` est absent. */
   title: string
-  /** Nom de l'espèce — fallback pour construire le slug URL si pas de titre. */
+  /** Nom de l'espèce : fallback pour construire le slug URL si pas de titre. */
   species?: string | null
   /** Callback de fermeture */
   onClose: () => void
@@ -52,7 +52,7 @@ interface SocialIconProps {
   iconNode: React.ReactNode
 }
 
-// ─── Icônes — logos officiels via assets PNG (Figma 6385:100127) ────────────
+// ─── Icônes : logos officiels via assets PNG (Figma 6385:100127) ────────────
 // Les 4 logos sont en `src/assets/images/social/` (PNG transparents 512px).
 // Source : logos officiels de marque importés par Nicolas (2026-05-01).
 
@@ -99,7 +99,7 @@ export function SharePopover({ postId, shareUrl, title, species, onClose }: Shar
 
   // Priorité : shareUrl explicite > URL canonique post avec slug > origin.
   // buildPostPath() préfixe l'UUID d'un slug humain pour les URLs partagées
-  // (cf. src/lib/postSlug.ts) — rétro-compatible (l'UUID reste à la fin).
+  // (cf. src/lib/postSlug.ts) : rétro-compatible (l'UUID reste à la fin).
   const url =
     shareUrl ??
     (postId
@@ -150,7 +150,7 @@ export function SharePopover({ postId, shareUrl, title, species, onClose }: Shar
     },
     {
       label: 'Instagram',
-      // Instagram n'a pas d'API publique de partage — ouvre le profil
+      // Instagram n'a pas d'API publique de partage : ouvre le profil
       // (placeholder ; à remplacer par un deeplink mobile si app installée)
       href: 'https://www.instagram.com/',
       iconNode: <SocialLogo src={instagramLogo} alt="" />,
@@ -171,7 +171,7 @@ export function SharePopover({ postId, shareUrl, title, species, onClose }: Shar
 
   const content = (
     <>
-      {/* Header — titre + close */}
+      {/* Header : titre + close */}
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-lg font-bold text-foreground">
           {t('home.share.title', { defaultValue: "Partager l'observation" })}
@@ -197,7 +197,7 @@ export function SharePopover({ postId, shareUrl, title, species, onClose }: Shar
       {/* Séparateur fin entre les icônes et la section copy (Figma 6385:100127) */}
       <hr className="border-border mb-5" />
 
-      {/* Section copier le lien — label bold + URL inline + icône copy à droite */}
+      {/* Section copier le lien : label bold + URL inline + icône copy à droite */}
       <div className="flex flex-col gap-2">
         <p className="text-sm font-bold text-foreground">
           {t('home.share.copyLinkLabel', { defaultValue: 'Copier le lien :' })}

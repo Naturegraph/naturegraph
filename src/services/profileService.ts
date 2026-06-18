@@ -1,5 +1,5 @@
 /**
- * profileService — Couche d'accès aux données profil (Supabase)
+ * profileService : Couche d'accès aux données profil (Supabase)
  *
  * TODO backend :
  *  - Activer les RLS policies sur la table `profiles`
@@ -54,7 +54,7 @@ export interface UpdateProfilePayload {
   is_public?: boolean
   avatar_url?: string | null
   banner_url?: string | null
-  /** Objectif d'observations hebdomadaire (1-50) — colonne ajoutée
+  /** Objectif d'observations hebdomadaire (1-50) : colonne ajoutée
    *  Nicolas 2026-05-22. Saisi via EditInfoTab. */
   week_goal?: number
 }
@@ -160,7 +160,7 @@ export async function updateProfile(
 /**
  * Récupère des profils suggérés pour la section "Migrateurs à suivre".
  *
- * Règles (cf. PRD — Migrateurs à suivre) :
+ * Règles (cf. PRD : Migrateurs à suivre) :
  *  1. Exclusion : utilisateur connecté + profils déjà suivis
  *  2. Contrainte géographique : si `region` est fournie, la recherche est restreinte
  *     à cette région. S'il y a moins de 3 profils disponibles dans la région →
@@ -250,11 +250,8 @@ export async function getSuggestedUsers({
   if (candidates.length === 0) return []
 
   // Etape 3 : split entre matchs interets (boost) + reste (fallback top actifs)
-  const hasInterestMatch = (
-    c: (typeof candidates)[number],
-  ): boolean =>
-    Array.isArray(c.interests) &&
-    userInterests.some((interest) => c.interests!.includes(interest))
+  const hasInterestMatch = (c: (typeof candidates)[number]): boolean =>
+    Array.isArray(c.interests) && userInterests.some((interest) => c.interests!.includes(interest))
 
   const withInterest = shuffle(candidates.filter(hasInterestMatch))
   const withoutInterest = shuffle(candidates.filter((c) => !hasInterestMatch(c)))

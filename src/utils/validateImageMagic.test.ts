@@ -1,5 +1,5 @@
 /**
- * Tests unit — validateImageMagicNumber
+ * Tests unit : validateImageMagicNumber
  *
  * Refs : T-062 + T-010 (MASTER_TODO) + BATCH 24
  */

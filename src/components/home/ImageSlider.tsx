@@ -1,5 +1,5 @@
 /**
- * ImageSlider — Galerie d'images d'un post (Figma · format-aware)
+ * ImageSlider : Galerie d'images d'un post (Figma · format-aware)
  *
  * Source de vérité : ratios Figma (la HAUTEUR scale avec la largeur).
  *   · 16:9    → ratio 606/384 (≈ 1.578:1) → à 656px wide : 416px tall
@@ -34,11 +34,11 @@ import { ImagePresets } from '@/lib/supabaseImage'
 
 /** Aspect ratio Figma de la photo. Largeur fournie par Tailwind, hauteur déduite. */
 const FORMAT_ASPECT: Record<MockPost['format'], string> = {
-  // Figma node 6385:60464 — slide 606×384.
+  // Figma node 6385:60464 : slide 606×384.
   '16:9': 'aspect-[606/384]',
-  // Figma node 6385:60539 — slide 606×768.
+  // Figma node 6385:60539 : slide 606×768.
   portrait: 'aspect-[606/768]',
-  // Figma node 6385:60614 — slide 606×606.
+  // Figma node 6385:60614 : slide 606×606.
   '1:1': 'aspect-square',
 }
 
@@ -61,7 +61,7 @@ const DRAG_THRESHOLD_PX = 4
  *
  * ⚠ `setPointerCapture` n'est appelé QU'APRÈS détection d'un drag réel
  * (mouvement > DRAG_THRESHOLD_PX). Sinon le click event serait dispatché sur
- * l'élément capturé (scroller) au lieu du `<button>` enfant — la lightbox
+ * l'élément capturé (scroller) au lieu du `<button>` enfant : la lightbox
  * ne s'ouvrirait plus. Capturer après seuil préserve le click flow natif.
  */
 function useCarouselDrag(scrollerRef: RefObject<HTMLDivElement | null>) {
@@ -160,7 +160,7 @@ function useCarouselDrag(scrollerRef: RefObject<HTMLDivElement | null>) {
 
 /**
  * Suit la slide la plus visible dans le scroller via IntersectionObserver.
- * Sert au compteur "1/N" — pas au snap (qui reste géré par CSS scroll-snap).
+ * Sert au compteur "1/N" : pas au snap (qui reste géré par CSS scroll-snap).
  */
 function useCurrentSlideIndex(scrollerRef: RefObject<HTMLDivElement | null>, enabled: boolean) {
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -193,7 +193,7 @@ interface ImageSliderProps {
   images: MockPost['images']
   format: MockPost['format']
   author: MockPost['author']
-  /** ID + titre du post — propagés à la lightbox pour activer le partage */
+  /** ID + titre du post : propagés à la lightbox pour activer le partage */
   postId?: string
   postTitle?: string
 }
@@ -244,9 +244,9 @@ export function ImageSlider({
       authorName: author.name,
       authorAvatar: author.avatar,
       // Format propagé pour que la lightbox respecte l'aspect-ratio choisi
-      // à la création — second-agent/18.
+      // à la création : second-agent/18.
       format,
-      // Identité du post — active le bouton Partager dans la lightbox
+      // Identité du post : active le bouton Partager dans la lightbox
       // (second-agent/20).
       postId,
       postTitle,
@@ -268,7 +268,7 @@ export function ImageSlider({
             aspect,
             COLUMN_MAX_W,
           ].join(' ')}
-          aria-label={`${images[0].alt} — ${enlargeLabel}`}
+          aria-label={`${images[0].alt} : ${enlargeLabel}`}
         >
           {/*
             Supabase Image Transformations (Pro plan), photo feed servie en
@@ -304,7 +304,7 @@ export function ImageSlider({
               // Nicolas 2026-05-22 : `touch-pan-x touch-pan-y` autorise le
               // swipe horizontal (carousel) ET le scroll vertical (page).
               // Avant on avait juste `touch-pan-y` qui BLOQUAIT le swipe
-              // tactile sur mobile/tablette — d'où l'impossibilité de
+              // tactile sur mobile/tablette : d'où l'impossibilité de
               // passer aux photos suivantes au doigt.
               'cursor-grab select-none touch-pan-x touch-pan-y',
               '[&::-webkit-scrollbar]:hidden [scrollbar-width:none]',
@@ -326,7 +326,7 @@ export function ImageSlider({
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset',
                   aspect,
                 ].join(' ')}
-                aria-label={`${img.alt} — ${enlargeLabel} (${i + 1}/${images.length})`}
+                aria-label={`${img.alt} : ${enlargeLabel} (${i + 1}/${images.length})`}
               >
                 <img
                   src={ImagePresets.feedPhoto(img.url)}
@@ -344,7 +344,7 @@ export function ImageSlider({
             ))}
           </div>
 
-          {/* Compteur Figma (node 6385:60466) — pill verre dépoli bottom-right.
+          {/* Compteur Figma (node 6385:60466) : pill verre dépoli bottom-right.
               "N/Total" : index courant en bold, séparateur + total en regular. */}
           <div
             role="status"
@@ -406,7 +406,7 @@ export function ImageSlider({
         </div>
       )}
 
-      {/* Lightbox plein écran — rendue une seule fois, partagée single+multi. */}
+      {/* Lightbox plein écran : rendue une seule fois, partagée single+multi. */}
       {lightbox && (
         <PhotoLightbox
           data={lightbox}

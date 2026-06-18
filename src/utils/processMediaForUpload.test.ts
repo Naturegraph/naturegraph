@@ -54,7 +54,7 @@ describe('isProcessMediaError', () => {
   })
 })
 
-describe('processMediaForUpload — validation entree', () => {
+describe('processMediaForUpload : validation entree', () => {
   it('rejette les fichiers > 40 Mo avec code too_large + message clair', async () => {
     // 41 Mo
     const huge = makeFile('huge.jpg', 'image/jpeg', 41 * 1024 * 1024)
@@ -114,7 +114,7 @@ describe('processMediaForUpload — validation entree', () => {
   })
 })
 
-describe('processMediaForUpload — messages user-friendly', () => {
+describe('processMediaForUpload : messages user-friendly', () => {
   it('le message too_large inclut la taille reelle en Mo', async () => {
     // 42.5 Mo
     const huge = makeFile('photo.jpg', 'image/jpeg', Math.round(42.5 * 1024 * 1024))

@@ -1,5 +1,5 @@
 /**
- * ProfileHeader — En-tête de la page profil (desktop horizontal / mobile centré)
+ * ProfileHeader : En-tête de la page profil (desktop horizontal / mobile centré)
  * ============================================================================
  *
  * Design Figma (visiteur) :
@@ -12,7 +12,7 @@
  * Modes :
  *  - isOwnProfile = true  → boutons "Modifier" (Pencil, primary) + "Paramètres"
  *                            (Settings, outlined). Pas de menu options ni partage
- *                            ici — les paramètres ouvrent un panel dédié.
+ *                            ici : les paramètres ouvrent un panel dédié.
  *  - isOwnProfile = false → bouton "Migrer" / "Tu migres avec" + partage + options
  *
  * Figma owner : 6385:77470 (desktop) / 6385:77493 (boutons détaillés).
@@ -61,13 +61,13 @@ export interface ProfileDisplayData {
 interface ProfileHeaderProps {
   profile: ProfileDisplayData
   isOwnProfile: boolean
-  /** Owner only — ouvre le panel de modification du profil */
+  /** Owner only : ouvre le panel de modification du profil */
   onEditProfile?: () => void
-  /** Owner only — ouvre la page / panel de paramètres compte (notifs, langue, etc.) */
+  /** Owner only : ouvre la page / panel de paramètres compte (notifs, langue, etc.) */
   onSettings?: () => void
-  /** Visiteur uniquement — ouvre le SharePopover */
+  /** Visiteur uniquement : ouvre le SharePopover */
   onShare?: () => void
-  /** Visiteur uniquement — ouvre le menu options (block / report / copy link) */
+  /** Visiteur uniquement : ouvre le menu options (block / report / copy link) */
   onOptions?: () => void
 }
 
@@ -89,7 +89,7 @@ export function ProfileHeader({
   // follow sans rien ecrire en base (Nicolas 2026-05-25, bug critique).
   const { data: isFollowing = false } = useIsFollowing(isOwnProfile ? undefined : profile.id)
   const toggleFollow = useToggleFollow()
-  // Menu d'options (3 points) — ProfileOptionsMenu géré ici en local pour
+  // Menu d'options (3 points) : ProfileOptionsMenu géré ici en local pour
   // que la position absolute soit relative au bouton (pas à Profile.tsx).
   const [showOptionsMenu, setShowOptionsMenu] = useState(false)
 
@@ -124,7 +124,7 @@ export function ProfileHeader({
 
   return (
     // Container : pas de padding latéral mobile pour que la bannière
-    // s'étende edge-to-edge (Nicolas 2026-05-19 — le padding créait un
+    // s'étende edge-to-edge (Nicolas 2026-05-19 : le padding créait un
     // espace nul). Desktop garde le padding 24px + rounded-md.
     <div className="w-full max-w-[1440px] mx-auto md:px-6 md:pt-6">
       {/* ── Bannière ──
@@ -157,7 +157,7 @@ export function ProfileHeader({
           pour que seule la bannière soit edge-to-edge. */}
       <div className="relative px-4 md:px-0">
         <div className="relative flex flex-col md:flex-row md:items-start md:gap-6 md:px-12">
-          {/* Avatar — chevauche la bannière (margin top négative)
+          {/* Avatar : chevauche la bannière (margin top négative)
               Desktop : aligné à gauche px-12 (48px), taille 128px, overlap 56px
               Mobile  : centré, taille 96px, overlap 48px */}
           <div className="-mt-12 md:-mt-14 self-center md:self-start shrink-0">
@@ -181,7 +181,7 @@ export function ProfileHeader({
                   }}
                 />
               </div>
-              {/* Badge — Figma 6385:74513 : Container 32×32 à x=144 y=96 (relatif
+              {/* Badge : Figma 6385:74513 : Container 32×32 à x=144 y=96 (relatif
                   à Frame 8). L'avatar étant à x=48, le badge est positionné
                   flush bottom-right de l'avatar (96+32 = 128 = avatar size). */}
               {badgeEmoji && (
@@ -211,7 +211,7 @@ export function ProfileHeader({
               <h1 className="font-title font-bold text-2xl md:text-[2rem] text-foreground leading-tight">
                 {profile.username}
               </h1>
-              {/* Stats — séparateur vertical (Figma 6385:74448 = ligne 1×28px) */}
+              {/* Stats : séparateur vertical (Figma 6385:74448 = ligne 1×28px) */}
               <div className="flex items-center gap-3 text-sm text-foreground">
                 <span>
                   <strong className="font-bold">{profile.followers_count}</strong>{' '}
@@ -225,11 +225,11 @@ export function ProfileHeader({
               </div>
             </div>
 
-            {/* Boutons d'action — alignés en haut sur desktop (self-start) */}
+            {/* Boutons d'action : alignés en haut sur desktop (self-start) */}
             <div className="flex items-center gap-2 self-center md:self-start">
               {isOwnProfile ? (
                 /* ── Owner : [Modifier] (primary) + [Paramètres] (outlined) ──
-                   Figma 6385:77493 — boutons texte+icône, pas de menu 3-pts.
+                   Figma 6385:77493 : boutons texte+icône, pas de menu 3-pts.
                    Les actions block/report/copy-link n'ont pas de sens sur son
                    propre profil → on les retire complètement. */
                 <>

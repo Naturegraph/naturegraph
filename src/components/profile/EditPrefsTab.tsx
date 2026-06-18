@@ -1,5 +1,5 @@
 /**
- * EditPrefsTab — Onglet "Préférences" du panneau d'édition de profil
+ * EditPrefsTab : Onglet "Préférences" du panneau d'édition de profil
  *
  * Pixel-perfect Figma 6385:75887 (desktop) / 6385:73873 (mobile).
  *   - Titre H3 "Quels sont tes centres d'intérêt ?" (font-title bold)
@@ -8,9 +8,9 @@
  *   - Tuiles sélectionnées : bg-primary-light + border-primary + label primary
  *     + badge numéroté (1, 2, 3) en haut-droite (cercle primary)
  *   - Tuiles non sélectionnées : bg-background + border 0.5px
- *   - Pas de compteur "X/3" — Figma ne le montre pas
+ *   - Pas de compteur "X/3" : Figma ne le montre pas
  *
- * TODO [BACKEND] — Phase 2 : `useUpdateProfile()` mutation invalide la query.
+ * TODO [BACKEND] : Phase 2 : `useUpdateProfile()` mutation invalide la query.
  */
 
 import { forwardRef, useImperativeHandle, useState } from 'react'
@@ -41,7 +41,7 @@ const INTERESTS = [
   { id: 'plants', emoji: CATEGORY_EMOJIS.plants },
 ] as const
 
-/** Union typée des IDs d'intérêts — dérivée du `as const` ci-dessus. */
+/** Union typée des IDs d'intérêts : dérivée du `as const` ci-dessus. */
 type InterestId = (typeof INTERESTS)[number]['id']
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -63,7 +63,7 @@ interface InterestTileProps {
 }
 
 /**
- * Tuile sélectionnable — Figma Frame 4251 (6385:75904) :
+ * Tuile sélectionnable : Figma Frame 4251 (6385:75904) :
  *   - h-[104px], padding 16px, gap 8px, rounded-xl (12px)
  *   - Border 1px (PAS 2px), même épaisseur sélectionné/non-sélectionné
  *   - Sélectionné : bg #E7E9F7 (action-light) + border #5F5DD8 (action-default)
@@ -91,7 +91,7 @@ function InterestTile({ emoji, label, isSelected, selectionIndex, onClick }: Int
           : 'bg-transparent border border-[var(--color-border)] motion-safe:hover:shadow-md motion-safe:active:scale-95',
       ].join(' ')}
     >
-      {/* Badge numéroté — Figma : 20×20 cercle bg cream/neutral-primary,
+      {/* Badge numéroté : Figma : 20×20 cercle bg cream/neutral-primary,
           texte foreground regular 12px (pas blanc, pas bold). */}
       {isSelected && selectionIndex !== null && (
         <span
@@ -101,11 +101,11 @@ function InterestTile({ emoji, label, isSelected, selectionIndex, onClick }: Int
           {selectionIndex + 1}
         </span>
       )}
-      {/* Emoji — 32px Quicksand bold (Title/H3 token Figma). */}
+      {/* Emoji : 32px Quicksand bold (Title/H3 token Figma). */}
       <span className="font-title font-bold text-[32px] leading-[120%]" aria-hidden="true">
         {emoji}
       </span>
-      {/* Label — Figma Frame 4243 :
+      {/* Label : Figma Frame 4243 :
           - Sélectionné : 16px Mulish BOLD (Paragraph/Bold) + color action-default
           - Non sélectionné : 16px Mulish REGULAR (Paragraph/Base) + foreground */}
       <span
@@ -124,7 +124,7 @@ function InterestTile({ emoji, label, isSelected, selectionIndex, onClick }: Int
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 
-/** Sélecteur de centres d'intérêt — max 3 */
+/** Sélecteur de centres d'intérêt : max 3 */
 export const EditPrefsTab = forwardRef<EditTabHandle, EditPrefsTabProps>(function EditPrefsTab(
   { profile, onSave, onClose },
   ref,
@@ -144,7 +144,7 @@ export const EditPrefsTab = forwardRef<EditTabHandle, EditPrefsTabProps>(functio
     })
   }
 
-  // Expose save() au parent via ref forwardée — même pattern que EditInfoTab.
+  // Expose save() au parent via ref forwardée : même pattern que EditInfoTab.
   useImperativeHandle(
     ref,
     () => ({
@@ -182,7 +182,7 @@ export const EditPrefsTab = forwardRef<EditTabHandle, EditPrefsTabProps>(functio
       </div>
 
       {/* ── Grille 2 colonnes (Nicolas 2026-05-19 : cohérence avec le reste
-           du design system — onboarding et autres sélecteurs sont en 2 cols
+           du design system : onboarding et autres sélecteurs sont en 2 cols
            dès le mobile). */}
       <div
         className="grid grid-cols-2 gap-2"

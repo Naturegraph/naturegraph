@@ -1,5 +1,5 @@
 /**
- * hiddenPostsService — Posts masqués individuellement par un utilisateur
+ * hiddenPostsService : Posts masqués individuellement par un utilisateur
  *
  * Différent du blocage user (`blocks`) : ici on masque juste un post précis,
  * pas tout l'auteur. Signal pour l'algo de feed (futur).
@@ -53,7 +53,7 @@ export async function toggleHiddenPost(postId: string, currentlyHidden: boolean)
   return true
 }
 
-/** Action one-shot — masquer un post (sans toggle). */
+/** Action one-shot : masquer un post (sans toggle). */
 export async function hidePost(postId: string): Promise<void> {
   await toggleHiddenPost(postId, false)
 }

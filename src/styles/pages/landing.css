@@ -1,5 +1,5 @@
 /**
- * Landing Page — CSS utilitaires et animations
+ * Landing Page : CSS utilitaires et animations
  * =============================================
  * Variables de couleur spécifiques à la landing (mapping Figma Make → design system),
  * animations, et classes utilitaires réutilisables.
@@ -89,7 +89,7 @@ html {
   scroll-behavior: smooth;
 }
 
-/* ── Accessibilité — Réduire les animations ──────────────────────────── */
+/* ── Accessibilité : Réduire les animations ──────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

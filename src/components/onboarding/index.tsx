@@ -1,5 +1,5 @@
 /**
- * Onboarding — Orchestrateur 4 étapes
+ * Onboarding : Orchestrateur 4 étapes
  *
  * Étapes : interests → frequency → motivations → username
  * Gère la navigation entre étapes, la persistance des données
@@ -12,17 +12,17 @@
  *   1. `profiles` (UPDATE conditionnel) :
  *        - username, first_name, interests
  *        - PAS d'écrasement si profile déjà complété (cf.
- *          `isProfileAlreadyOnboarded` — re-onboarding accidentel safe)
+ *          `isProfileAlreadyOnboarded` : re-onboarding accidentel safe)
  *
  *   2. `user_settings` (UPSERT) :
  *        - notif_frequency mappée (UI 'monthly'/'occasionally' → DB 'weekly')
- *        - Idempotent — la row est créée si absente
+ *        - Idempotent : la row est créée si absente
  *
  *   3. `notification_preferences.species_digest` :
  *        - Opt-in si fréquence = 'daily' ou 'weekly' (RGPD-friendly)
  *
  *   4. `motivations` :
- *        - Persistées dans localStorage (clé par userId) — pas de colonne DB
+ *        - Persistées dans localStorage (clé par userId) : pas de colonne DB
  *          dédiée en MVP. Phase 3 : migration localStorage → DB.
  *
  * Props :
@@ -117,7 +117,7 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
           // Mode démo (Supabase non configuré) : on saute la persistance
           // serveur mais on persiste quand même les motivations en local
           // pour cohérence avec le mode connecté.
-          debugLog('onboarding', 'demo mode — skipping server persistence')
+          debugLog('onboarding', 'demo mode : skipping server persistence')
           await onComplete()
           return
         }
@@ -130,7 +130,7 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
           // Cas limite : session expirée pendant l'onboarding.
           // On loggue mais on appelle onComplete pour laisser le routing
           // gérer la redirection vers /auth.
-          console.warn('[onboarding] no auth user — calling onComplete anyway')
+          console.warn('[onboarding] no auth user : calling onComplete anyway')
           await onComplete()
           return
         }
@@ -150,11 +150,11 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
         // Si l'utilisateur a déjà été onboardé (interests non vide ou
         // first_name déjà renseigné), on REFUSE l'upsert profile pour ne
         // pas écraser des données légitimes (modifications faites depuis
-        // Settings, etc.). C'est une garde défensive — le OnboardingGuard
+        // Settings, etc.). C'est une garde défensive : le OnboardingGuard
         // empêche normalement ce cas, mais on double-check au cas où.
         const alreadyOnboarded = await isProfileAlreadyOnboarded(user.id)
         if (alreadyOnboarded) {
-          console.warn('[onboarding] profile already complete — skipping upsert to avoid overwrite')
+          console.warn('[onboarding] profile already complete : skipping upsert to avoid overwrite')
         } else {
           const { error: upsertError } = await supabase.from('profiles').upsert(
             {
@@ -191,7 +191,7 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
             console.warn('[onboarding] persistNotifFrequency failed', err)
           }
         } else {
-          debugLog('onboarding', 'no frequency selected — using DB default (weekly)')
+          debugLog('onboarding', 'no frequency selected : using DB default (weekly)')
         }
 
         // ─── 3. species_digest opt-in (RGPD) ─────────────────────────────
@@ -212,7 +212,7 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
 
         // ─── 4. motivations (localStorage) ───────────────────────────────
         //
-        // Pas de colonne DB en MVP — on stocke localement pour ne pas
+        // Pas de colonne DB en MVP : on stocke localement pour ne pas
         // perdre l'information. Migration vers DB en Phase 3.
         if (userData.motivations.length > 0) {
           persistMotivationsLocal(user.id, userData.motivations)
@@ -238,7 +238,7 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
 
   return (
     <div className="flex items-center overflow-clip relative rounded-sm md:rounded-xl w-full h-full">
-      {/* Fond blanc — contenu centré */}
+      {/* Fond blanc : contenu centré */}
       <div className="bg-[var(--color-bg-primary)] flex flex-col items-center justify-center w-full md:w-[636px] h-full">
         {step === 'interests' && (
           <OnboardingInterests

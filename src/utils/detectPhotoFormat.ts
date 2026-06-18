@@ -1,5 +1,5 @@
 /**
- * detectPhotoFormat — Détection du format natif d'une photo côté client.
+ * detectPhotoFormat : Détection du format natif d'une photo côté client.
  *
  * PRD v2 § 4.1.3 : règle d'inférence basée sur le ratio width/height.
  *   ratio ≥ 1.05  → landscape

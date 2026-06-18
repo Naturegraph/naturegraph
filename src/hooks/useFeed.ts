@@ -1,5 +1,5 @@
 /**
- * useFeed — Hook React Query pour le feed principal
+ * useFeed : Hook React Query pour le feed principal
  *
  * Encapsule getFeed() derrière useQuery pour bénéficier du cache,
  * des états de chargement/erreur, et du refetch automatique.
@@ -7,7 +7,7 @@
  * Responsabilités additionnelles :
  *   - Enrichit chaque post avec user_reaction (réaction de l'utilisateur connecté)
  *   - Applique le filtre de rayon géographique CÔTÉ CLIENT via Haversine
- *     (PostgREST n'expose pas ST_DWithin — un RPC dédié sera créé en v2)
+ *     (PostgREST n'expose pas ST_DWithin : un RPC dédié sera créé en v2)
  *
  * Clé de cache : inclut tab + page + limit + sérialisation des filtres pour
  * invalidation ciblée quand n'importe quel filtre change.
@@ -58,7 +58,7 @@ function serializeFilters(filters?: FeedParams['filters']): string {
   })
 }
 
-/** Clé de cache React Query — permet l'invalidation ciblée post-contribution */
+/** Clé de cache React Query : permet l'invalidation ciblée post-contribution */
 export const FEED_QUERY_KEY = (params: FeedParams) =>
   [
     'feed',

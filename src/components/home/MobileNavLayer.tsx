@@ -1,11 +1,11 @@
 /**
- * MobileNavLayer — Couche complète de navigation mobile (DRY pour Home + Profile + autres).
+ * MobileNavLayer : Couche complète de navigation mobile (DRY pour Home + Profile + autres).
  *
  * Wrapper qui encapsule la MobileBottomNav et orchestre les bottom sheets associés :
- *   - Recherche (SearchPanel) — déclenché par l'icône loupe
- *   - Menu (MobileNavDrawer) — déclenché par l'icône burger
- *   - Profil (ProfileMenu) — déclenché par l'avatar (cohérence desktop)
- *   - Paramètres (SettingsPanel) — déclenché depuis le ProfileMenu
+ *   - Recherche (SearchPanel) : déclenché par l'icône loupe
+ *   - Menu (MobileNavDrawer) : déclenché par l'icône burger
+ *   - Profil (ProfileMenu) : déclenché par l'avatar (cohérence desktop)
+ *   - Paramètres (SettingsPanel) : déclenché depuis le ProfileMenu
  *
  * Pourquoi ce wrapper :
  *   - Évite de dupliquer le state + le rendu des sheets dans Home.tsx et Profile.tsx.
@@ -35,7 +35,7 @@ const SettingsPanel = lazy(() =>
 
 interface MobileNavLayerProps {
   /**
-   * Callback contribution — délégué à la page hôte. Si non fourni, le bouton +
+   * Callback contribution : délégué à la page hôte. Si non fourni, le bouton +
    * ouvre la `ContributeModal` interne (cohérence Home / Profile / etc.).
    * La Home le câble pour ouvrir directement un panel inline ; les autres
    * pages laissent le défaut (modale).
@@ -56,13 +56,13 @@ export function MobileNavLayer({ onContributeClick }: MobileNavLayerProps) {
   // Nicolas 2026-05-22 : LocationModal exposée depuis le bouton dédié de
   // la bottom nav (qui remplace l'ancien Home).
   const [showLocation, setShowLocation] = useState(false)
-  // Nicolas 2026-05-22 : ContributeModal interne — fallback quand la page
+  // Nicolas 2026-05-22 : ContributeModal interne : fallback quand la page
   // hôte ne passe pas `onContributeClick`. Avant ce fix, le bouton + était
   // mort sur Profile (et toute page sans Home).
   const [showContribute, setShowContribute] = useState(false)
 
   // Si la page fournit un callback, on l'utilise. Sinon on ouvre la modale
-  // interne — c'est le cas par défaut hors Home.
+  // interne : c'est le cas par défaut hors Home.
   const handleContribute = onContributeClick ?? (() => setShowContribute(true))
 
   // V1.1.4 QA round 6 (Nicolas 2026-06-01) : le pill recherche dans FeedSection
@@ -81,7 +81,7 @@ export function MobileNavLayer({ onContributeClick }: MobileNavLayerProps) {
         onSearchClick={() => setShowSearch(true)}
         onMenuClick={() => setShowDrawer(true)}
         onLocationClick={() => setShowLocation(true)}
-        // onProfileClick seulement si authentifié — la MobileBottomNav navigue
+        // onProfileClick seulement si authentifié : la MobileBottomNav navigue
         // d'elle-même vers /login en mode invité.
         onProfileClick={isAuthenticated ? () => setShowProfile(true) : undefined}
         searchActive={!!activeSpecies}

@@ -1,5 +1,5 @@
 /**
- * OnboardingExitModal — Modal de confirmation de sortie d'onboarding
+ * OnboardingExitModal : Modal de confirmation de sortie d'onboarding
  *
  * 3 options : quitter vers l'accueil, aller au login, continuer l'onboarding.
  * Overlay avec backdrop blur, fermeture par ESC ou clic sur l'overlay.
@@ -122,7 +122,7 @@ export function OnboardingExitModal({
       {/* Overlay semi-transparent avec flou */}
       <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" aria-hidden="true" />
 
-      {/* Card modale — stopPropagation pour éviter la fermeture au clic interne */}
+      {/* Card modale : stopPropagation pour éviter la fermeture au clic interne */}
       {/* role="presentation" : conteneur décoratif, pas d'interaction propre */}
       <div
         ref={containerRef}

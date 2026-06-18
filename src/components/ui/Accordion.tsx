@@ -1,5 +1,5 @@
 /**
- * Accordion — Liste d'éléments dépliables (FAQ, sections collapsibles)
+ * Accordion : Liste d'éléments dépliables (FAQ, sections collapsibles)
  * =====================================================================
  * Composant entièrement contrôlé : le parent gère l'état des items ouverts
  * via un Set<string>. Permet d'ouvrir plusieurs items simultanément ou de

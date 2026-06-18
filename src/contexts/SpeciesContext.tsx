@@ -1,5 +1,5 @@
 /**
- * SpeciesContext — Species Context Layer
+ * SpeciesContext : Species Context Layer
  * ========================================
  * Implementation du concept produit cle du PRD Recherche §3.4 :
  *
@@ -7,7 +7,7 @@
  *    L application passe d un feed global a un feed contextualise."
  *
  * Quand une espece est selectionnee dans la recherche :
- *   1. Elle est stockee ici (memoire — pas de localStorage pour la session)
+ *   1. Elle est stockee ici (memoire : pas de localStorage pour la session)
  *   2. FeedSection souscrit a ce contexte et filtre le feed cote backend
  *      par taxref_id
  *   3. Le bouton recherche de la HomeNavbar affiche le label + une croix X
@@ -60,7 +60,7 @@ export function SpeciesProvider({ children }: { children: ReactNode }) {
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 /**
- * useSpecies — accede au Species Context Layer.
+ * useSpecies : accede au Species Context Layer.
  * Doit etre utilise dans un composant enfant de <SpeciesProvider>.
  */
 export function useSpecies(): SpeciesContextValue {

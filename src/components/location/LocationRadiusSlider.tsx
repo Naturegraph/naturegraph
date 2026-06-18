@@ -1,5 +1,5 @@
 /**
- * LocationRadiusSlider — Sélection du rayon de partage
+ * LocationRadiusSlider : Sélection du rayon de partage
  * ======================================================
  * Slider discret sur des valeurs prédéfinies : 75 / 100 / 150 / 250 / 500 km.
  *

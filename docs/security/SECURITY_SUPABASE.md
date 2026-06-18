@@ -1,4 +1,4 @@
-# SECURITY_SUPABASE.md — Audit sécurité Supabase
+# SECURITY_SUPABASE.md : Audit sécurité Supabase
 
 > Audit réalisé le 2026-05-20 · Projet `hrxgduvworofnrjmgpcj` · PostgreSQL 15 + PostGIS
 > Source : `get_advisors` (security + performance), inspection RLS / policies / fonctions.
@@ -24,7 +24,7 @@ exposées et quelques réglages de durcissement.
 
 ## 1. Row Level Security (RLS)
 
-### 🟢 Couverture RLS — complète
+### 🟢 Couverture RLS : complète
 
 - **29 tables applicatives** ont la RLS activée.
 - Seule `spatial_ref_sys` (table système PostGIS) n'a pas de RLS → **faux positif** :
@@ -39,10 +39,10 @@ exposées et quelques réglages de durcissement.
 - `species_master` et `fr_cities` : **une seule policy SELECT publique**
   (`is_active = true` / lecture seule). Le doublon de policy sur `species_master` a été
   corrigé (migration `drop_duplicate_species_master_select_policy`). Les grants
-  temporaires d'écriture (`anon`) utilisés pour les seeds ont été **révoqués** —
+  temporaires d'écriture (`anon`) utilisés pour les seeds ont été **révoqués** -
   vérifié : 1 policy SELECT chacune, aucun GRANT INSERT/UPDATE résiduel.
 
-### 🟠 `beta_waitlist` — INSERT public non restreint
+### 🟠 `beta_waitlist` : INSERT public non restreint
 
 - **Description** : la policy `public_insert_waitlist` a `WITH CHECK (true)` → n'importe
   qui (rôle `anon`) peut insérer dans `beta_waitlist`.
@@ -61,7 +61,7 @@ exposées et quelques réglages de durcissement.
 - **Effort** : 2-3 h.
 - **Avant prod ?** OUI (avant que la waitlist soit publiquement accessible).
 
-### ⚪ `admin_audit_logs` — INSERT-only (bonne pratique)
+### ⚪ `admin_audit_logs` : INSERT-only (bonne pratique)
 
 - Trigger `no_update_or_delete_admin_audit_logs` empêche UPDATE/DELETE → l'audit trail
   est **immuable**. ✅ Excellent pour la traçabilité (Loi 25 / RGPD).
@@ -80,19 +80,19 @@ exposées et quelques réglages de durcissement.
   **échouent** (elles référencent `NEW`/`OLD` inexistants) → pas d'effet. Mais c'est de
   la **surface d'attaque inutile** et du bruit. Quelques fonctions métier légitimes
   sont là aussi (`claim_beta_access_key`, `check_beta_access_key_validity`,
-  `search_cities`, `nearby_posts`) — celles-là DOIVENT rester appelables.
+  `search_cities`, `nearby_posts`) : celles-là DOIVENT rester appelables.
 - **Impact** : faible à modéré. Pas de fuite directe identifiée, mais une fonction de
   trigger mal écrite pourrait être détournée. `generate_beta_keys` est protégée par un
   check `is_admin()` interne ✅.
 - **Scénario** : un attaquant énumère `/rest/v1/rpc/` et appelle chaque fonction pour
   trouver un effet de bord exploitable.
-- **Difficulté** : moyenne (nécessite de connaître les noms — le repo étant public,
+- **Difficulté** : moyenne (nécessite de connaître les noms : le repo étant public,
   ils sont connus).
 - **Priorité** : importante (réduction de surface).
 - **Mitigation** : `REVOKE EXECUTE ... FROM anon, authenticated` sur **toutes les
   fonctions de trigger** (elles n'ont pas à être dans l'API REST). Garder l'EXECUTE
   uniquement sur les RPC métier réellement appelées par le front. Migration SQL
-  dédiée — cf. SECURITY_HARDENING_ROADMAP §A2.
+  dédiée : cf. SECURITY_HARDENING_ROADMAP §A2.
 - **Effort** : 2-3 h (lister les triggers vs RPC métier, écrire la migration REVOKE).
 - **Avant prod ?** OUI (réduction de surface significative, le repo public expose les
   noms de fonctions).
@@ -117,7 +117,7 @@ exposées et quelques réglages de durcissement.
 - **Impact** : modéré (compromission de comptes utilisateurs).
 - **Scénario** : attaque par credential stuffing sur des comptes à mot de passe faible.
 - **Difficulté** : faible si des mots de passe fuités sont réutilisés.
-- **Priorité** : moyenne — **1 clic** à activer.
+- **Priorité** : moyenne : **1 clic** à activer.
 - **Mitigation** : Supabase Dashboard → Authentication → Settings → activer **Leaked
   Password Protection**. Activer aussi une longueur minimale (≥ 10).
 - **Effort** : 5 min.
@@ -145,15 +145,15 @@ exposées et quelques réglages de durcissement.
 - **Impact** : élevé si faille (suppression de compte arbitraire).
 - **Scénario** : appel direct de `/functions/v1/admin-delete-user` avec un JWT non-admin.
 - **Difficulté** : faible si la vérification manque.
-- **Priorité** : moyenne — **à auditer ligne par ligne** (non inspecté en profondeur
+- **Priorité** : moyenne : **à auditer ligne par ligne** (non inspecté en profondeur
   ici, hors périmètre de la collecte rapide).
 - **Mitigation** : revue de code dédiée des 6 Edge Functions : (1) vérifier le JWT,
   (2) vérifier les droits, (3) ne jamais utiliser la `service_role` key sans contrôle
   d'autorisation préalable, (4) valider/échapper les inputs.
 - **Effort** : 2 h (revue des 6 fonctions).
-- **Avant prod ?** OUI — checklist dans SECURITY_CHECKLIST_PRE_PROD.md.
+- **Avant prod ?** OUI : checklist dans SECURITY_CHECKLIST_PRE_PROD.md.
 
-### 🟡 `send-waitlist-confirmation` — `console.log` (1 warning ESLint)
+### 🟡 `send-waitlist-confirmation` : `console.log` (1 warning ESLint)
 
 - Présence d'un `console.log` (warning lint non bloquant). Vérifier qu'aucune donnée
   sensible (email en clair, token) n'est loggée dans les logs Edge Function.
@@ -163,7 +163,7 @@ exposées et quelques réglages de durcissement.
 
 ## 5. Storage
 
-### 🟢 Buckets — configuration saine
+### 🟢 Buckets : configuration saine
 
 - `avatars` (2 MB, image/webp|jpeg|png), `banners` (2 MB), `post-media` (10 MB,
   +video/mp4), `notebook-covers` (2 MB) : **publics en lecture, MIME + taille limités**.
@@ -172,13 +172,13 @@ exposées et quelques réglages de durcissement.
 - Suppression directe de `storage.objects` protégée par trigger
   `protect_objects_delete` (anti-suppression accidentelle d'orphelins) ✅.
 
-### 🟡 Buckets publics — énumération d'objets
+### 🟡 Buckets publics : énumération d'objets
 
 - **Description** : les buckets `public` permettent de servir les fichiers sans auth.
   Les noms de fichiers sont des UUID/hashs → non énumérables facilement, mais une URL
   partagée reste accessible indéfiniment.
 - **Risque** : une photo d'observation « privée » dont l'URL fuite reste accessible.
-- **Impact** : modéré (photo nature — peu sensible, mais géolocalisation possible dans
+- **Impact** : modéré (photo nature : peu sensible, mais géolocalisation possible dans
   l'image… EXIF déjà strippé ✅).
 - **Mitigation** : pour les médias réellement privés (Phase 2), utiliser des **signed
   URLs** à durée limitée plutôt que des buckets publics. Pour le MVP (observations
@@ -206,8 +206,8 @@ exposées et quelques réglages de durcissement.
 ### ⚪ Extensions dans le schéma `public`
 
 - `postgis`, `pg_trgm`, `unaccent` installées dans `public` (advisor WARN).
-- **Risque** : très faible — bonne pratique de les isoler dans un schéma `extensions`.
-- **Mitigation** : déplacement en Phase 2 (non trivial — peut casser des fonctions).
+- **Risque** : très faible : bonne pratique de les isoler dans un schéma `extensions`.
+- **Mitigation** : déplacement en Phase 2 (non trivial : peut casser des fonctions).
 - **Avant prod ?** NON.
 
 ---

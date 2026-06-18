@@ -1,5 +1,5 @@
 /**
- * supportService — Submission des tickets de support
+ * supportService : Submission des tickets de support
  * ====================================================
  *
  * Wrapper autour de la table `support_tickets` (cf. migration
@@ -14,7 +14,7 @@
  *
  * Anti-spam :
  *   - Limit 3 tickets / 24h / user (vérification DB côté serveur via trigger
- *     ou RPC dédiée — pas en client). Le compte est aussi rate-limité côté
+ *     ou RPC dédiée : pas en client). Le compte est aussi rate-limité côté
  *     useSubmitHelpRequest pour donner un feedback immédiat.
  */
 
@@ -102,7 +102,7 @@ export async function submitHelpRequest(payload: SubmitHelpRequestPayload): Prom
 
 /**
  * Liste les tickets de l'utilisateur connecté (transparence RGPD).
- * Optionnel — pas utilisé par SettingsHelpView mais pratique pour une page
+ * Optionnel : pas utilisé par SettingsHelpView mais pratique pour une page
  * "Mes demandes" plus tard.
  */
 export async function listMyTickets(): Promise<SupportTicket[]> {

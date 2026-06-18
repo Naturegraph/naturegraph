@@ -1,5 +1,5 @@
 /**
- * ReportModal — Modale de signalement d'une publication
+ * ReportModal : Modale de signalement d'une publication
  *
  * Affiche un sélecteur de raison + boutons Annuler / Soumettre.
  * Après soumission : POST sur la table `reports` puis état de succès 2s.
@@ -120,7 +120,7 @@ export function ReportModal({ postId, onClose }: ReportModalProps) {
       </p>
 
       {/*
-        Liste de radios visible inline (Nicolas 2026-05-24) — remplace l'ancien
+        Liste de radios visible inline (Nicolas 2026-05-24) : remplace l'ancien
         dropdown custom dont le click-outside provoquait une race condition
         mobile qui empêchait la sélection. Les radio cards sont toujours
         visibles, plus fiables et plus accessibles.
@@ -153,7 +153,7 @@ export function ReportModal({ postId, onClose }: ReportModalProps) {
                 onChange={() => setReason(opt.value)}
                 className="sr-only"
               />
-              {/* Indicateur radio personnalisé — cohérent avec le DS */}
+              {/* Indicateur radio personnalisé : cohérent avec le DS */}
               <span
                 aria-hidden="true"
                 className={[

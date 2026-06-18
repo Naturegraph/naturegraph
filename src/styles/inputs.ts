@@ -1,5 +1,5 @@
 /**
- * inputs.ts — Classes Tailwind partagées pour les inputs / textarea / boutons
+ * inputs.ts : Classes Tailwind partagées pour les inputs / textarea / boutons
  * ============================================================================
  *
  * Centralise les classes utilitaires pour les champs de formulaire afin
@@ -28,7 +28,7 @@ export const INPUT_PILL_CLASS =
   'focus:outline-none focus:bg-primary-light focus:border-primary focus:ring-2 focus:ring-primary'
 
 /**
- * Variante read-only de INPUT_PILL_CLASS — pas de focus state primary,
+ * Variante read-only de INPUT_PILL_CLASS : pas de focus state primary,
  * curseur not-allowed pour signaler l'immutabilité.
  *
  * Utilisé pour afficher l'ancien email dans SettingsSecurityView.
@@ -49,7 +49,7 @@ export const TEXTAREA_CLASS =
   'focus:outline-none focus:bg-primary-light focus:border-primary focus:ring-2 focus:ring-primary'
 
 /**
- * Bouton primaire pill h-12 (48px) — action principale (Sauvegarder, Envoyer,
+ * Bouton primaire pill h-12 (48px) : action principale (Sauvegarder, Envoyer,
  * Mettre à jour, Confirmer). Pleine largeur via `flex-1` ou `w-full`.
  *
  * BATCH 96 : aligne sur le DS Button (btn-press 3D + bonne couleur).
@@ -65,7 +65,7 @@ export const BUTTON_PRIMARY_CLASS =
   'disabled:opacity-50 disabled:cursor-not-allowed'
 
 /**
- * Bouton secondaire pill h-12 (48px) — action de cancel / back.
+ * Bouton secondaire pill h-12 (48px) : action de cancel / back.
  * BATCH 96 : aligne sur btn-press-secondary (cohérence DS partout).
  */
 export const BUTTON_OUTLINE_CLASS =
@@ -78,7 +78,7 @@ export const BUTTON_OUTLINE_CLASS =
   'disabled:opacity-50 disabled:cursor-not-allowed'
 
 /**
- * Bouton danger pill h-12 — action destructive (Confirmer suppression compte).
+ * Bouton danger pill h-12 : action destructive (Confirmer suppression compte).
  */
 export const BUTTON_DANGER_CLASS =
   'h-12 rounded-full bg-[var(--color-error)] text-white text-sm font-bold ' +

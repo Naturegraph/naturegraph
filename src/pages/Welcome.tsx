@@ -1,5 +1,5 @@
 /**
- * Welcome — Page d'entree beta fermee
+ * Welcome : Page d'entree beta fermee
  *
  * Refs : strategie Nicolas BATCH 45 + corrections visuelles 51-58.
  *
@@ -86,7 +86,7 @@ export default function Welcome() {
 
   // Lien d'invitation /welcome?code=NG-XXXX-XXXX (présent dans l'email beta).
   // On dérive l'état initial directement du paramètre d'URL : pré-remplissage
-  // du code + bascule sur l'écran de saisie, sans useEffect — donc sans render
+  // du code + bascule sur l'écran de saisie, sans useEffect : donc sans render
   // en cascade (cf. règle react-hooks/set-state-in-effect).
   const codeFromUrl = searchParams.get('code')
   const [view, setView] = useState<ViewState>(codeFromUrl ? 'enter-code' : 'initial')
@@ -97,7 +97,7 @@ export default function Welcome() {
   // Redirection immédiate si l'accès est déjà acquis :
   //   - clé beta valide en localStorage (hasAccess), OU
   //   - session authentifiée (un invité qui a activé son compte est déjà
-  //     membre — il n'a rien à saisir sur cet écran).
+  //     membre : il n'a rien à saisir sur cet écran).
   useEffect(() => {
     if (hasAccess || isAuthenticated) {
       const from = (location.state as { from?: string } | null)?.from ?? '/'

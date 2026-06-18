@@ -1,4 +1,4 @@
-# Templates Email Naturegraph — Supabase Auth
+# Templates Email Naturegraph : Supabase Auth
 
 Templates HTML aux couleurs Naturegraph pour les emails d'authentification Supabase.
 
@@ -26,7 +26,7 @@ L'app Naturegraph utilise `supabase.auth.signInWithOtp()` qui attend que l'utili
 
 | Template Supabase  | Fichier               | Subject                                                |
 | ------------------ | --------------------- | ------------------------------------------------------ |
-| **Confirm signup** | `confirm-signup.html` | `Bienvenue sur Naturegraph — ton code de vérification` |
+| **Confirm signup** | `confirm-signup.html` | `Bienvenue sur Naturegraph : ton code de vérification` |
 | **Magic Link**     | `magic-link.html`     | `Ton code de connexion Naturegraph`                    |
 | **Invite user**    | `invite-user.html`    | `Ton invitation à la beta Naturegraph`                 |
 
@@ -37,11 +37,11 @@ L'app Naturegraph utilise `supabase.auth.signInWithOtp()` qui attend que l'utili
 
 ## Variables Supabase utilisées
 
-- `{{ .Token }}` — Code OTP à 6 chiffres (obligatoire pour notre flow)
-- `{{ .Email }}` — Email de l'utilisateur (optionnel)
-- `{{ .SiteURL }}` — URL de l'app (optionnel)
+- `{{ .Token }}` : Code OTP à 6 chiffres (obligatoire pour notre flow)
+- `{{ .Email }}` : Email de l'utilisateur (optionnel)
+- `{{ .SiteURL }}` : URL de l'app (optionnel)
 
-⚠️ **Ne pas utiliser `{{ .ConfirmationURL }}`** — ça enverrait un magic link au lieu d'un code.
+⚠️ **Ne pas utiliser `{{ .ConfirmationURL }}`** : ça enverrait un magic link au lieu d'un code.
 
 ## Design system appliqué
 

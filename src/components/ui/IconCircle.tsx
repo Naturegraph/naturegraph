@@ -1,5 +1,5 @@
 /**
- * IconCircle — Cercle coloré avec icône centrée
+ * IconCircle : Cercle coloré avec icône centrée
  * ===============================================
  * Pattern visuel récurrent dans la landing page : un cercle de fond pastel
  * avec une icône au centre. Évite la duplication de 6+ occurrences inline.
@@ -23,9 +23,9 @@ export type IconCircleColor = 'primary' | 'highlight' | 'warm' | 'solid' | 'high
 export interface IconCircleProps {
   /** Icône à afficher (lucide-react ou SVG) */
   icon: ReactNode
-  /** Variante couleur — défaut: primary */
+  /** Variante couleur : défaut: primary */
   color?: IconCircleColor
-  /** Taille du cercle — défaut: md */
+  /** Taille du cercle : défaut: md */
   size?: IconCircleSize
   /** Classes additionnelles */
   className?: string

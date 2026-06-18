@@ -1,5 +1,5 @@
 /**
- * observationDate — Helpers date d'observation (anti-decalage timezone)
+ * observationDate : Helpers date d'observation (anti-decalage timezone)
  * =====================================================================
  *
  * V1.1.4 NG-027 round 12 (Nicolas 2026-06-03) : correction du bug "date -1".

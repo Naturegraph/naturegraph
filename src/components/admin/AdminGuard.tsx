@@ -1,5 +1,5 @@
 /**
- * AdminGuard — Garde de route /admin/*
+ * AdminGuard : Garde de route /admin/*
  *
  * Refs : ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md v2.0 + BATCH 31
  *

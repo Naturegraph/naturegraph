@@ -1,5 +1,5 @@
 /**
- * notificationAnalytics — Événements analytics du système de notifications
+ * notificationAnalytics : Événements analytics du système de notifications
  *
  * EPIC 5.4 du PRD.
  *
@@ -17,7 +17,7 @@
  *
  * Eco-conception :
  *   - Pas de batch réseau par défaut (zero-dépendance)
- *   - Pas de PII dans les props — seulement des id anonymisés ou type
+ *   - Pas de PII dans les props : seulement des id anonymisés ou type
  */
 
 import { debugLog } from '@/lib/debugLog'
@@ -37,7 +37,7 @@ export interface NotifAnalyticsProps {
   tab?: string
   /** Valeur du toggle pour preference_toggled. */
   enabled?: boolean
-  /** Index signature — compatibilité Record<string, unknown> pour window.ngTrack. */
+  /** Index signature : compatibilité Record<string, unknown> pour window.ngTrack. */
   [key: string]: unknown
 }
 
@@ -49,7 +49,7 @@ declare global {
   }
 }
 
-/** Log un événement — passe par `window.ngTrack` si défini, sinon console. */
+/** Log un événement : passe par `window.ngTrack` si défini, sinon console. */
 export function trackNotifEvent(event: NotifAnalyticsEvent, props: NotifAnalyticsProps = {}): void {
   try {
     const fn = typeof window !== 'undefined' ? window.ngTrack : undefined
@@ -60,6 +60,6 @@ export function trackNotifEvent(event: NotifAnalyticsEvent, props: NotifAnalytic
     // BATCH 15 / QW-CL2 : migre vers debugLog (centralise + tree-shake en prod)
     debugLog('notif-analytics', event, props)
   } catch {
-    // silencieux — jamais bloquer l'UI pour un log
+    // silencieux : jamais bloquer l'UI pour un log
   }
 }

@@ -1,5 +1,5 @@
 /**
- * authContextObject — Définition isolée du contexte d'authentification.
+ * authContextObject : Définition isolée du contexte d'authentification.
  *
  * Séparé de `AuthContext.tsx` (qui exporte le composant `AuthProvider`) pour
  * respecter `react-refresh/only-export-components` et éviter les glitches HMR
@@ -23,7 +23,7 @@ export interface AuthState {
   profile: Profile | null
   isLoading: boolean
   isAuthenticated: boolean
-  /** True si l'utilisateur a un username — indique que l'onboarding est terminé */
+  /** True si l'utilisateur a un username : indique que l'onboarding est terminé */
   onboardingCompleted: boolean
 }
 
@@ -45,12 +45,12 @@ export interface AuthContextValue extends AuthState {
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
   /**
    * OTP direct via Supabase.
-   * @param email — adresse à laquelle envoyer le code
-   * @param remember — si true, session persistée en localStorage (30j).
+   * @param email : adresse à laquelle envoyer le code
+   * @param remember : si true, session persistée en localStorage (30j).
    *                   Sinon sessionStorage (effacée à la fermeture navigateur).
    */
   signInWithOtp: (email: string, remember?: boolean) => Promise<{ error: Error | null }>
-  /** OAuth social (stub — affiche un message en attendant l'implémentation) */
+  /** OAuth social (stub : affiche un message en attendant l'implémentation) */
   signInWithSocial: (provider: 'google' | 'apple' | 'facebook') => Promise<SocialResult>
   /** Vérification du code OTP */
   verifyOtp: (email: string, token: string) => Promise<{ error: Error | null }>

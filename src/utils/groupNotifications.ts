@@ -1,5 +1,5 @@
 /**
- * groupNotifications — Regroupement des notifications identiques sur 24h
+ * groupNotifications : Regroupement des notifications identiques sur 24h
  *
  * Exemple : 3 personnes réagissent à mon post → une seule ligne
  *   "Alice, Bob + 1 autre ont réagi à ton post"
@@ -18,7 +18,7 @@ export interface GroupedNotification extends Notification {
   group_count: number
   /** IDs de toutes les notifs représentées (pour mark-as-read groupé, BATCH 107) */
   group_ids: string[]
-  /** Liste des acteurs (pour affichage multi-avatars) — toujours inclut le principal */
+  /** Liste des acteurs (pour affichage multi-avatars) : toujours inclut le principal */
   grouped_actors: Array<{
     id: string | null
     username: string | null
@@ -72,7 +72,7 @@ export function groupNotifications(notifs: Notification[]): GroupedNotification[
       // Fenêtre symétrique : on regroupe si les deux notifs sont à moins de 24h
       // l'une de l'autre, indépendamment de l'ordre dans le tableau.
       // (Le tri DESC est respecté en pratique mais ne doit pas être une
-      // précondition stricte — sinon le regroupement devient flaky quand deux
+      // précondition stricte : sinon le regroupement devient flaky quand deux
       // notifs ont le même timestamp à la milliseconde près, cf. tests CI.)
       const diff = Math.abs(nDate - new Date(other.created_at).getTime())
       if (diff > WINDOW_MS) continue

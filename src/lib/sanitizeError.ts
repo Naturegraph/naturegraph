@@ -1,5 +1,5 @@
 /**
- * sanitizeError — Filtre central des messages d'erreur exposes a l'utilisateur
+ * sanitizeError : Filtre central des messages d'erreur exposes a l'utilisateur
  * ===========================================================================
  *
  * Retour testeur (naelm_photo, 2026-06-11) : « pour le retour des erreurs, tu

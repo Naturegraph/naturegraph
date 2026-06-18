@@ -1,6 +1,6 @@
-# PRD — Follow System (compléments Phase 2)
+# PRD : Follow System (compléments Phase 2)
 
-> **Statut :** Draft Phase 2 — pas encore validé Nicolas.
+> **Statut :** Draft Phase 2 : pas encore validé Nicolas.
 > **Date :** 2026-05-15 (post V1.0.0).
 > **Auteur :** Équipe produit Naturegraph.
 > **Pré-requis :** V1 livrée (table `follows` + service + hooks + trigger compteurs déjà en prod).
@@ -15,7 +15,7 @@ La V1 livre une **base fonctionnelle** du suivi : la table `follows`, le `follow
 
 - Pas de **feed "Pour mes migrations"** alimenté par les profils suivis (le feed actuel mélange tout).
 - Pas de **suggestions** ("Qui suivre" en empty state du feed, après onboarding, ou en sidebar guest).
-- Pas de **pagination keyset** sur les listes followers/following (cap à 50 en mémoire — fragile dès qu'un compte explose).
+- Pas de **pagination keyset** sur les listes followers/following (cap à 50 en mémoire : fragile dès qu'un compte explose).
 - **Blocks et follows ne se croisent pas** : un user bloqué peut encore apparaître dans `getFollowers`.
 - Notification follow trop pauvre (pas de "X et 3 autres ont commencé à te suivre").
 
@@ -41,20 +41,20 @@ La V1 livre une **base fonctionnelle** du suivi : la table `follows`, le `follow
 - RPC + hook `getSuggestedUsers` (3 heuristiques : popular dans mes intérêts, mutuals, locaux).
 - Refactor `getFollowers` / `getFollowing` → **cursor-based** (`created_at` desc, page size 20).
 - Filtrage `blocks` côté listings : exclure les profils où je suis bloqué ou que j'ai bloqué.
-- Groupement notifications follow (déjà partiellement en place — étendre la logique).
+- Groupement notifications follow (déjà partiellement en place : étendre la logique).
 
 ### Out of scope (Phase 3+)
 
-- Notification "X t'a un-followed" (volontairement absent — anti-anxiété).
+- Notification "X t'a un-followed" (volontairement absent : anti-anxiété).
 - Listes privées / amis proches (pas de besoin produit identifié).
-- Import contacts (carnet d'adresses) — éthique platform.
+- Import contacts (carnet d'adresses) : éthique platform.
 - Recommandations algorithmiques avancées (graph-based, ML).
 
 ---
 
 ## 4. Modèle de données
 
-La table `follows` existe — **pas de nouvelle table**. Compléments :
+La table `follows` existe : **pas de nouvelle table**. Compléments :
 
 ```sql
 -- 1) Index pour pagination cursor-based sur followers/following
@@ -89,7 +89,7 @@ $$ LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public;
 -- 3) RPC suggestions (3 heuristiques fusionnées, top 10)
 CREATE OR REPLACE FUNCTION public.get_suggested_users(p_limit int DEFAULT 10)
 RETURNS TABLE (profile_id uuid, score numeric, reason text) AS $$
-  -- Implémentation détaillée Sprint — voir §6
+  -- Implémentation détaillée Sprint : voir §6
   SELECT id, 1::numeric, 'popular'::text FROM profiles
   WHERE  id <> auth.uid()
     AND  is_internal = false
@@ -169,7 +169,7 @@ $$ LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public;
 
 ---
 
-## Annexe — Décisions clés
+## Annexe : Décisions clés
 
 **ADR-001 : Pas de nouvelle table.** La structure `(follower_id, followed_id)` actuelle est suffisante. On ajoute juste 2 RPC + 2 index pour les nouveaux cas d'usage.
 
@@ -177,4 +177,4 @@ $$ LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public;
 
 **ADR-003 : Suggestions = trois heuristiques fusionnées côté SQL.** Évite une dépendance ML/Edge Function. Le ranking peut évoluer sans changer le contrat front.
 
-**ADR-004 : Pas de "X t'a un-followed".** Choix éthique produit — éviter l'anxiété sociale et l'engagement toxique.
+**ADR-004 : Pas de "X t'a un-followed".** Choix éthique produit : éviter l'anxiété sociale et l'engagement toxique.

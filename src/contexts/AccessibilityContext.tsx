@@ -1,5 +1,5 @@
 /**
- * AccessibilityContext — Préférences d'accessibilité globales
+ * AccessibilityContext : Préférences d'accessibilité globales
  * ============================================================
  * Gère deux paramètres persistés en localStorage et appliqués
  * immédiatement sur l'élément <html> via des attributs data-* :
@@ -17,7 +17,7 @@
  *   - Clé : "ng_high_contrast" valeur : "true" | "false"
  *   - En cas de valeur corrompue → fallback silencieux sur les défauts
  *
- * TODO [BACKEND] — synchroniser ces préférences avec profiles.preferences (Supabase)
+ * TODO [BACKEND] : synchroniser ces préférences avec profiles.preferences (Supabase)
  */
 
 import {
@@ -62,7 +62,7 @@ function writeLS(key: string, value: string) {
   try {
     localStorage.setItem(key, value)
   } catch {
-    /* silencieux — la préférence ne sera pas persistée */
+    /* silencieux : la préférence ne sera pas persistée */
   }
 }
 

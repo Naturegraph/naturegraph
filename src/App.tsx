@@ -125,14 +125,14 @@ export default function App() {
         <ThemeProvider>
           <AuthProvider>
             <LocationProvider>
-              {/* SpeciesProvider — Species Context Layer (PRD Recherche §3.4) */}
+              {/* SpeciesProvider : Species Context Layer (PRD Recherche §3.4) */}
               <SpeciesProvider>
                 {/* NotebookProvider V1.2.0 (NG-005/006) : gere le carnet
                     d observations actif (mode terrain). Recovery au boot
                     si l user avait un carnet draft/active cote serveur. */}
                 <NotebookProvider>
                   <ToastProvider>
-                    {/* Skip link global — pointe vers l'id="main-content" de chaque page */}
+                    {/* Skip link global : pointe vers l'id="main-content" de chaque page */}
                     <a href="#main-content" className="skip-link">
                       Aller au contenu principal
                     </a>
@@ -145,11 +145,11 @@ export default function App() {
                           menu "+ Contribuer". Composant conserve pour reprise. */}
                       <Outlet />
                     </BootSplash>
-                    {/* InstallPromptBanner — propose l'installation PWA en haut
+                    {/* InstallPromptBanner : propose l'installation PWA en haut
                       (Chrome beforeinstallprompt OU guide iOS Safari).
                       Affiché ~3 sec après chargement, dismissible 30 j. */}
                     <InstallPromptBanner />
-                    {/* CookieBanner global — RGPD/ePrivacy/Loi 25 information layer.
+                    {/* CookieBanner global : RGPD/ePrivacy/Loi 25 information layer.
                       Affiché une seule fois par navigateur (localStorage). */}
                     <CookieBanner />
                   </ToastProvider>

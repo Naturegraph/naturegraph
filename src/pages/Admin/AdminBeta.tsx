@@ -298,7 +298,7 @@ export default function AdminBeta() {
   //   3. notes contient "admin perpétuelle" ou "super admin" → super admin
   //      (lookup via super_admin role dans admin_users si dispo, sinon affiche
   //      le label "Admin permanent")
-  //   4. sinon : clé de batch générique → "—"
+  //   4. sinon : clé de batch générique → "-"
   //
   // Le parsing du `notes` est volontairement simple (regex sur le texte écrit
   // par `send-beta-invite` et la doc admin). On accepte un peu de fragilité ici
@@ -916,7 +916,7 @@ export default function AdminBeta() {
                               className="text-muted-foreground"
                               title="Clé utilisée, non sélectionnable"
                             >
-                              —
+                              -
                             </span>
                           )}
                         </td>
@@ -1030,7 +1030,7 @@ export default function AdminBeta() {
                             </div>
                           ) : (
                             // Cas 4 : clé de batch générique (pas de destinataire pré-assigné)
-                            <span className="text-muted-foreground">—</span>
+                            <span className="text-muted-foreground">-</span>
                           )}
                         </td>
                         <td className="px-5 py-3 text-muted-foreground">

@@ -1,5 +1,5 @@
 /**
- * send-waitlist-confirmation — Email de confirmation après INSERT beta_waitlist
+ * send-waitlist-confirmation : Email de confirmation après INSERT beta_waitlist
  *
  * BATCH 77 (2026-05-15) : déclenchée automatiquement via trigger PostgreSQL
  * + pg_net (cf. migration `20260515_waitlist_send_confirmation_trigger.sql`).
@@ -12,7 +12,7 @@
  *   5. Si pas de RESEND_API_KEY : log + return 200 OK (mode degrade gracieux)
  *
  * Variables d'env (à configurer dans Supabase Dashboard → Edge Functions → Secrets) :
- *   - RESEND_API_KEY  : clé API Resend (https://resend.com/api-keys) — requis pour envoyer
+ *   - RESEND_API_KEY  : clé API Resend (https://resend.com/api-keys) : requis pour envoyer
  *   - RESEND_FROM     : optionnel, default "Naturegraph <naturegraph.fr@gmail.com>"
  *   - SUPABASE_URL    : injecté automatiquement
  *   - SUPABASE_SERVICE_ROLE_KEY : injecté automatiquement
@@ -68,7 +68,7 @@ Deno.serve(async (req: Request) => {
   // 2. Si pas de RESEND_API_KEY -> mode degrade (log + return OK)
   if (!RESEND_API_KEY) {
     console.log(
-      `[send-waitlist-confirmation] Pas de RESEND_API_KEY — skip envoi. Position #${rank}/${total} pour ${record.email}`,
+      `[send-waitlist-confirmation] Pas de RESEND_API_KEY : skip envoi. Position #${rank}/${total} pour ${record.email}`,
     )
     return new Response(
       JSON.stringify({ ok: true, sent: false, reason: 'resend_not_configured', rank, total }),
@@ -133,7 +133,7 @@ function buildWaitlistHtml({ rank, total }: { rank: number; total: number }): st
     </td></tr>
     <tr><td style="background:#f1eee4;padding:20px 32px;border-radius:0 0 24px 24px;text-align:center;border:1px solid #e9e6dc;border-top:none;">
       <p style="margin:0 0 6px;font-size:13px;color:#4a4869;">Une question ? <a href="mailto:naturegraph.fr@gmail.com" style="color:#5f5dd8;text-decoration:none;font-weight:600;">naturegraph.fr@gmail.com</a></p>
-      <p style="margin:0;font-size:12px;color:#8a8898;">© 2026 Naturegraph — Plateforme citoyenne biodiversité</p>
+      <p style="margin:0;font-size:12px;color:#8a8898;">© 2026 Naturegraph : Plateforme citoyenne biodiversité</p>
     </td></tr>
   </table>
 </body></html>`

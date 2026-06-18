@@ -1,5 +1,5 @@
 /**
- * ErrorState — Primitive d'état d'erreur unifié
+ * ErrorState : Primitive d'état d'erreur unifié
  * ============================================================================
  *
  * Standard pour "Une erreur est survenue", "Connexion perdue", etc.

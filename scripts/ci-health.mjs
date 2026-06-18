@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // @ts-check
 /**
- * CI Health Check — vérification périodique non-destructive
+ * CI Health Check : vérification périodique non-destructive
  * ==========================================================
  *
  * Exécute une série de checks read-only sur :
@@ -21,7 +21,7 @@
  *
  * IMPORTANT : ce script ne commit, ne push, ne pull, ne merge JAMAIS.
  * La règle "jamais de push direct sur main" du projet est respectée
- * par construction — toute écriture doit passer par une PR manuelle.
+ * par construction : toute écriture doit passer par une PR manuelle.
  */
 
 import { execSync } from 'node:child_process'
@@ -33,8 +33,8 @@ import { join } from 'node:path'
 const TIMEOUT_MS = 10_000
 const LOG_DIR = 'logs'
 
-/** URLs à pinger (HEAD) — configurable via env pour les workflows CI */
-// staging n'a pas de domaine custom — on cible la preview Vercel de la branche
+/** URLs à pinger (HEAD) : configurable via env pour les workflows CI */
+// staging n'a pas de domaine custom : on cible la preview Vercel de la branche
 // `staging` (URL stable basée sur le slug Vercel). Override via STAGING_URL si
 // un domaine custom est branché plus tard.
 const URLS = {
@@ -44,7 +44,7 @@ const URLS = {
   prod: process.env.PROD_URL ?? 'https://naturegraph.ca',
 }
 
-/** Tables Supabase dont on vérifie qu'elles répondent — représentatives du schéma */
+/** Tables Supabase dont on vérifie qu'elles répondent : représentatives du schéma */
 const SUPABASE_TABLES = ['profiles', 'posts', 'species']
 
 /** Patterns de fichiers indésirables qu'on signale s'ils traînent dans le repo */
@@ -67,7 +67,7 @@ function git(args) {
   }).trim()
 }
 
-/** Exécute une commande git en mode "soft" — renvoie null si erreur */
+/** Exécute une commande git en mode "soft" : renvoie null si erreur */
 function gitSoft(args) {
   try {
     return git(args)
@@ -89,7 +89,7 @@ function timestamp() {
 // ─── Checks ──────────────────────────────────────────────────────────────────
 
 /**
- * Check Git — état du dépôt local vs remote.
+ * Check Git : état du dépôt local vs remote.
  * Non-destructif : `git fetch` est autorisé (ne modifie pas le working tree),
  * mais aucun pull/commit/push.
  */
@@ -147,7 +147,7 @@ async function checkGit() {
 }
 
 /**
- * Check Supabase — REST endpoint + tables représentatives.
+ * Check Supabase : REST endpoint + tables représentatives.
  * Utilise les secrets via env. Skip propre si non fournis.
  */
 async function checkSupabase() {
@@ -173,7 +173,7 @@ async function checkSupabase() {
     return result
   }
 
-  // Check chaque table clé — HEAD + limite 0 évite de télécharger des données
+  // Check chaque table clé : HEAD + limite 0 évite de télécharger des données
   for (const table of SUPABASE_TABLES) {
     try {
       const r = await fetch(`${url.replace(/\/$/, '')}/rest/v1/${table}?select=id&limit=1`, {
@@ -197,7 +197,7 @@ async function checkSupabase() {
 }
 
 /**
- * Check serveur — HEAD request sur chaque URL connue.
+ * Check serveur : HEAD request sur chaque URL connue.
  * 301/302 sont considérés OK (redirection HTTPS par exemple).
  */
 async function checkServer(name, url) {
@@ -249,7 +249,7 @@ function statusBadge(status) {
 
 async function main() {
   const startedAt = new Date().toISOString()
-  console.log(color.dim(`ci-health — ${startedAt}`))
+  console.log(color.dim(`ci-health : ${startedAt}`))
 
   const [gitRes, supaRes, stagingRes, prodRes] = await Promise.all([
     checkGit(),
@@ -312,7 +312,7 @@ async function main() {
   console.log('')
   console.log(color.dim(`report → ${logPath}`))
 
-  // Exit code — 0 ok, 1 warn, 2 error
+  // Exit code : 0 ok, 1 warn, 2 error
   process.exit(hasError ? 2 : hasWarn ? 1 : 0)
 }
 

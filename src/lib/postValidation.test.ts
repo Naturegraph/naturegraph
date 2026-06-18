@@ -1,5 +1,5 @@
 /**
- * Tests postValidation — regles de contenu d'un post (retour testeur 2026-06-11).
+ * Tests postValidation : regles de contenu d'un post (retour testeur 2026-06-11).
  * Couvre : borne titre/description, regle « non vide », et le flag enforceNonEmpty
  * utilise cote service (qui ne connait pas les photos).
  */

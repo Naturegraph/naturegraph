@@ -1,5 +1,5 @@
 /**
- * useAdminAction — Hook helper pour logger les actions admin (DRY)
+ * useAdminAction : Hook helper pour logger les actions admin (DRY)
  *
  * Refs : ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md v2.0 ligne 562-589 + BATCH 36
  *
@@ -66,7 +66,7 @@ export interface UseAdminActionReturn {
    * Log une action admin dans `admin_audit_logs` (table immutable).
    *
    * @returns `true` si l'insert a reussi, `false` sinon (mais l'action calling continue).
-   *          Pas d'exception pour eviter de casser le flow user — on log juste.
+   *          Pas d'exception pour eviter de casser le flow user : on log juste.
    */
   logAction: (params: AdminActionLog) => Promise<boolean>
   /** Indique si le hook est pret a logger (admin connecte + supabase initialise). */
@@ -83,7 +83,7 @@ export function useAdminAction(): UseAdminActionReturn {
   const logAction = useCallback(
     async ({ action, targetType, targetId, metadata }: AdminActionLog): Promise<boolean> => {
       if (!supabase || !adminUser) {
-        // Pas d'admin connecte : on ne logge rien (cas degrade — ne devrait pas
+        // Pas d'admin connecte : on ne logge rien (cas degrade : ne devrait pas
         // arriver car AdminGuard protege deja les pages).
         console.warn('[useAdminAction] logAction called but admin not ready', { action })
         return false
@@ -102,7 +102,7 @@ export function useAdminAction(): UseAdminActionReturn {
           // Toast d'erreur visible pour l'admin (debug live).
           toast.error(
             'Audit log echoue',
-            `${action} : ${error.message} — l'action a continue mais n'est pas tracee.`,
+            `${action} : ${error.message} : l'action a continue mais n'est pas tracee.`,
           )
           return false
         }

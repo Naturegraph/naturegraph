@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 /**
- * Bridge CSS — Semantic aliases pour les composants Figma Make
+ * Bridge CSS : Semantic aliases pour les composants Figma Make
  * Ces variables font le pont entre les noms Figma et notre design system SCSS.
  * Les valeurs réelles sont définies dans src/styles/themes/_light-theme.scss
  */
@@ -13,7 +13,7 @@
   --text-light: var(--color-text-inverse);
   --text-dark: var(--color-text-secondary);
 
-  /* Tokens Home / Feed — mappés sur le design system SCSS */
+  /* Tokens Home / Feed : mappés sur le design system SCSS */
   --cream-lighter: var(--color-bg-secondary);
   --cream: var(--color-surface-cream, #f4f1e8);
   --card: var(--color-surface, #ffffff);
@@ -22,7 +22,7 @@
 }
 
 /**
- * @theme inline — Expose les variables bridge comme utilitaires Tailwind 4
+ * @theme inline : Expose les variables bridge comme utilitaires Tailwind 4
  * Exemples générés : bg-off-white, text-text-dark, rounded-card, etc.
  */
 /**
@@ -55,7 +55,7 @@
   --color-text-dark: var(--text-dark);
   --color-foreground: var(--color-text-primary);
 
-  /* Couleur primaire — suit --color-action-default (source de vérité unique) */
+  /* Couleur primaire : suit --color-action-default (source de vérité unique) */
   --color-primary: var(--color-action-default);
   --color-primary-light: var(--primary-light);
   --color-primary-foreground: var(--primary-foreground);
@@ -68,7 +68,7 @@
   /* Bordure */
   --color-border: var(--color-border);
 
-  /* Rayons de bordure — alignés sur tokens Figma (Radius/XXS..XL + Full) */
+  /* Rayons de bordure : alignés sur tokens Figma (Radius/XXS..XL + Full) */
   --radius-xs: 4px; /* Figma Radius/XS */
   --radius-sm: 8px; /* Figma Radius/S */
   --radius-md: 12px; /* Figma Radius/M */
@@ -79,9 +79,9 @@
   --radius-card: 8px;
   --radius-button: 999px;
 
-  /* Ombres — alignées sur Figma Shadow/S|M|L (defs dans _light-theme.scss) */
+  /* Ombres : alignées sur Figma Shadow/S|M|L (defs dans _light-theme.scss) */
   --shadow-elevation-sm: var(--elevation-sm);
-  /* Tailwind shadow utilities — sourced from Figma tokens */
+  /* Tailwind shadow utilities : sourced from Figma tokens */
   --shadow-sm: var(--shadow-sm);
   --shadow-md: var(--shadow-md);
   --shadow-lg: var(--shadow-lg);
@@ -136,7 +136,7 @@
   }
 }
 
-/* ─── Toast progress bar (BATCH 63 — barre auto-dismiss) ────────────────── */
+/* ─── Toast progress bar (BATCH 63 : barre auto-dismiss) ────────────────── */
 
 @keyframes toast-progress {
   from {
@@ -161,7 +161,7 @@
 }
 
 /**
- * Inputs date — masquer l'icône native (Webkit/Blink) pour ne garder que
+ * Inputs date : masquer l'icône native (Webkit/Blink) pour ne garder que
  * notre icône custom Calendar (cohérence design system). Le clic sur l'input
  * continue d'ouvrir le picker natif normalement.
  *
@@ -170,7 +170,7 @@
  *
  * BATCH 91 (2026-05-15) : `color-scheme: light` force le picker natif a rester
  * en mode clair meme si l'OS de l'utilisateur est en dark mode. Sans ca,
- * Chrome/Safari/Edge affichent un picker sombre sur fond sombre — incompatible
+ * Chrome/Safari/Edge affichent un picker sombre sur fond sombre : incompatible
  * avec notre DS qui est exclusivement light pour la beta.
  */
 .date-input-clean {

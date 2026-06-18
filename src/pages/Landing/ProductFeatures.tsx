@@ -1,5 +1,5 @@
 /**
- * ProductFeatures — Section produit (phone sticky + cartes alternées)
+ * ProductFeatures : Section produit (phone sticky + cartes alternées)
  * ====================================================================
  * Desktop : phone central sticky, cartes alternées gauche/droite au scroll.
  * Tablet/Mobile : slider horizontal avec pagination dots.
@@ -65,7 +65,7 @@ function PhoneDisplay({ activeIndex }: { activeIndex: number }) {
           transition={{ duration: 0.6, ease: 'easeInOut' }}
           className="absolute inset-0 w-full h-full"
         >
-          {/* alt="" : capture d'écran décorative — le titre + description
+          {/* alt="" : capture d'écran décorative : le titre + description
               de la feature adjacents portent déjà l'information. */}
           <img src={img} alt="" className="w-full h-full object-cover" loading="lazy" />
         </motion.div>
@@ -92,7 +92,7 @@ function MobileFeatureSlide({
       {/* Image phone */}
       <div className="relative h-[256px] bg-[var(--color-surface-cream-light)] overflow-hidden flex-shrink-0 flex items-end justify-center pt-8">
         <PhoneFrame size="sm">
-          {/* alt="" : capture décorative — contenu porté par le texte adjacent. */}
+          {/* alt="" : capture décorative : contenu porté par le texte adjacent. */}
           <img
             src={FEATURE_IMAGES[imageIndex]}
             alt=""
@@ -214,7 +214,7 @@ export function ProductFeatures() {
     },
   ]
 
-  /* ── Scroll detection (desktop) — détermine quelle carte est active ── */
+  /* ── Scroll detection (desktop) : détermine quelle carte est active ── */
   useEffect(() => {
     let ticking = false
 
@@ -306,7 +306,7 @@ export function ProductFeatures() {
           En-dessous, le slider horizontal mobile prend le relais.
         */}
         <div className="hidden 2xl:block relative pb-24" style={{ minHeight: '1750px' }}>
-          {/* Phone sticky — reste centré à l'écran pendant tout le scroll */}
+          {/* Phone sticky : reste centré à l'écran pendant tout le scroll */}
           <div
             className="sticky z-10 flex justify-center pointer-events-none"
             style={{ top: 'calc(50vh - 303px)', height: '606px' }}
@@ -314,7 +314,7 @@ export function ProductFeatures() {
             <PhoneDisplay activeIndex={activeFeature} />
           </div>
 
-          {/* Cartes en absolute — superposées au phone, définissent la mise en page visuelle */}
+          {/* Cartes en absolute : superposées au phone, définissent la mise en page visuelle */}
           <div className="absolute top-0 inset-x-0 px-6 md:px-10 lg:px-32">
             <div className="max-w-[1728px] mx-auto grid grid-cols-[1fr_320px_1fr] gap-x-16 xl:gap-x-24">
               {/* Colonne gauche : features 1 et 3 */}

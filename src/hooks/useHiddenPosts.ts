@@ -1,5 +1,5 @@
 /**
- * useHiddenPosts — Hook React Query pour les posts masqués
+ * useHiddenPosts : Hook React Query pour les posts masqués
  *
  * Voir second-agent/22 et hiddenPostsService.
  */

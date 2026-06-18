@@ -1,5 +1,5 @@
 /**
- * useNotificationPreferences — React Query hook pour les préférences par type
+ * useNotificationPreferences : React Query hook pour les préférences par type
  *
  * - Query : liste des rows persistées
  * - Helper `isEnabled(type)` : applique le défaut SQL si pas de row

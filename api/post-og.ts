@@ -1,9 +1,9 @@
 /**
- * api/post-og.ts — Vercel Serverless Function : OG meta dynamiques pour /post/:id
+ * api/post-og.ts : Vercel Serverless Function : OG meta dynamiques pour /post/:id
  *
  * Pourquoi cette fonction existe :
  *   Naturegraph est une SPA Vite. Les crawlers Open Graph (WhatsApp, Facebook,
- *   Twitter, LinkedIn, Discord, iMessage, Slack…) ne lisent pas le JS — ils
+ *   Twitter, LinkedIn, Discord, iMessage, Slack…) ne lisent pas le JS : ils
  *   crawlent le HTML initial servi par le serveur. Or notre index.html ne
  *   contient que les meta OG génériques de la landing.
  *
@@ -27,7 +27,7 @@
  *   - Échappement HTML systématique sur tous les champs user-generated
  *     (title, description, username) pour éviter le XSS dans le HTML servi.
  *
- * Runtime : Node serverless (pas Edge) — plus simple, suffisant pour ce cas
+ * Runtime : Node serverless (pas Edge) : plus simple, suffisant pour ce cas
  * d'usage et compatible avec le SDK supabase-js qui nécessite globalThis.fetch.
  */
 
@@ -95,7 +95,7 @@ interface OgPost {
 }
 
 /**
- * Fetch le post via PostgREST avec la clé anon — les RLS Supabase filtrent
+ * Fetch le post via PostgREST avec la clé anon : les RLS Supabase filtrent
  * automatiquement les posts privés / supprimés. Aucun secret exposé.
  */
 async function fetchPostForOg(postId: string): Promise<OgPost | null> {
@@ -184,7 +184,7 @@ function truncate(s: string, max = 200): string {
 
 /**
  * Construit le HTML minimal servi aux crawlers avec les meta OG dynamiques.
- * Pas de JS — juste les balises essentielles pour le preview.
+ * Pas de JS : juste les balises essentielles pour le preview.
  */
 function buildCrawlerHtml(post: OgPost, postUrl: string, origin: string): string {
   const safeTitle = escapeHtml(post.title)
@@ -244,13 +244,13 @@ function buildFallbackHtml(postUrl: string): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Naturegraph — Observation</title>
-  <meta name="description" content="Naturegraph — partage d'observations nature et biodiversité." />
+  <title>Naturegraph : Observation</title>
+  <meta name="description" content="Naturegraph : partage d'observations nature et biodiversité." />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Naturegraph" />
   <meta property="og:url" content="${safeUrl}" />
-  <meta property="og:title" content="Naturegraph — Partageons nos émotions" />
-  <meta property="og:description" content="Naturegraph — partage d'observations nature et biodiversité." />
+  <meta property="og:title" content="Naturegraph : Partageons nos émotions" />
+  <meta property="og:description" content="Naturegraph : partage d'observations nature et biodiversité." />
   <meta property="og:locale" content="fr_CA" />
 </head>
 <body>
@@ -263,7 +263,7 @@ function buildFallbackHtml(postUrl: string): string {
 // ─── Handler principal ────────────────────────────────────────────────────────
 
 /**
- * Handler Vercel — appelé pour toutes les requêtes vers /post/:postId via
+ * Handler Vercel : appelé pour toutes les requêtes vers /post/:postId via
  * le rewrite défini dans vercel.json.
  *
  * Flow :

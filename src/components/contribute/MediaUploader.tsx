@@ -1,13 +1,13 @@
 /**
- * MediaUploader — Sélection et prévisualisation de photos pour les contributions
+ * MediaUploader : Sélection et prévisualisation de photos pour les contributions
  *
  * Fonctionnement :
  *   - Drag & drop ou sélection via bouton "parcourir"
- *   - Prévisualisation locale (URL.createObjectURL — nettoyée automatiquement)
+ *   - Prévisualisation locale (URL.createObjectURL : nettoyée automatiquement)
  *   - Limite configurable (défaut : 4 photos)
- *   - Aucun upload réel — les File[] sont renvoyés au parent via onChange
+ *   - Aucun upload réel : les File[] sont renvoyés au parent via onChange
  *
- * TODO [BACKEND] — Upload vers Supabase Storage :
+ * TODO [BACKEND] : Upload vers Supabase Storage :
  *   bucket 'post-media', policy RLS : authentifié seulement
  *   Utiliser supabase.storage.from('post-media').upload(path, file)
  *   Stocker l'URL publique dans media.url après upload réussi.
@@ -56,8 +56,8 @@ const ALLOWED_MIME_TYPES = new Set([
 /**
  * Valide un fichier avant ajout à la liste.
  * Retourne un message d'erreur localisé, ou null si le fichier est valide.
- * TODO [BACKEND] — Ajouter une vérification du "magic number" (en-têtes binaires)
- * côté serveur — le MIME type client peut être falsifié.
+ * TODO [BACKEND] : Ajouter une vérification du "magic number" (en-têtes binaires)
+ * côté serveur : le MIME type client peut être falsifié.
  */
 function validateFile(file: File): string | null {
   // V1.1.4 NG-025 (Nicolas 2026-06-03) : aligne avec EncounterStep1 et
@@ -68,7 +68,7 @@ function validateFile(file: File): string | null {
     const ext = rawMatch[1].toUpperCase()
     return `Fichier RAW (${ext}) non supporté. Convertis-le en JPEG dans ton logiciel photo, puis réessaye.`
   }
-  // MIME vide tolérée (Android Chrome ancienne version) — on tente l'upload.
+  // MIME vide tolérée (Android Chrome ancienne version) : on tente l'upload.
   if (file.type && !ALLOWED_MIME_TYPES.has(file.type)) {
     return `Format non supporté : ${file.type}. Formats acceptés : JPEG, PNG, WebP, AVIF, HEIC.`
   }
@@ -156,7 +156,7 @@ export function MediaUploader({ files, onChange, maxFiles = 4, error }: MediaUpl
         </span>
       </span>
 
-      {/* Zone de dépôt — masquée quand le max est atteint */}
+      {/* Zone de dépôt : masquée quand le max est atteint */}
       {canAddMore && (
         <div
           role="button"
@@ -188,7 +188,7 @@ export function MediaUploader({ files, onChange, maxFiles = 4, error }: MediaUpl
         </div>
       )}
 
-      {/* Input fichier caché — déclenché par le bouton visible */}
+      {/* Input fichier caché : déclenché par le bouton visible */}
       {/* Nicolas 2026-05-22 : `accept="image/*"` pour laisser iOS Safari
           convertir HEIC en JPEG automatiquement (sinon 2ᵉ photo iPhone
           parfois bloquée silencieusement). */}

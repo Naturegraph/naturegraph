@@ -1,5 +1,5 @@
 // ============================================
-// Inputs — Naturegraph
+// Inputs : Naturegraph
 // ============================================
 
 // ─── Slider de localisation ────────────────────────────────────────────────────
@@ -15,7 +15,7 @@
   cursor: pointer;
   border: none;
 
-  // Thumb — Chrome / Safari / Edge (Chromium)
+  // Thumb : Chrome / Safari / Edge (Chromium)
   &::-webkit-slider-thumb {
     appearance: none;
     -webkit-appearance: none;
@@ -33,7 +33,7 @@
     transform: scale(1.15);
   }
 
-  // Thumb — Firefox
+  // Thumb : Firefox
   &::-moz-range-thumb {
     width: 18px;
     height: 18px;

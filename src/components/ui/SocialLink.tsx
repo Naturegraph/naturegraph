@@ -1,5 +1,5 @@
 /**
- * SocialLink — Lien externe vers un réseau social
+ * SocialLink : Lien externe vers un réseau social
  * ==================================================
  * Wrapper standardisé pour les ancres sociales (Instagram, Discord, etc.).
  *  - target/_blank + rel sécurisés par défaut
@@ -12,7 +12,7 @@ import type { ReactNode } from 'react'
 export interface SocialLinkProps {
   /** URL externe complète */
   href: string
-  /** Label accessible (ex: "Instagram") — obligatoire car icône seule */
+  /** Label accessible (ex: "Instagram") : obligatoire car icône seule */
   label: string
   /** Icône (lucide-react ou SVG inline) */
   icon: ReactNode

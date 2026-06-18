@@ -1,11 +1,11 @@
 /**
- * AuthPage — Page d'authentification unifiée
+ * AuthPage : Page d'authentification unifiée
  *
  * Gère tous les modes en un seul composant :
  *  signup → verification → onboarding
  *  login  → verification → home (si déjà onboardé)
  *
- * Adapté du design Figma Make — design system Naturegraph appliqué.
+ * Adapté du design Figma Make : design system Naturegraph appliqué.
  */
 
 import { useEffect, useState } from 'react'
@@ -32,9 +32,9 @@ type AuthMode = 'beta-key' | 'signup' | 'login' | 'verification' | 'onboarding'
 const BETA_GATE_ENABLED = import.meta.env.VITE_BETA_GATE_ENABLED === 'true'
 
 interface AuthPageProps {
-  /** Mode initial — 'signup' par défaut */
+  /** Mode initial : 'signup' par défaut */
   initialMode?: 'signup' | 'login'
-  /** Callback externe pour naviguer vers la landing (optionnel — useNavigate par défaut) */
+  /** Callback externe pour naviguer vers la landing (optionnel : useNavigate par défaut) */
   onNavigateToLanding?: () => void
   /** Callback externe à la fin de l'authentification (optionnel) */
   onAuthComplete?: () => void
@@ -83,7 +83,7 @@ export default function AuthPage({
   })
   const [initialAuthMode, setInitialAuthMode] = useState<'signup' | 'login'>(initialMode)
   const [pendingEmail, setPendingEmail] = useState('')
-  // BATCH 30 : keyId stocke apres validation beta — utile pour future traçabilite (Phase 2).
+  // BATCH 30 : keyId stocke apres validation beta : utile pour future traçabilite (Phase 2).
   const [, setValidatedKeyId] = useState<string | null>(null)
 
   // Raccourcis de navigation avec fallback useNavigate
@@ -121,7 +121,7 @@ export default function AuthPage({
   }
 
   function handleLoginSuccess(email: string) {
-    // Connexion OTP — stocker l'email et afficher le formulaire de vérification
+    // Connexion OTP : stocker l'email et afficher le formulaire de vérification
     setPendingEmail(email)
     setInitialAuthMode('login')
     setMode('verification')
@@ -136,7 +136,7 @@ export default function AuthPage({
       // + decrement quota global via Edge Function).
       // Si claim echoue (rare : cle expiree entre welcome et signup), on
       // affiche un toast mais on continue le flow (le compte est deja cree
-      // dans Supabase Auth — pas de rollback).
+      // dans Supabase Auth : pas de rollback).
       if (storedBetaCode && BETA_GATE_ENABLED) {
         const claimResult = await validateBetaKey(storedBetaCode)
         if (claimResult.valid && claimResult.key_id) {
@@ -154,7 +154,7 @@ export default function AuthPage({
       setMode('onboarding')
     } else {
       // Login : vérifier si l'onboarding est terminé via le profil (username réel)
-      // onboardingCompleted vient du AuthContext — basé sur le username dans le profil DB
+      // onboardingCompleted vient du AuthContext : basé sur le username dans le profil DB
       success(t('auth.success.loginTitle'), t('auth.success.loginDescription'))
       goto.home()
     }
@@ -182,7 +182,7 @@ export default function AuthPage({
         mode === 'onboarding' ? 'bg-warm-beige' : 'bg-off-white md:bg-teal-dark'
       }`}
     >
-      {/* Orbes de gradient animées — desktop uniquement, désactivées en mode onboarding */}
+      {/* Orbes de gradient animées : desktop uniquement, désactivées en mode onboarding */}
       {mode !== 'onboarding' && !prefersReducedMotion && <AuthOrbBackground mouse={mouse} />}
 
       {/* Contenu avec transitions fluides */}

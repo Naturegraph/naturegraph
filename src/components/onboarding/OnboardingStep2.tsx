@@ -1,5 +1,5 @@
 /**
- * OnboardingStep2 — Étape 2 : Fréquence d'exploration
+ * OnboardingStep2 : Étape 2 : Fréquence d'exploration
  *
  * Sélection radio parmi 4 options de fréquence.
  * Layout identique à OnboardingInterests (730px min-height, 4 barres progression).
@@ -24,7 +24,7 @@ import { OnboardingHeader } from './OnboardingHeader'
 
 /**
  * Options de fréquence d'exploration.
- * TODO [BACKEND] — Mapper ces valeurs aux paramètres de notifications Supabase :
+ * TODO [BACKEND] : Mapper ces valeurs aux paramètres de notifications Supabase :
  *   - 'daily'        → fréquence temps réel (notifications immédiates)
  *   - 'weekly'       → 1 digest par jour
  *   - 'monthly'      → 1 digest par semaine
@@ -66,7 +66,7 @@ export function OnboardingStep2({ onNext, onBack, initialValue, onExit }: Onboar
             </p>
           </div>
 
-          {/* Options de fréquence — role="radiogroup" pour grouper sémantiquement */}
+          {/* Options de fréquence : role="radiogroup" pour grouper sémantiquement */}
           <div
             role="radiogroup"
             aria-label={t('onboarding.frequency.title')}

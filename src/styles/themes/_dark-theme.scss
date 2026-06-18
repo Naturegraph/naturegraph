@@ -1,7 +1,7 @@
 // ============================================
-// Dark Theme — Naturegraph
+// Dark Theme : Naturegraph
 // ============================================
-// Synced from Figma "Colors Tokens" collection — Dark mode (2026-03-19)
+// Synced from Figma "Colors Tokens" collection : Dark mode (2026-03-19)
 
 @use '../abstracts/colors' as *;
 
@@ -9,7 +9,7 @@
   // ── Background / Neutral ──
   --color-bg-primary: #{$greyscale-900}; // #0C0C14
   --color-bg-secondary: #{$greyscale-800}; // #20203D
-  --color-bg-tertiary: #{$greyscale-700}; // #13131A — remplace le crème #FFF4E0 en dark
+  --color-bg-tertiary: #{$greyscale-700}; // #13131A : remplace le crème #FFF4E0 en dark
   --color-bg-menthe: #{$color-menthe}; // #99FFCC
 
   // ── Background / Highlight ──
@@ -44,7 +44,7 @@
   --color-error: #{$semantic-red-100}; // #FCCDD5
   --color-info: #{$semantic-blue-100}; // #BADEFA
 
-  // ── Brand secondary (Instant nature — BATCH 42) ──
+  // ── Brand secondary (Instant nature : BATCH 42) ──
   // Spec Figma identique en dark (couleur brand specifique).
   --color-amber-primary: #cc7a00;
 
@@ -61,18 +61,18 @@
   // ── Surfaces ──
   --color-surface: #{$greyscale-800};
   --color-surface-hover: #{$greyscale-700};
-  --color-surface-cream: #{$greyscale-800}; // #20203D — remplace crème clair en dark
-  --color-surface-cream-light: #{$greyscale-700}; // #13131A — variante plus sombre
+  --color-surface-cream: #{$greyscale-800}; // #20203D : remplace crème clair en dark
+  --color-surface-cream-light: #{$greyscale-700}; // #13131A : variante plus sombre
   --color-overlay: rgba(0, 0, 0, 0.7);
 
   // ── Text / Muted ──
-  --color-text-muted: #{$greyscale-400}; // #9696A3 — gris clair, contraste ~4.6:1 sur bg-primary dark
+  --color-text-muted: #{$greyscale-400}; // #9696A3 : gris clair, contraste ~4.6:1 sur bg-primary dark
 
   // ── Accents ──
-  --color-accent-mint: #{$color-accent-mint}; // #83C5BE — identique light, lisible en dark
+  --color-accent-mint: #{$color-accent-mint}; // #83C5BE : identique light, lisible en dark
 
   // ── Semantic / Action destructive ──
-  --color-error-action: #{$semantic-red-400}; // #FD4B67 — variante dark du rouge action
+  --color-error-action: #{$semantic-red-400}; // #FD4B67 : variante dark du rouge action
 
   // ── Legacy aliases (backward compat with Landing.tsx) ──
   --color-primary: #{$brand-main-400};

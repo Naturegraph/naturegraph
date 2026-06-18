@@ -1,12 +1,12 @@
 /**
- * validateImageMagic — Verification des magic numbers d'une image
+ * validateImageMagic : Verification des magic numbers d'une image
  * ============================================================================
  *
  * Refs : T-062 (MASTER_TODO) + BATCH 24
  *
  * Pourquoi ?
  *   `file.type` (MIME) est inferre par le navigateur a partir de l'extension
- *   ou du upload header — facilement contournable. Un attaquant peut renommer
+ *   ou du upload header : facilement contournable. Un attaquant peut renommer
  *   un .exe en .jpg et le MIME sera quand meme `image/jpeg`.
  *
  * Solution : lire les premiers octets du fichier (magic numbers) qui sont
@@ -32,7 +32,7 @@ export type SupportedImageType = 'image/jpeg' | 'image/png' | 'image/webp'
  * Retourne le MIME confirme ou null si invalide.
  */
 export async function validateImageMagicNumber(file: File): Promise<SupportedImageType | null> {
-  // On lit les 12 premiers octets — suffisant pour JPEG/PNG/WebP.
+  // On lit les 12 premiers octets : suffisant pour JPEG/PNG/WebP.
   const buffer = await file.slice(0, 12).arrayBuffer()
   const bytes = new Uint8Array(buffer)
 

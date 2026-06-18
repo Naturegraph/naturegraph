@@ -1,5 +1,5 @@
 /**
- * useSettings — React Query wrapper pour user_settings
+ * useSettings : React Query wrapper pour user_settings
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'

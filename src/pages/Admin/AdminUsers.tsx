@@ -131,7 +131,7 @@ const ASSIGNABLE_ROLES: { value: AdminRole; label: string; hint: string }[] = [
  * Utilisée pour "Inscrit le", pas besoin d'heure, juste un repère temporel.
  */
 function formatShortDate(iso: string | null): string {
-  if (!iso) return '—'
+  if (!iso) return '-'
   try {
     return new Date(iso).toLocaleDateString('fr-FR', {
       day: '2-digit',
@@ -139,7 +139,7 @@ function formatShortDate(iso: string | null): string {
       year: 'numeric',
     })
   } catch {
-    return '—'
+    return '-'
   }
 }
 
@@ -164,7 +164,7 @@ function formatRelativeTime(iso: string | null): string {
     if (d < 365) return `il y a ${Math.floor(d / 30)} mois`
     return formatShortDate(iso)
   } catch {
-    return '—'
+    return '-'
   }
 }
 
@@ -674,7 +674,7 @@ export default function AdminUsers() {
                     </td>
                     <td className="px-4 py-2 text-foreground">{u.posts_count ?? 0}</td>
                     <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
-                      {u.created_at ? formatShortDate(u.created_at) : '—'}
+                      {u.created_at ? formatShortDate(u.created_at) : '-'}
                     </td>
                     <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
                       {formatRelativeTime(u.last_login_at ?? u.updated_at)}
@@ -694,7 +694,7 @@ export default function AdminUsers() {
                           {!u.admin_is_active && ' (inactif)'}
                         </span>
                       ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
+                        <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </td>
                     <td className="px-4 py-2 text-right">
@@ -844,7 +844,7 @@ export default function AdminUsers() {
                 >
                   {ASSIGNABLE_ROLES.map((r) => (
                     <option key={r.value} value={r.value}>
-                      {r.label} — {r.hint}
+                      {r.label} : {r.hint}
                     </option>
                   ))}
                   <option value="remove">Retirer le rôle (redevient migrateur)</option>

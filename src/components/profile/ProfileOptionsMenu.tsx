@@ -1,5 +1,5 @@
 /**
- * ProfileOptionsMenu — Menu d'options sur la page profil (3 points)
+ * ProfileOptionsMenu : Menu d'options sur la page profil (3 points)
  * ===================================================================
  *
  * Mêmes patterns visuels que PostOptionsMenu du feed (cohérence DS).

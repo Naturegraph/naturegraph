@@ -1,5 +1,5 @@
 /**
- * PostOptionsMenu — Menu contextuel d'un post (⋮)
+ * PostOptionsMenu : Menu contextuel d'un post (⋮)
  *
  * Deux modes selon l'auteur :
  *   isOwnPost = true  → Modifier, Copier le lien, Supprimer
@@ -51,24 +51,24 @@ import { buildPostPath } from '@/lib/postSlug'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface PostOptionsMenuProps {
-  /** ID du post — pour construire l'URL de partage et les requêtes API */
+  /** ID du post : pour construire l'URL de partage et les requêtes API */
   postId: string
-  /** Titre du post — utilisé comme base du slug URL partagé (rétro-compat
+  /** Titre du post : utilisé comme base du slug URL partagé (rétro-compat
    *  si absent : URL = `/post/{uuid}` brut). */
   postTitle?: string
-  /** Nom d'espèce — fallback slug si pas de titre. */
+  /** Nom d'espèce : fallback slug si pas de titre. */
   postSpecies?: string | null
   /** Nom d'utilisateur de l'auteur (pour "Ne plus migrer avec @username") */
   authorUsername: string
-  /** ID de l'auteur (uuid) — utilisé par follow/block (cible des actions) */
+  /** ID de l'auteur (uuid) : utilisé par follow/block (cible des actions) */
   authorId?: string
   /** true = post de l'utilisateur connecté */
   isOwnPost: boolean
   onClose: () => void
-  /** Callback suppression — connecté à postService.deletePost via useDeletePost. */
+  /** Callback suppression : connecté à postService.deletePost via useDeletePost. */
   onDelete?: () => void
   /**
-   * Callback édition — Nicolas 2026-05-24 : permet de rouvrir le panel de
+   * Callback édition : Nicolas 2026-05-24 : permet de rouvrir le panel de
    * création (Encounter ou Instant) pré-rempli avec les valeurs du post pour
    * que l'auteur puisse corriger ses observations (photos, détails, espèces).
    * Si absent, le bouton « Modifier » est masqué.
@@ -83,9 +83,9 @@ interface MenuItemProps {
   label: string
   description: string
   onClick: () => void
-  /** Variante destructive — texte + icône rouges */
+  /** Variante destructive : texte + icône rouges */
   danger?: boolean
-  /** Variante mise en avant — fond légèrement teinté */
+  /** Variante mise en avant : fond légèrement teinté */
   highlighted?: boolean
   itemRef?: React.RefObject<HTMLButtonElement>
 }
@@ -157,7 +157,7 @@ export function PostOptionsMenu({
    *   - Affiche un check vert + label de confirmation pendant 1.2s
    *   - Ferme le menu ensuite (sauf "favorite" qui reste actif visuellement)
    * Les actions appellent les vrais services Supabase (saved_posts, follows,
-   * blocks). Les erreurs sont silencieuses ici — un toast global devra être
+   * blocks). Les erreurs sont silencieuses ici : un toast global devra être
    * ajouté dans une itération séparée.
    */
   const [actionedItem, setActionedItem] = useState<string | null>(null)
@@ -186,7 +186,7 @@ export function PostOptionsMenu({
 
   // Fermer si clic en dehors du menu (desktop dropdown + mobile sheet).
   // 2026-05-19 : `click` post-React + selector `[role="menu"]` au lieu de
-  // `mousedown` + `contains(ref)` — sinon les actions menu (Migrer, Favoris,
+  // `mousedown` + `contains(ref)` : sinon les actions menu (Migrer, Favoris,
   // Copier, Masquer, Signaler) ne s'exécutent pas en mobile car onClose()
   // ferme le menu avant le click handler React.
   useEffect(() => {
@@ -235,7 +235,7 @@ export function PostOptionsMenu({
 
   /**
    * Suppression du post
-   * TODO [BACKEND] — appeler postService.deletePost(postId)
+   * TODO [BACKEND] : appeler postService.deletePost(postId)
    * puis invalider le cache TanStack Query ['feed']
    */
   function handleDelete() {
@@ -271,7 +271,7 @@ export function PostOptionsMenu({
         targetUserId: authorId,
         currentlyFollowing: !!isCurrentlyFollowing,
       })
-      // Pas de fermeture auto — on laisse l'user voir le state changer
+      // Pas de fermeture auto : on laisse l'user voir le state changer
       return
     }
     setActionedItem(action)
@@ -311,7 +311,7 @@ export function PostOptionsMenu({
         description={t('home.post.options.copyLinkDesc')}
         onClick={handleCopyLink}
       />
-      {/* Modifier mon observation — affiché uniquement si le parent a câblé
+      {/* Modifier mon observation : affiché uniquement si le parent a câblé
           le callback onEdit (Home → FeedSection → FeedPost). Nicolas
           2026-05-24 : permet de corriger une erreur (espèce, photo, etc.). */}
       {onEdit && (

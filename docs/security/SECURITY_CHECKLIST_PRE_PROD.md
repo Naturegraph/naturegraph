@@ -1,4 +1,4 @@
-# SECURITY_CHECKLIST_PRE_PROD.md — Checklist sécurité pré-production
+# SECURITY_CHECKLIST_PRE_PROD.md : Checklist sécurité pré-production
 
 > Établie le 2026-05-20 · À cocher avant chaque palier (beta → ouverture publique).
 > Issue de la consolidation des audits SECURITY*\*.md / PRIVACY*\*.md / ROADMAP.
@@ -111,7 +111,7 @@
 
 ### ➡️ Feu vert BETA
 
-Conditionné aux ⬜ de la colonne « Beta » — essentiellement la **Vague 0 de la roadmap**
+Conditionné aux ⬜ de la colonne « Beta » : essentiellement la **Vague 0 de la roadmap**
 (2FA, leaked-password, cloisonnement env Vercel, Vercel Auth prod, décision dépôt,
 vérif purge Storage / export / consentement géoloc, sauvegardes). **≈ 1 journée** de
 travail, surtout des réglages et vérifications.
@@ -120,13 +120,13 @@ travail, surtout des réglages et vérifications.
 
 ### ➡️ Feu vert OUVERTURE PUBLIQUE
 
-Conditionné à TOUTES les colonnes « Public » ✅ — soit la **Vague 0 + Vague 1** de la
+Conditionné à TOUTES les colonnes « Public » ✅ : soit la **Vague 0 + Vague 1** de la
 roadmap (revue Edge Functions, REVOKE EXECUTE, anti-spam waitlist, quotas, rate
 limiting, pages légales, responsable PRP). **≈ 2-3 jours** de sprint hardening.
 
 ---
 
-## Récapitulatif — ce qui est DÉJÀ solide ✅
+## Récapitulatif : ce qui est DÉJÀ solide ✅
 
 - RLS sur 29/29 tables · policies vérifiées · grants de seed révoqués
 - 0 dépendance vulnérable · secret scanning · Dependabot · CodeQL

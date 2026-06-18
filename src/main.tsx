@@ -49,7 +49,7 @@ createRoot(document.getElementById('root')!).render(
             que la connexion tombe, masque le reste du temps. */}
         <OnlineStatusBanner />
         <RouterProvider router={router} />
-        {/* Vercel Web Analytics — pageviews + visiteurs uniques, no-op en dev.
+        {/* Vercel Web Analytics : pageviews + visiteurs uniques, no-op en dev.
             Minimum suffisant pour suivre la beta fermée (Nicolas 2026-05-24).
             Aucun cookie, conforme RGPD/Loi 25 QC. */}
         <Analytics />

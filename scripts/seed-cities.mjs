@@ -1,5 +1,5 @@
 /**
- * seed-cities.mjs — Seed `fr_cities` : communes FR + municipalités QC
+ * seed-cities.mjs : Seed `fr_cities` : communes FR + municipalités QC
  * ====================================================================
  *
  * Objectif (Nicolas 2026-05-20) : blinder le socle de localisation pour
@@ -9,20 +9,20 @@
  *
  * Deux sources, toutes deux open-data et sans authentification :
  *
- *   FRANCE  — @etalab/decoupage-administratif (ODbL, IGN/INSEE)
+ *   FRANCE  : @etalab/decoupage-administratif (ODbL, IGN/INSEE)
  *             ~35 000 communes métropole + DROM-COM, avec centroïde.
  *
- *   QUÉBEC  — dataset GeoNames hébergé par OpenDataSoft (CC-BY)
+ *   QUÉBEC  : dataset GeoNames hébergé par OpenDataSoft (CC-BY)
  *             municipalités du Québec (admin1_code = 10) pop > 1000,
  *             ~488 villes avec coordonnées.
  *             → indispensable : l'API Adresse data.gouv.fr est FR-only,
  *               un testeur québécois ne trouve pas sa ville sans ça.
  *
  * Écriture : upsert via l'API REST PostgREST de Supabase (le rôle `anon`
- * doit avoir temporairement INSERT/UPDATE sur `fr_cities` — grant accordé
+ * doit avoir temporairement INSERT/UPDATE sur `fr_cities` : grant accordé
  * puis révoqué autour de l'exécution).
  *
- * Idempotent : ON CONFLICT (insee_code) — relançable sans doublon.
+ * Idempotent : ON CONFLICT (insee_code) : relançable sans doublon.
  *
  * Usage : node scripts/seed-cities.mjs
  */
@@ -90,7 +90,7 @@ async function fetchJson(url) {
 
 // ─── Construction des lignes FRANCE ──────────────────────────────────────────
 //
-// Nicolas 2026-05-21 : on passe de GeoNames (pop > 1000 — ~9 000 villes FR
+// Nicolas 2026-05-21 : on passe de GeoNames (pop > 1000 : ~9 000 villes FR
 // seulement) à `geo.api.gouv.fr/communes` qui expose les ~35 000 communes
 // officielles INSEE avec centroïde (`centre`), code département, code région
 // et population. Source primaire IGN/INSEE, licence ODbL.
@@ -106,7 +106,7 @@ async function buildFranceRows() {
   const regionName = new Map(regions.map((r) => [r.code, r.nom]))
   const deptName = new Map(departements.map((d) => [d.code, d.nom]))
 
-  // geo.api.gouv.fr ne paginate pas — un seul appel renvoie l'ensemble (~9 Mo JSON).
+  // geo.api.gouv.fr ne paginate pas : un seul appel renvoie l'ensemble (~9 Mo JSON).
   // `centre` = GeoJSON Point [lon, lat]. Inclut métropole + DROM-COM (codes 97*).
   const url =
     'https://geo.api.gouv.fr/communes?fields=nom,code,codeDepartement,codeRegion,population,centre&format=json&geometry=centre'
@@ -186,19 +186,19 @@ async function upsertBatch(rows) {
     body: JSON.stringify(rows),
   })
   if (!res.ok) {
-    throw new Error(`Upsert HTTP ${res.status} — ${await res.text()}`)
+    throw new Error(`Upsert HTTP ${res.status} : ${await res.text()}`)
   }
 }
 
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log('📍 Seed fr_cities — communes FR + municipalités QC\n')
+  console.log('📍 Seed fr_cities : communes FR + municipalités QC\n')
 
   const [franceRows, quebecRows] = await Promise.all([buildFranceRows(), buildQuebecRows()])
   const all = [...franceRows, ...quebecRows]
 
-  // Dédoublonnage par insee_code (sécurité — ne devrait pas arriver).
+  // Dédoublonnage par insee_code (sécurité : ne devrait pas arriver).
   const seen = new Set()
   const unique = all.filter((r) => !seen.has(r.insee_code) && seen.add(r.insee_code))
 

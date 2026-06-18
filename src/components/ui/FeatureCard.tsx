@@ -1,5 +1,5 @@
 /**
- * FeatureCard — Carte feature avec icône, titre et description
+ * FeatureCard : Carte feature avec icône, titre et description
  * =============================================================
  * Pattern récurrent dans la landing (FeaturesCards, ProductFeatures, Storytelling).
  *
@@ -21,11 +21,11 @@ export interface FeatureCardProps {
   title: string
   /** Description courte */
   description: string
-  /** Variante couleur de l'IconCircle — défaut: primary */
+  /** Variante couleur de l'IconCircle : défaut: primary */
   iconColor?: IconCircleColor
   /** Variante visuelle : boxed = fond + padding, plain = sans (défaut: plain) */
   boxed?: boolean
-  /** Alignement du contenu — défaut: left */
+  /** Alignement du contenu : défaut: left */
   align?: 'left' | 'center'
   /** Classes additionnelles sur le wrapper */
   className?: string

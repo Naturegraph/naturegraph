@@ -1,5 +1,5 @@
 /**
- * monitoring.ts — Wiring Sentry (lazy, optionnel)
+ * monitoring.ts : Wiring Sentry (lazy, optionnel)
  *
  * Sentry n'est PAS installé en dépendance directe : ce module charge le SDK
  * dynamiquement uniquement si :
@@ -21,7 +21,7 @@
 let sentryRef: any = null
 
 /**
- * Fil d'Ariane « auth » (NG-038 Phase 0 — instrumentation).
+ * Fil d'Ariane « auth » (NG-038 Phase 0 : instrumentation).
  *
  * Trace chaque transition d'authentification / boot pour pouvoir diagnostiquer
  * les vrais echecs en prod (faux etat deconnecte, session perdue, boot lent)
@@ -59,7 +59,7 @@ export async function initMonitoring(): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const Sentry = (await import('@sentry/react').catch(() => null)) as any
     if (!Sentry) {
-      console.warn('[monitoring] @sentry/react absent — skip')
+      console.warn('[monitoring] @sentry/react absent : skip')
       return
     }
     sentryRef = Sentry

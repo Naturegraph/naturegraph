@@ -1,5 +1,5 @@
 /**
- * SwipeableNotifItem — Wrapper swipe-to-delete pour les notifs mobile
+ * SwipeableNotifItem : Wrapper swipe-to-delete pour les notifs mobile
  * ============================================================
  *
  * Pattern UX iOS/Android natif :
@@ -96,7 +96,7 @@ export function SwipeableNotifItem({
 
   return (
     <div className="group/swipe relative overflow-hidden">
-      {/* Bouton supprimer principal — révélé par le swipe sur mobile,
+      {/* Bouton supprimer principal : révélé par le swipe sur mobile,
           ou caché sous le contenu sinon. */}
       <button
         type="button"
@@ -113,7 +113,7 @@ export function SwipeableNotifItem({
         <Trash2 className="size-5 pointer-events-none" aria-hidden="true" />
       </button>
 
-      {/* Item swipeable — translate pour révéler/cacher le bouton mobile. */}
+      {/* Item swipeable : translate pour révéler/cacher le bouton mobile. */}
       <div
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -124,10 +124,10 @@ export function SwipeableNotifItem({
       >
         {children}
 
-        {/* Bouton corbeille desktop — visible au hover (pas de swipe à la
+        {/* Bouton corbeille desktop : visible au hover (pas de swipe à la
             souris sur desktop / tablette stylet). Tap-target 32px à droite,
             absolute pour ne pas perturber le layout du content (Nicolas
-            2026-05-22 : retour beta — swipe ne fonctionne qu'au tactile). */}
+            2026-05-22 : retour beta : swipe ne fonctionne qu'au tactile). */}
         <button
           type="button"
           onClick={handleDelete}

@@ -1,9 +1,9 @@
 /**
- * ContributeModal — Sélection du type de contribution (v2 — pixel-perfect Figma 6385:97403)
+ * ContributeModal : Sélection du type de contribution (v2 : pixel-perfect Figma 6385:97403)
  *
  * Options :
- *   - Rencontre nature  : observation documentée d'une espèce — icône oiseau teal (disponible)
- *   - Instant nature    : capture spontanée paysage/ambiance — icône montagne orange (bientôt)
+ *   - Rencontre nature  : observation documentée d'une espèce : icône oiseau teal (disponible)
+ *   - Instant nature    : capture spontanée paysage/ambiance : icône montagne orange (bientôt)
  *
  * Design :
  *   - Conteneur : bg cream, border gris-clair 0.5px, rounded-lg, shadow-lg, padding 4px
@@ -22,13 +22,13 @@
  *   - Escape pour fermer, clic backdrop (mobile) ferme
  *   - Focus sur le premier item à l'ouverture
  *
- * TODO [FEATURE] Instant nature — activer quand le formulaire est prêt :
+ * TODO [FEATURE] Instant nature : activer quand le formulaire est prêt :
  *   1. Retirer `disabled: true` dans CONTRIBUTION_TYPES
  *   2. Créer le formulaire /contribute?type=nature_instant
  *   3. POST /posts { type: 'nature_instant', ... } via postService
  *   4. Invalider le cache TanStack Query ['feed']
  *
- * TODO [TOKEN] `#cc7a00` (cercle Instant nature) — ajouter `--color-amber-primary`
+ * TODO [TOKEN] `#cc7a00` (cercle Instant nature) : ajouter `--color-amber-primary`
  *   dans _light-theme.scss quand le design system sera mis à jour.
  */
 
@@ -48,7 +48,7 @@ interface ContributionType {
   iconBg: string
   /** Composant Lucide pour l'icône */
   Icon: React.ElementType
-  /** Si true, carte grisée + badge "Bientôt" — non cliquable */
+  /** Si true, carte grisée + badge "Bientôt" : non cliquable */
   disabled: boolean
 }
 
@@ -65,9 +65,9 @@ const CONTRIBUTION_TYPES: ContributionType[] = [
     id: 'nature_notebook',
     title: "Carnet d'observations",
     description: 'Démarre une sortie nature : ajoute progressivement les espèces observées.',
-    /** Background/Neutral/Secondary — gris clair (#F4F4F4, Figma Frame 2985). */
+    /** Background/Neutral/Secondary : gris clair (#F4F4F4, Figma Frame 2985). */
     cardBg: '#f4f4f4',
-    /** Content/Neutral/Secondary — bleu nuit (#20203D = $greyscale-800). */
+    /** Content/Neutral/Secondary : bleu nuit (#20203D = $greyscale-800). */
     iconBg: '#20203d',
     Icon: BookOpen,
     disabled: false,
@@ -88,7 +88,7 @@ const CONTRIBUTION_TYPES: ContributionType[] = [
     id: 'nature_encounter',
     title: 'Rencontre nature',
     description: 'Contribue en ajoutant une observation animale, avec ou sans photo.',
-    /** Background/Highlight/Secondary — teal-50 (#E5F7F7, $brand-highlight-50). */
+    /** Background/Highlight/Secondary : teal-50 (#E5F7F7, $brand-highlight-50). */
     cardBg: '#e5f7f7',
     /** Background/Highlight/Primary (--color-highlight-primary = #006666). */
     iconBg: 'var(--color-highlight-primary)',
@@ -112,7 +112,7 @@ function SoonBadge() {
 interface ContributeModalProps {
   onClose: () => void
   /**
-   * Si fourni, appelé à la sélection d'un type — ouvre le panneau inline
+   * Si fourni, appelé à la sélection d'un type : ouvre le panneau inline
    * sans naviguer vers /contribute. Sinon : navigation classique.
    */
   onTypeSelect?: (type: string) => void
@@ -138,7 +138,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
   }, [onClose])
 
   // Fermer si clic en dehors du dropdown/sheet.
-  // 2026-05-19 : même pattern que ProfileMenu/NotificationsPanel — `click`
+  // 2026-05-19 : même pattern que ProfileMenu/NotificationsPanel : `click`
   // post-React + `closest()` qui matche desktop dropdown ET mobile sheet
   // (sinon le ref desktop seul ferme le menu avant que onTypeSelect ne fire
   // sur le tap d'une carte en mobile).
@@ -170,7 +170,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
     }
   }
 
-  // Ordre Figma selon le viewport (Nicolas 2026-06-08) — le Carnet est
+  // Ordre Figma selon le viewport (Nicolas 2026-06-08) : le Carnet est
   // desormais disponible PARTOUT (desktop, tablette, mobile) pour couvrir les
   // deux usages : mode terrain sur smartphone OU saisie au calme sur PC.
   //  - Mobile (bottom sheet) : Carnet -> Instant -> Rencontre (terrain en 1er,
@@ -199,7 +199,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
         {types.map((type, i) => {
           const { Icon } = type
 
-          // Carte désactivée (bientôt disponible) — rendu en <div> non cliquable
+          // Carte désactivée (bientôt disponible) : rendu en <div> non cliquable
           if (type.disabled) {
             return (
               <div
@@ -209,7 +209,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
                 className="flex items-center gap-4 p-3 rounded-md opacity-60 cursor-not-allowed select-none"
                 style={{ backgroundColor: type.cardBg }}
               >
-                {/* Cercle icône — 48px (Figma Frame 4448) */}
+                {/* Cercle icône : 48px (Figma Frame 4448) */}
                 <div
                   className="size-12 rounded-full flex items-center justify-center shrink-0"
                   style={{ backgroundColor: type.iconBg }}
@@ -234,7 +234,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
             )
           }
 
-          // Carte active — bouton cliquable
+          // Carte active : bouton cliquable
           return (
             <button
               key={type.id}
@@ -245,7 +245,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
               className="w-full flex items-center gap-4 p-3 rounded-md text-left transition-opacity hover:opacity-90 active:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
               style={{ backgroundColor: type.cardBg }}
             >
-              {/* Cercle icône — 48px (Figma Frame 4448) */}
+              {/* Cercle icône : 48px (Figma Frame 4448) */}
               <div
                 className="size-12 rounded-full flex items-center justify-center shrink-0"
                 style={{ backgroundColor: type.iconBg }}
@@ -291,7 +291,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
       </div>
 
       {/* ── Mobile : bottom sheet positionné au-dessus de la MobileBottomNav
-              (h-14 + safe-area) — sinon les cartes "Rencontre nature" / "Instant nature"
+              (h-14 + safe-area) : sinon les cartes "Rencontre nature" / "Instant nature"
               tombent sous la navbar et leurs clics sont interceptés.
               z-[60] > navbar z-50 pour ne pas laisser la navbar capturer les taps. */}
       <div
@@ -304,7 +304,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
         <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
           <div className="w-10 h-1 bg-border rounded-full" />
         </div>
-        {/* Titre "Partager" retiré sur mobile (Nicolas 2026-05-19) — pas
+        {/* Titre "Partager" retiré sur mobile (Nicolas 2026-05-19) : pas
             d'intérêt sur sheet compacte, les cartes parlent d'elles-mêmes. */}
         <div className="px-2 pt-2 pb-4">{renderCards(mobileOrder, false)}</div>
       </div>

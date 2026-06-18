@@ -1,10 +1,10 @@
 /**
- * postService — Couche d'accès aux données publications (Supabase)
+ * postService : Couche d'accès aux données publications (Supabase)
  *
  * Architecture :
  *  - getFeed        : SELECT posts + join profiles + join media, paginé
  *  - getPostById    : SELECT single post avec toutes ses relations
- *  - createPost     : INSERT post (sans médias — mediaService gère l'upload séparé)
+ *  - createPost     : INSERT post (sans médias : mediaService gère l'upload séparé)
  *  - toggleReaction : INSERT / DELETE sur reactions, trigger met à jour likes_count
  */
 
@@ -15,7 +15,7 @@ import { validatePostContent } from '@/lib/postValidation'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /**
- * Filtres appliqués au feed — schéma aligné avec FeedFilterPanel.
+ * Filtres appliqués au feed : schéma aligné avec FeedFilterPanel.
  * Chaque filtre est optionnel et appliqué uniquement s'il a une valeur non par défaut.
  */
 export interface FeedFilterParams {
@@ -50,7 +50,7 @@ export interface FeedParams {
   tab?: 'recent' | 'popular' | 'for_you' | 'trending'
   filters?: FeedFilterParams
   /**
-   * Id de l'utilisateur connecté — utilisé pour personnaliser le tab `for_you`
+   * Id de l'utilisateur connecté : utilisé pour personnaliser le tab `for_you`
    * (ne montre que les posts des utilisateurs suivis). Optionnel : si absent
    * ou si l'utilisateur ne suit personne, `for_you` retombe sur le tri
    * chronologique (= comportement de `recent`).
@@ -72,7 +72,7 @@ export interface FeedResult {
 
 export interface CreatePostPayload {
   type: Post['type']
-  /** Titre court optionnel (null-safe côté DB — colonne `posts.title`). */
+  /** Titre court optionnel (null-safe côté DB : colonne `posts.title`). */
   title?: string
   description: string
   visibility?: Post['visibility']
@@ -100,7 +100,7 @@ export interface CreatePostPayload {
   display_format?: Post['display_format']
 }
 
-// Sélecteur de colonnes utilisé dans les requêtes feed — centralisé pour cohérence.
+// Sélecteur de colonnes utilisé dans les requêtes feed : centralisé pour cohérence.
 // `interests` est nécessaire pour afficher le badge "préférence #1" sur l'avatar
 // auteur dans FeedPost (second-agent/08).
 const POST_FEED_SELECT = `
@@ -119,7 +119,7 @@ const POST_FEED_SELECT = `
 // quand `location_hidden = true`.
 //
 // Les ÉCRITURES (createPost, updatePost, deletePost, INSERT reactions, etc.)
-// restent sur la table `posts` directement — la vue est lecture seule.
+// restent sur la table `posts` directement : la vue est lecture seule.
 //
 // Cf. migration `20260503_posts_public_view.sql` et docs/SYNTHESE_AUDITS.md
 // (cause racine RC-B partie API/DB).
@@ -142,7 +142,7 @@ export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
 
   if (!supabase) throw new Error('Supabase non configuré')
 
-  // ─── Tab "Pour vous" — filtre sur les utilisateurs suivis ────────────────
+  // ─── Tab "Pour vous" : filtre sur les utilisateurs suivis ────────────────
   // Pré-fetch des following IDs si nécessaire. Si l'user ne suit personne →
   // résultat vide explicite (UX cohérente : "rien ne s'affiche tant que tu
   // ne suis personne"). Si pas authentifié → fallback sur 'recent'.
@@ -172,7 +172,7 @@ export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
   // Lecture via la vue `posts_public` qui masque latitude/longitude/city/etc.
   // pour les viewers qui ne sont pas l'auteur, quand `location_hidden=true`.
   // Cf. migration `20260503_posts_public_view.sql` et Fix #2.
-  // Le cast `any` est temporaire — `posts_public` sera dans `supabase.ts`
+  // Le cast `any` est temporaire : `posts_public` sera dans `supabase.ts`
   // après régénération des types post-migration appliquée.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let query = (supabase as any)
@@ -280,14 +280,14 @@ export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
  * Récupère un post par son ID avec toutes ses relations.
  * Utilisé pour la page de détail d'un post et les partages.
  *
- * Lecture via `posts_public` (cf. Fix #2) — les coordonnées sont masquées
+ * Lecture via `posts_public` (cf. Fix #2) : les coordonnées sont masquées
  * si `location_hidden=true` ET le viewer n'est pas l'auteur.
  */
 export async function getPostById(postId: string): Promise<PostFeedItem | null> {
   if (!supabase) throw new Error('Supabase non configuré')
 
   // Détecte un short ID (8 hex chars sans tirets) vs UUID complet (36 chars).
-  // La colonne `short_id` est une generated column indexée — requête O(1).
+  // La colonne `short_id` est une generated column indexée : requête O(1).
   const isShortId = postId.length === 8 && /^[0-9a-f]{8}$/i.test(postId)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -298,7 +298,7 @@ export async function getPostById(postId: string): Promise<PostFeedItem | null> 
     : await baseQuery.eq('id', postId).single()
 
   if (error) {
-    // code PGRST116 = 0 rows — post non trouvé ou non accessible (RLS)
+    // code PGRST116 = 0 rows : post non trouvé ou non accessible (RLS)
     if (error.code === 'PGRST116') return null
     throw new Error(error.message)
   }
@@ -467,7 +467,7 @@ export async function deletePost(postId: string): Promise<void> {
 }
 
 /**
- * Met à jour un post existant (édition). Champs au format `Partial<CreatePostPayload>` —
+ * Met à jour un post existant (édition). Champs au format `Partial<CreatePostPayload>` -
  * seuls les champs fournis sont mis à jour. RLS user-scoped : seul le
  * propriétaire peut modifier.
  *
@@ -504,12 +504,12 @@ export async function updatePost(
 }
 
 /**
- * Récupère le détail des réactions par type pour chaque post — compteur réel
+ * Récupère le détail des réactions par type pour chaque post : compteur réel
  * agrégé depuis la table `reactions`. Remplace l'approximation client qui
  * mettait toutes les réactions dans le bucket `love`.
  *
  * Coût : 1 SELECT non-paginé (filtre `post_id IN (...)`). Pour 20 posts avec
- * ~5 réactions chacun, < 200 lignes — pas besoin d'agrégat SQL côté serveur.
+ * ~5 réactions chacun, < 200 lignes : pas besoin d'agrégat SQL côté serveur.
  */
 export async function getReactionsBreakdown(
   postIds: string[],

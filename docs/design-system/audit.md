@@ -1,4 +1,4 @@
-# Audit — Design System Atomic
+# Audit : Design System Atomic
 
 > Phase 1. Consolidation des audits Landing + Onboarding/Auth. À valider par Nicolas avant Phase 2 (Tokens).
 
@@ -74,7 +74,7 @@
 
 - Fix appliqué : déplacé dans `_buttons.scss` (importé partout)
 
-### 🟡 Figma MCP — reconnecté ✅
+### 🟡 Figma MCP : reconnecté ✅
 
 - Phase 2 (Tokens) débloquée
 

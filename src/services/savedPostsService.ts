@@ -1,7 +1,7 @@
 /**
- * savedPostsService — Posts sauvegardés (favoris privés)
+ * savedPostsService : Posts sauvegardés (favoris privés)
  *
- * Table `saved_posts` (migration 20260501) — RLS user-scoped en lecture/écriture.
+ * Table `saved_posts` (migration 20260501) : RLS user-scoped en lecture/écriture.
  * Utilisé par le bouton Sauvegarder du FeedPost (second-agent/13) et par
  * l'onglet Collection du profil utilisateur (à venir).
  */

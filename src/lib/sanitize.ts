@@ -1,5 +1,5 @@
 /**
- * sanitize — Utilitaires de validation/échappement pour les sources non-fiables
+ * sanitize : Utilitaires de validation/échappement pour les sources non-fiables
  *
  * BATCH 78 (CodeQL #3 + #4) : helper pour valider les URLs d'image avant
  * de les utiliser comme `src` d'une balise <img>.
@@ -14,7 +14,7 @@
  *   - blob:              (URL.createObjectURL pour upload local)
  *
  * Tout autre schéma (javascript:, file:, vbscript:, data:text/html, etc.)
- * est rejeté en retournant `null` — le caller doit gérer le fallback.
+ * est rejeté en retournant `null` : le caller doit gérer le fallback.
  */
 
 const ALLOWED_IMAGE_SCHEMES = ['http:', 'https:', 'blob:'] as const
@@ -46,7 +46,7 @@ export function sanitizeImageUrl(url: string | null | undefined): string | null 
     const parsed = new URL(trimmed)
     return (ALLOWED_IMAGE_SCHEMES as readonly string[]).includes(parsed.protocol) ? trimmed : null
   } catch {
-    // URL relative (ex: "/path/to/img.png") — autorisé pour les assets locaux
+    // URL relative (ex: "/path/to/img.png") : autorisé pour les assets locaux
     // mais on refuse tout ce qui ressemble à un schéma suspect.
     if (trimmed.includes(':')) return null
     return trimmed

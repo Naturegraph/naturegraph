@@ -1,13 +1,13 @@
 /**
- * contact — Constantes de contact Naturegraph
+ * contact : Constantes de contact Naturegraph
  * ════════════════════════════════════════════════════════════════════════════
  *
- * ⚠️ ATTENTION — EMAIL DE CONTACT UNIQUE
+ * ⚠️ ATTENTION : EMAIL DE CONTACT UNIQUE
  * ─────────────────────────────────────────
  * Pour la beta et toutes les mentions légales / RGPD / contact, l'unique
  * email de référence est `naturegraph.fr@gmail.com` (boîte Gmail).
  *
- * Le nom du compte Gmail reflète l'identité historique « naturegraph.fr » —
+ * Le nom du compte Gmail reflète l'identité historique « naturegraph.fr » -
  * indépendant du domaine du site web (`naturegraph.ca` depuis 2026-05-21,
  * migration Hostinger). On garde cette adresse Gmail pendant toute la beta
  * pour ne pas casser les liens mailto déjà partagés / templates email envoyés.

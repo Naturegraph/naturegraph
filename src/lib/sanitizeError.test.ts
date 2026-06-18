@@ -1,5 +1,5 @@
 /**
- * Tests sanitizeError — jamais de fuite technique a l'utilisateur (retour
+ * Tests sanitizeError : jamais de fuite technique a l'utilisateur (retour
  * testeur 2026-06-11). On verifie que les messages SQL/PostgREST bruts sont
  * remplaces par un message generique, et que nos libelles FR maison passent.
  */

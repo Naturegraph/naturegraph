@@ -1,5 +1,5 @@
 /**
- * usePageTitle — Hook pour synchroniser le titre de l'onglet du navigateur
+ * usePageTitle : Hook pour synchroniser le titre de l'onglet du navigateur
  * ============================================================================
  *
  * Ajoute le titre de la page courante apres le nom du produit, avec un
@@ -23,7 +23,7 @@
  * }
  * ```
  *
- * Refs : QW-UX1 (QUICK_WINS) — BATCH 10
+ * Refs : QW-UX1 (QUICK_WINS) : BATCH 10
  */
 
 import { useEffect } from 'react'

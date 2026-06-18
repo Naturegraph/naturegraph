@@ -1,5 +1,5 @@
 /**
- * usePost — Hooks React Query pour les données post individuel
+ * usePost : Hooks React Query pour les données post individuel
  *
  *  - usePost(postId)       : récupère un post par ID avec author + media
  *  - useToggleReaction()   : mutation optimiste pour les réactions
@@ -297,7 +297,7 @@ export function useToggleReaction(userId: string | undefined) {
  * Invalide le feed après succès pour que la nouvelle contribution apparaisse.
  */
 export function useCreatePost(userId: string) {
-  // NOTE : on n'invalide PAS le feed ici — les formulaires uploadent les
+  // NOTE : on n'invalide PAS le feed ici : les formulaires uploadent les
   // médias APRÈS createPost, donc une invalidation prématurée refetcherait
   // un post sans media et le mettrait en cache. L'invalidation doit être
   // déclenchée par le form après l'upload media (voir Contribute*Form).
@@ -321,7 +321,7 @@ export function useDeletePost() {
       queryClient.invalidateQueries({ queryKey: postQueryKey.byId(postId) })
     },
     onError: (err) => {
-      // Surfaçage explicite — sans ce log, un échec RLS / trigger / FK
+      // Surfaçage explicite : sans ce log, un échec RLS / trigger / FK
       // restait totalement silencieux (Nicolas 2026-05-23 : delete instant
       // ne fonctionnait pas, aucune trace visible).
       console.error('[useDeletePost] échec suppression :', err)
