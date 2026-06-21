@@ -42,6 +42,25 @@ export function authBreadcrumb(message: string, data?: Record<string, unknown>):
   }
 }
 
+/**
+ * Reporte une exception a Sentry (si actif), sinon log console. No-op safe.
+ *
+ * Utilise par l'AppErrorBoundary pour remonter les erreurs de rendu (500, NG-021).
+ * Le SDK est charge dynamiquement (cf. initMonitoring), d'ou l'usage de sentryRef.
+ */
+export function captureException(error: unknown, context?: Record<string, unknown>): void {
+  try {
+    console.error('[monitoring] exception capturee :', error)
+  } catch {
+    /* console indispo : ignore */
+  }
+  try {
+    sentryRef?.captureException?.(error, context ? { extra: context } : undefined)
+  } catch {
+    /* Sentry absent ou erreur : ignore */
+  }
+}
+
 export async function initMonitoring(): Promise<void> {
   const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined
   if (!dsn) return

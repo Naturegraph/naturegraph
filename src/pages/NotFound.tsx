@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next'
 import { motion, useReducedMotion } from 'motion/react'
 import { ArrowLeft, Search, Home, Compass } from 'lucide-react'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useNoIndex } from '@/hooks/useNoIndex'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 
 const fadeUp = {
@@ -30,6 +31,7 @@ export default function NotFound() {
   const { t } = useTranslation()
   const reduceMotion = useReducedMotion()
   usePageTitle(t('notFound.title', { defaultValue: 'Page introuvable' }))
+  useNoIndex()
 
   // Si l'utilisateur a désactivé les animations système, on n'anime pas
   const initial = reduceMotion ? 'visible' : 'hidden'

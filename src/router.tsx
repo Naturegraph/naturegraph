@@ -63,6 +63,7 @@ const SettingsHidden = lazy(() => import('./pages/SettingsHidden'))
 const SettingsBlocked = lazy(() => import('./pages/SettingsBlocked'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
+const Forbidden = lazy(() => import('./pages/Forbidden'))
 const Waitlist = lazy(() => import('./pages/Waitlist'))
 const PostDetail = lazy(() => import('./pages/PostDetail'))
 
@@ -406,6 +407,17 @@ export const router = createBrowserRouter([
             element: (
               <LazyPage>
                 <Legal />
+              </LazyPage>
+            ),
+          },
+
+          // 403 : acces refuse (NG-021). Route dediee pour les acces refuses generiques
+          // (l'acces /admin sans role passe par AdminGuard -> redirect silencieux, anti-leak).
+          {
+            path: '403',
+            element: (
+              <LazyPage>
+                <Forbidden />
               </LazyPage>
             ),
           },
