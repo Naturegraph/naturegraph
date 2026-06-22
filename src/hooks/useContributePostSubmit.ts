@@ -22,7 +22,7 @@
  * `uploadProgress`, `uploadError` : à câbler dans l'UI du caller.
  */
 
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/AuthContext'
@@ -172,10 +172,31 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
   )
   const [uploadError, setUploadError] = useState<string | null>(null)
 
+  // Verrou "soumission en cours" INDEPENDANT de isSubmitting (NG-012 #1).
+  // Le watchdog peut remettre isSubmitting a false (pour debloquer le spinner)
+  // AVANT que le pipeline reel soit termine : sans ce verrou, le bouton Publier
+  // redevient cliquable et un 2e clic creerait un DOUBLON de post. Le ref n'est
+  // libere que quand le pipeline finit vraiment (finally) ou que le watchdog
+  // declare un blocage. Un ref (et pas un state) car on veut une valeur lue
+  // synchroniquement, sans re-render.
+  const inFlightRef = useRef(false)
+
   const clearError = useCallback(() => setUploadError(null), [])
 
   const submit = useCallback(
     async ({ payload, files, editingPostId, onSuccess }: ContributeSubmitParams) => {
+      // Anti-doublon (NG-012 #1) : si un pipeline est deja en cours, on bloque
+      // toute nouvelle soumission. Cas typique : le watchdog a reactive le
+      // bouton Publier alors que l'upload tourne encore en arriere-plan.
+      if (inFlightRef.current) {
+        setUploadError(
+          t('contribute.errors.alreadySubmitting', {
+            defaultValue: 'Publication deja en cours, patiente un instant.',
+          }),
+        )
+        return
+      }
+
       if (!user?.id) {
         setUploadError(
           t('contribute.errors.notAuthenticated', { defaultValue: 'Connecte-toi pour publier' }),
@@ -223,26 +244,40 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
       }
 
       const isEditing = !!editingPostId
+      inFlightRef.current = true
       setIsSubmitting(true)
       setUploadError(null)
       let createdPostId: string | null = null
 
-      // Watchdog 60 s : Nicolas 2026-05-24 : sur réseau mobile lent (3G/4G
-      // rurale Québec) avec photo 2 Mo, le watchdog 30s déclenchait avant
-      // que l'upload finisse → user voyait « délai dépassé » alors qu'on
-      // était à 80% de l'upload. 60s laisse de la marge pour un mobile
-      // moyen tout en gardant un garde-fou contre les vrais hangs.
-      const watchdog = setTimeout(() => {
-        console.warn(`[${formLabel}] watchdog : submission > 60s, force release`)
-        setIsSubmitting(false)
-        setUploadProgress(null)
-        setUploadError(
-          t('contribute.media.uploadError', {
-            defaultValue:
-              'La soumission prend trop de temps. Vérifie ta connexion internet et réessaie.',
-          }),
-        )
-      }, 60_000)
+      // Watchdog "sans progression" (NG-012 #1). AVANT : timeout fixe de 60 s sur
+      // la duree TOTALE. Probleme : sur reseau mobile lent (3G/4G rurale) avec
+      // retries, le pipeline depasse 60 s legitimement (jusqu'a >2 min pour une
+      // photo qui retry 3x) -> fausse erreur "trop long" + reactivation du bouton
+      // -> doublon de post si l'user reclique. MAINTENANT : on re-arme le watchdog
+      // a CHAQUE etape qui progresse (createPost, chaque photo, chaque tentative
+      // bornee a 45 s). Il ne se declenche donc que sur un VRAI blocage : aucune
+      // progression pendant 60 s.
+      const WATCHDOG_MS = 60_000
+      let watchdogId: ReturnType<typeof setTimeout> | undefined
+      const armWatchdog = () => {
+        if (watchdogId) clearTimeout(watchdogId)
+        watchdogId = setTimeout(() => {
+          console.warn(`[${formLabel}] watchdog : aucune progression depuis 60s, force release`)
+          // Vrai blocage : on libere le verrou pour que l'utilisateur puisse
+          // reessayer. Reste un cas rare (upload tres lent qui se debloque juste
+          // apres) a couvrir plus tard via AbortController (NG-012 suite).
+          inFlightRef.current = false
+          setIsSubmitting(false)
+          setUploadProgress(null)
+          setUploadError(
+            t('contribute.media.uploadError', {
+              defaultValue:
+                'La soumission prend trop de temps. Vérifie ta connexion internet et réessaie.',
+            }),
+          )
+        }, WATCHDOG_MS)
+      }
+      armWatchdog()
 
       try {
         // 1. Création OU mise à jour du post (timeout 10 s : opération SQL légère).
@@ -258,6 +293,7 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         // createdPostId reste null en mode édition → pas de rollback sur erreur
         // d'upload (on garde le post existant tel quel).
         if (!isEditing) createdPostId = post.id
+        armWatchdog() // post cree : etape franchie, on re-arme le garde-fou
 
         // 2. Upload des médias (si fournis) : pipeline robuste avec retry
         //    exponentiel + tolérance aux échecs partiels.
@@ -269,6 +305,7 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         if (files.length > 0) {
           for (let i = 0; i < files.length; i++) {
             setUploadProgress({ current: i + 1, total: files.length })
+            armWatchdog() // nouvelle photo : progression
 
             const rawFile = files[i]
             const sizeMo = rawFile.size / 1024 / 1024
@@ -307,6 +344,7 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
             let succeeded = false
             let lastError: { kind: UploadErrorKind; message: string } | null = null
             for (let attempt = 1; attempt <= MAX_ATTEMPTS && !succeeded; attempt++) {
+              armWatchdog() // chaque tentative bornee (45s) re-arme le garde-fou
               try {
                 await withTimeout(
                   uploadPostMedia({
@@ -425,7 +463,9 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
           console.error(`[${formLabel}] submit failed:`, err)
         }
       } finally {
-        clearTimeout(watchdog)
+        if (watchdogId) clearTimeout(watchdogId)
+        // Pipeline reellement termine (succes ou echec) : on libere le verrou.
+        inFlightRef.current = false
         setIsSubmitting(false)
         setUploadProgress(null)
       }
