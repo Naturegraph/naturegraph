@@ -21,9 +21,13 @@ exposées et quelques réglages de durcissement.
 | Sévérité     | Nombre |
 | ------------ | ------ |
 | 🔴 Critique  | 0      |
-| 🟠 Important | 2      |
+| 🟠 Important | 3      |
 | 🟡 Moyen     | 4      |
 | ⚪ Mineur    | 2      |
+
+> MAJ 2026-06-22 : +1 🟠 (`send-waitlist-confirmation` non authentifiée, §4) ; revue Edge
+> Functions clôturée (autorisations OK hors ce point). Les 🟠 restants se traitent dans
+> les chantiers waitlist/email (NG-009) et durcissement RPC (SECURITY_HARDENING_ROADMAP).
 
 ---
 
@@ -137,8 +141,9 @@ exposées et quelques réglages de durcissement.
 
 ## 4. Edge Functions
 
-6 Edge Functions : `admin-delete-user`, `delete-account`, `export-data`,
-`send-waitlist-confirmation`, `validate-beta-key`, `weekly-species-digest`.
+7 Edge Functions : `admin-delete-user`, `delete-account`, `export-data`,
+`send-beta-invite`, `send-waitlist-confirmation`, `validate-beta-key`,
+`weekly-species-digest`.
 
 ### 🟢 Vérification des autorisations dans les Edge Functions : revue faite (2026-06-22)
 
@@ -146,14 +151,15 @@ Revue ligne par ligne des 7 Edge Functions (NG-007). Verdict : **autorisations
 correctes, aucun trou critique**. L'ordre est partout le bon : auth d'abord, droits
 ensuite, `service_role` seulement après contrôle.
 
-| Function                | Contrôle d'accès                                                    | Verdict |
-| ----------------------- | ------------------------------------------------------------------- | ------- |
-| `admin-delete-user`     | JWT (`getUser`) + `super_admin` actif + anti-suicide + audit log    | ✅      |
-| `delete-account`        | JWT, opère uniquement sur `user.id` (pas de `target` du body)       | ✅      |
-| `export-data`           | JWT, requêtes filtrées sur `user.id` + signed URL 24h, bucket privé | ✅      |
-| `send-beta-invite`      | JWT + `admin_users.is_active`, rollback des clés orphelines         | ✅      |
-| `validate-beta-key`     | rate-limit IP (5/10min) + claim atomique + quota + audit            | ✅      |
-| `weekly-species-digest` | cron interne, pas de données sensibles renvoyées                    | ✅      |
+| Function                     | Contrôle d'accès                                                    | Verdict |
+| ---------------------------- | ------------------------------------------------------------------- | ------- |
+| `admin-delete-user`          | JWT (`getUser`) + `super_admin` actif + anti-suicide + audit log    | ✅      |
+| `delete-account`             | JWT, opère uniquement sur `user.id` (pas de `target` du body)       | ✅      |
+| `export-data`                | JWT, requêtes filtrées sur `user.id` + signed URL 24h, bucket privé | ✅      |
+| `send-beta-invite`           | JWT + `admin_users.is_active`, rollback des clés orphelines         | ✅      |
+| `validate-beta-key`          | rate-limit IP (5/10min) + claim atomique + quota + audit            | ✅      |
+| `send-waitlist-confirmation` | `verify_jwt: false`, AUCUNE vérif d'appelant/secret (cf. 🟠)        | 🟠      |
+| `weekly-species-digest`      | cron interne, pas de données sensibles renvoyées                    | ✅      |
 
 Toutes assainissent les erreurs (message générique, pas de stack trace : CodeQL ✅) et
 n'exposent jamais la `service_role` au client.
@@ -169,11 +175,35 @@ manuel par `auth.getUser()` (vérifie la signature). Effort : 15 min. Avant prod
 - `send-beta-invite` n'existait pas lors de l'audit du 2026-05-20 : ajoutée et revue ici.
 - **Avant prod ?** Point initial RÉSOLU. Checklist SECURITY_CHECKLIST_PRE_PROD.md à cocher.
 
-### 🟡 `send-waitlist-confirmation` : `console.log` (1 warning ESLint)
+### 🟠 `send-waitlist-confirmation` : endpoint d'envoi d'email non authentifié (2026-06-22)
 
-- Présence d'un `console.log` (warning lint non bloquant). Vérifier qu'aucune donnée
-  sensible (email en clair, token) n'est loggée dans les logs Edge Function.
-- **Effort** : 15 min. **Avant prod ?** OUI (vérification).
+- **Description** : la function a `verify_jwt: false` (elle est déclenchée par un trigger
+  PostgreSQL via `pg_net` à l'INSERT dans `beta_waitlist`). Mais elle **ne vérifie aucun
+  secret partagé ni l'identité de l'appelant** : elle accepte n'importe quel
+  `POST { record: { email, id } }` et envoie un email brandé Naturegraph (via Resend) à
+  l'adresse fournie. Elle ne vérifie même pas que `record.id` existe réellement dans la
+  table (le rang tombe à `#0` si absent, l'email part quand même).
+- **Risque réel** : le repo étant public, l'URL `/functions/v1/send-waitlist-confirmation`
+  est connue → un attaquant peut envoyer des emails Naturegraph à des adresses arbitraires :
+  spam, phishing à notre nom, **épuisement du quota Resend** et surtout **dégradation de la
+  réputation du domaine d'envoi**.
+- **Impact** : modéré à important, **et critique dans le contexte du prélancement** : on
+  s'apprête à monter la délivrabilité email (NG-009). Un domaine grillé par de l'abus
+  ferait tomber nos mails de campagne ET nos OTP en spam.
+- **Scénario** : script qui POST en boucle avec des emails cibles.
+- **Difficulté** : triviale (aucune auth). Dormant uniquement si `RESEND_API_KEY` n'est
+  pas configuré (mode dégradé sans envoi).
+- **Priorité** : importante, à traiter dans le chantier email (NG-009).
+- **Mitigation** : faire passer au trigger `pg_net` un **secret partagé** (header type
+  `x-webhook-secret`, stocké en secret Edge Function) et **rejeter** tout appel sans ce
+  secret. Alternative : vérifier que `record.id` existe et a été créé il y a < 1 min, et
+  que l'email correspond. Note : la refonte email MailerLite (NG-009) va de toute façon
+  retoucher ce flux, c'est le bon moment pour sécuriser l'appel.
+- **Annexe** : `from` actuel = `naturegraph.fr@gmail.com` (gmail + domaine `.fr` en cours
+  de redirection) → à remplacer par une adresse du domaine d'envoi pro (NG-009).
+- **Effort** : 1-2 h. **Avant prod publique ?** OUI (avant d'activer l'envoi d'emails réels).
+- **Note logs** : un `console.log` affiche la position + l'email en clair dans les logs
+  Edge Function (warning lint historique) : acceptable côté serveur, à garder en tête RGPD.
 
 ---
 
@@ -230,16 +260,17 @@ manuel par `auth.getUser()` (vérifie la signature). Effort : 15 min. Avant prod
 
 ## 8. Verdict Supabase
 
-| Domaine            | État                                                    |
-| ------------------ | ------------------------------------------------------- |
-| RLS                | ✅ 29/29 tables, policies vérifiées                     |
-| Storage            | ✅ MIME/taille limités, exports privés                  |
-| Auth               | 🟡 activer leaked-password protection (5 min)           |
-| Fonctions exposées | 🟠 REVOKE EXECUTE sur les triggers (réduction surface)  |
-| `beta_waitlist`    | 🟠 anti-spam avant ouverture publique                   |
-| Edge Functions     | ✅ revue 2026-06-22 : autorisations OK (1 mineur suivi) |
-| Cron / Realtime    | ✅ RLS-aware, anonymisation en place                    |
+| Domaine            | État                                                     |
+| ------------------ | -------------------------------------------------------- |
+| RLS                | ✅ 29/29 tables, policies vérifiées                      |
+| Storage            | ✅ MIME/taille limités, exports privés                   |
+| Auth               | 🟡 activer leaked-password protection (5 min)            |
+| Fonctions exposées | 🟠 REVOKE EXECUTE sur les triggers (réduction surface)   |
+| `beta_waitlist`    | 🟠 anti-spam avant ouverture publique                    |
+| Edge Functions     | 🟠 autz OK sauf `send-waitlist-confirmation` (non authq) |
+| Cron / Realtime    | ✅ RLS-aware, anonymisation en place                     |
 
-**Supabase est solide pour la beta.** 3 actions avant prod publique : leaked-password
-(5 min), REVOKE EXECUTE triggers (3 h), anti-spam waitlist (3 h). Revue Edge Functions
-recommandée.
+**Supabase est solide pour la beta.** Avant prod publique : leaked-password (5 min),
+REVOKE EXECUTE triggers (3 h), anti-spam waitlist (3 h), **sécuriser
+`send-waitlist-confirmation`** (secret partagé, 1-2 h, à faire avec le chantier email
+NG-009). Revue Edge Functions faite (2026-06-22) : autorisations OK hors ce point.
