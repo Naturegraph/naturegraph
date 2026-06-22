@@ -40,9 +40,9 @@
  *       created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
  *       resolved_at TIMESTAMPTZ
  *     );
- *     -- Email transactionnel (Resend) à naturegraph.fr@gmail.com + accusé user
- *     -- ⚠️ Pendant la beta : utiliser naturegraph.fr@gmail.com (cf src/constants/contact.ts).
- *     -- Migrer vers staff@naturegraph.fr quand le domaine sera transféré côté Hostinger.
+ *     -- Email transactionnel (Resend) à support@naturegraph.ca + accusé user
+ *     -- ⚠️ Pendant la beta : utiliser support@naturegraph.ca (cf src/constants/contact.ts).
+ *     -- Migrer vers support@naturegraph.ca quand le domaine sera transféré côté Hostinger.
  *     -- RLS : user peut SELECT ses propres tickets (transparence RGPD)
  *
  *   ## Validation côté serveur (Edge Function)
@@ -115,7 +115,7 @@ export function SettingsHelpView() {
       // 1. INSERT en DB pour traçabilité (support_tickets, RLS user-owner)
       await submitMutation.mutateAsync({ subject, message })
 
-      // 2. BATCH 96 : ouvre mailto: vers naturegraph.fr@gmail.com pour garantir
+      // 2. BATCH 96 : ouvre mailto: vers support@naturegraph.ca pour garantir
       //    la réception de l'email côté équipe : tant que SMTP custom + Resend
       //    ne sont pas configurés sur Supabase Dashboard, le mailto est la seule
       //    voie 100% reliable.

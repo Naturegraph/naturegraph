@@ -5,7 +5,7 @@
  *   - Background teal-dark + pattern dots + orbes (md:)
  *   - Card cream centree, rounded-[32px] (md:)
  *
- * Backend : utilise un mailto: vers naturegraph.fr@gmail.com (CONTACT_EMAIL).
+ * Backend : utilise un mailto: vers support@naturegraph.ca (CONTACT_EMAIL).
  * Pas d'edge function ni de table cote serveur pour la beta MVP :
  *   - Le user remplit le form, on prefill mailto subject/body
  *   - Au click "Envoyer", son client mail s'ouvre, il valide -> email arrive

@@ -54,12 +54,12 @@ function errorMessageForReason(
     case 'invalid_or_used':
       return t('auth.beta.errorInvalid', {
         defaultValue:
-          'Clé invalide ou déjà utilisée. Vérifie ou contacte-nous à naturegraph.fr@gmail.com.',
+          'Clé invalide ou déjà utilisée. Vérifie ou contacte-nous à support@naturegraph.ca.',
       })
     case 'expired':
       return t('auth.beta.errorExpired', {
         defaultValue:
-          'Clé expirée. Contacte-nous à naturegraph.fr@gmail.com pour en obtenir une nouvelle.',
+          'Clé expirée. Contacte-nous à support@naturegraph.ca pour en obtenir une nouvelle.',
       })
     case 'quota_full':
       return t('auth.beta.errorQuotaFull', {

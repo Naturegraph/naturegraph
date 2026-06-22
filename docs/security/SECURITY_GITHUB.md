@@ -180,7 +180,7 @@ l'historique git.** Le point structurant : le dépôt est **public**.
 
 - `.github/SECURITY.md` existe (politique de sécurité + versions supportées).
 - **🟡 À compléter** : ajouter un canal de **divulgation responsable** clair (email
-  dédié type `security@naturegraph.fr` ou usage des _Private Vulnerability Reporting_
+  dédié type `security@naturegraph.ca` ou usage des _Private Vulnerability Reporting_
   GitHub) + délai d'engagement de réponse. Activer **Private Vulnerability Reporting**
   dans Settings → Security.
 - **Effort** : 30 min. **Avant prod ?** OUI (avant exposition publique).

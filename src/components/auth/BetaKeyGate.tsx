@@ -71,12 +71,12 @@ function errorMessageForReason(
     case 'invalid_or_used':
       return t('auth.beta.errorInvalid', {
         defaultValue:
-          'Cle invalide ou deja utilisee. Verifie ou contacte-nous a naturegraph.fr@gmail.com.',
+          'Cle invalide ou deja utilisee. Verifie ou contacte-nous a support@naturegraph.ca.',
       })
     case 'expired':
       return t('auth.beta.errorExpired', {
         defaultValue:
-          'Cle expiree. Contacte-nous a naturegraph.fr@gmail.com pour en obtenir une nouvelle.',
+          'Cle expiree. Contacte-nous a support@naturegraph.ca pour en obtenir une nouvelle.',
       })
     case 'rate_limited':
       return t('auth.beta.errorRateLimited', {
