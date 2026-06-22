@@ -196,6 +196,13 @@ interface ImageSliderProps {
   /** ID + titre du post : propagés à la lightbox pour activer le partage */
   postId?: string
   postTitle?: string
+  /**
+   * NG-026 : true UNIQUEMENT pour le 1er post du feed (above-the-fold, candidat
+   * LCP) -> chargement `eager`. Tous les autres posts chargent en `lazy` pour
+   * ne pas telecharger d'un coup toutes les couvertures d'un feed de 200 items
+   * (eco-conception + LCP plus rapide sur reseau lent). Defaut false.
+   */
+  priority?: boolean
 }
 
 export function ImageSlider({
@@ -204,6 +211,7 @@ export function ImageSlider({
   author,
   postId,
   postTitle,
+  priority = false,
 }: ImageSliderProps) {
   const { t } = useTranslation()
   const [lightbox, setLightbox] = useState<LightboxData | null>(null)
@@ -280,7 +288,8 @@ export function ImageSlider({
             src={ImagePresets.feedPhoto(images[0].url)}
             alt={images[0].alt}
             className="absolute inset-0 size-full object-cover"
-            loading="eager"
+            // NG-026 : eager seulement pour le 1er post (LCP), lazy sinon.
+            loading={priority ? 'eager' : 'lazy'}
             decoding="async"
           />
         </button>
@@ -335,8 +344,9 @@ export function ImageSlider({
                   // Nicolas 2026-05-22 : eager pour les 2 premières slides
                   // (la slide 1 visible, la slide 2 = swipe le plus probable).
                   // Évite le blanc-flash sur connexion lente quand l'user
-                  // swipe vers la photo suivante.
-                  loading={i <= 1 ? 'eager' : 'lazy'}
+                  // swipe vers la photo suivante. NG-026 : uniquement pour le
+                  // 1er post du feed (priority) ; les autres restent lazy.
+                  loading={priority && i <= 1 ? 'eager' : 'lazy'}
                   decoding="async"
                   draggable={false}
                 />

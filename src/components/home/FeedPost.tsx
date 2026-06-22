@@ -262,6 +262,12 @@ interface FeedPostProps extends MockPost {
    * deja sur la page du post, le filtre espece/categorie n'a pas de sens ici.
    */
   disableChipFilters?: boolean
+  /**
+   * NG-026 : true uniquement pour le 1er post du feed (above-the-fold, LCP).
+   * Propage `priority` a l'ImageSlider pour charger sa cover en `eager` ; tous
+   * les autres posts chargent en `lazy`. Defaut false.
+   */
+  priority?: boolean
 }
 
 export function FeedPost({
@@ -303,6 +309,7 @@ export function FeedPost({
   onSelectCategory,
   expandContent = false,
   disableChipFilters = false,
+  priority = false,
 }: FeedPostProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -834,6 +841,7 @@ export function FeedPost({
           author={author}
           postId={id}
           postTitle={title}
+          priority={priority}
         />
 
         {/* Compteurs réactions (Figma node 6385:60468 : flex justify-between).

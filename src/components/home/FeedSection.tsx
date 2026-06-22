@@ -776,6 +776,9 @@ export function FeedSection({
                   /* Dernier item du feed : on retire la bordure de fin pour
                      éviter une barre orpheline en bas de liste. */
                   hideEndBorder={idx === posts.length - 1}
+                  /* NG-026 : seul le 1er post (above-the-fold, LCP) charge sa
+                     cover en eager ; les autres en lazy (eco-conception). */
+                  priority={idx === 0}
                 />
               ))}
             </div>
