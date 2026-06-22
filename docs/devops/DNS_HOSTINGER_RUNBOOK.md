@@ -34,22 +34,32 @@ Vercel : Settings, Domains (Vercel affiche les enregistrements attendus pour le 
       (`216.198.79.1`). Si Vercel demande une autre valeur, l'aligner ; sinon ne rien toucher.
 - [ ] Confirmer le certificat SSL `.ca` valide (cadenas, auto-renouvele).
 
-### 1.2 Rediriger naturegraph.fr vers naturegraph.ca (301)
+### 1.2 Rediriger naturegraph.fr vers naturegraph.ca (308) : FAIT le 2026-06-22 (Option B)
 
-Deux options. **Recommandee : Option B (via Vercel)** pour un SSL automatique et fiable,
-coherent avec l'hebergement Vercel.
+> Choix retenu : **Option B (via Vercel)** pour le SSL automatique. L'Option A (redirection
+> Hostinger) etait en place mais n'emettait jamais de certificat -> `https://naturegraph.fr`
+> tombait en erreur SSL. Bascule effectuee le 2026-06-22.
 
-**Option B : redirection via Vercel**
+**Etat final applique (Option B) :**
 
-- [ ] Vercel : Settings, Domains : ajouter `naturegraph.fr` (et `www.naturegraph.fr`).
-- [ ] Configurer la redirection vers `naturegraph.ca` (Redirect to, 308/301 permanent)
-      dans Vercel pour `naturegraph.fr`.
-- [ ] Hostinger : pointer le DNS de `.fr` vers Vercel, valeurs exactes affichees par Vercel : - `@` (apex) : enregistrement A vers l'IP Vercel indiquee (probablement `216.198.79.1`) - `www` : CNAME vers `cname.vercel-dns.com`
-- [ ] Attendre la propagation + emission du certificat SSL `.fr` par Vercel.
+- [x] Vercel : projet Naturegraph, Settings -> Domains : `naturegraph.fr` ET
+      `www.naturegraph.fr` ajoutes en **Redirect to `naturegraph.ca`, 308 Permanent**.
+- [x] Hostinger : zone DNS de `.fr` reconfiguree (nameservers `*.dns-parking.com`
+      inchanges, on reste en DNS Hostinger pour le futur DNS email NG-009) :
+  - `A` `@` -> **`216.198.79.1`** (IP Vercel, valeur exacte affichee par Vercel), TTL 300
+  - `CNAME` `www` -> **`2cada2502b853b90.vercel-dns-017.com`** (hostname dedie au projet,
+    nouvelle plage Vercel ; l'ancien `cname.vercel-dns.com` marche aussi), TTL 300
+  - `AAAA` `@` (parking IPv6 `2a02:4780:84::32`) **supprime** (Vercel ne fournit pas
+    d'AAAA apex ; le laisser ferait resoudre l'apex vers Hostinger en IPv6 = conflit)
+  - **Redirection Hostinger 301 supprimee** (sinon conflit avec la redirection Vercel ;
+    c'est elle qui maintenait l'`A` vers l'IP de parking `2.57.91.91`)
+- [x] `https://www.naturegraph.fr` verifie : **308 -> `https://naturegraph.ca/`**,
+      `Server: Vercel`, HSTS, certificat emis.
+- [ ] Apex `https://naturegraph.fr` : DNS correct et propage, **certificat Vercel en cours
+      d'emission** (l'apex valide quelques minutes apres le www ; `Refresh` cote Vercel).
 
-**Option A : redirection via Hostinger (fallback, si Option B indisponible)**
-
-- [ ] Hostinger : section Redirects pour `naturegraph.fr` - Source : `naturegraph.fr/*` -> Destination : `https://naturegraph.ca/$1`, type 301 - Idem pour `www.naturegraph.fr`
+**Pour memoire : ancienne Option A (Hostinger, abandonnee)** : section Redirects, source
+`naturegraph.fr/*` -> `https://naturegraph.ca/$1` type 301. N'emet pas de SSL -> remplacee.
 
 ### 1.3 CAA (les deux domaines)
 
