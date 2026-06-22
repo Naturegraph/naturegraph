@@ -55,8 +55,9 @@ Vercel : Settings, Domains (Vercel affiche les enregistrements attendus pour le 
     c'est elle qui maintenait l'`A` vers l'IP de parking `2.57.91.91`)
 - [x] `https://www.naturegraph.fr` verifie : **308 -> `https://naturegraph.ca/`**,
       `Server: Vercel`, HSTS, certificat emis.
-- [ ] Apex `https://naturegraph.fr` : DNS correct et propage, **certificat Vercel en cours
-      d'emission** (l'apex valide quelques minutes apres le www ; `Refresh` cote Vercel).
+- [x] Apex `https://naturegraph.fr` : **Valid** cote Vercel, certificat emis, verifie au
+      curl le 2026-06-22 : `308 -> https://naturegraph.ca/`, `Server: Vercel`, HSTS.
+      **Volet web NG-008 termine** (`.fr` et `www.fr` en HTTPS vers `.ca`).
 
 **Pour memoire : ancienne Option A (Hostinger, abandonnee)** : section Redirects, source
 `naturegraph.fr/*` -> `https://naturegraph.ca/$1` type 301. N'emet pas de SSL -> remplacee.
