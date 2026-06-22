@@ -1,7 +1,12 @@
 # SECURITY_SUPABASE.md : Audit sécurité Supabase
 
-> Audit réalisé le 2026-05-20 · Projet `hrxgduvworofnrjmgpcj` · PostgreSQL 15 + PostGIS
+> Audit réalisé le 2026-05-20 · mis à jour le 2026-06-22 (re-scan advisors + revue
+> Edge Functions, NG-007) · Projet `hrxgduvworofnrjmgpcj` · PostgreSQL 15 + PostGIS
 > Source : `get_advisors` (security + performance), inspection RLS / policies / fonctions.
+>
+> Re-scan 2026-06-22 : advisors security/perf inchangés vs 2026-05-20 (mêmes findings
+> by-design). RPC privilégiées re-vérifiées (`admin_set_user_role` exige `super_admin`,
+> `claim_beta_access_key` atomique). Revue complète des Edge Functions ajoutée (§4).
 
 ---
 
@@ -135,23 +140,34 @@ exposées et quelques réglages de durcissement.
 6 Edge Functions : `admin-delete-user`, `delete-account`, `export-data`,
 `send-waitlist-confirmation`, `validate-beta-key`, `weekly-species-digest`.
 
-### 🟡 Vérification des autorisations dans les Edge Functions
+### 🟢 Vérification des autorisations dans les Edge Functions : revue faite (2026-06-22)
 
-- **Description** : `admin-delete-user` et `delete-account` manipulent des données
-  sensibles. Elles DOIVENT vérifier le JWT de l'appelant et ses droits (`is_admin`
-  pour la première, `auth.uid() == cible` pour la seconde).
-- **Risque réel** : si une de ces fonctions ne vérifie pas l'appelant, un attaquant
-  pourrait supprimer le compte d'un tiers.
-- **Impact** : élevé si faille (suppression de compte arbitraire).
-- **Scénario** : appel direct de `/functions/v1/admin-delete-user` avec un JWT non-admin.
-- **Difficulté** : faible si la vérification manque.
-- **Priorité** : moyenne : **à auditer ligne par ligne** (non inspecté en profondeur
-  ici, hors périmètre de la collecte rapide).
-- **Mitigation** : revue de code dédiée des 6 Edge Functions : (1) vérifier le JWT,
-  (2) vérifier les droits, (3) ne jamais utiliser la `service_role` key sans contrôle
-  d'autorisation préalable, (4) valider/échapper les inputs.
-- **Effort** : 2 h (revue des 6 fonctions).
-- **Avant prod ?** OUI : checklist dans SECURITY_CHECKLIST_PRE_PROD.md.
+Revue ligne par ligne des 7 Edge Functions (NG-007). Verdict : **autorisations
+correctes, aucun trou critique**. L'ordre est partout le bon : auth d'abord, droits
+ensuite, `service_role` seulement après contrôle.
+
+| Function                | Contrôle d'accès                                                    | Verdict |
+| ----------------------- | ------------------------------------------------------------------- | ------- |
+| `admin-delete-user`     | JWT (`getUser`) + `super_admin` actif + anti-suicide + audit log    | ✅      |
+| `delete-account`        | JWT, opère uniquement sur `user.id` (pas de `target` du body)       | ✅      |
+| `export-data`           | JWT, requêtes filtrées sur `user.id` + signed URL 24h, bucket privé | ✅      |
+| `send-beta-invite`      | JWT + `admin_users.is_active`, rollback des clés orphelines         | ✅      |
+| `validate-beta-key`     | rate-limit IP (5/10min) + claim atomique + quota + audit            | ✅      |
+| `weekly-species-digest` | cron interne, pas de données sensibles renvoyées                    | ✅      |
+
+Toutes assainissent les erreurs (message générique, pas de stack trace : CodeQL ✅) et
+n'exposent jamais la `service_role` au client.
+
+**🟡 Mineur (suivi, non bloquant)** : `validate-beta-key` décode le JWT en base64 pour
+extraire `sub` **sans vérifier la signature**, uniquement pour renseigner
+`used_by_user_id`. Un JWT forgé pourrait donc associer un claim à un `user_id` arbitraire,
+mais il faut déjà un **code beta valide** pour claim, et l'effet se limite à un mauvais
+étiquetage (pas de fuite, pas d'élévation). Durcissement possible : remplacer le décodage
+manuel par `auth.getUser()` (vérifie la signature). Effort : 15 min. Avant prod ? Non
+(cosmétique sécurité).
+
+- `send-beta-invite` n'existait pas lors de l'audit du 2026-05-20 : ajoutée et revue ici.
+- **Avant prod ?** Point initial RÉSOLU. Checklist SECURITY_CHECKLIST_PRE_PROD.md à cocher.
 
 ### 🟡 `send-waitlist-confirmation` : `console.log` (1 warning ESLint)
 
@@ -214,15 +230,15 @@ exposées et quelques réglages de durcissement.
 
 ## 8. Verdict Supabase
 
-| Domaine            | État                                                   |
-| ------------------ | ------------------------------------------------------ |
-| RLS                | ✅ 29/29 tables, policies vérifiées                    |
-| Storage            | ✅ MIME/taille limités, exports privés                 |
-| Auth               | 🟡 activer leaked-password protection (5 min)          |
-| Fonctions exposées | 🟠 REVOKE EXECUTE sur les triggers (réduction surface) |
-| `beta_waitlist`    | 🟠 anti-spam avant ouverture publique                  |
-| Edge Functions     | 🟡 revue d'autorisation des 6 fonctions                |
-| Cron / Realtime    | ✅ RLS-aware, anonymisation en place                   |
+| Domaine            | État                                                    |
+| ------------------ | ------------------------------------------------------- |
+| RLS                | ✅ 29/29 tables, policies vérifiées                     |
+| Storage            | ✅ MIME/taille limités, exports privés                  |
+| Auth               | 🟡 activer leaked-password protection (5 min)           |
+| Fonctions exposées | 🟠 REVOKE EXECUTE sur les triggers (réduction surface)  |
+| `beta_waitlist`    | 🟠 anti-spam avant ouverture publique                   |
+| Edge Functions     | ✅ revue 2026-06-22 : autorisations OK (1 mineur suivi) |
+| Cron / Realtime    | ✅ RLS-aware, anonymisation en place                    |
 
 **Supabase est solide pour la beta.** 3 actions avant prod publique : leaked-password
 (5 min), REVOKE EXECUTE triggers (3 h), anti-spam waitlist (3 h). Revue Edge Functions
