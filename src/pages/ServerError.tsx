@@ -9,8 +9,9 @@
  * (l'ErrorBoundary englobe le RouterProvider dans main.tsx). Il ne peut donc PAS
  * utiliser <Link> ni les hooks react-router : on navigue via <a> / window.location.
  *
- * Ton Naturegraph : rassurant, leger, metaphore nature. Pas de jargon technique
- * pour l'utilisateur (les details ne s'affichent qu'en dev). noindex.
+ * Ton Naturegraph : rassurant, leger, metaphore nature. Aucun detail technique
+ * n'est affiche a l'utilisateur (l'erreur part dans la console + Sentry via
+ * l'AppErrorBoundary, jamais a l'ecran). noindex.
  */
 
 import { useTranslation } from 'react-i18next'
@@ -22,7 +23,7 @@ import {
   errorBtnSecondary,
 } from '@/components/layout/ErrorPageLayout'
 
-export default function ServerError({ error }: { error?: Error | null }) {
+export default function ServerError() {
   const { t } = useTranslation()
   usePageTitle(t('serverError.title', { defaultValue: 'Un pépin dans la forêt' }))
   useNoIndex()
@@ -37,28 +38,15 @@ export default function ServerError({ error }: { error?: Error | null }) {
           "Quelque chose ne s'est pas passé comme prévu. On est sur le coup. Aucune donnée n'est perdue, tu peux recharger ou revenir en terrain connu.",
       })}
       footer={
-        <>
-          <p>
-            {t('serverError.support', { defaultValue: 'Le souci persiste ?' })}{' '}
-            <a
-              href="mailto:support@naturegraph.ca"
-              className="font-semibold text-[var(--color-action-default)] underline underline-offset-2"
-            >
-              support@naturegraph.ca
-            </a>
-          </p>
-
-          {/* Details techniques visibles uniquement en developpement. */}
-          {import.meta.env.DEV && error && (
-            <details className="mt-3 text-xs text-left">
-              <summary className="cursor-pointer">Details techniques (dev)</summary>
-              <pre className="mt-2 whitespace-pre-wrap break-words bg-muted/30 p-3 rounded">
-                {error.message}
-                {error.stack ? '\n\n' + error.stack : ''}
-              </pre>
-            </details>
-          )}
-        </>
+        <p>
+          {t('serverError.support', { defaultValue: 'Le souci persiste ?' })}{' '}
+          <a
+            href="mailto:support@naturegraph.ca"
+            className="font-semibold text-[var(--color-action-default)] underline underline-offset-2"
+          >
+            support@naturegraph.ca
+          </a>
+        </p>
       }
     >
       {/* "Retour" en premier (secondary, a gauche desktop). Pas de <Link> : hors router. */}

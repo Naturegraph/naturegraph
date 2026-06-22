@@ -46,6 +46,8 @@ export class AppErrorBoundary extends Component<Props, State> {
     if (this.props.fallback) return this.props.fallback
     // Page 500 dediee (NG-021). Rendue HORS router : ServerError navigue via
     // <a>/window.location (pas de <Link>), et fait son propre reload.
-    return <ServerError error={this.state.error} />
+    // L'erreur n'est PAS passee a la page : elle part en console + Sentry
+    // (componentDidCatch ci-dessus), jamais affichee a l'utilisateur.
+    return <ServerError />
   }
 }
