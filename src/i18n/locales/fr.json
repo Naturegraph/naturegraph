@@ -1232,7 +1232,9 @@
     "alreadyMsg": "Tu es déjà sur la liste !",
     "backWelcome": "Retour à l'accueil",
     "errorEmail": "Email invalide",
-    "errorServer": "Erreur lors de l'inscription. Réessaie plus tard."
+    "errorServer": "Erreur lors de l'inscription. Réessaie plus tard.",
+    "privacyNotice": "En rejoignant la liste, tu acceptes de recevoir par email ta clé d'accès et, occasionnellement, des nouvelles de Naturegraph. Désinscription possible à tout moment.",
+    "privacyLink": "Politique de confidentialité"
   },
 
   "admin": {

@@ -1232,7 +1232,9 @@
     "alreadyMsg": "You're already on the list!",
     "backWelcome": "Back to home",
     "errorEmail": "Invalid email",
-    "errorServer": "Error during registration. Try again later."
+    "errorServer": "Error during registration. Try again later.",
+    "privacyNotice": "By joining the list, you agree to receive your access key by email and, occasionally, news about Naturegraph. You can unsubscribe at any time.",
+    "privacyLink": "Privacy policy"
   },
 
   "admin": {

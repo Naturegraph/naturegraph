@@ -22,7 +22,7 @@
  */
 
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Loader2, Mail, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -211,6 +211,23 @@ export default function Waitlist() {
                 {t('common.back', { defaultValue: 'Retour' })}
               </Button>
             </div>
+
+            {/* Mention de transparence RGPD (Art. 13) : finalite de la collecte
+                de l'email + lien vers la politique de confidentialite. Affichee
+                au moment de la collecte, condition prealable a l'import des
+                emails waitlist dans l'outil d'emailing (NG-009). */}
+            <p className="text-xs text-[var(--color-text-secondary)] text-center leading-relaxed">
+              {t('waitlist.privacyNotice', {
+                defaultValue:
+                  "En rejoignant la liste, tu acceptes de recevoir par email ta clé d'accès et, occasionnellement, des nouvelles de Naturegraph. Désinscription possible à tout moment.",
+              })}{' '}
+              <Link
+                to="/privacy"
+                className="underline text-[var(--color-action-default)] hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] rounded"
+              >
+                {t('waitlist.privacyLink', { defaultValue: 'Politique de confidentialité' })}
+              </Link>
+            </p>
           </form>
 
           {/* Slogan Naturegraph avec separateur fin */}
