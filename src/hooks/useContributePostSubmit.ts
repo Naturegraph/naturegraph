@@ -259,6 +259,10 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
       // progression pendant 60 s.
       const WATCHDOG_MS = 60_000
       let watchdogId: ReturnType<typeof setTimeout> | undefined
+      // NG-012 #3 : marque que le watchdog a "abandonne" (vrai blocage). Sert a
+      // ne PAS declencher onSuccess (navigation) si le pipeline finit APRES que
+      // l'utilisateur a deja vu l'erreur "trop long".
+      let watchdogReleased = false
       const armWatchdog = () => {
         if (watchdogId) clearTimeout(watchdogId)
         watchdogId = setTimeout(() => {
@@ -266,6 +270,7 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
           // Vrai blocage : on libere le verrou pour que l'utilisateur puisse
           // reessayer. Reste un cas rare (upload tres lent qui se debloque juste
           // apres) a couvrir plus tard via AbortController (NG-012 suite).
+          watchdogReleased = true
           inFlightRef.current = false
           setIsSubmitting(false)
           setUploadProgress(null)
@@ -280,16 +285,18 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
       armWatchdog()
 
       try {
-        // 1. Création OU mise à jour du post (timeout 10 s : opération SQL légère).
-        //    En mode édition on appelle updatePost(id, payload) ; aucune
-        //    nouvelle row n'est créée donc pas de rollback nécessaire.
+        // 1. Création OU mise à jour du post. NG-012 #2 : timeout 20 s (et non 10).
+        //    Sur 3G/4G rurale l'INSERT peut legitimement depasser 10 s ; un timeout
+        //    trop court rejetait alors que l'INSERT reussissait cote serveur ->
+        //    fausse erreur + post cree sans rollback (createdPostId reste null).
+        //    En mode édition, aucune nouvelle row n'est créée donc pas de rollback.
         const post = isEditing
           ? await withTimeout(
               updatePost.mutateAsync({ postId: editingPostId!, payload }),
-              10_000,
+              20_000,
               'mise à jour du post',
             )
-          : await withTimeout(createPost.mutateAsync(payload), 10_000, 'création du post')
+          : await withTimeout(createPost.mutateAsync(payload), 20_000, 'création du post')
         // createdPostId reste null en mode édition → pas de rollback sur erreur
         // d'upload (on garde le post existant tel quel).
         if (!isEditing) createdPostId = post.id
@@ -431,7 +438,12 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         queryClient.invalidateQueries({ queryKey: ['feed'] })
         queryClient.invalidateQueries({ queryKey: ['posts', 'by-user'] })
 
-        await onSuccess(post)
+        // NG-012 #3 : si le watchdog a deja abandonne (l'user a vu l'erreur "trop
+        // long"), on NE declenche PAS onSuccess (navigation/fermeture du form) ->
+        // evite une navigation tardive deroutante. Le post est quand meme cree et
+        // le feed invalide ci-dessus, donc l'observation apparaitra au prochain
+        // affichage.
+        if (!watchdogReleased) await onSuccess(post)
       } catch (err) {
         // Rollback best-effort : supprime le post orphelin si l'upload média
         // a planté APRÈS la création. On ignore les erreurs de rollback
