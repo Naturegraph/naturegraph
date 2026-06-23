@@ -4,7 +4,8 @@
  * Couvre :
  *   - Regroupement identiques < 24h
  *   - Pas de regroupement si fenêtre dépassée
- *   - Pas de regroupement pour types non groupables (post, species_digest…)
+ *   - Regroupement des "nouveau post" par AUTEUR (anti-spam), pas par reference
+ *   - Pas de regroupement entre auteurs différents ni pour species_digest
  *   - Déduplication par actor_id
  *   - `read` global du groupe = ET logique
  *   - formatGroupedActors selon arité
