@@ -42,6 +42,7 @@ import hermineIcon from '@/assets/images/hermine-icon.png'
 import { ImagePresets } from '@/lib/supabaseImage'
 import { useUserStreak } from '@/hooks/useStats'
 import { useUnreadCount } from '@/hooks/useNotifications'
+import { useAppBadge } from '@/hooks/useAppBadge'
 import { useLocation } from '@/contexts/LocationContext'
 // V1.1.4 NG-023 ext final : indique le filtre actif (espece ou categorie)
 // directement dans le bouton recherche au lieu d un bandeau separe.
@@ -114,6 +115,10 @@ export function HomeNavbar({
   // Compteur de notifications non lues, alimente le badge
   const { data: unreadCount } = useUnreadCount(profile?.id)
 
+  // Pastille "non lues" sur l'icône de l'app installée (PWA) : nudge de retour
+  // léger et gratuit. No-op gracieux si non supporté (cf. useAppBadge).
+  useAppBadge(unreadCount ?? 0)
+
   // V1.1.4 NG-023 ext final : pill espece active dans le bouton recherche.
   // La categorie a un flow distinct (FeedFilterPanel + badge compteur).
   const { activeSpecies, clearActiveSpecies } = useSpecies()
@@ -127,13 +132,7 @@ export function HomeNavbar({
   // temps. Les wrappers separes precedents souffraient d un bug de batch
   // React (state stale). Avec un seul state, ouvrir un panel ferme
   // mecaniquement les autres car la valeur change.
-  type ActivePanel =
-    | 'search'
-    | 'notifications'
-    | 'contribute'
-    | 'location'
-    | 'profile'
-    | null
+  type ActivePanel = 'search' | 'notifications' | 'contribute' | 'location' | 'profile' | null
   const [activePanel, setActivePanel] = useState<ActivePanel>(null)
   const showSearch = activePanel === 'search'
   const showNotifications = activePanel === 'notifications'
@@ -272,10 +271,7 @@ export function HomeNavbar({
                       </span>
                     )}
                     {showNotifications && (
-                      <NotificationsPanel
-                        anchorRef={notifBtnRef}
-                        onClose={() => closePanel()}
-                      />
+                      <NotificationsPanel anchorRef={notifBtnRef} onClose={() => closePanel()} />
                     )}
                   </div>
                 )}
@@ -329,9 +325,7 @@ export function HomeNavbar({
                     )}
                   </button>
 
-                  {showLocationModal && (
-                    <LocationModal onClose={() => closePanel()} />
-                  )}
+                  {showLocationModal && <LocationModal onClose={() => closePanel()} />}
                 </div>
 
                 {/* ── Recherche ───────────────────────────────────────────
@@ -412,10 +406,7 @@ export function HomeNavbar({
                       </span>
                     )}
                     {showNotifications && (
-                      <NotificationsPanel
-                        anchorRef={notifBtnRef}
-                        onClose={() => closePanel()}
-                      />
+                      <NotificationsPanel anchorRef={notifBtnRef} onClose={() => closePanel()} />
                     )}
                   </div>
                 )}
