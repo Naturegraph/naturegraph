@@ -92,6 +92,7 @@ import { ToggleSwitch } from '@/components/ui/ToggleSwitch'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings'
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -141,6 +142,17 @@ export function SettingsNotificationsView() {
   const { data: settings, isLoading } = useSettings(user?.id)
   const updateSettings = useUpdateSettings(user?.id)
 
+  // Préférences PAR TYPE (table notification_preferences) : FONCTIONNEL des
+  // maintenant. Les triggers DB respectent deja `is_notif_enabled`, donc
+  // desactiver un type coupe reellement ces notifs. C'est le controle que
+  // l'utilisateur attend au prelancement.
+  const {
+    isEnabled: isTypeEnabled,
+    set: setTypePref,
+    isPending: typePrefPending,
+  } = useNotificationPreferences(user?.id)
+  const typePrefsDisabled = !user?.id || typePrefPending
+
   // Valeurs courantes : fallback sur les défauts si pas encore chargé/persisté.
   // ⚠️ On lit directement depuis `settings` (pas de state local) pour rester
   // synchronisé avec React Query : l'optimistic update se fait via `setQueryData`.
@@ -177,11 +189,49 @@ export function SettingsNotificationsView() {
 
   return (
     <div className="flex flex-col">
+      {/* ── Section 0 : Types de notifications (FONCTIONNEL) ──────────────
+          Branche sur notification_preferences. L'utilisateur choisit ce qu'il
+          recoit ; desactiver un type coupe reellement la notif (trigger DB). */}
+      <section className="flex flex-col gap-4 px-6 pt-4 pb-6">
+        <h3 className="font-title font-bold text-lg text-foreground leading-tight">
+          {t('settings.notifications.typesTitle', {
+            defaultValue: 'Quelles notifications recevoir',
+          })}
+        </h3>
+        <div className="flex flex-col gap-3">
+          <ToggleCard
+            label={t('settings.notifications.typeReaction', {
+              defaultValue: 'Réactions à mes publications',
+            })}
+            checked={isTypeEnabled('reaction')}
+            disabled={typePrefsDisabled}
+            onChange={(v) => setTypePref({ type: 'reaction', enabled: v })}
+          />
+          <ToggleCard
+            label={t('settings.notifications.typeFollow', {
+              defaultValue: 'Nouveaux migrateurs (abonnés)',
+            })}
+            checked={isTypeEnabled('follow')}
+            disabled={typePrefsDisabled}
+            onChange={(v) => setTypePref({ type: 'follow', enabled: v })}
+          />
+          <ToggleCard
+            label={t('settings.notifications.typePost', {
+              defaultValue: 'Nouvelles publications des profils suivis',
+            })}
+            checked={isTypeEnabled('post')}
+            disabled={typePrefsDisabled}
+            onChange={(v) => setTypePref({ type: 'post', enabled: v })}
+          />
+        </div>
+      </section>
+
+      <div className="h-1 bg-border" aria-hidden="true" />
+
+      {/* Les sections ci-dessous (livraison email + fréquence/digest) ne sont
+          pas encore wired backend -> tag « Bientôt » + toggles désactivés. */}
       {SOON_FEATURE && (
-        <div className="px-6 pt-2">
-          {/* Tag « Bientôt » aligné sur le style utilisé partout dans le
-              produit (FeedFilterPanel, ProfileTabs). Pas de texte d'explication
-              additionnel : cohérence DS. */}
+        <div className="px-6 pt-4">
           <span className="inline-block text-[10px] font-bold uppercase tracking-wide text-primary bg-primary/10 px-2 py-0.5 rounded-full">
             Bientôt
           </span>

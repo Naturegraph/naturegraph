@@ -65,10 +65,59 @@ describe('groupNotifications', () => {
     expect(out).toHaveLength(2)
   })
 
-  it('ne groupe pas les types post / species_digest', () => {
+  it('groupe les "nouveau post" du MÊME auteur en < 24h (anti-spam)', () => {
+    const now = Date.now()
+    // 3 posts du meme auteur (reference_id differents) -> 1 ligne "a publie 3 publications"
     const input: Notification[] = [
-      mk({ id: 'n1', type: 'post', reference_id: 'p1' }),
-      mk({ id: 'n2', type: 'post', reference_id: 'p1', actor_id: 'u2' }),
+      mk({
+        id: 'n1',
+        type: 'post',
+        reference_id: 'p1',
+        actor_id: 'u1',
+        actor_username: 'patosz',
+        created_at: new Date(now).toISOString(),
+      }),
+      mk({
+        id: 'n2',
+        type: 'post',
+        reference_id: 'p2',
+        actor_id: 'u1',
+        actor_username: 'patosz',
+        created_at: new Date(now - 3_600_000).toISOString(),
+      }),
+      mk({
+        id: 'n3',
+        type: 'post',
+        reference_id: 'p3',
+        actor_id: 'u1',
+        actor_username: 'patosz',
+        created_at: new Date(now - 7_200_000).toISOString(),
+      }),
+    ]
+    const out = groupNotifications(input)
+    expect(out).toHaveLength(1)
+    expect(out[0].group_count).toBe(3)
+  })
+
+  it('ne groupe pas les "nouveau post" d\'auteurs différents', () => {
+    const input: Notification[] = [
+      mk({ id: 'n1', type: 'post', reference_id: 'p1', actor_id: 'u1' }),
+      mk({ id: 'n2', type: 'post', reference_id: 'p2', actor_id: 'u2' }),
+    ]
+    const out = groupNotifications(input)
+    expect(out).toHaveLength(2)
+  })
+
+  it('ne groupe pas species_digest', () => {
+    const input: Notification[] = [
+      mk({ id: 'n1', type: 'species_digest', reference_id: null, reference_type: null }),
+      mk({
+        id: 'n2',
+        type: 'species_digest',
+        reference_id: null,
+        reference_type: null,
+        actor_id: 'u2',
+      }),
     ]
     const out = groupNotifications(input)
     expect(out).toHaveLength(2)

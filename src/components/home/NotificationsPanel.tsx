@@ -149,14 +149,24 @@ function NotifChip({ type }: { type: NotificationType }) {
 // ─── Message par type ─────────────────────────────────────────────────────────
 
 /** Phrase secondaire affichée sous le username + chip. */
-function getMessage(type: NotificationType, t: (k: string) => string): string {
-  switch (type) {
+function getMessage(
+  notif: GroupedNotification,
+  t: (k: string, opts?: Record<string, unknown>) => string,
+): string {
+  switch (notif.type) {
     case 'reaction':
       return t('home.notifications.messageReaction')
     case 'follow':
       return t('home.notifications.messageFollow')
     case 'post':
-      return t('home.notifications.messagePost')
+      // Regroupe par auteur : "a publié N publications" si plusieurs, sinon
+      // le message unitaire historique.
+      return notif.group_count > 1
+        ? t('home.notifications.messagePostGrouped', {
+            count: notif.group_count,
+            defaultValue: 'a publié {{count}} publications',
+          })
+        : t('home.notifications.messagePost')
     case 'species_digest':
       return t('home.notifications.messageSpeciesDigest')
     default:
@@ -404,7 +414,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
                             notif.title ??
                             ''}
                         </span>{' '}
-                        <span className="text-muted-foreground">{getMessage(notif.type, t)}</span>
+                        <span className="text-muted-foreground">{getMessage(notif, t)}</span>
                       </p>
                       {/*
                         Corps de la notification, affiche sur plusieurs lignes quand present
@@ -412,7 +422,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
                         ou l administrateur ecrit un message libre. whitespace-pre-line preserve
                         les retours a la ligne du texte stocke en base.
                       */}
-                      {notif.body && (
+                      {notif.body && !(notif.type === 'post' && notif.group_count > 1) && (
                         <p className="mt-1 text-sm text-muted-foreground leading-snug whitespace-pre-line">
                           {notif.body}
                         </p>

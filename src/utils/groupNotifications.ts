@@ -49,6 +49,32 @@ export function groupNotifications(notifs: Notification[]): GroupedNotification[
     }
     usedIds.add(n.id)
 
+    // Regroupement par AUTEUR des notifs "nouveau post" (anti-pollution).
+    // Chaque post a un reference_id different, donc le regroupement par
+    // reference ne collapse rien : l'utilisateur voyait N lignes "X a publie
+    // un nouveau post" (aggrave par les anciens posts dupliques du bug NG-012
+    // #1). On groupe ici par auteur (meme actor) sur 24h -> "X a publie N
+    // publications". Le representant = le plus recent (deep-link vers sa derniere
+    // publi). group_count sert au libelle dans le NotificationsPanel.
+    if (n.type === 'post') {
+      const authorKey = n.actor_id ?? n.title
+      const nDate = new Date(n.created_at).getTime()
+      let allReadPost = n.read
+      for (const other of notifs) {
+        if (usedIds.has(other.id)) continue
+        if (other.type !== 'post') continue
+        if ((other.actor_id ?? other.title) !== authorKey) continue
+        if (Math.abs(nDate - new Date(other.created_at).getTime()) > WINDOW_MS) continue
+        usedIds.add(other.id)
+        group.group_count += 1
+        group.group_ids.push(other.id)
+        allReadPost = allReadPost && other.read
+      }
+      group.read = allReadPost
+      result.push(group)
+      continue
+    }
+
     // Pas de regroupement pour les types sans "cible" commune
     const groupable =
       !!n.reference_id &&
