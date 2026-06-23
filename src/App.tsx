@@ -10,6 +10,7 @@ import { AccessibilityProvider } from '@/contexts/AccessibilityContext'
 import { NotebookProvider } from '@/contexts/NotebookContext'
 import { CookieBanner } from '@/components/layout/CookieBanner'
 import { InstallPromptBanner } from '@/components/layout/InstallPromptBanner'
+import { AppBadgeSync } from '@/components/layout/AppBadgeSync'
 import loadingVideo from '@/assets/branding/app-loading.webm'
 
 /**
@@ -152,6 +153,9 @@ export default function App() {
                     {/* CookieBanner global : RGPD/ePrivacy/Loi 25 information layer.
                       Affiché une seule fois par navigateur (localStorage). */}
                     <CookieBanner />
+                    {/* AppBadgeSync : pastille "non lues" sur l'icône PWA, pilotée
+                      au niveau app (active sur toutes les pages, pas seulement Home). */}
+                    <AppBadgeSync />
                   </ToastProvider>
                 </NotebookProvider>
               </SpeciesProvider>

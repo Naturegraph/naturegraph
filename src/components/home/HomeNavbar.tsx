@@ -42,7 +42,6 @@ import hermineIcon from '@/assets/images/hermine-icon.png'
 import { ImagePresets } from '@/lib/supabaseImage'
 import { useUserStreak } from '@/hooks/useStats'
 import { useUnreadCount } from '@/hooks/useNotifications'
-import { useAppBadge } from '@/hooks/useAppBadge'
 import { useLocation } from '@/contexts/LocationContext'
 // V1.1.4 NG-023 ext final : indique le filtre actif (espece ou categorie)
 // directement dans le bouton recherche au lieu d un bandeau separe.
@@ -112,12 +111,9 @@ export function HomeNavbar({
   // nom de ville pour rappeler à l'utilisateur quel rayon est actif sur le feed.
   const { locationLabel, locationDistance } = useLocation()
 
-  // Compteur de notifications non lues, alimente le badge
+  // Compteur de notifications non lues, alimente le badge visuel de la cloche.
+  // (La pastille de l'icône PWA est gérée globalement par AppBadgeSync dans App.)
   const { data: unreadCount } = useUnreadCount(profile?.id)
-
-  // Pastille "non lues" sur l'icône de l'app installée (PWA) : nudge de retour
-  // léger et gratuit. No-op gracieux si non supporté (cf. useAppBadge).
-  useAppBadge(unreadCount ?? 0)
 
   // V1.1.4 NG-023 ext final : pill espece active dans le bouton recherche.
   // La categorie a un flow distinct (FeedFilterPanel + badge compteur).
