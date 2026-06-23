@@ -1,5 +1,5 @@
 /**
- * CookieBanner — Information cookies essentiels (RGPD + ePrivacy + Loi 25)
+ * CookieBanner : Information cookies essentiels (RGPD + ePrivacy + Loi 25)
  * =========================================================================
  *
  * Naturegraph n'utilise QUE des cookies strictement nécessaires (session
@@ -60,7 +60,7 @@ function readAcknowledged(): boolean {
 
 /**
  * Persiste l'acceptation dans le localStorage.
- * Silencieux si localStorage indisponible — pas de raison de bloquer l'UX.
+ * Silencieux si localStorage indisponible : pas de raison de bloquer l'UX.
  */
 function writeAcknowledged(): void {
   try {
@@ -72,7 +72,7 @@ function writeAcknowledged(): void {
 
 export function CookieBanner() {
   const { t } = useTranslation()
-  // Lazy initial state — lu une seule fois au montage côté client.
+  // Lazy initial state : lu une seule fois au montage côté client.
   // Évite un useEffect avec setState (anti-pattern + erreur ESLint).
   // `typeof window` est défensif (Vite SPA n'a pas de SSR mais bonne pratique).
   const [open, setOpen] = useState(() => {
@@ -112,7 +112,7 @@ export function CookieBanner() {
     >
       <div className="max-w-4xl mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row items-start md:items-center gap-4">
         <div className="flex-1 min-w-0">
-          {/* Titre via primitive Heading h4 (DS) — coherence visuelle avec le reste de l'app */}
+          {/* Titre via primitive Heading h4 (DS) : coherence visuelle avec le reste de l'app */}
           <Heading level="h4" as="h2" color="primary" className="mb-1">
             {t('cookies.banner.title', { defaultValue: 'Cookies essentiels uniquement' })}
           </Heading>
@@ -128,7 +128,7 @@ export function CookieBanner() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0 self-stretch md:self-auto">
-          {/* Bouton primary (variant Button DS) — coherence avec tous les CTA primary de l'app */}
+          {/* Bouton primary (variant Button DS) : coherence avec tous les CTA primary de l'app */}
           <Button variant="primary" size="sm" onClick={handleAccept}>
             {t('cookies.banner.accept', { defaultValue: "J'ai compris" })}
           </Button>

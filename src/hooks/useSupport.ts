@@ -1,5 +1,5 @@
 /**
- * useSupport — React Query hooks pour les tickets de support
+ * useSupport : React Query hooks pour les tickets de support
  *
  * Fournit `useSubmitHelpRequest` qui :
  *   - Wrappe `supportService.submitHelpRequest()`

@@ -1,6 +1,6 @@
 # Description
 
-<!-- Quel problème résout cette PR ? Référencer l'ID T-XXX ou QW-XXX si applicable. -->
+<!-- Quel problème résout cette PR ? Référencer le ticket Notion NG-XXX si applicable. -->
 
 ## Type
 
@@ -14,11 +14,11 @@
 - [ ] 🧪 Tests
 - [ ] 🔧 Chore (config, build, deps)
 
-## Référence MASTER_TODO / QUICK_WINS
+## Référence ticket Notion
 
-<!-- Indiquer l'ID de la tâche pour traçabilité, ex: T-013, QW-I1 -->
+<!-- Indiquer le ticket Notion pour traçabilité, ex: NG-008 -->
 
-- Tâche : `T-XXX` ou `QW-XXX`
+- Ticket : `NG-XXX`
 
 ## Test plan
 

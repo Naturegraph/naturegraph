@@ -1,5 +1,5 @@
 /**
- * extractPhotoMetadata — Lecture EXIF des photos d'observation
+ * extractPhotoMetadata : Lecture EXIF des photos d'observation
  *
  * Utilisé à l'étape 1 du flow "Rencontre nature" pour pré-remplir
  * automatiquement la date, l'heure, les coordonnées GPS et en déduire
@@ -9,16 +9,16 @@
  * capture d'écran, WebP sans métadonnées), les champs restent undefined
  * et l'utilisateur remplit manuellement à l'étape 3.
  *
- * Lib : exifr build `lite` (~15 KB gzip) — lecture TIFF+GPS uniquement.
+ * Lib : exifr build `lite` (~15 KB gzip) : lecture TIFF+GPS uniquement.
  *   · On n'a pas besoin de XMP/IPTC/ICC (full build) pour nos cas d'usage :
  *     DateTimeOriginal + GPS sont dans le segment TIFF que lite décode.
- *   · Gain ~10 KB gzip vs full — respecte le budget éco-conception (< 300 KB).
+ *   · Gain ~10 KB gzip vs full : respecte le budget éco-conception (< 300 KB).
  */
 
-// Import ciblé du build `lite` — pas d'entrée exports dans exifr/package.json,
+// Import ciblé du build `lite` : pas d'entrée exports dans exifr/package.json,
 // d'où le chemin direct vers dist/*.esm.mjs. Stable (API identique à la racine).
 // Pas de .d.ts pour ce sous-chemin → @ts-expect-error ciblé sur l'import.
-// @ts-expect-error — exifr ne publie pas de types pour les builds dérivés
+// @ts-expect-error : exifr ne publie pas de types pour les builds dérivés
 import exifr from 'exifr/dist/lite.esm.mjs'
 import type { TimeOfDay } from '@/types/database'
 
@@ -40,11 +40,11 @@ export interface PhotoMetadata {
 }
 
 /**
- * Détails de prise de vue (EXIF enrichi) — alimente le panneau ℹ️ lightbox
+ * Détails de prise de vue (EXIF enrichi) : alimente le panneau ℹ️ lightbox
  * et la colonne `media.exif` (JSONB). Tous champs optionnels : une photo
  * capture d'écran n'a rien de tout ça.
  *
- * Les champs sont des string ou number bruts — l'UI formate (ex: "f/4.5",
+ * Les champs sont des string ou number bruts : l'UI formate (ex: "f/4.5",
  * "1/1000 s", "ISO 400"). On ne transforme pas côté extraction pour garder
  * la donnée fidèle au capteur.
  */
@@ -71,7 +71,7 @@ export interface PhotoExifDetails {
 
 /**
  * Déduit le moment de la journée à partir d'une heure locale (0-23).
- * Tranches volontairement simplifiées — alignées sur l'enum backend
+ * Tranches volontairement simplifiées : alignées sur l'enum backend
  * (morning / afternoon / dusk / evening / night). On ne distingue pas
  * l'aube ici (regroupée avec morning) pour éviter la fausse précision.
  */
@@ -86,7 +86,7 @@ export function inferTimeOfDay(hour: number): TimeOfDay {
 // ─── API principale ───────────────────────────────────────────────────────────
 
 /**
- * Extrait les métadonnées EXIF d'une image. Best-effort — ne jette jamais.
+ * Extrait les métadonnées EXIF d'une image. Best-effort : ne jette jamais.
  * Retourne un objet vide si aucune donnée exploitable n'est trouvée.
  */
 export async function extractPhotoMetadata(file: File): Promise<PhotoMetadata> {
@@ -100,10 +100,10 @@ export async function extractPhotoMetadata(file: File): Promise<PhotoMetadata> {
 
     const result: PhotoMetadata = {}
 
-    // Date/heure — priorité :
+    // Date/heure : priorité :
     //   1. EXIF DateTimeOriginal (capture caméra réelle)
     //   2. EXIF CreateDate (fallback)
-    //   3. file.lastModified (cas iPhone HEIC mal parsé, screenshots, etc.) —
+    //   3. file.lastModified (cas iPhone HEIC mal parsé, screenshots, etc.) -
     //      mieux que la date du jour quand l'EXIF est absent.
     let captureSource: Date | null = null
     const exifRaw = exif?.DateTimeOriginal ?? exif?.CreateDate
@@ -118,7 +118,7 @@ export async function extractPhotoMetadata(file: File): Promise<PhotoMetadata> {
 
     if (captureSource && !isNaN(captureSource.getTime())) {
       result.capturedAt = captureSource
-      // Format ISO YYYY-MM-DD (local — évite le décalage UTC qui basculerait
+      // Format ISO YYYY-MM-DD (local : évite le décalage UTC qui basculerait
       // une photo prise à 23h en jour suivant)
       const y = captureSource.getFullYear()
       const m = String(captureSource.getMonth() + 1).padStart(2, '0')
@@ -133,7 +133,7 @@ export async function extractPhotoMetadata(file: File): Promise<PhotoMetadata> {
 
     if (!exif) return result
 
-    // GPS — vérifie que les valeurs sont des nombres finis valides
+    // GPS : vérifie que les valeurs sont des nombres finis valides
     if (typeof exif.latitude === 'number' && Number.isFinite(exif.latitude)) {
       result.latitude = exif.latitude
     }
@@ -149,7 +149,7 @@ export async function extractPhotoMetadata(file: File): Promise<PhotoMetadata> {
 }
 
 /**
- * Extrait les détails de prise de vue (EXIF enrichi) — persisté en
+ * Extrait les détails de prise de vue (EXIF enrichi) : persisté en
  * `media.exif` (JSONB). Alimente le panneau ℹ️ de la lightbox.
  *
  * Best-effort : tout champ absent reste undefined. Ne jette jamais.

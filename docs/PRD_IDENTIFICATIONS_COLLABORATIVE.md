@@ -1,6 +1,6 @@
-# PRD — Identifications collaboratives (Phase 2)
+# PRD : Identifications collaboratives (Phase 2)
 
-> **Statut :** Draft Phase 2 — pas encore validé Nicolas.
+> **Statut :** Draft Phase 2 : pas encore validé Nicolas.
 > **Date :** 2026-05-15 (post V1.0.0).
 > **Auteur :** Équipe produit Naturegraph.
 > **Pré-requis :** V1 livrée (table `identification_proposals` + service basique `create/list/delete`).
@@ -13,10 +13,10 @@ La V1 livre une **base squelettique** : la table `identification_proposals` exis
 
 **Manques structurants pour transformer cette base en feature vivante :**
 
-- **Pas de table `identification_votes`** — les colonnes `votes_up` / `votes_down` sont des nombres dans le vide, sans audit ni anti-fraude (1 user peut voter 10 fois).
+- **Pas de table `identification_votes`** : les colonnes `votes_up` / `votes_down` sont des nombres dans le vide, sans audit ni anti-fraude (1 user peut voter 10 fois).
 - **Pas de workflow consensus** : pas de logique "espèce confirmée après N votes positifs et X% de consensus".
 - **Pas de hook React Query** ni de composant `<IdentificationPanel />` côté front.
-- **RLS incomplet** sur `identification_proposals` (à vérifier — la migration initiale ne couvre que les tables principales).
+- **RLS incomplet** sur `identification_proposals` (à vérifier : la migration initiale ne couvre que les tables principales).
 - **Pas de notification** quand quelqu'un propose une identification sur ton post.
 - **Pas de badge "expert"** ni système de réputation (un naturaliste pro propose ≠ un débutant).
 
@@ -246,7 +246,7 @@ CREATE POLICY id_votes_delete ON public.identification_votes
 | Bundle JS `<IdentificationPanel />`    | ≤ 8 kB gzip                                        |
 | Notifications générées par proposition | 1 (auteur post) + 1 par voteur, groupées à l'heure |
 
-Pas d'animation gratuite, pas de polling — invalidation React Query au vote. Realtime Supabase `subscribe` envisageable Phase 3 si engagement le justifie.
+Pas d'animation gratuite, pas de polling : invalidation React Query au vote. Realtime Supabase `subscribe` envisageable Phase 3 si engagement le justifie.
 
 ---
 
@@ -262,7 +262,7 @@ Pas d'animation gratuite, pas de polling — invalidation React Query au vote. R
 
 ---
 
-## Annexe — Décisions clés
+## Annexe : Décisions clés
 
 **ADR-001 : Consensus = 3 votes up + ratio 70 %.** Compromise entre fluidité (3 votes accessibles dès une vingtaine de users actifs/jour) et fiabilité. Ajustable via constants serveur si la dynamique communautaire le demande.
 

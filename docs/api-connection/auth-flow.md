@@ -4,13 +4,13 @@
 
 ## Méthodes activées dans Supabase
 
-| Méthode | Statut | Usage |
-|---|---|---|
-| Email + mot de passe | ✅ MVP | Signup / Login standard |
-| Email OTP (magic link) | ✅ MVP | Récupération mot de passe + login sans password |
-| Google OAuth | 🔒 V1 | Désactivé tant que la base utilisateurs < 1k |
-| Apple OAuth | 🔒 V1 | idem |
-| Phone / SMS | ❌ jamais | décision produit |
+| Méthode                | Statut    | Usage                                           |
+| ---------------------- | --------- | ----------------------------------------------- |
+| Email + mot de passe   | ✅ MVP    | Signup / Login standard                         |
+| Email OTP (magic link) | ✅ MVP    | Récupération mot de passe + login sans password |
+| Google OAuth           | 🔒 V1     | Désactivé tant que la base utilisateurs < 1k    |
+| Apple OAuth            | 🔒 V1     | idem                                            |
+| Phone / SMS            | ❌ jamais | décision produit                                |
 
 ## Diagrammes de flux
 
@@ -112,7 +112,7 @@ const AuthContext = createContext<{
 - Le profil est aussi cacheable via `useProfile(user.id)` mais le contexte garde une copie pour l'accès synchrone (sidebar, navbar).
 - Au logout, `queryClient.clear()` purge tout.
 
-## Sécurité — checklist
+## Sécurité : checklist
 
 - [x] **Email confirmation obligatoire** (Supabase setting `mailer_autoconfirm = false`)
 - [x] **Rate limit** sur `/signup`, `/signin`, `/recover` (Supabase built-in : 30 req/h par IP)

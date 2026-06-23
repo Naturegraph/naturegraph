@@ -1,12 +1,12 @@
 /**
- * onboardingPersistence — Persistance des données d'onboarding
+ * onboardingPersistence : Persistance des données d'onboarding
  * ==============================================================
  *
  * Concentre la logique de persistance des 3 inputs onboarding :
  *
- *   1. `interests`        → `profiles.interests` (text[])           — DB
- *   2. `notif_frequency`  → `user_settings.notif_frequency` (text)  — DB
- *   3. `motivations`      → localStorage (Phase MVP)                — client
+ *   1. `interests`        → `profiles.interests` (text[])           : DB
+ *   2. `notif_frequency`  → `user_settings.notif_frequency` (text)  : DB
+ *   3. `motivations`      → localStorage (Phase MVP)                : client
  *
  * Pourquoi `motivations` côté client ?
  * ────────────────────────────────────
@@ -46,9 +46,9 @@ export type FrequencyOption = 'daily' | 'weekly' | 'monthly' | 'occasionally'
  * Choix de mapping :
  *   - 'daily'        → 'daily'   (1:1)
  *   - 'weekly'       → 'weekly'  (1:1)
- *   - 'monthly'      → 'weekly'  (rounding down — l'utilisateur préfère peu
+ *   - 'monthly'      → 'weekly'  (rounding down : l'utilisateur préfère peu
  *                                  de notifs, on garde le minimum non-zéro)
- *   - 'occasionally' → 'weekly'  (idem — pas d'option moins fréquente que
+ *   - 'occasionally' → 'weekly'  (idem : pas d'option moins fréquente que
  *                                  weekly côté DB)
  *
  * À terme, la DB pourrait gagner les valeurs `'monthly'` / `'never'` mais
@@ -103,7 +103,7 @@ function motivationsStorageKey(userId: string): string {
 /**
  * Stocke les motivations de l'user dans le localStorage navigateur.
  *
- * Sera migré vers `profiles.motivations` (text[]) en Phase 3 — voir
+ * Sera migré vers `profiles.motivations` (text[]) en Phase 3 : voir
  * commentaire d'en-tête.
  *
  * Try/catch silencieux : si localStorage est désactivé (Safari mode privé,
@@ -120,7 +120,7 @@ export function persistMotivationsLocal(userId: string, motivations: string[]): 
       count: motivations.length,
     })
   } catch (err) {
-    // localStorage désactivé ou quota dépassé — pas bloquant.
+    // localStorage désactivé ou quota dépassé : pas bloquant.
     console.warn('[onboarding-persistence] persistMotivationsLocal failed', err)
   }
 }
@@ -155,7 +155,7 @@ export function clearLocalMotivations(userId: string): void {
   try {
     window.localStorage.removeItem(motivationsStorageKey(userId))
   } catch {
-    /* silent — localStorage indisponible */
+    /* silent : localStorage indisponible */
   }
 }
 

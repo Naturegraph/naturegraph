@@ -1,5 +1,5 @@
 /**
- * FeaturesCards — Section "Découvrir" (3 cartes)
+ * FeaturesCards : Section "Découvrir" (3 cartes)
  * ================================================
  * 3 cartes fonctionnalités avec icônes lucide-react,
  * animation stagger au scroll via framer-motion.
@@ -11,7 +11,7 @@ import { Binoculars, Camera, HeartHandshake } from 'lucide-react'
 import { IconCircle } from '@/components/ui/IconCircle'
 
 /**
- * Carte feature individuelle — wrapper card-style spécifique à cette section.
+ * Carte feature individuelle : wrapper card-style spécifique à cette section.
  * Utilise le IconCircle partagé en variant `solid` (fond action-default).
  */
 function FeatureCard({

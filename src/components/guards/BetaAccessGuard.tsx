@@ -1,5 +1,5 @@
 /**
- * BetaAccessGuard — Garde le site derrière le welcome screen.
+ * BetaAccessGuard : Garde le site derrière le welcome screen.
  *
  * Laisse passer :
  *   - les visiteurs ayant validé une clé beta (gate localStorage), ET

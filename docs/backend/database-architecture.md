@@ -1,7 +1,7 @@
-# Database Architecture — Naturegraph
+# Database Architecture : Naturegraph
 
 > **Auteurs (table ronde)** : Database Architect (DBA), DevOps, Backend Developer (BE)
-> **Statut** : v1.0 — socle MVP, vision long terme
+> **Statut** : v1.0 : socle MVP, vision long terme
 > **Stack** : PostgreSQL 15 + PostGIS 3.3 (Supabase Hosted, région `eu-west-3` / Paris)
 >
 > ⚠️ **Schéma cible vs schéma actuel** : ce document décrit le schéma **cible** v1.0 consolidé. La base `naturegraph-dev` actuelle utilise le schéma initial (legacy) issu des migrations historiques. **Le code TypeScript (`src/services/`) suit le schéma réel, pas le schéma cible.** La source de vérité runtime est `src/types/supabase.ts` (généré via `npx supabase gen types typescript`).
@@ -19,17 +19,17 @@
 > | notebooks   | `owner_id`           | `author_id`                  |
 > | (jointure)  | `notebook_entries`   | `notebook_observations`      |
 >
-> Une convergence vers le schéma cible se fera par migrations successives — voir `supabase/migrations/`.
+> Une convergence vers le schéma cible se fera par migrations successives : voir `supabase/migrations/`.
 
 ---
 
 ## 1. Vision & principes directeurs
 
-**DBA** — On conçoit pour 3 horizons : MVP (10k users), V1 (100k users), V2 (1M+ users). Toutes les décisions ci-dessous doivent rester valides à 1M users sans refonte structurelle. Ce qui change à l'échelle : les index, le partitioning, le cache — pas le modèle.
+**DBA** : On conçoit pour 3 horizons : MVP (10k users), V1 (100k users), V2 (1M+ users). Toutes les décisions ci-dessous doivent rester valides à 1M users sans refonte structurelle. Ce qui change à l'échelle : les index, le partitioning, le cache : pas le modèle.
 
-**BE** — D'accord, mais on reste pragmatique : pas de sur-engineering (pas de sharding ni partitioning au MVP). On prépare juste les **points de découpe**.
+**BE** : D'accord, mais on reste pragmatique : pas de sur-engineering (pas de sharding ni partitioning au MVP). On prépare juste les **points de découpe**.
 
-**DevOps** — Mon non-négociable : tout est versionné en migrations SQL idempotentes, tout est reproductible sur un projet Supabase vide en < 5 minutes.
+**DevOps** : Mon non-négociable : tout est versionné en migrations SQL idempotentes, tout est reproductible sur un projet Supabase vide en < 5 minutes.
 
 ### Principes adoptés
 
@@ -48,7 +48,7 @@
 
 ---
 
-## 2. Vue d'ensemble — domaines fonctionnels
+## 2. Vue d'ensemble : domaines fonctionnels
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -77,13 +77,13 @@
                    └──────────────────────┘
 ```
 
-**DBA** — 5 domaines, ~14 tables. Au-delà, on bascule vers un schéma logique séparé (`analytics`, `audit`).
+**DBA** : 5 domaines, ~14 tables. Au-delà, on bascule vers un schéma logique séparé (`analytics`, `audit`).
 
-**BE** — Pour le MVP on reste sur `public`. Si on ajoute de l'analytics lourd plus tard (vues matérialisées, agrégats), on créera un schéma `analytics` dédié pour ne pas polluer `public` et pour pouvoir donner des droits différents.
+**BE** : Pour le MVP on reste sur `public`. Si on ajoute de l'analytics lourd plus tard (vues matérialisées, agrégats), on créera un schéma `analytics` dédié pour ne pas polluer `public` et pour pouvoir donner des droits différents.
 
 ---
 
-## 3. Tables — détail et justifications
+## 3. Tables : détail et justifications
 
 ### 3.1 `profiles`
 
@@ -116,9 +116,9 @@ CREATE TABLE profiles (
 );
 ```
 
-**Pourquoi `CITEXT` sur `username`** — Recherche case-insensitive native, sans `LOWER(username)` partout. **DBA** : « si tu indexes `LOWER(username)` tu doubles l'index, et tu rates les jointures naïves. CITEXT règle ça pour de bon. »
+**Pourquoi `CITEXT` sur `username`** : Recherche case-insensitive native, sans `LOWER(username)` partout. **DBA** : « si tu indexes `LOWER(username)` tu doubles l'index, et tu rates les jointures naïves. CITEXT règle ça pour de bon. »
 
-**Pourquoi `interests TEXT[]`** — Tags légers, < 10 items, lecture simple. **BE** : « pas besoin d'une table de jointure tant qu'on n'a pas de stats par tag. Si on veut ça, on migrera vers `profile_interests(profile_id, interest_id)`. »
+**Pourquoi `interests TEXT[]`** : Tags légers, < 10 items, lecture simple. **BE** : « pas besoin d'une table de jointure tant qu'on n'a pas de stats par tag. Si on veut ça, on migrera vers `profile_interests(profile_id, interest_id)`. »
 
 **DevOps** : index requis (cf. `relations.md`).
 
@@ -172,7 +172,7 @@ CREATE TABLE post_media (
   size_bytes      INTEGER,
   -- Métadonnées EXIF nettoyées (on retire GPS/timestamps avant upload)
   alt_text        TEXT,
-  -- Copyright (obligatoire — TAXREF/INPN si applicable)
+  -- Copyright (obligatoire : TAXREF/INPN si applicable)
   copyright_notice TEXT NOT NULL,
   license         TEXT NOT NULL DEFAULT 'CC-BY-NC-SA-4.0'
                   CHECK (license IN (
@@ -200,9 +200,9 @@ CREATE TABLE reactions (
 );
 ```
 
-**DBA** — PK composite = pas besoin de UNIQUE supplémentaire, et la PK sert d'index pour les jointures `posts ◀── reactions`. **Important** : on ne permet **qu'une réaction par user/post**. Changer de réaction = `UPDATE`, pas un nouvel insert.
+**DBA** : PK composite = pas besoin de UNIQUE supplémentaire, et la PK sert d'index pour les jointures `posts ◀── reactions`. **Important** : on ne permet **qu'une réaction par user/post**. Changer de réaction = `UPDATE`, pas un nouvel insert.
 
-**BE** — Trigger `update_post_likes_count()` AFTER INSERT/UPDATE/DELETE met à jour `posts.likes_count`. On évite tout `COUNT(*)` au runtime.
+**BE** : Trigger `update_post_likes_count()` AFTER INSERT/UPDATE/DELETE met à jour `posts.likes_count`. On évite tout `COUNT(*)` au runtime.
 
 ### 3.5 `comments`
 
@@ -220,8 +220,8 @@ CREATE TABLE comments (
 
 **Discussion threads** :
 
-- **BE** — Adjacency list (`parent_id`) suffit au MVP. Profondeur max 2 (réponses, pas de réponses-de-réponses) appliquée par trigger.
-- **DBA** — Si on veut un jour des arbres profonds avec requêtes « tout le sous-arbre », on basculera vers `ltree`. Pas avant.
+- **BE** : Adjacency list (`parent_id`) suffit au MVP. Profondeur max 2 (réponses, pas de réponses-de-réponses) appliquée par trigger.
+- **DBA** : Si on veut un jour des arbres profonds avec requêtes « tout le sous-arbre », on basculera vers `ltree`. Pas avant.
 
 ### 3.6 `follows`
 
@@ -282,7 +282,7 @@ CREATE TABLE notifications (
 );
 ```
 
-**BE** — Réalisation côté client via Supabase Realtime (channel `notifications:user_id=eq.${uid}`). Pas besoin de WebSocket custom.
+**BE** : Réalisation côté client via Supabase Realtime (channel `notifications:user_id=eq.${uid}`). Pas besoin de WebSocket custom.
 
 ### 3.9 `reports` (modération)
 
@@ -316,7 +316,7 @@ CREATE TABLE blocks (
 
 Utilisé par les fonctions `can_see_post()` / `can_see_profile()` pour filtrer le feed.
 
-### 3.11 `taxref` (référentiel TAXREF — INPN/MNHN, CC-BY)
+### 3.11 `taxref` (référentiel TAXREF : INPN/MNHN, CC-BY)
 
 ```sql
 CREATE TABLE taxref (
@@ -338,9 +338,9 @@ CREATE TABLE taxref (
 );
 ```
 
-**DBA** — Table en lecture seule, rechargée par script ETL depuis le dump INPN. ~600k lignes. Index GIN sur `search_vector` pour l'autocomplete.
+**DBA** : Table en lecture seule, rechargée par script ETL depuis le dump INPN. ~600k lignes. Index GIN sur `search_vector` pour l'autocomplete.
 
-**Attribution obligatoire** : toute UI affichant TAXREF doit créditer « TAXREF v17 — INPN/MNHN, CC-BY 4.0 ».
+**Attribution obligatoire** : toute UI affichant TAXREF doit créditer « TAXREF v17 : INPN/MNHN, CC-BY 4.0 ».
 
 ### 3.12 `user_settings`
 
@@ -399,7 +399,7 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION handle_new_auth_user();
 ```
 
-**BE** — Indispensable. Sinon le client doit créer le profil après signup, et on a un trou de cohérence si l'app crashe entre les deux.
+**BE** : Indispensable. Sinon le client doit créer le profil après signup, et on a un trou de cohérence si l'app crashe entre les deux.
 
 ---
 
@@ -421,6 +421,6 @@ CREATE TRIGGER on_auth_user_created
 
 **BE** : « Les types TS sont alignés (`supabase.ts` généré), les services sont déjà branchés sur ce schéma. Cohérent. »
 
-**DevOps** : « Tout est en migration SQL versionnée, reproductible. Je signe à condition que `schema.sql` soit toujours synchro avec les migrations — ce sera vérifié en CI. »
+**DevOps** : « Tout est en migration SQL versionnée, reproductible. Je signe à condition que `schema.sql` soit toujours synchro avec les migrations : ce sera vérifié en CI. »
 
 → **Validé**. Voir `schema.sql` pour le SQL canonique consolidé et `relations.md` pour les diagrammes ER + index.

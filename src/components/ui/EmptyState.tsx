@@ -1,5 +1,5 @@
 /**
- * EmptyState — Primitive d'état vide unifié
+ * EmptyState : Primitive d'état vide unifié
  * ============================================================================
  *
  * Standard pour "Aucun résultat", "Pas encore de contenu", etc.
@@ -25,7 +25,7 @@
 import type { ReactNode } from 'react'
 
 export interface EmptyStateProps {
-  /** Icône ou illustration (optionnel — recommandé pour clarté visuelle) */
+  /** Icône ou illustration (optionnel : recommandé pour clarté visuelle) */
   icon?: ReactNode
   /** Titre principal (court, impératif ou descriptif) */
   title: string

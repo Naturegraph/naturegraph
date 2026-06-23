@@ -1,11 +1,11 @@
 /**
- * Contact — Page de contact publique (BATCH 67)
+ * Contact : Page de contact publique (BATCH 67)
  *
  * Style : aligne sur /welcome et /waitlist via <BetaAuthLayout>.
  *   - Background teal-dark + pattern dots + orbes (md:)
  *   - Card cream centree, rounded-[32px] (md:)
  *
- * Backend : utilise un mailto: vers naturegraph.fr@gmail.com (CONTACT_EMAIL).
+ * Backend : utilise un mailto: vers support@naturegraph.ca (CONTACT_EMAIL).
  * Pas d'edge function ni de table cote serveur pour la beta MVP :
  *   - Le user remplit le form, on prefill mailto subject/body
  *   - Au click "Envoyer", son client mail s'ouvre, il valide -> email arrive
@@ -71,7 +71,7 @@ export default function Contact() {
 
     // Construit l'email avec contexte (nom, email expediteur + sujet + message)
     const subjectLabel = SUBJECT_LABELS[subject]
-    const subjectLine = `[Naturegraph] ${subjectLabel} — ${name.trim()}`
+    const subjectLine = `[Naturegraph] ${subjectLabel} : ${name.trim()}`
     const body = [
       `Bonjour Naturegraph,`,
       ``,
@@ -205,7 +205,7 @@ export default function Contact() {
               />
             </div>
 
-            {/* Sujet — dropdown custom */}
+            {/* Sujet : dropdown custom */}
             <div className="flex flex-col gap-1.5 w-full">
               <label
                 htmlFor="contact-subject-trigger"

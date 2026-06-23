@@ -1,5 +1,5 @@
 /**
- * ProfileMenu — Menu déroulant du profil utilisateur (v2 — pixel-perfect Figma)
+ * ProfileMenu : Menu déroulant du profil utilisateur (v2 : pixel-perfect Figma)
  * ================================================================================
  * Redesign selon Figma node 6385:97828.
  *
@@ -60,7 +60,7 @@ function Divider() {
 }
 
 /**
- * Label de section — caption style Figma.
+ * Label de section : caption style Figma.
  * Pas d'uppercase : correspond au design Figma (Principal, Thème, Accessibilité).
  */
 function SectionLabel({ label }: { label: string }) {
@@ -77,7 +77,7 @@ function SoonBadge() {
 }
 
 /**
- * Conteneur d'icône — 33.6px rounded-full (Figma spec).
+ * Conteneur d'icône : 33.6px rounded-full (Figma spec).
  * Centralise l'icône et applique la couleur selon le contexte.
  */
 function IconWrap({ children, danger = false }: { children: React.ReactNode; danger?: boolean }) {
@@ -95,7 +95,7 @@ function IconWrap({ children, danger = false }: { children: React.ReactNode; dan
 }
 
 /**
- * Ligne de menu — navigation ou action.
+ * Ligne de menu : navigation ou action.
  * disabled → rendu en <div aria-disabled> + SoonBadge automatique.
  * highlighted → fond lavande bg-primary/10 (item principal mis en avant).
  */
@@ -118,7 +118,7 @@ function MenuItem({
   disabled?: boolean
   rightContent?: React.ReactNode
 }) {
-  // Classe de base commune — items Figma : h-12 (48px), px-3, gap-2, rounded-lg
+  // Classe de base commune : items Figma : h-12 (48px), px-3, gap-2, rounded-lg
   const base = [
     'w-full flex items-center gap-2 px-3 h-12 rounded-md text-left transition-colors',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
@@ -171,7 +171,7 @@ function MenuItem({
 }
 
 /**
- * Row "Taille du texte" — affiche la valeur courante + chevron.
+ * Row "Taille du texte" : affiche la valeur courante + chevron.
  * Expandable : déplie les 3 boutons radio inline (Petit / Moyen / Grand).
  * Le chevron pivote 90° à l'ouverture.
  */
@@ -186,7 +186,7 @@ function TextSizeRow({ value, onChange }: { value: TextSize; onChange: (v: TextS
 
   return (
     <div>
-      {/* Row principale — montre la valeur courante */}
+      {/* Row principale : montre la valeur courante */}
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
@@ -211,7 +211,7 @@ function TextSizeRow({ value, onChange }: { value: TextSize; onChange: (v: TextS
         </span>
       </button>
 
-      {/* Boutons radio inline — visibles quand expanded */}
+      {/* Boutons radio inline : visibles quand expanded */}
       {expanded && (
         <div
           id="text-size-options"
@@ -242,7 +242,7 @@ function TextSizeRow({ value, onChange }: { value: TextSize; onChange: (v: TextS
                 .join(' ')}
             >
               {short}
-              <span className="sr-only"> — {label}</span>
+              <span className="sr-only"> : {label}</span>
             </button>
           ))}
         </div>
@@ -263,7 +263,7 @@ interface ProfileMenuProps {
   /**
    * Ouvre le SettingsPanel (rendu par le parent HomeNavbar).
    * Le state vit dans HomeNavbar pour survivre à la fermeture du
-   * ProfileMenu — sinon le panel paramètres serait démonté en même
+   * ProfileMenu : sinon le panel paramètres serait démonté en même
    * temps que le menu profil.
    */
   onOpenSettings?: () => void
@@ -378,13 +378,13 @@ export function ProfileMenu({ onClose, onOpenSettings }: ProfileMenuProps) {
 
       <Divider />
 
-      {/* ── Blocs de sections — gap-4 entre chaque section (Figma : 16px) ─── */}
+      {/* ── Blocs de sections : gap-4 entre chaque section (Figma : 16px) ─── */}
       <div className="px-3 py-4 flex flex-col gap-4">
         {/* ── Section Principal ─────────────────────────────────────────── */}
         <div className="flex flex-col gap-2">
           <SectionLabel label="Principal" />
           <div>
-            {/* Mon profil — câblé sur la page /profile (audit + refonte en cours) */}
+            {/* Mon profil : câblé sur la page /profile (audit + refonte en cours) */}
             <MenuItem
               icon={<User className="size-5" />}
               label="Mon profil"
@@ -393,14 +393,14 @@ export function ProfileMenu({ onClose, onOpenSettings }: ProfileMenuProps) {
                 navigate('/profile')
               }}
             />
-            {/* Paramètres — délégue au parent (HomeNavbar) qui possède le
+            {/* Paramètres : délégue au parent (HomeNavbar) qui possède le
                 state du SettingsPanel et ferme le menu profil en même temps. */}
             <MenuItem
               icon={<Settings className="size-5" />}
               label="Paramètres"
               onClick={() => onOpenSettings?.()}
             />
-            {/* Administration — visible uniquement pour les comptes admin (BATCH 85).
+            {/* Administration : visible uniquement pour les comptes admin (BATCH 85).
                 Le RLS bloque deja l'acces aux donnees admin pour les non-admins,
                 mais on cache l'entree de menu pour ne pas la suggerer aux users
                 normaux (decision Nicolas : compte admin invisible). */}
@@ -421,7 +421,7 @@ export function ProfileMenu({ onClose, onOpenSettings }: ProfileMenuProps) {
         <div className="flex flex-col gap-2">
           <SectionLabel label="Thème" />
           <div>
-            {/* Apparence — feature gated (dark mode non implémenté) */}
+            {/* Apparence : feature gated (dark mode non implémenté) */}
             <MenuItem icon={<Palette className="size-5" />} label="Apparence" disabled />
           </div>
         </div>
@@ -430,7 +430,7 @@ export function ProfileMenu({ onClose, onOpenSettings }: ProfileMenuProps) {
         <div className="flex flex-col gap-2">
           <SectionLabel label="Accessibilité" />
           <div>
-            {/* Taille du texte — FONCTIONNEL : row expandable */}
+            {/* Taille du texte : FONCTIONNEL : row expandable */}
             <TextSizeRow value={textSize} onChange={setTextSize} />
             {/* Nicolas 2026-05-22 : ContrastToggleRow retirée (pas prête beta). */}
           </div>
@@ -447,7 +447,7 @@ export function ProfileMenu({ onClose, onOpenSettings }: ProfileMenuProps) {
           onClick={() => setShowLogoutModal(true)}
           danger
         />
-        {/* Version dynamique — "App version X.X.X" (Figma spec, sans icône) */}
+        {/* Version dynamique : "App version X.X.X" (Figma spec, sans icône) */}
         <p className="px-1 py-1 text-xs text-muted-foreground/60 text-center">
           App version {__APP_VERSION__}
         </p>

@@ -1,10 +1,10 @@
 /**
- * DeleteAccountModal — Confirmation suppression compte avec username matching
+ * DeleteAccountModal : Confirmation suppression compte avec username matching
  * ============================================================================
  *
  * Modal de double-confirmation : l'utilisateur doit taper EXACTEMENT son
  * username pour pouvoir cliquer sur "Supprimer". Pattern utilisé par GitHub,
- * Twitter/X, Stripe, etc. — friction cognitive volontaire pour éviter les
+ * Twitter/X, Stripe, etc. : friction cognitive volontaire pour éviter les
  * suppressions accidentelles.
  *
  * Décision produit Q-PROD-5
@@ -43,7 +43,7 @@ import { useAuth } from '@/contexts/AuthContext'
 interface DeleteAccountModalProps {
   /** Annule la suppression (ferme la modal) */
   onCancel: () => void
-  /** Confirme la suppression — appelé seulement après match du username */
+  /** Confirme la suppression : appelé seulement après match du username */
   onConfirm: () => void
 }
 
@@ -57,17 +57,17 @@ export function DeleteAccountModal({ onCancel, onConfirm }: DeleteAccountModalPr
   /** Texte tapé par l'utilisateur dans l'input de confirmation. */
   const [typedUsername, setTypedUsername] = useState('')
 
-  /** Match strict (case-sensitive) — pas de tolérance. */
+  /** Match strict (case-sensitive) : pas de tolérance. */
   const isMatch = typedUsername.length > 0 && typedUsername === expectedUsername
 
   const cancelBtnRef = useRef<HTMLButtonElement>(null)
 
-  // Focus initial sur Annuler (action non-destructive) — protection clavier.
+  // Focus initial sur Annuler (action non-destructive) : protection clavier.
   useEffect(() => {
     cancelBtnRef.current?.focus()
   }, [])
 
-  // Escape ferme la modal — alternative clavier au bouton X.
+  // Escape ferme la modal : alternative clavier au bouton X.
   useEffect(() => {
     function onKeyDown(e: globalThis.KeyboardEvent) {
       if (e.key === 'Escape') onCancel()
@@ -93,7 +93,7 @@ export function DeleteAccountModal({ onCancel, onConfirm }: DeleteAccountModalPr
         onClick={onCancel}
       />
 
-      {/* Modal — bottom-sheet mobile, centrée desktop. Identique à ConfirmModal
+      {/* Modal : bottom-sheet mobile, centrée desktop. Identique à ConfirmModal
           pour cohérence visuelle. */}
       <div
         role="alertdialog"

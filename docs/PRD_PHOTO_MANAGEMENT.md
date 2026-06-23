@@ -1,9 +1,9 @@
-# PRD — Gestion des photos (v3)
+# PRD : Gestion des photos (v3)
 
-> **Statut :** v3 — refonte complète (remplace v2).
+> **Statut :** v3 : refonte complète (remplace v2).
 > **Date :** 2026-04-22
 > **Auteur :** Équipe produit Naturegraph
-> **Inspiration :** Strava, Apple Photos, Instagram "feed natif" — simplicité radicale.
+> **Inspiration :** Strava, Apple Photos, Instagram "feed natif" : simplicité radicale.
 
 ---
 
@@ -21,12 +21,12 @@ La v2 imposait un **format unique par post** (paysage OU portrait OU carré), un
 
 | Élément v2                                     | Décision v3                                        |
 | ---------------------------------------------- | -------------------------------------------------- |
-| P3 "un seul format par post"                   | ❌ Supprimé — formats mixtes autorisés             |
+| P3 "un seul format par post"                   | ❌ Supprimé : formats mixtes autorisés             |
 | Détection + badge mismatch "Adapter"           | ❌ Supprimé                                        |
 | Modal d'édition crop/zoom/rotation obligatoire | ❌ Supprimé en MVP (reportée v4)                   |
-| `crop_data` JSONB + transforms feed            | ❌ Supprimé — photos affichées telles quelles      |
+| `crop_data` JSONB + transforms feed            | ❌ Supprimé : photos affichées telles quelles      |
 | `posts.media_format` (format de post)          | ❌ Supprimé                                        |
-| Slider à format unique                         | ❌ Supprimé — feed adaptatif par count             |
+| Slider à format unique                         | ❌ Supprimé : feed adaptatif par count             |
 | Re-encode systématique canvas pour crop        | ✅ Conservé uniquement pour strip EXIF + downscale |
 
 ### Ce qu'on introduit
@@ -37,7 +37,7 @@ La v2 imposait un **format unique par post** (paysage OU portrait OU carré), un
 - Réorganisation simple : ◀ ▶ ★ ✕ (gauche / droite / mettre en cover / supprimer).
 - Feed **adaptatif par count** : 1, 2, 3, 4 → layouts dédiés, sans déformation.
 - Viewer plein écran avec pinch-zoom + swipe (photo originale, non recadrée).
-- Strip EXIF + downscale conservés (privacy + éco-conception — inchangés v2).
+- Strip EXIF + downscale conservés (privacy + éco-conception : inchangés v2).
 
 ---
 
@@ -59,10 +59,10 @@ Strava résout ce problème en laissant l'utilisateur coller 1 à N photos de fo
 
 ### Objectifs produit (OKR Q2 2026)
 
-- **O1 — Réduire la friction de publication.** Temps médian étape "Photos" < 20 s pour 3 photos (vs ~60 s en v2 avec édition).
-- **O2 — Augmenter le nombre moyen de photos par post.** Cible ≥ 2,2 photos / post (vs 1,4 en v2).
-- **O3 — Préserver la qualité visuelle du feed.** NPS visuel interne ≥ 7/10 sur panel beta.
-- **O4 — Rester sobre.** Budget photo ≤ 300 kB par photo affichée en feed (hors viewer).
+- **O1 : Réduire la friction de publication.** Temps médian étape "Photos" < 20 s pour 3 photos (vs ~60 s en v2 avec édition).
+- **O2 : Augmenter le nombre moyen de photos par post.** Cible ≥ 2,2 photos / post (vs 1,4 en v2).
+- **O3 : Préserver la qualité visuelle du feed.** NPS visuel interne ≥ 7/10 sur panel beta.
+- **O4 : Rester sobre.** Budget photo ≤ 300 kB par photo affichée en feed (hors viewer).
 
 ### Non-objectifs (explicites)
 
@@ -112,7 +112,7 @@ Strava résout ce problème en laissant l'utilisateur coller 1 à N photos de fo
 
 ## 5. UX / UI
 
-### 5.1 Étape 1 — Contribution
+### 5.1 Étape 1 : Contribution
 
 **Panneau photo simplifié :**
 
@@ -146,7 +146,7 @@ Strava résout ce problème en laissant l'utilisateur coller 1 à N photos de fo
 
 Accessibles au clavier (`Tab` + `Enter/Space`), `aria-label` explicite ("Déplacer vers la gauche", "Mettre en photo de couverture", etc.).
 
-### 5.2 Feed — Layout adaptatif
+### 5.2 Feed : Layout adaptatif
 
 Basé purement sur le **nombre de photos** du post, pas sur leur format. Aucune photo n'est rognée en aveugle : on utilise `object-cover` dans des cadres au **ratio figé** calculé pour accueillir dignement tous les formats courants.
 
@@ -209,13 +209,13 @@ created_at      timestamptz
 
 ### 6.2 Colonnes supprimées (vs v2)
 
-- `media.crop_data` — supprimé (pas de crop non-destructif côté feed).
-- `media.format` (enum landscape/portrait/square) — supprimé, déduit du `ratio`.
-- `posts.media_format` — supprimé (un post n'a plus de format unique).
+- `media.crop_data` : supprimé (pas de crop non-destructif côté feed).
+- `media.format` (enum landscape/portrait/square) : supprimé, déduit du `ratio`.
+- `posts.media_format` : supprimé (un post n'a plus de format unique).
 
 ### 6.3 Contraintes
 
-- `CHECK (display_order BETWEEN 0 AND 3)` — max 4 photos.
+- `CHECK (display_order BETWEEN 0 AND 3)` : max 4 photos.
 - Trigger `BEFORE INSERT OR UPDATE` garantissant **exactement une cover par post** (auto-cover = display_order min si aucune).
 - Cascade delete sur `posts`.
 
@@ -371,21 +371,21 @@ Events analytics à ajouter (Plausible custom events) : `photo_added`, `photo_re
 
 ## 11. Vision long terme
 
-**v3 (ce PRD — Sprint 1-2, Q2 2026)** : simplicité radicale, MVP photo-first, sortie beta.
+**v3 (ce PRD : Sprint 1-2, Q2 2026)** : simplicité radicale, MVP photo-first, sortie beta.
 
-**v4 (Sprint 3-4, Q3 2026) — édition opt-in :**
+**v4 (Sprint 3-4, Q3 2026) : édition opt-in :**
 
 - Modal édition simple : crop libre, rotation 90°, alt-text.
 - Persistance non-destructive (réintroduction éventuelle de `crop_data` si usage justifié).
 - Filtres légers (luminosité/contraste uniquement, pas de style Instagram).
 
-**v5 (Q4 2026) — multimédia :**
+**v5 (Q4 2026) : multimédia :**
 
 - Vidéo courte (≤ 15 s, WebM/MP4).
 - Séries chronologiques (burst terrain).
 - EXIF sélectif (date opt-in, GPS toujours retiré).
 
-**v6+ — intelligence :**
+**v6+ : intelligence :**
 
 - Suggestion de cover basée sur netteté/saillance (offline, client-side).
 - Clustering visuel pour carnets (regrouper photos d'une même sortie).
@@ -395,32 +395,32 @@ Events analytics à ajouter (Plausible custom events) : `photo_added`, `photo_re
 
 ## 12. Roadmap & découpage
 
-### Sprint 1 — Refonte contribution (2 semaines)
+### Sprint 1 : Refonte contribution (2 semaines)
 
-- [ ] **T1** — Migration SQL `20260422_photo_management_v3.sql` (drop v2, add v3, trigger cover).
-- [ ] **T2** — Regen `src/types/supabase.ts`, retirer les `as any`.
-- [ ] **T3** — Refactor `EncounterStep1.tsx` : grille uniforme 4 slots, boutons réordonner, badge cover, plus de détection format ni hero.
-- [ ] **T4** — Simplifier `ContributeEncounterForm.tsx` : retirer `aspectRatio`, `photoEdits`. Pipeline = detect → strip → upload + `displayOrder` + `isCover`.
-- [ ] **T5** — Supprimer `PhotoEditModal.tsx` + `photoEdits.ts`.
-- [ ] **T6** — Mettre à jour `mediaService.ts` + `postService.ts`.
-- [ ] **T7** — Finir `stripExif.ts` : intégrer `computeDownscale` dans le canvas (chantier en cours).
+- [ ] **T1** : Migration SQL `20260422_photo_management_v3.sql` (drop v2, add v3, trigger cover).
+- [ ] **T2** : Regen `src/types/supabase.ts`, retirer les `as any`.
+- [ ] **T3** : Refactor `EncounterStep1.tsx` : grille uniforme 4 slots, boutons réordonner, badge cover, plus de détection format ni hero.
+- [ ] **T4** : Simplifier `ContributeEncounterForm.tsx` : retirer `aspectRatio`, `photoEdits`. Pipeline = detect → strip → upload + `displayOrder` + `isCover`.
+- [ ] **T5** : Supprimer `PhotoEditModal.tsx` + `photoEdits.ts`.
+- [ ] **T6** : Mettre à jour `mediaService.ts` + `postService.ts`.
+- [ ] **T7** : Finir `stripExif.ts` : intégrer `computeDownscale` dans le canvas (chantier en cours).
 
-### Sprint 2 — Feed & viewer (2 semaines)
+### Sprint 2 : Feed & viewer (2 semaines)
 
-- [ ] **T8** — Créer `FeedPhotoLayout.tsx` + 4 variantes CSS (`.feed-layout-1/2/3/4`).
-- [ ] **T9** — Remplacer `ImageSlider.tsx` par `FeedPhotoLayout` dans `FeedPost.tsx`.
-- [ ] **T10** — Adapter `FeedGallery.tsx` (mosaïque galerie).
-- [ ] **T11** — Ajouter pinch-zoom + swipe dans `PhotoLightbox.tsx`.
-- [ ] **T12** — Retirer `cropData` de `LightboxImage`, `MockPost.images`, `mediaService`.
-- [ ] **T13** — Instrumenter les 7 events Plausible.
+- [ ] **T8** : Créer `FeedPhotoLayout.tsx` + 4 variantes CSS (`.feed-layout-1/2/3/4`).
+- [ ] **T9** : Remplacer `ImageSlider.tsx` par `FeedPhotoLayout` dans `FeedPost.tsx`.
+- [ ] **T10** : Adapter `FeedGallery.tsx` (mosaïque galerie).
+- [ ] **T11** : Ajouter pinch-zoom + swipe dans `PhotoLightbox.tsx`.
+- [ ] **T12** : Retirer `cropData` de `LightboxImage`, `MockPost.images`, `mediaService`.
+- [ ] **T13** : Instrumenter les 7 events Plausible.
 
-### Sprint 3 — Polish & validation (1 semaine)
+### Sprint 3 : Polish & validation (1 semaine)
 
-- [ ] **T14** — Test matrix : iOS Safari, Android Chrome, Firefox ESR, desktop.
-- [ ] **T15** — Audit a11y (axe-core sur Step1 + Lightbox + Feed).
-- [ ] **T16** — Audit perf (Lighthouse mobile 4G, `vite build --report`).
-- [ ] **T17** — Revue sécu strip EXIF (photo GPS connue → vérifier Storage).
-- [ ] **T18** — Release notes v3 + communication beta testers.
+- [ ] **T14** : Test matrix : iOS Safari, Android Chrome, Firefox ESR, desktop.
+- [ ] **T15** : Audit a11y (axe-core sur Step1 + Lightbox + Feed).
+- [ ] **T16** : Audit perf (Lighthouse mobile 4G, `vite build --report`).
+- [ ] **T17** : Revue sécu strip EXIF (photo GPS connue → vérifier Storage).
+- [ ] **T18** : Release notes v3 + communication beta testers.
 
 ### Done when
 
@@ -431,7 +431,7 @@ Events analytics à ajouter (Plausible custom events) : `photo_added`, `photo_re
 
 ---
 
-## Annexe A — Décisions architecturales (ADR abrégés)
+## Annexe A : Décisions architecturales (ADR abrégés)
 
 **ADR-001 : Pas de `crop_data` en MVP.** Rationale : aucun usage validé ; complexité backend + rendering pour valeur incertaine. Réversible (v4 peut le réintroduire).
 

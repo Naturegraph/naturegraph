@@ -1,5 +1,5 @@
 // ============================================
-// Buttons — Naturegraph (Phase 1, simplifié)
+// Buttons : Naturegraph (Phase 1, simplifié)
 // ============================================
 //
 // 2026-05-19 (Nicolas) : retour terrain sur la version 3D btn-press
@@ -18,7 +18,7 @@
 // éviter de migrer les 12 fichiers consommateurs (rétrocompatibilité).
 // Renommage éventuel en `btn-simple` à voir en Phase 2 cleanup.
 //
-// BATCH 58 (2026-05-15) — règle conservée :
+// BATCH 58 (2026-05-15) : règle conservée :
 // :hover/:active/:focus-visible sont scopées avec :not(:disabled) pour
 // qu'un bouton désactivé ne réagisse plus aux interactions. Combine avec
 // disabled:opacity-50 + disabled:cursor-not-allowed (Tailwind, baseClasses

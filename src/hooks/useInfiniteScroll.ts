@@ -1,5 +1,5 @@
 /**
- * useInfiniteScroll — Sentinelle IntersectionObserver pour scroll infini
+ * useInfiniteScroll : Sentinelle IntersectionObserver pour scroll infini
  * =====================================================================
  *
  * V1.1.4 NG-026 (Nicolas 2026-06-03) : hook generique reutilisable pour

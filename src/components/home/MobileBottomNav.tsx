@@ -1,5 +1,5 @@
 /**
- * MobileBottomNav — Barre de navigation mobile fixée en bas de l'écran
+ * MobileBottomNav : Barre de navigation mobile fixée en bas de l'écran
  *
  * Affiche 5 éléments : Menu | Localisation | [FAB Contribuer] | Recherche | Profil.
  *
@@ -55,7 +55,7 @@ interface MobileBottomNavProps {
 }
 
 /**
- * Barre de navigation mobile — fixée en bas, visible uniquement sur petits écrans.
+ * Barre de navigation mobile : fixée en bas, visible uniquement sur petits écrans.
  * Gère la navigation entre les sections principales et l'état actif.
  */
 export function MobileBottomNav({
@@ -89,7 +89,7 @@ export function MobileBottomNav({
     ].join(' ')
   }
 
-  /** Taille des icônes — 24px Figma (size-6). Stroke 2 par défaut. */
+  /** Taille des icônes : 24px Figma (size-6). Stroke 2 par défaut. */
   const iconSize = 'size-6'
 
   return (
@@ -99,7 +99,7 @@ export function MobileBottomNav({
     >
       <div className="flex items-end justify-around h-14">
         {/* ── Menu navigation ──────────────────────────────────────────────── */}
-        {/* TODO [UX] — Ouvre un drawer de navigation latéral sur mobile (remplace la sidebar desktop) */}
+        {/* TODO [UX] : Ouvre un drawer de navigation latéral sur mobile (remplace la sidebar desktop) */}
         <button
           type="button"
           onClick={onMenuClick}
@@ -111,7 +111,7 @@ export function MobileBottomNav({
 
         {/* ── Localisation ─────────────────────────────────────────────────
             Nicolas 2026-05-22 : on garde TOUJOURS la même icône `Locate`
-            pour la cohérence visuelle — seul le style change quand
+            pour la cohérence visuelle : seul le style change quand
             l'utilisateur est localisé (couleur primary via itemClasses +
             strokeWidth plus épais pour effet « solid violet »). Plus de
             switch MapPin/Locate qui cassait la mémoire visuelle. */}
@@ -129,7 +129,7 @@ export function MobileBottomNav({
           <Locate className={iconSize} strokeWidth={locationLabel ? 3 : 2} aria-hidden="true" />
         </button>
 
-        {/* ── Contribuer (FAB) — toujours visible ──────────────────────────────
+        {/* ── Contribuer (FAB) : toujours visible ──────────────────────────────
             Invité : click → navigate('/login') (incite à se connecter avant de partager).
             Authentifié : click → onContributeClick (ouvre ContributeModal).
             On garde le FAB violet dans les deux cas pour éviter un vide moche
@@ -166,7 +166,7 @@ export function MobileBottomNav({
         </button>
 
         {/* ── Profil ───────────────────────────────────────────────────────────
-            Authentifié : ouvre le ProfileMenu (bottom sheet) — cohérence desktop.
+            Authentifié : ouvre le ProfileMenu (bottom sheet) : cohérence desktop.
             Le menu contient Mon profil / Paramètres / Thème / Accessibilité / Déconnexion.
             Si onProfileClick non fourni, fallback navigation directe (rétrocompat).
             Invité : navigation directe vers /login. */}
@@ -189,7 +189,7 @@ export function MobileBottomNav({
           aria-haspopup={isAuthenticated && onProfileClick ? 'dialog' : undefined}
         >
           {isAuthenticated ? (
-            /* Avatar 40 px (size-10) — Nicolas 2026-05-22 : agrandi depuis
+            /* Avatar 40 px (size-10) : Nicolas 2026-05-22 : agrandi depuis
                size-6 (24 px) pour une meilleure lisibilité et un hit target
                plus confortable sur mobile (WCAG 2.5.5). */
             <img

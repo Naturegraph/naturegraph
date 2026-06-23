@@ -1,5 +1,5 @@
 /**
- * CityAutocomplete — Saisie ville avec autocomplete ARIA
+ * CityAutocomplete : Saisie ville avec autocomplete ARIA
  * =======================================================
  * Pattern ARIA combobox (WAI-ARIA 1.2) :
  *   - role="combobox" sur l'input
@@ -215,7 +215,7 @@ export function CityAutocomplete({
           className="flex-1 min-w-0 bg-transparent focus:outline-none text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] text-sm disabled:cursor-not-allowed"
         />
 
-        {/* Bouton effacer — visible uniquement si sélection active */}
+        {/* Bouton effacer : visible uniquement si sélection active */}
         {value && (
           <button
             type="button"

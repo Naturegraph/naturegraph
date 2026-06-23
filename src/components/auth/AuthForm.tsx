@@ -1,5 +1,5 @@
 /**
- * AuthForm — Organism partagé Login + Signup
+ * AuthForm : Organism partagé Login + Signup
  * =============================================
  * Factorise le pattern commun aux deux formulaires d'authentification :
  *   - Logo + titre + description
@@ -27,7 +27,7 @@ import { AuthHeroPhoto } from './AuthHeroPhoto'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-/** Résultat normalisé d'un submit auth — un seul format pour Login + Signup */
+/** Résultat normalisé d'un submit auth : un seul format pour Login + Signup */
 export interface AuthSubmitResult {
   success: boolean
   error?: string
@@ -52,9 +52,9 @@ export interface AuthFormProps {
   inputLabel: string
   /** Helper text optionnel sous l'input */
   inputHelperText?: string
-  /** Type HTML de l'input — défaut: email */
+  /** Type HTML de l'input : défaut: email */
   inputType?: 'email' | 'text'
-  /** autocomplete HTML — défaut: email */
+  /** autocomplete HTML : défaut: email */
   autoComplete?: string
   /** Label du bouton submit principal */
   submitLabel: string
@@ -67,7 +67,7 @@ export interface AuthFormProps {
   /** Label du séparateur central (ex: "ou continuer avec") */
   orContinueLabel: string
   /**
-   * Handler de submit — reçoit la valeur trimée et, si rememberMe est configuré,
+   * Handler de submit : reçoit la valeur trimée et, si rememberMe est configuré,
    * l'état de la checkbox "Se souvenir de moi".
    */
   onSubmit: (value: string, rememberMe: boolean) => Promise<AuthSubmitResult>
@@ -184,7 +184,7 @@ export function AuthForm({
             disabled={isLoading}
           />
 
-          {/* Checkbox "Se souvenir de moi" — affichée uniquement sur login */}
+          {/* Checkbox "Se souvenir de moi" : affichée uniquement sur login */}
           {rememberMe && (
             <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">
               <input
@@ -215,7 +215,7 @@ export function AuthForm({
         </form>
 
         {/*
-          ⚠️ BETA — OAuth providers caches (BATCH 49, decision Nicolas 2026-05-14)
+          ⚠️ BETA : OAuth providers caches (BATCH 49, decision Nicolas 2026-05-14)
           ═══════════════════════════════════════════════════════════════════════
           Pendant la beta privee, on cache les boutons "Continuer avec Google/Apple/Facebook"
           ET le separateur "ou continuer avec" car les flux OAuth ne sont pas encore

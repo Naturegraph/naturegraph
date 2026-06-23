@@ -1,11 +1,11 @@
 /**
- * send-beta-invite — Invitation beta via Supabase Auth
+ * send-beta-invite : Invitation beta via Supabase Auth
  *
  * Demande Nicolas 2026-05-20 : l'invitation doit partir par le MÊME canal que
  * les emails d'authentification (le code de login). On utilise donc
  * `auth.admin.inviteUserByEmail` : Supabase Auth crée le compte invité et
  * envoie lui-même l'email d'invitation via son SMTP configuré. Aucune
- * dépendance Resend / SMTP côté Edge Function — zéro config email à part.
+ * dépendance Resend / SMTP côté Edge Function : zéro config email à part.
  *
  * Flow :
  *   1. Vérifie que l'appelant est un admin actif (JWT → admin_users)
@@ -22,11 +22,11 @@
  *   6. Retourne { ok, sent, reason? }
  *
  * Renvoi : si l'invité n'a pas encore activé son compte, on supprime le compte
- * en attente puis on ré-invite — garantit un lien d'invitation frais.
+ * en attente puis on ré-invite : garantit un lien d'invitation frais.
  *
  * L'invité clique le lien de l'email → session créée → arrive sur /onboarding.
  *
- * verify_jwt : true — action admin authentifiée.
+ * verify_jwt : true : action admin authentifiée.
  *
  * Variables d'env (injectées par Supabase) :
  *   - SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY
@@ -49,7 +49,7 @@ const corsHeaders = {
 interface InviteRequest {
   /** UUID de l'entrée beta_waitlist à inviter. */
   waitlist_id?: string
-  /** Origine de l'app appelante (window.location.origin) — base du lien de retour. */
+  /** Origine de l'app appelante (window.location.origin) : base du lien de retour. */
   app_origin?: string
 }
 
@@ -95,7 +95,7 @@ function resolveAppOrigin(origin: string | undefined): string {
 function reasonToMessage(reason: InviteResponse['reason']): string {
   switch (reason) {
     case 'rate_limited':
-      return "Trop d'envois en peu de temps — réessaie dans quelques minutes."
+      return "Trop d'envois en peu de temps : réessaie dans quelques minutes."
     case 'invite_error':
       return "Supabase n'a pas pu envoyer l'email d'invitation."
     default:
@@ -110,7 +110,7 @@ function reasonToMessage(reason: InviteResponse['reason']): string {
  *
  * Note : la collision sur `beta_access_keys.code` (UNIQUE) est extrêmement
  * improbable (~36^8 = 2,8e12 combinaisons). L'INSERT remontera l'erreur si
- * collision et le caller peut retry — non géré ici pour la simplicité.
+ * collision et le caller peut retry : non géré ici pour la simplicité.
  */
 function generateBetaCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -124,7 +124,7 @@ function generateBetaCode(): string {
 
 /** Batch dédié aux invitations individuelles waitlist (vs vagues admin manuelles). */
 const WAITLIST_INVITE_BATCH = 99
-/** Durée de validité de la clé personnelle d'invitation (1 an — beta longue). */
+/** Durée de validité de la clé personnelle d'invitation (1 an : beta longue). */
 const INVITE_KEY_EXPIRES_DAYS = 365
 
 Deno.serve(async (req: Request) => {
@@ -232,9 +232,9 @@ Deno.serve(async (req: Request) => {
       })
       keyErr = insertRes.error
       if (keyErr) {
-        // Très improbable (collision UNIQUE sur code) — on log et on bascule
+        // Très improbable (collision UNIQUE sur code) : on log et on bascule
         // l'invitation sans code (l'email partira mais sans {{ .Data.beta_code }}).
-        // Le user pourra toujours reentrer via login OTP — fail soft.
+        // Le user pourra toujours reentrer via login OTP : fail soft.
         console.error('[send-beta-invite] beta key insert failed:', keyErr.message)
       }
     }
@@ -270,7 +270,7 @@ Deno.serve(async (req: Request) => {
         )
         if (existing?.email_confirmed_at) {
           // Déjà membre actif → rien à envoyer, on ne touche pas la waitlist.
-          // On supprime la clé qu'on venait de créer (orpheline) — mais JAMAIS
+          // On supprime la clé qu'on venait de créer (orpheline) : mais JAMAIS
           // une clé réutilisée (pré-existante), qui doit rester valide.
           if (!keyErr && !reusedExistingKey) {
             await admin.from('beta_access_keys').delete().eq('code', inviteeBetaCode)
@@ -290,7 +290,7 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Si l'envoi a échoué : on supprime la clé créée pour rien — mais jamais
+    // Si l'envoi a échoué : on supprime la clé créée pour rien : mais jamais
     // une clé réutilisée (pré-existante), qui doit rester valide pour un
     // prochain renvoi.
     if (!sent && !keyErr && !reusedExistingKey) {
@@ -315,7 +315,7 @@ Deno.serve(async (req: Request) => {
     }
     return json({ ok: false, sent: false, reason }, reason === 'rate_limited' ? 429 : 200)
   } catch (err) {
-    // Erreur journalisée côté serveur uniquement — on ne renvoie pas le détail
+    // Erreur journalisée côté serveur uniquement : on ne renvoie pas le détail
     // au client (cf. CodeQL « information exposure through a stack trace »).
     console.error('[send-beta-invite] unexpected error:', err)
     return json({ ok: false, sent: false, reason: 'server_error' }, 500)

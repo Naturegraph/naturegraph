@@ -1,5 +1,5 @@
 /**
- * OnboardingStep3 — Étape 3 : Motivations
+ * OnboardingStep3 : Étape 3 : Motivations
  *
  * Multi-select de 4 motivations (checkboxes custom).
  * Layout identique aux étapes précédentes (730px min-height).
@@ -66,7 +66,7 @@ export function OnboardingStep3({
             </p>
           </div>
 
-          {/* Options motivations — role="group" pour regrouper sémantiquement */}
+          {/* Options motivations : role="group" pour regrouper sémantiquement */}
           <div
             role="group"
             aria-label={t('onboarding.motivations.title')}
@@ -89,7 +89,7 @@ export function OnboardingStep3({
                   ].join(' ')}
                 >
                   <div className="flex gap-2 md:gap-3 h-[52px] items-center px-5 md:px-6 w-full">
-                    {/* Checkbox visuelle — décorative (aria-pressed porte l'état) */}
+                    {/* Checkbox visuelle : décorative (aria-pressed porte l'état) */}
                     <div
                       aria-hidden="true"
                       className={`flex items-center justify-center rounded-sm shrink-0 size-5 ${

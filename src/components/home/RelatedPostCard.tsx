@@ -1,5 +1,5 @@
 /**
- * RelatedPostCard — Carte compacte d'observation recommandee
+ * RelatedPostCard : Carte compacte d'observation recommandee
  * ============================================================
  *
  * Utilisee dans la section "Observations susceptibles de t'interesser" de la
@@ -30,7 +30,7 @@ import { TAXONOMIC_GROUP_CONFIG } from '@/constants/commonSpecies'
 import { buildPostPath } from '@/lib/postSlug'
 import type { MockPost } from './FeedPost'
 
-// Chip passif (display only) — meme apparence que les chips FeedPost mais
+// Chip passif (display only) : meme apparence que les chips FeedPost mais
 // sans interaction (la carte entiere est deja un lien).
 const CHIP_CLASS =
   'bg-primary-light text-foreground text-sm font-bold px-3 py-1.5 rounded-full leading-tight inline-flex items-center'
@@ -77,7 +77,7 @@ export function RelatedPostCard(post: MockPost) {
       className="group flex flex-col rounded-card bg-background border-[0.5px] border-border overflow-hidden hover:border-primary/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
     >
       <div className="flex flex-col gap-3 p-4">
-        {/* Header auteur — passif (avatar + nom + type/date/lieu) */}
+        {/* Header auteur : passif (avatar + nom + type/date/lieu) */}
         <div className="flex items-center gap-3">
           <span className="relative size-10 shrink-0 rounded-full overflow-hidden">
             <img
@@ -148,7 +148,7 @@ export function RelatedPostCard(post: MockPost) {
         )}
       </div>
 
-      {/* Photo de couverture — ratio fixe pour une hauteur de carte constante */}
+      {/* Photo de couverture : ratio fixe pour une hauteur de carte constante */}
       <div className="px-4 pb-4">
         <div className="relative aspect-[3/2] w-full overflow-hidden rounded-md bg-muted">
           <img

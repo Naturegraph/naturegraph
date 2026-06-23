@@ -1,5 +1,5 @@
 /**
- * BetaAuthLayout — Layout partage des ecrans beta (Welcome + Waitlist)
+ * BetaAuthLayout : Layout partage des ecrans beta (Welcome + Waitlist)
  *
  * BATCH 64 (Nicolas decision 2026-05-15) : factorisation du pattern visuel
  * commun a /welcome et /waitlist, pour eviter la duplication et garantir
@@ -56,7 +56,7 @@ export function BetaAuthLayout({ children, mainId = 'main-content' }: BetaAuthLa
       />
       {!prefersReducedMotion && <AuthOrbBackground mouse={mouse} />}
 
-      {/* Carte centree — paddings/gaps reduits sur mobile pour tenir sans scroll */}
+      {/* Carte centree : paddings/gaps reduits sur mobile pour tenir sans scroll */}
       <div className="relative z-10 w-full md:w-auto flex items-center justify-center md:p-6">
         <div className="flex items-center overflow-hidden relative rounded-sm md:rounded-[32px] w-full md:w-auto">
           <div className="bg-[var(--color-bg-primary)] flex flex-col gap-4 md:gap-8 items-center justify-center overflow-hidden p-4 md:p-16 h-full w-full md:w-[512px]">

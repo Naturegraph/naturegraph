@@ -1,5 +1,5 @@
 /**
- * useFollow — Hooks React Query pour suivre / ne plus suivre un user
+ * useFollow : Hooks React Query pour suivre / ne plus suivre un user
  *
  * Voir second-agent/22.
  */
@@ -25,7 +25,7 @@ const FOLLOWING_KEY = (userId: string) => ['following', userId] as const
  * Liste les followers (migrateurs) d'un profil.
  * Utilisé par ProfileCommunity > onglet "Migrateurs".
  *
- * @param enabled (BATCH 16 / T-079) — Defaut true. Permet de "lazy load" :
+ * @param enabled (BATCH 16 / T-079) : Defaut true. Permet de "lazy load" :
  *   pour eviter de charger les deux listes en parallele a l'ouverture du
  *   ProfileCommunity, passer `enabled: activeTab === 'migrateurs'`.
  */
@@ -42,7 +42,7 @@ export function useFollowers(userId: string | undefined, enabled = true) {
  * Liste les profils suivis (migrations) par un profil.
  * Utilisé par ProfileCommunity > onglet "Migrations".
  *
- * @param enabled (BATCH 16 / T-079) — Voir doc `useFollowers`.
+ * @param enabled (BATCH 16 / T-079) : Voir doc `useFollowers`.
  */
 export function useFollowing(userId: string | undefined, enabled = true) {
   return useQuery<CommunityProfile[], Error>({

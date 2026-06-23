@@ -1,11 +1,11 @@
 /**
- * ProfileFeed — Onglet "Journal nature" du profil
+ * ProfileFeed : Onglet "Journal nature" du profil
  *
  * Affiche les observations partagées par l'utilisateur sous forme de liste.
  * Sous-onglets : Récent | Populaire (filtre côté client sur les mocks).
  * État vide : illustration hermine + message.
  *
- * TODO [BACKEND] — Remplacer par postService.getPostsByUser(userId, { sort })
+ * TODO [BACKEND] : Remplacer par postService.getPostsByUser(userId, { sort })
  */
 
 import { useState } from 'react'
@@ -116,7 +116,7 @@ export function ProfileFeed({
       {/* ── Header row : Récent/Populaire à gauche, View/Filter à droite ──
           Figma 6385:74534 (Header) avec 2 sous-blocs séparés. */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        {/* Récent / Populaire — segmented control Figma 6385:74536 */}
+        {/* Récent / Populaire : segmented control Figma 6385:74536 */}
         <div
           className="inline-flex items-center rounded-full border border-border bg-cream-lighter p-1 gap-1"
           role="group"
@@ -139,7 +139,7 @@ export function ProfileFeed({
           ))}
         </div>
 
-        {/* View toggle (list / grid) — visible mobile + desktop.
+        {/* View toggle (list / grid) : visible mobile + desktop.
             Nicolas 2026-05-22 : ancienne version `hidden md:inline-flex` partait
             du principe que la HomeNavbar exposait ces contrôles aussi sur le
             profil, mais elle ne le fait que sur la home. Résultat : un user
@@ -209,7 +209,7 @@ export function ProfileFeed({
           </div>
         )
       ) : (
-        /* État vide — Figma 6385:77220 (desktop) / 6385:74690 (mobile).
+        /* État vide : Figma 6385:77220 (desktop) / 6385:74690 (mobile).
            Réutilise <ProfileEmptyState /> pour cohérence DS. */
         <ProfileEmptyState
           title={t('profile.journal.noObsTitle', {

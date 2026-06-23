@@ -1,8 +1,8 @@
 /**
- * OnboardingStep4 — Étape 4 : Choix du nom d'utilisateur
+ * OnboardingStep4 : Étape 4 : Choix du nom d'utilisateur
  *
  * Unique étape finale de l'onboarding : saisie + validation du pseudo.
- * La localisation est intentionnellement absente de l'onboarding — elle
+ * La localisation est intentionnellement absente de l'onboarding : elle
  * sera proposée progressivement in-app après découverte du produit.
  *
  * Validation :
@@ -35,14 +35,14 @@ import {
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
 /**
- * Liste complète des mots bannis côté client — 434 entrées.
+ * Liste complète des mots bannis côté client : 434 entrées.
  * Couvre : noms système réservés, vulgarités FR/EN/ES, termes discriminatoires,
  * contournements leetspeak courants, termes sexuels explicites.
  *
  * Détection via normalisation : retire . et _ puis compare en minuscules.
  * Ex : "f.u.c.k" → "fuck" ❌  |  "ad_min" → "admin" ❌  |  "nature" → "nature" ✅
  *
- * TODO [BACKEND] — Remplacer par une requête à une table `banned_usernames`
+ * TODO [BACKEND] : Remplacer par une requête à une table `banned_usernames`
  *   gérée par les admins (Supabase table avec RLS read-only pour tous).
  *   La vérification finale doit toujours se faire côté serveur (RLS + trigger DB).
  *   Le back doit enrichir la normalisation :
@@ -461,7 +461,7 @@ interface OnboardingStep4Props {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function validateFormat(username: string): UsernameError {
-  // Format de base délégué au util partagé — source de vérité unique
+  // Format de base délégué au util partagé : source de vérité unique
   // (lib/usernameValidation.ts) utilisée aussi par EditInfoTab.
   const baseError = validateUsernameFormat(username)
   if (baseError) return baseError
@@ -507,7 +507,7 @@ export function OnboardingStep4({
       try {
         if (supabase) {
           /**
-           * Timeout 5s — évite un blocage si Supabase est en veille (free tier pausé).
+           * Timeout 5s : évite un blocage si Supabase est en veille (free tier pausé).
            * En cas de timeout ou d'erreur réseau, on laisse passer : la contrainte
            * d'unicité côté DB bloquera les doublons au moment du upsert.
            */
@@ -530,7 +530,7 @@ export function OnboardingStep4({
           setServerError(taken.includes(username.toLowerCase()) ? 'alreadyTaken' : null)
         }
       } catch {
-        // Timeout ou erreur réseau — on considère le pseudo disponible
+        // Timeout ou erreur réseau : on considère le pseudo disponible
         setServerError(null)
       } finally {
         setIsChecking(false)
@@ -562,7 +562,7 @@ export function OnboardingStep4({
 
   const bgClass = () => {
     if (username.length === 0) return 'bg-[var(--color-bg-primary)]'
-    // Fond erreur léger via token — error-bg défini dans les deux thèmes
+    // Fond erreur léger via token : error-bg défini dans les deux thèmes
     if (error && hasTyped) return 'bg-[var(--color-error-bg)]'
     return 'bg-[var(--color-action-light)]'
   }

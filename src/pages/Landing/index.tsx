@@ -1,5 +1,5 @@
 /**
- * Landing Page — Page d'accueil publique de Naturegraph
+ * Landing Page : Page d'accueil publique de Naturegraph
  * =====================================================
  * Assemblage modulaire de toutes les sections.
  * Chaque section est un composant dédié, réutilisant les tokens

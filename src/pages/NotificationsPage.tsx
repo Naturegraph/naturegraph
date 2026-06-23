@@ -1,13 +1,13 @@
 /**
- * NotificationsPage — Page dédiée /notifications
+ * NotificationsPage : Page dédiée /notifications
  *
  * EPIC 3.1 + 3.2 + 3.3 du PRD notifications
  *
  * Fonctionnalités :
  *   - Liste complète des notifications du user courant (vue notifications_with_actor)
  *   - Filtres par catégorie via tabs : Tous / Social / Espèces / Système
- *   - Pagination par curseur (created_at) — 20 par page — "Charger plus" explicite
- *     (pas de scroll infini — cf. GUIDELINES.md éco-conception)
+ *   - Pagination par curseur (created_at) : 20 par page : "Charger plus" explicite
+ *     (pas de scroll infini : cf. GUIDELINES.md éco-conception)
  *   - Bouton "Tout marquer comme lu"
  *   - Regroupement 24h identique au panel (Alice + 3 autres)
  *   - Deep-link par reference_type (post / profile / species)
@@ -18,7 +18,7 @@
  *   - Bouton "charger plus" visible clavier + aria-live pour l'état "you're all caught up"
  *
  * Eco-conception :
- *   - Pas de polling — Realtime déjà actif dans useNotifications côté panel
+ *   - Pas de polling : Realtime déjà actif dans useNotifications côté panel
  *   - LIMIT 20 par requête, pas de scroll infini
  *   - Lazy-loadée dans le router
  */
@@ -275,7 +275,7 @@ export default function NotificationsPage() {
           </ul>
         )}
 
-        {/* Pagination — "Charger plus" (pas de scroll infini pour éco-conception) */}
+        {/* Pagination : "Charger plus" (pas de scroll infini pour éco-conception) */}
         {grouped.length > 0 && (
           <div className="mt-6 text-center" aria-live="polite">
             {query.hasNextPage ? (

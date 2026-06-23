@@ -1,5 +1,5 @@
 /**
- * PhoneFrame — Cadre téléphone stylisé pour mockups
+ * PhoneFrame : Cadre téléphone stylisé pour mockups
  * ====================================================
  * Bordure arrondie épaisse autour d'un screenshot d'app.
  * Utilisé dans la landing pour ProductFeatures (desktop + mobile slides)
@@ -18,7 +18,7 @@ export type PhoneFrameSize = 'sm' | 'md'
 interface PhoneFrameProps {
   /** Contenu (généralement une <img>) */
   children: ReactNode
-  /** Taille prédéfinie — défaut: md */
+  /** Taille prédéfinie : défaut: md */
   size?: PhoneFrameSize
   /** Classes additionnelles pour le wrapper */
   className?: string

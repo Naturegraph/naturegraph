@@ -1,8 +1,8 @@
 /**
- * EditProfilePanel — Panneau de modification du profil
+ * EditProfilePanel : Panneau de modification du profil
  *
  * Bottom sheet sur mobile, panneau latéral fixe sur desktop.
- * Sous-composants par onglet dans ce même fichier (scope restreint — pas d'export).
+ * Sous-composants par onglet dans ce même fichier (scope restreint : pas d'export).
  * 3 onglets : Informations | Préférences | Photo de profil
  *
  * Comportement :
@@ -42,7 +42,7 @@ type EditTab = 'info' | 'prefs' | 'photo'
 export function EditProfilePanel({ profile, onClose, onSave }: EditProfilePanelProps) {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<EditTab>('info')
-  // Refs vers les tabs — utilisées par le footer Sauvegarder pour appeler
+  // Refs vers les tabs : utilisées par le footer Sauvegarder pour appeler
   // save() directement (cf. useImperativeHandle dans EditInfoTab / EditPrefsTab).
   const infoRef = useRef<EditTabHandle>(null)
   const prefsRef = useRef<EditTabHandle>(null)
@@ -87,7 +87,7 @@ export function EditProfilePanel({ profile, onClose, onSave }: EditProfilePanelP
       />
 
       {/* ── Panneau ──
-          Mobile : full-page (inset-0) — pas de bottom sheet, pas de handle
+          Mobile : full-page (inset-0) : pas de bottom sheet, pas de handle
           → cohérence avec les autres panneaux pleine page (cf. ContributeModal,
           SearchPanel) sur petits écrans.
           Desktop (md+) : panneau latéral droit 420px, pleine hauteur. */}
@@ -121,7 +121,7 @@ export function EditProfilePanel({ profile, onClose, onSave }: EditProfilePanelP
         {/* ── Navigation onglets ── Figma 6385:75440 :
             Tabs underline alignés à gauche (start-aligned, pas equal-flex).
             Active = primary + border-bottom 2px violet, inactive = foreground
-            standard sans muted (Nicolas DS — labels noirs).
+            standard sans muted (Nicolas DS : labels noirs).
             `whitespace-nowrap` + `text-sm` + `gap-5` pour que les 3 labels
             tiennent sur 1 ligne même en mobile 375px (Nicolas 2026-05-02 :
             "essayer d'avoir l'ensemble des labels sur une ligne pas 2"). */}
@@ -175,7 +175,7 @@ export function EditProfilePanel({ profile, onClose, onSave }: EditProfilePanelP
         {activeTab !== 'photo' && (
           <div className="shrink-0 border-t border-border px-5 py-4 bg-cream-lighter pb-[calc(1rem+env(safe-area-inset-bottom))] md:pb-4">
             {/* Nicolas 2026-05-22 : on appelle directement save() exposé
-                par chaque tab via useImperativeHandle — bien plus fiable
+                par chaque tab via useImperativeHandle : bien plus fiable
                 que requestSubmit() (qui échouait en prod sur certains
                 navigateurs). */}
             <button

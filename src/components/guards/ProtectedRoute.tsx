@@ -1,5 +1,5 @@
 /**
- * ProtectedRoute — Route guard pour les pages authentifiées
+ * ProtectedRoute : Route guard pour les pages authentifiées
  *
  * Redirige vers /login si l'utilisateur n'est pas connecté.
  * Affiche un spinner pendant la vérification de l'auth.
@@ -31,7 +31,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   // Si authentifié mais onboarding pas terminé, forcer le passage par /onboarding
-  // (sauf si on y est déjà — évite la boucle infinie)
+  // (sauf si on y est déjà : évite la boucle infinie)
   if (!onboardingCompleted && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />
   }

@@ -14,12 +14,12 @@
 //   - Peut aussi être déclenchée manuellement via POST sans body
 //
 // Sécurité :
-//   - Utilise SERVICE_ROLE_KEY (pas d'auth user requise — appel interne cron)
+//   - Utilise SERVICE_ROLE_KEY (pas d'auth user requise : appel interne cron)
 //   - Vérifie header secret `x-cron-secret` pour bloquer les appels publics
 //
 // Eco-conception :
 //   - Une seule requête agrégée par user, pas de N+1
-//   - LIMIT 500 users par run (pagination pour gros volumes — à augmenter si besoin)
+//   - LIMIT 500 users par run (pagination pour gros volumes : à augmenter si besoin)
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'

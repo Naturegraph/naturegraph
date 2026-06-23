@@ -1,5 +1,5 @@
 /**
- * FAQ — Questions fréquentes avec accordéon
+ * FAQ : Questions fréquentes avec accordéon
  * ==========================================
  * Image + liste de questions. Utilise ImageTextLayout (image fixed 448px desktop).
  * Accordion partagé du DS, rendu une seule fois.

@@ -1,9 +1,9 @@
 /**
- * Tests unitaires — searchService
+ * Tests unitaires : searchService
  *
  * Phase 1 (Nicolas 2026-05-19) : la source de production est species_master
  * (~200 espèces FR+QC seed initial via GBIF + Wikidata CC0). Plus de mock
- * fallback — on teste 100% sur Supabase via tests E2E Playwright.
+ * fallback : on teste 100% sur Supabase via tests E2E Playwright.
  *
  * Ces tests vérifient uniquement les comportements défensifs côté front :
  *   - Validation de la requête (longueur min)
@@ -21,7 +21,7 @@ vi.mock('@/lib/supabase', () => ({
 
 import { searchSpecies, searchProfiles } from './searchService'
 
-describe('searchSpecies — comportements défensifs', () => {
+describe('searchSpecies : comportements défensifs', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -55,7 +55,7 @@ describe('searchSpecies — comportements défensifs', () => {
   })
 })
 
-describe('searchProfiles — comportements défensifs', () => {
+describe('searchProfiles : comportements défensifs', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })

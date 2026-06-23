@@ -1,15 +1,15 @@
 /**
- * ImageTextLayout — Layout image + contenu côte à côte
+ * ImageTextLayout : Layout image + contenu côte à côte
  * ======================================================
  * Pattern récurrent dans la landing : Mission, Values, FAQ, Discord.
  * - Mobile/Tablet : empilé (image en haut)
  * - Desktop (lg+) : image et contenu côte à côte avec gap configurable
  *
  * Props :
- * - `image` : node de l'image (déjà stylée — wrapper aspect/rounded)
- * - `imagePosition` : 'left' (défaut) ou 'right' — l'image passe à droite en desktop
- * - `gap` : 'md' (default 12/20) | 'lg' (12/32) — gap responsive
- * - `align` : 'center' (défaut) ou 'start' — alignement vertical desktop
+ * - `image` : node de l'image (déjà stylée : wrapper aspect/rounded)
+ * - `imagePosition` : 'left' (défaut) ou 'right' : l'image passe à droite en desktop
+ * - `gap` : 'md' (default 12/20) | 'lg' (12/32) : gap responsive
+ * - `align` : 'center' (défaut) ou 'start' : alignement vertical desktop
  * - `imageWidth` : 'flex' (défaut, 50/50) ou 'fixed' (largeur image fixée par le caller)
  */
 

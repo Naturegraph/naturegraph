@@ -1,5 +1,5 @@
 /**
- * useProfile — Hooks React Query pour les données profil
+ * useProfile : Hooks React Query pour les données profil
  *
  * Trois variantes :
  *  - useProfile(userId)          : profil par ID (page Home, sidebar)
@@ -18,7 +18,7 @@ import {
 } from '@/services/profileService'
 import type { Profile } from '@/types/database'
 
-/** Clés de cache — permettent l'invalidation croisée (update → refresh sidebar) */
+/** Clés de cache : permettent l'invalidation croisée (update → refresh sidebar) */
 export const profileQueryKey = {
   byId: (userId: string) => ['profile', 'id', userId] as const,
   byUsername: (username: string) => ['profile', 'username', username] as const,
@@ -33,7 +33,7 @@ export function useProfile(userId: string | undefined) {
     queryKey: profileQueryKey.byId(userId ?? ''),
     queryFn: () => getProfileById(userId!),
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000, // 5 minutes — les profils changent rarement
+    staleTime: 5 * 60 * 1000, // 5 minutes : les profils changent rarement
   })
 }
 
@@ -53,7 +53,7 @@ export function useProfileByUsername(username: string | undefined) {
 /**
  * Récupère des profils suggérés pour la section "Migrateurs à suivre".
  * Activé uniquement quand l'utilisateur est connecté.
- * Cache 1 heure — les suggestions n'ont pas besoin d'être ultra-fraîches.
+ * Cache 1 heure : les suggestions n'ont pas besoin d'être ultra-fraîches.
  */
 export function useSuggestedUsers(
   currentUserId: string | undefined,

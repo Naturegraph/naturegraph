@@ -1,5 +1,5 @@
 /**
- * ContributeEncounterForm — Panel latéral Rencontre Nature (3 étapes)
+ * ContributeEncounterForm : Panel latéral Rencontre Nature (3 étapes)
  *
  * Rendu sous forme de panneau droit fixe superposé au feed (design Figma v2).
  * Sur mobile le panneau prend toute la largeur de l'écran.
@@ -28,7 +28,7 @@ import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import { toStorageTimestamp, toDateInputValue } from '@/utils/observationDate'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-// Pipeline submit factorisé — partagé avec ContributeInstantPanel pour
+// Pipeline submit factorisé : partagé avec ContributeInstantPanel pour
 // garantir que les deux flows restent strictement alignés (Nicolas
 // 2026-05-23 audit final : single source of truth pour compression,
 // upload, watchdog, rollback).
@@ -68,7 +68,7 @@ const GROUP_TO_INAT_CLASS: Record<string, string> = {
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /**
- * État du formulaire Rencontre — Figma v3 (complet) :
+ * État du formulaire Rencontre : Figma v3 (complet) :
  *   Étape 3 collecte Titre (optionnel), Description*, Date, Localisation +
  *   Options avancées repliables : habitat / météo / moment de la journée.
  *   Visibilité pilotée par le switch de localisation ; défaut 'public'.
@@ -76,7 +76,7 @@ const GROUP_TO_INAT_CLASS: Record<string, string> = {
 interface EncounterFormData {
   // Étape 1
   files: File[]
-  /** Format d'affichage choisi par l'utilisateur (Figma 6385:47324) — Paysage
+  /** Format d'affichage choisi par l'utilisateur (Figma 6385:47324) : Paysage
    *  16:9 par défaut, l'utilisateur peut basculer en Portrait 3:4 ou Carré 1:1. */
   displayFormat: DisplayFormat
   /** Métadonnées EXIF agrégées (date/GPS/time-of-day) pour l'étape 3. */
@@ -92,7 +92,7 @@ interface EncounterFormData {
   weather: WeatherCondition | ''
   habitat: HabitatType | ''
   locationName: string
-  /** Coordonnées GPS de la ville sélectionnée via autocomplete API Adresse —
+  /** Coordonnées GPS de la ville sélectionnée via autocomplete API Adresse -
    *  utilisées par le serveur pour reverse-geocoding cohérent (city, region). */
   locationLat: number | null
   locationLng: number | null
@@ -125,7 +125,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
   const { t } = useTranslation()
   const { user } = useAuth()
 
-  // Pipeline submit factorisé — identique à ContributeInstantPanel.
+  // Pipeline submit factorisé : identique à ContributeInstantPanel.
   const { submit, isSubmitting, uploadProgress, uploadError, clearError } =
     useContributePostSubmit('ContributeEncounterForm')
 
@@ -202,7 +202,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
     return restoredDraft ? { ...defaults, ...restoredDraft, files: [] } : defaults
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
-  // Gate l'affichage des erreurs inline (second-agent/30) — passe à true au
+  // Gate l'affichage des erreurs inline (second-agent/30) : passe à true au
   // premier handleSubmit ; remis à false sur navigation entre étapes.
   const [submitAttempted, setSubmitAttempted] = useState(false)
   // V1.1.4 NG-024 (Nicolas 2026-06-01) : photos existantes en mode edition.
@@ -218,7 +218,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
   // du post + sa première observation (species) et on initialise le form
   // pour que l'utilisateur retrouve son contenu et puisse corriger.
   // Les photos existantes ne sont PAS re-injectées dans `files` (on ne sait
-  // pas reconstruire un File depuis une URL distante facilement) — les
+  // pas reconstruire un File depuis une URL distante facilement) : les
   // nouvelles photos uploadées seront ajoutées en append.
   useEffect(() => {
     if (!editingPostId || !supabase) return
@@ -227,7 +227,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
     // Ici on charge les valeurs du post pour pre-remplir le form.
     ;(async () => {
       // Cast `any` car les types supabase générés sont en retard sur
-      // certaines colonnes (individuals_count, display_format) — runtime OK.
+      // certaines colonnes (individuals_count, display_format) : runtime OK.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: postRaw, error } = await (supabase as any)
         .from('posts')
@@ -577,7 +577,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
     const cityFromInput = locSegments[0] || undefined
     const regionFromInput = locSegments[locSegments.length - 1] || undefined
 
-    // Délégation au hook factorisé — gère watchdog, timeouts, compression,
+    // Délégation au hook factorisé : gère watchdog, timeouts, compression,
     // strip EXIF, upload, rollback, invalidation feed. La proposition
     // d'identification collaborative est lancée dans onSuccess avec le
     // post.id retourné par le hook.
@@ -624,7 +624,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
               notes: "Aide à l'identification demandée par l'auteur",
             })
           } catch (err) {
-            // Best-effort — l'utilisateur pourra renouveler la demande
+            // Best-effort : l'utilisateur pourra renouveler la demande
             // depuis le post si la proposition n'a pas été créée.
             console.warn('[ContributeEncounterForm] createProposal failed:', err)
           }
@@ -718,7 +718,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
 
   return (
     <>
-      {/* ── Backdrop — clic ferme le panneau ────────────────────────────── */}
+      {/* ── Backdrop : clic ferme le panneau ────────────────────────────── */}
       <div
         className="fixed inset-0 z-40 bg-foreground/30 backdrop-blur-sm md:block hidden"
         aria-hidden="true"
@@ -742,7 +742,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
             rond 32px fond #F0F0F5, progress 3 segments h-1.5 rounded-full. */}
         <div className="shrink-0 pt-6 px-4 pb-3 flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
-            {/* Badge type — pill teal avec label */}
+            {/* Badge type : pill teal avec label */}
             <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-teal-dark text-white text-sm leading-none">
               <span className="font-body">{t('contribute.encounterTitle')}</span>
             </span>
@@ -760,8 +760,8 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
                 type="button"
                 onClick={onClose}
                 aria-label={t('common.close')}
-                /* Figma 6385:47503 — bg Content/Neutral/Primary-Inverse #F0F0F5
-                   (très clair, subtil — pas le `bg-muted` plus foncé). */
+                /* Figma 6385:47503 : bg Content/Neutral/Primary-Inverse #F0F0F5
+                   (très clair, subtil : pas le `bg-muted` plus foncé). */
                 className="size-8 shrink-0 rounded-full bg-[#f0f0f5] hover:bg-[#e5e5ea] flex items-center justify-center text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 <X className="size-5" strokeWidth={2} aria-hidden="true" />
@@ -769,7 +769,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
             </div>
           </div>
 
-          {/* Barre de progression — 3 segments h-1.5 rounded-full, gap-1 (4px) */}
+          {/* Barre de progression : 3 segments h-1.5 rounded-full, gap-1 (4px) */}
           <div
             className="flex gap-1"
             role="progressbar"
@@ -951,7 +951,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
           </form>
         </div>
 
-        {/* Toast erreur upload (Figma node 6385:56334) — affiché au-dessus du
+        {/* Toast erreur upload (Figma node 6385:56334) : affiché au-dessus du
             footer quand l'upload échoue. Pas de toast de succès : la photo
             apparaît dans le feed → confirmation visuelle suffisante. */}
         {uploadError && (
@@ -986,7 +986,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
           </div>
         )}
 
-        {/* Toast progression upload (Figma node 6385:48726) — informe l'user
+        {/* Toast progression upload (Figma node 6385:48726) : informe l'user
             sur connexion lente. Affiché uniquement durant le submit, masqué
             dès que la promesse upload résout. */}
         {uploadProgress && (
@@ -1017,7 +1017,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
                 </p>
               </div>
             </div>
-            {/* Barre de progression — bleu primary, % à droite */}
+            {/* Barre de progression : bleu primary, % à droite */}
             <div className="px-4 pb-3 flex items-center gap-2">
               <div className="flex-1 h-1 rounded-full bg-border overflow-hidden">
                 <div
@@ -1036,7 +1036,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
 
         {/* ── Footer sticky ──────────────────────────────────────────────── */}
         <div className="shrink-0 border-t border-border bg-background px-5 py-4 flex flex-col gap-2">
-          {/* Erreur « post vide » (retour testeur 2026-06-11) — affichee apres
+          {/* Erreur « post vide » (retour testeur 2026-06-11) : affichee apres
               une tentative de publication d'un post sans aucun contenu. */}
           {submitAttempted && errors.empty && (
             <p role="alert" className="text-xs text-[var(--color-error)] text-center">
@@ -1044,7 +1044,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
             </p>
           )}
           <div className="flex items-center gap-3">
-            {/* Bouton retour — BATCH 99 : style btn-press-secondary (cohérence DS) */}
+            {/* Bouton retour : BATCH 99 : style btn-press-secondary (cohérence DS) */}
             <button
               type="button"
               onClick={handleBack}
@@ -1054,10 +1054,10 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
               <ArrowLeft className="size-4" aria-hidden="true" />
             </button>
 
-            {/* CTA principal — composant Button DS (effet btn-press 3D).
+            {/* CTA principal : composant Button DS (effet btn-press 3D).
                 IMPORTANT (second-agent/34) :
                 - TOUS les boutons sont type="button" (jamais "submit"). La
-                  soumission ne passe PAS par le submit natif HTML — elle est
+                  soumission ne passe PAS par le submit natif HTML : elle est
                   déclenchée par onClick → handleSubmit, ce qui élimine le risque
                   d'auto-soumission lors de la transition step 2 → step 3
                   (React réutilisait le même <button> DOM en changeant le type).
@@ -1107,7 +1107,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
                 aria-busy={isSubmitting}
                 onClick={(e) => {
                   // Soumission programmatique via React (pas de form natif HTML)
-                  // — handleSubmit accepte un FormEvent-like mais on lui passe
+                  // : handleSubmit accepte un FormEvent-like mais on lui passe
                   // une SyntheticEvent qui supporte preventDefault.
                   handleSubmit(e as unknown as React.FormEvent)
                 }}
@@ -1132,7 +1132,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
             )}
           </div>
 
-          {/* Lien "continuer sans photo" — étape 1 uniquement */}
+          {/* Lien "continuer sans photo" : étape 1 uniquement */}
           {step === 1 && (
             <button
               type="button"

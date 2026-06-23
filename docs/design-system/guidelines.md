@@ -1,13 +1,13 @@
-# Guidelines — Design System Naturegraph
+# Guidelines : Design System Naturegraph
 
 ## Règles d'or
 
-1. **Figma = source de vérité** — toute divergence est un bug à corriger côté code
-2. **Aucune valeur en dur** — toujours `var(--token-*)` ou utility Tailwind mappée sur token
-3. **Pill-first** — boutons `rounded-full` par défaut
-4. **A11y WCAG AA** — contraste 4.5:1, focus visible, navigation clavier complète
-5. **Éco-conception** — < 300KB JS gzip, lazy loading images, pas d'animation superflue
-6. **Composants < 200 lignes** — sinon découper
+1. **Figma = source de vérité** : toute divergence est un bug à corriger côté code
+2. **Aucune valeur en dur** : toujours `var(--token-*)` ou utility Tailwind mappée sur token
+3. **Pill-first** : boutons `rounded-full` par défaut
+4. **A11y WCAG AA** : contraste 4.5:1, focus visible, navigation clavier complète
+5. **Éco-conception** : < 300KB JS gzip, lazy loading images, pas d'animation superflue
+6. **Composants < 200 lignes** : sinon découper
 
 ## Naming
 

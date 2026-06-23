@@ -1,5 +1,5 @@
 /**
- * Navbar — Navigation principale de la landing page
+ * Navbar : Navigation principale de la landing page
  * ===================================================
  * Intégrée dans le hero (fond teal transparent).
  * Menu burger avec overlay sur mobile/tablet.
@@ -18,7 +18,7 @@ interface NavbarProps {
 }
 
 /**
- * Bouton de navigation interne — style transparent partagé entre desktop et mobile.
+ * Bouton de navigation interne : style transparent partagé entre desktop et mobile.
  * Évite la duplication de classes longues sur 2 emplacements (header desktop + overlay mobile).
  */
 function NavLinkButton({
@@ -96,7 +96,7 @@ export function Navbar({ onNavigate }: NavbarProps) {
         ))}
       </nav>
 
-      {/* Desktop CTA — language switcher : voir docs/archive/feature-language-switcher.md
+      {/* Desktop CTA : language switcher : voir docs/archive/feature-language-switcher.md
           (réactivation Phase 2 quand EN sera production-ready) */}
       <div className="hidden lg:flex items-center gap-4">
         <Button to="/signup" size="md">

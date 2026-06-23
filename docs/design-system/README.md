@@ -1,4 +1,4 @@
-# Design System Naturegraph — Atomic
+# Design System Naturegraph : Atomic
 
 Source de vérité unique entre Figma et le code. Structure Atomic Design (Brad Frost).
 

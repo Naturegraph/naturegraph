@@ -17,7 +17,7 @@ Push branche ──▶ GitHub Actions ──▶ Vercel
 
 Si tous les checks passent → Vercel déploie automatiquement (preview pour PR, prod pour `main`).
 
-## GitHub Actions — workflow minimal
+## GitHub Actions : workflow minimal
 
 `.github/workflows/ci.yml` :
 
@@ -51,7 +51,7 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
 ```
 
-## Vercel — config
+## Vercel : config
 
 `vercel.json` :
 
@@ -68,15 +68,19 @@ jobs:
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Permissions-Policy", "value": "geolocation=(self), camera=(), microphone=()" },
-        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://*.vercel-insights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.supabase.co https://*.unsplash.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.taxref.fr; font-src 'self' data:" }
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://*.vercel-insights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.supabase.co https://*.unsplash.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.taxref.fr; font-src 'self' data:"
+        }
       ]
     },
     {
       "source": "/assets/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
     }
   ]
 }
@@ -112,13 +116,13 @@ Aucune branche feature ne mergeable directement dans `main` ou `staging`. Une PR
 - **Code** : Vercel garde les déploiements précédents → 1 clic « Promote to production ».
 - **DB** : pas de rollback automatique. Toute migration doit être pensée comme **forward-only**. Pour casser une feature : déployer le code précédent + migration corrective (`UPDATE`/`ALTER`).
 
-> **DBA** : c'est pourquoi on n'écrit *jamais* de migration destructive (DROP COLUMN, DROP TABLE) sans une fenêtre de maintenance et une sauvegarde manuelle confirmée.
+> **DBA** : c'est pourquoi on n'écrit _jamais_ de migration destructive (DROP COLUMN, DROP TABLE) sans une fenêtre de maintenance et une sauvegarde manuelle confirmée.
 
 ## Sauvegardes
 
-| Quoi | Fréquence | Rétention | Outil |
-|---|---|---|---|
-| DB Postgres | quotidien (Supabase auto) | 7 jours (Free), 30 jours (Pro) | Supabase Backups |
-| Storage | quotidien (manuel snapshot bucket) | 30 jours | script `scripts/backup-storage.mjs` |
-| Migrations SQL | versionné dans git | infini | git |
-| Secrets Vercel | export manuel chiffré | rotation 90 jours | 1Password |
+| Quoi           | Fréquence                          | Rétention                      | Outil                               |
+| -------------- | ---------------------------------- | ------------------------------ | ----------------------------------- |
+| DB Postgres    | quotidien (Supabase auto)          | 7 jours (Free), 30 jours (Pro) | Supabase Backups                    |
+| Storage        | quotidien (manuel snapshot bucket) | 30 jours                       | script `scripts/backup-storage.mjs` |
+| Migrations SQL | versionné dans git                 | infini                         | git                                 |
+| Secrets Vercel | export manuel chiffré              | rotation 90 jours              | 1Password                           |

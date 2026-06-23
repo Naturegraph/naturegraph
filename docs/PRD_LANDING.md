@@ -1,7 +1,7 @@
-# PRD — Landing Page Naturegraph
+# PRD : Landing Page Naturegraph
 
 > Product Requirements Document
-> Version : 2.0 — 2026-03-20
+> Version : 2.0 : 2026-03-20
 > Auteur : Nicolas (Design/Dev) + Claude (PM/Tech)
 > Statut : En cours d'implémentation
 
@@ -28,7 +28,7 @@
 
 ### Pourquoi cette landing page ?
 
-Naturegraph n'est pas en mode waitlist. Le produit se lance directement — la landing page est la **porte d'entrée vers l'inscription et l'engagement immédiat**. Elle doit convaincre en quelques secondes et convertir en quelques scrolls.
+Naturegraph n'est pas en mode waitlist. Le produit se lance directement : la landing page est la **porte d'entrée vers l'inscription et l'engagement immédiat**. Elle doit convaincre en quelques secondes et convertir en quelques scrolls.
 
 ### Rôle de la landing
 
@@ -46,8 +46,8 @@ La landing page est **indépendante de l'application**. Elle sera maintenue mêm
 
 | Source             | Rôle                                                                                                                                       |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Figma**          | Design de référence — [Naturegraph Web App (WIP)](https://www.figma.com/design/YNnsWRi3hSp5hWsUa0Tjr6/Naturegraph---Web-App--WIP-Nicolas-) |
-| **naturegraph.fr** | Ancienne version live — base visuelle et contenu                                                                                           |
+| **Figma**          | Design de référence : [Naturegraph Web App (WIP)](https://www.figma.com/design/YNnsWRi3hSp5hWsUa0Tjr6/Naturegraph---Web-App--WIP-Nicolas-) |
+| **naturegraph.fr** | Ancienne version live : base visuelle et contenu                                                                                           |
 | **GUIDELINES.md**  | Identité de marque, design system, principes techniques                                                                                    |
 | **Code**           | `src/pages/Landing.tsx` + composants associés                                                                                              |
 
@@ -57,7 +57,7 @@ La landing page est **indépendante de l'application**. Elle sera maintenue mêm
 
 ### Objectif principal
 
-**Inscriptions et engagement immédiat** — lancement direct du produit, pas de waitlist.
+**Inscriptions et engagement immédiat** : lancement direct du produit, pas de waitlist.
 
 Trois axes de conversion, par ordre de priorité :
 
@@ -73,15 +73,15 @@ L'accès visiteur (sans compte) permet de :
 
 | Action visiteur                            | Disponible sans compte | Nécessite un compte |
 | ------------------------------------------ | ---------------------- | ------------------- |
-| Explorer le feed public                    | ✅                     | —                   |
-| Consulter les observations des autres      | ✅                     | —                   |
-| Partager une première observation anonyme  | ✅                     | —                   |
-| Naviguer la carte des observations         | ✅                     | —                   |
-| Identifier une espèce (aide communautaire) | —                      | ✅                  |
-| Créer son Journal de la Nature             | —                      | ✅                  |
-| Commenter et interagir                     | —                      | ✅                  |
-| Participer aux défis et objectifs          | —                      | ✅                  |
-| Sauvegarder ses observations dans le temps | —                      | ✅                  |
+| Explorer le feed public                    | ✅                     | :                   |
+| Consulter les observations des autres      | ✅                     | :                   |
+| Partager une première observation anonyme  | ✅                     | :                   |
+| Naviguer la carte des observations         | ✅                     | :                   |
+| Identifier une espèce (aide communautaire) | :                      | ✅                  |
+| Créer son Journal de la Nature             | :                      | ✅                  |
+| Commenter et interagir                     | :                      | ✅                  |
+| Participer aux défis et objectifs          | :                      | ✅                  |
+| Sauvegarder ses observations dans le temps | :                      | ✅                  |
 
 **Moment de conversion naturel** : après sa première observation anonyme, le visiteur voit un message du type _"Ton observation a été partagée ! Crée ton compte pour la retrouver dans ton Journal de la Nature et suivre les réponses de la communauté."_
 
@@ -133,9 +133,9 @@ L'inscription devient une **récompense** (débloquer son journal, retrouver ses
 
 Trois messages clés, dans cet ordre :
 
-1. **Émotion** — Ce n'est pas une app scientifique froide, c'est une expérience humaine
-2. **Journal** — Chaque sortie devient un souvenir qui s'enrichit dans le temps
-3. **Communauté** — On apprend ensemble, on partage ensemble
+1. **Émotion** : Ce n'est pas une app scientifique froide, c'est une expérience humaine
+2. **Journal** : Chaque sortie devient un souvenir qui s'enrichit dans le temps
+3. **Communauté** : On apprend ensemble, on partage ensemble
 
 ### Ce qu'il doit faire avant de partir
 
@@ -154,7 +154,7 @@ Landing page
     ↓
 "Partager une observation" (CTA principal)
     ↓
-Formulaire simplifié (photo + lieu + émotion) — SANS COMPTE
+Formulaire simplifié (photo + lieu + émotion) : SANS COMPTE
     ↓
 Observation publiée ! 🎉
     ↓
@@ -172,20 +172,20 @@ Ce tunnel réduit la friction à zéro : le visiteur **vit l'expérience avant d
 
 ## 4. Architecture des sections
 
-### Structure validée — 11 sections
+### Structure validée : 11 sections
 
 | #   | Section               | Rôle narratif                                    | Priorité      |
 | --- | --------------------- | ------------------------------------------------ | ------------- |
 | 1   | **Header**            | Navigation claire + CTA toujours visible         | 🔴 Critique   |
-| 2   | **Hero**              | Accroche émotionnelle — comprendre en 5 secondes | 🔴 Critique   |
-| 3   | **Découvrir**         | 3 piliers produit — ce qu'on peut faire          | 🔴 Critique   |
-| 4   | **Valeurs**           | Pourquoi Naturegraph existe — les convictions    | 🔴 Critique   |
-| 5   | **Fonctionnalités**   | Comment ça marche — le détail des features       | 🟠 Important  |
-| 6   | **CTA intermédiaire** | Relance de conversion — micro-arguments          | 🟠 Important  |
-| 7   | **Mission & Hermine** | Storytelling — identité, animal totem, vision    | 🟠 Important  |
-| 8   | **Discord**           | Invitation communauté — preuve sociale           | 🟠 Important  |
-| 9   | **FAQ**               | Lever les freins — répondre aux objections       | 🔴 Critique   |
-| 10  | **Partenaires**       | Crédibilité — écosystème de confiance            | 🟡 Secondaire |
+| 2   | **Hero**              | Accroche émotionnelle : comprendre en 5 secondes | 🔴 Critique   |
+| 3   | **Découvrir**         | 3 piliers produit : ce qu'on peut faire          | 🔴 Critique   |
+| 4   | **Valeurs**           | Pourquoi Naturegraph existe : les convictions    | 🔴 Critique   |
+| 5   | **Fonctionnalités**   | Comment ça marche : le détail des features       | 🟠 Important  |
+| 6   | **CTA intermédiaire** | Relance de conversion : micro-arguments          | 🟠 Important  |
+| 7   | **Mission & Hermine** | Storytelling : identité, animal totem, vision    | 🟠 Important  |
+| 8   | **Discord**           | Invitation communauté : preuve sociale           | 🟠 Important  |
+| 9   | **FAQ**               | Lever les freins : répondre aux objections       | 🔴 Critique   |
+| 10  | **Partenaires**       | Crédibilité : écosystème de confiance            | 🟡 Secondaire |
 | 11  | **Footer**            | Navigation secondaire, légal, réseaux            | 🔴 Critique   |
 
 ### Flux narratif
@@ -201,18 +201,18 @@ CONNEXION        → Mission & Hermine : l'histoire, l'animal totem, la vision
 COMMUNAUTÉ       → Discord : rejoindre les autres
 RASSURANCE       → FAQ : lever les derniers doutes (+ "C'est gratuit ? Dois-je créer un compte ?")
 CRÉDIBILITÉ      → Partenaires : ils nous soutiennent
-CONVERSION       → Footer : dernière chance — essayer ou s'inscrire
+CONVERSION       → Footer : dernière chance : essayer ou s'inscrire
 ```
 
-Le CTA "Partager une observation" est le **premier bouton** du hero. Il ne demande rien — pas de compte, pas d'email. Le visiteur est immédiatement dans l'action. L'inscription vient après, comme une suite logique.
+Le CTA "Partager une observation" est le **premier bouton** du hero. Il ne demande rien : pas de compte, pas d'email. Le visiteur est immédiatement dans l'action. L'inscription vient après, comme une suite logique.
 
 ### Si on ne garde que 5 sections
 
-1. Header/Hero — émotion + CTA
-2. Découvrir — comprendre le produit
-3. Valeurs — se reconnaître
-4. FAQ — lever les freins
-5. Footer — convertir
+1. Header/Hero : émotion + CTA
+2. Découvrir : comprendre le produit
+3. Valeurs : se reconnaître
+4. FAQ : lever les freins
+5. Footer : convertir
 
 ---
 
@@ -225,11 +225,11 @@ Le CTA "Partager une observation" est le **premier bouton** du hero. Il ne deman
 | Élément    | Spécification                                                            |
 | ---------- | ------------------------------------------------------------------------ |
 | Logo       | Wordmark SVG blanc, top left, `h-10 w-auto`                              |
-| Navigation | Découvrir · Valeurs · Communauté · FAQ — liens ancre blancs, centrés     |
-| CTA        | "Rejoindre l'aventure" — pill violet `--color-action-default`, top right |
+| Navigation | Découvrir · Valeurs · Communauté · FAQ : liens ancre blancs, centrés     |
+| CTA        | "Rejoindre l'aventure" : pill violet `--color-action-default`, top right |
 | Mobile     | Burger menu, logo réduit, CTA maintenu                                   |
 
-**Comportement** : intégré dans le fond teal du hero (pas de barre blanche séparée). Pas de sticky — le CTA est répété à plusieurs endroits de la page.
+**Comportement** : intégré dans le fond teal du hero (pas de barre blanche séparée). Pas de sticky : le CTA est répété à plusieurs endroits de la page.
 
 **Contenus i18n** : `landing.nav.*`
 
@@ -242,10 +242,10 @@ Le CTA "Partager une observation" est le **premier bouton** du hero. Il ne deman
 | Élément          | Spécification                                                           |
 | ---------------- | ----------------------------------------------------------------------- |
 | Fond             | `--color-highlight-primary` (#006666), `border-radius: 32px` desktop    |
-| Titre            | "Ensemble, donnons vie à tes rencontres !" — Quicksand Bold 64px, blanc |
-| Sous-titre       | Description courte — Mulish 18px, blanc 80% opacité                     |
-| CTA principal    | "Partager une observation" — pill violet                                |
-| CTA secondaire   | "Découvrir notre solution" — outline blanc, scroll vers section 3       |
+| Titre            | "Ensemble, donnons vie à tes rencontres !" : Quicksand Bold 64px, blanc |
+| Sous-titre       | Description courte : Mulish 18px, blanc 80% opacité                     |
+| CTA principal    | "Partager une observation" : pill violet                                |
+| CTA secondaire   | "Découvrir notre solution" : outline blanc, scroll vers section 3       |
 | Phone mockups    | 4 écrans app inclinés avec blobs décoratifs violet/menthe               |
 | Scroll indicator | Icône souris SVG avec animation pulse douce                             |
 
@@ -263,11 +263,11 @@ Le CTA "Partager une observation" est le **premier bouton** du hero. Il ne deman
 
 | Élément    | Spécification                                                       |
 | ---------- | ------------------------------------------------------------------- |
-| Titre      | "Découvre Naturegraph" — Quicksand Bold                             |
+| Titre      | "Découvre Naturegraph" : Quicksand Bold                             |
 | Sous-titre | "Observer et découvrir la nature, ensemble."                        |
-| Carte 1    | 🔍 Explorer la nature — icône Lucide `Search` + titre + description |
-| Carte 2    | 📸 Partager ses émotions et observations — icône Lucide `Camera`    |
-| Carte 3    | 💚 Contribuer à la communauté — icône Lucide `Heart`                |
+| Carte 1    | 🔍 Explorer la nature : icône Lucide `Search` + titre + description |
+| Carte 2    | 📸 Partager ses émotions et observations : icône Lucide `Camera`    |
+| Carte 3    | 💚 Contribuer à la communauté : icône Lucide `Heart`                |
 
 **Design** :
 
@@ -288,7 +288,7 @@ Le CTA "Partager une observation" est le **premier bouton** du hero. Il ne deman
 | Items   | 3 valeurs : accessibilité · curiosité · engagement                           |
 | Texte   | Courte phrase expliquant ce que Naturegraph représente pour les utilisateurs |
 
-**Layout** : asymétrique — image à gauche, contenu à droite (desktop). Empilé sur mobile.
+**Layout** : asymétrique : image à gauche, contenu à droite (desktop). Empilé sur mobile.
 
 **Contenus i18n** : `landing.values.*`
 
@@ -299,10 +299,10 @@ Le CTA "Partager une observation" est le **premier bouton** du hero. Il ne deman
 | Élément      | Spécification                                                          |
 | ------------ | ---------------------------------------------------------------------- |
 | Fond         | `--color-highlight-primary` (#006666), texte blanc                     |
-| Feature 1    | Journal de la Nature personnel — conserver et revivre ses observations |
-| Feature 2    | Gamification douce — défis, objectifs, participation                   |
-| Feature 3    | Identification collaborative — apprentissage communautaire             |
-| Feature 4    | Carte interactive — localiser ses rencontres                           |
+| Feature 1    | Journal de la Nature personnel : conserver et revivre ses observations |
+| Feature 2    | Gamification douce : défis, objectifs, participation                   |
+| Feature 3    | Identification collaborative : apprentissage communautaire             |
+| Feature 4    | Carte interactive : localiser ses rencontres                           |
 | Illustration | Phone mockup central + micro-animation par feature (CSS-only)          |
 
 **Layout** : liste à gauche, phone à droite (desktop). Empilé sur mobile.
@@ -316,9 +316,9 @@ Le CTA "Partager une observation" est le **premier bouton** du hero. Il ne deman
 | Élément         | Spécification                                                    |
 | --------------- | ---------------------------------------------------------------- |
 | Image           | Martin-pêcheur (pleine largeur ou côte-à-côte)                   |
-| Titre           | Accroche de relance — ex: "Commence ton journal dès aujourd'hui" |
+| Titre           | Accroche de relance : ex: "Commence ton journal dès aujourd'hui" |
 | Micro-arguments | 2-3 raisons courtes de s'inscrire maintenant                     |
-| CTA             | "Rejoindre l'aventure" — pill violet (même que hero)             |
+| CTA             | "Rejoindre l'aventure" : pill violet (même que hero)             |
 
 **Contenus i18n** : `landing.cta.*`
 
@@ -330,7 +330,7 @@ Cette section est le **cœur émotionnel** de la landing. Elle raconte l'histoir
 
 | Élément      | Spécification                                                                              |
 | ------------ | ------------------------------------------------------------------------------------------ |
-| Animal totem | L'Hermine — illustration ou photo de qualité                                               |
+| Animal totem | L'Hermine : illustration ou photo de qualité                                               |
 | Symbolique   | Résilience, discrétion, adaptabilité                                                       |
 | Message      | Observer, comprendre, évoluer avec la nature                                               |
 | Connexion    | Chaque sortie = souvenir + apprentissage                                                   |
@@ -350,7 +350,7 @@ Cette section est le **cœur émotionnel** de la landing. Elle raconte l'histoir
 | Fond      | `--color-highlight-primary` (#006666)                                           |
 | Titre     | "Rejoins-nous sur Discord !"                                                    |
 | Arguments | Entraide · identification collaborative · échanges · partages · avant-premières |
-| CTA       | "Devenir migrateur" — pill violet + icône Discord                               |
+| CTA       | "Devenir migrateur" : pill violet + icône Discord                               |
 | Visuel    | Screenshot/preview du serveur Discord en décor                                  |
 
 **Contenus i18n** : `landing.discord.*`
@@ -417,7 +417,7 @@ Cette section est le **cœur émotionnel** de la landing. Elle raconte l'histoir
 | Textes FR                  | ✅ Validés     | Dans `fr.json`, ajustements mineurs possibles       |
 | Textes EN                  | 🟡 À traduire  | Structure i18n prête, contenu FR à traduire         |
 | Photos hero (phones)       | ✅ Définitives | Mockups app issus du Figma                          |
-| Photo valeurs              | ⚠️ Provisoire  | Immersive et qualitative — finalisation à confirmer |
+| Photo valeurs              | ⚠️ Provisoire  | Immersive et qualitative : finalisation à confirmer |
 | Photo CTA (martin-pêcheur) | ✅ Définitive  | Image haute qualité                                 |
 | Photo/illustration Hermine | 🟡 À sourcer   | Pour la section Mission & Storytelling              |
 | Logos partenaires          | ✅ Confirmés   | SVG/PNG disponibles                                 |
@@ -427,8 +427,8 @@ Cette section est le **cœur émotionnel** de la landing. Elle raconte l'histoir
 
 | Type                     | Statut       | Timing                                    |
 | ------------------------ | ------------ | ----------------------------------------- |
-| Vidéo hero / démo app    | 🟡 Optionnel | v2 — micro-animation ou vidéo courte      |
-| Témoignages utilisateurs | 🟡 Optionnel | Post-bêta — bêta-testeurs ou naturalistes |
+| Vidéo hero / démo app    | 🟡 Optionnel | v2 : micro-animation ou vidéo courte      |
+| Témoignages utilisateurs | 🟡 Optionnel | Post-bêta : bêta-testeurs ou naturalistes |
 | Mentions presse          | 🟡 Optionnel | Dès les premières retombées               |
 
 ### Optimisation des images
@@ -450,8 +450,8 @@ Toutes les images intégrées doivent respecter :
 | Breakpoint   | Largeur     | Comportement                                                                                 |
 | ------------ | ----------- | -------------------------------------------------------------------------------------------- |
 | **Mobile**   | < 768px     | 1 colonne · burger menu · hero compact (pas de phones) · boutons empilés · sections empilées |
-| **Tablette** | 768–1023px  | 2 colonnes · nav visible · 2 phones · grille adaptée                                         |
-| **Desktop**  | 1024–1439px | Layout complet · 4 phones · navigation pleine · sections côte-à-côte                         |
+| **Tablette** | 768-1023px  | 2 colonnes · nav visible · 2 phones · grille adaptée                                         |
+| **Desktop**  | 1024-1439px | Layout complet · 4 phones · navigation pleine · sections côte-à-côte                         |
 | **Large**    | ≥ 1440px    | Centré `max-width: 1440px` · marges auto                                                     |
 
 ### Adaptations mobile prioritaires
@@ -491,18 +491,18 @@ Toutes les images intégrées doivent respecter :
 
 | Balise               | Contenu                                                                                                              |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `<title>`            | Naturegraph — Explore, observe, partage tes rencontres nature                                                        |
+| `<title>`            | Naturegraph : Explore, observe, partage tes rencontres nature                                                        |
 | `<meta description>` | Plateforme communautaire pour observer la nature, partager tes émotions et créer ton Journal de la Nature personnel. |
-| `og:title`           | Naturegraph — Ton Journal de la Nature                                                                               |
+| `og:title`           | Naturegraph : Ton Journal de la Nature                                                                               |
 | `og:description`     | Explore, observe et partage tes rencontres nature avec une communauté bienveillante.                                 |
 | `og:image`           | Screenshot du hero (1200×630px)                                                                                      |
 | `og:type`            | website                                                                                                              |
 
 ### Structured data (JSON-LD)
 
-- `WebApplication` — nom, description, URL, catégorie
-- `Organization` — Naturegraph, logo, réseaux sociaux
-- `FAQPage` — questions/réponses de la section FAQ (rich snippets Google)
+- `WebApplication` : nom, description, URL, catégorie
+- `Organization` : Naturegraph, logo, réseaux sociaux
+- `FAQPage` : questions/réponses de la section FAQ (rich snippets Google)
 
 ---
 
@@ -523,7 +523,7 @@ Toutes les images intégrées doivent respecter :
 
 ### Accessibilité (non-négociable)
 
-- WCAG **AA** intégral — voir [GUIDELINES.md §8](./GUIDELINES.md#8-accessibilité-wcag-aa)
+- WCAG **AA** intégral : voir [GUIDELINES.md §8](./GUIDELINES.md#8-accessibilité-wcag-aa)
 - Skip link en premier élément du DOM
 - Navigation clavier complète sur tous les interactifs
 - `prefers-reduced-motion` respecté sur toutes les animations
@@ -554,7 +554,7 @@ Toutes les images intégrées doivent respecter :
 | **Lighthouse CI**       | Performance + a11y | Intégré au pipeline de deploy |
 | **GreenIT Analysis**    | EcoIndex           | Audit mensuel                 |
 
-> Pas de Google Analytics — choix éco-conception + respect RGPD.
+> Pas de Google Analytics : choix éco-conception + respect RGPD.
 
 ### Tableau de bord post-lancement
 
@@ -573,7 +573,7 @@ Toutes les images intégrées doivent respecter :
 
 ## 11. Roadmap d'implémentation
 
-### Phase 1 — Structure (✅ Fait)
+### Phase 1 : Structure (✅ Fait)
 
 - [x] Architecture `Landing.tsx` avec toutes les sections
 - [x] Intégration i18n FR complète
@@ -583,7 +583,7 @@ Toutes les images intégrées doivent respecter :
 - [x] Logo wordmark SVG (blanc + couleur)
 - [x] Hook `useScrollReveal` avec `prefers-reduced-motion`
 
-### Phase 2 — Pixel perfect Figma (🔄 En cours)
+### Phase 2 : Pixel perfect Figma (🔄 En cours)
 
 - [x] Header : logo wordmark, navigation, CTA violet
 - [x] Hero : titre, sous-titre, boutons, fond teal
@@ -598,7 +598,7 @@ Toutes les images intégrées doivent respecter :
 - [ ] Partenaires : grille logos hover
 - [ ] Footer : 3 colonnes, réseaux, CTA final
 
-### Phase 3 — Polishing
+### Phase 3 : Polishing
 
 - [ ] Responsive mobile pixel-perfect (chaque section)
 - [ ] Responsive tablette
@@ -608,7 +608,7 @@ Toutes les images intégrées doivent respecter :
 - [ ] Tests performance : Lighthouse > 90, GreenIT A/B
 - [ ] Tests cross-browser : Chrome, Firefox, Safari, Edge
 
-### Phase 4 — Contenu & lancement
+### Phase 4 : Contenu & lancement
 
 - [ ] Traduction EN complète
 - [ ] Image Open Graph optimisée (1200×630px)
@@ -618,7 +618,7 @@ Toutes les images intégrées doivent respecter :
 - [ ] Déploiement production
 - [ ] Soumission Search Console + sitemap
 
-### Phase 5 — Post-lancement (itérations)
+### Phase 5 : Post-lancement (itérations)
 
 - [ ] A/B test CTA (libellé, couleur, position)
 - [ ] Ajout témoignages bêta-testeurs
@@ -636,12 +636,12 @@ Toutes les images intégrées doivent respecter :
 | Vidéo hero en v2 ?         | Micro-animation CSS · Vidéo courte · Non               | 🟡 À évaluer post-lancement        |
 | Témoignages                | Section dédiée · Intégrés dans les sections existantes | 🟡 Post-bêta                       |
 | Blog / articles nature     | Section landing · Page séparée · Non pour MVP          | 🟡 À définir                       |
-| Header sticky au scroll ?  | Oui (transparent → opaque) · Non (intégré dans hero)   | ✅ Non — intégré dans hero         |
+| Header sticky au scroll ?  | Oui (transparent → opaque) · Non (intégré dans hero)   | ✅ Non : intégré dans hero         |
 | Nombre de FAQ              | 4 questions · 6 questions · Extensible                 | 🟡 À valider avec le contenu final |
 
 ---
 
-## Annexe — Correspondance i18n
+## Annexe : Correspondance i18n
 
 Mapping entre les sections et les clés de traduction dans `src/i18n/locales/fr.json` :
 

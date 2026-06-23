@@ -1,5 +1,5 @@
 /**
- * AuthOrbBackground — Orbes de gradient animées (page d'authentification)
+ * AuthOrbBackground : Orbes de gradient animées (page d'authentification)
  * =========================================================================
  * Même système d'orbes "mousse dans l'eau" que le Hero de la landing :
  * 4 blobs de gradient qui flottent et sont repoussés par le curseur.
@@ -29,7 +29,7 @@ export interface OrbMouseTracking {
   containerH: MotionValue<number>
 }
 
-/* ── Spring config — même fluidité que le Hero landing ───────────── */
+/* ── Spring config : même fluidité que le Hero landing ───────────── */
 
 const springConfig = { damping: 20, stiffness: 80, mass: 0.6 }
 
@@ -37,7 +37,7 @@ const springConfig = { damping: 20, stiffness: 80, mass: 0.6 }
 
 const orbConfigs = [
   {
-    /* Grande orbe mint — bas gauche */
+    /* Grande orbe mint : bas gauche */
     size: 'w-[400px] h-[400px] lg:w-[600px] lg:h-[600px]',
     color1: 'var(--color-accent-mint)',
     color2: 'color-mix(in srgb, var(--color-accent-mint) 20%, transparent)',
@@ -49,7 +49,7 @@ const orbConfigs = [
     strength: 80,
   },
   {
-    /* Orbe violette — haut droite */
+    /* Orbe violette : haut droite */
     size: 'w-[350px] h-[350px] lg:w-[500px] lg:h-[500px]',
     color1: 'var(--color-action-default)',
     color2: 'color-mix(in srgb, var(--color-action-default) 15%, transparent)',
@@ -61,7 +61,7 @@ const orbConfigs = [
     strength: 70,
   },
   {
-    /* Orbe mint — centre droite */
+    /* Orbe mint : centre droite */
     size: 'w-[200px] h-[200px] lg:w-[300px] lg:h-[300px]',
     color1: 'var(--color-accent-mint)',
     color2: 'color-mix(in srgb, var(--color-accent-mint) 12%, transparent)',
@@ -73,7 +73,7 @@ const orbConfigs = [
     strength: 100,
   },
   {
-    /* Orbe teal — haut gauche */
+    /* Orbe teal : haut gauche */
     size: 'w-[250px] h-[250px]',
     color1: 'var(--color-highlight-tertiary)',
     color2: 'color-mix(in srgb, var(--color-highlight-tertiary) 10%, transparent)',
@@ -157,7 +157,7 @@ function GradientOrb({
         y: smoothY,
       }}
     >
-      {/* Flottement continu — se combine avec la répulsion souris */}
+      {/* Flottement continu : se combine avec la répulsion souris */}
       <motion.div
         className="w-full h-full"
         animate={{ y: [0, -15, 0], x: [0, 8, 0], scale: [1, 1.03, 1] }}
@@ -167,7 +167,7 @@ function GradientOrb({
   )
 }
 
-/* ── Hook — tracking souris relatif au container parent ──────────── */
+/* ── Hook : tracking souris relatif au container parent ──────────── */
 
 /**
  * À brancher sur le div racine de l'AuthPage.
@@ -219,7 +219,7 @@ interface AuthOrbBackgroundProps {
 
 /**
  * Affiche les 4 orbes de gradient animées.
- * Le composant est `pointer-events-none` — les événements souris
+ * Le composant est `pointer-events-none` : les événements souris
  * doivent être capturés par le div parent et passés via `useAuthOrbTracking`.
  */
 export function AuthOrbBackground({ mouse }: AuthOrbBackgroundProps) {

@@ -1,11 +1,11 @@
 /**
- * EncounterStep3 — Étape 3 : Contexte & détails (Figma v3 — complet)
+ * EncounterStep3 : Étape 3 : Contexte & détails (Figma v3 : complet)
  *
  * Ordre strict Figma :
- *   1. Titre (optionnel)       — input pill
- *   2. Description*            — textarea rounded, max 1500 car.
- *   3. Date de l'observation   — date picker pill + icône calendrier
- *   4. Localisation (+info)    — input pill + switch « Activer pour rendre
+ *   1. Titre (optionnel)       : input pill
+ *   2. Description*            : textarea rounded, max 1500 car.
+ *   3. Date de l'observation   : date picker pill + icône calendrier
+ *   4. Localisation (+info)    : input pill + switch « Activer pour rendre
  *                                la localisation publique » (switch ON =
  *                                publique ⇒ locationHidden = false).
  *   5. Options avancées (collapsible, fermé par défaut) :
@@ -25,7 +25,7 @@ import { useLocationAutocomplete } from '@/hooks/useLocationAutocomplete'
 import type { CityResult } from '@/types/location'
 import { POST_LIMITS } from '@/lib/postValidation'
 
-// ─── Constantes UI — labels emoji mappés aux énumérations DB ────────────────
+// ─── Constantes UI : labels emoji mappés aux énumérations DB ────────────────
 
 /**
  * Emojis associés aux habitats / conditions météo pour rester fidèle au Figma.
@@ -42,7 +42,7 @@ const HABITAT_EMOJI: Record<HabitatType, string> = {
   sea_coast: '🌊',
 }
 
-// Emojis Figma 6385:55806 (second-agent/05) — alignés sur FeedPost.WEATHER_EMOJI.
+// Emojis Figma 6385:55806 (second-agent/05) : alignés sur FeedPost.WEATHER_EMOJI.
 const WEATHER_EMOJI: Record<WeatherCondition, string> = {
   sunny: '☀️',
   cloudy: '⛅',
@@ -101,7 +101,7 @@ function Chip({ label, emoji, active, onClick }: ChipProps) {
 // ─── Props ──────────────────────────────────────────────────────────────────
 
 interface EncounterStep3Props {
-  /** true uniquement après un clic "Publier" raté — gate l'affichage des erreurs
+  /** true uniquement après un clic "Publier" raté : gate l'affichage des erreurs
    *  inline pour ne pas montrer "obligatoire" tant que l'utilisateur n'a pas
    *  tenté de soumettre (second-agent/30). */
   submitAttempted?: boolean
@@ -142,7 +142,7 @@ interface EncounterStep3Props {
 const MAX_TITLE = POST_LIMITS.TITLE_MAX
 const MAX_DESC = POST_LIMITS.DESCRIPTION_MAX
 
-/** ISO (YYYY-MM-DD) du jour — borne max du champ date. */
+/** ISO (YYYY-MM-DD) du jour : borne max du champ date. */
 function todayISO() {
   return new Date().toISOString().slice(0, 10)
 }
@@ -179,7 +179,7 @@ export function EncounterStep3({
   // (ex : EXIF a détecté un moment de la journée). Sinon fermé.
   // Nicolas 2026-05-22 : champs habitat / météo / moment sont désormais
   // toujours visibles (cf. plus bas). Le state advancedOpen et son toggle
-  // ont été retirés — peu de users dépliaient le bloc → posts incomplets.
+  // ont été retirés : peu de users dépliaient le bloc → posts incomplets.
 
   // ─── Popover "info localisation" ────────────────────────────────────────
   // Affiche les règles de confidentialité au clic sur l'icône (i).
@@ -300,7 +300,7 @@ export function EncounterStep3({
       <div className="flex flex-col gap-1.5">
         <label htmlFor={descId} className="text-sm text-foreground">
           {t('contribute.description.label', { defaultValue: 'Description' })}
-          {/* Asterisque retiré (second-agent/30 — phase test) : on laisse libre
+          {/* Asterisque retiré (second-agent/30 : phase test) : on laisse libre
               pour analyser qui complète quoi avant de rendre obligatoire. */}
         </label>
         <textarea
@@ -328,7 +328,7 @@ export function EncounterStep3({
           {description.length}/{MAX_DESC}
         </span>
         {/* Erreur affichée UNIQUEMENT après une tentative de soumission ratée
-            — sinon le label "*" suffit à signaler le caractère obligatoire
+            : sinon le label "*" suffit à signaler le caractère obligatoire
             (second-agent/30). */}
         {submitAttempted && errors.description && (
           <p id={`${descId}-error`} role="alert" className="text-xs text-[var(--color-error)]">
@@ -349,7 +349,7 @@ export function EncounterStep3({
             value={encounterDate}
             max={todayISO()}
             onChange={(e) => onDateChange(e.target.value)}
-            // `date-input-clean` cache l'icône native (Webkit/Edge) — l'icône
+            // `date-input-clean` cache l'icône native (Webkit/Edge) : l'icône
             // visible est notre <Calendar> custom, alignée avec le design system.
             // Le clic sur l'input ouvre toujours le picker natif.
             className="date-input-clean w-full h-11 pl-4 pr-10 rounded-full border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
@@ -385,7 +385,7 @@ export function EncounterStep3({
               role="dialog"
               aria-label={t('contribute.location.label', { defaultValue: 'Localisation' })}
               // Popover ne déborde plus du panneau contribute (sidebar
-              // étroite sur desktop) — on cape à 100% de la largeur du
+              // étroite sur desktop) : on cape à 100% de la largeur du
               // parent + un padding interne plus compact. Shadow allégée
               // (md au lieu de xl) pour rester subtil (Nicolas 2026-05-22).
               className="absolute left-0 right-0 top-full mt-2 z-30 max-w-full rounded-2xl border-[0.5px] border-border bg-background p-4 shadow-md flex flex-col gap-3"
@@ -510,7 +510,7 @@ export function EncounterStep3({
           )}
         </div>
 
-        {/* Switch Figma : label avant, toggle après — ON = publique */}
+        {/* Switch Figma : label avant, toggle après : ON = publique */}
         <label
           htmlFor={switchId}
           className="flex items-center justify-between gap-3 cursor-pointer pt-1"
@@ -548,11 +548,11 @@ export function EncounterStep3({
         </label>
       </div>
 
-      {/* Séparateur entre Localisation et Habitat — délimite visuellement
+      {/* Séparateur entre Localisation et Habitat : délimite visuellement
           la section « contexte » du formulaire (Nicolas 2026-05-22). */}
       <hr className="border-0 border-t border-border my-2" aria-hidden="true" />
 
-      {/* ── 5. Habitat + conditions + moment — toujours visibles ──────────
+      {/* ── 5. Habitat + conditions + moment : toujours visibles ──────────
           Nicolas 2026-05-22 : retrait du collapsible « Options avancées ».
           Les retours users beta montraient que peu d'utilisateurs cliquaient
           sur le bouton pour le déplier → champs jamais saisis → posts moins

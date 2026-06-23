@@ -1,5 +1,5 @@
 /**
- * notificationPreferencesService — Préférences par type de notification
+ * notificationPreferencesService : Préférences par type de notification
  *
  * Table `notification_preferences` (PK composite: user_id + type)
  *   - enabled BOOLEAN DEFAULT TRUE

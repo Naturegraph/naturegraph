@@ -8,6 +8,19 @@ Les notes user-friendly sont dans `docs/devops/releases/V[X.Y.Z]_USER.md`.
 
 ---
 
+## [V0.0.1] - 2026-06-17, Base officielle de prelancement
+
+> Renumerotation officielle (1.2.25 -> 0.0.1) + adoption de la norme de versioning (NG-025).
+> Aucun changement fonctionnel. Detail : `docs/devops/releases/V0.0.1_TECHNICAL.md`.
+
+### Modifie
+
+- Numerotation SemVer officielle + Conventional Commits (cf. `docs/devops/VERSIONING.md`)
+- `package.json` aligne sur 0.0.1
+- Nettoyage des tirets cadratins dans tout le repo (NG-026)
+
+---
+
 ## [V1.1.0] - 2026-05-26, BDD taxonomique en prod + family fallback
 
 > Premiere release MINOR. Voir `docs/devops/releases/V1.1.0_USER.md` pour la communication users.

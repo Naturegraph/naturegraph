@@ -1,12 +1,12 @@
 /**
- * ContributeInstantForm — Formulaire Instant Nature (page unique)
+ * ContributeInstantForm : Formulaire Instant Nature (page unique)
  *
  * Capture rapide d'un moment de nature : photo(s), description,
  * phénomène, lieu, date, visibilité, tags.
  *
  * Type de post créé : 'nature_instant'
  *
- * TODO [BACKEND] — Brancher la création de post :
+ * TODO [BACKEND] : Brancher la création de post :
  *   1. Upload médias → Supabase Storage bucket 'post-media'
  *      supabase.storage.from('post-media').upload(path, file)
  *   2. Insérer le post → table 'posts' via postService.createPost()
@@ -33,7 +33,7 @@ import { useQueryClient } from '@tanstack/react-query'
 // par le bucket) ou des photos non strippees (faille RGPD GPS).
 import { processMediaForUpload, isProcessMediaError } from '@/utils/processMediaForUpload'
 import { toStorageTimestamp } from '@/utils/observationDate'
-// useToast retiré (Nicolas 2026-05-22) — plus de toast publication.
+// useToast retiré (Nicolas 2026-05-22) : plus de toast publication.
 
 // ─── État du formulaire ───────────────────────────────────────────────────────
 
@@ -113,7 +113,7 @@ export function ContributeInstantForm() {
     let createdPostId: string | null = null
     try {
       // Décompose le label « Ville, Région » pour persister `city` distinct
-      // de `location_name` — sans ça FeedPost n'affiche pas la ville à droite
+      // de `location_name` : sans ça FeedPost n'affiche pas la ville à droite
       // de la date (cf. ContributeEncounterForm pour le même fix).
       const locSegments = form.locationName
         .split(',')
@@ -168,12 +168,12 @@ export function ContributeInstantForm() {
       // Invalider le feed APRÈS l'upload media pour que le post apparaisse avec sa photo
       queryClient.invalidateQueries({ queryKey: FEED_QUERY_KEY({}) })
 
-      // Toast publication retiré — la nav vers /home + apparition du post
+      // Toast publication retiré : la nav vers /home + apparition du post
       // dans le feed est la confirmation visuelle (Nicolas 2026-05-22).
       navigate('/home')
     } catch (err) {
       // Rollback : supprimer le post orphelin si l'upload des médias a échoué.
-      // Le rollback est best-effort — on ignore une éventuelle erreur de suppression.
+      // Le rollback est best-effort : on ignore une éventuelle erreur de suppression.
       if (createdPostId && supabase) {
         try {
           await supabase.from('posts').delete().eq('id', createdPostId)

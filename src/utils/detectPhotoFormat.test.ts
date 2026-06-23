@@ -1,5 +1,5 @@
 /**
- * Tests unit — detectPhotoFormat
+ * Tests unit : detectPhotoFormat
  *
  * Couvre uniquement la fonction pure `inferFormat()` car `detectPhotoFormat`
  * et `detectBatchPhotoFormat` dependent de l'API Image/createImageBitmap

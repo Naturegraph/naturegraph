@@ -1,5 +1,5 @@
 /**
- * HighlightedText — Affiche du texte multi-ligne avec surlignage des marqueurs
+ * HighlightedText : Affiche du texte multi-ligne avec surlignage des marqueurs
  *
  * BATCH 68 (Nicolas decision 2026-05-15) : utilise sur Privacy et Legal pour
  * faire ressortir visuellement les sections juridiques a completer

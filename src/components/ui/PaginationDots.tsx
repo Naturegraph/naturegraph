@@ -1,5 +1,5 @@
 /**
- * PaginationDots — Indicateurs de pagination cliquables
+ * PaginationDots : Indicateurs de pagination cliquables
  * =======================================================
  * Pattern dots pour sliders horizontaux. Le dot actif s'allonge
  * (largeur 50px) pour signaler visuellement la position.

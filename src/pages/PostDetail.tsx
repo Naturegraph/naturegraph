@@ -1,5 +1,5 @@
 /**
- * PostDetail — Page d'un post unique (deep-link partageable)
+ * PostDetail : Page d'un post unique (deep-link partageable)
  * ============================================================
  *
  * Route : /post/:postId
@@ -7,9 +7,9 @@
  * Cible :
  *   1. Permettre le partage de lien direct vers un post (SharePopover).
  *   2. Offrir une URL stable indexable par les crawlers OG (WhatsApp,
- *      Facebook, Twitter) — le rendu côté serveur des meta tags Open
+ *      Facebook, Twitter) : le rendu côté serveur des meta tags Open
  *      Graph est délégué à une Vercel Edge Function (cf. `api/post-og.ts`).
- *   3. Garder l'utilisateur dans le contexte de l'app — avec navbar +
+ *   3. Garder l'utilisateur dans le contexte de l'app : avec navbar +
  *      sidebar pour qu'il puisse continuer son exploration depuis le post.
  *
  * Beta gate (PRD §5) :
@@ -54,13 +54,13 @@ import { useToggleReaction } from '@/hooks/usePost'
 import { useEditPostFlow } from '@/hooks/useEditPostFlow'
 import type { ReactionType, PostFeedItem } from '@/types/database'
 
-// FeedPost lazy — composant lourd, on évite le coût bundle si on
+// FeedPost lazy : composant lourd, on évite le coût bundle si on
 // arrive sur une 404 ou un état d'erreur.
 const FeedPost = lazy(() =>
   import('@/components/home/FeedPost').then((m) => ({ default: m.FeedPost })),
 )
 
-// Sidebar droite (Impact + Tendances) — meme composant que Home, lazy : on ne
+// Sidebar droite (Impact + Tendances) : meme composant que Home, lazy : on ne
 // paye le chunk que sur ecran XL (>=1280px) ou la colonne est visible.
 const StatsSidebar = lazy(() =>
   import('@/components/home/StatsSidebar').then((m) => ({ default: m.StatsSidebar })),
@@ -68,7 +68,7 @@ const StatsSidebar = lazy(() =>
 
 // ─── États visuels ────────────────────────────────────────────────────────────
 
-/** Skeleton minimal d'un post — cohérent avec le LoadingState du feed. */
+/** Skeleton minimal d'un post : cohérent avec le LoadingState du feed. */
 function PostSkeleton() {
   return (
     <div className="rounded-card bg-background border-[0.5px] border-border p-5 animate-pulse motion-reduce:animate-none">
@@ -84,7 +84,7 @@ function PostSkeleton() {
   )
 }
 
-/** Carte « post introuvable » — message clair + CTA retour au feed. */
+/** Carte « post introuvable » : message clair + CTA retour au feed. */
 function PostNotFound({ backLabel }: { backLabel: string }) {
   return (
     <div className="rounded-card bg-background border-[0.5px] border-border p-8 flex flex-col items-center gap-4 text-center">
@@ -236,12 +236,12 @@ export default function PostDetail() {
 
       <div className="flex flex-1 w-full">
         <div className="w-full xl:max-w-[1440px] mx-auto flex md:gap-6 gap-0 md:px-6 px-0 md:py-6 pb-20 md:pb-6">
-          {/* Colonne gauche — Profile / Guest (cohérence Home, dès lg) */}
+          {/* Colonne gauche : Profile / Guest (cohérence Home, dès lg) */}
           <aside className="hidden lg:block w-[320px] shrink-0">
             {isAuthenticated ? <ProfileSidebar /> : <GuestSidebar />}
           </aside>
 
-          {/* Colonne centrale — Post détail.
+          {/* Colonne centrale : Post détail.
               Marges mobiles (Nicolas 2026-06-04) : un seul gouttiere de 16px
               (px-4) appliquee par bloc, JAMAIS cumulee. Le post principal
               (FeedPost) porte deja sa propre marge interne, donc il reste en
@@ -359,7 +359,7 @@ export default function PostDetail() {
             )}
           </main>
 
-          {/* Colonne droite — Impact & Tendances — visible uniquement XL desktop
+          {/* Colonne droite : Impact & Tendances : visible uniquement XL desktop
               (>=1280px), comme sur Home, pour ne pas creer un grand vide a
               droite du post (Nicolas 2026-06-04). Lazy : chunk charge seulement
               quand la colonne est rendue. */}

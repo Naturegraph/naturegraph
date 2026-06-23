@@ -14,14 +14,14 @@ Le document central du projet est **[`PROJECT_MASTER.md`](PROJECT_MASTER.md)**. 
 
 | Document                                 | Quand le lire                                                    |
 | ---------------------------------------- | ---------------------------------------------------------------- |
-| [`PROJECT_MASTER.md`](PROJECT_MASTER.md) | **Vue d ensemble**, vision, état V1.0.0, roadmap, TODO, workflow |
+| [`PROJECT_MASTER.md`](PROJECT_MASTER.md) | **Vue d ensemble**, vision, état V0.0.1, roadmap, TODO, workflow |
 | [`CHANGELOG.md`](CHANGELOG.md)           | Historique des versions, ce qui change a chaque release          |
 | [`CLAUDE.md`](CLAUDE.md)                 | Instructions Claude Code + règles permanentes                    |
 | [`GUIDELINES.md`](GUIDELINES.md)         | Budgets eco-conception + accessibilité WCAG AA                   |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md)     | Comment contribuer                                               |
 | [`docs/README.md`](docs/README.md)       | Index des docs techniques détaillées                             |
 
-**Version actuelle** : V1.0.0 (2026-05-25)
+**Version actuelle** : V0.0.1 (2026-06-17)
 
 ---
 
@@ -148,8 +148,8 @@ scripts/
 
 Les traductions sont dans `src/i18n/locales/` :
 
-- `fr.json` — Français (langue par défaut)
-- `en.json` — Anglais
+- `fr.json` : Français (langue par défaut)
+- `en.json` : Anglais
 
 Le switcher FR/EN est intégré (fonctionnel) mais masqué en production dans l'attente d'une traduction complète.
 
@@ -157,10 +157,10 @@ Le switcher FR/EN est intégré (fonctionnel) mais masqué en production dans l'
 
 ## Qualité et accessibilité
 
-- **WCAG AA** — focus-visible sur tous les éléments interactifs, skip link, attribut `lang`
-- **Éco-conception** — `loading="lazy"` sur toutes les images hors-fold, bundle JS ~181 KB gzip
-- **Animations** — respectueuses de `prefers-reduced-motion`
-- **Pre-commit hook** — ESLint + Prettier via Husky + lint-staged (bloque les commits avec erreurs)
+- **WCAG AA** : focus-visible sur tous les éléments interactifs, skip link, attribut `lang`
+- **Éco-conception** : `loading="lazy"` sur toutes les images hors-fold, bundle JS ~181 KB gzip
+- **Animations** : respectueuses de `prefers-reduced-motion`
+- **Pre-commit hook** : ESLint + Prettier via Husky + lint-staged (bloque les commits avec erreurs)
 
 ---
 
@@ -207,9 +207,9 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 Les donnees taxonomiques (especes, hierarchies, statuts territoriaux FR + CA) proviennent de bases scientifiques ouvertes :
 
-- **[iNaturalist](https://www.inaturalist.org)** — source principale, donnees accessibles via l API publique sous licence Creative Commons CC-BY 4.0. Attribution requise et fournie via les Mentions legales + Politique de confidentialite + interface Settings.
-- **[GBIF](https://www.gbif.org)** — Global Biodiversity Information Facility, referentiel taxonomique international, licence CC0 (domaine public).
-- **[Wikidata](https://www.wikidata.org)** — noms vernaculaires complementaires en francais et quebecois, licence CC0.
+- **[iNaturalist](https://www.inaturalist.org)** : source principale, donnees accessibles via l API publique sous licence Creative Commons CC-BY 4.0. Attribution requise et fournie via les Mentions legales + Politique de confidentialite + interface Settings.
+- **[GBIF](https://www.gbif.org)** : Global Biodiversity Information Facility, referentiel taxonomique international, licence CC0 (domaine public).
+- **[Wikidata](https://www.wikidata.org)** : noms vernaculaires complementaires en francais et quebecois, licence CC0.
 
 Naturegraph ne reproduit aucune donnee personnelle ou observation individuelle de ces plateformes. Seules les donnees de reference agregees (noms scientifiques, hierarchies, comptage par territoire) sont importees.
 
@@ -219,4 +219,4 @@ Detail technique : [`docs/backend/TAXONOMY_DATABASE_DESIGN.md`](docs/backend/TAX
 
 ## Partenaires
 
-Naturegraph est soutenu par [Paloume](https://paloume.org), [Hub Environnement](https://hub-environnement.fr) et [Kreapulse](https://kreapulse.fr).
+Naturegraph est soutenu par [Paloume](https://www.paloume.fr/page/2020316-accueil), [E-Hub Enerco](https://www.hubenerco.bzh/) et [Kréa'Pulse](https://www.ploermelcommunaute.bzh/kreapulse/).

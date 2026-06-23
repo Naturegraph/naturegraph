@@ -1,7 +1,7 @@
 /**
- * reportService — Signalements de contenu
+ * reportService : Signalements de contenu
  *
- * NG-033 (Nicolas 2026-06-06) — CORRECTIF backend signalement :
+ * NG-033 (Nicolas 2026-06-06) : CORRECTIF backend signalement :
  * Les signalements utilisateurs etaient inseres dans la table `reports`, alors
  * que le dashboard admin (AdminModeration) lit/ecrit EXCLUSIVEMENT la table
  * `moderation_reports`. Resultat : aucun signalement ne remontait cote admin
@@ -45,7 +45,7 @@ const REASON_MAP: Record<ReportReason, string> = {
  * Crée un signalement dans `moderation_reports`. L'auteur (`reporter_id`) est
  * l'utilisateur connecté (vérifié par RLS côté DB).
  *
- * Au moins un de `postId` ou `profileId` doit être fourni — sinon le report
+ * Au moins un de `postId` ou `profileId` doit être fourni : sinon le report
  * n'a pas de cible.
  */
 export async function createReport(payload: CreateReportPayload): Promise<void> {

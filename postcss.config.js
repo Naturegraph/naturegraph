@@ -1,4 +1,4 @@
-// BATCH 115 : Config PostCSS explicite — garantit l'exécution d'autoprefixer.
+// BATCH 115 : Config PostCSS explicite : garantit l'exécution d'autoprefixer.
 //
 // Sans ce fichier, Vite 7 + @tailwindcss/vite gère les @tailwind directives,
 // mais autoprefixer n'est PAS exécuté automatiquement. Or autoprefixer est

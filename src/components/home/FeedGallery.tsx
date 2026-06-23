@@ -1,5 +1,5 @@
 /**
- * FeedGallery — Vue galerie masonry du feed
+ * FeedGallery : Vue galerie masonry du feed
  *
  * Affiche UNE cover-image par post (1 cellule = 1 post) :
  *   - 3 colonnes sur desktop, 2 colonnes sur mobile
@@ -10,7 +10,7 @@
  *   - Lazy loading images pour l'éco-conception
  *
  * Utilise la propriété CSS `columns` pour le layout masonry
- * (préféré à une solution JS — RGESN, sobriété numérique).
+ * (préféré à une solution JS : RGESN, sobriété numérique).
  */
 
 import { Link } from 'react-router-dom'
@@ -33,13 +33,13 @@ interface GalleryItem {
   postId: string
   postTitle: string
   author: { name: string; avatar: string }
-  /** Nombre total de photos du post — affiche le badge si > 1 */
+  /** Nombre total de photos du post : affiche le badge si > 1 */
   imagesCount: number
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Convertit le format MockPost en format galerie — respecte le display_format du post */
+/** Convertit le format MockPost en format galerie : respecte le display_format du post */
 function toGalleryFormat(postFormat: string): 'landscape' | 'portrait' | 'square' {
   if (postFormat === 'portrait') return 'portrait'
   if (postFormat === '1:1') return 'square'
@@ -71,7 +71,7 @@ function buildGalleryItems(posts: MockPost[]): GalleryItem[] {
   return items
 }
 
-/** Classes CSS d'aspect-ratio par format — aligné avec l'ImageSlider du feed */
+/** Classes CSS d'aspect-ratio par format : aligné avec l'ImageSlider du feed */
 const ASPECT_CLASSES: Record<string, string> = {
   landscape: 'aspect-video', // 16:9
   portrait: 'aspect-[3/4]',
@@ -103,11 +103,11 @@ export function FeedGallery({ posts }: FeedGalleryProps) {
             role="gridcell"
             aria-label={
               item.imagesCount > 1
-                ? `${item.postTitle} — ${item.author.name} — ${item.imagesCount} photos`
-                : `${item.postTitle} — ${item.author.name}`
+                ? `${item.postTitle} : ${item.author.name} : ${item.imagesCount} photos`
+                : `${item.postTitle} : ${item.author.name}`
             }
           >
-            {/* Cover du post — aspect-ratio dérivé du display_format */}
+            {/* Cover du post : aspect-ratio dérivé du display_format */}
             <img
               src={item.imageUrl || undefined}
               alt={item.alt}
@@ -115,7 +115,7 @@ export function FeedGallery({ posts }: FeedGalleryProps) {
               className={['w-full object-cover', ASPECT_CLASSES[item.format]].join(' ')}
             />
 
-            {/* Badge multi-photos — visible si le post a plusieurs images.
+            {/* Badge multi-photos : visible si le post a plusieurs images.
                 V1.1.4 QA round 6 (Nicolas 2026-06-01) : font-size INLINE
                 pour bypass tout purge/cache Tailwind. Avant les arbitrary
                 values text-[9px] etaient peut-etre purgees -> aucun
@@ -134,14 +134,14 @@ export function FeedGallery({ posts }: FeedGalleryProps) {
               </span>
             )}
 
-            {/* Overlay hover/focus — auteur + titre */}
+            {/* Overlay hover/focus : auteur + titre */}
             <div
               className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent transition-opacity opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
               aria-hidden="true"
             >
               <div className="absolute bottom-0 left-0 right-0 p-3">
-                {/* Titre sur 2 lignes max — donne plus de contexte sur les
-                    titres longs (second-agent/03 — révision 2026-04-30). */}
+                {/* Titre sur 2 lignes max : donne plus de contexte sur les
+                    titres longs (second-agent/03 : révision 2026-04-30). */}
                 <p className="text-white text-sm font-bold leading-snug line-clamp-2">
                   {item.postTitle}
                 </p>

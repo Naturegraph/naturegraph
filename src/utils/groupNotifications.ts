@@ -1,5 +1,5 @@
 /**
- * groupNotifications — Regroupement des notifications identiques sur 24h
+ * groupNotifications : Regroupement des notifications identiques sur 24h
  *
  * Exemple : 3 personnes réagissent à mon post → une seule ligne
  *   "Alice, Bob + 1 autre ont réagi à ton post"
@@ -18,7 +18,7 @@ export interface GroupedNotification extends Notification {
   group_count: number
   /** IDs de toutes les notifs représentées (pour mark-as-read groupé, BATCH 107) */
   group_ids: string[]
-  /** Liste des acteurs (pour affichage multi-avatars) — toujours inclut le principal */
+  /** Liste des acteurs (pour affichage multi-avatars) : toujours inclut le principal */
   grouped_actors: Array<{
     id: string | null
     username: string | null
@@ -49,6 +49,32 @@ export function groupNotifications(notifs: Notification[]): GroupedNotification[
     }
     usedIds.add(n.id)
 
+    // Regroupement par AUTEUR des notifs "nouveau post" (anti-pollution).
+    // Chaque post a un reference_id different, donc le regroupement par
+    // reference ne collapse rien : l'utilisateur voyait N lignes "X a publie
+    // un nouveau post" (aggrave par les anciens posts dupliques du bug NG-012
+    // #1). On groupe ici par auteur (meme actor) sur 24h -> "X a publie N
+    // publications". Le representant = le plus recent (deep-link vers sa derniere
+    // publi). group_count sert au libelle dans le NotificationsPanel.
+    if (n.type === 'post') {
+      const authorKey = n.actor_id ?? n.title
+      const nDate = new Date(n.created_at).getTime()
+      let allReadPost = n.read
+      for (const other of notifs) {
+        if (usedIds.has(other.id)) continue
+        if (other.type !== 'post') continue
+        if ((other.actor_id ?? other.title) !== authorKey) continue
+        if (Math.abs(nDate - new Date(other.created_at).getTime()) > WINDOW_MS) continue
+        usedIds.add(other.id)
+        group.group_count += 1
+        group.group_ids.push(other.id)
+        allReadPost = allReadPost && other.read
+      }
+      group.read = allReadPost
+      result.push(group)
+      continue
+    }
+
     // Pas de regroupement pour les types sans "cible" commune
     const groupable =
       !!n.reference_id &&
@@ -72,7 +98,7 @@ export function groupNotifications(notifs: Notification[]): GroupedNotification[
       // Fenêtre symétrique : on regroupe si les deux notifs sont à moins de 24h
       // l'une de l'autre, indépendamment de l'ordre dans le tableau.
       // (Le tri DESC est respecté en pratique mais ne doit pas être une
-      // précondition stricte — sinon le regroupement devient flaky quand deux
+      // précondition stricte : sinon le regroupement devient flaky quand deux
       // notifs ont le même timestamp à la milliseconde près, cf. tests CI.)
       const diff = Math.abs(nDate - new Date(other.created_at).getTime())
       if (diff > WINDOW_MS) continue

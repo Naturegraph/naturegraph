@@ -1,5 +1,5 @@
 /**
- * Mission — Section mission du projet
+ * Mission : Section mission du projet
  * =====================================
  * Image + 2 paragraphes côte à côte. Utilise le template ImageTextLayout.
  */

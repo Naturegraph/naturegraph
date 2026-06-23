@@ -1,5 +1,5 @@
 /**
- * BetaStatusCallout — Bloc d'avertissement « phase beta privée »
+ * BetaStatusCallout : Bloc d'avertissement « phase beta privée »
  *
  * Affiché tout en haut des pages Privacy et Legal pour informer clairement
  * l'utilisateur que Naturegraph est un projet personnel non commercial,
@@ -23,7 +23,7 @@
 import { useTranslation } from 'react-i18next'
 
 interface BetaStatusCalloutProps {
-  /** Clé i18n racine — `legal.privacy` ou `legal.terms`. */
+  /** Clé i18n racine : `legal.privacy` ou `legal.terms`. */
   i18nNamespace: 'legal.privacy' | 'legal.terms'
   /** Identifiant unique pour aria-labelledby (préfixe). */
   id: string
@@ -33,7 +33,7 @@ export function BetaStatusCallout({ i18nNamespace, id }: BetaStatusCalloutProps)
   const { t } = useTranslation()
   const titleId = `${id}-title`
 
-  // Nicolas 2026-05-21 : pas d'icône AlertTriangle séparée — le titre embarque
+  // Nicolas 2026-05-21 : pas d'icône AlertTriangle séparée : le titre embarque
   // déjà l'emoji ⚠️ et l'icône ronde grise rendait le bloc moins lisible en
   // responsive (largeur réduite côté mobile).
   return (

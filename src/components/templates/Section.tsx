@@ -1,5 +1,5 @@
 /**
- * Section — Wrapper standard pour les sections de la landing
+ * Section : Wrapper standard pour les sections de la landing
  * ============================================================
  * Mutualise le pattern récurrent :
  *   bg-bg-primary + w-full + flex justify-center + padding responsive
@@ -9,8 +9,8 @@
  *
  * Props :
  * - `id` : ancre HTML pour navigation interne (optionnel)
- * - `as` : balise HTML — défaut 'section'
- * - `background` : token de fond — défaut 'primary'
+ * - `as` : balise HTML : défaut 'section'
+ * - `background` : token de fond : défaut 'primary'
  * - `padding` : 'default' (px responsive + my responsive) | 'none' (le parent gère)
  * - `dataName` : annotation Figma pour debug visuel
  */

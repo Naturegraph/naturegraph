@@ -1,5 +1,5 @@
 /**
- * AdminDashboard — Module 1 : vue d'ensemble système
+ * AdminDashboard : Module 1 : vue d'ensemble système
  *
  * BATCH 108 (Nicolas demande "améliorer aussi, dashboard plus moderne avec vraies analytics") :
  *   - 6 KPIs principaux (users, posts 7j, signalements ouverts, beta quota, observations 7j, identif 7j)
@@ -57,7 +57,7 @@ interface RecentReport {
 }
 
 /**
- * Top espèces observées sur le produit — agrégation simple sur posts.species_name.
+ * Top espèces observées sur le produit : agrégation simple sur posts.species_name.
  * Remplace l'ancien widget "Actions admin récentes" qui n'avait pas
  * d'intérêt produit (Nicolas 2026-05-24).
  */
@@ -175,7 +175,7 @@ async function fetchRecentReports(): Promise<RecentReport[]> {
 
 /**
  * Top 5 espèces les plus observées (par nombre de posts). Agrège côté client
- * sur les 200 posts les plus récents — volume MVP raisonnable.
+ * sur les 200 posts les plus récents : volume MVP raisonnable.
  */
 async function fetchTopSpecies(): Promise<TopSpecies[]> {
   if (!supabase) return []
@@ -303,7 +303,7 @@ export default function AdminDashboard() {
               ? '1 ouverte'
               : 'fermée'} · {stats.betaUsers}/{stats.betaMaxUsers} users ({betaPct}%)
           </p>
-          {/* CTA Analytics détaillée — bouton primary pour rendre la page
+          {/* CTA Analytics détaillée : bouton primary pour rendre la page
               dédiée bien visible (Nicolas 2026-05-24). */}
           <Link
             to="/admin/analytics"
@@ -399,7 +399,7 @@ export default function AdminDashboard() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-foreground">
                         <span className="font-medium capitalize">{r.target_type}</span>
-                        <span className="text-muted-foreground"> — {r.reason}</span>
+                        <span className="text-muted-foreground"> : {r.reason}</span>
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {formatRelative(r.created_at)}
@@ -413,7 +413,7 @@ export default function AdminDashboard() {
           )}
         </section>
 
-        {/* Top espèces observées — Nicolas 2026-05-24 : remplace l'ancien
+        {/* Top espèces observées : Nicolas 2026-05-24 : remplace l'ancien
             « Actions admin récentes » par un widget produit-utile qui montre
             ce que la communauté observe en ce moment (top 5 species_name). */}
         <section className="bg-background border border-border rounded-lg flex flex-col">
@@ -480,7 +480,7 @@ export default function AdminDashboard() {
                   #{idx + 1}
                 </span>
                 {/* Nicolas 2026-05-24 : photo de profil de l'user, fallback
-                    hermine (cohérent avec le reste de l'app — onboarding,
+                    hermine (cohérent avec le reste de l'app : onboarding,
                     feed, sidebar, etc.) au lieu des initiales auto. */}
                 <img
                   src={c.avatar_url ?? hermineIcon}

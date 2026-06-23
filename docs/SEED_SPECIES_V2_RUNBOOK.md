@@ -1,6 +1,6 @@
-# Seed species V2 — extension à ~10 000 espèces
+# Seed species V2 : extension à ~10 000 espèces
 
-> **Contexte** : Nicolas 2026-05-24 — la beta du Québec ne trouve pas ses
+> **Contexte** : Nicolas 2026-05-24 : la beta du Québec ne trouve pas ses
 > espèces locales dans l'autocomplete. On étend `species_master` de
 > 4 835 → ~10 000 espèces avec ajout des plantes, poissons, arachnides,
 > mollusques + boost régional Canada.
@@ -25,12 +25,12 @@
 | `reptiles`   | 406   | 1 500            | +1 500                           | +1 500         |
 | **Total**    | 4 835 | **~15 200 base** | **+ ~15 000 boost régional max** |                |
 
-**Réaliste : 13 000 – 16 000 espèces** (boost régional limité par le nombre
+**Réaliste : 13 000 : 16 000 espèces** (boost régional limité par le nombre
 de taxons effectivement nommés en FR ; chaque groupe atteint son palier
 selon la couverture vernaculaire GBIF).
 
 Le boost régional fait **2 passes** (Canada + France) pour couvrir les
-2 territoires beta — un user du Québec retrouve l'érable rouge, un user
+2 territoires beta : un user du Québec retrouve l'érable rouge, un user
 de France retrouve la mésange charbonnière, etc.
 
 **Estimation taille DB** :
@@ -45,7 +45,7 @@ de France retrouve la mésange charbonnière, etc.
 
 ### 1. Préparer la clé service_role
 
-Le script utilise désormais `SUPABASE_SERVICE_ROLE_KEY` (bypass RLS) — pas
+Le script utilise désormais `SUPABASE_SERVICE_ROLE_KEY` (bypass RLS) : pas
 besoin de jongler avec les `GRANT` temporaires.
 
 ```bash
@@ -55,7 +55,7 @@ besoin de jongler avec les `GRANT` temporaires.
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIs...
 ```
 
-⚠️ **Ne JAMAIS committer le `.env.local`** (déjà dans .gitignore — vérifié).
+⚠️ **Ne JAMAIS committer le `.env.local`** (déjà dans .gitignore : vérifié).
 
 ### 2. Lancer le script
 
@@ -69,16 +69,16 @@ node scripts/seed-species-from-gbif.mjs
 
 ```
 🔑 Auth Supabase : service_role (bypass RLS)
-🌿 Import GBIF → species_master (v2 — étendu + boost CA)
+🌿 Import GBIF → species_master (v2 : étendu + boost CA)
 
-── Oiseaux (birds) — cible 2000 ──
+── Oiseaux (birds) : cible 2000 ──
    clé 212 page 0 → 850/2000
    clé 212 page 1 → 1700/2000
    ...
    ✓ Oiseaux : 2000 espèces
    🇨🇦 Boost régional CA pour Oiseaux…
       ✓ 387 espèces CA additionnelles
-── Mammifères (mammals) — cible 1200 ──
+── Mammifères (mammals) : cible 1200 ──
    ...
 ```
 
@@ -99,7 +99,7 @@ WHERE taxonomic_group='plants' ORDER BY popularity DESC LIMIT 20;
 ### 4. (optionnel) Régénérer les types TypeScript
 
 Le type `TaxonomicGroup` inclut déjà `plants/fish/arachnids/mollusks` côté
-TS — pas besoin de regen. Mais si les types Supabase générés sont en retard
+TS : pas besoin de regen. Mais si les types Supabase générés sont en retard
 sur certaines colonnes, lance :
 
 ```bash
@@ -112,7 +112,7 @@ npx supabase gen types typescript --project-id hrxgduvworofnrjmgpcj > src/types/
 
 - Le script utilise la clé **service_role** : ne PAS l'exécuter sur staging
   ou main sans backup DB.
-- La clé service_role bypass TOUTES les policies RLS — usage strictement
+- La clé service_role bypass TOUTES les policies RLS : usage strictement
   local + script de seed contrôlé.
 - Les écritures sont en **UPSERT idempotent** (merge sur `scientific_name`)
   → ré-exécutable sans risque de doublons.
@@ -124,8 +124,8 @@ npx supabase gen types typescript --project-id hrxgduvworofnrjmgpcj > src/types/
 | Symptôme                             | Cause probable             | Solution                                                             |
 | ------------------------------------ | -------------------------- | -------------------------------------------------------------------- |
 | `403 Forbidden` sur les upserts      | Clé anon utilisée + RLS    | Ajouter SERVICE_ROLE_KEY                                             |
-| `Timeout création du post après 30s` | Lien GBIF rate-limité      | Re-run — le script reprend où il s'est arrêté grâce au dédoublonnage |
-| Quotas non atteints pour un groupe   | Couverture FR GBIF limitée | Normal — la qualité prime sur le quota                               |
+| `Timeout création du post après 30s` | Lien GBIF rate-limité      | Re-run : le script reprend où il s'est arrêté grâce au dédoublonnage |
+| Quotas non atteints pour un groupe   | Couverture FR GBIF limitée | Normal : la qualité prime sur le quota                               |
 | Boost CA retourne 0 espèces          | Taxon key invalide         | Vérifier les keys GBIF dans GROUPS                                   |
 
 ---

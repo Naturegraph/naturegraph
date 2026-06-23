@@ -1,5 +1,5 @@
 /**
- * Button — Composant bouton universel de Naturegraph
+ * Button : Composant bouton universel de Naturegraph
  * ====================================================
  * Gère 3 modes de rendu selon les props fournies :
  * - `to`   → <Link> React Router (navigation interne)
@@ -9,7 +9,7 @@
  * Variants : primary | outline | secondary | ghost | danger
  * Sizes    : sm (h-10) | md (h-12) | lg (h-14)
  *
- * 2026-05-19 (Nicolas) — Phase 1 simplification :
+ * 2026-05-19 (Nicolas) : Phase 1 simplification :
  * - Plus de shadow ni d'effet 3D translateY (anciennement btn-press).
  * - Primary  : background plein, hover = brightness léger.
  * - Secondary: transparent + border simple, hover = border-color qui pointe primary.
@@ -26,11 +26,11 @@ export type ButtonSize = 'sm' | 'md' | 'lg'
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** Variante visuelle du bouton */
   variant?: ButtonVariant
-  /** Taille du bouton — sm=40px | md=48px | lg=56px de hauteur */
+  /** Taille du bouton : sm=40px | md=48px | lg=56px de hauteur */
   size?: ButtonSize
-  /** Navigation interne via React Router — rend un <Link> */
+  /** Navigation interne via React Router : rend un <Link> */
   to?: string
-  /** Lien externe — rend un <a> */
+  /** Lien externe : rend un <a> */
   href?: string
   /** Ouvre le lien dans un nouvel onglet (pertinent avec href) */
   newTab?: boolean
@@ -44,34 +44,34 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<ButtonVariant, string> = {
   /**
-   * Bouton principal — violet solid, sobre (pas de shadow).
+   * Bouton principal : violet solid, sobre (pas de shadow).
    * Usage : CTA primaires, actions importantes.
    */
   primary:
     'btn-press btn-press-primary bg-[var(--color-action-default)] text-[var(--color-text-white)] rounded-full',
 
   /**
-   * Bouton outline — transparent + border translucide blanche.
+   * Bouton outline : transparent + border translucide blanche.
    * Usage : actions secondaires sur fonds sombres (Hero, Discord).
    */
   outline: 'btn-press btn-press-outline bg-transparent text-[var(--color-text-white)] rounded-full',
 
   /**
-   * Bouton secondaire — transparent + border simple.
+   * Bouton secondaire : transparent + border simple.
    * Usage : actions secondaires dans l'interface app (auth, forms).
    */
   secondary:
     'btn-press btn-press-secondary bg-transparent text-[var(--color-text-primary)] rounded-full',
 
   /**
-   * Bouton fantôme — fond transparent, texte secondaire.
+   * Bouton fantôme : fond transparent, texte secondaire.
    * Usage : actions tertiaires, annulation, "Découvrir sans compte".
    */
   ghost:
     'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] rounded-full',
 
   /**
-   * Bouton destructif — rouge, pour suppressions et actions irréversibles.
+   * Bouton destructif : rouge, pour suppressions et actions irréversibles.
    */
   danger:
     'bg-[var(--color-error-action)] text-[var(--color-text-white)] hover:opacity-90 rounded-full',
@@ -80,9 +80,9 @@ const variantClasses: Record<ButtonVariant, string> = {
 // ── Classes par taille ───────────────────────────────────────────────────────
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'h-10 px-4 text-sm', // 40px — ex: Footer CTA
-  md: 'h-12 px-6 text-base', // 48px — ex: Navbar, CTABanner, Discord
-  lg: 'h-14 px-10 text-base', // 56px — ex: Hero CTA principal
+  sm: 'h-10 px-4 text-sm', // 40px : ex: Footer CTA
+  md: 'h-12 px-6 text-base', // 48px : ex: Navbar, CTABanner, Discord
+  lg: 'h-14 px-10 text-base', // 56px : ex: Hero CTA principal
 }
 
 // ── Classes de base communes ─────────────────────────────────────────────────
@@ -126,7 +126,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       </>
     )
 
-    // Navigation interne — <Link> React Router
+    // Navigation interne : <Link> React Router
     if (to) {
       return (
         <Link to={to} className={computedClass}>
@@ -135,7 +135,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       )
     }
 
-    // Lien externe — <a>
+    // Lien externe : <a>
     if (href) {
       return (
         <a

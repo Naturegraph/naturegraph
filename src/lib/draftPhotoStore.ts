@@ -1,5 +1,5 @@
 /**
- * draftPhotoStore — Persistance des PHOTOS de brouillon via IndexedDB (NG-038)
+ * draftPhotoStore : Persistance des PHOTOS de brouillon via IndexedDB (NG-038)
  * ===========================================================================
  *
  * Probleme : l'auto-save brouillon (useContributeDraft) ecrit le texte en

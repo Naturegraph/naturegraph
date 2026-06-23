@@ -1,5 +1,5 @@
 /**
- * LocationContext — Localisation privacy-first
+ * LocationContext : Localisation privacy-first
  * =============================================
  * Refonte complète avec rétrocompatibilité de l'API existante.
  *
@@ -11,7 +11,7 @@
  *
  * API conservée (rétrocompatibilité avec FeedSection, HomeNavbar, etc.) :
  *   - locationLabel   : dérivé de userLocation ou saisi dans LocationModal
- *   - locationDistance: rayon local (non encore lié à location_radius_km — TODO)
+ *   - locationDistance: rayon local (non encore lié à location_radius_km : TODO)
  *   - setLocation     : mise à jour locale du label
  *   - setLocationDistance : mise à jour locale du rayon
  *   - locationCoords  : coordonnées temporaires (session uniquement, non stockées)
@@ -45,9 +45,9 @@ export interface LocationCoords {
  * Fusionne l'ancienne API (locationLabel, etc.) et la nouvelle (userLocation, etc.)
  */
 export interface LocationContextValue extends LocationContextState {
-  /** @deprecated — utiliser getVisibilityLabel() pour l'affichage public */
+  /** @deprecated : utiliser getVisibilityLabel() pour l'affichage public */
   locationLabel: string
-  /** Rayon local (session) — sera remplacé par userLocation.locationRadiusKm */
+  /** Rayon local (session) : sera remplacé par userLocation.locationRadiusKm */
   locationDistance: number
   /** Coordonnées temporaires (non stockées) */
   locationCoords: LocationCoords | null
@@ -242,7 +242,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const setLocation = useCallback((label: string, coords?: LocationCoords | null) => {
     setLocalLabel(label)
     if (coords !== undefined) setCoords(coords ?? null)
-    // Persistance localStorage — pour que le filtre rayon survive au
+    // Persistance localStorage : pour que le filtre rayon survive au
     // reload de page (sinon locationCoords retombe à null et le feed
     // affiche tous les posts au lieu du rayon).
     try {
@@ -259,7 +259,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch {
-      /* private mode / quota — ignorer silencieusement */
+      /* private mode / quota : ignorer silencieusement */
     }
   }, [])
 

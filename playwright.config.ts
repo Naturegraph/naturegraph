@@ -1,5 +1,5 @@
 /**
- * Playwright config — Tests E2E critical path Naturegraph
+ * Playwright config : Tests E2E critical path Naturegraph
  * ============================================================================
  *
  * Refs : T-007 + T-009 (MASTER_TODO) + BATCH 20

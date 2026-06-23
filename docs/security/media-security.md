@@ -2,12 +2,12 @@
 
 ## Buckets Supabase Storage
 
-| Bucket | Public | Usage | Size limit | MIME |
-|---|---|---|---|---|
-| `avatars` | ✅ public | Avatars users | 2 MB | image/webp, image/jpeg, image/png |
-| `post-media` | ✅ public | Photos/vidéos d'observations | 10 MB | image/webp, image/jpeg, video/mp4 |
-| `notebook-covers` | ✅ public | Couvertures de carnets | 2 MB | image/webp, image/jpeg |
-| `exports` | 🔒 private | Exports RGPD ZIP | 100 MB | application/zip |
+| Bucket            | Public     | Usage                        | Size limit | MIME                              |
+| ----------------- | ---------- | ---------------------------- | ---------- | --------------------------------- |
+| `avatars`         | ✅ public  | Avatars users                | 2 MB       | image/webp, image/jpeg, image/png |
+| `post-media`      | ✅ public  | Photos/vidéos d'observations | 10 MB      | image/webp, image/jpeg, video/mp4 |
+| `notebook-covers` | ✅ public  | Couvertures de carnets       | 2 MB       | image/webp, image/jpeg            |
+| `exports`         | 🔒 private | Exports RGPD ZIP             | 100 MB     | application/zip                   |
 
 > « Public » = lecture sans auth (URLs servies via CDN Supabase). L'écriture reste protégée par RLS.
 
@@ -59,7 +59,7 @@ CREATE POLICY postmedia_delete ON storage.objects
   );
 ```
 
-> **Pourquoi user_id en premier dossier** — Permet une politique RLS triviale et un nettoyage simple à la suppression de compte (`DELETE FROM storage.objects WHERE name LIKE 'post-media/{user_id}/%'`).
+> **Pourquoi user_id en premier dossier** : Permet une politique RLS triviale et un nettoyage simple à la suppression de compte (`DELETE FROM storage.objects WHERE name LIKE 'post-media/{user_id}/%'`).
 
 ### `exports` (privé)
 
@@ -108,11 +108,11 @@ export async function uploadPostMedia(
   file: File,
   postId: string,
   userId: string,
-  copyright: { notice: string; license: License }
+  copyright: { notice: string; license: License },
 ): Promise<{ storage_path: string; width: number; height: number }> {
   // 1. validation
   if (file.size > 10 * 1024 * 1024) throw new Error('Fichier trop lourd (max 10 MB)')
-  if (!['image/jpeg','image/png','image/webp'].includes(file.type)) {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
     throw new Error('Format non supporté')
   }
 
@@ -123,7 +123,8 @@ export async function uploadPostMedia(
   // 4. upload
   const path = `${userId}/${postId}/${crypto.randomUUID()}.webp`
   const { error: upErr } = await supabase.storage
-    .from('post-media').upload(path, blob, { contentType: 'image/webp' })
+    .from('post-media')
+    .upload(path, blob, { contentType: 'image/webp' })
   if (upErr) throw upErr
 
   // 5. metadata row
@@ -131,7 +132,9 @@ export async function uploadPostMedia(
     post_id: postId,
     storage_path: path,
     mime_type: 'image/webp',
-    width, height, size_bytes: blob.size,
+    width,
+    height,
+    size_bytes: blob.size,
     copyright_notice: copyright.notice,
     license: copyright.license,
   })
@@ -145,11 +148,12 @@ export async function uploadPostMedia(
 }
 ```
 
-## Espèces sensibles — floutage de coordonnées
+## Espèces sensibles : floutage de coordonnées
 
 Certaines espèces (rapaces nicheurs, orchidées rares...) ont `taxref.is_sensitive = true`. Pour ces posts, on ne doit jamais exposer la position exacte.
 
 **Implémentation** :
+
 - À la création du post, si `species_id` est sensitive, le **trigger serveur** force `location_precision = 2` (~10 km) et **brouille `location`** vers le centre de la maille.
 - Une fonction `posts_public_view` expose `ST_SnapToGrid(location, 0.1)` au lieu de `location` brut.
 
@@ -175,21 +179,21 @@ CREATE TRIGGER trg_blur_sensitive
 
 ## Anti-abus
 
-| Risque | Mitigation |
-|---|---|
-| Upload de contenu illégal | Modération a posteriori via `reports` + ban via Edge Function admin |
-| Hotlinking massif (egress abuse) | Cache CDN Supabase + monitoring egress quota |
-| Upload de virus | MIME validation client + en V1 : scan via Edge Function avec ClamAV |
-| Données EXIF leakées | Strip systématique avant upload (cf. pipeline §3) |
-| Vol de bande passante | Watermark optionnel V1 sur grandes images |
+| Risque                           | Mitigation                                                          |
+| -------------------------------- | ------------------------------------------------------------------- |
+| Upload de contenu illégal        | Modération a posteriori via `reports` + ban via Edge Function admin |
+| Hotlinking massif (egress abuse) | Cache CDN Supabase + monitoring egress quota                        |
+| Upload de virus                  | MIME validation client + en V1 : scan via Edge Function avec ClamAV |
+| Données EXIF leakées             | Strip systématique avant upload (cf. pipeline §3)                   |
+| Vol de bande passante            | Watermark optionnel V1 sur grandes images                           |
 
 ## Politique de licence
 
-| Cas | Licence par défaut | Modifiable |
-|---|---|---|
-| Photo personnelle | `CC-BY-NC-SA-4.0` | ✅ |
-| Photo de groupe / événement | `CC-BY-NC-SA-4.0` | ✅ |
-| Capture d'écran TAXREF | doit créditer INPN/MNHN | non |
-| Photo réutilisée d'ailleurs | `all-rights-reserved` | ✅ |
+| Cas                         | Licence par défaut      | Modifiable |
+| --------------------------- | ----------------------- | ---------- |
+| Photo personnelle           | `CC-BY-NC-SA-4.0`       | ✅         |
+| Photo de groupe / événement | `CC-BY-NC-SA-4.0`       | ✅         |
+| Capture d'écran TAXREF      | doit créditer INPN/MNHN | non        |
+| Photo réutilisée d'ailleurs | `all-rights-reserved`   | ✅         |
 
-Le champ `copyright_notice` est **obligatoire** (NOT NULL) — l'utilisateur doit toujours déclarer la source.
+Le champ `copyright_notice` est **obligatoire** (NOT NULL) : l'utilisateur doit toujours déclarer la source.

@@ -1,5 +1,5 @@
 // ============================================
-// Database types — Naturegraph
+// Database types : Naturegraph
 // Maps to Supabase PostgreSQL schema
 // Source of truth: docs/DATA_ARCHITECTURE.md
 // ============================================
@@ -24,7 +24,7 @@ export type PostType = 'nature_encounter' | 'nature_instant'
 export type PostStatus = 'draft' | 'published' | 'archived'
 /**
  * Format d'affichage choisi par l'utilisateur (Figma 6385:47324).
- * Préférence visuelle utilisée par le FeedPost — n'altère pas les photos sources.
+ * Préférence visuelle utilisée par le FeedPost : n'altère pas les photos sources.
  */
 export type DisplayFormat = '16:9' | 'portrait' | '1:1'
 export type Visibility = 'public' | 'private' | 'followers'
@@ -54,9 +54,9 @@ export type TaxonomicGroup =
   | 'plants'
   | 'other'
 
-// Réactions disponibles sur un post — aligné avec FeedPost.tsx REACTION_CONFIG
+// Réactions disponibles sur un post : aligné avec FeedPost.tsx REACTION_CONFIG
 // (second-agent/10) Ordre Figma 6385:103293 : love → fire → admire → wow → curious.
-// 'disappointed' supprimé — ton trop négatif, validation Nicolas 2026-04-30.
+// 'disappointed' supprimé : ton trop négatif, validation Nicolas 2026-04-30.
 // TODO backend : retirer la valeur 'disappointed' de l'enum reaction_type côté DB
 //                + nettoyer les éventuels rows historiques avec ce type.
 export type ReactionType = 'love' | 'admire' | 'fire' | 'wow' | 'curious'
@@ -103,7 +103,7 @@ export interface Profile {
   birth_date: string | null
   bio: string | null
   interests: Interest[]
-  // Localisation héritée (colonnes texte legacy — conservées pour compatibilité)
+  // Localisation héritée (colonnes texte legacy : conservées pour compatibilité)
   city: string | null
   region: string | null
   country: string | null
@@ -114,7 +114,7 @@ export interface Profile {
   region_name: string | null
   /** Code pays ISO 3166-1 alpha-2 */
   country_code: string
-  /** Rayon de partage déclaré [75–500 km] */
+  /** Rayon de partage déclaré [75-500 km] */
   location_radius_km: number
   /**
    * Visibilité de la localisation :
@@ -126,7 +126,7 @@ export interface Profile {
   /** Timestamp du dernier update (pour throttle 1h) */
   location_updated_at: string | null
   // Note : location_point (geography PostGIS) est absent intentionnellement.
-  // Il n'est jamais renvoyé au client — usage serveur uniquement (ST_DWithin).
+  // Il n'est jamais renvoyé au client : usage serveur uniquement (ST_DWithin).
   instagram: string | null
   twitter: string | null
   /** NG-011 (V1.1.3) : optionnel pour ne pas casser les Profile objects existants
@@ -219,7 +219,7 @@ export interface Post {
   taxref_updated_at: string | null
   // Phenomenon (nature_instant)
   phenomenon: string | null
-  // Display preference (Figma 6385:47324) — choisi à l'étape 1 du formulaire.
+  // Display preference (Figma 6385:47324) : choisi à l'étape 1 du formulaire.
   // Détermine le format du conteneur photo dans le feed (16:9 / portrait / 1:1).
   display_format: DisplayFormat
   // Counters (denormalized)
@@ -304,7 +304,7 @@ export interface Follow {
 }
 
 /**
- * Bookmark / favori — un user a sauvegardé un post pour le retrouver dans
+ * Bookmark / favori : un user a sauvegardé un post pour le retrouver dans
  * sa Collection. Voir second-agent/13.
  */
 export interface SavedPost {
@@ -314,7 +314,7 @@ export interface SavedPost {
 }
 
 /**
- * Blocage utilisateur — table déjà existante (migration 20260420). Utilisée
+ * Blocage utilisateur : table déjà existante (migration 20260420). Utilisée
  * pour les actions "Masquer @user" du PostOptionsMenu (second-agent/12).
  * Le bloqué ne peut pas voir le profil/posts du bloqueur (RLS côté DB).
  */
@@ -324,7 +324,7 @@ export interface Block {
   created_at: string
 }
 
-/** Raisons de signalement — alignées sur le check constraint DB. */
+/** Raisons de signalement : alignées sur le check constraint DB. */
 export type ReportReason =
   | 'inappropriate_content'
   | 'harassment'
@@ -336,7 +336,7 @@ export type ReportReason =
 export type ReportStatus = 'pending' | 'reviewing' | 'resolved' | 'dismissed'
 
 /**
- * Signalement de contenu — table déjà existante (migration 20260420).
+ * Signalement de contenu : table déjà existante (migration 20260420).
  * Utilisée par ReportModal (second-agent/15).
  */
 export interface Report {

@@ -1,5 +1,5 @@
 /**
- * AuthInput — Champ de formulaire pour les pages d'authentification
+ * AuthInput : Champ de formulaire pour les pages d'authentification
  * Affiche un label, un input, un texte d'aide et un message d'erreur.
  */
 

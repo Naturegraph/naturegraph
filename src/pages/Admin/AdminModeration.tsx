@@ -1,17 +1,17 @@
 /**
- * AdminModeration — Module 3 : Moderation contenu (MVP)
+ * AdminModeration : Module 3 : Moderation contenu (MVP)
  *
  * Refs : ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md v2.0 Module 3 + BATCH 33
  *
  * Fonctionnalites livrees :
- *   - Liste signalements paginee (20/page) — pagination obligatoire (eco-conception)
+ *   - Liste signalements paginee (20/page) : pagination obligatoire (eco-conception)
  *   - Filtres : status (new / in_review / resolved / dismissed) + priority
  *   - Actions par signalement :
  *       * Voir cible (lien vers profil ou post)
  *       * Marquer "in_review" (auto-assign a l'admin connecte)
  *       * Resoudre avec notes (ConfirmModal + textarea)
  *       * Rejeter (dismiss) avec notes
- *       * Supprimer contenu (action irreversible — admin_actions.content_remove)
+ *       * Supprimer contenu (action irreversible : admin_actions.content_remove)
  *   - Toutes les actions log dans admin_audit_logs (immutable)
  *
  * Hors scope BATCH 33 (Phase 2+) :
@@ -287,7 +287,7 @@ export default function AdminModeration() {
   }
 
   async function quickReview(report: ReportRow) {
-    // Action rapide : assign + mark in_review (pas de modal — 1 click)
+    // Action rapide : assign + mark in_review (pas de modal : 1 click)
     if (!supabase || !adminUser) return
     try {
       const { error } = await supabase
@@ -359,7 +359,7 @@ export default function AdminModeration() {
             toast.error('Raison (10 caracteres min) requise pour supprimer.')
             return
           }
-          // Log dans admin_actions (action reversible? Non — suppression definitive)
+          // Log dans admin_actions (action reversible? Non : suppression definitive)
           const { error: actionErr } = await supabase.from('admin_actions').insert({
             performed_by: adminUser.id,
             action_type: 'content_remove',
@@ -372,7 +372,7 @@ export default function AdminModeration() {
           if (actionErr) throw actionErr
 
           // Hide le contenu selon target_type via la colonne `status`
-          // (le schema actuel n'a pas de soft-delete column — on utilise status='removed')
+          // (le schema actuel n'a pas de soft-delete column : on utilise status='removed')
           if (report.target_type === 'post') {
             await supabase.from('posts').update({ status: 'removed' }).eq('id', report.target_id)
           }
@@ -541,7 +541,7 @@ export default function AdminModeration() {
                         </span>
                       </div>
                       <p className="text-sm font-medium text-foreground">
-                        <span className="capitalize">{r.target_type}</span> signale —{' '}
+                        <span className="capitalize">{r.target_type}</span> signale -{' '}
                         <span className="text-muted-foreground">{r.reason}</span>
                       </p>
                       {r.description && (
@@ -1054,7 +1054,7 @@ function ReportDetailDrawer({
               </div>
               <div className="bg-[var(--color-bg-secondary)]/40 rounded-lg p-2.5">
                 <p className="text-xs text-muted-foreground">Signalements sur la cible</p>
-                <p className="font-medium text-foreground tabular-nums">{relatedCount ?? '—'}</p>
+                <p className="font-medium text-foreground tabular-nums">{relatedCount ?? '-'}</p>
               </div>
             </div>
             <div className="bg-[var(--color-bg-secondary)]/40 rounded-lg p-3">
@@ -1318,7 +1318,7 @@ interface ReportActionMenuProps {
   onAction: (type: Exclude<ActionType, null>, report: ReportRow) => void
   onClose: () => void
   /** BATCH 109 : rect du bouton trigger pour positionner le menu via Portal
-      (même fix que AdminUsers BATCH 105a — évite le clipping). */
+      (même fix que AdminUsers BATCH 105a : évite le clipping). */
   anchorRect: DOMRect | null
 }
 

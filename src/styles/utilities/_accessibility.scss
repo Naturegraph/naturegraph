@@ -1,5 +1,5 @@
 // ============================================
-// Accessibility — Naturegraph
+// Accessibility : Naturegraph
 // ============================================
 // Trois systèmes :
 //   1. Skip link global (focus trap bypass)
@@ -44,7 +44,7 @@
   // Les composants qui utilisent `text-base` (1rem) bénéficient du scale.
   // Les tailles Tailwind (text-sm, text-lg, etc.) restent proportionnelles.
   :root {
-    --font-size-base: 16px; // medium — valeur par défaut
+    --font-size-base: 16px; // medium : valeur par défaut
   }
 
   html[data-text-size='small'] {

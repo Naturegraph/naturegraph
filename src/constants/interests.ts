@@ -1,5 +1,5 @@
 /**
- * Centres d'intérêt — Configuration UI
+ * Centres d'intérêt : Configuration UI
  *
  * Source de vérité pour les labels et emojis des centres d'intérêt.
  * Utilisé dans l'éditeur de profil, l'ADN de l'observateur, les badges.
@@ -8,7 +8,7 @@
  *
  * Nicolas 2026-05-24 : les emojis sont DÉRIVÉS de CATEGORY_EMOJIS pour
  * éviter les drifts visuels (avant : `🐿` sans variation selector dans
- * ProfileSidebar vs `🐿️` avec dans FeedPost — rendu différent selon OS).
+ * ProfileSidebar vs `🐿️` avec dans FeedPost : rendu différent selon OS).
  */
 
 import { CATEGORY_EMOJIS } from '@/utils/badgeHelpers'

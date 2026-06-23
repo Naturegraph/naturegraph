@@ -1,21 +1,21 @@
 // ============================================
-// Variables — Design System Naturegraph
+// Variables : Design System Naturegraph
 // ============================================
 // Synced from Figma variables (2026-03-19)
 
 // ── Font families ──
-$font-title: "Quicksand", sans-serif;
-$font-body: "Mulish", sans-serif;
+$font-title: 'Quicksand', sans-serif;
+$font-body: 'Mulish', sans-serif;
 
 // ── Font sizes (Desktop values, responsive via CSS clamp or media queries) ──
-$font-size-xs: 0.75rem;    // 12px
-$font-size-sm: 0.875rem;   // 14px
-$font-size-md: 1rem;        // 16px
-$font-size-lg: 1.125rem;    // 18px (desktop) / 16px (mobile)
-$font-size-xl: 1.5rem;      // 24px (desktop) / 18px (mobile)
-$font-size-2xl: 2rem;       // 32px (desktop) / 24px (mobile)
-$font-size-3xl: 3rem;       // 48px (desktop) / 32px (mobile)
-$font-size-4xl: 4rem;       // 64px (desktop) / 40px (mobile)
+$font-size-xs: 0.75rem; // 12px
+$font-size-sm: 0.875rem; // 14px
+$font-size-md: 1rem; // 16px
+$font-size-lg: 1.125rem; // 18px (desktop) / 16px (mobile)
+$font-size-xl: 1.5rem; // 24px (desktop) / 18px (mobile)
+$font-size-2xl: 2rem; // 32px (desktop) / 24px (mobile)
+$font-size-3xl: 3rem; // 48px (desktop) / 32px (mobile)
+$font-size-4xl: 4rem; // 64px (desktop) / 40px (mobile)
 
 // ── Font weights ──
 $font-weight-regular: 400;

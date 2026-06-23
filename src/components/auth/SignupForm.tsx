@@ -1,5 +1,5 @@
 /**
- * SignupForm — Inscription Naturegraph via OTP
+ * SignupForm : Inscription Naturegraph via OTP
  *
  * Wrapper léger autour de AuthForm (organism partagé avec LoginForm).
  */

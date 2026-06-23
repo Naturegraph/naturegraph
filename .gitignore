@@ -11,7 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
-# Env files — couvrir TOUTES les variantes (BATCH 39 hardening)
+# Env files : couvrir TOUTES les variantes (BATCH 39 hardening)
 .env
 .env.*
 !.env.example

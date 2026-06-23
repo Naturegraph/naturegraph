@@ -1,6 +1,6 @@
-# PRD — Base de données espèces (Phase 1 socle + Phase 2 fallback)
+# PRD : Base de données espèces (Phase 1 socle + Phase 2 fallback)
 
-> **Statut :** Validé Nicolas (2026-05-19) — Phase 1 en cours d'exécution.
+> **Statut :** Validé Nicolas (2026-05-19) : Phase 1 en cours d'exécution.
 > **Date :** 2026-05-19.
 > **Auteur :** Équipe produit Naturegraph.
 > **Remplace :** stratégie TAXREF/INPN abandonnée (cf. décision Nicolas 2026-05-19).
@@ -21,16 +21,16 @@ La stratégie initiale **TAXREF / INPN** est abandonnée pour la Phase 1 :
 
 ### Nouvelle direction
 
-- **GBIF (Global Biodiversity Information Facility)** — référentiel taxonomique international, **CC0** (domaine public).
-- **Wikidata** — pour les noms vernaculaires français et québécois manquants chez GBIF, **CC0**.
-- **iNaturalist API** (Phase 2 fallback) — pour les espèces rares non trouvées localement, **CC-BY**.
+- **GBIF (Global Biodiversity Information Facility)** : référentiel taxonomique international, **CC0** (domaine public).
+- **Wikidata** : pour les noms vernaculaires français et québécois manquants chez GBIF, **CC0**.
+- **iNaturalist API** (Phase 2 fallback) : pour les espèces rares non trouvées localement, **CC-BY**.
 
 État actuel de la DB (relevé 2026-05-19) :
 
 | Table            | Lignes            | Usage                                              |
 | ---------------- | ----------------- | -------------------------------------------------- |
-| `species_master` | 20 (seed minimal) | Cible Phase 1 — schéma déjà adapté GBIF + Wikidata |
-| `taxref_cache`   | ~?                | Legacy TAXREF — à déprécier Phase 1 fin            |
+| `species_master` | 20 (seed minimal) | Cible Phase 1 : schéma déjà adapté GBIF + Wikidata |
+| `taxref_cache`   | ~?                | Legacy TAXREF : à déprécier Phase 1 fin            |
 | `species_full`   | 0                 | Table vide, à supprimer                            |
 
 ---
@@ -82,14 +82,14 @@ La table `species_master` existe déjà avec le schéma adapté. **Aucune nouvel
 species_master (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   taxref_id       varchar    -- conservé pour traçabilité historique (NULL pour Phase 1)
-  gbif_id         varchar    -- GBIF taxonKey — PRIMARY identifier Phase 1
+  gbif_id         varchar    -- GBIF taxonKey : PRIMARY identifier Phase 1
   common_name_fr  varchar    -- nom français (depuis Wikidata si manquant GBIF)
   common_name_en  varchar
   scientific_name varchar    -- NOT NULL
   synonyms        text[]     -- noms alternatifs (Wikidata aliases)
   taxonomic_group varchar    -- birds, mammals, insects, reptiles, amphibians, plants, fungi, fish, other
   source          varchar    -- 'gbif' | 'wikidata' | 'inat' (Phase 2)
-  popularity      integer    -- nb d'observations historiques (GBIF) — sert au ranking
+  popularity      integer    -- nb d'observations historiques (GBIF) : sert au ranking
   image_url       varchar    -- URL Wikimedia Commons (Wikidata image)
   is_active       boolean    -- soft delete
   created_at      timestamptz
@@ -117,7 +117,7 @@ CREATE INDEX IF NOT EXISTS idx_species_master_group_pop
 ALTER TABLE species_master ENABLE ROW LEVEL SECURITY;
 CREATE POLICY species_master_public_read ON species_master
   FOR SELECT USING (is_active = true);
--- Aucun INSERT/UPDATE/DELETE pour les utilisateurs — seed via migrations admin uniquement.
+-- Aucun INSERT/UPDATE/DELETE pour les utilisateurs : seed via migrations admin uniquement.
 ```
 
 ---
@@ -138,7 +138,7 @@ CREATE POLICY species_master_public_read ON species_master
 | T-10     | (Phase 2) Seed étendu ~5 000 espèces via le script `seed-species-from-gbif.ts`                                          | 1,5 j      | Phase 2                                    |
 | T-11     | (Phase 2) iNaturalist API fallback + caching auto species_master                                                        | 1,5 j      | Phase 2                                    |
 
-**Total Phase 1 (T-01 à T-09)** : ~3,75 j dev — **terminé 2026-05-19** ✅
+**Total Phase 1 (T-01 à T-09)** : ~3,75 j dev : **terminé 2026-05-19** ✅
 Phase 2 (T-10/T-11) : ~3 j dev, à planifier quand le volume utilisateurs le justifie.
 
 ---
@@ -175,7 +175,7 @@ Phase 2 (T-10/T-11) : ~3 j dev, à planifier quand le volume utilisateurs le jus
 | Doublons GBIF (synonymes non résolus)             | Moyenne     | Moyen  | UPSERT sur `(scientific_name, gbif_id)` ; conservation `synonyms[]`.   |
 | Couverture Québec insuffisante après seed         | Moyenne     | Moyen  | Lister manuellement top 200 espèces QC + croisement GBIF avant import. |
 | `species_master` schema désaligné après migration | Faible      | Élevé  | Regen `npx supabase gen types typescript` après migration ; bench tsc. |
-| iNaturalist API ToS changeants (Phase 2)          | Faible      | Moyen  | Wrapper service abstrait — facile à swap pour autre fournisseur.       |
+| iNaturalist API ToS changeants (Phase 2)          | Faible      | Moyen  | Wrapper service abstrait : facile à swap pour autre fournisseur.       |
 
 ---
 
@@ -186,7 +186,7 @@ Phase 2 (T-10/T-11) : ~3 j dev, à planifier quand le volume utilisateurs le jus
 | Lignes DB                        | ~?                     | ~5 000                                        |
 | Taille DB                        | 184 KB                 | ~1 MB                                         |
 | Latence autocomplete p95         | ~50ms                  | < 30ms (pg_trgm)                              |
-| Requêtes API externes en runtime | 0                      | 0 (Phase 1) — Phase 2 fallback iNat optionnel |
+| Requêtes API externes en runtime | 0                      | 0 (Phase 1) : Phase 2 fallback iNat optionnel |
 | Bandwidth client                 | ~0 (recherche serveur) | ~0 (idem)                                     |
 
 **Conformité GUIDELINES.md** : aucune dépendance JS ajoutée. Pas de polling. Pas d'API externe sauf Phase 2 fallback ciblé (caching auto = appel unique par espèce rare).
@@ -202,7 +202,7 @@ Phase 2 (T-10/T-11) : ~3 j dev, à planifier quand le volume utilisateurs le jus
 - [x] `searchService.searchSpecies` query `species_master` au lieu de `taxref_cache`
 - [x] UI fallback "Espèce non trouvée → Ajouter à valider" testée en dev (mobile + desktop)
 - [x] `taxref_cache` + `species_full` supprimées de la DB
-- [x] Tests vitest searchService (6/6 passent — fallback mock)
+- [x] Tests vitest searchService (6/6 passent : fallback mock)
 - [x] Skeleton script seed `scripts/seed-species-from-gbif.ts` pour extension Phase 2
 - [x] `npm run lint && npm run test` au vert (47/47)
 - [ ] Migration appliquée sur staging + prod (manuel à faire au moment de la release v1.0.1+)
@@ -211,7 +211,7 @@ Phase 2 (T-10/T-11) : ~3 j dev, à planifier quand le volume utilisateurs le jus
 
 ---
 
-## Annexe — Décisions clés
+## Annexe : Décisions clés
 
 **ADR-001 : GBIF + Wikidata over TAXREF.** Licence CC0 (vs CC-BY contraignante), couverture mondiale (vs France only), pas d'accord officiel à négocier, sync auto via API.
 
@@ -225,7 +225,7 @@ Phase 2 (T-10/T-11) : ~3 j dev, à planifier quand le volume utilisateurs le jus
 
 ---
 
-**Phase 1 status — 2026-05-19** : **toutes les étapes T-01 à T-09 sont complétées** ✅ (~3,75 j dev). La Phase 1 socle est en place :
+**Phase 1 status : 2026-05-19** : **toutes les étapes T-01 à T-09 sont complétées** ✅ (~3,75 j dev). La Phase 1 socle est en place :
 
 - 202 espèces FR + QC en `species_master` (10 groupes taxonomiques)
 - Indexes pg_trgm sur 3 colonnes pour autocomplete rapide

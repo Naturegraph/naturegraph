@@ -1,27 +1,35 @@
 // ============================================
-// Mixins — Design System Naturegraph
+// Mixins : Design System Naturegraph
 // ============================================
 
-@use "breakpoints" as *;
-@use "variables" as *;
-@use "spacing" as *;
+@use 'breakpoints' as *;
+@use 'variables' as *;
+@use 'spacing' as *;
 
 // ---- Responsive ----
 @mixin respond-to($breakpoint) {
   @if $breakpoint == sm {
-    @media (min-width: $breakpoint-sm) { @content; }
+    @media (min-width: $breakpoint-sm) {
+      @content;
+    }
   } @else if $breakpoint == md {
-    @media (min-width: $breakpoint-md) { @content; }
+    @media (min-width: $breakpoint-md) {
+      @content;
+    }
   } @else if $breakpoint == lg {
-    @media (min-width: $breakpoint-lg) { @content; }
+    @media (min-width: $breakpoint-lg) {
+      @content;
+    }
   } @else if $breakpoint == xl {
-    @media (min-width: $breakpoint-xl) { @content; }
+    @media (min-width: $breakpoint-xl) {
+      @content;
+    }
   }
 }
 
 // ---- Theme ----
 @mixin theme-dark {
-  [data-theme="dark"] & {
+  [data-theme='dark'] & {
     @content;
   }
 }

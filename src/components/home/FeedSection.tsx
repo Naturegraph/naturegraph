@@ -1,5 +1,5 @@
 /**
- * FeedSection — Section centrale du feed
+ * FeedSection : Section centrale du feed
  *
  * Tabs : Récent · Populaire · Pour vous
  *   - Récent    : chronologique, accessible à tous
@@ -41,7 +41,7 @@ import { Loader2 } from 'lucide-react'
 import { useHiddenPostIds } from '@/hooks/useHiddenPosts'
 import { useToggleReaction } from '@/hooks/usePost'
 // LocationPermissionModal + useLocationCTA + requestBrowserLocation retirés
-// de la Phase 1 (Nicolas 2026-05-19) — peu de données, modale prématurée.
+// de la Phase 1 (Nicolas 2026-05-19) : peu de données, modale prématurée.
 // Réactiver Phase 2 quand le volume justifiera le CTA géoloc.
 // import { useLocationCTA } from '@/hooks/useLocationCTA'
 // import { LocationPermissionModal } from '@/components/location/LocationPermissionModal'
@@ -52,20 +52,20 @@ import { formatObservationDate } from '@/utils/observationDate'
 import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
 
 /**
- * Tabs du feed — ordre : Récent · Populaire · Pour vous
+ * Tabs du feed : ordre : Récent · Populaire · Pour vous
  * "for-you" nécessite d'être connecté (tab disabled + modale discovery sinon)
  */
 export type FeedTab = 'recent' | 'popular' | 'for-you'
 
-// Source de vérité unique des emojis catégorie — second-agent/09.
+// Source de vérité unique des emojis catégorie : second-agent/09.
 // Tous les emojis du produit (onboarding, feed, contribute, badges, profil)
-// passent par CATEGORY_EMOJIS dans @/utils/badgeHelpers — DRY + cohérence.
+// passent par CATEGORY_EMOJIS dans @/utils/badgeHelpers : DRY + cohérence.
 import { CATEGORY_EMOJIS } from '@/utils/badgeHelpers'
 
 /** Fallback emoji pour la catégorie 'other' (absente de CATEGORY_EMOJIS). */
 const OTHER_EMOJI = '✨'
 
-/** Lookup tolérant — accepte tout TaxonomicGroup, retourne l'emoji officiel. */
+/** Lookup tolérant : accepte tout TaxonomicGroup, retourne l'emoji officiel. */
 function getTaxonomicEmoji(group: string | null | undefined): string {
   if (!group) return OTHER_EMOJI
   if (group in CATEGORY_EMOJIS) {
@@ -99,7 +99,7 @@ function derivePostFormat(width?: number, height?: number): MockPost['format'] {
  * Badge "préférence #1" affiché en bas-droite de l'avatar auteur
  * (second-agent/08). Mappe le premier centre d'intérêt sur l'emoji
  * de TAXONOMIC_GROUP_CONFIG. Retourne undefined si la liste est vide
- * ou indéfinie (rare — onboarding force au moins un choix).
+ * ou indéfinie (rare : onboarding force au moins un choix).
  */
 function getAuthorPreferenceEmoji(interests: string[] | undefined | null): string | undefined {
   if (!interests || interests.length === 0) return undefined
@@ -131,7 +131,7 @@ function formatPostDate(isoDate: string): string {
  */
 export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost {
   // Le pseudo (username) est la source de vérité pour l'affichage du nom
-  // d'auteur — il suit instantanément les changements de pseudo via la
+  // d'auteur : il suit instantanément les changements de pseudo via la
   // jointure DB profiles!user_id. On a abandonné la concat
   // « first_name + last_name » qui restait figée à l'ancienne valeur quand
   // le pseudo changeait (Nicolas 2026-05-24 : « pas logique »).
@@ -157,8 +157,8 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
 
   return {
     id: item.id,
-    // Auteur du post — comparé à user.id côté parent pour `isOwnPost`
-    // (second-agent/12 — menu adapté selon le contexte).
+    // Auteur du post : comparé à user.id côté parent pour `isOwnPost`
+    // (second-agent/12 : menu adapté selon le contexte).
     authorId: item.user_id,
     // Règle globale (second-agent/04) : conditionne l'icône + couleur d'en-tête
     // dans FeedPost. Default = nature_encounter pour les rares posts legacy
@@ -167,12 +167,12 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
     author: {
       name: authorName,
       // `username` est la SOURCE DE VÉRITÉ pour les liens /profile/:username.
-      // Récupéré via la jointure profiles!user_id donc toujours à jour — un
+      // Récupéré via la jointure profiles!user_id donc toujours à jour : un
       // user qui change son pseudo voit instantanément ses anciens posts
       // pointer vers le bon nouveau profil (Nicolas 2026-05-24 bug fix).
       username: item.author?.username ?? '',
       avatar: item.author?.avatar_url ?? '',
-      // Badge "préférence #1" — emoji du premier centre d'intérêt de l'auteur
+      // Badge "préférence #1" : emoji du premier centre d'intérêt de l'auteur
       // (second-agent/08). Affiché en bas-droite de l'avatar dans FeedPost.
       badge: getAuthorPreferenceEmoji(
         (item.author as { interests?: string[] } | undefined)?.interests,
@@ -193,7 +193,7 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
         ? formatObservationDate(item.encounter_date)
         : undefined
       : undefined,
-    // Règle de confidentialité (Nicolas 2026-05-24 — v3 mobile-friendly) :
+    // Règle de confidentialité (Nicolas 2026-05-24 : v3 mobile-friendly) :
     //  - location_hidden = true → uniquement le **pays** (« France », « Canada »)
     //    pour donner un repère biogéographique sans compromettre la vie privée.
     //  - location_hidden = false → « Ville, Région » (sans pays) pour tenir
@@ -215,7 +215,7 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
       label: item.taxonomic_group ?? 'Autre',
     },
     // Pas de fallback hardcodé : si null, FeedPost gère via i18n
-    // (second-agent/06 — règle catégorie + espèce unifiée).
+    // (second-agent/06 : règle catégorie + espèce unifiée).
     species: item.species_name ?? null,
     // Nicolas 2026-05-22 : `posts.individuals_count` désormais en DB → on le
     // mappe directement (avant : toujours undefined faute de colonne). FeedPost
@@ -231,7 +231,7 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
     scientific_name: item.scientific_name ?? null,
     taxref_id: item.taxref_id ?? null,
     taxonomic_group: item.taxonomic_group ?? null,
-    // Format Figma (Figma 6385:47324) — préférence utilisateur saisie à
+    // Format Figma (Figma 6385:47324) : préférence utilisateur saisie à
     // l'étape 1 du formulaire de contribution. Fallback ratio-based si la
     // colonne est absente (legacy posts pré-migration 20260429).
     //
@@ -249,7 +249,7 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
       width: m.width ?? undefined,
       height: m.height ?? undefined,
     })),
-    // Répartition réelle par type — agrégée serveur (Nicolas 2026-05-22).
+    // Répartition réelle par type : agrégée serveur (Nicolas 2026-05-22).
     // Avant : approximation côté client qui dumpait tout dans `love` →
     // affichage incohérent (« ❤️ 3 » au lieu de « ❤️ 2 / 😱 1 »).
     // Maintenant : compteurs réels depuis la table `reactions`, calculés
@@ -315,7 +315,7 @@ interface FeedSectionProps {
    *  Géré au niveau Home (qui contrôle activePanelType). */
   onContributeClick?: () => void
   /**
-   * Callback édition post — remonté à Home pour ouvrir le panel
+   * Callback édition post : remonté à Home pour ouvrir le panel
    * Encounter/Instant pré-rempli avec les données du post existant
    * (Nicolas 2026-05-24 : permet aux users de corriger leurs obs).
    */
@@ -336,7 +336,7 @@ export function FeedSection({
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
-  // updateLocation retiré avec la LocationPermissionModal (Phase 1) — n'est
+  // updateLocation retiré avec la LocationPermissionModal (Phase 1) : n'est
   // plus déclenché qu'au signup/onboarding et via les Settings.
   // Nicolas 2026-05-22 : quand l'utilisateur est localisé, on applique
   // AUTOMATIQUEMENT son rayon de filtrage (sans qu'il doive ouvrir le panel
@@ -355,7 +355,7 @@ export function FeedSection({
 
   // BATCH 74 : suppression de la modale discovery "Pour vous" (decision Nicolas).
   // Le tab "Pour vous" reste disable visuellement pour les non-connectes
-  // (cf. requiresAuth: true sur le tab) — aucun pop-up ne s'affiche, c'est
+  // (cf. requiresAuth: true sur le tab) : aucun pop-up ne s'affiche, c'est
   // simplement non-cliquable. Plus simple et moins intrusif pour la beta.
   const handleTabClick = useCallback(
     (tabId: FeedTab) => {
@@ -366,7 +366,7 @@ export function FeedSection({
     [isAuthenticated],
   )
 
-  // CTA localisation retiré de la Phase 1 (Nicolas 2026-05-19) — peu de
+  // CTA localisation retiré de la Phase 1 (Nicolas 2026-05-19) : peu de
   // données au démarrage rend la modale prématurée. La géoloc reste
   // disponible via l'onboarding et le LocationModal dans la navbar header.
 
@@ -381,7 +381,7 @@ export function FeedSection({
   // On omet shareTypes si les deux sont cochés (par défaut = tous types) pour
   // éviter des requêtes inutiles et une clé de cache qui change inutilement.
   // Si l'utilisateur est localisé, on force le rayon à `locationDistance`
-  // (75-250 km défini dans LocationModal) — sauf si l'utilisateur a déjà
+  // (75-250 km défini dans LocationModal) : sauf si l'utilisateur a déjà
   // choisi un rayon plus restrictif dans le panel filtres. Sans localisation
   // active, on retombe sur `filters.radius` (0 = pas de filtre géographique).
   const effectiveRadius = isLocalized && filters.radius === 0 ? locationDistance : filters.radius
@@ -429,7 +429,7 @@ export function FeedSection({
     fetchNextPage,
   })
 
-  // Comptage des filtres actifs — affiché en badge numérique sur l'icône entonnoir.
+  // Comptage des filtres actifs : affiché en badge numérique sur l'icône entonnoir.
   // Règle : chaque groupe de filtre "modifié" par rapport au défaut compte pour 1.
   //  - Catégories : 1 si au moins une est sélectionnée
   //  - Demandes d'aide : 1 si cochée
@@ -457,7 +457,7 @@ export function FeedSection({
   const isError_ = isFeedError
 
   // Filtrage côté client : masquer les posts cachés individuellement
-  // (table hidden_posts) — second-agent/22. Les posts d'utilisateurs bloqués
+  // (table hidden_posts) : second-agent/22. Les posts d'utilisateurs bloqués
   // sont déjà filtrés par les RLS DB (table blocks).
   const { data: hiddenIds } = useHiddenPostIds()
   const hiddenSet = new Set(hiddenIds ?? [])
@@ -479,7 +479,7 @@ export function FeedSection({
   // ── Mutation réaction ──────────────────────────────────────────────────
   const reactionMutation = useToggleReaction(user?.id)
 
-  /** Callback passé à chaque FeedPost — déclenche la mutation optimiste */
+  /** Callback passé à chaque FeedPost : déclenche la mutation optimiste */
   function handleReact(postId: string, type: ReactionType) {
     // V1.1.4 NG-026 : on cherche directement dans rawPosts (flat array
     // accumule des pages) au lieu de feedData.data (cas pagination).
@@ -494,7 +494,7 @@ export function FeedSection({
 
   /**
    * Ordre PRD validé : Récent · Populaire · Pour vous
-   * "Pour vous" est toujours visible — disabled si non connecté (conversion).
+   * "Pour vous" est toujours visible : disabled si non connecté (conversion).
    */
   const TABS: { id: FeedTab; label: string; requiresAuth: boolean }[] = [
     { id: 'recent', label: t('home.feed.recent'), requiresAuth: false },
@@ -554,9 +554,9 @@ export function FeedSection({
         </div>
       )}
 
-      {/* Header tabs + contrôles — desktop seulement */}
+      {/* Header tabs + contrôles : desktop seulement */}
       {/*
-        Bandeau des tabs + contrôles vue/filtres — sticky pour rester accessible
+        Bandeau des tabs + contrôles vue/filtres : sticky pour rester accessible
         au scroll (second-agent/24).
         - top-[72px] : juste sous la HomeNavbar (header h-[72px] sticky top-0)
         - bg-background avec léger backdrop-blur pour lisibilité quand le feed
@@ -667,8 +667,8 @@ export function FeedSection({
       {/* État chargement */}
       {isLoading_ && <FeedSkeleton />}
 
-      {/* État erreur — utilise la primitive ErrorState (BATCH 6 / T-020).
-          Ajoute un bouton "Réessayer" qui declenche refetch() — UX amelioree. */}
+      {/* État erreur : utilise la primitive ErrorState (BATCH 6 / T-020).
+          Ajoute un bouton "Réessayer" qui declenche refetch() : UX amelioree. */}
       {isError_ && (
         <div className="bg-background md:rounded-card rounded-none">
           <ErrorState
@@ -776,6 +776,9 @@ export function FeedSection({
                   /* Dernier item du feed : on retire la bordure de fin pour
                      éviter une barre orpheline en bas de liste. */
                   hideEndBorder={idx === posts.length - 1}
+                  /* NG-026 : seul le 1er post (above-the-fold, LCP) charge sa
+                     cover en eager ; les autres en lazy (eco-conception). */
+                  priority={idx === 0}
                 />
               ))}
             </div>
@@ -824,7 +827,7 @@ export function FeedSection({
           filters={filters}
           onApply={(next) => {
             setFilters(next)
-            // Force invalidation TOUT le cache 'feed' — défensif au cas où
+            // Force invalidation TOUT le cache 'feed' : défensif au cas où
             // React Query reste sur des données stale après changement de
             // filtres (Nicolas 2026-05-22 : retour beta « rien ne change »).
             queryClient.invalidateQueries({ queryKey: ['feed'] })
@@ -836,7 +839,7 @@ export function FeedSection({
       )}
 
       {/* BATCH 74 : modale discovery "Pour vous" supprimee de la beta. */}
-      {/* LocationPermissionModal retirée Phase 1 (Nicolas 2026-05-19) —
+      {/* LocationPermissionModal retirée Phase 1 (Nicolas 2026-05-19) -
           composant conservé dans /components/location pour réactivation Phase 2. */}
     </section>
   )

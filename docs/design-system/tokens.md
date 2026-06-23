@@ -1,6 +1,6 @@
-# Tokens — Design System Naturegraph
+# Tokens : Design System Naturegraph
 
-> Phase 2. **Source : Figma — Style Guide** (node `2061:2837`).
+> Phase 2. **Source : Figma : Style Guide** (node `2061:2837`).
 > Extraction via `mcp__Figma__get_variable_defs` le 2026-04-09.
 > Mapping : `src/styles/abstracts/_variables.scss` + `src/index.css @theme inline`.
 
@@ -164,20 +164,20 @@ CSS :
 - [x] **DS-02e** `_shadows.scss` corrigé pour matcher Figma S/M/L ✅
 - [x] **DS-02f** Shadows exposées en CSS vars (`--shadow-sm/md/lg`) + `index.css @theme` ✅
 - [ ] **DS-02g** Dark mode reporté post-MVP (décision Nicolas 2026-04-09)
-- [ ] **DS-02h** Spacing : pas de tokens Figma — garder l'échelle 4px-based actuelle (suffisante)
+- [ ] **DS-02h** Spacing : pas de tokens Figma : garder l'échelle 4px-based actuelle (suffisante)
 
 ---
 
-## 9. Audit d'écarts — résolu
+## 9. Audit d'écarts : résolu
 
 | Élément                               | Statut                                               |
 | ------------------------------------- | ---------------------------------------------------- |
 | Couleurs (`#5F5DD8`, `#FFFDF8`, etc.) | ✅ Aligné                                            |
 | Radius (2/4/8/12/20/32/999)           | ✅ Aligné dans `_variables.scss`                     |
-| Typo Quicksand/Mulish                 | ✅ Aligné — Figma écrit "Muli", on garde "Mulish"    |
+| Typo Quicksand/Mulish                 | ✅ Aligné : Figma écrit "Muli", on garde "Mulish"    |
 | Shadows S/M/L                         | ✅ Corrigé en DS-02e                                 |
 | Mode dark                             | ⏸️ Reporté post-MVP                                  |
-| Spacing tokens                        | ⚠️ Absents Figma — échelle 4px-based locale acceptée |
+| Spacing tokens                        | ⚠️ Absents Figma : échelle 4px-based locale acceptée |
 
 ## 10. Reste à faire
 

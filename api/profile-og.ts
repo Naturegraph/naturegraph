@@ -1,5 +1,5 @@
 /**
- * api/profile-og.ts — Vercel Function : OG meta dynamiques pour /profile/:username
+ * api/profile-og.ts : Vercel Function : OG meta dynamiques pour /profile/:username
  *
  * Pendant le partage d'un lien profil sur WhatsApp/Facebook/Twitter, le
  * crawler de preview ne sait pas exécuter le JS de la SPA. On lui sert donc
@@ -197,13 +197,13 @@ function buildFallbackHtml(profileUrl: string): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Naturegraph — Profil</title>
-  <meta name="description" content="Naturegraph — partage d'observations nature et biodiversité." />
+  <title>Naturegraph : Profil</title>
+  <meta name="description" content="Naturegraph : partage d'observations nature et biodiversité." />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Naturegraph" />
   <meta property="og:url" content="${safeUrl}" />
-  <meta property="og:title" content="Naturegraph — Partageons nos émotions" />
-  <meta property="og:description" content="Naturegraph — partage d'observations nature et biodiversité." />
+  <meta property="og:title" content="Naturegraph : Partageons nos émotions" />
+  <meta property="og:description" content="Naturegraph : partage d'observations nature et biodiversité." />
   <meta property="og:locale" content="fr_CA" />
 </head>
 <body>
@@ -222,7 +222,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const proto = (req.headers['x-forwarded-proto'] as string | undefined) ?? 'https'
   const profileUrl = `${proto}://${host}/profile/${username ?? ''}`
 
-  // Whitelist stricte des hosts (CodeQL SSRF safe) — voir post-og.ts.
+  // Whitelist stricte des hosts (CodeQL SSRF safe) : voir post-og.ts.
   const ALLOWED_HOSTS = new Set([
     'naturegraph.ca',
     'www.naturegraph.ca',

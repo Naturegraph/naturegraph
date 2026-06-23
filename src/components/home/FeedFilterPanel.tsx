@@ -1,15 +1,15 @@
 /**
- * FeedFilterPanel — Panneau de filtres du feed (pixel-perfect Figma node 6385-103213)
+ * FeedFilterPanel : Panneau de filtres du feed (pixel-perfect Figma node 6385-103213)
  *
  * Desktop : sidebar fixe à droite (w-[448px]), shadow large
  * Mobile  : bottom sheet plein écran scrollable
  *
  * Filtres disponibles :
  *   - Catégorie d'espèces (chips toggle, multi-select)
- *   - Demandes d'aide uniquement (checkbox) — mappé sur identification_status = 'pending'
- *   - Type de partage (checkbox) — nature_encounter (Instant masqué pour MVP)
+ *   - Demandes d'aide uniquement (checkbox) : mappé sur identification_status = 'pending'
+ *   - Type de partage (checkbox) : nature_encounter (Instant masqué pour MVP)
  *   - Rayon géographique (chips radio: Tout, 100, 200, 500 km)
- *     Nécessite locationCoords (LocationContext) — filtré client-side via Haversine
+ *     Nécessite locationCoords (LocationContext) : filtré client-side via Haversine
  *   - Période (chips radio: Tout, Aujourd'hui, Cette semaine, Ce mois)
  *   - Mobile uniquement : tri (select Récent/Populaire/Pour vous)
  *
@@ -38,7 +38,7 @@ import { useLocation } from '@/contexts/LocationContext'
 /**
  * Catégories d'espèces visibles dans l'UI (labels FR) + mapping vers le champ DB
  * `taxonomic_group` (enum backend). Seules les 5 plus courantes sont exposées au
- * MVP — extensibles plus tard (fish, plants, arachnids, etc.).
+ * MVP : extensibles plus tard (fish, plants, arachnids, etc.).
  */
 // V1.1.0 (Nicolas 2026-05-26) : extension aux 8 categories iNat suite seed
 // taxonomy_nodes (Arachnida, Mollusca, Actinopterygii ajoutees).
@@ -61,7 +61,7 @@ const RADIUS_OPTIONS = [
   { value: 500, label: '500 km' },
 ] as const
 
-/** Options de période — mappées sur posts.published_at côté backend */
+/** Options de période : mappées sur posts.published_at côté backend */
 const PERIOD_OPTIONS = [
   { value: 'all', labelKey: 'home.filters.periodAll' },
   { value: 'today', labelKey: 'home.filters.periodToday' },
@@ -76,7 +76,7 @@ export interface FeedFilters {
   categories: string[]
   /** Si true → filtre sur identification_status = 'pending' (proxy demande d'aide) */
   helpOnly: boolean
-  /** Type de partage (Instant masqué — seul encounter actif au MVP) */
+  /** Type de partage (Instant masqué : seul encounter actif au MVP) */
   shareTypes: { encounter: boolean; instant: boolean }
   /** Rayon en km (0 = pas de filtre) */
   radius: number
@@ -138,7 +138,7 @@ function FilterChip({
 }
 
 /**
- * Checkbox custom (conforme Figma — aucun comportement natif visible).
+ * Checkbox custom (conforme Figma : aucun comportement natif visible).
  * 20px carré, bg #5F5DD8 avec Check blanc quand coché, bordure 1.5px #C4C4CC sinon.
  */
 function FilterCheckbox({
@@ -190,7 +190,7 @@ export function FeedFilterPanel({
   /**
    * Filtres dynamiques selon le contexte (second-agent/23) :
    *   - Rayon : visible UNIQUEMENT si l'utilisateur est localisé. Sinon
-   *             aucun intérêt — on cache la section pour éviter le bruit.
+   *             aucun intérêt : on cache la section pour éviter le bruit.
    *   - Demandes d'aide : feature non implémentée côté UX (pas de bouton
    *             "Demander de l'aide" dans le formulaire de contribution).
    *             On marque "Bientôt" pour transparence.
@@ -198,7 +198,7 @@ export function FeedFilterPanel({
   const showRadiusFilter = isLocalized
   const helpOnlyComingSoon = true
 
-  // État local — édition avant validation via "Sauvegarder". Initialisé
+  // État local : édition avant validation via "Sauvegarder". Initialisé
   // une seule fois au mount (panel unmount sur close → ré-initialisation
   // automatique à la ré-ouverture). Pas de useEffect sync ici (lint
   // react-hooks/set-state-in-effect).
@@ -325,9 +325,9 @@ export function FeedFilterPanel({
       <div className="flex flex-col gap-3">
         <p className={sectionLabelClass}>{t('home.filters.byShareType')}</p>
 
-        {/* Wrapper interne — les 2 rows restent collées l'une à l'autre (gap-3). */}
+        {/* Wrapper interne : les 2 rows restent collées l'une à l'autre (gap-3). */}
         <div className="flex flex-col gap-3">
-          {/* Rencontre nature — actif.
+          {/* Rencontre nature : actif.
               Utilisation d'un <div> plutôt qu'un <label> car FilterCheckbox rend
               un <button role="checkbox"> custom (pas un <input> natif). */}
           <div className="flex items-center gap-4 select-none">
@@ -354,7 +354,7 @@ export function FeedFilterPanel({
             </span>
           </div>
 
-          {/* Instant nature — activé (Nicolas 2026-05-23 : preview branche) */}
+          {/* Instant nature : activé (Nicolas 2026-05-23 : preview branche) */}
           <label htmlFor="filter-instant" className="flex items-center gap-4 cursor-pointer">
             <FilterCheckbox
               id="filter-instant"
@@ -384,7 +384,7 @@ export function FeedFilterPanel({
 
       {/* ───── 4. Rayon géographique ─────
           Affiché UNIQUEMENT si l'utilisateur est localisé (second-agent/23).
-          Sans localisation, le filtre n'a aucun effet — on cache la section
+          Sans localisation, le filtre n'a aucun effet : on cache la section
           plutôt que d'afficher des chips inactifs. */}
       {showRadiusFilter && (
         <>
@@ -430,9 +430,9 @@ export function FeedFilterPanel({
     </div>
   )
 
-  // ── Footer (Save + Reset) — partagé ──────────────────────────────────────
+  // ── Footer (Save + Reset) : partagé ──────────────────────────────────────
 
-  // Footer actions — utilise le composant Button du design system pour
+  // Footer actions : utilise le composant Button du design system pour
   // cohérence (variant primary avec effet btn-press 3D). Le reset reste un
   // lien souligné (pattern "action destructive douce" du Figma).
   const panelFooter = (
@@ -459,7 +459,7 @@ export function FeedFilterPanel({
       {/* ═══════ Desktop : sidebar droite 448px ═══════ */}
       <div className="hidden md:block">
         {/* Backdrop semi-transparent BATCH 89 : focus visuel sur le panneau,
-            click pour fermer. Avant : transparent total — pas de feedback visuel. */}
+            click pour fermer. Avant : transparent total : pas de feedback visuel. */}
         <div
           className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-200"
           onClick={onClose}
@@ -472,7 +472,7 @@ export function FeedFilterPanel({
           aria-label={t('home.filters.title')}
           className="fixed top-0 right-0 z-50 w-[448px] h-full bg-background overflow-y-auto shadow-[0_6px_16px_-4px_rgba(0,0,0,0.1)] flex flex-col"
         >
-          {/* Header — titre + croix close */}
+          {/* Header : titre + croix close */}
           <div className="flex items-center justify-between px-6 pt-6 pb-0 sticky top-0 bg-background z-10">
             <h2 className="font-heading text-[32px] font-bold leading-[1.2] text-foreground">
               {t('home.filters.title')}
@@ -490,7 +490,7 @@ export function FeedFilterPanel({
           {/* Contenu scrollable */}
           <div className="px-6 pt-6 pb-6 flex-1">{panelContent}</div>
 
-          {/* Footer actions — collé en bas */}
+          {/* Footer actions : collé en bas */}
           <div className="px-6 pt-4 pb-6 bg-background border-t-[0.5px] border-border">
             {panelFooter}
           </div>
@@ -509,7 +509,7 @@ export function FeedFilterPanel({
           aria-label={t('home.filters.title')}
           className="fixed inset-x-0 bottom-0 z-[60] bg-background rounded-t-2xl max-h-[95vh] flex flex-col pb-[env(safe-area-inset-bottom)]"
         >
-          {/* Handle bar — cohérence visuelle avec les autres bottom sheets. */}
+          {/* Handle bar : cohérence visuelle avec les autres bottom sheets. */}
           <div className="flex justify-center pt-3 pb-1 shrink-0" aria-hidden="true">
             <div className="w-10 h-1 bg-border rounded-full" />
           </div>

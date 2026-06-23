@@ -1,8 +1,8 @@
 /**
- * SettingsHelpView — Sous-vue "Besoin d'aide ?" du SettingsPanel
+ * SettingsHelpView : Sous-vue "Besoin d'aide ?" du SettingsPanel
  * ================================================================
  *
- * Pixel-perfect Figma — formulaire de contact :
+ * Pixel-perfect Figma : formulaire de contact :
  *   - Titre "Tu as une question ?"
  *   - Description (3 lignes ton de réassurance)
  *   - Sélecteur "Sujet*" (dropdown custom, 5 options)
@@ -17,17 +17,17 @@
  *   - Liste : card border 0.5px, items au hover bg-primary-light + text-primary
  *   - Item sélectionné : bg-primary-light + text-primary persistant
  *
- * TODO [BACKEND] Phase 2 — voir second-agent/03-profil-backend-notes.md §15
+ * TODO [BACKEND] Phase 2 : voir second-agent/03-profil-backend-notes.md §15
  *
  *   ## Soumission du formulaire
  *
- *   Option A (recommandée MVP) — Discord webhook :
+ *   Option A (recommandée MVP) : Discord webhook :
  *     - Edge Function `submit_help_request(subject, message)` qui POST sur
  *       l'URL d'un webhook Discord configuré côté secrets
  *     - Avantage : pas de DB, pas de service email, déploiement instantané
  *     - L'équipe répond directement dans Discord à l'utilisateur
  *
- *   Option B (Phase 3) — Table support_tickets :
+ *   Option B (Phase 3) : Table support_tickets :
  *     CREATE TABLE support_tickets (
  *       id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
  *       user_id     UUID REFERENCES profiles(id) ON DELETE SET NULL,
@@ -40,15 +40,15 @@
  *       created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
  *       resolved_at TIMESTAMPTZ
  *     );
- *     -- Email transactionnel (Resend) à naturegraph.fr@gmail.com + accusé user
- *     -- ⚠️ Pendant la beta : utiliser naturegraph.fr@gmail.com (cf src/constants/contact.ts).
- *     -- Migrer vers staff@naturegraph.fr quand le domaine sera transféré côté Hostinger.
+ *     -- Email transactionnel (Resend) à support@naturegraph.ca + accusé user
+ *     -- ⚠️ Pendant la beta : utiliser support@naturegraph.ca (cf src/constants/contact.ts).
+ *     -- Migrer vers support@naturegraph.ca quand le domaine sera transféré côté Hostinger.
  *     -- RLS : user peut SELECT ses propres tickets (transparence RGPD)
  *
  *   ## Validation côté serveur (Edge Function)
  *
  *   - Anti-spam : limit 3 messages / 24h / user (cooldown)
- *   - Sanitize message (DOMPurify ou markdown only — pas de HTML brut)
+ *   - Sanitize message (DOMPurify ou markdown only : pas de HTML brut)
  *   - Min message length : 20 caractères
  *
  *   ## i18n (clés à ajouter)
@@ -115,8 +115,8 @@ export function SettingsHelpView() {
       // 1. INSERT en DB pour traçabilité (support_tickets, RLS user-owner)
       await submitMutation.mutateAsync({ subject, message })
 
-      // 2. BATCH 96 : ouvre mailto: vers naturegraph.fr@gmail.com pour garantir
-      //    la réception de l'email côté équipe — tant que SMTP custom + Resend
+      // 2. BATCH 96 : ouvre mailto: vers support@naturegraph.ca pour garantir
+      //    la réception de l'email côté équipe : tant que SMTP custom + Resend
       //    ne sont pas configurés sur Supabase Dashboard, le mailto est la seule
       //    voie 100% reliable.
       const subjectLabel = SUBJECT_LABELS[subject]
@@ -172,7 +172,7 @@ export function SettingsHelpView() {
         </p>
       </div>
 
-      {/* Sujet — dropdown custom */}
+      {/* Sujet : dropdown custom */}
       <div className="flex flex-col gap-2" ref={dropdownRef}>
         <label htmlFor="help-subject-trigger" className="text-sm font-medium text-foreground">
           {t('settings.help.subjectLabel', { defaultValue: 'Sujet' })}
@@ -208,7 +208,7 @@ export function SettingsHelpView() {
             />
           </button>
 
-          {/* Liste des options — affichée au-dessous du trigger */}
+          {/* Liste des options : affichée au-dessous du trigger */}
           {dropdownOpen && (
             <ul
               role="listbox"
@@ -263,7 +263,7 @@ export function SettingsHelpView() {
         />
       </div>
 
-      {/* Actions — boutons partagés via styles/inputs.ts */}
+      {/* Actions : boutons partagés via styles/inputs.ts */}
       <div className="flex gap-3 mt-2">
         <button type="button" onClick={handleCancel} className={`flex-1 ${BUTTON_OUTLINE_CLASS}`}>
           {t('common.cancel', { defaultValue: 'Annuler' })}

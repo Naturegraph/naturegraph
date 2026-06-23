@@ -1,5 +1,5 @@
 # =====================================================================
-# seed-taxonomy-v2.ps1 — Seed taxonomy_nodes via iNaturalist API
+# seed-taxonomy-v2.ps1 : Seed taxonomy_nodes via iNaturalist API
 # =====================================================================
 #
 # Strategie (Nicolas 2026-05-26, pivot depuis TAXREF apres INPN 403) :

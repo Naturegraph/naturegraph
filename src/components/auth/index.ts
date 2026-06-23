@@ -1,5 +1,5 @@
 /**
- * Barrel export — composants d'authentification
+ * Barrel export : composants d'authentification
  */
 
 export { Logo } from './Logo'

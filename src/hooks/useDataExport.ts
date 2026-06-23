@@ -1,10 +1,10 @@
 /**
- * useDataExport — Hook React Query pour déclencher l'export RGPD
+ * useDataExport : Hook React Query pour déclencher l'export RGPD
  *
  * Wrapper autour de `dataExportService.requestDataExport` + déclenchement
  * automatique du téléchargement.
  *
- * Pas d'`onSuccess` invalidation — l'export est read-only sur les données,
+ * Pas d'`onSuccess` invalidation : l'export est read-only sur les données,
  * donc aucun cache à invalider.
  */
 

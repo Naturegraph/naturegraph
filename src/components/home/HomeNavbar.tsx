@@ -111,7 +111,8 @@ export function HomeNavbar({
   // nom de ville pour rappeler à l'utilisateur quel rayon est actif sur le feed.
   const { locationLabel, locationDistance } = useLocation()
 
-  // Compteur de notifications non lues, alimente le badge
+  // Compteur de notifications non lues, alimente le badge visuel de la cloche.
+  // (La pastille de l'icône PWA est gérée globalement par AppBadgeSync dans App.)
   const { data: unreadCount } = useUnreadCount(profile?.id)
 
   // V1.1.4 NG-023 ext final : pill espece active dans le bouton recherche.
@@ -127,13 +128,7 @@ export function HomeNavbar({
   // temps. Les wrappers separes precedents souffraient d un bug de batch
   // React (state stale). Avec un seul state, ouvrir un panel ferme
   // mecaniquement les autres car la valeur change.
-  type ActivePanel =
-    | 'search'
-    | 'notifications'
-    | 'contribute'
-    | 'location'
-    | 'profile'
-    | null
+  type ActivePanel = 'search' | 'notifications' | 'contribute' | 'location' | 'profile' | null
   const [activePanel, setActivePanel] = useState<ActivePanel>(null)
   const showSearch = activePanel === 'search'
   const showNotifications = activePanel === 'notifications'
@@ -272,10 +267,7 @@ export function HomeNavbar({
                       </span>
                     )}
                     {showNotifications && (
-                      <NotificationsPanel
-                        anchorRef={notifBtnRef}
-                        onClose={() => closePanel()}
-                      />
+                      <NotificationsPanel anchorRef={notifBtnRef} onClose={() => closePanel()} />
                     )}
                   </div>
                 )}
@@ -329,9 +321,7 @@ export function HomeNavbar({
                     )}
                   </button>
 
-                  {showLocationModal && (
-                    <LocationModal onClose={() => closePanel()} />
-                  )}
+                  {showLocationModal && <LocationModal onClose={() => closePanel()} />}
                 </div>
 
                 {/* ── Recherche ───────────────────────────────────────────
@@ -412,10 +402,7 @@ export function HomeNavbar({
                       </span>
                     )}
                     {showNotifications && (
-                      <NotificationsPanel
-                        anchorRef={notifBtnRef}
-                        onClose={() => closePanel()}
-                      />
+                      <NotificationsPanel anchorRef={notifBtnRef} onClose={() => closePanel()} />
                     )}
                   </div>
                 )}

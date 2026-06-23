@@ -1,5 +1,5 @@
 /**
- * notificationService — Couche d'accès aux notifications
+ * notificationService : Couche d'accès aux notifications
  *
  * Schema (table `notifications`) :
  *   id, user_id, type, title, body, reference_id, reference_type, read, created_at
@@ -30,7 +30,7 @@ export interface Notification {
   reference_type: string | null
   read: boolean
   created_at: string
-  /** Acteur (celui qui a déclenché la notif) — issu de la vue notifications_with_actor */
+  /** Acteur (celui qui a déclenché la notif) : issu de la vue notifications_with_actor */
   actor_id: string | null
   actor_username: string | null
   actor_avatar_url: string | null
@@ -38,7 +38,7 @@ export interface Notification {
 
 /** Liste les N dernieres notifications du user courant (vue enrichie avec actor).
  *  Nicolas 2026-05-22 : cap par défaut à 10 (panel mobile + desktop) pour
- *  garder la liste digeste — l'historique long reste accessible via
+ *  garder la liste digeste : l'historique long reste accessible via
  *  /notifications (pagination par curseur via listNotificationsPage). */
 export async function listNotifications(userId: string, limit = 10): Promise<Notification[]> {
   if (!isSupabaseConfigured || !supabase) return []

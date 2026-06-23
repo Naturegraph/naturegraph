@@ -1,6 +1,6 @@
-# PRD — Upload Storage Backend (compléments Phase 2)
+# PRD : Upload Storage Backend (compléments Phase 2)
 
-> **Statut :** Draft Phase 2 — pas encore validé Nicolas.
+> **Statut :** Draft Phase 2 : pas encore validé Nicolas.
 > **Date :** 2026-05-15 (post V1.0.0).
 > **Auteur :** Équipe produit Naturegraph.
 > **Pré-requis :** V1 livrée (`mediaService.uploadAvatar` + `uploadPostMedia`, EXIF strip, 4 buckets Supabase, RLS owner-only).
@@ -15,7 +15,7 @@ La V1 expose un upload **fonctionnel** : `mediaService.ts` côté front re-encod
 
 - **Pas de thumbnails** : on sert l'image originale (souvent 1-3 Mo) même en vignette feed → gros gâchis de bande passante + LCP dégradé.
 - **Pas de validation magic number** côté upload : un attaquant peut renommer un `.exe` en `.jpg` et le poster. La RLS Storage ne contrôle pas le contenu binaire.
-- **Pas de downscale automatique côté client** avant strip EXIF — on uploade des 12 MP inutiles.
+- **Pas de downscale automatique côté client** avant strip EXIF : on uploade des 12 MP inutiles.
 - **Pas de progress UI** ni de **retry** : un upload qui échoue à 70 % redemande tout depuis zéro.
 - **Pas d'orphan cleanup** : si l'insert `media` échoue après l'upload Storage, le fichier reste dans le bucket sans référence DB.
 - **MediaUploader.tsx** (composant UI) garde encore des `TODO [BACKEND]` non honorés (cf. lignes 10-23 du fichier).
@@ -48,16 +48,16 @@ La V1 expose un upload **fonctionnel** : `mediaService.ts` côté front re-encod
 
 ### Out of scope (Phase 3+)
 
-- Resumable upload via TUS protocol (`tus-js-client` ~15 kB) — sauf si feedback beta confirme le besoin.
-- Vidéo (MP4) — déjà dans MIME types autorisés du bucket mais aucun composant front ne l'exploite encore.
-- Édition pixel post-upload (crop, rotation) — voir PRD_PHOTO_MANAGEMENT v4.
-- CDN dédié (Cloudflare Images) — voir ROADMAP Phase 3.
+- Resumable upload via TUS protocol (`tus-js-client` ~15 kB) : sauf si feedback beta confirme le besoin.
+- Vidéo (MP4) : déjà dans MIME types autorisés du bucket mais aucun composant front ne l'exploite encore.
+- Édition pixel post-upload (crop, rotation) : voir PRD_PHOTO_MANAGEMENT v4.
+- CDN dédié (Cloudflare Images) : voir ROADMAP Phase 3.
 
 ---
 
 ## 4. Modèle de données / Storage
 
-**Pas de nouvelle table** — on enrichit `media` :
+**Pas de nouvelle table** : on enrichit `media` :
 
 ```sql
 -- Migration YYYYMMDD_media_thumbnails_phase2.sql
@@ -74,11 +74,11 @@ CREATE INDEX IF NOT EXISTS idx_media_pending_old
   WHERE upload_status IN ('pending', 'uploading');
 ```
 
-**Image Transform** : les 3 URLs ne sont pas stockées en dur — on les **dérive** via helper `getThumbnailUrl(url, width)` qui ajoute `?width=...&quality=80` à l'URL Supabase. Stocker en DB uniquement si on doit override (cas rare). Les colonnes ci-dessus servent de fallback / CDN-cache plus tard.
+**Image Transform** : les 3 URLs ne sont pas stockées en dur : on les **dérive** via helper `getThumbnailUrl(url, width)` qui ajoute `?width=...&quality=80` à l'URL Supabase. Stocker en DB uniquement si on doit override (cas rare). Les colonnes ci-dessus servent de fallback / CDN-cache plus tard.
 
 **Bucket RLS** : inchangé. La validation magic number se fait **côté client** (UX immédiate) + **côté Edge Function** post-upload pour cas critique (à n'activer que si on observe des abus).
 
-**Cron orphan cleanup** : Edge Function `cleanup-orphan-media` (existante côté patterns — voir `weekly-species-digest`), planifiée toutes les 6 h via `pg_cron`.
+**Cron orphan cleanup** : Edge Function `cleanup-orphan-media` (existante côté patterns : voir `weekly-species-digest`), planifiée toutes les 6 h via `pg_cron`.
 
 ```sql
 SELECT cron.schedule(
@@ -153,7 +153,7 @@ SELECT cron.schedule(
 | --------------------------------------------------------------- | ----------- | ------------ | --------------------------------------------------------------------------------------------- |
 | Supabase Image Transform absent ou rate-limité sur free plan    | Moyenne     | **Élevé**    | Vérifier quota avant migration ; fallback `<img srcset>` sans transformation.                 |
 | Downscale canvas tue iOS Safari sur très grandes images (12 MP) | Moyenne     | Moyen        | Limiter à 2400 px ; surveiller perf via `performance.mark` ; fallback "trop gros".            |
-| Magic number check ralentit l'upload de plusieurs photos        | Faible      | Faible       | Lecture des 4 premiers octets uniquement via `Blob.slice(0, 4)` — coût négligeable.           |
+| Magic number check ralentit l'upload de plusieurs photos        | Faible      | Faible       | Lecture des 4 premiers octets uniquement via `Blob.slice(0, 4)` : coût négligeable.           |
 | Cron orphan supprime un fichier en cours d'upload long          | Faible      | **Critique** | Fenêtre 24 h très large ; check `upload_status IN ('pending', 'uploading')` exclus du DELETE. |
 | Progress UI trompe l'utilisateur si XHR ne fournit pas d'event  | Faible      | Faible       | Fallback "Indéterminé" + spinner ; tester sur Safari (event partiel).                         |
 | Retry crée des duplicates si insert DB partiel                  | Moyenne     | Moyen        | Path déterministe (UUID) + INSERT … ON CONFLICT DO NOTHING.                                   |
@@ -186,7 +186,7 @@ Conformité **GUIDELINES.md** : downscale + thumbnails = baisse drastique de l'e
 
 ---
 
-## Annexe — Décisions clés
+## Annexe : Décisions clés
 
 **ADR-001 : Supabase Image Transform plutôt que stockage explicite des thumbs.** Évite la duplication Storage, le ré-encoding manuel, et la migration des photos existantes. Risque : dépendance plateforme (mitigé par colonnes fallback `thumb_*_url`).
 

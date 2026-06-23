@@ -1,9 +1,9 @@
 /**
- * LoginForm — Connexion Naturegraph via OTP
+ * LoginForm : Connexion Naturegraph via OTP
  *
  * Flux : email → code OTP reçu par mail → vérification → accès.
  * Identique au signup (Supabase signInWithOtp fonctionne pour les
- * comptes existants ET les nouveaux — pas de mot de passe).
+ * comptes existants ET les nouveaux : pas de mot de passe).
  *
  * Wrapper léger autour de AuthForm (organism partagé avec SignupForm).
  */
@@ -14,7 +14,7 @@ import { AuthForm, type AuthSubmitResult } from './AuthForm'
 
 interface LoginFormProps {
   onSwitchToSignup: () => void
-  /** Appelé après envoi OTP — reçoit l'email pour afficher VerificationForm */
+  /** Appelé après envoi OTP : reçoit l'email pour afficher VerificationForm */
   onSuccess?: (email: string) => void
   onNavigateToLanding?: () => void
   onDiscoverAsGuest?: () => void

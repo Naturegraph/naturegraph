@@ -1,7 +1,7 @@
 /**
- * reactQuery — Constantes partagees pour React Query
+ * reactQuery : Constantes partagees pour React Query
  *
- * Refs : audit Phase 3 (BATCH 41) — 35+ occurrences de `staleTime: X * 1000` inline.
+ * Refs : audit Phase 3 (BATCH 41) : 35+ occurrences de `staleTime: X * 1000` inline.
  *
  * Centralisation des durees de cache pour coherence + lisibilite.
  * Utiliser SHORT pour les data live (admin actions), LONG pour les data
@@ -29,7 +29,7 @@ export const STALE_TIMES = {
 /**
  * Tailles de pagination standardisees.
  *
- * MVP : 20 items partout (audit Phase 1 — eco-conception : jamais de scroll infini).
+ * MVP : 20 items partout (audit Phase 1 : eco-conception : jamais de scroll infini).
  */
 export const PAGE_SIZES = {
   /** Default pour admin pages (Users, Moderation, Audit). */

@@ -1,5 +1,5 @@
 /**
- * ContributeInstantPanel — Panel latéral Instant Nature (2 étapes)
+ * ContributeInstantPanel : Panel latéral Instant Nature (2 étapes)
  * ============================================================
  *
  * Capture rapide d'un paysage / phénomène naturel sans observation
@@ -11,7 +11,7 @@
  *   - city/region extraits du label location pour FeedPost
  *
  * Différences avec Encounter :
- *   - 2 étapes seulement (Photos → Détails) — pas de carnet d'espèces
+ *   - 2 étapes seulement (Photos → Détails) : pas de carnet d'espèces
  *   - Pas de champ habitat (spécifique aux observations)
  *   - Type de phénomène sélectionné via chips (au lieu de free text)
  *   - Couleur thème amber (vs teal pour Encounter)
@@ -39,7 +39,7 @@ import type { CityResult } from '@/types/location'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-/** Types de phénomènes (selon Nicolas — chips Step 2). */
+/** Types de phénomènes (selon Nicolas : chips Step 2). */
 const PHENOMENON_OPTIONS = [
   { id: 'aurora_borealis', label: 'Aurore boréale', emoji: '🌌' },
   { id: 'rainbow', label: 'Arc-en-ciel', emoji: '🌈' },
@@ -105,7 +105,7 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
   // inerte. Cf retour Nicolas en QA dev.
   const toast = useToast()
 
-  // Pipeline submit factorisé (cf. useContributePostSubmit) — identique
+  // Pipeline submit factorisé (cf. useContributePostSubmit) : identique
   // à ContributeEncounterForm pour garantir le même comportement watchdog
   // + compression + upload média + rollback.
   const { submit, isSubmitting, uploadProgress, uploadError, clearError } =
@@ -330,7 +330,7 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
 
   function handleNext(e?: React.MouseEvent | React.SyntheticEvent) {
     e?.preventDefault?.()
-    // Photos optionnelles (cohérent Encounter) — un user peut juste
+    // Photos optionnelles (cohérent Encounter) : un user peut juste
     // raconter un moment de nature sans photo (Nicolas 2026-05-23).
     setErrors({})
     setSubmitAttempted(false)
@@ -591,7 +591,7 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
           </div>
         )}
 
-        {/* Toast progression upload (même pattern que Encounter — informe sur
+        {/* Toast progression upload (même pattern que Encounter : informe sur
             connexion lente). Affiché uniquement durant le submit. */}
         {uploadProgress && (
           <div
@@ -637,7 +637,7 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
           </div>
         )}
 
-        {/* Footer sticky — boutons + hint « sans photo » en dessous (cohérent Encounter) */}
+        {/* Footer sticky : boutons + hint « sans photo » en dessous (cohérent Encounter) */}
         <div className="shrink-0 border-t border-border bg-background px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] md:pb-4 flex flex-col gap-2">
           {/* Erreur « post vide » (retour testeur 2026-06-11). */}
           {submitAttempted && errors.empty && (
@@ -687,7 +687,7 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
             </Button>
           </div>
 
-          {/* Lien « continuer sans photo » — étape 1 uniquement, sous les
+          {/* Lien « continuer sans photo » : étape 1 uniquement, sous les
               boutons (même pattern que Encounter). Clic = avance step. */}
           {step === 1 && (
             <button
@@ -706,7 +706,7 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
   )
 }
 
-// ─── Étape 2 — Détails de l'instant ──────────────────────────────────────────
+// ─── Étape 2 : Détails de l'instant ──────────────────────────────────────────
 
 interface InstantStep2Props {
   title: string
@@ -763,7 +763,7 @@ function InstantStep2({
   const locId = useId()
   const switchId = useId()
 
-  // Popover info localisation — même UX qu'Encounter.
+  // Popover info localisation : même UX qu'Encounter.
   const [locationInfoOpen, setLocationInfoOpen] = useState(false)
   const locationInfoRef = useRef<HTMLDivElement | null>(null)
 
@@ -785,7 +785,7 @@ function InstantStep2({
     }
   }, [locationInfoOpen])
 
-  // Autocomplete location — même hook que Encounter / Navbar.
+  // Autocomplete location : même hook que Encounter / Navbar.
   const [locSuggestionsOpen, setLocSuggestionsOpen] = useState(false)
   const locInputRef = useRef<HTMLDivElement | null>(null)
   // V1.1.4 NG-027 (Nicolas 2026-06-03) : on remonte aussi `error` pour
@@ -826,7 +826,7 @@ function InstantStep2({
         })}
       </p>
 
-      {/* Titre (optionnel) — sans placeholder */}
+      {/* Titre (optionnel) : sans placeholder */}
       <div className="flex flex-col gap-2">
         <label htmlFor={titleId} className="text-sm text-foreground">
           {t('contribute.title.label', { defaultValue: 'Titre' })}{' '}
@@ -879,7 +879,7 @@ function InstantStep2({
         )}
       </div>
 
-      {/* Date (sans suffixe « de l'observation » — demandé Nicolas) */}
+      {/* Date (sans suffixe « de l'observation » : demandé Nicolas) */}
       <div className="flex flex-col gap-2">
         <label htmlFor={dateId} className="text-sm text-foreground">
           {t('contribute.date.simpleLabel', { defaultValue: 'Date' })}
@@ -900,7 +900,7 @@ function InstantStep2({
         </div>
       </div>
 
-      {/* Localisation + info popover + autocomplete + switch — design Encounter */}
+      {/* Localisation + info popover + autocomplete + switch : design Encounter */}
       <div className="flex flex-col gap-2">
         <div className="relative flex items-center gap-1.5" ref={locationInfoRef}>
           <label htmlFor={locId} className="text-sm text-foreground">

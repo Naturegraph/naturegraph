@@ -1,11 +1,11 @@
-# Naturegraph — Référentiel User Stories (SOCLE)
+# Naturegraph : Référentiel User Stories (SOCLE)
 
-> **Version** : 1.1 — 2026-05-02
+> **Version** : 1.1 : 2026-05-02
 > **Statut** : Socle de référence pour les audits QA, eco-conception, accessibilité, et tests utilisateurs.
 > **Périmètre** : 100 % des flows existants dans le code à la date du document. **Aucune feature future** n'est listée ici.
 > **Convention** : chaque US est testable indépendamment. Les critères Gherkin (Given/When/Then) sont le contrat QA.
 
-> **Changelog v1.1 (2026-05-02)** — 4 décisions produit MVP intégrées :
+> **Changelog v1.1 (2026-05-02)** : 4 décisions produit MVP intégrées :
 >
 > - Q1 : description **optionnelle** (US-CONTRIB-03 alignée)
 > - Q2 : multi-observation **retirée du MVP** (US-CONTRIB-02 alignée)
@@ -19,18 +19,18 @@
 1. [Landing Page](#1-landing-page)
 2. [Onboarding (4 étapes)](#2-onboarding-4-étapes)
 3. [Authentification (magic link OTP)](#3-authentification-magic-link-otp)
-4. [Home — visiteur non connecté](#4-home--visiteur-non-connecté)
-5. [Home — utilisateur connecté](#5-home--utilisateur-connecté)
-6. [Feed — Tabs, filtres, interactions post](#6-feed--tabs-filtres-interactions-post)
+4. [Home : visiteur non connecté](#4-home--visiteur-non-connecté)
+5. [Home : utilisateur connecté](#5-home--utilisateur-connecté)
+6. [Feed : Tabs, filtres, interactions post](#6-feed--tabs-filtres-interactions-post)
 7. [Création d'une observation (Encounter, 3 étapes)](#7-création-dune-observation-encounter-3-étapes)
 8. [Upload images (max 4)](#8-upload-images-max-4)
-9. [Profil — affichage owner / visiteur](#9-profil--affichage-owner--visiteur)
+9. [Profil : affichage owner / visiteur](#9-profil--affichage-owner--visiteur)
 10. [Modification du profil (3 onglets)](#10-modification-du-profil-3-onglets)
 11. [Paramètres (Sécurité, Notifs, Aide, Licence, Suppression)](#11-paramètres-sécurité-notifs-aide-licence-suppression)
 12. [Notifications](#12-notifications-page-dédiée)
-13. [Accessibilité — exigences transverses](#13-accessibilité--exigences-transverses-wcag-aa)
-14. [Éco-conception — exigences transverses](#14-éco-conception--exigences-transverses)
-15. [Non-régression — invariants critiques](#15-non-régression--invariants-critiques)
+13. [Accessibilité : exigences transverses](#13-accessibilité--exigences-transverses-wcag-aa)
+14. [Éco-conception : exigences transverses](#14-éco-conception--exigences-transverses)
+15. [Non-régression : invariants critiques](#15-non-régression--invariants-critiques)
 
 ---
 
@@ -50,7 +50,7 @@
 **Route** : `/`
 **Composants** : `pages/Landing` (Hero, FeaturesCards, Values, ProductFeatures, CTABanner, Mission, Discord, FAQ, Partners, Footer)
 
-## US-LAND-01 — Visite de la landing en tant que visiteur
+## US-LAND-01 : Visite de la landing en tant que visiteur
 
 > **En tant que** visiteur non connecté
 > **Je veux** découvrir l'offre Naturegraph
@@ -85,7 +85,7 @@ Given je clique sur une question de la FAQ
 When  l'accordéon s'ouvre
 Then  la réponse devient visible
 And   l'attribut aria-expanded passe à "true"
-And   un seul item peut être ouvert à la fois (ou plusieurs selon comportement implémenté — à valider)
+And   un seul item peut être ouvert à la fois (ou plusieurs selon comportement implémenté : à valider)
 ```
 
 ### EC
@@ -121,7 +121,7 @@ And   un seul item peut être ouvert à la fois (ou plusieurs selon comportement
 **Composants** : `components/onboarding/index.tsx` + 4 step components
 **Étapes** : Intérêts → Fréquence → Motivations → Username
 
-## US-ONB-01 — Choisir mes centres d'intérêt (étape 1)
+## US-ONB-01 : Choisir mes centres d'intérêt (étape 1)
 
 > **En tant que** nouveau membre
 > **Je veux** sélectionner les groupes taxonomiques qui m'intéressent
@@ -165,7 +165,7 @@ Then  l'array `interests` reste vide (aucun blocage)
 - Indication visuelle ET textuelle de la sélection (pas seulement couleur)
 - Tab order logique : chips → Continuer
 
-## US-ONB-02 — Choisir ma fréquence (étape 2)
+## US-ONB-02 : Choisir ma fréquence (étape 2)
 
 > **En tant que** nouveau membre
 > **Je veux** choisir à quelle fréquence je compte contribuer
@@ -201,7 +201,7 @@ And   l'étape 3 s'affiche
 - `role="radiogroup"` avec aria-labelledby
 - Navigation flèches haut/bas entre options
 
-## US-ONB-03 — Choisir mes motivations (étape 3)
+## US-ONB-03 : Choisir mes motivations (étape 3)
 
 > **En tant que** nouveau membre
 > **Je veux** indiquer ce qui me motive (apprendre, contribuer, partager, …)
@@ -224,7 +224,7 @@ And   le bouton "Continuer" est toujours actif (sélection facultative)
 
 - Aucun appel réseau
 
-## US-ONB-04 — Choisir mon username (étape 4)
+## US-ONB-04 : Choisir mon username (étape 4)
 
 > **En tant que** nouveau membre
 > **Je veux** choisir un nom d'utilisateur unique
@@ -281,7 +281,7 @@ And   le bouton "Terminer" reste désactivé
 
 ### ECO
 
-- Une seule requête finale (à la validation step 4) — pas de check d'unicité à chaque keystroke (debounce 500 ms minimum si implémenté)
+- Une seule requête finale (à la validation step 4) : pas de check d'unicité à chaque keystroke (debounce 500 ms minimum si implémenté)
 
 ---
 
@@ -291,9 +291,9 @@ And   le bouton "Terminer" reste désactivé
 **Composants** : `pages/AuthPage`, `SignupForm`, `LoginForm`, `VerificationForm`
 **Modes** : signup → verification → onboarding | login → verification → /home
 
-> **Décision MVP (Q3)** : seul le **magic link OTP par email** est exposé. Les boutons sociaux (Google/Apple/Facebook) sont masqués pour le MVP — implémentés post-beta selon la demande utilisateur réelle.
+> **Décision MVP (Q3)** : seul le **magic link OTP par email** est exposé. Les boutons sociaux (Google/Apple/Facebook) sont masqués pour le MVP : implémentés post-beta selon la demande utilisateur réelle.
 
-## US-AUTH-01 — S'inscrire avec un email
+## US-AUTH-01 : S'inscrire avec un email
 
 > **En tant que** nouveau visiteur
 > **Je veux** créer un compte avec mon email
@@ -340,7 +340,7 @@ And   l'écran reste en mode signup
 - `<label>` visible (pas seulement placeholder)
 - Erreurs avec `aria-live="polite"`
 
-## US-AUTH-02 — Se connecter avec un email existant
+## US-AUTH-02 : Se connecter avec un email existant
 
 > **En tant que** membre existant
 > **Je veux** me connecter via mon email
@@ -367,7 +367,7 @@ And   un message clair m'oriente vers "Créer un compte"
 
 - `supabase.auth.signInWithOtp({ email })`
 
-## US-AUTH-03 — Valider le code OTP
+## US-AUTH-03 : Valider le code OTP
 
 > **En tant que** membre en cours d'authentification
 > **Je veux** saisir le code reçu par email
@@ -414,7 +414,7 @@ And   un bouton "Renvoyer un code" est proposé
 - Focus auto sur le premier champ à l'arrivée
 - Annonce screen reader : "Code envoyé à {email}"
 
-## US-AUTH-04 — Se déconnecter
+## US-AUTH-04 : Se déconnecter
 
 > **En tant que** utilisateur connecté
 > **Je veux** me déconnecter
@@ -439,12 +439,12 @@ And   je suis redirigé vers "/" (landing)
 
 ---
 
-# 4. Home — visiteur non connecté
+# 4. Home : visiteur non connecté
 
 **Route** : `/home` (accessible sans auth grâce au "guest mode")
 **Composants** : `Home`, `HomeNavbar`, `GuestSidebar`, `FeedSection`, `MobileBottomNav`
 
-## US-HOME-G-01 — Découvrir le feed sans être connecté
+## US-HOME-G-01 : Découvrir le feed sans être connecté
 
 > **En tant que** visiteur curieux
 > **Je veux** parcourir les contributions de la communauté
@@ -498,12 +498,12 @@ Then  j'arrive sur "/profile/:username" en mode visiteur
 
 ---
 
-# 5. Home — utilisateur connecté
+# 5. Home : utilisateur connecté
 
 **Route** : `/home`
 **Composants** : `Home`, `HomeNavbar`, `ProfileSidebar`, `FeedSection`, `StatsSidebar`, `MobileBottomNav`
 
-## US-HOME-C-01 — Voir mon feed personnalisé
+## US-HOME-C-01 : Voir mon feed personnalisé
 
 > **En tant qu'** utilisateur connecté
 > **Je veux** retrouver une page d'accueil avec mon profil et le feed
@@ -550,11 +550,11 @@ Then  je vois le formulaire ContributeEncounter à l'étape 1
 
 ---
 
-# 6. Feed — Tabs, filtres, interactions post
+# 6. Feed : Tabs, filtres, interactions post
 
 **Composants** : `FeedSection`, `FeedFilterPanel`, `FeedPost`, `SharePopover`, `PostOptionsMenu`
 
-## US-FEED-01 — Naviguer entre les onglets du feed
+## US-FEED-01 : Naviguer entre les onglets du feed
 
 > **En tant qu'** utilisateur (connecté ou non)
 > **Je veux** changer d'onglet (Récent / Populaire / Pour vous)
@@ -582,7 +582,7 @@ And   l'onglet actif reste "Récent"
 - `feedService.getFeed({ tab: 'recent' | 'popular' | 'for_you' })`
 - Pour `for_you` : JOIN sur table `follows` côté serveur
 
-## US-FEED-02 — Filtrer le feed
+## US-FEED-02 : Filtrer le feed
 
 > **En tant qu'** utilisateur
 > **Je veux** filtrer le feed par catégorie / type / radius / période
@@ -637,7 +637,7 @@ And   le feed re-fetch sans filtres
 - Pas de fetch tant que l'utilisateur n'a pas cliqué sur "Appliquer"
 - Pagination 20 posts
 
-## US-FEED-03 — Réagir à un post (like)
+## US-FEED-03 : Réagir à un post (like)
 
 > **En tant qu'** utilisateur connecté
 > **Je veux** liker un post
@@ -675,7 +675,7 @@ And   un toast d'erreur s'affiche
 - Trigger PG `update_post_likes_count`
 - RLS sur `reactions` : INSERT/DELETE limité à `auth.uid()`
 
-## US-FEED-04 — Sauvegarder un post
+## US-FEED-04 : Sauvegarder un post
 
 > **En tant qu'** utilisateur connecté
 > **Je veux** ajouter un post à ma collection
@@ -702,7 +702,7 @@ Then  un modal "Connexion requise" s'affiche
 - `savedPostsService.toggleSavedPost(userId, postId, currentlySaved)`
 - RLS `saved_posts` : owner only
 
-## US-FEED-05 — Partager un post
+## US-FEED-05 : Partager un post
 
 > **En tant qu'** utilisateur (connecté ou non)
 > **Je veux** copier le lien d'un post
@@ -727,7 +727,7 @@ And   un toast "Lien copié" s'affiche
 
 - Aucun appel backend (lien public)
 
-## US-FEED-06 — Menu options d'un post (… 3 points)
+## US-FEED-06 : Menu options d'un post (… 3 points)
 
 > **En tant qu'** utilisateur
 > **Je veux** ouvrir le menu options d'un post
@@ -764,7 +764,7 @@ And   chaque action est confirmée par un toast et persiste côté serveur
 **Composants** : `ContributeEncounterForm` + 3 step components
 **Flows** : `nature_encounter` (3 étapes complètes), `nature_instant` (réservé MVP+)
 
-## US-CONTRIB-01 — Étape 1 : Photos + format d'affichage
+## US-CONTRIB-01 : Étape 1 : Photos + format d'affichage
 
 > **En tant que** contributeur connecté
 > **Je veux** ajouter jusqu'à 4 photos
@@ -812,7 +812,7 @@ And   si après compression elle dépasse encore, un toast d'erreur s'affiche
 - `compressPhoto()` (lib client)
 - Pas d'upload Supabase tant que le formulaire n'est pas soumis (étape 3)
 
-## US-CONTRIB-02 — Étape 2 : Espèce observée
+## US-CONTRIB-02 : Étape 2 : Espèce observée
 
 > **En tant que** contributeur
 > **Je veux** identifier l'espèce observée et indiquer son nombre
@@ -854,14 +854,14 @@ And   le passage à l'étape 3 est bloqué
 ### DEP
 
 - `taxrefService.search(query)` avec cache Supabase `taxref_cache`
-- Service tier INPN (CC-BY) — attribution obligatoire
+- Service tier INPN (CC-BY) : attribution obligatoire
 
 ### ECO
 
 - Debounce 300ms minimum sur la recherche
 - Cache local des dernières recherches (LRU 50 entrées)
 
-## US-CONTRIB-03 — Étape 3 : Contexte (date, lieu, météo, habitat)
+## US-CONTRIB-03 : Étape 3 : Contexte (date, lieu, météo, habitat)
 
 > **En tant que** contributeur
 > **Je veux** documenter le contexte de l'observation
@@ -943,7 +943,7 @@ And   les visiteurs ne voient ni la ville ni le département (cf. règle confide
 
 > Cf. AC dans US-CONTRIB-01. Cette section formalise les invariants partagés.
 
-## US-UPLOAD-01 — Contraintes d'upload images
+## US-UPLOAD-01 : Contraintes d'upload images
 
 ### AC
 
@@ -982,12 +982,12 @@ Then  l'upload réussit uniquement si auth.uid() == user_id
 
 ---
 
-# 9. Profil — affichage owner / visiteur
+# 9. Profil : affichage owner / visiteur
 
 **Route** : `/profile` (owner) / `/profile/:username` (visiteur)
 **Composants** : `Profile`, `ProfileHeader`, `ProfileTabs`, `ProfileAboutCard`, `ProfileDNACard`, `ProfileFeed`, `ProfileInspirations`, `ProfileCommunity`, `ProfileStats`
 
-## US-PROF-01 — Visiter mon propre profil
+## US-PROF-01 : Visiter mon propre profil
 
 > **En tant qu'** utilisateur connecté
 > **Je veux** consulter mon profil
@@ -1050,7 +1050,7 @@ Then  je vois un placeholder "Bientôt disponible" (Sprint 4 stub)
 - `useFollowers(profileId)` / `useFollowing(profileId)` (Communauté)
 - RLS profiles : SELECT public (sauf si is_public = false → SELECT self only)
 
-## US-PROF-02 — Visiter le profil d'un autre utilisateur
+## US-PROF-02 : Visiter le profil d'un autre utilisateur
 
 > **En tant qu'** utilisateur (connecté ou non)
 > **Je veux** consulter le profil d'un autre membre
@@ -1097,7 +1097,7 @@ Then  je vois le header minimal mais pas les contributions
 
 **Composant** : `EditProfilePanel` avec 3 tabs (Info, Photos, Préférences)
 
-## US-EDIT-01 — Modifier mes infos textuelles
+## US-EDIT-01 : Modifier mes infos textuelles
 
 > **En tant qu'** utilisateur connecté
 > **Je veux** modifier mon username, bio, ville, réseaux sociaux
@@ -1140,7 +1140,7 @@ And   "Sauvegarder" reste désactivé
 - `profileService.updateProfile(payload)`
 - RLS : owner-only
 
-## US-EDIT-02 — Modifier mes photos (avatar + bannière)
+## US-EDIT-02 : Modifier mes photos (avatar + bannière)
 
 ### AC
 
@@ -1168,7 +1168,7 @@ Then  `profiles.banner_url` est mis à jour (bucket `banners`, max 2 Mo)
 - `storageService.uploadImage(bucket, file)`
 - Buckets `avatars` (1 Mo max) et `banners` (2 Mo max)
 
-## US-EDIT-03 — Modifier mes préférences (intérêts)
+## US-EDIT-03 : Modifier mes préférences (intérêts)
 
 ### AC
 
@@ -1190,7 +1190,7 @@ And   l'ADN observateur (ProfileDNACard) reflète la nouvelle sélection
 **Route** : `/settings` (panel ouvert depuis n'importe où)
 **Composants** : `SettingsPanel`, `SettingsList`, `SettingsSecurityView`, `SettingsNotificationsView`, `SettingsHelpView`, `SettingsLicenseView`, `DeleteAccountModal`, `LogoutModal`
 
-## US-SET-01 — Ouvrir le panneau Paramètres
+## US-SET-01 : Ouvrir le panneau Paramètres
 
 ### AC
 
@@ -1203,7 +1203,7 @@ And   l'overlay capture le focus (focus trap)
 And   Escape ferme le panneau
 ```
 
-## US-SET-02 — Section Sécurité (changer son email)
+## US-SET-02 : Section Sécurité (changer son email)
 
 ### AC
 
@@ -1235,7 +1235,7 @@ And   aucun appel API n'est fait
 - `supabase.auth.updateUser({ email })`
 - (Phase 2) trigger `security_audit_log` event_type='email_change_requested'
 
-## US-SET-03 — Section Notifications
+## US-SET-03 : Section Notifications
 
 ### AC
 
@@ -1261,7 +1261,7 @@ And   un toast "Préférences mises à jour" s'affiche
 - `settingsService.getSettings()` / `updateSettings()`
 - Colonne `user_settings.notif_frequency` (cf. migration phase 2)
 
-## US-SET-04 — Section Aide (formulaire support)
+## US-SET-04 : Section Aide (formulaire support)
 
 ### AC
 
@@ -1294,7 +1294,7 @@ And   aucun INSERT n'est fait
 - Table `support_tickets` avec RLS user-self
 - (Phase 2) Edge Function `submit-help` pour relai Discord webhook
 
-## US-SET-05 — Section Licence et droits d'auteur
+## US-SET-05 : Section Licence et droits d'auteur
 
 ### AC
 
@@ -1309,7 +1309,7 @@ And   le contenu est lisible (typographie, contrastes)
 
 - Aucun (texte statique)
 
-## US-SET-06 — Se déconnecter avec confirmation
+## US-SET-06 : Se déconnecter avec confirmation
 
 ### AC
 
@@ -1325,7 +1325,7 @@ And   je suis redirigé vers "/"
 
 - `supabase.auth.signOut()`
 
-## US-SET-07 — Supprimer mon compte (double confirmation)
+## US-SET-07 : Supprimer mon compte (double confirmation)
 
 ### AC
 
@@ -1354,7 +1354,7 @@ And   le compte n'est PAS supprimé (transaction côté serveur)
 
 ### EC
 
-- Mode 'anonymize' (préserver contributions, anonymiser identité) — supporté par l'Edge Function mais pas exposé dans l'UI MVP
+- Mode 'anonymize' (préserver contributions, anonymiser identité) : supporté par l'Edge Function mais pas exposé dans l'UI MVP
 - Réseau coupé pendant l'opération → l'Edge Function est idempotente
 
 ### DEP
@@ -1374,7 +1374,7 @@ And   le compte n'est PAS supprimé (transaction côté serveur)
 **Route** : `/notifications`
 **Composants** : `NotificationsPage`, `NotifItem`, hooks `useNotifications`, `useMarkAsRead`, `useMarkAllAsRead`
 
-## US-NOTIF-01 — Consulter mes notifications
+## US-NOTIF-01 : Consulter mes notifications
 
 ### AC
 
@@ -1430,11 +1430,11 @@ And   le badge de la navbar disparaît
 
 ---
 
-# 13. Accessibilité — exigences transverses (WCAG AA)
+# 13. Accessibilité : exigences transverses (WCAG AA)
 
 > **Référentiel** : WCAG 2.1 niveau AA. Tout flow ci-dessus DOIT respecter ces invariants.
 
-## A11Y-01 — Navigation clavier complète
+## A11Y-01 : Navigation clavier complète
 
 ```gherkin
 Given je navigue uniquement au clavier
@@ -1445,7 +1445,7 @@ And   aucun piège clavier n'existe (sauf focus trap intentionnel sur modals)
 And   Escape ferme tout overlay (modals, panels, popovers)
 ```
 
-## A11Y-02 — Focus visible
+## A11Y-02 : Focus visible
 
 ```gherkin
 Given un élément interactif a le focus
@@ -1453,7 +1453,7 @@ Then  un anneau focus visible apparaît (outline ou ring Tailwind ≥ 2px)
 And   le contraste de l'anneau ≥ 3:1 par rapport au fond
 ```
 
-## A11Y-03 — Labels et descriptions
+## A11Y-03 : Labels et descriptions
 
 ```gherkin
 Given un champ de formulaire est affiché
@@ -1462,7 +1462,7 @@ And   les erreurs sont liées via aria-describedby + aria-invalid="true"
 And   les boutons icon-only ont aria-label
 ```
 
-## A11Y-04 — Contraste
+## A11Y-04 : Contraste
 
 ```gherkin
 Given du texte standard (< 18.66 px) est affiché
@@ -1473,7 +1473,7 @@ Given un composant UI (bordure de bouton, icône) porte de l'information
 Then  son ratio est ≥ 3:1
 ```
 
-## A11Y-05 — Screen reader
+## A11Y-05 : Screen reader
 
 ```gherkin
 Given un screen reader (NVDA, JAWS, VoiceOver) est actif
@@ -1484,7 +1484,7 @@ And   les zones dynamiques (toasts, erreurs) utilisent aria-live="polite" ou "as
 And   chaque page déclare lang="fr" ou "en" selon i18n
 ```
 
-## A11Y-06 — `prefers-reduced-motion`
+## A11Y-06 : `prefers-reduced-motion`
 
 ```gherkin
 Given mon OS a "Réduire les mouvements" activé
@@ -1494,7 +1494,7 @@ And   les transitions sont instantanées ou ≤ 100 ms
 And   les carrousels/sliders ne défilent pas automatiquement
 ```
 
-## A11Y-07 — Skip links et landmarks
+## A11Y-07 : Skip links et landmarks
 
 ```gherkin
 Given je tabule depuis le début d'une page
@@ -1505,11 +1505,11 @@ And   chaque page a les landmarks <header>, <nav>, <main>, <footer>
 
 ---
 
-# 14. Éco-conception — exigences transverses
+# 14. Éco-conception : exigences transverses
 
 > **Référentiel** : RGESN, GUIDELINES.md interne. Budget : < 300 KB JS gzip / < 500 KB total / LCP < 2.5 s.
 
-## ECO-01 — Pagination obligatoire
+## ECO-01 : Pagination obligatoire
 
 ```gherkin
 Given une liste contient potentiellement > 20 items (feed, notifications, communauté, posts profil)
@@ -1518,17 +1518,17 @@ And   un bouton "Charger plus" est utilisé (jamais de scroll infini)
 And   chaque requête remonte au maximum 20 items
 ```
 
-## ECO-02 — Images optimisées
+## ECO-02 : Images optimisées
 
 ```gherkin
 Given une image est affichée
 Then  elle est servie en WebP ou AVIF (avec fallback JPEG si nécessaire)
 And   ses dimensions width/height sont explicites (évite CLS)
 And   elle a loading="lazy" si hors du fold initial
-And   les avatars ont 2 tailles (40 px UI, 80–120 px header)
+And   les avatars ont 2 tailles (40 px UI, 80-120 px header)
 ```
 
-## ECO-03 — Appels API minimisés
+## ECO-03 : Appels API minimisés
 
 ```gherkin
 Given une donnée a été fetchée
@@ -1538,7 +1538,7 @@ And   aucun polling périodique n'est utilisé sans nécessité
 And   les recherches autocomplete sont debouncées (300 ms minimum)
 ```
 
-## ECO-04 — Payload réduit
+## ECO-04 : Payload réduit
 
 ```gherkin
 Given une requête SELECT Supabase est faite
@@ -1547,7 +1547,7 @@ And   les jointures sont limitées (max 2 niveaux)
 And   les compteurs denormalisés (likes_count, posts_count, followers_count) sont utilisés au lieu de COUNT(*)
 ```
 
-## ECO-05 — Pas de dépendances JS superflues
+## ECO-05 : Pas de dépendances JS superflues
 
 ```gherkin
 Given une feature peut être faite en CSS pur
@@ -1556,7 +1556,7 @@ And   aucune lib lourde (Moment.js, Lodash full) n'est ajoutée si une alternati
 And   le bundle final est < 300 KB JS gzip
 ```
 
-## ECO-06 — Mode hors-ligne dégradé
+## ECO-06 : Mode hors-ligne dégradé
 
 ```gherkin
 Given le réseau est coupé
@@ -1568,48 +1568,48 @@ And   l'UI ne fige pas (timeout configuré)
 
 ---
 
-# 15. Non-régression — invariants critiques
+# 15. Non-régression : invariants critiques
 
 > **Liste des comportements qui DOIVENT rester stables** entre toutes les versions. Toute modification de cette liste nécessite une revue produit explicite.
 
-## NR-01 — Authentification
+## NR-01 : Authentification
 
 - Le flow magic link OTP (signup + login) ne doit JAMAIS demander de mot de passe
 - L'OTP a 6 chiffres et expire selon la config Supabase
 - Après signup, l'utilisateur DOIT compléter l'onboarding avant d'accéder à `/home`
 - `signOut()` vide TOUJOURS le cache React Query
 
-## NR-02 — Profil
+## NR-02 : Profil
 
 - `/profile` (sans username) = mon profil ssi connecté ; sinon doit rediriger vers /auth
 - `/profile/:username` accessible aux visiteurs non connectés (sauf si is_public = false)
 - L'onglet "Inspirations" ne doit JAMAIS afficher les saved_posts d'un autre utilisateur (RLS owner-only)
 - L'onglet par défaut à l'arrivée sur un profil = "Journal nature"
 
-## NR-03 — Feed
+## NR-03 : Feed
 
 - Pagination 20 posts max par requête
 - Onglet "Pour vous" en mode visiteur → modal de connexion (pas d'accès)
 - Filtres combinés = AND logique
 - Réactions = optimistic UI avec rollback en cas d'erreur
 
-## NR-04 — Création d'observation
+## NR-04 : Création d'observation
 
 - Maximum 4 photos par post (jamais 5+)
-- MIME types acceptés : JPEG, PNG, WebP uniquement (HEIC à convertir côté client iOS — Phase 3)
-- Description **optionnelle** en MVP (Q1) — seule la borne max 1500 chars est contrôlée
-- Une espèce par post en MVP (Q2) — multi-observation Phase 3
+- MIME types acceptés : JPEG, PNG, WebP uniquement (HEIC à convertir côté client iOS : Phase 3)
+- Description **optionnelle** en MVP (Q1) : seule la borne max 1500 chars est contrôlée
+- Une espèce par post en MVP (Q2) : multi-observation Phase 3
 - Localisation requise pour publication
 - `location_hidden = true` masque ville + département (pas seulement le marqueur carte)
 - Toggle "Aide à l'identification" masqué en MVP (Q4)
 
-## NR-05 — Données utilisateur
+## NR-05 : Données utilisateur
 
-- Aucune vraie donnée utilisateur en base de dev (mock users only — convention `feedback-mock-users`)
+- Aucune vraie donnée utilisateur en base de dev (mock users only : convention `feedback-mock-users`)
 - Suppression de compte = transaction atomique (pas d'état intermédiaire orphelin)
 - TAXREF : attribution CC-BY INPN obligatoire visible dans Licence
 
-## NR-06 — Accessibilité
+## NR-06 : Accessibilité
 
 - Skip links présents sur toutes les pages
 - Hiérarchie h1-h6 respectée
@@ -1617,21 +1617,21 @@ And   l'UI ne fige pas (timeout configuré)
 - Navigation clavier complète testée
 - `prefers-reduced-motion` honoré
 
-## NR-07 — Éco-conception
+## NR-07 : Éco-conception
 
 - Pas de scroll infini, jamais
 - Bundle JS gzip < 300 KB (vérifié au CI par `npm run build`)
 - Images en WebP/AVIF, dimensions explicites
 - Pagination 20 items max
 
-## NR-08 — Sécurité
+## NR-08 : Sécurité
 
 - RLS activée sur toutes les tables exposées (profiles, posts, reactions, follows, saved_posts, notifications, support_tickets, security_audit_log, user_settings)
 - Aucune clé service_role exposée côté client
 - Edge Functions protégées par JWT
 - Buckets storage : RLS user-prefix sur les écritures
 
-## NR-09 — Internationalisation
+## NR-09 : Internationalisation
 
 - FR (par défaut) + EN supportés
 - Tous les textes UI passent par i18next

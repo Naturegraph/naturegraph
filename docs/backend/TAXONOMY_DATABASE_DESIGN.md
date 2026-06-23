@@ -130,9 +130,9 @@ type d une colonne existante. Les changements de structure se font en :
 
 ### 3.3 RLS policies
 
-- `public_read_taxonomy` : `FOR SELECT USING (true)` — catalogue ouvert a
+- `public_read_taxonomy` : `FOR SELECT USING (true)` : catalogue ouvert a
   tous (anon + authenticated)
-- `admin_write_taxonomy` : `FOR ALL USING (is_admin(auth.uid()))` — seuls
+- `admin_write_taxonomy` : `FOR ALL USING (is_admin(auth.uid()))` : seuls
   les admins peuvent modifier (corrections manuelles). Les seeds passent
   par `service_role` qui bypass RLS.
 
@@ -159,7 +159,7 @@ Ordre de tri : especes d abord, puis genres, familles, ordres. Puis par
 ## 4. Conventions metadata (JSONB)
 
 Voici les patterns recommandes pour stocker les futures donnees dans
-`metadata`. **Tous optionnels** — ajoutes au fil du besoin.
+`metadata`. **Tous optionnels** : ajoutes au fil du besoin.
 
 ### 4.1 Migration et phenologie
 

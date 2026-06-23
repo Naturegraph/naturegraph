@@ -1,7 +1,7 @@
 /**
- * useDebouncedValue — Debounce une valeur (search input, autocomplete, etc.)
+ * useDebouncedValue : Debounce une valeur (search input, autocomplete, etc.)
  *
- * Refs : audit Phase 3 (BATCH 41) — pattern duplique
+ * Refs : audit Phase 3 (BATCH 41) : pattern duplique
  * (AdminUsers.tsx l'implemente inline avec useState + useEffect + setTimeout).
  *
  * Comportement :

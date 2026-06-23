@@ -1,5 +1,5 @@
 /**
- * PhotoLightbox — Visionneuse photo plein écran
+ * PhotoLightbox : Visionneuse photo plein écran
  *
  * Affiche une photo en grand en respectant son format original :
  *   - object-contain pour ne rien rogner
@@ -35,7 +35,7 @@ export interface LightboxData {
   /** Avatar de l'auteur */
   authorAvatar?: string
   /**
-   * Format d'affichage du post — la lightbox respecte ce ratio sur la photo
+   * Format d'affichage du post : la lightbox respecte ce ratio sur la photo
    * principale pour rester cohérente avec le rendu feed (second-agent/18).
    * Si absent → fallback `'16:9'`.
    */
@@ -133,7 +133,7 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
 
         <div className="flex items-center gap-2">
           {/*
-            Bouton Partager — ouvre le SharePopover (même composant que le feed).
+            Bouton Partager : ouvre le SharePopover (même composant que le feed).
             Masqué si postId absent (lightbox en mode preview seul). second-agent/20.
           */}
           {postId && (
@@ -175,7 +175,7 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
         )}
 
         {/*
-          Conteneur cadre format — respecte le format choisi à la création
+          Conteneur cadre format : respecte le format choisi à la création
           (16:9, portrait, 1:1). La photo remplit le cadre via object-cover
           pour rester cohérent avec le rendu feed.
           second-agent/18.
@@ -251,7 +251,7 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
         )}
       </div>
 
-      {/* SharePopover — overlay au-dessus de la lightbox quand activé */}
+      {/* SharePopover : overlay au-dessus de la lightbox quand activé */}
       {showShare && postId && (
         <SharePopover postId={postId} title={postTitle ?? ''} onClose={() => setShowShare(false)} />
       )}

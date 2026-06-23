@@ -1,5 +1,5 @@
 /**
- * Home — Page principale avec le feed
+ * Home : Page principale avec le feed
  *
  * Layout 3 colonnes (XL desktop uniquement) :
  *   - Gauche : GuestSidebar (invité) ou ProfileSidebar (connecté)
@@ -32,7 +32,7 @@ import { useEditPostFlow } from '@/hooks/useEditPostFlow'
 import { NotebookPanel } from '@/components/notebook/NotebookPanel'
 import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
 
-// StatsSidebar lazy (QW-I2 / T-082) — affichée uniquement xl:block (>=1280px).
+// StatsSidebar lazy (QW-I2 / T-082) : affichée uniquement xl:block (>=1280px).
 // Avant : 311 lignes chargees dans le bundle initial meme sur mobile/tablet.
 // Apres : chunk separe, telecharge uniquement quand l'utilisateur a un ecran XL.
 // Gain : -2 KB initial sur mobile + meilleur LCP.
@@ -65,7 +65,7 @@ export default function Home() {
   // panelNode -> a rendre dans le composant racine.
   const { onEditPost, openCreate, panelNode } = useEditPostFlow()
 
-  // État partagé feed — contrôlable depuis la navbar mobile ET le header desktop.
+  // État partagé feed : contrôlable depuis la navbar mobile ET le header desktop.
   // Nicolas 2026-06-06 : on PERSISTE le mode (liste/galerie) en sessionStorage
   // pour qu'un retour depuis une page détail (clic galerie -> post -> back) garde
   // la vue galerie active au lieu de retomber en liste. Survit le temps de
@@ -158,7 +158,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-cream-lighter">
-      {/* Navbar — reçoit les callbacks pour les contrôles mobiles */}
+      {/* Navbar : reçoit les callbacks pour les contrôles mobiles */}
       <HomeNavbar
         feedViewMode={feedViewMode}
         onToggleFeedView={() => setFeedViewMode((v) => (v === 'list' ? 'grid' : 'list'))}
@@ -176,7 +176,7 @@ export default function Home() {
        */}
       <div className="flex flex-1 w-full">
         <div className="w-full xl:max-w-[1440px] mx-auto flex md:gap-6 gap-0 md:px-6 px-0 md:py-6 pb-20 md:pb-6">
-          {/* Colonne gauche — visible dès LG (≥1024px, Nicolas 2026-05-22).
+          {/* Colonne gauche : visible dès LG (≥1024px, Nicolas 2026-05-22).
               Contient les stats user perso (observations, espèces, streak,
               objectif semaine) qui sont l'info la plus engageante. Avant
               elle n'apparaissait qu'à xl et un user sur iPad Air (1180px)
@@ -185,7 +185,7 @@ export default function Home() {
             {isAuthenticated ? <ProfileSidebar /> : <GuestSidebar />}
           </aside>
 
-          {/* Colonne centrale — Feed */}
+          {/* Colonne centrale : Feed */}
           <main id="main-content" className="flex-1 min-w-0">
             <FeedSection
               viewMode={feedViewMode}
@@ -200,7 +200,7 @@ export default function Home() {
             />
           </main>
 
-          {/* Colonne droite — Stats & Tendances — visible uniquement XL desktop
+          {/* Colonne droite : Stats & Tendances : visible uniquement XL desktop
               (≥1280px). Sur lg (1024-1279px) on garde main + sidebar gauche
               seule pour ne pas écraser la largeur du feed (photos nature).
               Lazy-loaded : ne charge le chunk que si l'écran est >=1280px. */}
@@ -212,11 +212,11 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Navigation mobile — visible md:hidden.
+      {/* Navigation mobile : visible md:hidden.
           MobileNavLayer orchestre la navbar bottom + les sheets (search, menu, profil, settings). */}
       <MobileNavLayer onContributeClick={() => setShowContributeModal(true)} />
 
-      {/* Sélection du type de contribution — dropdown desktop / bottom sheet mobile */}
+      {/* Sélection du type de contribution : dropdown desktop / bottom sheet mobile */}
       {showContributeModal && (
         <ContributeModal
           onClose={() => setShowContributeModal(false)}

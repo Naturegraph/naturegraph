@@ -1,7 +1,7 @@
-# PRIVACY_COMPLIANCE_AUDIT.md — Conformité RGPD & Loi 25 (Québec)
+# PRIVACY_COMPLIANCE_AUDIT.md : Conformité RGPD & Loi 25 (Québec)
 
 > Audit réalisé le 2026-05-20 · Périmètre : RGPD (UE) + Loi 25 (Québec)
-> ⚠️ Document d'audit technique — ne remplace pas un avis juridique professionnel.
+> ⚠️ Document d'audit technique : ne remplace pas un avis juridique professionnel.
 
 ---
 
@@ -33,7 +33,7 @@ notification de violation).
 | Nom / prénom / pseudo                                 | `profiles`                     | Moyenne                | Contrat                         |
 | **Géolocalisation** (ville, rayon, centroïde)         | `profiles.location_*`          | **Élevée**             | Consentement                    |
 | Photos d'observation                                  | Storage `post-media`           | Moyenne (EXIF strippé) | Contrat                         |
-| Observations (espèce, lieu, date)                     | `posts`, `media`               | Moyenne–élevée         | Contrat                         |
+| Observations (espèce, lieu, date)                     | `posts`, `media`               | Moyenne-élevée         | Contrat                         |
 | Données comportementales (suivis, réactions, carnets) | `follows`, `reactions`…        | Moyenne                | Intérêt légitime                |
 | Logs d'inscription beta                               | `beta_signup_log`              | Moyenne                | Intérêt légitime → anonymisé    |
 | Logs admin                                            | `admin_audit_logs`             | Moyenne                | Obligation légale (traçabilité) |
@@ -90,7 +90,7 @@ notification de violation).
 - **État** : `update_user_location` a un paramètre `p_consent_source` → la notion de
   consentement est tracée. `location_visibility` permet de contrôler la visibilité.
 - **🟠 À garantir** :
-  1. L'utilisateur consent **activement** (pas de géoloc par défaut) — Privacy by
+  1. L'utilisateur consent **activement** (pas de géoloc par défaut) : Privacy by
      Default.
   2. Le consentement est **horodaté et tracé** (`location_consent_source`,
      `location_updated_at` ✅).
@@ -100,7 +100,7 @@ notification de violation).
 - **Risque** : géoloc collectée sans consentement clair = violation RGPD art. 6/7 +
   Loi 25.
 - **Priorité** : importante.
-- **Mitigation** : revue du flux d'onboarding/Settings localisation — écran de
+- **Mitigation** : revue du flux d'onboarding/Settings localisation : écran de
   consentement explicite + lien vers la politique de confidentialité.
 - **Effort** : 2 h (revue + ajustement UI si besoin). **Avant prod ?** OUI.
 
@@ -147,7 +147,7 @@ notification de violation).
 
 - **Description** : aucune politique de rétention formalisée pour les comptes inactifs,
   les logs, les exports.
-- **Mitigation** : définir et documenter — ex. logs admin conservés 12 mois, exports
+- **Mitigation** : définir et documenter : ex. logs admin conservés 12 mois, exports
   RGPD purgés du bucket après 30 j, comptes inactifs supprimés/anonymisés après X mois.
 - **Effort** : 1 h (rédaction de la politique) + cron de purge des exports.
 - **Avant prod ?** NON pour la beta / OUI avant ouverture publique.
@@ -159,21 +159,21 @@ notification de violation).
 
 ---
 
-## 6. Loi 25 (Québec) — spécificités
+## 6. Loi 25 (Québec) : spécificités
 
 Avec des testeurs au Québec, la **Loi 25** (modernisation des dispositions sur la
 protection des renseignements personnels) s'applique :
 
-### 🟠 6.1 — Responsable de la protection des renseignements personnels
+### 🟠 6.1 : Responsable de la protection des renseignements personnels
 
 - La Loi 25 exige la **désignation d'un responsable** (par défaut, la personne ayant la
-  plus haute autorité — Nicolas). Son titre et ses coordonnées doivent être **publiés**
+  plus haute autorité : Nicolas). Son titre et ses coordonnées doivent être **publiés**
   (site web).
 - **Mitigation** : ajouter sur `/privacy` une mention « Responsable de la protection
   des renseignements personnels : [Nom], [email] ».
 - **Effort** : 15 min. **Avant prod ?** OUI.
 
-### 🟠 6.2 — Procédure d'incident de confidentialité
+### 🟠 6.2 : Procédure d'incident de confidentialité
 
 - La Loi 25 impose, en cas d'**incident de confidentialité** présentant un risque de
   préjudice sérieux : notification à la **Commission d'accès à l'information du Québec
@@ -182,18 +182,18 @@ protection des renseignements personnels) s'applique :
 - **Effort** : couvert par l'INCIDENT_RESPONSE_PLAN. **Avant prod ?** OUI (procédure
   prête, même si jamais déclenchée).
 
-### 🟡 6.3 — Évaluation des facteurs relatifs à la vie privée (ÉFVP)
+### 🟡 6.3 : Évaluation des facteurs relatifs à la vie privée (ÉFVP)
 
 - Pour un projet traitant de la géolocalisation, une ÉFVP allégée est recommandée
   (Loi 25). Le présent document + la cartographie §1 en constituent une base.
 - **Effort** : formalisation 1-2 h. **Avant prod ?** NON pour beta fermée / OUI public.
 
-### 🟡 6.4 — Consentement (Loi 25 ≈ RGPD)
+### 🟡 6.4 : Consentement (Loi 25 ≈ RGPD)
 
 - Consentement « manifeste, libre, éclairé, donné à des fins spécifiques ». Le flux
-  géoloc (§3) doit le respecter — exigence commune RGPD + Loi 25.
+  géoloc (§3) doit le respecter : exigence commune RGPD + Loi 25.
 
-### ⚪ 6.5 — Transfert hors Québec
+### ⚪ 6.5 : Transfert hors Québec
 
 - Les données sont hébergées sur Supabase / Vercel (hors Québec). La Loi 25 demande une
   évaluation que la juridiction d'hébergement offre une protection équivalente. À
@@ -228,8 +228,8 @@ protection des renseignements personnels) s'applique :
 | Consentement géoloc               | 🟠 garantir flux explicite + révocable            |
 | Minimisation / Privacy by Default | ✅ centroïde, EXIF strip, no superflu             |
 | Anonymisation                     | ✅ cron logs                                      |
-| Loi 25 — responsable PRP          | 🟠 à désigner + publier                           |
-| Loi 25 — procédure incident       | 🟠 cf. INCIDENT_RESPONSE_PLAN                     |
+| Loi 25 : responsable PRP          | 🟠 à désigner + publier                           |
+| Loi 25 : procédure incident       | 🟠 cf. INCIDENT_RESPONSE_PLAN                     |
 | Pages légales                     | 🟡 mettre à jour (géoloc, Loi 25, sous-traitants) |
 
 **Conformité raisonnable atteignable rapidement.** Les écarts sont surtout

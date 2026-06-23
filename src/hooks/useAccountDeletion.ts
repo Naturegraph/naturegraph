@@ -1,5 +1,5 @@
 /**
- * useAccountDeletion — React Query mutation pour suppression compte
+ * useAccountDeletion : React Query mutation pour suppression compte
  *
  * Wrappe `accountDeletionService.deleteAccount()` qui invoque l'Edge
  * Function `delete-account`.
@@ -21,7 +21,7 @@ export function useDeleteAccount() {
   return useMutation<DeleteAccountResult, Error, AccountDeletionMode | undefined>({
     mutationFn: (mode = 'hard') => deleteAccount(mode),
     onSuccess: () => {
-      // Vide tout le cache React Query — le user n'existe plus.
+      // Vide tout le cache React Query : le user n'existe plus.
       queryClient.clear()
     },
   })

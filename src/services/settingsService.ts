@@ -1,5 +1,5 @@
 /**
- * settingsService — CRUD user_settings
+ * settingsService : CRUD user_settings
  * RLS owner-only. Une ligne par user, créée au premier upsert (le trigger
  * d'auth `handle_new_auth_user` crée uniquement `profiles`, pas `user_settings`).
  *
@@ -14,7 +14,7 @@
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 
-/** Fréquence des digests notifs — aligné sur le CHECK constraint DB. */
+/** Fréquence des digests notifs : aligné sur le CHECK constraint DB. */
 export type NotifFrequency = 'realtime' | 'daily' | 'weekly'
 
 export interface UserSettings {

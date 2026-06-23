@@ -1,5 +1,5 @@
 /**
- * NotificationsPanel — Dropdown des notifications (persistantes, cloche header)
+ * NotificationsPanel : Dropdown des notifications (persistantes, cloche header)
  *
  * À ne pas confondre avec le ToastContext (notifications UI éphémères).
  *
@@ -149,14 +149,24 @@ function NotifChip({ type }: { type: NotificationType }) {
 // ─── Message par type ─────────────────────────────────────────────────────────
 
 /** Phrase secondaire affichée sous le username + chip. */
-function getMessage(type: NotificationType, t: (k: string) => string): string {
-  switch (type) {
+function getMessage(
+  notif: GroupedNotification,
+  t: (k: string, opts?: Record<string, unknown>) => string,
+): string {
+  switch (notif.type) {
     case 'reaction':
       return t('home.notifications.messageReaction')
     case 'follow':
       return t('home.notifications.messageFollow')
     case 'post':
-      return t('home.notifications.messagePost')
+      // Regroupe par auteur : "a publié N publications" si plusieurs, sinon
+      // le message unitaire historique.
+      return notif.group_count > 1
+        ? t('home.notifications.messagePostGrouped', {
+            count: notif.group_count,
+            defaultValue: 'a publié {{count}} publications',
+          })
+        : t('home.notifications.messagePost')
     case 'species_digest':
       return t('home.notifications.messageSpeciesDigest')
     default:
@@ -221,7 +231,7 @@ function formatGroupLabel(
 
 /**
  * Avatar de l'acteur. Si pas de photo, on affiche l'hermine officielle
- * (cohérence avec le reste de l'app — MobileBottomNav, ProfileHeader,
+ * (cohérence avec le reste de l'app : MobileBottomNav, ProfileHeader,
  * EditPhotoTab, GuestSidebar, etc.). Plus d'initiales (Nicolas 2026-05-19).
  */
 function Avatar({ url }: { url: string | null; fallback?: string }) {
@@ -277,7 +287,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
 
   // Fermer si clic en dehors du panel.
   // 2026-05-19 (Nicolas) : "Tout marquer comme lu" ne fonctionnait pas en
-  // mobile — même cause que ProfileMenu : `mousedown` document handler
+  // mobile : même cause que ProfileMenu : `mousedown` document handler
   // tirait AVANT le click React du bouton interne, et panelRef pointe
   // uniquement sur le dropdown desktop (caché en mobile). Du coup
   // `panelRef.current.contains(target)` retournait false même pour un
@@ -324,7 +334,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
 
   const panelContent = (
     <>
-      {/* Header — pas de badge unreadCount ici : doublon avec la cloche header
+      {/* Header : pas de badge unreadCount ici : doublon avec la cloche header
           qui porte déjà le compteur (Nicolas 2026-05-19). */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <p className="font-title font-bold text-base text-foreground">
@@ -340,7 +350,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
         </button>
       </div>
 
-      {/* Liste groupée par date (BATCH 114 : max-h responsive — 60vh sur mobile pour gérer le clavier virtuel) */}
+      {/* Liste groupée par date (BATCH 114 : max-h responsive : 60vh sur mobile pour gérer le clavier virtuel) */}
       <div className="max-h-[60vh] md:max-h-[420px] overflow-y-auto">
         {isLoading && (
           <LoadingState variant="skeleton" rows={4} label={t('home.notifications.loading')} />
@@ -404,7 +414,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
                             notif.title ??
                             ''}
                         </span>{' '}
-                        <span className="text-muted-foreground">{getMessage(notif.type, t)}</span>
+                        <span className="text-muted-foreground">{getMessage(notif, t)}</span>
                       </p>
                       {/*
                         Corps de la notification, affiche sur plusieurs lignes quand present
@@ -412,7 +422,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
                         ou l administrateur ecrit un message libre. whitespace-pre-line preserve
                         les retours a la ligne du texte stocke en base.
                       */}
-                      {notif.body && (
+                      {notif.body && !(notif.type === 'post' && notif.group_count > 1) && (
                         <p className="mt-1 text-sm text-muted-foreground leading-snug whitespace-pre-line">
                           {notif.body}
                         </p>
@@ -458,7 +468,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
     </>
   )
 
-  // Mobile bottom sheet via React Portal — sans portal, le sticky parent
+  // Mobile bottom sheet via React Portal : sans portal, le sticky parent
   // (HomeNavbar z-40) créait un stacking context qui contenait notre z-60.
   // Résultat : la bottom nav (z-50 dans body) restait visible au-dessus.
   // Le portal place le sheet DIRECTEMENT dans body → notre z-[60] gagne.

@@ -1,5 +1,5 @@
 /**
- * ToggleSwitch — Switch ON/OFF accessible
+ * ToggleSwitch : Switch ON/OFF accessible
  *
  * Composant générique réutilisable. Conforme WAI-ARIA :
  *   - role="switch" + aria-checked

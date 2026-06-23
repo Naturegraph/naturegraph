@@ -1,5 +1,5 @@
 /**
- * OnboardingInterests — Étape 1 : Centres d'intérêt
+ * OnboardingInterests : Étape 1 : Centres d'intérêt
  *
  * Multi-select de 9 catégories de biodiversité.
  * Emojis centralisés depuis CATEGORY_EMOJIS (source de vérité).
@@ -22,7 +22,7 @@ import { OnboardingHeader } from './OnboardingHeader'
 
 /** Nombre maximum de centres d'intérêt sélectionnables.
  * Spec : max 3, bloque la sélection d'un 4e.
- * TODO [BACKEND] — Ce max sera validé côté serveur lors du upsert profil.
+ * TODO [BACKEND] : Ce max sera validé côté serveur lors du upsert profil.
  */
 const MAX_INTERESTS = 3
 
@@ -80,7 +80,7 @@ export function OnboardingInterests({ onContinue, onSkip, onExit }: OnboardingIn
             </p>
           </div>
 
-          {/* Compteur de sélection — visible dès qu'au moins 1 centre d'intérêt est sélectionné */}
+          {/* Compteur de sélection : visible dès qu'au moins 1 centre d'intérêt est sélectionné */}
           {selectedInterests.length > 0 && (
             <p className="text-sm text-[var(--color-text-secondary)] shrink-0" aria-live="polite">
               {t('onboarding.interests.counter', {
@@ -100,7 +100,7 @@ export function OnboardingInterests({ onContinue, onSkip, onExit }: OnboardingIn
           >
             {INTERESTS.map(({ id, emoji }) => {
               const isSelected = selectedInterests.includes(id)
-              /** Numéro d'ordre de sélection (1, 2, 3) — null si non sélectionné */
+              /** Numéro d'ordre de sélection (1, 2, 3) : null si non sélectionné */
               const selectionOrder = isSelected ? selectedInterests.indexOf(id) + 1 : null
               /** Carte désactivée : max atteint et non sélectionnée */
               const isDisabled = isAtMax && !isSelected
@@ -123,7 +123,7 @@ export function OnboardingInterests({ onContinue, onSkip, onExit }: OnboardingIn
                         : 'bg-transparent border border-[var(--color-border)] motion-safe:hover:shadow-md motion-safe:active:scale-95',
                   ].join(' ')}
                 >
-                  {/* Badge numéroté — affiché dans le coin supérieur droit quand sélectionné */}
+                  {/* Badge numéroté : affiché dans le coin supérieur droit quand sélectionné */}
                   {selectionOrder !== null && (
                     <span
                       aria-hidden="true"
@@ -133,7 +133,7 @@ export function OnboardingInterests({ onContinue, onSkip, onExit }: OnboardingIn
                     </span>
                   )}
 
-                  {/* Emoji décoratif — masqué aux lecteurs d'écran */}
+                  {/* Emoji décoratif : masqué aux lecteurs d'écran */}
                   <span className="text-2xl" aria-hidden="true">
                     {emoji}
                   </span>

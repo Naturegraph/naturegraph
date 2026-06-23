@@ -1,9 +1,9 @@
-# PRD — Auth + Onboarding Naturegraph
+# PRD : Auth + Onboarding Naturegraph
 
 > Product Requirements Document
-> Version : 1.0 — 2026-04-01
+> Version : 1.0 : 2026-04-01
 > Auteur : Nicolas (Lead Product Designer) + Claude (PM/Dev/UX/UI)
-> Statut : Reference active — guide d'implementation
+> Statut : Reference active : guide d'implementation
 
 ---
 
@@ -12,13 +12,13 @@
 1. [Contexte & objectifs](#1-contexte--objectifs)
 2. [Etats utilisateur](#2-etats-utilisateur)
 3. [Layout & responsive](#3-layout--responsive)
-4. [Page Auth — Signup](#4-page-auth--signup)
-5. [Page Auth — Login](#5-page-auth--login)
-6. [Page Auth — Verification OTP](#6-page-auth--verification-otp)
-7. [Flow Onboarding — Etape 1 : Centres d'interet](#7-flow-onboarding--etape-1--centres-dinteret)
-8. [Flow Onboarding — Etape 2 : Frequence d'exploration](#8-flow-onboarding--etape-2--frequence-dexploration)
-9. [Flow Onboarding — Etape 3 : Motivations](#9-flow-onboarding--etape-3--motivations)
-10. [Flow Onboarding — Etape 4 : Nom d'utilisateur](#10-flow-onboarding--etape-4--nom-dutilisateur)
+4. [Page Auth : Signup](#4-page-auth--signup)
+5. [Page Auth : Login](#5-page-auth--login)
+6. [Page Auth : Verification OTP](#6-page-auth--verification-otp)
+7. [Flow Onboarding : Etape 1 : Centres d'interet](#7-flow-onboarding--etape-1--centres-dinteret)
+8. [Flow Onboarding : Etape 2 : Frequence d'exploration](#8-flow-onboarding--etape-2--frequence-dexploration)
+9. [Flow Onboarding : Etape 3 : Motivations](#9-flow-onboarding--etape-3--motivations)
+10. [Flow Onboarding : Etape 4 : Nom d'utilisateur](#10-flow-onboarding--etape-4--nom-dutilisateur)
 11. [Modal de sortie d'onboarding](#11-modal-de-sortie-donboarding)
 12. [Mode demo (demoAuth)](#12-mode-demo-demoauth)
 13. [Guest mode & restrictions](#13-guest-mode--restrictions)
@@ -32,8 +32,8 @@
 21. [TODO Backend](#21-todo-backend)
 22. [Roadmap d'implementation](#22-roadmap-dimplementation)
 
-Annexe A — [Design tokens reference](#annexe-a--design-tokens-reference)
-Annexe B — [Etats de l'AuthContext](#annexe-b--etats-de-lauthcontext)
+Annexe A : [Design tokens reference](#annexe-a--design-tokens-reference)
+Annexe B : [Etats de l'AuthContext](#annexe-b--etats-de-lauthcontext)
 
 ---
 
@@ -63,14 +63,14 @@ L'objectif est double :
 
 | Source    | Role                                                                                                                      |
 | --------- | ------------------------------------------------------------------------------------------------------------------------- |
-| **Figma** | Design de reference — [Onboarding Web App Light](https://www.figma.com/design/YNnsWRi3hSp5hWsUa0Tjr6/?node-id=6381-67389) |
-| **Code**  | `src/pages/AuthPage.tsx` — orchestrateur principal                                                                        |
-| **Code**  | `src/components/auth/` — 9 composants (Signup, Login, Verification, etc.)                                                 |
-| **Code**  | `src/components/onboarding/` — 6 composants (Interests, Step2-4, ExitModal, Button)                                       |
-| **Code**  | `src/lib/demoAuth.ts` — OTP en memoire pour le mode demo                                                                  |
-| **Code**  | `src/contexts/AuthContext.tsx` — etat global auth + DemoAuthProvider                                                      |
-| **Types** | `src/types/database.ts` — type Profile                                                                                    |
-| **i18n**  | `src/i18n/locales/fr.json`, `en.json` — cles `auth.*` et `onboarding.*`                                                   |
+| **Figma** | Design de reference : [Onboarding Web App Light](https://www.figma.com/design/YNnsWRi3hSp5hWsUa0Tjr6/?node-id=6381-67389) |
+| **Code**  | `src/pages/AuthPage.tsx` : orchestrateur principal                                                                        |
+| **Code**  | `src/components/auth/` : 9 composants (Signup, Login, Verification, etc.)                                                 |
+| **Code**  | `src/components/onboarding/` : 6 composants (Interests, Step2-4, ExitModal, Button)                                       |
+| **Code**  | `src/lib/demoAuth.ts` : OTP en memoire pour le mode demo                                                                  |
+| **Code**  | `src/contexts/AuthContext.tsx` : etat global auth + DemoAuthProvider                                                      |
+| **Types** | `src/types/database.ts` : type Profile                                                                                    |
+| **i18n**  | `src/i18n/locales/fr.json`, `en.json` : cles `auth.*` et `onboarding.*`                                                   |
 
 ---
 
@@ -166,7 +166,7 @@ SignupForm / LoginForm → bouton "Decouvrir sans compte"
 **Desktop / XL** :
 
 - Fond : `bg-teal-dark` (vert fonce Naturegraph)
-- Motifs SVG decoratifs (`AuthPatterns`) : grand cercles en stroke blanc opacity 4-7%, feuilles, lignes diagonales — `aria-hidden="true"`
+- Motifs SVG decoratifs (`AuthPatterns`) : grand cercles en stroke blanc opacity 4-7%, feuilles, lignes diagonales : `aria-hidden="true"`
 - Card : `rounded-[32px]`, hauteur fixe `md:h-[832px]`, shadow legere
 - Card 2 colonnes : formulaire 512px + photo hero 512px
 - Photo hero : `rounded-r-[32px]`, `object-cover`, credit photo en overlay bas
@@ -193,7 +193,7 @@ SignupForm / LoginForm → bouton "Decouvrir sans compte"
 - Min-height contenu par etape : 730px
 - Centree verticalement dans l'ecran
 
-### 3.4 Node IDs Figma — Reference
+### 3.4 Node IDs Figma : Reference
 
 #### Section globale : `6381:67389`
 
@@ -202,35 +202,35 @@ SignupForm / LoginForm → bouton "Decouvrir sans compte"
 | `6381:67390` | Signup               | XL Desktop (1920px) |
 | `6381:68393` | Login                | XL Desktop (1920px) |
 | `6381:67432` | Code OTP             | XL Desktop (1920px) |
-| `6381:67472` | Onboarding — etape 1 | XL Desktop (1920px) |
-| `6381:67528` | Onboarding — etape 2 | XL Desktop (1920px) |
-| `6381:67578` | Onboarding — etape 3 | XL Desktop (1920px) |
-| `6381:67612` | Onboarding — etape 4 | XL Desktop (1920px) |
+| `6381:67472` | Onboarding : etape 1 | XL Desktop (1920px) |
+| `6381:67528` | Onboarding : etape 2 | XL Desktop (1920px) |
+| `6381:67578` | Onboarding : etape 3 | XL Desktop (1920px) |
+| `6381:67612` | Onboarding : etape 4 | XL Desktop (1920px) |
 | `6381:68276` | Signup               | Desktop (1440px)    |
 | `6381:68541` | Login                | Desktop (1440px)    |
 | `6381:67977` | Code OTP             | Desktop (1440px)    |
-| `6381:68067` | Onboarding — etape 1 | Desktop (1440px)    |
-| `6381:68123` | Onboarding — etape 2 | Desktop (1440px)    |
-| `6381:68317` | Onboarding — etape 3 | Desktop (1440px)    |
-| `6381:68351` | Onboarding — etape 4 | Desktop (1440px)    |
+| `6381:68067` | Onboarding : etape 1 | Desktop (1440px)    |
+| `6381:68123` | Onboarding : etape 2 | Desktop (1440px)    |
+| `6381:68317` | Onboarding : etape 3 | Desktop (1440px)    |
+| `6381:68351` | Onboarding : etape 4 | Desktop (1440px)    |
 | `6381:67682` | Signup               | Tablet (768px)      |
 | `6381:68450` | Login                | Tablet (768px)      |
 | `6381:67653` | Code OTP             | Tablet (768px)      |
-| `6381:67712` | Onboarding — etape 1 | Tablet (768px)      |
-| `6381:67768` | Onboarding — etape 2 | Tablet (768px)      |
-| `6381:67845` | Onboarding — etape 3 | Tablet (768px)      |
-| `6381:67879` | Onboarding — etape 4 | Tablet (768px)      |
+| `6381:67712` | Onboarding : etape 1 | Tablet (768px)      |
+| `6381:67768` | Onboarding : etape 2 | Tablet (768px)      |
+| `6381:67845` | Onboarding : etape 3 | Tablet (768px)      |
+| `6381:67879` | Onboarding : etape 4 | Tablet (768px)      |
 | `6381:68173` | Signup               | Mobile (402px)      |
 | `6381:68496` | Login                | Mobile (402px)      |
 | `6381:67818` | Code OTP             | Mobile (402px)      |
-| `6381:67921` | Onboarding — etape 1 | Mobile (402px)      |
-| `6381:68017` | Onboarding — etape 2 | Mobile (402px)      |
-| `6381:68202` | Onboarding — etape 3 | Mobile (402px)      |
-| `6381:68235` | Onboarding — etape 4 | Mobile (402px)      |
+| `6381:67921` | Onboarding : etape 1 | Mobile (402px)      |
+| `6381:68017` | Onboarding : etape 2 | Mobile (402px)      |
+| `6381:68202` | Onboarding : etape 3 | Mobile (402px)      |
+| `6381:68235` | Onboarding : etape 4 | Mobile (402px)      |
 
 ---
 
-## 4. Page Auth — Signup
+## 4. Page Auth : Signup
 
 **Composant** : `src/components/auth/SignupForm.tsx`
 **Node IDs Figma** : `6381:67390` (XL), `6381:68276` (Desktop), `6381:67682` (Tablet), `6381:68173` (Mobile)
@@ -256,7 +256,7 @@ SignupForm / LoginForm → bouton "Decouvrir sans compte"
 
 [Separateur] "ou continuer avec"            ← ligne + texte centre sur fond off-white
 
-[Boutons sociaux — 3 egaux]
+[Boutons sociaux : 3 egaux]
   [Google] [Apple] [Facebook]              ← SocialButton, icone SVG seule
 
 [Lien] "Tu as deja un compte ?" [Se connecter]  ← texte + lien primary underline
@@ -271,7 +271,7 @@ SignupForm / LoginForm → bouton "Decouvrir sans compte"
   - Lien `@emie_photographie_nature` (href Instagram, `target="_blank"`)
 - Fallback : si l'image fail, l'image par defaut est utilisee (gestion `onError`)
 
-### 4.2 Composant AuthInput — Specs detaillees
+### 4.2 Composant AuthInput : Specs detaillees
 
 Structure interne (`src/components/auth/AuthInput.tsx`) :
 
@@ -309,7 +309,7 @@ Structure interne (`src/components/auth/AuthInput.tsx`) :
 
 ---
 
-## 5. Page Auth — Login
+## 5. Page Auth : Login
 
 **Composant** : `src/components/auth/LoginForm.tsx`
 **Node IDs Figma** : `6381:68393` (XL), `6381:68541` (Desktop), `6381:68450` (Tablet), `6381:68496` (Mobile)
@@ -345,7 +345,7 @@ Structure interne (`src/components/auth/AuthInput.tsx`) :
 [Lien] "Pas encore de compte ?" [Creer un compte]
 ```
 
-### 5.2 Checkbox "Se souvenir de moi" — Specs detaillees
+### 5.2 Checkbox "Se souvenir de moi" : Specs detaillees
 
 La checkbox utilise le pattern "sr-only real input + custom visual" :
 
@@ -357,10 +357,10 @@ La checkbox utilise le pattern "sr-only real input + custom visual" :
 
 **Note implementation** : `rememberMe` est capture dans l'etat local mais pas encore transmis a Supabase. TODO BACKEND : passer `options.persistSession` dans `signInWithPassword`.
 
-### 5.3 Toggle mot de passe — Specs detaillees
+### 5.3 Toggle mot de passe : Specs detaillees
 
 - Bouton absolu dans le champ (`right-6 top-1/2 -translate-y-1/2`)
-- Icone : `Eye` (mot de passe masque) | `EyeOff` (mot de passe visible) — Lucide, size 18
+- Icone : `Eye` (mot de passe masque) | `EyeOff` (mot de passe visible) : Lucide, size 18
 - `aria-label` dynamique : "Afficher le mot de passe" / "Masquer le mot de passe"
 - Transition : opacity sur hover/active
 
@@ -376,7 +376,7 @@ La checkbox utilise le pattern "sr-only real input + custom visual" :
 
 ---
 
-## 6. Page Auth — Verification OTP
+## 6. Page Auth : Verification OTP
 
 **Composant** : `src/components/auth/VerificationForm.tsx`
 **Node IDs Figma** : `6381:67432` (XL), `6381:67977` (Desktop), `6381:67653` (Tablet), `6381:67818` (Mobile)
@@ -392,7 +392,7 @@ La checkbox utilise le pattern "sr-only real input + custom visual" :
 
   [Label] "Code de verification"
 
-  [Inputs OTP — 6 cases]
+  [Inputs OTP : 6 cases]
     6 inputs cote a cote, flex gap-2
     Chaque case : w-full aspect-square max-w-[56px]
     background : var(--color-action-light)
@@ -400,15 +400,15 @@ La checkbox utilise le pattern "sr-only real input + custom visual" :
     Erreur : border-destructive (rouge)
     text-center, text-xl, font-semibold
 
-  [Message erreur — si code invalide]
+  [Message erreur : si code invalide]
     role="alert", text-destructive text-xs
 
   [Timer] "Code valide pendant MM:SS"         ← countdown 2:00 → 0:00
 
-  [Hint OTP — mode demo uniquement]
+  [Hint OTP : mode demo uniquement]
     Visible si !isSupabaseConfigured && demoOtp
     Fond : bg-[#f3e8ff], border-[#a78bfa], rounded-xl, px-4 py-3
-    Icone 🔐 + "Mode demo — Ton code OTP : XXXXXX"
+    Icone 🔐 + "Mode demo : Ton code OTP : XXXXXX"
     Texte violet : text-[#7c3aed], font-semibold
 
   [Renvoyer le code]
@@ -439,7 +439,7 @@ La checkbox utilise le pattern "sr-only real input + custom visual" :
 
 ### 6.3 Timer et renvoi de code
 
-- Duree initiale : **120 secondes (2 minutes)** — constante `TIMER_SECONDS = 120`
+- Duree initiale : **120 secondes (2 minutes)** : constante `TIMER_SECONDS = 120`
 - Format d'affichage : `MM:SS` (ex: "02:00" → "01:45" → "00:00")
 - Le bouton "Renvoyer le code" est desactive tant que le timer > 0
 - Au clic "Renvoyer" : reset du timer a 120s, reset des cases, nouvel OTP genere
@@ -451,7 +451,7 @@ La checkbox utilise le pattern "sr-only real input + custom visual" :
 
 1. `validateOtp(email, token)` verifie le format (6 chiffres), la correspondance avec `otpStore`, l'expiration (2 min)
 2. Usage unique : suppression de l'entree apres validation reussie
-3. En cas d'erreur : message "Code invalide — verifiez la console de votre navigateur"
+3. En cas d'erreur : message "Code invalide : verifiez la console de votre navigateur"
 
 **Mode production (Supabase)** :
 
@@ -466,7 +466,7 @@ La checkbox utilise le pattern "sr-only real input + custom visual" :
 
 ---
 
-## 7. Flow Onboarding — Etape 1 : Centres d'interet
+## 7. Flow Onboarding : Etape 1 : Centres d'interet
 
 **Composant** : `src/components/onboarding/OnboardingInterests.tsx`
 **Node IDs Figma** : `6381:67472` (XL), `6381:68067` (Desktop), `6381:67712` (Tablet), `6381:67921` (Mobile)
@@ -474,7 +474,7 @@ La checkbox utilise le pattern "sr-only real input + custom visual" :
 ### 7.1 Structure visuelle
 
 ```
-[Header — fixe en haut]
+[Header : fixe en haut]
   [Row]
     [Badge teal] "Profil"                    ← bg-teal-dark, h-8, px-3, rounded-button
     [Row]
@@ -490,29 +490,29 @@ La checkbox utilise le pattern "sr-only real input + custom visual" :
   [H3] "Quels sont tes centres d'interet ?"
   [P] "Aide-nous a mieux te connaitre..."
 
-  [Compteur — visible si >= 1 selectionne]
+  [Compteur : visible si >= 1 selectionne]
     "X / 3 selectionnes" aria-live="polite"
 
-  [Grille categories — flex-wrap gap-2]
+  [Grille categories : flex-wrap gap-2]
     9 cartes : flex-col, h-24, rounded-xl
     Width : 50% mobile - 4px | 33.33% desktop - 5.33px
 
-    [Carte — etat default]
+    [Carte : etat default]
       border border-border, bg-transparent
       hover:shadow-md (motion-safe)
       active:scale-95 (motion-safe)
       focus-visible:ring-2 ring-primary
 
-    [Carte — etat selectionne]
+    [Carte : etat selectionne]
       border-2 border-primary, bg-primary-light
       hover:shadow-md (motion-safe)
 
-    [Carte — etat desactive (max atteint)]
+    [Carte : etat desactive (max atteint)]
       opacity-40, cursor-not-allowed, border border-border
 
     Contenu : emoji (aria-hidden) + label traduit
 
-[Actions — fixes en bas]
+[Actions : fixes en bas]
   [OnboardingButton secondary] "Passer"      ← flex-1
   [OnboardingButton primary] "Continuer"    ← flex-1
 ```
@@ -553,12 +553,12 @@ Si non selectionne && count < MAX_INTERESTS → ajoute a la liste
 Si non selectionne && count >= MAX_INTERESTS → ignore (disabled)
 ```
 
-**Continuer** : appelle `onContinue(selectedInterests)` — tableau vide autorise si passe via "Passer"
+**Continuer** : appelle `onContinue(selectedInterests)` : tableau vide autorise si passe via "Passer"
 **Passer** : appelle `onSkip()` → avance a l'etape 2 sans interets
 
 ---
 
-## 8. Flow Onboarding — Etape 2 : Frequence d'exploration
+## 8. Flow Onboarding : Etape 2 : Frequence d'exploration
 
 **Composant** : `src/components/onboarding/OnboardingStep2.tsx`
 **Node IDs Figma** : `6381:67528` (XL), `6381:68123` (Desktop), `6381:67768` (Tablet), `6381:68017` (Mobile)
@@ -581,16 +581,16 @@ Si non selectionne && count >= MAX_INTERESTS → ignore (disabled)
   [H3] "A quelle frequence explores-tu la nature ?"
   [P] "Cela nous permettra d'adapter ton experience..."
 
-  [Groupe radio — role="radiogroup"]
+  [Groupe radio : role="radiogroup"]
     4 cartes options, flex-col gap-3, full-width
 
-    [Carte option — etat default]
+    [Carte option : etat default]
       border-border, bg-transparent
       hover:border-foreground/20
       rounded-card, p-6
       focus-visible:ring-2 ring-primary
 
-    [Carte option — etat selectionne]
+    [Carte option : etat selectionne]
       border-primary, bg-primary-light
       aria-pressed="true"
 
@@ -638,7 +638,7 @@ TODO BACKEND : stocker dans `profiles.notification_frequency` (type ENUM) et cre
 
 ---
 
-## 9. Flow Onboarding — Etape 3 : Motivations
+## 9. Flow Onboarding : Etape 3 : Motivations
 
 **Composant** : `src/components/onboarding/OnboardingStep3.tsx`
 **Node IDs Figma** : `6381:67578` (XL), `6381:68317` (Desktop), `6381:67845` (Tablet), `6381:68202` (Mobile)
@@ -661,16 +661,16 @@ TODO BACKEND : stocker dans `profiles.notification_frequency` (type ENUM) et cre
   [H3] "Pourquoi souhaites-tu utiliser Naturegraph ?"
   [P] "Dis-nous ce qui te motive le plus ! Cela nous aidera..."
 
-  [Groupe motivations — role="group"]
+  [Groupe motivations : role="group"]
     4 options toggle, flex-col gap-4, full-width
 
-    [Option — etat default]
+    [Option : etat default]
       bg-off-white, border border-border
       hover:border-foreground/20
       rounded-button, h-[52px]
       flex row : checkbox visuelle + label
 
-    [Option — etat selectionne]
+    [Option : etat selectionne]
       bg-primary/10, border border-primary
       aria-pressed="true"
 
@@ -705,13 +705,13 @@ TODO BACKEND : stocker dans `profiles.notification_frequency` (type ENUM) et cre
 - `initialMotivations` : restitue les selections si retour en arriere
 - Bouton retour : revient a l'etape 2 (frequence)
 
-**Decision technique** : Pas de limite de selection contrairement a l'etape 1 (les motivations sont de nature differente — toutes peuvent coexister).
+**Decision technique** : Pas de limite de selection contrairement a l'etape 1 (les motivations sont de nature differente : toutes peuvent coexister).
 
 TODO BACKEND : stocker `motivations` dans `profiles.motivations TEXT[]` ou table `user_motivations` si ponderation ML future.
 
 ---
 
-## 10. Flow Onboarding — Etape 4 : Nom d'utilisateur
+## 10. Flow Onboarding : Etape 4 : Nom d'utilisateur
 
 **Composant** : `src/components/onboarding/OnboardingStep4.tsx`
 **Node IDs Figma** : `6381:67612` (XL), `6381:68351` (Desktop), `6381:67879` (Tablet), `6381:68235` (Mobile)
@@ -755,7 +755,7 @@ TODO BACKEND : stocker `motivations` dans `profiles.motivations TEXT[]` ou table
         aria-describedby="username-error" (si erreur)
         min 3 car | max 25 car
 
-      [Indicateur droite — aria-hidden]
+      [Indicateur droite : aria-hidden]
         Si en cours : "Verification..." (text-primary)
         Sinon : compteur "X" restants (opacity 0.64)
 
@@ -776,14 +776,14 @@ TODO BACKEND : stocker `motivations` dans `profiles.motivations TEXT[]` ou table
 
 | Regle                                       | Erreur                                                                                          |
 | ------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Longueur < 3                                | `tooShort` — "Le pseudo doit contenir au moins 3 caracteres"                                    |
-| Longueur > 25                               | `tooLong` — "Le pseudo ne peut pas depasser 25 caracteres"                                      |
-| Caracteres invalides                        | `invalidFormat` — "Seules les lettres, chiffres, points (.) et underscores (\_) sont autorises" |
+| Longueur < 3                                | `tooShort` : "Le pseudo doit contenir au moins 3 caracteres"                                    |
+| Longueur > 25                               | `tooLong` : "Le pseudo ne peut pas depasser 25 caracteres"                                      |
+| Caracteres invalides                        | `invalidFormat` : "Seules les lettres, chiffres, points (.) et underscores (\_) sont autorises" |
 | Commence/termine par . ou \_                | `invalidFormat`                                                                                 |
 | Deux separateurs consecutifs (`..` ou `__`) | `invalidFormat`                                                                                 |
-| Mot banni                                   | `bannedWord` — "Ce pseudo n'est pas disponible"                                                 |
+| Mot banni                                   | `bannedWord` : "Ce pseudo n'est pas disponible"                                                 |
 
-**Regex** : `/^[a-zA-Z0-9._]+$/` — seuls lettres, chiffres, point, underscore
+**Regex** : `/^[a-zA-Z0-9._]+$/` : seuls lettres, chiffres, point, underscore
 
 #### Validation disponibilite Supabase (debounce 800ms)
 
@@ -840,7 +840,7 @@ Le bouton X present dans le header de chaque etape d'onboarding ouvre cette moda
   [OnboardingButton ghost] "Continuer l'onboarding"   → fermeture modal
 ```
 
-### 11.3 Accessibilite — Focus trap complet
+### 11.3 Accessibilite : Focus trap complet
 
 La modal implementee repond au pattern ARIA Dialog :
 
@@ -861,7 +861,7 @@ La modal implementee repond au pattern ARIA Dialog :
 
 ### 12.1 Architecture
 
-Quand Supabase n'est pas configure, `AuthProvider` rend `DemoAuthProvider` a la place. Les interfaces sont identiques — aucune difference pour les composants qui consomment `useAuth()`.
+Quand Supabase n'est pas configure, `AuthProvider` rend `DemoAuthProvider` a la place. Les interfaces sont identiques : aucune difference pour les composants qui consomment `useAuth()`.
 
 ```
 isSupabaseConfigured = false
@@ -883,7 +883,7 @@ isSupabaseConfigured = false
 
 **Affichage en UI** : le `VerificationForm` affiche un hint violet en mode demo :
 
-- Badge `🔐 Mode demo — Ton code OTP : XXXXXX`
+- Badge `🔐 Mode demo : Ton code OTP : XXXXXX`
 - Fond `#f3e8ff`, border `#a78bfa`, texte `#7c3aed`
 - Mis a jour apres chaque renvoi
 
@@ -952,7 +952,7 @@ Ces redirections s'appliquent via la detection `!isAuthenticated` dans les compo
 
 ## 14. Mots bannis (bannedWords)
 
-**Localisation** : `src/components/onboarding/OnboardingStep4.tsx` — constante `BANNED_USERNAMES`
+**Localisation** : `src/components/onboarding/OnboardingStep4.tsx` : constante `BANNED_USERNAMES`
 
 ### 14.1 Contenu de la liste
 
@@ -1144,7 +1144,7 @@ Le cleanup est effectue dans le `return` du `useEffect` (unsubscribe + clearInte
 ```typescript
 interface Profile {
   id: string // = user.id (UUID Supabase)
-  username: string // Unique, 3-25 chars — cle d'onboarding complet
+  username: string // Unique, 3-25 chars : cle d'onboarding complet
   email: string
   first_name: string | null
   last_name: string | null
@@ -1162,9 +1162,9 @@ interface Profile {
   email_verified: boolean
   avatar_url: string | null
   banner_url: string | null
-  posts_count: number // Compteur denormalise — maintenu par trigger
-  followers_count: number // Compteur denormalise — maintenu par trigger
-  following_count: number // Compteur denormalise — maintenu par trigger
+  posts_count: number // Compteur denormalise : maintenu par trigger
+  followers_count: number // Compteur denormalise : maintenu par trigger
+  following_count: number // Compteur denormalise : maintenu par trigger
   created_at: string
   updated_at: string
   last_login_at: string | null
@@ -1175,7 +1175,7 @@ interface Profile {
 
 ## 17. Internationalisation
 
-### 17.1 Cles i18n existantes — namespace `auth`
+### 17.1 Cles i18n existantes : namespace `auth`
 
 ```
 auth.login (general)
@@ -1216,7 +1216,7 @@ auth.verify.title, .description, .codeLabel
 auth.verify.noCode, .resend, .timer, .demoCode
 ```
 
-### 17.2 Cles i18n existantes — namespace `onboarding`
+### 17.2 Cles i18n existantes : namespace `onboarding`
 
 ```
 onboarding.stepLabel, .back, .continue
@@ -1258,8 +1258,8 @@ onboarding.exitModal.goHome, .goLogin, .continue
 
 ### 17.4 Support des langues
 
-- Langue principale : **Francais (fr)** — `src/i18n/locales/fr.json`
-- Langue secondaire : **Anglais (en)** — `src/i18n/locales/en.json`
+- Langue principale : **Francais (fr)** : `src/i18n/locales/fr.json`
+- Langue secondaire : **Anglais (en)** : `src/i18n/locales/en.json`
 - Detection automatique depuis `navigator.language`
 - Fallback vers `fr` si la langue n'est pas supportee
 
@@ -1324,7 +1324,7 @@ Tous les composants onboarding respectent `prefers-reduced-motion` via la classe
 
 - `motion-safe:hover:shadow-md` sur les cartes interets et options
 - `motion-safe:active:scale-95` sur les boutons
-- Les transitions AuthPage (`AnimatePresence`) : non conditionnel actuellement — TODO
+- Les transitions AuthPage (`AnimatePresence`) : non conditionnel actuellement : TODO
 
 ---
 
@@ -1345,11 +1345,11 @@ Le composant `LazyPage` fournit un fallback spinner accessible (`role="status"` 
 
 | Dependance      | Usage                                | Justification                                                           |
 | --------------- | ------------------------------------ | ----------------------------------------------------------------------- |
-| `motion/react`  | Transitions AuthPage                 | Animations fluides signup/login/verify/onboarding — essentiel pour l'UX |
+| `motion/react`  | Transitions AuthPage                 | Animations fluides signup/login/verify/onboarding : essentiel pour l'UX |
 | `lucide-react`  | Icones Eye, EyeOff, ArrowLeft, Check | Tree-shakable, pas d'import global                                      |
 | `react-i18next` | Traductions FR/EN                    | Pilier i18n du projet                                                   |
 
-Aucune dependance superflue — les animations de cartes sont en CSS pur (Tailwind).
+Aucune dependance superflue : les animations de cartes sont en CSS pur (Tailwind).
 
 ### 19.3 Images
 
@@ -1376,11 +1376,11 @@ Aucune fuite memoire possible (la map est bornee par le nombre d'emails en atten
 
 ## 20. Inventaire composants
 
-### 20.1 Composants existants — Auth (`src/components/auth/`)
+### 20.1 Composants existants : Auth (`src/components/auth/`)
 
 | Composant                     | Description                                          | Lignes |
 | ----------------------------- | ---------------------------------------------------- | ------ |
-| `AuthPage.tsx` (`src/pages/`) | Orchestrateur principal — gere les 4 modes           | ~180   |
+| `AuthPage.tsx` (`src/pages/`) | Orchestrateur principal : gere les 4 modes           | ~180   |
 | `SignupForm.tsx`              | Formulaire inscription email + boutons sociaux       | ~160   |
 | `LoginForm.tsx`               | Formulaire connexion email + mdp + toggle + checkbox | ~265   |
 | `VerificationForm.tsx`        | Saisie OTP 6 cases + timer + resend + hint demo      | ~220   |
@@ -1392,15 +1392,15 @@ Aucune fuite memoire possible (la map est bornee par le nombre d'emails en atten
 | `Logo.tsx`                    | Logo Naturegraph + lien vers landing                 | ~30    |
 | `index.ts`                    | Re-exports                                           | ~10    |
 
-### 20.2 Composants existants — Onboarding (`src/components/onboarding/`)
+### 20.2 Composants existants : Onboarding (`src/components/onboarding/`)
 
 | Composant                 | Description                                              | Lignes |
 | ------------------------- | -------------------------------------------------------- | ------ |
 | `index.tsx`               | Orchestrateur 4 etapes + OnboardingExitModal             | ~180   |
-| `OnboardingInterests.tsx` | Etape 1 — grille 9 categories, multi-select max 3        | ~190   |
-| `OnboardingStep2.tsx`     | Etape 2 — frequence, 4 options radio custom              | ~197   |
-| `OnboardingStep3.tsx`     | Etape 3 — motivations, multi-select libre                | ~182   |
-| `OnboardingStep4.tsx`     | Etape 4 — username + validation + 434 mots bannis        | ~700   |
+| `OnboardingInterests.tsx` | Etape 1 : grille 9 categories, multi-select max 3        | ~190   |
+| `OnboardingStep2.tsx`     | Etape 2 : frequence, 4 options radio custom              | ~197   |
+| `OnboardingStep3.tsx`     | Etape 3 : motivations, multi-select libre                | ~182   |
+| `OnboardingStep4.tsx`     | Etape 4 : username + validation + 434 mots bannis        | ~700   |
 | `OnboardingExitModal.tsx` | Modal de sortie + focus trap complet                     | ~160   |
 | `OnboardingButton.tsx`    | Bouton reutilisable onboarding (primary/secondary/ghost) | ~60    |
 
@@ -1409,12 +1409,12 @@ Aucune fuite memoire possible (la map est bornee par le nombre d'emails en atten
 | Page             | Route               | Description                                                                               |
 | ---------------- | ------------------- | ----------------------------------------------------------------------------------------- |
 | `AuthPage.tsx`   | `/signup`, `/login` | Orchestrateur avec AnimatePresence                                                        |
-| `Onboarding.tsx` | `/onboarding`       | Version standalone (fallback) — 3 etapes (interests/frequency/username, sans motivations) |
+| `Onboarding.tsx` | `/onboarding`       | Version standalone (fallback) : 3 etapes (interests/frequency/username, sans motivations) |
 
 **Note importante** : Il existe deux implementations de l'onboarding en parallel :
 
-1. `src/pages/Onboarding.tsx` : version standalone accessible via `/onboarding` — 3 etapes (sans l'etape motivations)
-2. `src/components/onboarding/index.tsx` : version integree dans `AuthPage` — 4 etapes completes
+1. `src/pages/Onboarding.tsx` : version standalone accessible via `/onboarding` : 3 etapes (sans l'etape motivations)
+2. `src/components/onboarding/index.tsx` : version integree dans `AuthPage` : 4 etapes completes
 
 La version `components/onboarding` est la **version cible** (4 etapes). La page standalone est un fallback pour les acces directs. TODO : aligner les deux implementations.
 
@@ -1430,7 +1430,7 @@ La version `components/onboarding` est la **version cible** (4 etapes). La page 
 
 ## 21. TODO Backend
 
-### 21.1 Supabase Auth — Configuration
+### 21.1 Supabase Auth : Configuration
 
 | Item                   | Description                                                              | Priorite |
 | ---------------------- | ------------------------------------------------------------------------ | -------- |
@@ -1444,19 +1444,19 @@ La version `components/onboarding` est la **version cible** (4 etapes). La page 
 | Route `/auth/callback` | Creer la page callback OAuth pour capturer le token de retour            | Haute    |
 | `rememberMe`           | Passer `options.persistSession` dans `signInWithPassword`                | Moyenne  |
 
-### 21.2 Supabase DB — Schema
+### 21.2 Supabase DB : Schema
 
 | Item                              | Description                                                        | Priorite |
 | --------------------------------- | ------------------------------------------------------------------ | -------- |
 | `profiles.notification_frequency` | Ajouter colonne ENUM pour la frequence choisie a l'etape 2         | Haute    |
 | `profiles.motivations`            | Ajouter colonne `TEXT[]` pour les motivations de l'etape 3         | Haute    |
-| `banned_usernames` table          | Table avec RLS read-only — remplacer la liste statique             | Haute    |
+| `banned_usernames` table          | Table avec RLS read-only : remplacer la liste statique             | Haute    |
 | Contrainte `interests`            | Limiter `profiles.interests` a max 3 elements cote DB              | Moyenne  |
 | `notification_settings` table     | Preferences notifications par utilisateur (push, email, frequence) | Moyenne  |
-| `community_photos` table          | Photos hero dynamiques — rotation mensuelle avec flag `is_active`  | Basse    |
+| `community_photos` table          | Photos hero dynamiques : rotation mensuelle avec flag `is_active`  | Basse    |
 | `profiles` RLS                    | Verifier les politiques RLS sur la table profiles                  | Critique |
 
-### 21.3 Supabase DB — Triggers
+### 21.3 Supabase DB : Triggers
 
 | Item                        | Description                                                     | Priorite |
 | --------------------------- | --------------------------------------------------------------- | -------- |
@@ -1484,7 +1484,7 @@ La photo hero est actuellement un asset statique (`mission-observer.png`) :
 
 ## 22. Roadmap d'implementation
 
-### Sprint 1 — Foundation (complete)
+### Sprint 1 : Foundation (complete)
 
 | Item                                                  | Statut   |
 | ----------------------------------------------------- | -------- |
@@ -1499,7 +1499,7 @@ La photo hero est actuellement un asset statique (`mission-observer.png`) :
 | i18n FR + EN complet                                  | ✅ Livre |
 | Guard PublicRoute / ProtectedRoute                    | ✅ Livre |
 
-### Sprint 2 — Polish & Accessibilite
+### Sprint 2 : Polish & Accessibilite
 
 | Item                                                                      | Statut | Priorite |
 | ------------------------------------------------------------------------- | ------ | -------- |
@@ -1511,7 +1511,7 @@ La photo hero est actuellement un asset statique (`mission-observer.png`) :
 | Conditionner les animations AuthPage sur prefers-reduced-motion           | TODO   | Moyenne  |
 | Cles i18n manquantes (voir section 17.3)                                  | TODO   | Moyenne  |
 
-### Sprint 3 — Backend Supabase
+### Sprint 3 : Backend Supabase
 
 | Item                                                     | Statut | Priorite |
 | -------------------------------------------------------- | ------ | -------- |
@@ -1524,7 +1524,7 @@ La photo hero est actuellement un asset statique (`mission-observer.png`) :
 | Rate limiting serveur OTP                                | TODO   | Haute    |
 | Photo hero communautaire dynamique                       | TODO   | Basse    |
 
-### Sprint 4 — Features additionnelles
+### Sprint 4 : Features additionnelles
 
 | Item                                                    | Statut | Priorite |
 | ------------------------------------------------------- | ------ | -------- |
@@ -1536,7 +1536,7 @@ La photo hero est actuellement un asset statique (`mission-observer.png`) :
 
 ---
 
-## Annexe A — Design tokens reference
+## Annexe A : Design tokens reference
 
 ### Couleurs cles du flow auth/onboarding
 
@@ -1587,7 +1587,7 @@ La photo hero est actuellement un asset statique (`mission-observer.png`) :
 
 ---
 
-## Annexe B — Etats de l'AuthContext
+## Annexe B : Etats de l'AuthContext
 
 ### Matrice des etats
 
@@ -1622,10 +1622,10 @@ La photo hero est actuellement un asset statique (`mission-observer.png`) :
 
 | Version | Date       | Auteur           | Modifications                                            |
 | ------- | ---------- | ---------------- | -------------------------------------------------------- |
-| 1.0     | 2026-04-01 | Nicolas + Claude | Creation initiale — couverture complete du flow existant |
+| 1.0     | 2026-04-01 | Nicolas + Claude | Creation initiale : couverture complete du flow existant |
 
 ---
 
 > Fichier genere automatiquement depuis le code source existant.
 > Source de verite : `src/components/auth/`, `src/components/onboarding/`, `src/pages/AuthPage.tsx`, `src/lib/demoAuth.ts`, `src/contexts/AuthContext.tsx`
-> Node IDs Figma : section `6381:67389` — Onboarding Web App Light
+> Node IDs Figma : section `6381:67389` : Onboarding Web App Light

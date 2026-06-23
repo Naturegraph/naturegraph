@@ -110,7 +110,7 @@ export function NotebookSpeciesList({
         const cfg = classDisplayConfig(vernacularClass)
         return (
           <section key={vernacularClass} aria-label={cfg.label} className="flex flex-col gap-4">
-            {/* Pill de groupe — bg #E7E9F7 (Content/Action/Light), label 14px bold */}
+            {/* Pill de groupe : bg #E7E9F7 (Content/Action/Light), label 14px bold */}
             <span className="inline-flex items-center self-start h-8 px-3 rounded-full bg-[#e7e9f7] text-foreground text-sm font-bold">
               {cfg.label}
             </span>

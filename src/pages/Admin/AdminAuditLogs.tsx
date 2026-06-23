@@ -1,5 +1,5 @@
 /**
- * AdminAuditLogs — Module 5 : Audit trail admin
+ * AdminAuditLogs : Module 5 : Audit trail admin
  *
  * BATCH 108 (Nicolas demande "améliorer aussi") :
  *   - Catégorisation des actions (auth/user/beta/moderation/system) avec badges colorés
@@ -414,7 +414,7 @@ export default function AdminAuditLogs() {
                             )}
                           </span>
                         ) : (
-                          <span className="text-muted-foreground">—</span>
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground max-w-md truncate">
@@ -426,7 +426,7 @@ export default function AdminAuditLogs() {
                                   `${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`,
                               )
                               .join(' · ')
-                          : '—'}
+                          : '-'}
                       </td>
                     </tr>
                     {isExpanded && hasDetails && (

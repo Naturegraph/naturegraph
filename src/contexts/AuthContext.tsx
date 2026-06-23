@@ -517,13 +517,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setState((prev) =>
           prev.user?.id === user.id && prev.profile
             ? deriveState({ ...prev, user, session, isAuthenticated: true })
-            : deriveState({
+            : // NG-003 : token refresh d'un user deja connecte mais dont le profil
+              // n'est pas encore en state (boot en cours, reouverture PWA). On NE
+              // FORCE JAMAIS l'onboarding sur cette fenetre transitoire (sinon
+              // redirection a tort vers /onboarding au lancement). Optimiste =
+              // true ; le fetchProfile en arriere-plan ci-dessous corrige si
+              // l'username est reellement temporaire.
+              {
                 user,
                 session,
                 profile: null,
                 isLoading: false,
                 isAuthenticated: true,
-              }),
+                onboardingCompleted: true,
+              },
         )
         fetchProfile(user.id)
           .then((profile) => {
@@ -540,7 +547,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // SIGNED_IN, USER_UPDATED, etc. -> on hydrate le profil frais.
       const profile = await fetchProfile(user.id)
-      setState(deriveState({ user, session, profile, isLoading: false, isAuthenticated: true }))
+      if (profile) {
+        setState(deriveState({ user, session, profile, isLoading: false, isAuthenticated: true }))
+      } else {
+        // NG-003 : profil indisponible (reseau / RLS transitoire). On authentifie
+        // SANS forcer l'onboarding (optimiste) au lieu de deriver onboarding=false
+        // d'un profil null -> evite une redirection a tort vers /onboarding.
+        setState((prev) => ({
+          user,
+          session,
+          profile: prev.user?.id === user.id ? prev.profile : null,
+          isLoading: false,
+          isAuthenticated: true,
+          onboardingCompleted: true,
+        }))
+      }
       if (event === 'SIGNED_IN') {
         // NG-004 : au login fresh, invalide les queries (evite un cache fantome
         // de l'ancien user). + pre-chauffe la RPC search_taxonomy (cold start).

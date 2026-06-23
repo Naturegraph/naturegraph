@@ -1,5 +1,5 @@
 /**
- * LocationPermissionModal — Modale de demande d'autorisation géolocalisation
+ * LocationPermissionModal : Modale de demande d'autorisation géolocalisation
  * ===========================================================================
  * Affichée une seule fois par session (via useLocationCTA) aux utilisateurs
  * connectés non encore localisés.
@@ -40,7 +40,7 @@ interface LocationPermissionModalProps {
 // ─── Composant ───────────────────────────────────────────────
 
 /**
- * Modale de permission géolocalisation — privacy-first.
+ * Modale de permission géolocalisation : privacy-first.
  * Ne s'affiche jamais si isOpen === false.
  * Le parent (FeedSection via useLocationCTA) gère l'état d'ouverture.
  *
@@ -120,7 +120,7 @@ export function LocationPermissionModal({
 
   return (
     /*
-     * Overlay semi-transparent — aria-hidden car le dialog est le vrai point de focus.
+     * Overlay semi-transparent : aria-hidden car le dialog est le vrai point de focus.
      * Fermeture via Escape (useEffect) ou boutons "Plus tard" / croix.
      * Pas de onClick sur l'overlay : pattern ARIA dialog recommandé + évite
      * les fermetures accidentelles au tap mobile.
@@ -130,7 +130,7 @@ export function LocationPermissionModal({
       className="fixed inset-0 z-[9990] flex items-center justify-center p-4"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.45)' }}
     >
-      {/* Card — dialog ARIA */}
+      {/* Card : dialog ARIA */}
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions --
           Le pattern ARIA dialog (WAI-ARIA 1.2 §6.5) requiert onKeyDown sur le container
           pour implémenter le focus trap (Tab/Shift+Tab). tabIndex=-1 le rend focusable. */}
@@ -146,7 +146,7 @@ export function LocationPermissionModal({
           'border border-border shadow-2xl',
         ].join(' ')}
       >
-        {/* Bouton fermeture — pattern X harmonisé avec FeedSection species banner */}
+        {/* Bouton fermeture : pattern X harmonisé avec FeedSection species banner */}
         <button
           ref={closeBtnRef}
           type="button"
@@ -161,7 +161,7 @@ export function LocationPermissionModal({
           <X className="size-4 text-foreground" aria-hidden="true" />
         </button>
 
-        {/* Hermine + titre — illustration mascotte projet (cohérent avec empty states) */}
+        {/* Hermine + titre : illustration mascotte projet (cohérent avec empty states) */}
         <div className="flex flex-col items-center gap-3 text-center pt-2">
           <img src={hermineEmptyState} alt="" className="w-36 opacity-90" aria-hidden="true" />
 
@@ -179,12 +179,12 @@ export function LocationPermissionModal({
           </h2>
         </div>
 
-        {/* Description — 2 lignes max, ton chaleureux */}
+        {/* Description : 2 lignes max, ton chaleureux */}
         <p className="text-sm text-muted-foreground text-center leading-relaxed text-balance">
           {t('location.permissionModal.description')}
         </p>
 
-        {/* Note privacy — fond crème, sans border, rounded 4px */}
+        {/* Note privacy : fond crème, sans border, rounded 4px */}
         <div
           className="flex items-start gap-2 p-3 rounded"
           style={{ backgroundColor: 'var(--color-surface-cream-light)' }}
@@ -195,7 +195,7 @@ export function LocationPermissionModal({
           </p>
         </div>
 
-        {/* CTAs — Button component du design system (variant primary = "Contribuer" navbar) */}
+        {/* CTAs : Button component du design system (variant primary = "Contribuer" navbar) */}
         <div className="flex flex-col gap-2">
           <Button
             ref={activateBtnRef}

@@ -1,5 +1,5 @@
 /**
- * featureFlags — Activation de fonctionnalites par environnement ("labs")
+ * featureFlags : Activation de fonctionnalites par environnement ("labs")
  * ========================================================================
  *
  * Decision Nicolas (2026-06-11) : garder la PRODUCTION PUBLIQUE focalisee sur le

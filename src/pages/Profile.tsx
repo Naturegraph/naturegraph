@@ -1,5 +1,5 @@
 /**
- * Profile — Page profil utilisateur
+ * Profile : Page profil utilisateur
  *
  * Accessible via :
  *   /profile           → propre profil (connecté)
@@ -74,7 +74,7 @@ function profileToDisplayData(profile: Profile): ProfileDisplayData {
       species: 0,
       streak: 0,
     },
-    // Objectif observations hebdomadaire — colonne week_goal de la DB
+    // Objectif observations hebdomadaire : colonne week_goal de la DB
     // (Nicolas 2026-05-22). `current` = 0 jusqu'à ce que le statsService
     // calcule l'avancement réel cette semaine.
     weekProgress: {
@@ -152,7 +152,7 @@ export default function Profile() {
 
   // ── Hooks Supabase ────────────────────────────────────────────────────────
   // Tous les hooks DOIVENT être appelés inconditionnellement (rules of hooks).
-  // Les queries sont gérées via `enabled: !!id` — pas d'appel réseau si l'ID
+  // Les queries sont gérées via `enabled: !!id` : pas d'appel réseau si l'ID
   // n'est pas encore connu.
   const { data: supabaseOwnProfile } = useProfile(isOwnProfile ? authProfile?.id : undefined)
   const {
@@ -254,7 +254,7 @@ export default function Profile() {
         banner_url: data.banner_url === undefined ? undefined : data.banner_url,
         // `interests` peut venir de EditPrefsTab (sélection des centres d'intérêt)
         interests: data.interests?.map((i) => i.id),
-        // Objectif hebdo — propagé depuis EditInfoTab.weekProgress.goal
+        // Objectif hebdo : propagé depuis EditInfoTab.weekProgress.goal
         // (la colonne DB s'appelle `week_goal`, pas `weekProgress`).
         week_goal: data.weekProgress?.goal,
       })
@@ -362,11 +362,11 @@ export default function Profile() {
           onShare={() => setShowShareSheet(true)}
         />
 
-        {/* Container principal — même structure que la branche mock pour
+        {/* Container principal : même structure que la branche mock pour
             que le rendu prod soit identique au mock (cards About+DNA visibles
             sur desktop, tabs alignées via md:px-12). */}
         <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 mt-6">
-          {/* Cards "À propos" + "ADN observateur" — DESKTOP UNIQUEMENT.
+          {/* Cards "À propos" + "ADN observateur" : DESKTOP UNIQUEMENT.
               Sur mobile + tablette ces cards sont rendues à l'intérieur du tab "À propos".
               BATCH 114 : md→lg pour ne pas écraser sur iPad portrait (768px). */}
           <div className="hidden lg:grid lg:grid-cols-[1fr_320px] gap-4 mb-6 lg:px-12 items-start">

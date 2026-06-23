@@ -1,5 +1,5 @@
 -- ============================================================================
---  Naturegraph — Schema canonique consolidé
+--  Naturegraph : Schema canonique consolidé
 --  Version : v1.0 (MVP)
 --  Cible   : PostgreSQL 15 + PostGIS 3.3 (Supabase Hosted)
 --
@@ -10,7 +10,7 @@
 --
 --  Ordre obligatoire :
 --    1. Extensions
---    2. Types ENUM (aucun ici — on utilise CHECK pour rester souple)
+--    2. Types ENUM (aucun ici : on utilise CHECK pour rester souple)
 --    3. Tables
 --    4. Index
 --    5. Fonctions & triggers
@@ -353,7 +353,7 @@ CREATE OR REPLACE FUNCTION can_see_post(p posts) RETURNS BOOLEAN AS $$
         END;
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
 
--- 5. RLS (extraits — voir security/rls-policies.md pour le détail) ------------
+-- 5. RLS (extraits : voir security/rls-policies.md pour le détail) ------------
 ALTER TABLE profiles      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE posts         ENABLE ROW LEVEL SECURITY;

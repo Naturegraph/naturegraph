@@ -1,5 +1,5 @@
 /**
- * Tests unitaires — notificationPreferencesService
+ * Tests unitaires : notificationPreferencesService
  *
  * On ne teste pas l'intégration Supabase ici (cf. tests E2E Playwright),
  * seulement le helper `defaultEnabled` qui encode la règle RGPD.
@@ -9,7 +9,7 @@ import { describe, it, expect } from 'vitest'
 import { defaultEnabled } from './notificationPreferencesService'
 
 describe('defaultEnabled', () => {
-  it('species_digest est opt-in (FALSE par défaut) — RGPD', () => {
+  it('species_digest est opt-in (FALSE par défaut) : RGPD', () => {
     expect(defaultEnabled('species_digest')).toBe(false)
   })
 

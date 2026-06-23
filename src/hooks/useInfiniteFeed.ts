@@ -1,5 +1,5 @@
 /**
- * useInfiniteFeed — Variante scroll infini de useFeed
+ * useInfiniteFeed : Variante scroll infini de useFeed
  * ====================================================
  *
  * V1.1.4 NG-026 (Nicolas 2026-06-03) : alternative a useFeed (pagination

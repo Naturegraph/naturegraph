@@ -1,5 +1,5 @@
 /**
- * ConfirmModal — Modal de confirmation générique réutilisable
+ * ConfirmModal : Modal de confirmation générique réutilisable
  * ============================================================
  *
  * Pixel-perfect Figma : modal centrée desktop / bottom-sheet mobile.
@@ -25,9 +25,9 @@ import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 
 export interface ConfirmModalProps {
-  /** Titre H2 de la modal — string ou ReactNode (slot, ex: `<>Supprimer <em>{name}</em> ?</>`) */
+  /** Titre H2 de la modal : string ou ReactNode (slot, ex: `<>Supprimer <em>{name}</em> ?</>`) */
   title: ReactNode
-  /** Description / explication de l'action — string ou ReactNode (slot pour <ul>, <strong>, etc.) */
+  /** Description / explication de l'action : string ou ReactNode (slot pour <ul>, <strong>, etc.) */
   description: ReactNode
   /**
    * Icone optionnelle affichee au-dessus du titre (BATCH 8 / T-025).
@@ -45,7 +45,7 @@ export interface ConfirmModalProps {
   cancelLabel?: string
   /**
    * `default` : bouton primary violet (action standard).
-   * `danger`  : bouton rouge (action destructive — suppression compte).
+   * `danger`  : bouton rouge (action destructive : suppression compte).
    */
   variant?: 'default' | 'danger'
   /**
@@ -75,7 +75,7 @@ export function ConfirmModal({
   const { t } = useTranslation()
   const cancelBtnRef = useRef<HTMLButtonElement>(null)
 
-  // Focus initial sur "Annuler" — sécurité contre les clics clavier
+  // Focus initial sur "Annuler" : sécurité contre les clics clavier
   // accidentels sur l'action confirmative.
   useEffect(() => {
     cancelBtnRef.current?.focus()
@@ -107,7 +107,7 @@ export function ConfirmModal({
         onClick={onCancel}
       />
 
-      {/* Modal — bottom-sheet mobile, centrée desktop */}
+      {/* Modal : bottom-sheet mobile, centrée desktop */}
       <div
         role="alertdialog"
         aria-modal="true"
@@ -149,16 +149,16 @@ export function ConfirmModal({
           </button>
         </div>
 
-        {/* Description — accepte ReactNode (slot) depuis BATCH 8 / T-025 */}
+        {/* Description : accepte ReactNode (slot) depuis BATCH 8 / T-025 */}
         <div id="confirm-modal-desc" className="text-sm text-foreground leading-relaxed">
           {description}
         </div>
 
-        {/* Slot children optionnel (BATCH 8 / T-025) — contenu additionnel entre
+        {/* Slot children optionnel (BATCH 8 / T-025) : contenu additionnel entre
             description et actions (ex: input de confirmation, checkbox, helper). */}
         {children && <div className="flex flex-col gap-3">{children}</div>}
 
-        {/* Actions : Annuler (focus initial) + Confirmer — BATCH 110 cohérence DS btn-press */}
+        {/* Actions : Annuler (focus initial) + Confirmer : BATCH 110 cohérence DS btn-press */}
         <div className="flex gap-3 mt-2">
           <button
             ref={cancelBtnRef}

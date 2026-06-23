@@ -1,5 +1,5 @@
 /**
- * AdminLayout — Layout pour toutes les routes /admin/*
+ * AdminLayout : Layout pour toutes les routes /admin/*
  *
  * BATCH 90 (Nicolas decision 2026-05-15) : redesign moderne.
  *   - Suppression du gros header noir "Naturegraph Admin / SUPER_ADMIN / Retour app"
@@ -129,7 +129,7 @@ export default function AdminLayout() {
               }`}
             >
               <Icon className="size-5" aria-hidden="true" />
-              {/* BATCH 114 : truncate au lieu de slice() — préserve l'accent + responsive */}
+              {/* BATCH 114 : truncate au lieu de slice() : préserve l'accent + responsive */}
               <span className="max-w-full truncate px-0.5">{item.label}</span>
             </NavLink>
           )

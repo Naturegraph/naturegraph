@@ -1,5 +1,5 @@
 /**
- * highlightMatch — Mise en gras de la portion d'un texte qui matche une requête
+ * highlightMatch : Mise en gras de la portion d'un texte qui matche une requête
  * ==============================================================================
  *
  * Utilisé partout où l'utilisateur cherche une espèce : recherche globale

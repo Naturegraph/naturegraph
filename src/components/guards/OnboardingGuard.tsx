@@ -1,5 +1,5 @@
 /**
- * OnboardingGuard — Force l'onboarding pour les users authentifiés sans username valide
+ * OnboardingGuard : Force l'onboarding pour les users authentifiés sans username valide
  *
  * Cas d'usage : un utilisateur s'inscrit via OTP. Le trigger DB `handle_new_auth_user`
  * crée un profil minimal avec un username temporaire `user_xxxxxxxx`. Tant que cet

@@ -1,5 +1,5 @@
 /**
- * EncounterStep1 — Photos de la rencontre (Figma node 6385:47496)
+ * EncounterStep1 : Photos de la rencontre (Figma node 6385:47496)
  *
  * Layout pixel-perfect Figma :
  *   · Big preview (haut)        : photo sélectionnée, aspect = format choisi.
@@ -14,7 +14,7 @@
  * upload → feed.
  *
  * Métadonnées EXIF extraites silencieusement (date, GPS, time-of-day) pour
- * pré-remplir l'étape 3 — pas d'UI dédiée.
+ * pré-remplir l'étape 3 : pas d'UI dédiée.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -26,7 +26,7 @@ import type { DisplayFormat } from '@/types/database'
 // ─── Validation ──────────────────────────────────────────────────────────────
 
 const MAX_FILES = 4
-// Nicolas 2026-05-21 : garde-fou large (50 Mo) — la compression adaptative
+// Nicolas 2026-05-21 : garde-fou large (50 Mo) : la compression adaptative
 // dans `stripImageExif()` ramène l'upload réel sous 2 Mo. On n'impose plus
 // à l'utilisateur de compresser lui-même ses photos avant de partager.
 // V1.1.4 NG-025 (Nicolas 2026-06-03) : aligne avec MAX_INPUT_BYTES de
@@ -34,17 +34,17 @@ const MAX_FILES = 4
 // le decode canvas (qui crash mobile bas de gamme sur 50 Mo).
 const MAX_FILE_SIZE_BYTES = 40 * 1024 * 1024 // 40 Mo
 
-// Aspect ratios par format — alignés sur ceux du feed (FeedPost.ImageSlider)
+// Aspect ratios par format : alignés sur ceux du feed (FeedPost.ImageSlider)
 // pour que ce que voit l'utilisateur ici corresponde EXACTEMENT au rendu
 // dans le feed après publication.
 //
 // L'image est toujours en `object-cover` : la photo REMPLIT le cadre choisi
-// (recadrée si nécessaire) — le format selector est un choix de cadrage,
+// (recadrée si nécessaire) : le format selector est un choix de cadrage,
 // pas un letterbox. Comportement cohérent avec le feed (FeedPost), aucune
 // bordure noire visible quel que soit le format.
 const FORMAT_ASPECT: Record<DisplayFormat, string> = {
-  '16:9': 'aspect-[606/384]', // ≈ 1.578:1 — Figma feed slide
-  portrait: 'aspect-[606/768]', // 4:5 — Figma feed slide portrait
+  '16:9': 'aspect-[606/384]', // ≈ 1.578:1 : Figma feed slide
+  portrait: 'aspect-[606/768]', // 4:5 : Figma feed slide portrait
   '1:1': 'aspect-square',
 }
 
@@ -82,7 +82,7 @@ function validateFile(file: File): string | null {
     return `Fichier RAW (${ext}) non supporté. Convertis-le en JPEG dans ton logiciel photo, puis réessaye.`
   }
 
-  // MIME vide tolérée (Android Chrome ancienne version) — on tente l'upload.
+  // MIME vide tolérée (Android Chrome ancienne version) : on tente l'upload.
   if (file.type && !ALLOWED_MIME_TYPES.has(file.type)) {
     return `Format non supporté : ${file.type}. Formats acceptés : JPEG, PNG, WebP, AVIF, HEIC.`
   }
@@ -163,7 +163,7 @@ function BigPreview({ url, aspectClass, onRemove, removeLabel }: BigPreviewProps
   return (
     <div
       className={[
-        // Bg muted neutre — visible brièvement avant le rendu de l'image, puis
+        // Bg muted neutre : visible brièvement avant le rendu de l'image, puis
         // recouvert par object-cover qui remplit complètement le cadre.
         'relative w-full rounded-md overflow-hidden bg-muted ring-1 ring-black/5',
         aspectClass,
@@ -430,7 +430,7 @@ export function EncounterStep1({
           hint={labels.addHint}
         />
       ) : (
-        // Layout Figma 6385:47496 — Big preview + thumb row 4 slots toujours
+        // Layout Figma 6385:47496 : Big preview + thumb row 4 slots toujours
         // visibles. La selection courante apparaît en grand ; clic sur un thumb
         // → bascule la sélection.
         <div className="flex flex-col gap-1" role="region" aria-label={labels.galleryLabel}>
@@ -471,7 +471,7 @@ export function EncounterStep1({
         </div>
       )}
 
-      {/* Sélecteur de format Figma (node 6385:47535) — Paysage / Portrait / Carré.
+      {/* Sélecteur de format Figma (node 6385:47535) : Paysage / Portrait / Carré.
           Toujours visible. Chips h-10 px-4, gap-3 (12px), label "Paysage" en
           regular + ratio "(16:9)" en italique gris (Content/Neutral/Secondary).
           Active : bg primary-light + border 0.5px primary. */}

@@ -14,7 +14,7 @@
 
 ### Procédure
 
-1. **Email confidentiel** à : `privacy@naturegraph.fr`
+1. **Email confidentiel** à : `security@naturegraph.ca` (en cours de configuration, cf. NG-009 ; domaine principal .ca)
 2. **Sujet** : `[SECURITY] Vulnérabilité - <courte description>`
 3. **Contenu** :
    - Description technique
@@ -54,7 +54,7 @@
 
 Naturegraph respecte :
 
-- **RGPD** (Règlement Général sur la Protection des Données — UE)
-- **Loi 25** (Loi modernisant des dispositions législatives en matière de protection des renseignements personnels — Québec)
+- **RGPD** (Règlement Général sur la Protection des Données : UE)
+- **Loi 25** (Loi modernisant des dispositions législatives en matière de protection des renseignements personnels : Québec)
 
 Pour exercer tes droits RGPD/Loi 25 : Settings → Export RGPD ou Suppression compte.

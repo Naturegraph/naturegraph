@@ -1,11 +1,11 @@
 /**
- * LocationPicker — Saisie du lieu d'observation + option masquage localisation précise
+ * LocationPicker : Saisie du lieu d'observation + option masquage localisation précise
  *
  * Champs mappés sur Post :
  *   - location_name   : texte libre (ville, forêt, lieu-dit…)
- *   - location_hidden : masque lat/lng publiquement — seule la région est visible
+ *   - location_hidden : masque lat/lng publiquement : seule la région est visible
  *
- * TODO [BACKEND] — Autocomplétion Nominatim / Mapbox :
+ * TODO [BACKEND] : Autocomplétion Nominatim / Mapbox :
  *   GET https://nominatim.openstreetmap.org/search?q=...&format=json
  *   Proxy serveur recommandé (rate limit 1 req/sec Nominatim).
  *   Stocker lat/lng dans post.latitude / post.longitude.

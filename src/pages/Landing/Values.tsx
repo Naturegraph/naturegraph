@@ -1,5 +1,5 @@
 /**
- * Values — Section des valeurs du projet
+ * Values : Section des valeurs du projet
  * ========================================
  * Layout 50/50 : image (placeholder) à gauche, 3 valeurs numérotées à droite.
  * Séparateurs animés entre les items.

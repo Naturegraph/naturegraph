@@ -1,15 +1,15 @@
-# PRD — Localisation & Géolocalisation (Privacy-First)
+# PRD : Localisation & Géolocalisation (Privacy-First)
 
 > **Document de référence pour les agents Claude Code et l'équipe produit.**
 > Dernière mise à jour : 2026-04-15
-> Statut : v1.1 — Delayed activation strategy validée
+> Statut : v1.1 : Delayed activation strategy validée
 > Propriétaires : Nicolas (Fondateur/Lead Product Designer), agents IA
 
 ---
 
 ## 0. Contexte & Vision Naturegraph
 
-Naturegraph est une plateforme citoyenne de biodiversité francophone. Chaque contribution est **géographique par nature** : une observation d'espèce n'a de valeur scientifique et sociale que si l'on sait _où_ elle a été faite. Mais cette nécessité entre en tension directe avec la vie privée des contributeur·rice·s — particulièrement pour les personnes observant depuis leur domicile, leur jardin, ou des lieux sensibles (nids, sites de reproduction d'espèces protégées).
+Naturegraph est une plateforme citoyenne de biodiversité francophone. Chaque contribution est **géographique par nature** : une observation d'espèce n'a de valeur scientifique et sociale que si l'on sait _où_ elle a été faite. Mais cette nécessité entre en tension directe avec la vie privée des contributeur·rice·s : particulièrement pour les personnes observant depuis leur domicile, leur jardin, ou des lieux sensibles (nids, sites de reproduction d'espèces protégées).
 
 **Principe fondateur :** la localisation **utilisateur** et la localisation **observation** sont deux concepts distincts, soumis à des règles différentes.
 
@@ -38,19 +38,19 @@ Ce PRD couvre uniquement la **localisation utilisateur**. La localisation des ob
 ### 1.3 Non-objectifs
 
 - Pas de tracking temps réel (ni check-in, ni "friends nearby").
-- Pas de géolocalisation navigateur imposée — tout est opt-in explicite.
+- Pas de géolocalisation navigateur imposée : tout est opt-in explicite.
 - Pas de stockage d'historique de positions.
 
 ---
 
 ## 2. Principes de confidentialité
 
-1. **Privacy by design** — la position précise ne quitte jamais le client sans floutage.
-2. **Opt-in post-découverte** — la localisation est proposée uniquement après que l'utilisateur a découvert le produit. Elle n'est jamais une condition d'accès ni demandée à l'inscription.
-3. **Rayon minimum 75 km** — garantit qu'une ville ≠ un individu dans les zones rurales.
-4. **Granularité publique : ville + région uniquement** — jamais de rue, quartier, code postal affiché.
-5. **Effacement immédiat** — suppression de la localisation = purge SQL en cascade (pas de soft-delete sur ce champ).
-6. **Pas de partage tiers** — la localisation n'est jamais transmise à des partenaires, même anonymisée, sans consentement dédié.
+1. **Privacy by design** : la position précise ne quitte jamais le client sans floutage.
+2. **Opt-in post-découverte** : la localisation est proposée uniquement après que l'utilisateur a découvert le produit. Elle n'est jamais une condition d'accès ni demandée à l'inscription.
+3. **Rayon minimum 75 km** : garantit qu'une ville ≠ un individu dans les zones rurales.
+4. **Granularité publique : ville + région uniquement** : jamais de rue, quartier, code postal affiché.
+5. **Effacement immédiat** : suppression de la localisation = purge SQL en cascade (pas de soft-delete sur ce champ).
+6. **Pas de partage tiers** : la localisation n'est jamais transmise à des partenaires, même anonymisée, sans consentement dédié.
 
 ---
 
@@ -84,10 +84,10 @@ create index if not exists profiles_location_gix
 **Règles :**
 
 - `location_point` est utilisé **uniquement** côté serveur pour calculer des distances approximatives.
-- Jamais retourné dans les requêtes `select *` — à exclure via vue `profiles_public`.
+- Jamais retourné dans les requêtes `select *` : à exclure via vue `profiles_public`.
 - `location_visibility = 'private'` → aucun autre utilisateur ne voit la ville.
 
-### 3.3 Vue publique — ce que voient les autres
+### 3.3 Vue publique : ce que voient les autres
 
 ```sql
 create or replace view profiles_public as
@@ -151,7 +151,7 @@ create policy "profiles_own_location_update"
 
 **Pourquoi l'onboarding est exclu :**
 
-- Trop tôt dans le parcours — l'utilisateur n'a pas encore perçu la valeur du feed territorial
+- Trop tôt dans le parcours : l'utilisateur n'a pas encore perçu la valeur du feed territorial
 - Friction inutile au moment critique de l'activation
 - Risque d'abandon à l'inscription
 
@@ -159,14 +159,14 @@ create policy "profiles_own_location_update"
 
 | Moment                           | Déclencheur                                   | Canal                                           |
 | -------------------------------- | --------------------------------------------- | ----------------------------------------------- |
-| J+0 (premier feed)               | Onglet "Pour vous" non localisé — empty state | 3 CTAs d'activation (intérêts / follows / zone) |
-| J+0 (3 secondes après connexion) | `useLocationCTA` — 1x/session                 | `LocationPermissionModal` (modale douce)        |
-| Any                              | Pill "Localisation" dans le header            | `LocationModal` — picker ville + rayon          |
+| J+0 (premier feed)               | Onglet "Pour vous" non localisé : empty state | 3 CTAs d'activation (intérêts / follows / zone) |
+| J+0 (3 secondes après connexion) | `useLocationCTA` : 1x/session                 | `LocationPermissionModal` (modale douce)        |
+| Any                              | Pill "Localisation" dans le header            | `LocationModal` : picker ville + rayon          |
 | Any                              | Paramètres → Localisation & Confidentialité   | `LocationPickerSection` + clear                 |
 
 **Principes :**
 
-- Jamais imposée — toujours skippable
+- Jamais imposée : toujours skippable
 - Jamais de permission navigateur demandée sans action explicite de l'utilisateur
 - La valeur doit être claire **avant** la demande
 
@@ -187,7 +187,7 @@ create policy "profiles_own_location_update"
 
 ### 5.1 Feed (`PRD_HOMEPAGE.md`)
 
-- Signal "localisation" dans le tab "Pour vous" (via `nearby_posts` RPC) — requête PostGIS :
+- Signal "localisation" dans le tab "Pour vous" (via `nearby_posts` RPC) : requête PostGIS :
 
   ```sql
   select p.* from posts p
@@ -211,8 +211,8 @@ create policy "profiles_own_location_update"
 ### 5.3 Suggestions (`profileService`)
 
 - Scoring de suggestion actuel (posts_count, intérêts) + bonus distance :
-  - 0–75 km : +0.3
-  - 75–250 km : +0.1
+  - 0-75 km : +0.3
+  - 75-250 km : +0.1
   - > 250 km : +0.0
 
 ### 5.4 Notifications
@@ -280,23 +280,23 @@ supabase/
 
 ### 7.2 Phases d'implémentation
 
-**Phase 1 — MVP localisation (develop)**
+**Phase 1 : MVP localisation (develop)**
 
 - Migration SQL `profiles` + `fr_cities` + vue publique.
 - Composant `CityAutocomplete` + intégration `OnboardingStep4`.
 - Update du service profil pour lire/écrire la localisation.
 
-**Phase 2 — Feed territorial**
+**Phase 2 : Feed territorial**
 
 - Filtre "Près de moi" dans le feed.
 - Suggestions de profils par proximité.
 
-**Phase 3 — Recherche & carte**
+**Phase 3 : Recherche & carte**
 
 - Facettes de recherche.
 - Notifications contextuelles.
 
-**Phase 4 — International**
+**Phase 4 : International**
 
 - Étendre `fr_cities` vers `world_cities` (Nominatim / GeoNames).
 - Support `country_code` dans les filtres.
@@ -404,8 +404,8 @@ location.errors.outsideFrance
 
 - [API Adresse data.gouv.fr](https://adresse.data.gouv.fr/api-doc/adresse)
 - [PostGIS ST_DWithin](https://postgis.net/docs/ST_DWithin.html)
-- [CNIL — Géolocalisation](https://www.cnil.fr/fr/la-geolocalisation)
-- [WCAG 2.1 — Combobox pattern](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/)
+- [CNIL : Géolocalisation](https://www.cnil.fr/fr/la-geolocalisation)
+- [WCAG 2.1 : Combobox pattern](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/)
 - Projet : `docs/backend/database-architecture.md`, `GUIDELINES.md`, `PRD_ONBOARDING.md`
 
 ---

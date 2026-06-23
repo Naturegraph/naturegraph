@@ -1,4 +1,4 @@
-# Contributing — Naturegraph
+# Contributing : Naturegraph
 
 ## Stratégie de branches
 
@@ -18,7 +18,7 @@ main           ← Production (naturegraph.ca)         | Supabase PROD
 | -------------------------------------- | ------------------ | ---------------------------------------------------- | ---------------------------------------- |
 | `main`                                 | `staging`          | PR squash obligatoire                                | Force-push bloque sauf cycle force-align |
 | `staging`                              | `develop`          | PR squash obligatoire (depuis `develop` uniquement)  | Force-push bloque sauf cycle force-align |
-| `develop`                              | `feat/*` ou direct | Push direct OK pour petits changes / PR squash sinon | Non protegee                             |
+| `develop`                              | `feat/*` ou direct | Push direct OK pour petits changes / PR squash sinon | Force-push bloque (ruleset)              |
 | `feat/*` `fix/*` `refactor/*` `docs/*` | `develop`          | PR squash vers `develop`                             | Libre                                    |
 
 **Hotfix urgents** : `hotfix/*` depuis `main` → merger dans `main` → remonter dans `staging` → `develop`.
@@ -35,17 +35,18 @@ main           ← Production (naturegraph.ca)         | Supabase PROD
 ### Merge convention
 
 - **Squash merge uniquement** sur main / staging / develop (merge_commit + rebase_merge desactives dans Settings GitHub)
-- **Auto-delete branch on merge desactive** : on supprime manuellement apres force-align
-- **delete-branch-on-merge = false** dans Settings (cf. BATCH 11 cleanup)
+- **Auto-suppression des branches mergees activee** (delete-branch-on-merge = true, depuis 2026-06-17)
+- Protection via **rulesets** (survivent aux changements de visibilite) : `main` = PR + squash + checks requis (Lint/Test/Build + CodeQL) + non_fast_forward ; `develop` = non_fast_forward
 
 ## Conventions de commit
 
-Format : `type: description courte`
+Format **Conventional Commits** : `type(scope): description courte` (scope optionnel). Norme complete : `docs/devops/VERSIONING.md`.
 
 | Préfixe     | Usage                                       |
 | ----------- | ------------------------------------------- |
 | `feat:`     | Nouvelle fonctionnalité                     |
 | `fix:`      | Correction de bug                           |
+| `security:` | Correctif de sécurité                       |
 | `refactor:` | Refactoring (pas de changement fonctionnel) |
 | `style:`    | Formatage, CSS, sans impact logique         |
 | `docs:`     | Documentation                               |
@@ -55,15 +56,15 @@ Format : `type: description courte`
 
 ## Versioning (SemVer)
 
-- **MAJOR** (1.0.0) → Lancement public / breaking changes
-- **MINOR** (0.x.0) → Nouvelle feature (ex: v0.3.0 = onboarding)
-- **PATCH** (0.x.y) → Bug fix
+Norme complete : `docs/devops/VERSIONING.md`. Résumé :
 
-### Versions prévues
+- **MAJEUR** (1.0.0) → refonte / rupture de compatibilité
+- **MINEUR** (0.x.0) → nouvelle fonctionnalité stable
+- **PATCH** (0.x.y) → bug fix / correctif
 
-- `v0.1.0` — Setup initial du projet
-- `v0.2.0` — Design system + composants UI
-- `v0.3.0` — Onboarding flow
-- `v0.4.0` — Feed & contributions
-- `v0.5.0` — Profil utilisateur
-- `v1.0.0` — MVP public
+### Jalons actuels (depuis le reset V0.0.1, NG-025)
+
+- `v0.0.1` : MVP validé, base officielle (actuel)
+- `v0.0.x` : correctifs sécurité, infra email/DNS/légal, admin, SEO
+- `v0.1.0` : lancement public
+- `v1.0.0` : produit stable et établi

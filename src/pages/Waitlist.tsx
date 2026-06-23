@@ -1,5 +1,5 @@
 /**
- * Waitlist — Page d'inscription a la liste d'attente
+ * Waitlist : Page d'inscription a la liste d'attente
  *
  * Refs : BETA_CLOSED_ACCESS_STRATEGY.md v2.0 + BATCH 30 + BATCH 56 (refonte UI)
  *        + BATCH 61 (fix focus loss) + BATCH 64 (layout factorise)

@@ -1,5 +1,5 @@
 /**
- * monitoring.ts — Wiring Sentry (lazy, optionnel)
+ * monitoring.ts : Wiring Sentry (lazy, optionnel)
  *
  * Sentry n'est PAS installé en dépendance directe : ce module charge le SDK
  * dynamiquement uniquement si :
@@ -21,7 +21,7 @@
 let sentryRef: any = null
 
 /**
- * Fil d'Ariane « auth » (NG-038 Phase 0 — instrumentation).
+ * Fil d'Ariane « auth » (NG-038 Phase 0 : instrumentation).
  *
  * Trace chaque transition d'authentification / boot pour pouvoir diagnostiquer
  * les vrais echecs en prod (faux etat deconnecte, session perdue, boot lent)
@@ -37,6 +37,25 @@ export function authBreadcrumb(message: string, data?: Record<string, unknown>):
   }
   try {
     sentryRef?.addBreadcrumb?.({ category: 'auth', level: 'info', message, data })
+  } catch {
+    /* Sentry absent ou erreur : ignore */
+  }
+}
+
+/**
+ * Reporte une exception a Sentry (si actif), sinon log console. No-op safe.
+ *
+ * Utilise par l'AppErrorBoundary pour remonter les erreurs de rendu (500, NG-021).
+ * Le SDK est charge dynamiquement (cf. initMonitoring), d'ou l'usage de sentryRef.
+ */
+export function captureException(error: unknown, context?: Record<string, unknown>): void {
+  try {
+    console.error('[monitoring] exception capturee :', error)
+  } catch {
+    /* console indispo : ignore */
+  }
+  try {
+    sentryRef?.captureException?.(error, context ? { extra: context } : undefined)
   } catch {
     /* Sentry absent ou erreur : ignore */
   }
@@ -59,7 +78,7 @@ export async function initMonitoring(): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const Sentry = (await import('@sentry/react').catch(() => null)) as any
     if (!Sentry) {
-      console.warn('[monitoring] @sentry/react absent — skip')
+      console.warn('[monitoring] @sentry/react absent : skip')
       return
     }
     sentryRef = Sentry

@@ -28,7 +28,7 @@ export { Input } from './Input'
 export { Textarea } from './Textarea'
 export { Select } from './Select'
 export { Checkbox } from './Checkbox'
-// `Switch` (input-checkbox) supprime BATCH 7 (T-024) — 0 usage in app.
+// `Switch` (input-checkbox) supprime BATCH 7 (T-024) : 0 usage in app.
 // `ToggleSwitch` (button role=switch) reste la seule primitive switch.
 export { ToggleSwitch } from './ToggleSwitch'
 export { FormField } from './FormField'
@@ -51,7 +51,7 @@ export { Spinner } from './Spinner'
 export { AppLoader } from './AppLoader'
 export { Skeleton, SkeletonGroup } from './Skeleton'
 
-// States (T-017 / T-018 / T-019 — primitives unifiées loading/empty/error)
+// States (T-017 / T-018 / T-019 : primitives unifiées loading/empty/error)
 export { EmptyState } from './EmptyState'
 export type { EmptyStateProps } from './EmptyState'
 export { ErrorState } from './ErrorState'

@@ -1,17 +1,17 @@
 /**
- * Smoke tests E2E — pages publiques critiques
+ * Smoke tests E2E : pages publiques critiques
  * ============================================================================
  *
  * Verifie qu'aucune page publique n'est cassee a chaud apres deploy.
  * Si l'un de ces tests passe au rouge, c'est qu'un build casse a slip
- * en prod — alerter immediatement.
+ * en prod : alerter immediatement.
  *
  * Refs : T-007 + T-009 (MASTER_TODO) + BATCH 20
  */
 
 import { test, expect } from '@playwright/test'
 
-test.describe('Smoke tests — pages publiques', () => {
+test.describe('Smoke tests : pages publiques', () => {
   test('Landing page se charge et contient le hero', async ({ page }) => {
     await page.goto('/')
 
@@ -34,7 +34,7 @@ test.describe('Smoke tests — pages publiques', () => {
 
   test('Page 404 affiche un message', async ({ page }) => {
     const response = await page.goto('/this-page-does-not-exist')
-    // En SPA, le statut HTTP est 200 (index.html servi) — on verifie le contenu
+    // En SPA, le statut HTTP est 200 (index.html servi) : on verifie le contenu
     expect(response).toBeTruthy()
     await expect(page.locator('body')).toContainText(/introuvable|not found|404/i)
   })

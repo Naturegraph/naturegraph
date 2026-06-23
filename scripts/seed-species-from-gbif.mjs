@@ -1,5 +1,5 @@
 /**
- * seed-species-from-gbif.mjs — Import ~5000 espèces depuis GBIF → species_master
+ * seed-species-from-gbif.mjs : Import ~5000 espèces depuis GBIF → species_master
  * ==============================================================================
  *
  * Objectif (Nicolas 2026-05-20) : peupler `species_master` avec ~5000 espèces
@@ -20,7 +20,7 @@
  * Écriture : upsert direct via l'API REST PostgREST de Supabase
  *   (POST /rest/v1/species_master avec Prefer: resolution=merge-duplicates).
  *   Nécessite que le rôle `anon` ait temporairement INSERT/UPDATE sur la
- *   table (grant accordé puis révoqué autour de l'exécution — cf. doc PRD).
+ *   table (grant accordé puis révoqué autour de l'exécution : cf. doc PRD).
  *
  * Usage : node scripts/seed-species-from-gbif.mjs
  */
@@ -47,7 +47,7 @@ const ENV = loadEnv()
 const SUPABASE_URL = ENV.VITE_SUPABASE_URL
 // Préférence service_role (bypass RLS, pas besoin de grant temporaire).
 // Fallback anon key (nécessite alors un GRANT INSERT,UPDATE temporaire sur
-// species_master au rôle anon — voir doc en tête de fichier).
+// species_master au rôle anon : voir doc en tête de fichier).
 const SUPABASE_KEY = ENV.SUPABASE_SERVICE_ROLE_KEY || ENV.VITE_SUPABASE_ANON_KEY
 const USING_SERVICE_ROLE = !!ENV.SUPABASE_SERVICE_ROLE_KEY
 if (!SUPABASE_URL || !SUPABASE_KEY) {
@@ -68,7 +68,7 @@ console.log(
 // `quota` = nombre cible d'espèces FR-nommées pour ce groupe.
 //
 // V2 (Nicolas 2026-05-24) : on RESTE sur les 5 catégories actuelles de la
-// beta — pas de nouveaux groupes pour l'instant (plants/fish/arachnids/
+// beta : pas de nouveaux groupes pour l'instant (plants/fish/arachnids/
 // mollusks ne sont pas exposés dans les filtres produit). On enrichit
 // uniquement ce qui est déjà filtrable + boost régional Canada pour les
 // users du Québec qui ne trouvent pas leurs espèces locales.
@@ -76,7 +76,7 @@ console.log(
 const GROUPS = [
   // V3 (Nicolas 2026-05-24) : objectif 15k espèces, quotas poussés au max
   // de la couverture vernaculaire FR raisonnable. La qualité prime sur le
-  // quota — si GBIF n a plus de noms FR, le groupe s arrête naturellement.
+  // quota : si GBIF n a plus de noms FR, le groupe s arrête naturellement.
   //
   // Oiseaux : ~10 000 espèces mondiales, ~5000 avec nom FR. Quota porté à 4500.
   { group: 'birds', label: 'Oiseaux', keys: [212], quota: 4500 },
@@ -128,7 +128,7 @@ async function fetchJson(url, options = {}) {
     try {
       const res = await fetch(url, { ...options, signal: controller.signal })
       clearTimeout(timer)
-      if (!res.ok) throw new Error(`HTTP ${res.status} — ${await res.text()}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status} : ${await res.text()}`)
       const text = await res.text()
       return text ? JSON.parse(text) : null
     } catch (err) {
@@ -149,7 +149,7 @@ function pickVernacular(vernacularNames, lang) {
 /** Récupère les espèces FR-nommées d'un groupe taxonomique. */
 async function fetchGroup({ group, label, keys, quota }) {
   const collected = new Map() // scientific_name → { fr, en }
-  console.log(`\n── ${label} (${group}) — cible ${quota} ──`)
+  console.log(`\n── ${label} (${group}) : cible ${quota} ──`)
 
   for (const key of keys) {
     if (collected.size >= quota) break
@@ -196,13 +196,13 @@ async function fetchGroup({ group, label, keys, quota }) {
 }
 
 /**
- * Boost régional — pour un pays donné, récupère les `speciesKey` les plus
+ * Boost régional : pour un pays donné, récupère les `speciesKey` les plus
  * observés via la facette `/occurrence/search`, puis fetch les détails
  * (nom FR/EN + binôme) via /species/{key}.
  *
  * Cible Nicolas 2026-05-24 : les users beta (FR + QC) doivent retrouver les
  * espèces qu'ils observent réellement sur leur territoire. La passe globale
- * GBIF privilégie les taxons « centraux » — on complète ici par les espèces
+ * GBIF privilégie les taxons « centraux » : on complète ici par les espèces
  * les plus observées localement dans chaque pays beta.
  */
 async function fetchRegional({ group, label, keys }, { countryCode, label: flag, perGroup }) {
@@ -277,7 +277,7 @@ async function upsertBatch(rows) {
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log('🌿 Import GBIF → species_master (v2 — étendu + boost CA)\n')
+  console.log('🌿 Import GBIF → species_master (v2 : étendu + boost CA)\n')
   const all = []
   for (const cfg of GROUPS) {
     all.push(...(await fetchGroup(cfg)))

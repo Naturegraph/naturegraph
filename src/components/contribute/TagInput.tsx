@@ -1,5 +1,5 @@
 /**
- * TagInput — Saisie de tags libres avec chips supprimables
+ * TagInput : Saisie de tags libres avec chips supprimables
  *
  * Comportement :
  *   - Entrée ou virgule ajoute le tag (trim + lowercase, pas de doublon)

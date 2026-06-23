@@ -1,5 +1,5 @@
 /**
- * EditInfoTab — Onglet "Informations" du panneau d'édition de profil
+ * EditInfoTab : Onglet "Informations" du panneau d'édition de profil
  *
  * Pixel-perfect Figma 6385:75440 (desktop) / 6385:73687 (mobile).
  * Champs Phase 1 :
@@ -7,7 +7,7 @@
  *   - Présentation (textarea, 300 caractères max, fond background)
  *   - Mon objectif d'observations par semaine (number, helper italic)
  *
- * Nicolas 2026-05-22 — Refacto save :
+ * Nicolas 2026-05-22 : Refacto save :
  *   La sauvegarde s'effectue désormais via `useImperativeHandle` exposé sur
  *   une ref forwardée par le composant. Le footer "Sauvegarder" de
  *   `EditProfilePanel` appelle directement `ref.current.save()` au lieu de
@@ -143,7 +143,7 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
   }>({})
   const [weekGoal, setWeekGoal] = useState<number>(profile.weekProgress?.goal ?? 5)
   // `weekGoalInput` permet à l'utilisateur de vider l'input pour taper
-  // un nombre — sans ça type="number" + Number('') = NaN bloquait la saisie.
+  // un nombre : sans ça type="number" + Number('') = NaN bloquait la saisie.
   const [weekGoalInput, setWeekGoalInput] = useState<string>(
     String(profile.weekProgress?.goal ?? 5),
   )
@@ -417,7 +417,7 @@ export const EditInfoTab = forwardRef<EditTabHandle, EditInfoTabProps>(function 
         </div>
       </div>
 
-      {/* ── Objectif hebdomadaire — saisie libre 1-50 ── */}
+      {/* ── Objectif hebdomadaire : saisie libre 1-50 ── */}
       <div className="flex flex-col gap-2">
         <label htmlFor="edit-goal" className="text-sm font-medium text-foreground">
           {t('profile.edit.weekGoal', {

@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-// Types générés par `supabase gen types typescript` — source de vérité pour les appels Supabase
+// Types générés par `supabase gen types typescript` : source de vérité pour les appels Supabase
 // Ne pas modifier manuellement : régénérer via MCP après chaque migration
 import type { Database } from '@/types/supabase'
 import { authStorage } from './authStorage'
@@ -9,7 +9,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''
 
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey)
 
-// Singleton survivant au HMR — évite que Vite recrée plusieurs clients
+// Singleton survivant au HMR : évite que Vite recrée plusieurs clients
 // qui se battent pour le navigator lock (AbortError: Lock broken).
 declare global {
   var __naturegraph_supabase__: ReturnType<typeof createClient<Database>> | undefined
@@ -22,7 +22,7 @@ export const supabase = isSupabaseConfigured
         autoRefreshToken: true,
         detectSessionInUrl: true,
         storageKey: 'naturegraph-auth',
-        // Storage adapter dynamique — route vers localStorage ou sessionStorage
+        // Storage adapter dynamique : route vers localStorage ou sessionStorage
         // selon l'option "Se souvenir de moi" choisie par l'utilisateur.
         // Voir `src/lib/authStorage.ts`.
         storage: authStorage,

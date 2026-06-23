@@ -40,7 +40,7 @@ export function Header() {
           >
             <Globe size={18} />
           </button>
-          {/* Theme toggle — désactivé pour le MVP, réactivation post-MVP */}
+          {/* Theme toggle : désactivé pour le MVP, réactivation post-MVP */}
         </div>
       </div>
     </header>

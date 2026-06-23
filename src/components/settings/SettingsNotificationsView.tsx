@@ -1,8 +1,8 @@
 /**
- * SettingsNotificationsView — Sous-vue "Notifications" du SettingsPanel
+ * SettingsNotificationsView : Sous-vue "Notifications" du SettingsPanel
  * =====================================================================
  *
- * Pixel-perfect Figma — 3 sections séparées par dividers :
+ * Pixel-perfect Figma : 3 sections séparées par dividers :
  *
  *   1. Méthodes de notification (RADIO exclusif via switches stylisés)
  *      - Dans l'application
@@ -39,13 +39,13 @@
  * Pour la **cohérence de l'écosystème**, cette vue doit lire/écrire dans la
  * MÊME source que l'onboarding (la table `notification_preferences` +
  * éventuellement une nouvelle table `user_notification_settings` plus
- * granulaire — voir notes backend ci-dessous).
+ * granulaire : voir notes backend ci-dessous).
  *
  * ── TODO [BACKEND] Phase 2 ────────────────────────────────────────────
  *
  *   ## Tables à enrichir / créer
  *
- *   Option A — Étendre `notification_preferences` existante :
+ *   Option A : Étendre `notification_preferences` existante :
  *     ALTER TABLE notification_preferences ADD COLUMN delivery TEXT
  *       NOT NULL DEFAULT 'in_app'
  *       CHECK (delivery IN ('in_app','email','none'));
@@ -53,7 +53,7 @@
  *       NOT NULL DEFAULT 'realtime'
  *       CHECK (frequency IN ('realtime','daily','weekly','monthly'));
  *
- *   Option B (recommandée) — Nouvelle table de réglages globaux user :
+ *   Option B (recommandée) : Nouvelle table de réglages globaux user :
  *     CREATE TABLE user_notification_settings (
  *       user_id    UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
  *       delivery   TEXT NOT NULL DEFAULT 'in_app'
@@ -92,12 +92,13 @@ import { ToggleSwitch } from '@/components/ui/ToggleSwitch'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings'
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type DeliveryMethod = 'in_app' | 'email' | 'none'
 /**
- * Fréquence de notification (digest) — stockée dans `user_settings.notif_frequency`
+ * Fréquence de notification (digest) : stockée dans `user_settings.notif_frequency`
  * (colonne ajoutée par migration `20260502_settings_notif_frequency.sql`).
  *
  * 'realtime' = notif immédiate dès qu'un événement survient.
@@ -141,9 +142,20 @@ export function SettingsNotificationsView() {
   const { data: settings, isLoading } = useSettings(user?.id)
   const updateSettings = useUpdateSettings(user?.id)
 
-  // Valeurs courantes — fallback sur les défauts si pas encore chargé/persisté.
+  // Préférences PAR TYPE (table notification_preferences) : FONCTIONNEL des
+  // maintenant. Les triggers DB respectent deja `is_notif_enabled`, donc
+  // desactiver un type coupe reellement ces notifs. C'est le controle que
+  // l'utilisateur attend au prelancement.
+  const {
+    isEnabled: isTypeEnabled,
+    set: setTypePref,
+    isPending: typePrefPending,
+  } = useNotificationPreferences(user?.id)
+  const typePrefsDisabled = !user?.id || typePrefPending
+
+  // Valeurs courantes : fallback sur les défauts si pas encore chargé/persisté.
   // ⚠️ On lit directement depuis `settings` (pas de state local) pour rester
-  // synchronisé avec React Query — l'optimistic update se fait via `setQueryData`.
+  // synchronisé avec React Query : l'optimistic update se fait via `setQueryData`.
   const delivery: DeliveryMethod = settings
     ? deliveryFromSettings(settings.email_notifications, settings.push_notifications)
     : 'email'
@@ -177,11 +189,49 @@ export function SettingsNotificationsView() {
 
   return (
     <div className="flex flex-col">
+      {/* ── Section 0 : Types de notifications (FONCTIONNEL) ──────────────
+          Branche sur notification_preferences. L'utilisateur choisit ce qu'il
+          recoit ; desactiver un type coupe reellement la notif (trigger DB). */}
+      <section className="flex flex-col gap-4 px-6 pt-4 pb-6">
+        <h3 className="font-title font-bold text-lg text-foreground leading-tight">
+          {t('settings.notifications.typesTitle', {
+            defaultValue: 'Quelles notifications recevoir',
+          })}
+        </h3>
+        <div className="flex flex-col gap-3">
+          <ToggleCard
+            label={t('settings.notifications.typeReaction', {
+              defaultValue: 'Réactions à mes publications',
+            })}
+            checked={isTypeEnabled('reaction')}
+            disabled={typePrefsDisabled}
+            onChange={(v) => setTypePref({ type: 'reaction', enabled: v })}
+          />
+          <ToggleCard
+            label={t('settings.notifications.typeFollow', {
+              defaultValue: 'Nouveaux migrateurs (abonnés)',
+            })}
+            checked={isTypeEnabled('follow')}
+            disabled={typePrefsDisabled}
+            onChange={(v) => setTypePref({ type: 'follow', enabled: v })}
+          />
+          <ToggleCard
+            label={t('settings.notifications.typePost', {
+              defaultValue: 'Nouvelles publications des profils suivis',
+            })}
+            checked={isTypeEnabled('post')}
+            disabled={typePrefsDisabled}
+            onChange={(v) => setTypePref({ type: 'post', enabled: v })}
+          />
+        </div>
+      </section>
+
+      <div className="h-1 bg-border" aria-hidden="true" />
+
+      {/* Les sections ci-dessous (livraison email + fréquence/digest) ne sont
+          pas encore wired backend -> tag « Bientôt » + toggles désactivés. */}
       {SOON_FEATURE && (
-        <div className="px-6 pt-2">
-          {/* Tag « Bientôt » aligné sur le style utilisé partout dans le
-              produit (FeedFilterPanel, ProfileTabs). Pas de texte d'explication
-              additionnel — cohérence DS. */}
+        <div className="px-6 pt-4">
           <span className="inline-block text-[10px] font-bold uppercase tracking-wide text-primary bg-primary/10 px-2 py-0.5 rounded-full">
             Bientôt
           </span>
@@ -223,7 +273,7 @@ export function SettingsNotificationsView() {
       </section>
 
       {/* Séparateur 4px solid bg-border edge-to-edge (mêmes specs que
-          FeedPost mobile + EditPhotoTab — cohérence DS produit). */}
+          FeedPost mobile + EditPhotoTab : cohérence DS produit). */}
       <div className="h-1 bg-border" aria-hidden="true" />
 
       {/* ── Section 2 : Nouvelles et mises à jour ──────────────────────── */}
@@ -245,7 +295,7 @@ export function SettingsNotificationsView() {
       </section>
 
       {/* Séparateur 4px solid bg-border edge-to-edge (mêmes specs que
-          FeedPost mobile + EditPhotoTab — cohérence DS produit). */}
+          FeedPost mobile + EditPhotoTab : cohérence DS produit). */}
       <div className="h-1 bg-border" aria-hidden="true" />
 
       {/* ── Section 3 : Fréquence de notification ──────────────────────── */}
@@ -256,7 +306,7 @@ export function SettingsNotificationsView() {
           })}
         </h3>
         {/* Ordre Figma : Temps réel → Une fois par jour → Une fois par semaine
-            (du plus fréquent au moins fréquent — Nicolas 2026-05-02). */}
+            (du plus fréquent au moins fréquent : Nicolas 2026-05-02). */}
         <div className="flex flex-col gap-3" role="radiogroup">
           <ToggleCard
             label={t('settings.notifications.freqRealtime', {

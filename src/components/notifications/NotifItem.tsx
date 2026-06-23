@@ -1,5 +1,5 @@
 /**
- * NotifItem — Sous-composants partagés entre NotificationsPanel et NotificationsPage
+ * NotifItem : Sous-composants partagés entre NotificationsPanel et NotificationsPage
  *
  * Extraits pour éviter la duplication :
  *   - NotifIcon : petit badge Lucide en surcouche de l'avatar

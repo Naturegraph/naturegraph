@@ -1,5 +1,5 @@
 /**
- * dataExportService — Export RGPD / Loi 25 des données utilisateur
+ * dataExportService : Export RGPD / Loi 25 des données utilisateur
  * =================================================================
  *
  * Wrapper TypeScript autour de l'Edge Function `export-data` (déployée v3).
@@ -14,11 +14,11 @@
  *   5. Le client lance le téléchargement automatiquement
  *
  * Conformité :
- *   - RGPD Art. 20 — droit à la portabilité (format structuré, lisible
+ *   - RGPD Art. 20 : droit à la portabilité (format structuré, lisible
  *     par machine = JSON)
- *   - Loi 25 Art. 27.3 — droit à la portabilité dans un format technologique
+ *   - Loi 25 Art. 27.3 : droit à la portabilité dans un format technologique
  *     structuré
- *   - RGPD Art. 15 — droit d'accès (l'utilisateur reçoit toutes ses données)
+ *   - RGPD Art. 15 : droit d'accès (l'utilisateur reçoit toutes ses données)
  *
  * Sécurité :
  *   - L'Edge Function est protégée par JWT (header Authorization)

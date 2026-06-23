@@ -1,5 +1,5 @@
 /**
- * LoadingState — Primitive d'état de chargement unifié
+ * LoadingState : Primitive d'état de chargement unifié
  * ============================================================================
  *
  * Standard pour les états de chargement, avec 2 variantes :

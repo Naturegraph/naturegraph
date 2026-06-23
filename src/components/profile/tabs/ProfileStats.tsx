@@ -1,10 +1,10 @@
 /**
- * ProfileStats — Onglet "Statistiques" du profil
+ * ProfileStats : Onglet "Statistiques" du profil
  *
- * Placeholder "Bientôt disponible" — sera enrichi avec graphiques d'observations,
+ * Placeholder "Bientôt disponible" : sera enrichi avec graphiques d'observations,
  * diversité d'espèces, progression dans le temps lors d'un sprint ultérieur.
  *
- * TODO [BACKEND] Phase 3 — RPC `get_profile_stats(profile_id)` (cf. note backend §4.2).
+ * TODO [BACKEND] Phase 3 : RPC `get_profile_stats(profile_id)` (cf. note backend §4.2).
  */
 
 import { useTranslation } from 'react-i18next'

@@ -1,5 +1,5 @@
 /**
- * ProfileInspirations — Onglet "Inspirations" du profil (collection sauvegardée)
+ * ProfileInspirations : Onglet "Inspirations" du profil (collection sauvegardée)
  *
  * Affiche les observations d'autres utilisateurs sauvegardées par ce profil
  * (table `saved_posts` côté backend) avec EXACTEMENT le même rendu que la vue
@@ -12,7 +12,7 @@
  *
  * État vide : card hermine + titre/sous-titre, même style que ProfileFeed.
  *
- * TODO [BACKEND] — Remplacer par savedPostService.getSavedPostsByUser(userId).
+ * TODO [BACKEND] : Remplacer par savedPostService.getSavedPostsByUser(userId).
  *   Schéma : `saved_posts (user_id, post_id, created_at)` + JOIN sur `posts`.
  */
 
@@ -50,7 +50,7 @@ export function ProfileInspirations({ savedPosts, username }: ProfileInspiration
     )
   }
 
-  // ─── Galerie masonry — réutilise FeedGallery du feed home ──────────────────
+  // ─── Galerie masonry : réutilise FeedGallery du feed home ──────────────────
   // `-mx-4 md:mx-0` : annule le padding latéral du parent sur mobile pour que
   // la galerie touche les bords de l'écran (cohérence avec la vue grid du home).
   return (

@@ -1,5 +1,5 @@
 /**
- * demoAuth — Gestion OTP en mémoire pour le mode démonstration
+ * demoAuth : Gestion OTP en mémoire pour le mode démonstration
  *
  * Utilisé par DemoAuthProvider dans AuthContext quand Supabase n'est pas configuré.
  * À remplacer par les appels Supabase réels une fois le back-end en place.
@@ -17,7 +17,7 @@ interface OtpEntry {
   expiresAt: number
 }
 
-/** Map email → { otp, expiresAt } — vidée après chaque utilisation réussie */
+/** Map email → { otp, expiresAt } : vidée après chaque utilisation réussie */
 const otpStore = new Map<string, OtpEntry>()
 
 /** Durée de validité de l'OTP : 2 minutes (identique au TTL Supabase configuré en prod) */
@@ -39,7 +39,7 @@ export function generateAndStoreOtp(email: string): string {
     expiresAt: Date.now() + OTP_TTL_MS,
   })
 
-  // Log stylisé — visible dans DevTools (F12 → Console)
+  // Log stylisé : visible dans DevTools (F12 → Console)
   console.warn(
     `%c[DEMO] 🔐 Code OTP pour ${email} : ${otp}`,
     [
@@ -52,7 +52,7 @@ export function generateAndStoreOtp(email: string): string {
       'border: 1px solid #a78bfa',
     ].join('; '),
   )
-  console.warn('%c[DEMO] ⏱ Valide 2 minutes — usage unique', 'color: #6b7280; font-size: 12px;')
+  console.warn('%c[DEMO] ⏱ Valide 2 minutes : usage unique', 'color: #6b7280; font-size: 12px;')
 
   return otp
 }
@@ -96,7 +96,7 @@ export function validateOtp(email: string, token: string): boolean {
 }
 
 /**
- * Retourne le code OTP actuel pour un email — uniquement pour l'affichage en mode démo.
+ * Retourne le code OTP actuel pour un email : uniquement pour l'affichage en mode démo.
  * Ne pas utiliser en production (Supabase gère les OTP côté serveur).
  *
  * @returns Le code OTP si valide, null s'il est expiré ou inexistant

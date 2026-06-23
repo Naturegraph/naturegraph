@@ -1,5 +1,5 @@
 /**
- * searchService — Recherche globale espèces + profils
+ * searchService : Recherche globale espèces + profils
  * ====================================================
  * Stratégie de recherche espèces Phase 1 (Nicolas 2026-05-19) :
  *
@@ -11,13 +11,13 @@
  *   - species_master : ~200 espèces FR+QC seed initial (migration v2)
  *   - Expansion ~5 000 via scripts/seed-species-from-gbif.ts (Phase 2)
  *
- * 2026-05-19 (Nicolas) : suppression du mock local COMMON_SPECIES — on
+ * 2026-05-19 (Nicolas) : suppression du mock local COMMON_SPECIES : on
  * teste en condition réelle uniquement. Si Supabase est indisponible, on
  * retourne un tableau vide (l'UI EncounterStep2 propose alors le fallback
  * "Ajouter à valider par la communauté").
  *
  * Règle de sécurité : aucune API externe (GBIF, Wikidata, iNat) n'est
- * appelée directement depuis le front — toujours via une table Supabase
+ * appelée directement depuis le front : toujours via une table Supabase
  * (species_master Phase 1, ou cache rate-limit-friendly Phase 2).
  */
 
@@ -44,7 +44,7 @@ export interface SpeciesHit {
 }
 
 /**
- * TaxonomyHit — V1.1.0 (BDD taxonomy_nodes).
+ * TaxonomyHit : V1.1.0 (BDD taxonomy_nodes).
  *
  * Etend SpeciesHit avec :
  *   - rank : 'species' | 'family' | 'genus' | 'order' (permet fallback famille
@@ -54,7 +54,7 @@ export interface SpeciesHit {
  *   - class : pour afficher la categorie (Aves, Insecta, etc.)
  */
 export interface TaxonomyHit {
-  /** UUID de taxonomy_nodes.id — utilise comme FK pour posts.taxonomy_node_id */
+  /** UUID de taxonomy_nodes.id : utilise comme FK pour posts.taxonomy_node_id */
   taxonomy_node_id: string
   /** Rang : 'species' (precis), 'genus', 'family' (fallback), 'order' */
   rank: 'species' | 'genus' | 'family' | 'order' | 'class'
@@ -76,7 +76,7 @@ export interface TaxonomyHit {
 // ─── Recherche espèces ────────────────────────────────────────────────────────
 
 /**
- * searchSpecies — Recherche dans species_master (GBIF + Wikidata, Phase 1).
+ * searchSpecies : Recherche dans species_master (GBIF + Wikidata, Phase 1).
  *
  * Stratégie :
  *   1. Supabase + species_master + ILIKE % multi-colonnes
@@ -84,7 +84,7 @@ export interface TaxonomyHit {
  *      common_name_en accélèrent les ILIKE).
  *   2. Tri par popularity DESC pour mettre les espèces communes en haut.
  *   3. Si Supabase indisponible : retourne [] (l'UI propose alors le fallback
- *      "Ajouter à valider par la communauté" — cf. EncounterStep2).
+ *      "Ajouter à valider par la communauté" : cf. EncounterStep2).
  *
  * @param query  Terme saisi (minimum 2 caractères)
  * @param limit  Nombre max de résultats (défaut 10)
@@ -236,7 +236,7 @@ export async function searchSpecies(
 // ─── Recherche taxonomie V1.1.0 (BDD taxonomy_nodes) ────────────────────────
 
 /**
- * searchTaxonomy — Recherche dans la nouvelle BDD taxonomy_nodes (V1.1.0).
+ * searchTaxonomy : Recherche dans la nouvelle BDD taxonomy_nodes (V1.1.0).
  *
  * Remplace progressivement searchSpecies(). Avantages :
  *   - Retourne especes + familles + ordres dans une seule recherche
@@ -326,8 +326,8 @@ export async function searchTaxonomy(
 // ─── Recherche profils ────────────────────────────────────────────────────────
 
 /**
- * searchProfiles — Recherche profils par username, prénom, nom.
- * ILIKE simple — MVP. Full-text en Phase 2.
+ * searchProfiles : Recherche profils par username, prénom, nom.
+ * ILIKE simple : MVP. Full-text en Phase 2.
  */
 export async function searchProfiles(query: string, limit = 10): Promise<ProfileHit[]> {
   if (!isSupabaseConfigured || !supabase) return []

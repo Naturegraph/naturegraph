@@ -39,7 +39,7 @@ jobs:
 
       # BATCH 13 / T-003 : detection drift entre src/types/supabase.ts et le
       # schema DB courant. Best-effort (skip si supabase CLI non authentifie
-      # — typique en CI sans secrets). Le script exit 2 = skip silencieux,
+      # : typique en CI sans secrets). Le script exit 2 = skip silencieux,
       # exit 1 = fail (drift detecte).
       - name: Supabase types drift check
         run: npm run check:types-drift || true
@@ -64,7 +64,7 @@ jobs:
           echo "heic2any lazy chunk (exclu du budget): ${HEIC_KB}KB"
           # Budget MVP : 330 KB gzip (somme de TOUS les chunks JS, pas la critical
           # path). Note : le first-paint réel pour la home charge ~190 KB gzip
-          # (index + vendor + supabase + i18n) — le reste est lazy-loaded par
+          # (index + vendor + supabase + i18n) : le reste est lazy-loaded par
           # route (Auth, Profile, Contribute, Settings, Notifications).
           # Bumped 300→320 le 2026-05-01 suite à l'ajout de :
           #   - autocomplete localisation API Adresse + popover privacy (~3 KB)
@@ -84,7 +84,7 @@ jobs:
           #   - Admin section complete : 6 pages lazy-loaded (~17 KB gzip somme)
           #     • AdminLayout + AdminGuard + useIsAdmin (~3 KB)
           #     • Dashboard + Beta + Audit (~7 KB)
-          #     • Users + Moderation (~9 KB — pagination + filters + actions)
+          #     • Users + Moderation (~9 KB : pagination + filters + actions)
           # Le first-paint reel reste ~200 KB gzip (index + vendor + supabase + i18n)
           # car TOUT le code admin/beta est split en chunks separes (lazy-loaded).
           # Bumped 420->480 le 2026-05-25 (Nicolas) suite a :

@@ -1,5 +1,5 @@
 /**
- * ProfileAboutCard — Carte "À propos" du profil
+ * ProfileAboutCard : Carte "À propos" du profil
  * ===============================================
  *
  * Design Figma 6385:74429 (desktop) / 6385:71694 (mobile, dans le tab) :
@@ -26,7 +26,7 @@ interface ProfileAboutCardProps {
 
 /**
  * Formate "Migrateur depuis janvier 2026" à partir d'un ISO date.
- * Locale FR — à passer via i18n quand on aura plus de langues.
+ * Locale FR : à passer via i18n quand on aura plus de langues.
  */
 /**
  * Garantit un href cliquable. Les liens sont stockes en URL complete depuis
@@ -98,7 +98,7 @@ export function ProfileAboutCard({ profile, compact = false }: ProfileAboutCardP
         compact ? 'p-4' : 'p-5'
       } flex flex-col gap-3`}
     >
-      {/* Header card — Paragraph/Base 16px Bold (Figma 6385:74466 ; var
+      {/* Header card : Paragraph/Base 16px Bold (Figma 6385:74466 ; var
           Body/Bold/Size = 16). */}
       <div className="flex items-center gap-3">
         <span
@@ -120,11 +120,11 @@ export function ProfileAboutCard({ profile, compact = false }: ProfileAboutCardP
         <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{profile.bio}</p>
       )}
 
-      {/* Métadonnées — UNE SEULE ROW (Figma 6385:74468 = Frame w=514 h=23) :
+      {/* Métadonnées : UNE SEULE ROW (Figma 6385:74468 = Frame w=514 h=23) :
           date d'inscription + lien site + lien Instagram, séparés par gap-x-6.
           Wrap autorisé sur petits écrans / cards étroites. */}
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-        {/* Date d'inscription — texte muted (pas un lien) */}
+        {/* Date d'inscription : texte muted (pas un lien) */}
         <div className="flex items-center gap-2 text-muted-foreground">
           <Calendar className="size-[18px] shrink-0" aria-hidden="true" />
           <span>
@@ -135,7 +135,7 @@ export function ProfileAboutCard({ profile, compact = false }: ProfileAboutCardP
           </span>
         </div>
 
-        {/* Lien site web — group entièrement en primary violet (icône + texte). */}
+        {/* Lien site web : group entièrement en primary violet (icône + texte). */}
         {websiteHref && (
           <a
             href={websiteHref}
@@ -148,7 +148,7 @@ export function ProfileAboutCard({ profile, compact = false }: ProfileAboutCardP
           </a>
         )}
 
-        {/* Lien Instagram — group entièrement en primary violet (icône + texte). */}
+        {/* Lien Instagram : group entièrement en primary violet (icône + texte). */}
         {instagramHref && (
           <a
             href={instagramHref}
