@@ -39,6 +39,8 @@ export default function Waitlist() {
 
   const [email, setEmail] = useState('')
   const [motivation, setMotivation] = useState('')
+  // Opt-in marketing RGPD : decoche par defaut (pas de consentement presume).
+  const [marketingConsent, setMarketingConsent] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [alreadyOnList, setAlreadyOnList] = useState(false)
@@ -57,6 +59,7 @@ export default function Waitlist() {
     const result = await joinWaitlist({
       email: trimmedEmail,
       motivation: motivation.trim() || undefined,
+      marketingConsent,
     })
 
     if (result.success) {
@@ -212,14 +215,33 @@ export default function Waitlist() {
               </Button>
             </div>
 
-            {/* Mention de transparence RGPD (Art. 13) : finalite de la collecte
-                de l'email + lien vers la politique de confidentialite. Affichee
-                au moment de la collecte, condition prealable a l'import des
-                emails waitlist dans l'outil d'emailing (NG-009). */}
+            {/* Opt-in marketing RGPD (Art. 6/7) : consentement explicite et
+                separe pour les communications marketing. Decoche par defaut,
+                non bloquant. Condition prealable a l'import de l'email dans
+                l'outil d'emailing (NG-009). L'email de cle d'acces, lui, est
+                transactionnel et part independamment de cette case. */}
+            <label className="flex items-start gap-2.5 w-full cursor-pointer text-left">
+              <input
+                type="checkbox"
+                checked={marketingConsent}
+                onChange={(e) => setMarketingConsent(e.target.checked)}
+                disabled={isSubmitting}
+                className="mt-0.5 size-4 shrink-0 rounded border-[var(--color-border)] accent-[var(--color-action-default)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] disabled:opacity-50"
+              />
+              <span className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+                {t('waitlist.marketingConsentLabel', {
+                  defaultValue:
+                    'Je veux aussi recevoir les nouvelles de Naturegraph (lancement, nouveautés). Optionnel, désinscription à tout moment.',
+                })}
+              </span>
+            </label>
+
+            {/* Mention de transparence RGPD (Art. 13) : finalite (transactionnelle)
+                de la collecte de l'email + lien vers la politique de confidentialite. */}
             <p className="text-xs text-[var(--color-text-secondary)] text-center leading-relaxed">
               {t('waitlist.privacyNotice', {
                 defaultValue:
-                  "En rejoignant la liste, tu acceptes de recevoir par email ta clé d'accès et, occasionnellement, des nouvelles de Naturegraph. Désinscription possible à tout moment.",
+                  "Ton email sert à t'envoyer ta clé d'accès dès qu'une place se libère.",
               })}{' '}
               <Link
                 to="/privacy"
