@@ -41,6 +41,11 @@ export default function Waitlist() {
   const [motivation, setMotivation] = useState('')
   // Opt-in marketing RGPD : decoche par defaut (pas de consentement presume).
   const [marketingConsent, setMarketingConsent] = useState(false)
+  // Honeypot anti-bot : champ cache que seuls les bots remplissent. Aucun
+  // captcha ni appel reseau (eco-conception), invisible et neutre pour les
+  // lecteurs d'ecran (aria-hidden + hors flux). Rempli => on simule un succes
+  // sans rien inserer en base.
+  const [honeypot, setHoneypot] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [alreadyOnList, setAlreadyOnList] = useState(false)
@@ -48,6 +53,13 @@ export default function Waitlist() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (isSubmitting) return
+
+    // Honeypot : un humain ne voit pas ce champ et ne le remplit jamais.
+    // On feint le succes (pas de signal exploitable pour le bot), sans INSERT.
+    if (honeypot.trim() !== '') {
+      setSubmitted(true)
+      return
+    }
 
     const trimmedEmail = email.trim().toLowerCase()
     if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
@@ -138,6 +150,33 @@ export default function Waitlist() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-3 md:gap-4 w-full" noValidate>
+            {/* Honeypot anti-bot : hors flux visuel + invisible aux lecteurs
+                d'ecran (aria-hidden, tabIndex -1). Les humains ne le voient pas
+                et ne le remplissent jamais ; les bots qui remplissent tous les
+                champs se trahissent. */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                width: 1,
+                height: 1,
+                overflow: 'hidden',
+                clip: 'rect(0 0 0 0)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <label htmlFor="waitlist-website">Ne pas remplir ce champ</label>
+              <input
+                id="waitlist-website"
+                type="text"
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+              />
+            </div>
+
             <div className="flex flex-col gap-1.5 w-full">
               <label
                 htmlFor="waitlist-email"
