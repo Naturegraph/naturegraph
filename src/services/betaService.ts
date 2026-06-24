@@ -179,6 +179,108 @@ export async function joinWaitlist(
   return { success: true }
 }
 
+// ─── Import cohorte prelancement (admin) ───────────────────────────────────
+
+/** Bilan d'un import d'emails dans la cohorte prelancement. */
+export interface PrelaunchImportResult {
+  /** Emails reellement ajoutes (source='prelaunch'). */
+  added: number
+  /** Ignores car deja presents dans la waitlist (doublon). */
+  skippedDuplicate: number
+  /** Ignores car un compte existe deja pour cet email (adresse non "vide"). */
+  skippedHasAccount: number
+  /** Ignores car format d'email invalide. */
+  invalid: number
+  /** Total de lignes fournies en entree. */
+  total: number
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/**
+ * Importe une liste d'emails dans la cohorte de prelancement (source='prelaunch').
+ *
+ * Garde-fous (demande Nicolas 2026-06-24) :
+ *   - dedup intra-liste + contre la waitlist existante (aucun doublon),
+ *   - exclusion des emails ayant deja un compte (on ne garde que les adresses
+ *     "vides", c.-a-d. sans profil),
+ *   - validation basique du format.
+ *
+ * N'envoie aucune invitation : l'envoi se fait ensuite par vagues via l'admin.
+ *
+ * @param rawEmails - emails colles par l'admin (un par ligne, virgules ou espaces).
+ */
+export async function importPrelaunchEmails(rawEmails: string[]): Promise<PrelaunchImportResult> {
+  const empty: PrelaunchImportResult = {
+    added: 0,
+    skippedDuplicate: 0,
+    skippedHasAccount: 0,
+    invalid: 0,
+    total: 0,
+  }
+  if (!supabase) return empty
+
+  // 1. Normalisation + dedup intra-liste + validation format.
+  const seen = new Set<string>()
+  let invalid = 0
+  const candidates: string[] = []
+  for (const raw of rawEmails) {
+    const email = raw.trim().toLowerCase()
+    if (!email) continue
+    if (!EMAIL_RE.test(email)) {
+      invalid++
+      continue
+    }
+    if (seen.has(email)) continue
+    seen.add(email)
+    candidates.push(email)
+  }
+  const total = invalid + candidates.length
+  if (candidates.length === 0) return { ...empty, invalid, total }
+
+  // 2. Emails deja dans la waitlist (doublon) et emails ayant deja un compte.
+  const [{ data: existingWl }, { data: existingProfiles }] = await Promise.all([
+    supabase.from('beta_waitlist').select('email').in('email', candidates),
+    supabase.from('profiles').select('email').in('email', candidates),
+  ])
+  const inWaitlist = new Set((existingWl ?? []).map((r) => (r.email ?? '').toLowerCase()))
+  const hasAccount = new Set(
+    (existingProfiles ?? []).map((r) => (r.email ?? '').toLowerCase()).filter(Boolean),
+  )
+
+  let skippedDuplicate = 0
+  let skippedHasAccount = 0
+  const toInsert: { email: string; source: string }[] = []
+  for (const email of candidates) {
+    if (hasAccount.has(email)) {
+      skippedHasAccount++
+      continue
+    }
+    if (inWaitlist.has(email)) {
+      skippedDuplicate++
+      continue
+    }
+    toInsert.push({ email, source: 'prelaunch' })
+  }
+
+  // 3. Insertion en masse. ignoreDuplicates couvre une eventuelle course
+  //    (insertion concurrente entre le check et l'insert).
+  let added = 0
+  if (toInsert.length > 0) {
+    const { data, error } = await supabase
+      .from('beta_waitlist')
+      .upsert(toInsert, { onConflict: 'email', ignoreDuplicates: true })
+      .select('id')
+    if (error) {
+      // Echec global : on remonte 0 ajout, le reste du bilan reste informatif.
+      return { added: 0, skippedDuplicate, skippedHasAccount, invalid, total }
+    }
+    added = data?.length ?? 0
+  }
+
+  return { added, skippedDuplicate, skippedHasAccount, invalid, total }
+}
+
 // ─── Invitation beta depuis la waitlist (admin) ────────────────────────────
 
 /** Raison d'échec renvoyée par l'Edge Function `send-beta-invite`. */
