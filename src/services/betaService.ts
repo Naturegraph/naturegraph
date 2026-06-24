@@ -142,6 +142,13 @@ export async function getBetaQuotaStatus(): Promise<BetaQuotaStatus | null> {
 export interface WaitlistEntry {
   email: string
   motivation?: string
+  /**
+   * Opt-in explicite pour les communications marketing (RGPD art. 6/7).
+   * FALSE par defaut : l'email de cle d'acces reste transactionnel et part
+   * independamment de ce consentement. L'horodatage de preuve est pose cote
+   * serveur par trigger, jamais transmis par le client.
+   */
+  marketingConsent?: boolean
 }
 
 /**
@@ -158,6 +165,7 @@ export async function joinWaitlist(
   const { error } = await supabase.from('beta_waitlist').insert({
     email: entry.email.trim().toLowerCase(),
     motivation: entry.motivation?.trim() || null,
+    marketing_consent: entry.marketingConsent ?? false,
   })
 
   if (error) {

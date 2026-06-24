@@ -1101,7 +1101,7 @@
   "legal": {
     "privacy": {
       "title": "Privacy Policy",
-      "lastUpdated": "Last updated: June 10, 2026",
+      "lastUpdated": "Last updated: June 23, 2026",
       "section0Title": "⚠️ Private beta status",
       "section0Content": "Naturegraph is currently in a private closed beta. The service is operated personally and non-commercially by Nicolas Douaron from Quebec (Canada).\n\nConcretely:\n\n• Access is restricted to people who received an invitation with a personal access key.\n• No service level agreement (SLA) is guaranteed during the beta.\n• Data collected is minimal and retained only as long as needed for the beta.\n• The service may be interrupted, modified or reset at any time without notice to improve the platform.\n• Your data can be deleted at any time on simple request to support@naturegraph.ca.\n• No monetization during the beta: no payment, no advertising, no commercial sharing.\n\nBy joining the beta with your access key, you accept to test the service under these conditions.",
       "section1Title": "Preamble",
@@ -1121,7 +1121,7 @@
       "section8Title": "Security",
       "section8Content": "We implement the following technical measures:\n\n• encryption of data in transit (HTTPS / TLS)\n• strict access control at the database level (PostgreSQL Row Level Security)\n• secure storage via Supabase\n• secure account deletion (full cascade + storage cleanup)\n• automatic removal of location metadata (EXIF) from photos before upload\n• automatic compression and resizing of photos to limit stored data",
       "section9Title": "Hosting and international transfers",
-      "section9Content": "Your data is processed by our technical service providers:\n\n• Frontend: Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, USA (vercel.com)\n• Database and storage: Supabase Inc., AWS us-east-2 region in Ohio, USA (supabase.com)\n• Technical monitoring (error and stability detection): Sentry (Functional Software, Inc.), European Union hosting region (Germany). Sentry only receives technical data (error type, browser, anonymized navigation path): neither your email address nor your IP address is sent to it, in accordance with our data minimization settings.\n\nCore and storage data is hosted in the United States; technical monitoring data stays within the European Union. For users in the European Union, the transfer is based on Standard Contractual Clauses of the European Commission, in accordance with Article 46 of the GDPR. For Quebec users, this transfer complies with the requirements of Law 25: informed consent and equivalent protection measures.",
+      "section9Content": "Your data is processed by our technical service providers:\n\n• Frontend: Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, USA (vercel.com)\n• Database and storage: Supabase Inc., AWS us-east-2 region in Ohio, USA (supabase.com)\n• Technical monitoring (error and stability detection): Sentry (Functional Software, Inc.), European Union hosting region (Germany). Sentry only receives technical data (error type, browser, anonymized navigation path): neither your email address nor your IP address is sent to it, in accordance with our data minimization settings.\n• Email delivery: MailerSend (transactional emails: sending your access key and signup confirmations) and MailerLite (newsletter and informational campaigns, only if you have consented), operated by MailerLite (European Union). These providers only receive your email address and, where applicable, your first name, solely for the purpose of sending the relevant communications. You can withdraw your marketing consent at any time via the unsubscribe link in every email.\n\nCore and storage data is hosted in the United States; technical monitoring data stays within the European Union. For users in the European Union, the transfer is based on Standard Contractual Clauses of the European Commission, in accordance with Article 46 of the GDPR. For Quebec users, this transfer complies with the requirements of Law 25: informed consent and equivalent protection measures.",
       "section10Title": "Contact",
       "section10Content": "Privacy contact: support@naturegraph.ca\n\nData controller: Nicolas Douaron, Quebec resident (Canada). Naturegraph is operated in a personal capacity during the private beta phase.\n\nNo postal address is published during the private beta. For any official correspondence requiring an address, contact us first by email. We will provide the appropriate address based on the nature of your request.",
       "section12Title": "Third-party sources and data processors",
@@ -1232,7 +1232,10 @@
     "alreadyMsg": "You're already on the list!",
     "backWelcome": "Back to home",
     "errorEmail": "Invalid email",
-    "errorServer": "Error during registration. Try again later."
+    "errorServer": "Error during registration. Try again later.",
+    "marketingConsentLabel": "I also want to receive Naturegraph news (launch, updates). Optional, unsubscribe anytime.",
+    "privacyNotice": "Your email is used to send you your access key as soon as a spot opens up.",
+    "privacyLink": "Privacy policy"
   },
 
   "admin": {

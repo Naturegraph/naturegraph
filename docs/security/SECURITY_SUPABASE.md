@@ -260,17 +260,50 @@ manuel par `auth.getUser()` (vérifie la signature). Effort : 15 min. Avant prod
 
 ## 8. Verdict Supabase
 
-| Domaine            | État                                                     |
-| ------------------ | -------------------------------------------------------- |
-| RLS                | ✅ 29/29 tables, policies vérifiées                      |
-| Storage            | ✅ MIME/taille limités, exports privés                   |
-| Auth               | 🟡 activer leaked-password protection (5 min)            |
-| Fonctions exposées | 🟠 REVOKE EXECUTE sur les triggers (réduction surface)   |
-| `beta_waitlist`    | 🟠 anti-spam avant ouverture publique                    |
-| Edge Functions     | 🟠 autz OK sauf `send-waitlist-confirmation` (non authq) |
-| Cron / Realtime    | ✅ RLS-aware, anonymisation en place                     |
+| Domaine            | État                                                         |
+| ------------------ | ------------------------------------------------------------ |
+| RLS                | ✅ 29/29 tables, policies vérifiées                          |
+| Storage            | ✅ MIME/taille limités, exports privés                       |
+| Auth               | 🟡 activer leaked-password protection (5 min)                |
+| Fonctions exposées | 🟠 REVOKE EXECUTE sur les triggers (réduction surface)       |
+| `beta_waitlist`    | 🟠 anti-spam avant ouverture publique                        |
+| Edge Functions     | ✅ autz OK ; `send-waitlist-confirmation` sécurisée (secret) |
+| Cron / Realtime    | ✅ RLS-aware, anonymisation en place                         |
 
 **Supabase est solide pour la beta.** Avant prod publique : leaked-password (5 min),
-REVOKE EXECUTE triggers (3 h), anti-spam waitlist (3 h), **sécuriser
-`send-waitlist-confirmation`** (secret partagé, 1-2 h, à faire avec le chantier email
-NG-009). Revue Edge Functions faite (2026-06-22) : autorisations OK hors ce point.
+REVOKE EXECUTE triggers (3 h), anti-spam waitlist (3 h). Revue Edge Functions faite
+(2026-06-22) : autorisations OK. `send-waitlist-confirmation` sécurisée le 2026-06-23
+(secret partagé, cf. section 9). Reste à poser le secret en prod lors du chantier email.
+
+---
+
+## 9. Secret partagé `send-waitlist-confirmation` (NG-007, 2026-06-23)
+
+`send-waitlist-confirmation` est en `verify_jwt:false` (appelée par le trigger DB
+`waitlist_send_confirmation`, pas par un client). Comme elle est publiquement
+atteignable, elle était vulnérable à l'abus : n'importe qui pouvait POSTer un
+`record.email` arbitraire pour déclencher l'envoi d'un email brandé Naturegraph
+(spam / phishing + consommation du quota Resend).
+
+**Correctif (code déployé)** : la fonction exige un header `x-waitlist-secret`
+égal à l'env `WAITLIST_TRIGGER_SECRET` (comparaison à temps constant). Le trigger
+PostgreSQL lit le secret depuis Supabase Vault (`waitlist_trigger_secret`) et le
+transmet. Rollout progressif : tant que le secret n'est posé ni côté Vault ni côté
+env, le comportement est inchangé (header omis + warning loggé). Une fois posé des
+deux côtés, le secret devient obligatoire (401 sinon).
+
+Migration : `20260623_waitlist_confirmation_secret.sql` (trigger).
+
+### Setup one-time du secret (par environnement : dev/staging ET prod)
+
+1. Générer un secret aléatoire : `openssl rand -hex 32`.
+2. Vault (SQL Editor du bon projet) :
+   ```sql
+   select vault.create_secret('<le_secret>', 'waitlist_trigger_secret');
+   ```
+3. Edge Function Secrets (Dashboard → Edge Functions → Secrets) :
+   `WAITLIST_TRIGGER_SECRET = <le_meme_secret>`.
+4. Vérifier : une inscription waitlist déclenche un envoi (logs de la fonction) ; un
+   POST direct sans header renvoie `401`.
+
+Secret distinct par environnement (ne pas réutiliser le secret dev en prod).
