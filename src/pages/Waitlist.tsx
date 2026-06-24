@@ -30,6 +30,7 @@ import { BetaAuthLayout } from '@/components/auth/BetaAuthLayout'
 import { useToast } from '@/contexts/ToastContext'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { joinWaitlist } from '@/services/betaService'
+import { MARKETING_CONSENT_ENABLED } from '@/lib/featureFlags'
 
 export default function Waitlist() {
   const { t } = useTranslation()
@@ -258,22 +259,26 @@ export default function Waitlist() {
                 separe pour les communications marketing. Decoche par defaut,
                 non bloquant. Condition prealable a l'import de l'email dans
                 l'outil d'emailing (NG-009). L'email de cle d'acces, lui, est
-                transactionnel et part independamment de cette case. */}
-            <label className="flex items-start gap-2.5 w-full cursor-pointer text-left">
-              <input
-                type="checkbox"
-                checked={marketingConsent}
-                onChange={(e) => setMarketingConsent(e.target.checked)}
-                disabled={isSubmitting}
-                className="mt-0.5 size-4 shrink-0 rounded border-[var(--color-border)] accent-[var(--color-action-default)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] disabled:opacity-50"
-              />
-              <span className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
-                {t('waitlist.marketingConsentLabel', {
-                  defaultValue:
-                    'Je veux aussi recevoir les nouvelles de Naturegraph (lancement, nouveautés). Optionnel, désinscription à tout moment.',
-                })}
-              </span>
-            </label>
+                transactionnel et part independamment de cette case.
+                Masque tant qu'on n'est pas en phase marketing (Nicolas 2026-06-24,
+                cf. MARKETING_CONSENT_ENABLED) : reaffichage en 1 ligne pour aout. */}
+            {MARKETING_CONSENT_ENABLED && (
+              <label className="flex items-start gap-2.5 w-full cursor-pointer text-left">
+                <input
+                  type="checkbox"
+                  checked={marketingConsent}
+                  onChange={(e) => setMarketingConsent(e.target.checked)}
+                  disabled={isSubmitting}
+                  className="mt-0.5 size-4 shrink-0 rounded border-[var(--color-border)] accent-[var(--color-action-default)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] disabled:opacity-50"
+                />
+                <span className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+                  {t('waitlist.marketingConsentLabel', {
+                    defaultValue:
+                      'Je veux aussi recevoir les nouvelles de Naturegraph (lancement, nouveautés). Optionnel, désinscription à tout moment.',
+                  })}
+                </span>
+              </label>
+            )}
 
             {/* Mention de transparence RGPD (Art. 13) : finalite (transactionnelle)
                 de la collecte de l'email + lien vers la politique de confidentialite. */}
