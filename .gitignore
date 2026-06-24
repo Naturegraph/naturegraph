@@ -29,6 +29,10 @@ supabase/.temp/
 # Claude Code config (machine-specific)
 .claude/
 
+# Donnees privees / PII (vraies adresses email, listes de contacts) : NE JAMAIS
+# versionner dans un repo public (fuite RGPD). Conserve en local uniquement.
+private/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
