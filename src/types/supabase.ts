@@ -277,6 +277,8 @@ export type Database = {
           marketing_consent_at: string | null
           motivation: string | null
           notes: string | null
+          source: string
+          wave: number | null
         }
         Insert: {
           created_at?: string
@@ -291,6 +293,8 @@ export type Database = {
           marketing_consent_at?: string | null
           motivation?: string | null
           notes?: string | null
+          source?: string
+          wave?: number | null
         }
         Update: {
           created_at?: string
@@ -305,6 +309,8 @@ export type Database = {
           marketing_consent_at?: string | null
           motivation?: string | null
           notes?: string | null
+          source?: string
+          wave?: number | null
         }
         Relationships: [
           {

@@ -37,7 +37,11 @@ import { useToast } from '@/contexts/ToastContext'
 import { useAdminAction } from '@/hooks/useAdminAction'
 import { useBetaAccess } from '@/hooks/useBetaAccess'
 import { STALE_TIMES } from '@/constants/reactQuery'
-import { sendBetaInvite, type BetaInviteResult } from '@/services/betaService'
+import {
+  sendBetaInvite,
+  importPrelaunchEmails,
+  type BetaInviteResult,
+} from '@/services/betaService'
 
 // ─── Types DB rows ────────────────────────────────────────────────────────
 
@@ -67,6 +71,10 @@ interface BetaWaitlistEntry {
   email_status: 'sent' | 'failed' | null
   /** Détail de l'échec du dernier envoi (NULL si OK). */
   email_error: string | null
+  /** Origine : 'organic' (formulaire public) ou 'prelaunch' (cohorte cible). */
+  source: string
+  /** Numéro de vague d'envoi (NULL tant que pas invité). */
+  wave: number | null
 }
 
 /** Profil minimal d'un inscrit, pour relier une entrée waitlist à son compte. */
@@ -200,6 +208,17 @@ export default function AdminBeta() {
   //   bonne ligne ; couvre l'invitation initiale ET le renvoi)
   const [waitlistToDelete, setWaitlistToDelete] = useState<BetaWaitlistEntry | null>(null)
   const [processingId, setProcessingId] = useState<string | null>(null)
+  // Cohorte prelancement (Nicolas 2026-06-24) :
+  // - sourceFilter : filtre la vue waitlist (Tous / Organique / Prelancement)
+  // - import : modale de collage d'emails -> cohorte prelancement (dedup + exclusion comptes)
+  // - waveSending : envoi de la prochaine vague de 20 en cours
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'organic' | 'prelaunch'>('all')
+  const [importOpen, setImportOpen] = useState(false)
+  const [importText, setImportText] = useState('')
+  const [importing, setImporting] = useState(false)
+  const [waveSending, setWaveSending] = useState(false)
+  // Taille d'une vague d'envoi (Nicolas : 20 mails tous les 2 jours).
+  const WAVE_SIZE = 20
 
   // Quota, Nicolas 2026-05-24 : `current_user_count` stale en DB (pas
   // de trigger pour le maintenir à jour) → on récupère le vrai compteur
@@ -394,10 +413,10 @@ export default function AdminBeta() {
       const { data } = await supabase
         .from('beta_waitlist')
         .select(
-          'id, email, motivation, created_at, invited_at, invite_count, email_status, email_error',
+          'id, email, motivation, created_at, invited_at, invite_count, email_status, email_error, source, wave',
         )
         .order('created_at', { ascending: true })
-        .limit(100)
+        .limit(200)
       return (data ?? []) as unknown as BetaWaitlistEntry[]
     },
     staleTime: STALE_TIMES.LONG,
@@ -627,6 +646,151 @@ export default function AdminBeta() {
       toast.error('Erreur suppression', err instanceof Error ? err.message : undefined)
     } finally {
       setWaitlistToDelete(null)
+    }
+  }
+
+  // ─── Cohorte prelancement (Nicolas 2026-06-24) ──────────────────────────
+
+  /** Vue waitlist filtree par source (Tous / Organique / Prelancement). */
+  const filteredWaitlist = useMemo(
+    () => (sourceFilter === 'all' ? waitlist : waitlist.filter((w) => w.source === sourceFilter)),
+    [waitlist, sourceFilter],
+  )
+  const prelaunchCount = useMemo(
+    () => waitlist.filter((w) => w.source === 'prelaunch').length,
+    [waitlist],
+  )
+
+  /** True si l'entree correspond a un compte pleinement inscrit (onboarding fini). */
+  function isEntryFullyRegistered(entry: BetaWaitlistEntry): boolean {
+    const reg = registeredByEmail[entry.email.toLowerCase()]
+    if (!reg) return false
+    // Pseudo auto "user_xxxx" = compte cree mais onboarding non termine.
+    return !/^user_[0-9a-f]+$/i.test(reg.username)
+  }
+
+  /**
+   * Importe des emails colles par l'admin dans la cohorte prelancement.
+   * Dedup + exclusion des emails ayant deja un compte (cf. importPrelaunchEmails).
+   */
+  async function handleImportPrelaunch() {
+    if (importing) return
+    const emails = importText
+      .split(/[\n,;]+/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+    if (emails.length === 0) {
+      toast.error('Aucun email a importer')
+      return
+    }
+    setImporting(true)
+    try {
+      const res = await importPrelaunchEmails(emails)
+      toast.success(
+        `${res.added} email(s) ajoute(s) a la cohorte prelancement`,
+        `Ignores : ${res.skippedDuplicate} doublon(s), ${res.skippedHasAccount} avec compte, ${res.invalid} invalide(s).`,
+      )
+      await logAction({
+        action: 'beta.prelaunch_import',
+        targetType: 'batch',
+        metadata: {
+          added: res.added,
+          skipped_duplicate: res.skippedDuplicate,
+          skipped_has_account: res.skippedHasAccount,
+          invalid: res.invalid,
+          total: res.total,
+        },
+      })
+      queryClient.invalidateQueries({ queryKey: ['beta-waitlist'] })
+      setImportText('')
+      setImportOpen(false)
+      setSourceFilter('prelaunch')
+    } catch (err) {
+      toast.error('Erreur import', err instanceof Error ? err.message : undefined)
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  /**
+   * Bascule en cohorte prelancement les inscriptions waitlist organiques NON
+   * terminees (pas de compte, ou onboarding inacheve). Aucune suppression :
+   * on change juste `source` (l'entree quitte la vue organique pour la cohorte).
+   */
+  async function handleTagIncompleteAsPrelaunch() {
+    if (!supabase) return
+    const ids = waitlist
+      .filter((w) => w.source !== 'prelaunch' && !isEntryFullyRegistered(w))
+      .map((w) => w.id)
+    if (ids.length === 0) {
+      toast.error('Aucune inscription non terminee a basculer')
+      return
+    }
+    if (!window.confirm(`Basculer ${ids.length} inscription(s) non terminee(s) en prelancement ?`))
+      return
+    try {
+      const { error } = await supabase
+        .from('beta_waitlist')
+        .update({ source: 'prelaunch' })
+        .in('id', ids)
+      if (error) throw error
+      await logAction({
+        action: 'beta.prelaunch_tag_incomplete',
+        targetType: 'batch',
+        metadata: { count: ids.length },
+      })
+      toast.success(`${ids.length} inscription(s) basculee(s) en prelancement`)
+      queryClient.invalidateQueries({ queryKey: ['beta-waitlist'] })
+      setSourceFilter('prelaunch')
+    } catch (err) {
+      toast.error('Erreur bascule', err instanceof Error ? err.message : undefined)
+    }
+  }
+
+  /**
+   * Invite la prochaine vague (20 par defaut) de la cohorte prelancement :
+   * les contacts prelancement pas encore invites et sans compte, par ordre
+   * d'anciennete. Chaque envoi reussi est estampille du numero de vague.
+   */
+  async function handleInviteNextWave() {
+    if (!supabase || waveSending) return
+    const maxWave = waitlist.reduce((m, w) => (w.wave && w.wave > m ? w.wave : m), 0)
+    const nextWave = maxWave + 1
+    const candidates = waitlist
+      .filter(
+        (w) =>
+          w.source === 'prelaunch' && !w.invited_at && !registeredByEmail[w.email.toLowerCase()],
+      )
+      .slice(0, WAVE_SIZE)
+    if (candidates.length === 0) {
+      toast.error('Aucun contact prelancement a inviter (tous invites ou inscrits)')
+      return
+    }
+    setWaveSending(true)
+    let sent = 0
+    let failed = 0
+    try {
+      for (const entry of candidates) {
+        const result = await sendBetaInvite(entry.id)
+        if (result.sent) {
+          sent++
+          await supabase.from('beta_waitlist').update({ wave: nextWave }).eq('id', entry.id)
+        } else {
+          failed++
+        }
+      }
+      await logAction({
+        action: 'beta.prelaunch_wave',
+        targetType: 'batch',
+        metadata: { wave: nextWave, sent, failed, size: candidates.length },
+      })
+      queryClient.invalidateQueries({ queryKey: ['beta-waitlist'] })
+      toast.success(
+        `Vague ${nextWave} : ${sent} invitation(s) envoyee(s)`,
+        failed > 0 ? `${failed} echec(s), a relancer.` : undefined,
+      )
+    } finally {
+      setWaveSending(false)
     }
   }
 
@@ -1086,9 +1250,76 @@ export default function AdminBeta() {
           visible de l'inscription à la création de compte (statut dérivé). ── */}
       {activeTab === 'waitlist' && (
         <section className="bg-background border border-border rounded-lg overflow-hidden">
-          {waitlist.length === 0 ? (
+          {/* Barre cohorte prelancement (Nicolas 2026-06-24) : filtre par source,
+              import d'emails, bascule des inscriptions non terminees, envoi par vague. */}
+          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-border bg-[var(--color-bg-secondary)]/30">
+            <div className="inline-flex items-center gap-1">
+              {[
+                { key: 'all' as const, label: 'Tous', count: waitlist.length },
+                {
+                  key: 'organic' as const,
+                  label: 'Organique',
+                  count: waitlist.length - prelaunchCount,
+                },
+                { key: 'prelaunch' as const, label: 'Prélancement', count: prelaunchCount },
+              ].map((f) => (
+                <button
+                  key={f.key}
+                  type="button"
+                  onClick={() => setSourceFilter(f.key)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] ${
+                    sourceFilter === f.key
+                      ? 'bg-[var(--color-action-default)] text-white'
+                      : 'bg-[var(--color-bg-secondary)] text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {f.label}
+                  <span className="tabular-nums opacity-80">{f.count}</span>
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleTagIncompleteAsPrelaunch}
+                title="Basculer les inscriptions non terminees en cohorte prelancement"
+              >
+                Basculer non terminés
+              </Button>
+              {prelaunchCount > 0 && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleInviteNextWave}
+                  disabled={waveSending}
+                  icon={
+                    waveSending ? (
+                      <Loader2 className="size-3.5 motion-safe:animate-spin" aria-hidden="true" />
+                    ) : (
+                      <Send className="size-3.5" aria-hidden="true" />
+                    )
+                  }
+                  title={`Inviter les ${WAVE_SIZE} prochains contacts prelancement`}
+                >
+                  {waveSending ? 'Envoi…' : `Inviter la vague (${WAVE_SIZE})`}
+                </Button>
+              )}
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setImportOpen(true)}
+                icon={<Plus className="size-3.5" aria-hidden="true" />}
+              >
+                Importer (prélancement)
+              </Button>
+            </div>
+          </div>
+          {filteredWaitlist.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-muted-foreground">
-              Waitlist vide, personne n'attend d'invitation pour le moment.
+              {sourceFilter === 'prelaunch'
+                ? 'Cohorte prélancement vide. Clique « Importer » pour coller tes adresses.'
+                : 'Aucune entrée pour ce filtre.'}
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -1102,7 +1333,7 @@ export default function AdminBeta() {
                   </tr>
                 </thead>
                 <tbody>
-                  {waitlist.map((entry, idx) => {
+                  {filteredWaitlist.map((entry, idx) => {
                     // Statut dérivé de l'état réel (cf. helper waitlistStatus).
                     const registered = registeredByEmail[entry.email.toLowerCase()]
                     // Nicolas 2026-06-06 : un profil au pseudo auto "user_xxxxxxxx"
@@ -1131,6 +1362,12 @@ export default function AdminBeta() {
                             <span className="text-foreground font-medium break-all">
                               {entry.email}
                             </span>
+                            {entry.source === 'prelaunch' && (
+                              <span className="inline-flex w-fit items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-primary-light text-primary">
+                                Prélancement
+                                {entry.wave ? ` · vague ${entry.wave}` : ''}
+                              </span>
+                            )}
                             {entry.motivation && (
                               <span className="text-xs text-muted-foreground italic whitespace-pre-line">
                                 « {entry.motivation} »
@@ -1256,6 +1493,59 @@ export default function AdminBeta() {
             </div>
           )}
         </section>
+      )}
+
+      {/* Nicolas 2026-06-24 : modale d'import d'emails dans la cohorte prelancement. */}
+      {importOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="prelaunch-import-title"
+        >
+          <div className="w-full max-w-lg bg-background border border-border rounded-xl shadow-lg p-6 flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <h2 id="prelaunch-import-title" className="text-lg font-bold text-foreground">
+                Importer des emails (prélancement)
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Un email par ligne (ou séparés par virgule). Les doublons et les adresses ayant déjà
+                un compte sont ignorés automatiquement.
+              </p>
+            </div>
+            <textarea
+              value={importText}
+              onChange={(e) => setImportText(e.target.value)}
+              rows={8}
+              placeholder={'alice@example.com\nbob@example.com'}
+              disabled={importing}
+              className="w-full px-3 py-2 rounded-md border border-border bg-[var(--color-bg-primary)] text-foreground text-sm font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] disabled:opacity-50"
+            />
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={() => setImportOpen(false)}
+                disabled={importing}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleImportPrelaunch}
+                disabled={importing || importText.trim() === ''}
+                icon={
+                  importing ? (
+                    <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
+                  ) : undefined
+                }
+              >
+                {importing ? 'Import…' : 'Importer'}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Nicolas 2026-05-19 : confirmation suppression entrée waitlist (DELETE). */}

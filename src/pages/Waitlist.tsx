@@ -30,6 +30,7 @@ import { BetaAuthLayout } from '@/components/auth/BetaAuthLayout'
 import { useToast } from '@/contexts/ToastContext'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { joinWaitlist } from '@/services/betaService'
+import { MARKETING_CONSENT_ENABLED } from '@/lib/featureFlags'
 
 export default function Waitlist() {
   const { t } = useTranslation()
@@ -41,6 +42,11 @@ export default function Waitlist() {
   const [motivation, setMotivation] = useState('')
   // Opt-in marketing RGPD : decoche par defaut (pas de consentement presume).
   const [marketingConsent, setMarketingConsent] = useState(false)
+  // Honeypot anti-bot : champ cache que seuls les bots remplissent. Aucun
+  // captcha ni appel reseau (eco-conception), invisible et neutre pour les
+  // lecteurs d'ecran (aria-hidden + hors flux). Rempli => on simule un succes
+  // sans rien inserer en base.
+  const [honeypot, setHoneypot] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [alreadyOnList, setAlreadyOnList] = useState(false)
@@ -48,6 +54,13 @@ export default function Waitlist() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (isSubmitting) return
+
+    // Honeypot : un humain ne voit pas ce champ et ne le remplit jamais.
+    // On feint le succes (pas de signal exploitable pour le bot), sans INSERT.
+    if (honeypot.trim() !== '') {
+      setSubmitted(true)
+      return
+    }
 
     const trimmedEmail = email.trim().toLowerCase()
     if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
@@ -138,6 +151,33 @@ export default function Waitlist() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-3 md:gap-4 w-full" noValidate>
+            {/* Honeypot anti-bot : hors flux visuel + invisible aux lecteurs
+                d'ecran (aria-hidden, tabIndex -1). Les humains ne le voient pas
+                et ne le remplissent jamais ; les bots qui remplissent tous les
+                champs se trahissent. */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                width: 1,
+                height: 1,
+                overflow: 'hidden',
+                clip: 'rect(0 0 0 0)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <label htmlFor="waitlist-website">Ne pas remplir ce champ</label>
+              <input
+                id="waitlist-website"
+                type="text"
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+              />
+            </div>
+
             <div className="flex flex-col gap-1.5 w-full">
               <label
                 htmlFor="waitlist-email"
@@ -219,22 +259,26 @@ export default function Waitlist() {
                 separe pour les communications marketing. Decoche par defaut,
                 non bloquant. Condition prealable a l'import de l'email dans
                 l'outil d'emailing (NG-009). L'email de cle d'acces, lui, est
-                transactionnel et part independamment de cette case. */}
-            <label className="flex items-start gap-2.5 w-full cursor-pointer text-left">
-              <input
-                type="checkbox"
-                checked={marketingConsent}
-                onChange={(e) => setMarketingConsent(e.target.checked)}
-                disabled={isSubmitting}
-                className="mt-0.5 size-4 shrink-0 rounded border-[var(--color-border)] accent-[var(--color-action-default)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] disabled:opacity-50"
-              />
-              <span className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
-                {t('waitlist.marketingConsentLabel', {
-                  defaultValue:
-                    'Je veux aussi recevoir les nouvelles de Naturegraph (lancement, nouveautés). Optionnel, désinscription à tout moment.',
-                })}
-              </span>
-            </label>
+                transactionnel et part independamment de cette case.
+                Masque tant qu'on n'est pas en phase marketing (Nicolas 2026-06-24,
+                cf. MARKETING_CONSENT_ENABLED) : reaffichage en 1 ligne pour aout. */}
+            {MARKETING_CONSENT_ENABLED && (
+              <label className="flex items-start gap-2.5 w-full cursor-pointer text-left">
+                <input
+                  type="checkbox"
+                  checked={marketingConsent}
+                  onChange={(e) => setMarketingConsent(e.target.checked)}
+                  disabled={isSubmitting}
+                  className="mt-0.5 size-4 shrink-0 rounded border-[var(--color-border)] accent-[var(--color-action-default)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] disabled:opacity-50"
+                />
+                <span className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+                  {t('waitlist.marketingConsentLabel', {
+                    defaultValue:
+                      'Je veux aussi recevoir les nouvelles de Naturegraph (lancement, nouveautés). Optionnel, désinscription à tout moment.',
+                  })}
+                </span>
+              </label>
+            )}
 
             {/* Mention de transparence RGPD (Art. 13) : finalite (transactionnelle)
                 de la collecte de l'email + lien vers la politique de confidentialite. */}

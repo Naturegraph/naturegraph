@@ -48,3 +48,18 @@ export const NOTEBOOKS_ENABLED = LABS_ENABLED
  * votes, affichage distinctif). Masquee sur le site public prod (en test).
  */
 export const IDENTIFICATION_HELP_ENABLED = LABS_ENABLED
+
+/**
+ * Consentement marketing (opt-in newsletter sur le formulaire waitlist).
+ *
+ * Decision Nicolas (2026-06-24) : MASQUE PARTOUT pour l'instant, on n'est pas
+ * encore en phase marketing / mailing / newsletter (MailerLite prevu pour aout).
+ * Afficher une case "recevoir les nouvelles" maintenant n'aurait pas de sens.
+ *
+ * Reversible : passer a `true` reaffiche la case quand la phase marketing demarre.
+ * Non destructif : la colonne `beta_waitlist.marketing_consent` reste en place
+ * (toujours false tant que la case est masquee). La mention transactionnelle et
+ * le lien vers la politique de confidentialite, eux, restent toujours affiches
+ * (transparence RGPD de base, independante du marketing).
+ */
+export const MARKETING_CONSENT_ENABLED = false
