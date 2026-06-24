@@ -273,6 +273,8 @@ export type Database = {
           invite_count: number
           invited_at: string | null
           invited_with_key_id: string | null
+          marketing_consent: boolean
+          marketing_consent_at: string | null
           motivation: string | null
           notes: string | null
         }
@@ -285,6 +287,8 @@ export type Database = {
           invite_count?: number
           invited_at?: string | null
           invited_with_key_id?: string | null
+          marketing_consent?: boolean
+          marketing_consent_at?: string | null
           motivation?: string | null
           notes?: string | null
         }
@@ -297,6 +301,8 @@ export type Database = {
           invite_count?: number
           invited_at?: string | null
           invited_with_key_id?: string | null
+          marketing_consent?: boolean
+          marketing_consent_at?: string | null
           motivation?: string | null
           notes?: string | null
         }
