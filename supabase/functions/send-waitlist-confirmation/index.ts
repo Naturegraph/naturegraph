@@ -14,10 +14,19 @@
  * Variables d'env (à configurer dans Supabase Dashboard → Edge Functions → Secrets) :
  *   - RESEND_API_KEY  : clé API Resend (https://resend.com/api-keys) : requis pour envoyer
  *   - RESEND_FROM     : optionnel, default "Naturegraph <support@naturegraph.ca>"
+ *   - WAITLIST_TRIGGER_SECRET : secret partagé avec le trigger DB (voir ci-dessous)
  *   - SUPABASE_URL    : injecté automatiquement
  *   - SUPABASE_SERVICE_ROLE_KEY : injecté automatiquement
  *
- * verify_jwt : false (declenché par trigger DB, pas par user client)
+ * verify_jwt : false (declenché par trigger DB, pas par user client). Comme la
+ * fonction est publiquement atteignable, un secret partagé (header
+ * `x-waitlist-secret`) authentifie l'appelant et bloque l'abus (envoi d'emails
+ * brandés arbitraires + consommation du quota Resend). Le trigger PostgreSQL
+ * lit ce secret depuis Supabase Vault et le transmet en header.
+ *
+ * Rollout progressif : si WAITLIST_TRIGGER_SECRET n'est pas configuré, la
+ * fonction logge un avertissement et continue (compat ascendante), le temps
+ * de poser le secret des deux côtés. Une fois configuré, le secret est exigé.
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
@@ -26,6 +35,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? ''
 const RESEND_FROM = Deno.env.get('RESEND_FROM') ?? 'Naturegraph <support@naturegraph.ca>'
+const TRIGGER_SECRET = Deno.env.get('WAITLIST_TRIGGER_SECRET') ?? ''
 
 interface WaitlistRecord {
   id: string
@@ -34,7 +44,34 @@ interface WaitlistRecord {
   created_at: string
 }
 
+/**
+ * Comparaison à temps constant : évite de fuiter le secret via le timing
+ * (early-return sur la première différence). La longueur peut fuiter, sans
+ * conséquence pratique ici.
+ */
+function timingSafeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder()
+  const ab = enc.encode(a)
+  const bb = enc.encode(b)
+  if (ab.length !== bb.length) return false
+  let diff = 0
+  for (let i = 0; i < ab.length; i++) diff |= ab[i] ^ bb[i]
+  return diff === 0
+}
+
 Deno.serve(async (req: Request) => {
+  // ── Authentification de l'appelant (secret partagé avec le trigger DB) ──
+  if (TRIGGER_SECRET) {
+    const provided = req.headers.get('x-waitlist-secret') ?? ''
+    if (!timingSafeEqual(provided, TRIGGER_SECRET)) {
+      return new Response('Unauthorized', { status: 401 })
+    }
+  } else {
+    console.warn(
+      '[send-waitlist-confirmation] WAITLIST_TRIGGER_SECRET non configuré : endpoint non protégé (rollout en cours).',
+    )
+  }
+
   let payload: { record?: WaitlistRecord; type?: string }
   try {
     payload = await req.json()
