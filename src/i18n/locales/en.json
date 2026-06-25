@@ -236,7 +236,7 @@
     },
     "verify": {
       "title": "Check your inbox",
-      "description": "We sent you a 6-digit code to {{email}}.",
+      "description": "We sent you a 6-digit code to {{email}}. If it doesn't arrive right away, please check your spam or junk folder.",
       "codeLabel": "Verification code",
       "noCode": "Didn't receive the code?",
       "resend": "Resend code",
