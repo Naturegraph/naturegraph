@@ -152,3 +152,72 @@ Tickets a prevoir :
 - Pas de tiret cadratin/demi-cadratin. TS strict. Eco-conception + WCAG AA.
 - Mon MCP technique ne touche que le projet Supabase dev : toute action prod
   (migrations, secrets, toggles Auth) est faite manuellement cote fondateur.
+
+## 7. Convention de ticket (pour des tickets coherents)
+
+Chaque ticket cree devrait porter ces champs (homogeneite + tracabilite) :
+
+- **Titre** : verbe d'action court.
+- **Objectif** : 1 phrase (le "pourquoi").
+- **Scope** : ce qui est inclus / explicitement exclu.
+- **Criteres d'acceptation (DoD)** : verifiables, testables.
+- **Dependances** : "bloque par" / "bloque".
+- **Env impacte** : dev / staging / prod.
+- **Risque** : faible / moyen / eleve.
+- **Flag associe** : le cas echeant (ex OPEN_ACCESS_ENABLED).
+- **Action fondateur requise** : oui/non + quoi (dashboard Supabase/Hostinger/Resend).
+- **Priorite** : P0 (bloque le lancement) / P1 (important) / P2 (confort).
+
+## 8. Sequencement critique (anti-erreurs) — A NE PAS INVERSER
+
+- **Ne JAMAIS activer `OPEN_ACCESS` en prod avant** d'avoir livre : D2 (anti-abus
+  signup), D3 (re-audit RLS guest/inscription ouverte), A6 (nettoyage messaging) et
+  la mise a jour legale. Ouvrir sans ces prerequis = spam/abus/fuite potentielle.
+- La **securite (EPIC D) accompagne ou precede l'ouverture (EPIC A)**, jamais apres.
+- Tout changement structurel : **teste sur staging avec le flag** avant prod.
+- **Checklist Go/No-Go obligatoire** avant de basculer le flag en prod (cf. section 9).
+- Les invitations cohorte 2024 (EPIC C) sont **independantes** du gate (les liens
+  d'invitation contournent le code) : peuvent partir avant l'ouverture.
+
+## 9. Epics/tickets additionnels suggeres (a integrer)
+
+### EPIC G — Observabilite & delivrabilite
+
+- G1. Dashboard Resend + alertes (taux de rebond > 2%, spam > 0.1%).
+- G2. Google Postmaster Tools sur naturegraph.ca (reputation Gmail).
+- G3. Funnel d'inscription mesure : visite -> compte cree -> onboarding fini ->
+  1re observation. Definir la metrique d'"utilisateur actif".
+- G4. Sentry (deja en place) : verifier la couverture sur les parcours ouverts.
+
+### EPIC H — Moderation & confiance a l'echelle (signup ouvert = users inconnus)
+
+- H1. File de signalements + outils admin de moderation operationnels.
+- H2. Mots bannis / filtres de contenu a l'inscription et a la publication.
+- H3. Process de moderation (qui, quand, escalade) documente.
+
+### EPIC I — Resilience & garde-fous
+
+- I1. Plan de rollback documente : `OPEN_ACCESS=false` en cas d'abus/incident.
+- I2. Garde-fous cout/quota : limites Resend (3000/mois, 100/jour en free) et quotas
+  Supabase ; alerte en cas de pic. Warm-up du domaine d'envoi (vagues de 20 = bon
+  rythme initial).
+- I3. Sauvegardes/restauration DB (Supabase backups) verifiees.
+- I4. Suppression de compte + export de donnees : confirmer qu'ils fonctionnent dans
+  le flux ouvert (RGPD).
+
+### EPIC J — Support & legal en mode public
+
+- J1. Process support@ (qui repond, SLA) maintenant que la boite est live.
+- J2. Acceptation CGU/Confidentialite a l'inscription ouverte ; question des mineurs
+  (age minimum) ; duree de conservation.
+- J3. i18n emails : actuellement FR uniquement ; decider si EN necessaire selon l'audience.
+
+## 10. Meta-organisation Notion (pour piloter sans rien perdre)
+
+- **Une page "Go/No-Go prelancement"** : checklist unique a valider avant chaque
+  bascule prod sensible (ouverture acces, etc.). Source de verite du "pret a lancer".
+- **Priorisation P0/P1/P2** + champ **"bloque par"** pour les dependances (section 8).
+- **Tags** : epic, env, risque, flag, et surtout **"action fondateur (dashboard)"**
+  vs **"code"** : separe clairement ce que je fais de ce qui depend de tes clics.
+- **Vue par phase** : "Maintenant (cohorte+ouverture)" / "2 mois d'iteration" /
+  "Lancement public post-aout", pour ne pas melanger les horizons.
