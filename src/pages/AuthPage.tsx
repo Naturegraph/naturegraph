@@ -20,6 +20,7 @@ import { BetaKeyGate } from '@/components/auth/BetaKeyGate'
 import { AuthOrbBackground, useAuthOrbTracking } from '@/components/auth/AuthOrbBackground'
 import OnboardingComponent from '@/components/onboarding'
 import { validateBetaKey } from '@/services/betaService'
+import { OPEN_ACCESS_ENABLED } from '@/lib/featureFlags'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -29,7 +30,10 @@ import { validateBetaKey } from '@/services/betaService'
 // la cle se fait silencieusement post-OTP via validateBetaKey().
 type AuthMode = 'beta-key' | 'signup' | 'login' | 'verification' | 'onboarding'
 
-const BETA_GATE_ENABLED = import.meta.env.VITE_BETA_GATE_ENABLED === 'true'
+// Gate beta au signup (saisie + claim d'une cle). Pilote par l'env
+// VITE_BETA_GATE_ENABLED, et DESACTIVE des que l'acces ouvert (NG-029) est actif :
+// en early access, l'inscription est libre, sans cle ni claim.
+const BETA_GATE_ENABLED = !OPEN_ACCESS_ENABLED && import.meta.env.VITE_BETA_GATE_ENABLED === 'true'
 
 interface AuthPageProps {
   /** Mode initial : 'signup' par défaut */
