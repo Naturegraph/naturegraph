@@ -1243,7 +1243,7 @@
       "dashboard": "Dashboard",
       "users": "Users",
       "moderation": "Moderation",
-      "beta": "Beta",
+      "beta": "Prelaunch",
       "audit": "Audit"
     },
     "header": {
@@ -1381,7 +1381,7 @@
       "warningLogged": "All actions logged"
     },
     "beta": {
-      "title": "Closed beta management",
+      "title": "Prelaunch",
       "phase": "Phase {{n}}",
       "usersOf": "{{current}} / {{max}} users ({{pct}}%)",
       "acceptingSignups": "🟢 Accepting signups",

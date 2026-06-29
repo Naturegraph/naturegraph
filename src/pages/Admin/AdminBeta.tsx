@@ -1,5 +1,5 @@
 /**
- * AdminBeta, Module 4 : Gestion beta fermee
+ * AdminBeta, Module 4 : Prelancement (ex gestion beta fermee)
  *
  * Refs : ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md v2.0 Module 4 + BATCH 32
  *
@@ -126,17 +126,21 @@ function keyStatus(k: BetaAccessKey): { label: string; badgeClass: string } {
 
 /**
  * Statut de suivi d'une entrée waitlist, dérivé de son état réel :
- *   - Inscrit       : un compte existe pour cet email (priorité absolue)
+ *   - Inscrit       : compte créé ET onboarding terminé (priorité absolue)
  *   - Échec d'envoi : le dernier email d'invitation n'est pas parti
- *   - Invité        : clé envoyée, en attente de création de compte
- *   - En attente    : sur la waitlist, pas encore invité
+ *   - En cours      : compte créé mais inscription pas finalisée (onboarding
+ *                     inachevé, pseudo auto "user_xxxx")
+ *   - Invité        : email envoyé, en attente de création de compte
+ *   - En attente    : sur la liste, pas encore invité
  *
- * `isRegistered` est calculé par jointure profiles.email = waitlist.email :
- * la source de vérité est l'existence du compte, jamais une colonne stockée.
+ * `isRegistered` / `isOnboarding` sont calculés par jointure profiles.email =
+ * waitlist.email : la source de vérité est l'existence du compte et l'état de
+ * son pseudo, jamais une colonne stockée.
  */
 function waitlistStatus(
   entry: BetaWaitlistEntry,
   isRegistered: boolean,
+  isOnboarding: boolean,
 ): { label: string; badgeClass: string } {
   if (isRegistered)
     return {
@@ -147,6 +151,11 @@ function waitlistStatus(
     return {
       label: "Échec d'envoi",
       badgeClass: 'bg-[var(--color-error-bg)] text-[var(--color-error)]',
+    }
+  if (isOnboarding)
+    return {
+      label: 'En cours',
+      badgeClass: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
     }
   if (entry.invited_at)
     return {
@@ -193,7 +202,6 @@ export default function AdminBeta() {
   // Nicolas 2026-05-19 : permet au super admin de revoir la welcome screen
   // comme s'il découvrait le produit (clear le localStorage + redirect /welcome).
   const { revokeAccess } = useBetaAccess()
-  const [isGenerating, setIsGenerating] = useState(false)
   // BATCH 107 : modale double-confirmation pour suppression réelle
   const [keyToDelete, setKeyToDelete] = useState<BetaAccessKey | null>(null)
   // BATCH 108 : tab actif (cohérence AdminUsers : Clés / Waitlist / Stats)
@@ -463,50 +471,6 @@ export default function AdminBeta() {
     },
     staleTime: STALE_TIMES.LONG,
   })
-
-  // Next batch number (max + 1)
-  const nextBatch = useMemo(() => {
-    if (keys.length === 0) return 1
-    return Math.max(...keys.map((k) => k.batch_number)) + 1
-  }, [keys])
-
-  async function handleGenerateKeys() {
-    if (!supabase || isGenerating) return
-    setIsGenerating(true)
-    try {
-      // Nicolas 2026-05-19 : 365 jours minimum pour éviter de frustrer les
-      // testeurs avec des clés qui expirent trop vite (7j initialement).
-      const { data, error } = await supabase.rpc('generate_beta_keys', {
-        p_batch_number: nextBatch,
-        p_count: 10,
-        p_max_uses: 1,
-        p_expires_days: 365,
-        p_notes: `Vague ${nextBatch}, ${new Date().toISOString().slice(0, 10)}`,
-      })
-      if (error) throw error
-      toast.success(
-        t('admin.beta.generateSuccess', {
-          defaultValue: `10 cles generees (vague ${nextBatch})`,
-        }),
-      )
-      queryClient.invalidateQueries({ queryKey: ['beta-keys'] })
-      // Log audit (BATCH 36 : via useAdminAction)
-      await logAction({
-        action: 'beta.key_gen',
-        targetType: 'batch',
-        metadata: { batch_number: nextBatch, count: 10 },
-      })
-      // Données loggées dans admin_audit_logs (action: beta.key_gen), pas besoin de console
-      void data
-    } catch (err) {
-      toast.error(
-        t('admin.beta.generateError', { defaultValue: 'Erreur generation cles' }),
-        err instanceof Error ? err.message : undefined,
-      )
-    } finally {
-      setIsGenerating(false)
-    }
-  }
 
   async function handleDeactivateKey(keyId: string, code: string) {
     if (!supabase) return
@@ -867,7 +831,7 @@ export default function AdminBeta() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-bold text-foreground">
-            {t('admin.beta.title', { defaultValue: 'Gestion beta fermee' })}
+            {t('admin.beta.title', { defaultValue: 'Prélancement' })}
           </h1>
           {quota && (
             <div className="flex flex-wrap items-center gap-4 text-sm">
@@ -914,21 +878,6 @@ export default function AdminBeta() {
             icon={<Eye className="size-4" aria-hidden="true" />}
           >
             Aperçu écran d&apos;accueil
-          </Button>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={handleGenerateKeys}
-            disabled={isGenerating}
-            icon={
-              isGenerating ? (
-                <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
-              ) : (
-                <Plus className="size-4" aria-hidden="true" />
-              )
-            }
-          >
-            {isGenerating ? 'Génération…' : `Générer 10 clés (vague ${nextBatch})`}
           </Button>
         </div>
       </div>
@@ -1018,7 +967,8 @@ export default function AdminBeta() {
         <section className="bg-background border border-border rounded-lg overflow-hidden">
           {keys.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-muted-foreground">
-              Aucune clé générée. Clique "Générer 10 clés" pour démarrer la vague 1.
+              Aucune clé d'accès. La génération de clés est désactivée depuis le passage en accès
+              ouvert (les invitations se gèrent dans l'onglet Waitlist).
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -1344,7 +1294,9 @@ export default function AdminBeta() {
                     const isAutoUsername =
                       !!registered && /^user_[0-9a-f]+$/i.test(registered.username)
                     const isFullyRegistered = !!registered && !isAutoUsername
-                    const status = waitlistStatus(entry, isFullyRegistered)
+                    // En cours = compte cree mais onboarding non termine (pseudo auto).
+                    const isOnboarding = isAutoUsername
+                    const status = waitlistStatus(entry, isFullyRegistered, isOnboarding)
                     const isInvited = !!entry.invited_at
                     const isProcessing = processingId === entry.id
                     return (
