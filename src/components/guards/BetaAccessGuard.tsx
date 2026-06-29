@@ -16,6 +16,7 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { useBetaAccess } from '@/hooks/useBetaAccess'
 import { useAuth } from '@/contexts/AuthContext'
 import { LoadingState } from '@/components/ui'
+import { OPEN_ACCESS_ENABLED } from '@/lib/featureFlags'
 
 interface BetaAccessGuardProps {
   children: React.ReactNode
@@ -25,6 +26,13 @@ export function BetaAccessGuard({ children }: BetaAccessGuardProps) {
   const { hasAccess, isReady } = useBetaAccess()
   const { isAuthenticated, isLoading } = useAuth()
   const location = useLocation()
+
+  // Acces ouvert (NG-029) : quand le flag est actif, plus de gate code. L'app
+  // est accessible librement (le code beta n'est plus exige). Court-circuit en
+  // tete pour eviter tout flash de /welcome ou attente d'hydratation.
+  if (OPEN_ACCESS_ENABLED) {
+    return <>{children}</>
+  }
 
   // On attend l'hydratation du gate localStorage ET la résolution de la
   // session Supabase (sinon un invité fraîchement authentifié serait, le temps

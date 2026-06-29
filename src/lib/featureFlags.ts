@@ -63,3 +63,20 @@ export const IDENTIFICATION_HELP_ENABLED = LABS_ENABLED
  * (transparence RGPD de base, independante du marketing).
  */
 export const MARKETING_CONSENT_ENABLED = false
+
+/**
+ * Acces ouvert / early access (NG-029, Epic A).
+ *
+ * Quand ACTIF : supprime la beta fermee + le code d'acces. L'app est accessible
+ * sans cle (BetaAccessGuard transparent), l'inscription est libre depuis la
+ * landing, le messaging "beta fermee" devient "acces anticipe".
+ *
+ * Quand INACTIF (defaut) : comportement actuel inchange (gate code via
+ * BetaAccessGuard + /welcome).
+ *
+ * Reversible a tout moment (repasser a false). On NE bascule en prod qu'une fois
+ * la checklist go/no-go (NG-039) verte : securite (NG-032), legal (NG-038),
+ * stabilite. Tant que false, ce flag n'a aucun effet : on peut donc construire
+ * et merger sans risque.
+ */
+export const OPEN_ACCESS_ENABLED = false

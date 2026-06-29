@@ -1,0 +1,93 @@
+<!--
+  Template d'email : INVITATION cohorte prelancement 2024 (relance douce, sans code)
+  =================================================================================
+  DA identique au template OTP "Magic Link" (meme en-tete violet, logo, couleurs,
+  footer). Le bloc "code" est remplace par le bouton d'invitation.
+
+  Usage : Supabase (naturegraph-prod) -> Authentication -> Emails -> Templates
+          -> "Invite user".
+  - Objet (Subject heading) : Naturegraph t'ouvre ses portes
+  - Corps : coller le HTML ci-dessous (a partir de <!DOCTYPE html>).
+
+  Variable : {{ .ConfirmationURL }} = lien d'invitation. AUCUN code d'acces.
+
+  ATTENTION : template "Invite user" UNIQUE pour toutes les invitations. Mettre
+  cette version le temps d'inviter la cohorte 2024, puis remettre une version
+  generique apres.
+-->
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
+    <title>Naturegraph t'ouvre ses portes</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#fffaf0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#13131a;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fffaf0;padding:40px 20px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;background-color:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(60,67,128,0.08);">
+            <!-- En-tete (identique OTP) -->
+            <tr>
+              <td align="center" style="padding:36px 40px 28px 40px;background-color:#5f5dd8;">
+                <img src="https://naturegraph.ca/hermine-icon.png" alt="Naturegraph" width="56" height="56" style="display:block;margin:0 auto 12px auto;border:0;outline:none;text-decoration:none;border-radius:50%;background-color:#ffffff;padding:4px;" />
+                <div style="font-size:28px;font-weight:700;letter-spacing:-0.5px;color:#ffffff;font-family:'Quicksand',-apple-system,sans-serif;">Naturegraph</div>
+                <div style="font-size:13px;color:#ced3f0;margin-top:6px;letter-spacing:0.3px;font-style:italic;">Partageons nos émotions</div>
+              </td>
+            </tr>
+
+            <!-- Lettre, partie 1 (aligne a gauche) -->
+            <tr>
+              <td style="padding:44px 48px 8px 48px;" align="left">
+                <p style="margin:0 0 16px 0;font-size:15px;line-height:1.7;color:#565666;text-align:left;">Bonjour,</p>
+                <p style="margin:0 0 16px 0;font-size:15px;line-height:1.7;color:#565666;text-align:left;">Il y a un peu plus d'un an, tu t'es inscrit pour rejoindre Naturegraph.</p>
+                <p style="margin:0 0 16px 0;font-size:15px;line-height:1.7;color:#565666;text-align:left;">À l'époque, je pensais pouvoir ouvrir les portes beaucoup plus rapidement. La réalité a été différente. Certaines décisions n'ont pas été les bonnes, j'ai dû revoir plusieurs parties du projet, corriger des erreurs et parfois repartir de zéro.</p>
+                <p style="margin:0 0 16px 0;font-size:15px;line-height:1.7;color:#565666;text-align:left;">Cela a pris bien plus de temps que prévu.</p>
+                <p style="margin:0 0 16px 0;font-size:15px;line-height:1.7;color:#565666;text-align:left;">Je tenais donc d'abord à te remercier pour ta patience, mais aussi à m'excuser pour cette attente.</p>
+                <p style="margin:0 0 16px 0;font-size:15px;line-height:1.7;color:#565666;text-align:left;">La bonne nouvelle, c'est que Naturegraph est enfin prêt à accueillir ses premiers utilisateurs dans le cadre de cette phase de pré-lancement.</p>
+                <p style="margin:0;font-size:15px;line-height:1.7;color:#13131a;font-weight:600;text-align:left;">Tu peux dès maintenant finaliser ton inscription et accéder à la plateforme :</p>
+              </td>
+            </tr>
+
+            <!-- Bouton (aligne a gauche) -->
+            <tr>
+              <td align="left" style="padding:24px 48px 28px 48px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="left">
+                  <tr>
+                    <td align="center" style="border-radius:999px;background-color:#5f5dd8;box-shadow:0 6px 16px rgba(95,93,216,0.30);">
+                      <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:16px 44px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;font-family:'Quicksand',-apple-system,sans-serif;border-radius:999px;">Finaliser mon inscription</a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Lettre, partie 2 (aligne a gauche) -->
+            <tr>
+              <td style="padding:0 48px 40px 48px;" align="left">
+                <p style="margin:0 0 16px 0;font-size:15px;line-height:1.7;color:#565666;text-align:left;">Naturegraph est accessible depuis un ordinateur, une tablette ou un téléphone, sans installation particulière.</p>
+                <p style="margin:0 0 16px 0;font-size:15px;line-height:1.7;color:#565666;text-align:left;">L'objectif de cette phase est simple : observer comment la plateforme vit avec ses premiers membres, recueillir vos retours et continuer à l'améliorer avant une ouverture plus large.</p>
+                <p style="margin:0 0 16px 0;font-size:15px;line-height:1.7;color:#565666;text-align:left;">Tu fais partie des toutes premières personnes invitées à découvrir ce projet.</p>
+                <p style="margin:0 0 16px 0;font-size:15px;line-height:1.7;color:#565666;text-align:left;">Si tu décides de nous rejoindre, n'hésite pas à explorer, publier quelques observations, construire ton journal de nature et surtout me faire part de tes impressions. Les retours des premiers utilisateurs auront un rôle essentiel dans la suite du projet.</p>
+                <p style="margin:0 0 16px 0;font-size:15px;line-height:1.7;color:#565666;text-align:left;">Et si tu rencontres un problème, si quelque chose te semble confus ou si tu as simplement une idée à partager, tu peux répondre directement à cet email. Je lis personnellement chaque message.</p>
+                <p style="margin:0 0 16px 0;font-size:15px;line-height:1.7;color:#565666;text-align:left;">Merci encore pour la confiance que tu m'as accordée il y a un an, et pour celle que tu continues de m'accorder aujourd'hui.</p>
+                <p style="margin:0 0 24px 0;font-size:15px;line-height:1.7;color:#565666;text-align:left;">J'espère que Naturegraph sera à la hauteur de l'envie qui t'avait poussé à t'inscrire à l'époque.</p>
+                <p style="margin:0;font-size:15px;line-height:1.6;color:#13131a;text-align:left;">Bonne découverte,<br /><strong>Nicolas</strong><br /><span style="font-size:13px;color:#8a8898;">Fondateur de Naturegraph</span></p>
+              </td>
+            </tr>
+
+            <!-- Footer (identique OTP, adresse corrigee) -->
+            <tr>
+              <td style="padding:24px 48px;background-color:#f3f4fb;border-top:1px solid #e7e9f7;" align="center">
+                <p style="margin:0 0 8px 0;font-size:12px;color:#4a4869;">Besoin d'aide ? Contacte-nous à <a href="mailto:support@naturegraph.ca" style="color:#5f5dd8;text-decoration:none;font-weight:600;">support@naturegraph.ca</a></p>
+                <p style="margin:0;font-size:11px;color:#6b6981;">© 2026 Naturegraph · Partageons nos émotions</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
