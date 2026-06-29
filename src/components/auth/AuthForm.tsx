@@ -114,6 +114,9 @@ export function AuthForm({
   const [value, setValue] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  // Honeypot anti-bot (NG-032) : champ cache que seuls les bots remplissent.
+  // Rempli => on annule silencieusement (pas de submit, aucun signal renvoye).
+  const [honeypot, setHoneypot] = useState('')
   // Cochée par défaut (Nicolas 2026-05-22) : l'attente d'une app moderne est
   // une session persistante. Sans ça, l'utilisateur doit redemander un OTP à
   // chaque fermeture de navigateur, expérience trop frustrante pour une beta.
@@ -125,6 +128,11 @@ export function AuthForm({
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError('')
+
+    // Honeypot : un humain ne voit pas ce champ. Rempli = bot -> on n'envoie rien.
+    if (honeypot.trim() !== '') {
+      return
+    }
 
     const trimmed = value.trim()
     if (!trimmed) {
@@ -183,6 +191,32 @@ export function AuthForm({
             error={error}
             disabled={isLoading}
           />
+
+          {/* Honeypot anti-bot (NG-032) : hors flux + invisible aux lecteurs
+              d'ecran (aria-hidden, tabIndex -1). Les humains ne le remplissent
+              jamais ; un bot qui remplit tout se trahit. */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              width: 1,
+              height: 1,
+              overflow: 'hidden',
+              clip: 'rect(0 0 0 0)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <label htmlFor="auth-website">Ne pas remplir ce champ</label>
+            <input
+              id="auth-website"
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+            />
+          </div>
 
           {/* Checkbox "Se souvenir de moi" : affichée uniquement sur login */}
           {rememberMe && (
