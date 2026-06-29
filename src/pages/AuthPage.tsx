@@ -19,7 +19,7 @@ import { SignupForm, LoginForm, VerificationForm } from '@/components/auth'
 import { BetaKeyGate } from '@/components/auth/BetaKeyGate'
 import { AuthOrbBackground, useAuthOrbTracking } from '@/components/auth/AuthOrbBackground'
 import OnboardingComponent from '@/components/onboarding'
-import { validateBetaKey } from '@/services/betaService'
+import { validateBetaKey, getBetaQuotaStatus } from '@/services/betaService'
 import { OPEN_ACCESS_ENABLED } from '@/lib/featureFlags'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -114,6 +114,24 @@ export default function AuthPage({
       navigate(target, { replace: true })
     }
   }, [isAuthenticated, mode, initialAuthMode, onboardingCompleted, navigate])
+
+  // Acces ouvert (NG-029) : garde-fou quota au signup. Quand le flag est actif,
+  // l'inscription est libre MAIS bornee par le cap configure en base
+  // (beta_quota_config.max_users_total, ex 500). Si le cap est atteint, le
+  // signup bascule vers la waitlist (fallback, decision Nicolas 2026-06-26). La
+  // connexion (login) n'est jamais bloquee : seuls les NOUVEAUX comptes le sont.
+  useEffect(() => {
+    if (!OPEN_ACCESS_ENABLED || initialMode !== 'signup') return
+    let cancelled = false
+    getBetaQuotaStatus().then((quota) => {
+      if (!cancelled && quota?.is_full) {
+        navigate('/waitlist', { replace: true })
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [initialMode, navigate])
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
