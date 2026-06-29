@@ -22,7 +22,7 @@
  */
 
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Loader2, Mail, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -30,7 +30,7 @@ import { BetaAuthLayout } from '@/components/auth/BetaAuthLayout'
 import { useToast } from '@/contexts/ToastContext'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { joinWaitlist } from '@/services/betaService'
-import { MARKETING_CONSENT_ENABLED } from '@/lib/featureFlags'
+import { MARKETING_CONSENT_ENABLED, OPEN_ACCESS_ENABLED } from '@/lib/featureFlags'
 
 export default function Waitlist() {
   const { t } = useTranslation()
@@ -92,6 +92,13 @@ export default function Waitlist() {
     }
 
     setIsSubmitting(false)
+  }
+
+  // Acces ouvert (NG-029) : plus de liste d'attente en early access (l'inscription
+  // est libre). Toute visite de /waitlist repart vers la landing. La page reste
+  // dans le code pour le mode beta ferme (flag OFF) et l'eventuel retour arriere.
+  if (OPEN_ACCESS_ENABLED) {
+    return <Navigate to="/" replace />
   }
 
   return (
