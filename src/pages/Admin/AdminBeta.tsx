@@ -625,6 +625,21 @@ export default function AdminBeta() {
     [waitlist],
   )
 
+  // Prochaine vague a envoyer : la plus petite vague avec des contacts encore
+  // non invites et sans compte (respecte les vagues pre-assignees a l'import).
+  const nextWaveInfo = useMemo(() => {
+    const pending = waitlist.filter(
+      (w) => w.source === 'prelaunch' && !w.invited_at && !registeredByEmail[w.email.toLowerCase()],
+    )
+    if (pending.length === 0) return null
+    const waved = pending.filter((w) => w.wave != null)
+    if (waved.length > 0) {
+      const wave = Math.min(...waved.map((w) => w.wave as number))
+      return { wave, count: pending.filter((w) => w.wave === wave).length }
+    }
+    return { wave: null as number | null, count: Math.min(pending.length, WAVE_SIZE) }
+  }, [waitlist, registeredByEmail])
+
   /** True si l'entree correspond a un compte pleinement inscrit (onboarding fini). */
   function isEntryFullyRegistered(entry: BetaWaitlistEntry): boolean {
     const reg = registeredByEmail[entry.email.toLowerCase()]
@@ -712,24 +727,34 @@ export default function AdminBeta() {
   }
 
   /**
-   * Invite la prochaine vague (20 par defaut) de la cohorte prelancement :
-   * les contacts prelancement pas encore invites et sans compte, par ordre
-   * d'anciennete. Chaque envoi reussi est estampille du numero de vague.
+   * Invite la PROCHAINE vague en attente de la cohorte prelancement.
+   *
+   * Respecte les numeros de vague pre-assignes (import) : on envoie la plus
+   * petite vague qui a encore des contacts non invites et sans compte. A defaut
+   * de vague assignee (contacts sans `wave`), fallback historique : un lot de
+   * WAVE_SIZE estampille a la volee.
    */
   async function handleInviteNextWave() {
     if (!supabase || waveSending) return
-    const maxWave = waitlist.reduce((m, w) => (w.wave && w.wave > m ? w.wave : m), 0)
-    const nextWave = maxWave + 1
-    const candidates = waitlist
-      .filter(
-        (w) =>
-          w.source === 'prelaunch' && !w.invited_at && !registeredByEmail[w.email.toLowerCase()],
-      )
-      .slice(0, WAVE_SIZE)
-    if (candidates.length === 0) {
+    const pending = waitlist.filter(
+      (w) => w.source === 'prelaunch' && !w.invited_at && !registeredByEmail[w.email.toLowerCase()],
+    )
+    if (pending.length === 0) {
       toast.error('Aucun contact prelancement a inviter (tous invites ou inscrits)')
       return
     }
+    const waved = pending.filter((w) => w.wave != null)
+    let targetWave: number
+    let candidates: BetaWaitlistEntry[]
+    if (waved.length > 0) {
+      targetWave = Math.min(...waved.map((w) => w.wave as number))
+      candidates = pending.filter((w) => w.wave === targetWave)
+    } else {
+      targetWave = waitlist.reduce((m, w) => (w.wave && w.wave > m ? w.wave : m), 0) + 1
+      candidates = pending.slice(0, WAVE_SIZE)
+    }
+    if (!window.confirm(`Inviter la vague ${targetWave} (${candidates.length} personne(s)) ?`))
+      return
     setWaveSending(true)
     let sent = 0
     let failed = 0
@@ -738,7 +763,10 @@ export default function AdminBeta() {
         const result = await sendBetaInvite(entry.id)
         if (result.sent) {
           sent++
-          await supabase.from('beta_waitlist').update({ wave: nextWave }).eq('id', entry.id)
+          // Estampille seulement si la vague n'etait pas deja assignee (fallback).
+          if (entry.wave == null) {
+            await supabase.from('beta_waitlist').update({ wave: targetWave }).eq('id', entry.id)
+          }
         } else {
           failed++
         }
@@ -746,11 +774,11 @@ export default function AdminBeta() {
       await logAction({
         action: 'beta.prelaunch_wave',
         targetType: 'batch',
-        metadata: { wave: nextWave, sent, failed, size: candidates.length },
+        metadata: { wave: targetWave, sent, failed, size: candidates.length },
       })
       queryClient.invalidateQueries({ queryKey: ['beta-waitlist'] })
       toast.success(
-        `Vague ${nextWave} : ${sent} invitation(s) envoyee(s)`,
+        `Vague ${targetWave} : ${sent} invitation(s) envoyee(s)`,
         failed > 0 ? `${failed} echec(s), a relancer.` : undefined,
       )
     } finally {
@@ -1237,7 +1265,7 @@ export default function AdminBeta() {
               >
                 Basculer non terminés
               </Button>
-              {prelaunchCount > 0 && (
+              {prelaunchCount > 0 && nextWaveInfo && (
                 <Button
                   variant="secondary"
                   size="sm"
@@ -1250,9 +1278,13 @@ export default function AdminBeta() {
                       <Send className="size-3.5" aria-hidden="true" />
                     )
                   }
-                  title={`Inviter les ${WAVE_SIZE} prochains contacts prelancement`}
+                  title="Inviter la prochaine vague en attente de la cohorte prelancement"
                 >
-                  {waveSending ? 'Envoi…' : `Inviter la vague (${WAVE_SIZE})`}
+                  {waveSending
+                    ? 'Envoi…'
+                    : nextWaveInfo.wave != null
+                      ? `Inviter la vague ${nextWaveInfo.wave} (${nextWaveInfo.count})`
+                      : `Inviter (${nextWaveInfo.count})`}
                 </Button>
               )}
               <Button
