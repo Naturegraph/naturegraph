@@ -236,7 +236,7 @@
     },
     "verify": {
       "title": "Check your inbox",
-      "description": "We sent you a 6-digit code to {{email}}.",
+      "description": "We sent you a 6-digit code to {{email}}. If it doesn't arrive right away, please check your spam or junk folder.",
       "codeLabel": "Verification code",
       "noCode": "Didn't receive the code?",
       "resend": "Resend code",
@@ -1243,7 +1243,7 @@
       "dashboard": "Dashboard",
       "users": "Users",
       "moderation": "Moderation",
-      "beta": "Beta",
+      "beta": "Prelaunch",
       "audit": "Audit"
     },
     "header": {
@@ -1381,7 +1381,7 @@
       "warningLogged": "All actions logged"
     },
     "beta": {
-      "title": "Closed beta management",
+      "title": "Prelaunch",
       "phase": "Phase {{n}}",
       "usersOf": "{{current}} / {{max}} users ({{pct}}%)",
       "acceptingSignups": "🟢 Accepting signups",

@@ -1,0 +1,73 @@
+<!--
+  Template d'email : Confirm signup (finalisation d'inscription, code OTP)
+  =======================================================================
+  Supabase -> Authentication -> Emails -> Templates -> "Confirm signup".
+  Variable : {{ .Token }} = code de verification.
+  Corrections 2026-06-25 : footer -> support@naturegraph.ca, alt logo,
+  ligne securite harmonisee ("Si ce n'est pas toi").
+-->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Bienvenue sur Naturegraph</title>
+</head>
+<body style="margin:0;padding:0;background-color:#fffaf0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#13131a;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fffaf0;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;background-color:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(60,67,128,0.08);">
+          <tr>
+            <td align="center" style="padding:36px 40px 28px 40px;background-color:#5f5dd8;">
+              <img src="https://naturegraph.ca/hermine-icon.png" alt="Naturegraph" width="56" height="56" style="display:block;margin:0 auto 12px auto;border:0;outline:none;text-decoration:none;border-radius:50%;background-color:#ffffff;padding:4px;">
+              <div style="font-size:28px;font-weight:700;letter-spacing:-0.5px;color:#ffffff;font-family:'Quicksand',-apple-system,sans-serif;">Naturegraph</div>
+              <div style="font-size:13px;color:#ced3f0;margin-top:6px;letter-spacing:0.3px;font-style:italic;">Partageons nos émotions</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:48px 48px 24px 48px;" align="center">
+              <h1 style="margin:0 0 12px 0;font-size:26px;font-weight:700;color:#13131a;font-family:'Quicksand',-apple-system,sans-serif;line-height:1.3;">Bienvenue parmi les migrateurs !</h1>
+              <p style="margin:0;font-size:15px;line-height:1.6;color:#565666;">Entre le code ci-dessous pour finaliser ton inscription.</p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:8px 48px 32px 48px;">
+              <div style="display:inline-block;background-color:#fffaf0;border:2px solid #5f5dd8;border-radius:16px;padding:24px 40px;">
+                <div style="font-size:11px;font-weight:600;letter-spacing:1.5px;color:#5f5dd8;text-transform:uppercase;margin-bottom:12px;">Ton code de vérification</div>
+                <div style="font-size:42px;font-weight:700;letter-spacing:8px;color:#3c4380;font-family:'Courier New',monospace;line-height:1;">{{ .Token }}</div>
+              </div>
+              <p style="margin:16px 0 0 0;font-size:13px;color:#565666;">Ce code expire dans <strong style="color:#13131a;">2 minutes</strong>.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 48px 32px 48px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#d3eeec;border-radius:12px;">
+                <tr>
+                  <td style="padding:18px 24px;" align="center">
+                    <div style="font-size:14px;font-weight:700;color:#004d4d;margin:0 0 4px 0;">Sécurité</div>
+                    <div style="font-size:13px;color:#003333;line-height:1.55;">Ne partage jamais ce code. Si ce n'est pas toi, ignore cet email.</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 48px 40px 48px;" align="center">
+              <p style="margin:0;font-size:13px;color:#4a4869;line-height:1.7;">Naturegraph est un espace pour observer, partager et célébrer la biodiversité.<br>Chaque sortie devient un souvenir. Chaque observation, une histoire.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 48px;background-color:#f3f4fb;border-top:1px solid #e7e9f7;" align="center">
+              <p style="margin:0 0 8px 0;font-size:12px;color:#4a4869;">Besoin d'aide ? Contacte-nous à <a href="mailto:support@naturegraph.ca" style="color:#5f5dd8;text-decoration:none;font-weight:600;">support@naturegraph.ca</a></p>
+              <p style="margin:0;font-size:11px;color:#6b6981;">© 2026 Naturegraph · Partageons nos émotions</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

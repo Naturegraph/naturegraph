@@ -15,7 +15,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
+import { Navigate, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { KeyRound, Mail, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -26,6 +26,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useBetaAccess } from '@/hooks/useBetaAccess'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { checkBetaAccessKey, type BetaKeyReason } from '@/services/betaService'
+import { OPEN_ACCESS_ENABLED } from '@/lib/featureFlags'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 
 type ViewState = 'initial' | 'enter-code'
@@ -167,6 +168,13 @@ export default function Welcome() {
 
     setError(errorMessageForReason(result.reason, t))
     setIsSubmitting(false)
+  }
+
+  // Acces ouvert (NG-029) : l'ecran code/beta n'a plus lieu d'etre. Toute visite
+  // de /welcome (ex anciens liens d'invitation ?code=) repart vers la landing,
+  // d'ou l'inscription est libre. Redirection avant tout rendu (pas de flash).
+  if (OPEN_ACCESS_ENABLED) {
+    return <Navigate to="/" replace />
   }
 
   // V1.1.4 NG-004B (Nicolas 2026-06-01) : pendant le boot session, afficher

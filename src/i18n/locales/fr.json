@@ -236,7 +236,7 @@
     },
     "verify": {
       "title": "Vérifie ta messagerie",
-      "description": "Nous t'avons envoyé un code à 6 chiffres à {{email}}.",
+      "description": "Nous t'avons envoyé un code à 6 chiffres à {{email}}. S'il n'arrive pas tout de suite, pense à vérifier tes courriers indésirables (spam).",
       "codeLabel": "Code de vérification",
       "noCode": "Tu n'as pas reçu le code ?",
       "resend": "Renvoyer le code",
@@ -1243,7 +1243,7 @@
       "dashboard": "Dashboard",
       "users": "Utilisateurs",
       "moderation": "Modération",
-      "beta": "Beta",
+      "beta": "Prélancement",
       "audit": "Audit"
     },
     "header": {
@@ -1381,7 +1381,7 @@
       "warningLogged": "Toutes actions loguées"
     },
     "beta": {
-      "title": "Gestion beta fermée",
+      "title": "Prélancement",
       "phase": "Phase {{n}}",
       "usersOf": "{{current}} / {{max}} users ({{pct}}%)",
       "acceptingSignups": "🟢 Accepting signups",

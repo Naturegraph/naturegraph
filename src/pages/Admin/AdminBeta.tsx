@@ -1,5 +1,5 @@
 /**
- * AdminBeta, Module 4 : Gestion beta fermee
+ * AdminBeta, Module 4 : Prelancement (ex gestion beta fermee)
  *
  * Refs : ADMIN_PRODUCT_CONTROL_CENTER_STRATEGY.md v2.0 Module 4 + BATCH 32
  *
@@ -126,17 +126,21 @@ function keyStatus(k: BetaAccessKey): { label: string; badgeClass: string } {
 
 /**
  * Statut de suivi d'une entrée waitlist, dérivé de son état réel :
- *   - Inscrit       : un compte existe pour cet email (priorité absolue)
+ *   - Inscrit       : compte créé ET onboarding terminé (priorité absolue)
  *   - Échec d'envoi : le dernier email d'invitation n'est pas parti
- *   - Invité        : clé envoyée, en attente de création de compte
- *   - En attente    : sur la waitlist, pas encore invité
+ *   - En cours      : compte créé mais inscription pas finalisée (onboarding
+ *                     inachevé, pseudo auto "user_xxxx")
+ *   - Invité        : email envoyé, en attente de création de compte
+ *   - En attente    : sur la liste, pas encore invité
  *
- * `isRegistered` est calculé par jointure profiles.email = waitlist.email :
- * la source de vérité est l'existence du compte, jamais une colonne stockée.
+ * `isRegistered` / `isOnboarding` sont calculés par jointure profiles.email =
+ * waitlist.email : la source de vérité est l'existence du compte et l'état de
+ * son pseudo, jamais une colonne stockée.
  */
 function waitlistStatus(
   entry: BetaWaitlistEntry,
   isRegistered: boolean,
+  isOnboarding: boolean,
 ): { label: string; badgeClass: string } {
   if (isRegistered)
     return {
@@ -147,6 +151,11 @@ function waitlistStatus(
     return {
       label: "Échec d'envoi",
       badgeClass: 'bg-[var(--color-error-bg)] text-[var(--color-error)]',
+    }
+  if (isOnboarding)
+    return {
+      label: 'En cours',
+      badgeClass: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
     }
   if (entry.invited_at)
     return {
@@ -193,7 +202,6 @@ export default function AdminBeta() {
   // Nicolas 2026-05-19 : permet au super admin de revoir la welcome screen
   // comme s'il découvrait le produit (clear le localStorage + redirect /welcome).
   const { revokeAccess } = useBetaAccess()
-  const [isGenerating, setIsGenerating] = useState(false)
   // BATCH 107 : modale double-confirmation pour suppression réelle
   const [keyToDelete, setKeyToDelete] = useState<BetaAccessKey | null>(null)
   // BATCH 108 : tab actif (cohérence AdminUsers : Clés / Waitlist / Stats)
@@ -464,50 +472,6 @@ export default function AdminBeta() {
     staleTime: STALE_TIMES.LONG,
   })
 
-  // Next batch number (max + 1)
-  const nextBatch = useMemo(() => {
-    if (keys.length === 0) return 1
-    return Math.max(...keys.map((k) => k.batch_number)) + 1
-  }, [keys])
-
-  async function handleGenerateKeys() {
-    if (!supabase || isGenerating) return
-    setIsGenerating(true)
-    try {
-      // Nicolas 2026-05-19 : 365 jours minimum pour éviter de frustrer les
-      // testeurs avec des clés qui expirent trop vite (7j initialement).
-      const { data, error } = await supabase.rpc('generate_beta_keys', {
-        p_batch_number: nextBatch,
-        p_count: 10,
-        p_max_uses: 1,
-        p_expires_days: 365,
-        p_notes: `Vague ${nextBatch}, ${new Date().toISOString().slice(0, 10)}`,
-      })
-      if (error) throw error
-      toast.success(
-        t('admin.beta.generateSuccess', {
-          defaultValue: `10 cles generees (vague ${nextBatch})`,
-        }),
-      )
-      queryClient.invalidateQueries({ queryKey: ['beta-keys'] })
-      // Log audit (BATCH 36 : via useAdminAction)
-      await logAction({
-        action: 'beta.key_gen',
-        targetType: 'batch',
-        metadata: { batch_number: nextBatch, count: 10 },
-      })
-      // Données loggées dans admin_audit_logs (action: beta.key_gen), pas besoin de console
-      void data
-    } catch (err) {
-      toast.error(
-        t('admin.beta.generateError', { defaultValue: 'Erreur generation cles' }),
-        err instanceof Error ? err.message : undefined,
-      )
-    } finally {
-      setIsGenerating(false)
-    }
-  }
-
   async function handleDeactivateKey(keyId: string, code: string) {
     if (!supabase) return
     const confirmed = window.confirm(`Desactiver la cle ${code} ?`)
@@ -661,6 +625,21 @@ export default function AdminBeta() {
     [waitlist],
   )
 
+  // Prochaine vague a envoyer : la plus petite vague avec des contacts encore
+  // non invites et sans compte (respecte les vagues pre-assignees a l'import).
+  const nextWaveInfo = useMemo(() => {
+    const pending = waitlist.filter(
+      (w) => w.source === 'prelaunch' && !w.invited_at && !registeredByEmail[w.email.toLowerCase()],
+    )
+    if (pending.length === 0) return null
+    const waved = pending.filter((w) => w.wave != null)
+    if (waved.length > 0) {
+      const wave = Math.min(...waved.map((w) => w.wave as number))
+      return { wave, count: pending.filter((w) => w.wave === wave).length }
+    }
+    return { wave: null as number | null, count: Math.min(pending.length, WAVE_SIZE) }
+  }, [waitlist, registeredByEmail])
+
   /** True si l'entree correspond a un compte pleinement inscrit (onboarding fini). */
   function isEntryFullyRegistered(entry: BetaWaitlistEntry): boolean {
     const reg = registeredByEmail[entry.email.toLowerCase()]
@@ -748,24 +727,34 @@ export default function AdminBeta() {
   }
 
   /**
-   * Invite la prochaine vague (20 par defaut) de la cohorte prelancement :
-   * les contacts prelancement pas encore invites et sans compte, par ordre
-   * d'anciennete. Chaque envoi reussi est estampille du numero de vague.
+   * Invite la PROCHAINE vague en attente de la cohorte prelancement.
+   *
+   * Respecte les numeros de vague pre-assignes (import) : on envoie la plus
+   * petite vague qui a encore des contacts non invites et sans compte. A defaut
+   * de vague assignee (contacts sans `wave`), fallback historique : un lot de
+   * WAVE_SIZE estampille a la volee.
    */
   async function handleInviteNextWave() {
     if (!supabase || waveSending) return
-    const maxWave = waitlist.reduce((m, w) => (w.wave && w.wave > m ? w.wave : m), 0)
-    const nextWave = maxWave + 1
-    const candidates = waitlist
-      .filter(
-        (w) =>
-          w.source === 'prelaunch' && !w.invited_at && !registeredByEmail[w.email.toLowerCase()],
-      )
-      .slice(0, WAVE_SIZE)
-    if (candidates.length === 0) {
+    const pending = waitlist.filter(
+      (w) => w.source === 'prelaunch' && !w.invited_at && !registeredByEmail[w.email.toLowerCase()],
+    )
+    if (pending.length === 0) {
       toast.error('Aucun contact prelancement a inviter (tous invites ou inscrits)')
       return
     }
+    const waved = pending.filter((w) => w.wave != null)
+    let targetWave: number
+    let candidates: BetaWaitlistEntry[]
+    if (waved.length > 0) {
+      targetWave = Math.min(...waved.map((w) => w.wave as number))
+      candidates = pending.filter((w) => w.wave === targetWave)
+    } else {
+      targetWave = waitlist.reduce((m, w) => (w.wave && w.wave > m ? w.wave : m), 0) + 1
+      candidates = pending.slice(0, WAVE_SIZE)
+    }
+    if (!window.confirm(`Inviter la vague ${targetWave} (${candidates.length} personne(s)) ?`))
+      return
     setWaveSending(true)
     let sent = 0
     let failed = 0
@@ -774,7 +763,10 @@ export default function AdminBeta() {
         const result = await sendBetaInvite(entry.id)
         if (result.sent) {
           sent++
-          await supabase.from('beta_waitlist').update({ wave: nextWave }).eq('id', entry.id)
+          // Estampille seulement si la vague n'etait pas deja assignee (fallback).
+          if (entry.wave == null) {
+            await supabase.from('beta_waitlist').update({ wave: targetWave }).eq('id', entry.id)
+          }
         } else {
           failed++
         }
@@ -782,11 +774,11 @@ export default function AdminBeta() {
       await logAction({
         action: 'beta.prelaunch_wave',
         targetType: 'batch',
-        metadata: { wave: nextWave, sent, failed, size: candidates.length },
+        metadata: { wave: targetWave, sent, failed, size: candidates.length },
       })
       queryClient.invalidateQueries({ queryKey: ['beta-waitlist'] })
       toast.success(
-        `Vague ${nextWave} : ${sent} invitation(s) envoyee(s)`,
+        `Vague ${targetWave} : ${sent} invitation(s) envoyee(s)`,
         failed > 0 ? `${failed} echec(s), a relancer.` : undefined,
       )
     } finally {
@@ -867,7 +859,7 @@ export default function AdminBeta() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-bold text-foreground">
-            {t('admin.beta.title', { defaultValue: 'Gestion beta fermee' })}
+            {t('admin.beta.title', { defaultValue: 'Prélancement' })}
           </h1>
           {quota && (
             <div className="flex flex-wrap items-center gap-4 text-sm">
@@ -914,21 +906,6 @@ export default function AdminBeta() {
             icon={<Eye className="size-4" aria-hidden="true" />}
           >
             Aperçu écran d&apos;accueil
-          </Button>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={handleGenerateKeys}
-            disabled={isGenerating}
-            icon={
-              isGenerating ? (
-                <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
-              ) : (
-                <Plus className="size-4" aria-hidden="true" />
-              )
-            }
-          >
-            {isGenerating ? 'Génération…' : `Générer 10 clés (vague ${nextBatch})`}
           </Button>
         </div>
       </div>
@@ -1018,7 +995,8 @@ export default function AdminBeta() {
         <section className="bg-background border border-border rounded-lg overflow-hidden">
           {keys.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-muted-foreground">
-              Aucune clé générée. Clique "Générer 10 clés" pour démarrer la vague 1.
+              Aucune clé d'accès. La génération de clés est désactivée depuis le passage en accès
+              ouvert (les invitations se gèrent dans l'onglet Waitlist).
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -1287,7 +1265,7 @@ export default function AdminBeta() {
               >
                 Basculer non terminés
               </Button>
-              {prelaunchCount > 0 && (
+              {prelaunchCount > 0 && nextWaveInfo && (
                 <Button
                   variant="secondary"
                   size="sm"
@@ -1300,9 +1278,13 @@ export default function AdminBeta() {
                       <Send className="size-3.5" aria-hidden="true" />
                     )
                   }
-                  title={`Inviter les ${WAVE_SIZE} prochains contacts prelancement`}
+                  title="Inviter la prochaine vague en attente de la cohorte prelancement"
                 >
-                  {waveSending ? 'Envoi…' : `Inviter la vague (${WAVE_SIZE})`}
+                  {waveSending
+                    ? 'Envoi…'
+                    : nextWaveInfo.wave != null
+                      ? `Inviter la vague ${nextWaveInfo.wave} (${nextWaveInfo.count})`
+                      : `Inviter (${nextWaveInfo.count})`}
                 </Button>
               )}
               <Button
@@ -1344,7 +1326,9 @@ export default function AdminBeta() {
                     const isAutoUsername =
                       !!registered && /^user_[0-9a-f]+$/i.test(registered.username)
                     const isFullyRegistered = !!registered && !isAutoUsername
-                    const status = waitlistStatus(entry, isFullyRegistered)
+                    // En cours = compte cree mais onboarding non termine (pseudo auto).
+                    const isOnboarding = isAutoUsername
+                    const status = waitlistStatus(entry, isFullyRegistered, isOnboarding)
                     const isInvited = !!entry.invited_at
                     const isProcessing = processingId === entry.id
                     return (
