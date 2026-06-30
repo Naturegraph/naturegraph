@@ -218,6 +218,12 @@
       "orContinueWith": "or continue with",
       "alreadyAccount": "Already have an account?",
       "login": "Sign in",
+      "legalIntro": "By creating your account, you accept our",
+      "legalTerms": "terms of use",
+      "legalAnd": "and our",
+      "legalPrivacy": "privacy policy",
+      "legalAge": ", and you confirm you are 13 or older.",
+      "legalEarlyAccess": "Naturegraph is in early access (test phase): the service is provided as is, some imperfections may remain.",
       "photoCredit": "Photo credit",
       "photographer": "@emie_photographie_nature"
     },

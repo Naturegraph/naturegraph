@@ -16,7 +16,7 @@
  *   - handler de switch
  */
 
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
@@ -79,6 +79,12 @@ export interface AuthFormProps {
   onNavigateToLanding?: () => void
   /** Si fourni, affiche une checkbox "Se souvenir de moi" sous le champ email */
   rememberMe?: RememberMeConfig
+  /**
+   * Mention legale affichee sous les boutons (signup uniquement) : acceptation
+   * CGU + Confidentialite, age minimum, mention acces anticipe. Protection
+   * juridique a l'inscription (NG-038).
+   */
+  legalNotice?: ReactNode
 }
 
 /**
@@ -107,6 +113,7 @@ export function AuthForm({
   onDiscoverAsGuest,
   onNavigateToLanding,
   rememberMe,
+  legalNotice,
 }: AuthFormProps) {
   const { t } = useTranslation()
   const { signInWithSocial } = useAuth()
@@ -246,6 +253,13 @@ export function AuthForm({
               {guestLabel}
             </Button>
           </div>
+
+          {/* Mention legale (signup) : acceptation CGU + age + acces anticipe (NG-038) */}
+          {legalNotice && (
+            <div className="w-full text-xs leading-relaxed text-[var(--color-text-secondary)]">
+              {legalNotice}
+            </div>
+          )}
         </form>
 
         {/*
