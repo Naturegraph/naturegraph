@@ -115,6 +115,24 @@ export default function AuthPage({
     }
   }, [isAuthenticated, mode, initialAuthMode, onboardingCompleted, navigate])
 
+  // Session expiree (NG-029) : l'ecran /welcome ayant ete supprime, c'est ici
+  // (ecran de connexion) qu'on affiche le toast pose par assertActiveSession.
+  useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem('naturegraph-session-expired') === '1') {
+        window.sessionStorage.removeItem('naturegraph-session-expired')
+        notifyError(
+          t('auth.sessionExpired.title', { defaultValue: 'Ta session a expiré' }),
+          t('auth.sessionExpired.desc', {
+            defaultValue: 'Reconnecte-toi avec ton email pour continuer.',
+          }),
+        )
+      }
+    } catch {
+      // sessionStorage indisponible (Safari prive), on ignore
+    }
+  }, [notifyError, t])
+
   // ── Handlers ───────────────────────────────────────────────────────────────
 
   function handleSignupSuccess(email: string) {

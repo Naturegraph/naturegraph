@@ -13,7 +13,7 @@
  */
 
 import { useState, useMemo } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -26,7 +26,6 @@ import {
   Trash2,
   ExternalLink,
   BarChart3,
-  Eye,
   Send,
   AlertTriangle,
 } from 'lucide-react'
@@ -35,7 +34,6 @@ import { Button } from '@/components/ui/Button'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useToast } from '@/contexts/ToastContext'
 import { useAdminAction } from '@/hooks/useAdminAction'
-import { useBetaAccess } from '@/hooks/useBetaAccess'
 import { STALE_TIMES } from '@/constants/reactQuery'
 import {
   sendBetaInvite,
@@ -195,13 +193,9 @@ export default function AdminBeta() {
   const { t } = useTranslation()
   const toast = useToast()
   const queryClient = useQueryClient()
-  const navigate = useNavigate()
   // BATCH 36 : hook centralise pour audit log (DRY, strategy ligne 562).
   // useIsAdmin n'est plus necessaire ici car useAdminAction l'utilise en interne.
   const { logAction } = useAdminAction()
-  // Nicolas 2026-05-19 : permet au super admin de revoir la welcome screen
-  // comme s'il découvrait le produit (clear le localStorage + redirect /welcome).
-  const { revokeAccess } = useBetaAccess()
   // BATCH 107 : modale double-confirmation pour suppression réelle
   const [keyToDelete, setKeyToDelete] = useState<BetaAccessKey | null>(null)
   // BATCH 108 : tab actif (cohérence AdminUsers : Clés / Waitlist / Stats)
@@ -889,24 +883,6 @@ export default function AdminBeta() {
               </span>
             </div>
           )}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Nicolas 2026-05-19 : bouton pour revoir l'écran d'accueil beta
-              comme s'il était un nouvel utilisateur. Clear le localStorage
-              `naturegraph-beta-access` + redirige vers /welcome.
-              Le super admin peut ainsi tester le flow vu par ses testeurs. */}
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={() => {
-              revokeAccess()
-              toast.success("Accès beta réinitialisé, redirection vers l'écran d'accueil…")
-              setTimeout(() => navigate('/welcome'), 500)
-            }}
-            icon={<Eye className="size-4" aria-hidden="true" />}
-          >
-            Aperçu écran d&apos;accueil
-          </Button>
         </div>
       </div>
 

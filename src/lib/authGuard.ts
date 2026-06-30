@@ -89,12 +89,13 @@ export async function forceReauth(): Promise<void> {
   } catch {
     // ignore, on a deja purge le local
   }
-  // Pose un flag pour que Welcome affiche un toast a l arrivee
+  // Pose un flag pour que l'ecran de connexion affiche un toast a l arrivee
   try {
     window.sessionStorage.setItem('naturegraph-session-expired', '1')
   } catch {
     // sessionStorage indisponible (Safari prive), tant pis
   }
-  // Redirige avec un hard reload pour vider l etat React + Query cache
-  window.location.assign('/welcome')
+  // Redirige vers la connexion avec un hard reload pour vider l etat React +
+  // Query cache (l'ecran /welcome n'existe plus, acces ouvert NG-029).
+  window.location.assign('/login')
 }
