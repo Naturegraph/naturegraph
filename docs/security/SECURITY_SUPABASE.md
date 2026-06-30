@@ -310,9 +310,10 @@ Secret distinct par environnement (ne pas réutiliser le secret dev en prod).
 
 ---
 
-## 10. Audit acces ouvert (NG-032, 2026-06-29)
+## 10. Audit acces ouvert (NG-032, 2026-06-29 / dashboard 2026-06-30)
 
 Audit de securite avant l'activation du flag `OPEN_ACCESS_ENABLED` (NG-029).
+Flip realise en prod le 2026-06-30 (release V0.0.6) : NG-032 boucle (code + dashboard).
 
 ### Verifie / fait (code + DB)
 
@@ -329,16 +330,29 @@ Audit de securite avant l'activation du flag `OPEN_ACCESS_ENABLED` (NG-029).
 - **search_path : OK.** Fixe sur toutes nos fonctions `SECURITY DEFINER`. Seules
   3 fonctions PostGIS internes (`st_estimatedextent`) n'en ont pas : immutables,
   hors de notre controle, sans enjeu.
-- **Notifications DELETE policy : presente sur dev** (migration
-  `20260623_notifications_delete_policy.sql`). A confirmer en prod (cf. checklist).
+- **Notifications DELETE policy : presente sur dev ET prod.** Verifiee en prod le
+  2026-06-30 : `Users can delete own notifications` (cmd DELETE, role authenticated,
+  `qual = auth.uid() = user_id`), idem SELECT/UPDATE. Aucune policy ouverte.
 
-### A faire AVANT le flip (dashboard fondateur)
+### Fait sur le dashboard PROD (fondateur, 2026-06-30)
 
-- [ ] Poser le secret `waitlist_trigger_secret` (Vault) + env `WAITLIST_TRIGGER_SECRET`
-      en PROD (cf. section 9). `supabase secrets list --project-ref <prod>` pour verifier.
-- [ ] Activer **leaked-password protection** (Auth -> Settings).
-- [ ] Verifier la **policy DELETE notifications en prod** (sinon appliquer la migration).
-- [ ] Confirmer les **rate limits Auth** prod (sign-ups 30/5min/IP par defaut : OK).
+Tous les points dashboard bloquants ont ete realises avant le flip (release V0.0.6) :
+
+- [x] Secret `waitlist_trigger_secret` pose dans **Vault** prod + env `WAITLIST_TRIGGER_SECRET`
+      sur l'**Edge Function** (meme valeur, confirmee par empreinte SHA256). Endpoint
+      public `send-waitlist-confirmation` protege.
+- [x] **Leaked-password protection** activee (Auth -> Attack Protection -> email provider).
+- [x] **Policy DELETE notifications** verifiee en prod (cf. ci-dessus).
+- [x] **Rate limits Auth** prod confirmes : sending emails 100 -> **200/h** (marge pour
+      les vagues + login OTP), token verifications 30/5min/IP, sign-ups 30/5min/IP
+      (anti-abus par IP), IP forwarding OFF (front appelle Supabase en direct).
+- [x] **Email OTP expiration** 120s -> **600s** : un domaine d'envoi neuf (Yahoo/free.fr)
+      peut retarder le mail et faire expirer un code a 2 min.
+
+Note : le trigger `waitlist_send_confirmation` + sa fonction `trigger_send_waitlist_email`
+ont ete supprimes (migration `20260630_drop_waitlist_confirmation_trigger.sql`) : l'email
+de confirmation waitlist est obsolete en acces ouvert. Le secret reste en place pour
+proteger la fonction edge tant qu'elle existe.
 
 ### Suivi (moindre priorite, post-ouverture)
 
