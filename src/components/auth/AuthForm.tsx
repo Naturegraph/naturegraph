@@ -16,7 +16,7 @@
  *   - handler de switch
  */
 
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
@@ -79,6 +79,12 @@ export interface AuthFormProps {
   onNavigateToLanding?: () => void
   /** Si fourni, affiche une checkbox "Se souvenir de moi" sous le champ email */
   rememberMe?: RememberMeConfig
+  /**
+   * Mention legale affichee sous les boutons (signup uniquement) : acceptation
+   * CGU + Confidentialite, age minimum, mention acces anticipe. Protection
+   * juridique a l'inscription (NG-038).
+   */
+  legalNotice?: ReactNode
 }
 
 /**
@@ -107,6 +113,7 @@ export function AuthForm({
   onDiscoverAsGuest,
   onNavigateToLanding,
   rememberMe,
+  legalNotice,
 }: AuthFormProps) {
   const { t } = useTranslation()
   const { signInWithSocial } = useAuth()
@@ -114,6 +121,9 @@ export function AuthForm({
   const [value, setValue] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  // Honeypot anti-bot (NG-032) : champ cache que seuls les bots remplissent.
+  // Rempli => on annule silencieusement (pas de submit, aucun signal renvoye).
+  const [honeypot, setHoneypot] = useState('')
   // Cochée par défaut (Nicolas 2026-05-22) : l'attente d'une app moderne est
   // une session persistante. Sans ça, l'utilisateur doit redemander un OTP à
   // chaque fermeture de navigateur, expérience trop frustrante pour une beta.
@@ -125,6 +135,11 @@ export function AuthForm({
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError('')
+
+    // Honeypot : un humain ne voit pas ce champ. Rempli = bot -> on n'envoie rien.
+    if (honeypot.trim() !== '') {
+      return
+    }
 
     const trimmed = value.trim()
     if (!trimmed) {
@@ -184,6 +199,32 @@ export function AuthForm({
             disabled={isLoading}
           />
 
+          {/* Honeypot anti-bot (NG-032) : hors flux + invisible aux lecteurs
+              d'ecran (aria-hidden, tabIndex -1). Les humains ne le remplissent
+              jamais ; un bot qui remplit tout se trahit. */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              width: 1,
+              height: 1,
+              overflow: 'hidden',
+              clip: 'rect(0 0 0 0)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <label htmlFor="auth-website">Ne pas remplir ce champ</label>
+            <input
+              id="auth-website"
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+            />
+          </div>
+
           {/* Checkbox "Se souvenir de moi" : affichée uniquement sur login */}
           {rememberMe && (
             <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">
@@ -212,6 +253,14 @@ export function AuthForm({
               {guestLabel}
             </Button>
           </div>
+
+          {/* Mention legale (signup) : acceptation CGU + acces anticipe (NG-038).
+              Texte 14px italique, discret mais lisible (demande Nicolas). */}
+          {legalNotice && (
+            <div className="w-full text-sm italic leading-relaxed text-[var(--color-text-secondary)]">
+              {legalNotice}
+            </div>
+          )}
         </form>
 
         {/*

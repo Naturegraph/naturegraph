@@ -1,53 +1,19 @@
 /**
- * BetaAccessGuard : Garde le site derrière le welcome screen.
+ * BetaAccessGuard : passe-plat transparent (acces ouvert, NG-029).
  *
- * Laisse passer :
- *   - les visiteurs ayant validé une clé beta (gate localStorage), ET
- *   - les utilisateurs authentifiés : posséder un compte (créé via une clé OU
- *     via une invitation admin `inviteUserByEmail`) signifie qu'on est déjà
- *     membre de la beta. Le gate localStorage ne concerne donc que les
- *     visiteurs anonymes, avant entrée.
+ * Historique : ce guard gardait le site derriere l'ecran /welcome (code beta).
+ * Depuis le passage en acces ouvert (early access, plus de beta fermee), il n'y
+ * a plus de gate : l'app est accessible librement, l'inscription se fait sans
+ * code. L'ecran Welcome a ete supprime.
  *
- * Sans la règle « authentifié = accès », un invité qui vient de créer sa
- * session en cliquant le lien de son email d'invitation serait renvoyé en
- * boucle vers /welcome (il n'a pas de clé en localStorage).
+ * On conserve ce composant comme simple wrapper pour ne pas restructurer le
+ * router (BetaGatedLayout). Il rend ses enfants sans condition.
  */
-import { Navigate, useLocation } from 'react-router-dom'
-import { useBetaAccess } from '@/hooks/useBetaAccess'
-import { useAuth } from '@/contexts/AuthContext'
-import { LoadingState } from '@/components/ui'
-import { OPEN_ACCESS_ENABLED } from '@/lib/featureFlags'
 
 interface BetaAccessGuardProps {
   children: React.ReactNode
 }
 
 export function BetaAccessGuard({ children }: BetaAccessGuardProps) {
-  const { hasAccess, isReady } = useBetaAccess()
-  const { isAuthenticated, isLoading } = useAuth()
-  const location = useLocation()
-
-  // Acces ouvert (NG-029) : quand le flag est actif, plus de gate code. L'app
-  // est accessible librement (le code beta n'est plus exige). Court-circuit en
-  // tete pour eviter tout flash de /welcome ou attente d'hydratation.
-  if (OPEN_ACCESS_ENABLED) {
-    return <>{children}</>
-  }
-
-  // On attend l'hydratation du gate localStorage ET la résolution de la
-  // session Supabase (sinon un invité fraîchement authentifié serait, le temps
-  // d'un render, considéré comme anonyme et renvoyé vers /welcome).
-  if (!isReady || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-cream-lighter">
-        <LoadingState label="Chargement..." />
-      </div>
-    )
-  }
-
-  if (!hasAccess && !isAuthenticated) {
-    return <Navigate to="/welcome" state={{ from: location.pathname }} replace />
-  }
-
   return <>{children}</>
 }

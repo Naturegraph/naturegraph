@@ -67,16 +67,15 @@ export const MARKETING_CONSENT_ENABLED = false
 /**
  * Acces ouvert / early access (NG-029, Epic A).
  *
- * Quand ACTIF : supprime la beta fermee + le code d'acces. L'app est accessible
- * sans cle (BetaAccessGuard transparent), l'inscription est libre depuis la
- * landing, le messaging "beta fermee" devient "acces anticipe".
+ * ACTIF (etat actuel, decision Nicolas 2026-06-30) : la beta fermee et le code
+ * d'acces sont supprimes. L'app est accessible sans cle (BetaAccessGuard
+ * transparent), l'inscription est libre depuis la landing, le messaging "beta
+ * fermee" devient "acces anticipe (phase de test)".
  *
- * Quand INACTIF (defaut) : comportement actuel inchange (gate code via
- * BetaAccessGuard + /welcome).
- *
- * Reversible a tout moment (repasser a false). On NE bascule en prod qu'une fois
- * la checklist go/no-go (NG-039) verte : securite (NG-032), legal (NG-038),
- * stabilite. Tant que false, ce flag n'a aucun effet : on peut donc construire
- * et merger sans risque.
+ * Note : l'ecran /welcome (saisie du code) a ete PHYSIQUEMENT SUPPRIME du repo
+ * (plus de fichier Welcome.tsx, route /welcome redirige vers /). Ce flag n'est
+ * donc plus un simple interrupteur reversible : le retour a une beta fermee
+ * exigerait de restaurer cet ecran. On reste en "acces anticipe" cote messaging
+ * et legal (protection juridique : service fourni tel quel, phase de test).
  */
-export const OPEN_ACCESS_ENABLED = false
+export const OPEN_ACCESS_ENABLED = true

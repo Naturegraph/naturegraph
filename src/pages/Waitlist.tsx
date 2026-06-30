@@ -123,12 +123,7 @@ export default function Waitlist() {
             </p>
           </div>
 
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={() => navigate('/welcome')}
-            className="w-full"
-          >
+          <Button variant="primary" size="lg" onClick={() => navigate('/')} className="w-full">
             {t('waitlist.backWelcome', { defaultValue: "Retour à l'accueil" })}
           </Button>
 
@@ -254,7 +249,7 @@ export default function Waitlist() {
                 type="button"
                 variant="secondary"
                 size="md"
-                onClick={() => navigate('/welcome')}
+                onClick={() => navigate('/')}
                 disabled={isSubmitting}
                 className="w-full"
               >

@@ -307,3 +307,44 @@ Migration : `20260623_waitlist_confirmation_secret.sql` (trigger).
    POST direct sans header renvoie `401`.
 
 Secret distinct par environnement (ne pas réutiliser le secret dev en prod).
+
+---
+
+## 10. Audit acces ouvert (NG-032, 2026-06-29)
+
+Audit de securite avant l'activation du flag `OPEN_ACCESS_ENABLED` (NG-029).
+
+### Verifie / fait (code + DB)
+
+- **RLS guest : OK.** Toutes les policies d'ecriture (posts, comments, media,
+  reactions, follows, profiles, notifications, etc.) sont en role `public` mais
+  avec `WITH CHECK (auth.uid() = user_id)`. Un visiteur anonyme (sans token) a
+  `auth.uid() = NULL` -> toute ecriture est bloquee. Prouve par test (insert anon
+  sur `follows` -> refuse par RLS). Un guest peut lire (policies SELECT) mais pas
+  ecrire. Seul `beta_waitlist` accepte un INSERT anon (signup waitlist voulu).
+- **Honeypot signup : fait.** Champ cache anti-bot dans `AuthForm` (signup +
+  login), comme sur la waitlist. Rempli -> submit annule.
+- **REVOKE EXECUTE triggers : deja propre.** Aucune fonction `SECURITY DEFINER`
+  retournant `trigger` n'est executable par anon/authenticated.
+- **search_path : OK.** Fixe sur toutes nos fonctions `SECURITY DEFINER`. Seules
+  3 fonctions PostGIS internes (`st_estimatedextent`) n'en ont pas : immutables,
+  hors de notre controle, sans enjeu.
+- **Notifications DELETE policy : presente sur dev** (migration
+  `20260623_notifications_delete_policy.sql`). A confirmer en prod (cf. checklist).
+
+### A faire AVANT le flip (dashboard fondateur)
+
+- [ ] Poser le secret `waitlist_trigger_secret` (Vault) + env `WAITLIST_TRIGGER_SECRET`
+      en PROD (cf. section 9). `supabase secrets list --project-ref <prod>` pour verifier.
+- [ ] Activer **leaked-password protection** (Auth -> Settings).
+- [ ] Verifier la **policy DELETE notifications en prod** (sinon appliquer la migration).
+- [ ] Confirmer les **rate limits Auth** prod (sign-ups 30/5min/IP par defaut : OK).
+
+### Suivi (moindre priorite, post-ouverture)
+
+- CORS Edge Functions en `Access-Control-Allow-Origin: *`. Acceptable au lancement
+  (functions authentifiees par token/secret, pas par cookie -> pas de vecteur CSRF
+  cross-origin). A restreindre plus tard via une allowlist dynamique (naturegraph.ca,
+  naturegraph.fr, beta., localhost, \*.vercel.app) sur les 7 functions.
+- Anti-spam direct sur `beta_waitlist` (POST API hors formulaire, contourne le
+  honeypot) : faible risque (pollution waitlist), a traiter avant ouverture publique large.

@@ -36,7 +36,7 @@
  */
 
 import { lazy, Suspense } from 'react'
-import { createBrowserRouter, Outlet } from 'react-router-dom'
+import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 import App from './App'
 import { MainLayout } from '@/components/layout'
 import { ProtectedRoute, PublicRoute, OnboardingGuard } from '@/components/guards'
@@ -46,7 +46,6 @@ import { AppLoader } from '@/components/ui/AppLoader'
 
 // ─── Lazy-loaded pages (code splitting pour éco-conception) ────────
 
-const Welcome = lazy(() => import('./pages/Welcome'))
 const Landing = lazy(() => import('./pages/Landing'))
 const AuthPage = lazy(() => import('./pages/AuthPage'))
 const Onboarding = lazy(() => import('./pages/Onboarding'))
@@ -109,15 +108,12 @@ export const router = createBrowserRouter([
       // ROUTES PUBLIQUES (sans BetaAccessGuard : exceptions intentionnelles)
       // ════════════════════════════════════════════════════════════════
 
-      // Welcome screen : entry point beta privee (BATCH 45)
-      // Aucun guard : c'est la porte d'entree.
+      // Welcome (ex ecran code beta) SUPPRIME : acces ouvert (NG-029). Toute
+      // visite de /welcome, y compris les anciens liens ?code=, repart vers la
+      // landing. L'ecran code n'existe plus.
       {
         path: 'welcome',
-        element: (
-          <LazyPage>
-            <Welcome />
-          </LazyPage>
-        ),
+        element: <Navigate to="/" replace />,
       },
 
       // Waitlist : accessible sans auth (BATCH 30 / BETA_STRATEGY Phase 1)
