@@ -254,9 +254,10 @@ export function AuthForm({
             </Button>
           </div>
 
-          {/* Mention legale (signup) : acceptation CGU + age + acces anticipe (NG-038) */}
+          {/* Mention legale (signup) : acceptation CGU + acces anticipe (NG-038).
+              Texte 14px italique, discret mais lisible (demande Nicolas). */}
           {legalNotice && (
-            <div className="w-full text-xs leading-relaxed text-[var(--color-text-secondary)]">
+            <div className="w-full text-sm italic leading-relaxed text-[var(--color-text-secondary)]">
               {legalNotice}
             </div>
           )}

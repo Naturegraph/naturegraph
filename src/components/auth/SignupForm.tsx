@@ -35,8 +35,9 @@ export function SignupForm({
   }
 
   // Mention legale a l'inscription (NG-038) : acceptation CGU + Confidentialite,
-  // age minimum 13 ans, et mention "acces anticipe / service tel quel" (protection
-  // juridique pendant la phase de test). Liens cliquables vers /legal et /privacy.
+  // et mention "acces anticipe / service tel quel" (protection juridique pendant
+  // la phase de test). Liens cliquables vers /legal et /privacy. L'age minimum
+  // (13 ans) reste defini dans les CGU, pas affiche ici (demande Nicolas).
   const linkClass =
     'underline text-[var(--color-action-default)] hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] rounded'
   const legalNotice = (
@@ -50,7 +51,7 @@ export function SignupForm({
         {t('auth.signup.legalPrivacy', { defaultValue: 'politique de confidentialité' })}
       </Link>
       {t('auth.signup.legalAge', {
-        defaultValue: ', et tu confirmes avoir 13 ans ou plus.',
+        defaultValue: '.',
       })}{' '}
       {t('auth.signup.legalEarlyAccess', {
         defaultValue:
