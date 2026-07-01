@@ -20,6 +20,7 @@ import { BetaKeyGate } from '@/components/auth/BetaKeyGate'
 import { AuthOrbBackground, useAuthOrbTracking } from '@/components/auth/AuthOrbBackground'
 import OnboardingComponent from '@/components/onboarding'
 import { validateBetaKey } from '@/services/betaService'
+import { recordSignupConsent } from '@/services/legalConsentService'
 import { OPEN_ACCESS_ENABLED } from '@/lib/featureFlags'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -152,6 +153,10 @@ export default function AuthPage({
 
   async function handleVerificationSuccess() {
     if (initialAuthMode === 'signup') {
+      // NG-038 : le compte vient d'etre confirme (OTP verifie), on trace
+      // l'acceptation des CGU + confidentialite affichee au signup. Best-effort :
+      // n'interrompt jamais le flow (le compte est deja cree).
+      void recordSignupConsent()
       // BATCH 48 : claim de la cle beta apres OTP verifie (signup confirme).
       // Le user a deja valide sa cle au welcome screen (readonly), maintenant
       // on consomme reellement (claim_beta_access_key incremente current_uses

@@ -1,6 +1,13 @@
 -- ============================================================================
 -- NG-007 (2026-06-23) — Securisation de send-waitlist-confirmation
 -- ============================================================================
+-- OBSOLETE / NE PAS REAPPLIQUER (2026-06-30) : le trigger + la fonction
+-- trigger_send_waitlist_email() crees ici ont ete SUPPRIMES en acces ouvert
+-- (cf. 20260630_drop_waitlist_confirmation_trigger.sql). Reappliquer ce fichier
+-- recreerait la fonction supprimee. Conserve uniquement pour l'historique.
+-- Le secret partage (Vault + env WAITLIST_TRIGGER_SECRET) reste en place et
+-- protege la fonction edge tant qu'elle existe.
+-- ============================================================================
 -- L'edge function `send-waitlist-confirmation` est en verify_jwt:false (appelee
 -- par ce trigger DB, pas par un client). Etant publiquement atteignable, elle
 -- pouvait etre appelee par n'importe qui pour declencher l'envoi d'emails
