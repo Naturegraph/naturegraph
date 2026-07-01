@@ -21,6 +21,7 @@
 //   - Rate limiting basique en memoire (Edge Runtime singleton)
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { buildCors } from '../_shared/cors.ts'
 
 // ─── Types ───────────────────────────────────────────────────────────────
 interface ValidateRequest {
@@ -76,12 +77,8 @@ const CODE_REGEX = /^NG-[A-Z0-9]{4}-[A-Z0-9]{4}$/
 
 // ─── Handler ─────────────────────────────────────────────────────────────
 Deno.serve(async (req: Request) => {
-  // CORS headers (front public)
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  }
+  // CORS restreint (NG-032) : allowlist d'origines (front public), calcule par requete.
+  const corsHeaders = buildCors(req)
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: corsHeaders })

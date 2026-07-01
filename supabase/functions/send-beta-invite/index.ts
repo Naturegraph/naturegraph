@@ -34,17 +34,12 @@
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { buildCors } from '../_shared/cors.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
 const PUBLIC_APP_URL = Deno.env.get('PUBLIC_APP_URL') ?? ''
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
 
 interface InviteRequest {
   /** UUID de l'entrée beta_waitlist à inviter. */
@@ -67,13 +62,6 @@ interface InviteResponse {
     | 'server_error'
   /** Nombre total d'invitations envoyées après cette tentative. */
   invite_count?: number
-}
-
-function json(body: InviteResponse, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  })
 }
 
 /**
@@ -128,6 +116,17 @@ const WAITLIST_INVITE_BATCH = 99
 const INVITE_KEY_EXPIRES_DAYS = 365
 
 Deno.serve(async (req: Request) => {
+  // CORS restreint (NG-032) : allowlist d'origines, calcule par requete.
+  // json() est une closure ici pour capturer le corsHeaders de cette requete
+  // (evite un etat module mutable partage entre requetes concurrentes).
+  const corsHeaders = buildCors(req)
+  function json(body: InviteResponse, status = 200): Response {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: corsHeaders })
   }

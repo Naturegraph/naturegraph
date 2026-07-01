@@ -1876,6 +1876,30 @@ export type Database = {
           },
         ]
       }
+      user_legal_consents: {
+        Row: {
+          accepted_at: string
+          document: string
+          id: string
+          user_id: string
+          version: string
+        }
+        Insert: {
+          accepted_at?: string
+          document: string
+          id?: string
+          user_id: string
+          version: string
+        }
+        Update: {
+          accepted_at?: string
+          document?: string
+          id?: string
+          user_id?: string
+          version?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           email_notifications: boolean
