@@ -21,7 +21,7 @@ import { AuthOrbBackground, useAuthOrbTracking } from '@/components/auth/AuthOrb
 import OnboardingComponent from '@/components/onboarding'
 import { validateBetaKey } from '@/services/betaService'
 import { recordSignupConsent } from '@/services/legalConsentService'
-import { consumeInviteExpired } from '@/lib/authUrlNotice'
+import { consumeInviteExpired, peekInviteExpired } from '@/lib/authUrlNotice'
 import { OPEN_ACCESS_ENABLED } from '@/lib/featureFlags'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -82,6 +82,9 @@ export default function AuthPage({
   // Fallback 'beta-key' garde le filet de securite si le user arrive ici sans
   // passer par /welcome (cas degrade ou bypass du guard).
   const [mode, setMode] = useState<AuthMode>(() => {
+    // Lien d'invitation expire/consomme : on demarre directement sur le signup
+    // (acces ouvert). Le flag est consomme + le toast affiche dans l'effet plus bas.
+    if (peekInviteExpired()) return 'signup'
     if (initialMode === 'signup' && BETA_GATE_ENABLED && !storedBetaCode) {
       return 'beta-key'
     }
@@ -135,15 +138,16 @@ export default function AuthPage({
     }
   }, [notifyError, t])
 
-  // NG-042 : lien d'invitation / magic link deja consomme (pre-scan email) ou
-  // expire. captureAuthUrlError() (main.tsx) a pose le flag au boot ; on affiche
-  // ici un message clair invitant a se reconnecter par email (le compte existe).
+  // Lien d'invitation / magic link deja consomme (pre-scan email) ou expire.
+  // captureAuthUrlError() (main.tsx) a pose le flag au boot. En acces ouvert, pas
+  // besoin de lien : on bascule sur le formulaire d'inscription et on explique.
   useEffect(() => {
     if (consumeInviteExpired()) {
       notifyError(
-        t('auth.inviteExpired.title', { defaultValue: 'Lien expiré ou déjà utilisé' }),
+        t('auth.inviteExpired.title', { defaultValue: 'Ton lien d’invitation a expiré' }),
         t('auth.inviteExpired.desc', {
-          defaultValue: 'Entre ton email ci-dessous pour recevoir un nouveau lien de connexion.',
+          defaultValue:
+            "Pas de souci, l'accès est ouvert : crée ton compte ci-dessous pour rejoindre Naturegraph.",
         }),
       )
     }

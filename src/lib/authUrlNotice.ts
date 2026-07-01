@@ -14,9 +14,10 @@
  *
  * Solution : on capture l'erreur AU PLUS TOT (premiere ligne de main.tsx, avant
  * que le client Supabase ne nettoie le hash de maniere asynchrone), on pose un
- * flag en sessionStorage, et on nettoie l'URL. L'ecran de connexion (AuthPage)
- * lit ce flag et affiche un message clair invitant a se reconnecter par email
- * (le compte existe deja pour un invite : un simple OTP suffit a entrer).
+ * flag en sessionStorage, et on renvoie l'utilisateur vers l'inscription libre.
+ * En acces ouvert (NG-029), le lien d'invitation n'a plus de valeur particuliere :
+ * l'invite peut simplement creer son compte depuis le signup. AuthPage affiche un
+ * message clair pour expliquer la situation.
  */
 
 /** Flag lu par AuthPage pour afficher le toast "lien expire". */
@@ -24,7 +25,9 @@ const INVITE_EXPIRED_KEY = 'naturegraph-invite-expired'
 
 /**
  * A appeler tout au debut du boot (main.tsx). Si l'URL contient une erreur d'auth
- * (hash `#error=...` / `error_code=...`), pose le flag et nettoie le hash.
+ * (hash `#error=...` / `error_code=...`), pose le flag et nettoie le hash. C'est
+ * ensuite AuthPage qui bascule sur le formulaire d'inscription (acces ouvert :
+ * l'invite n'a qu'a creer son compte) et affiche le message.
  */
 export function captureAuthUrlError(): void {
   try {
@@ -35,10 +38,22 @@ export function captureAuthUrlError(): void {
     if (!hasError) return
 
     window.sessionStorage.setItem(INVITE_EXPIRED_KEY, '1')
-    // Nettoie le hash : evite un re-declenchement + laisse une URL propre.
+    // Nettoie le hash (evite un re-declenchement + URL propre).
     window.history.replaceState(null, '', window.location.pathname + window.location.search)
   } catch {
     // sessionStorage/history indisponible (Safari prive) : on ignore.
+  }
+}
+
+/**
+ * Lit le flag "lien expire" SANS le consommer (pour choisir le mode initial de
+ * l'ecran auth des le premier rendu, sans setState dans un effet).
+ */
+export function peekInviteExpired(): boolean {
+  try {
+    return window.sessionStorage.getItem(INVITE_EXPIRED_KEY) === '1'
+  } catch {
+    return false
   }
 }
 
