@@ -21,6 +21,7 @@ import { AuthOrbBackground, useAuthOrbTracking } from '@/components/auth/AuthOrb
 import OnboardingComponent from '@/components/onboarding'
 import { validateBetaKey } from '@/services/betaService'
 import { recordSignupConsent } from '@/services/legalConsentService'
+import { consumeInviteExpired } from '@/lib/authUrlNotice'
 import { OPEN_ACCESS_ENABLED } from '@/lib/featureFlags'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -131,6 +132,20 @@ export default function AuthPage({
       }
     } catch {
       // sessionStorage indisponible (Safari prive), on ignore
+    }
+  }, [notifyError, t])
+
+  // NG-042 : lien d'invitation / magic link deja consomme (pre-scan email) ou
+  // expire. captureAuthUrlError() (main.tsx) a pose le flag au boot ; on affiche
+  // ici un message clair invitant a se reconnecter par email (le compte existe).
+  useEffect(() => {
+    if (consumeInviteExpired()) {
+      notifyError(
+        t('auth.inviteExpired.title', { defaultValue: 'Lien expiré ou déjà utilisé' }),
+        t('auth.inviteExpired.desc', {
+          defaultValue: 'Entre ton email ci-dessous pour recevoir un nouveau lien de connexion.',
+        }),
+      )
     }
   }, [notifyError, t])
 

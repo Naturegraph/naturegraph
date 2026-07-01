@@ -5,12 +5,18 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { Analytics } from '@vercel/analytics/react'
 import { queryClient } from './lib/queryClient'
 import { initMonitoring } from './lib/monitoring'
+import { captureAuthUrlError } from './lib/authUrlNotice'
 import { router } from './router'
 import { AppErrorBoundary } from './components/layout/AppErrorBoundary'
 import { OnlineStatusBanner } from './components/layout/OnlineStatusBanner'
 import './i18n'
 import './styles/main.scss'
 import './index.css'
+
+// NG-042 : capture une eventuelle erreur d'auth dans l'URL (lien d'invitation
+// deja consomme / expire) AVANT que le client Supabase ne nettoie le hash.
+// L'ecran de connexion affichera un message clair. A faire en tout premier.
+captureAuthUrlError()
 
 // Initialise Sentry si VITE_SENTRY_DSN est defini (no-op sinon)
 void initMonitoring()
