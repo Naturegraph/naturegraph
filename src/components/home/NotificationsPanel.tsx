@@ -49,6 +49,7 @@ import {
   useDeleteNotification,
 } from '@/hooks/useNotifications'
 import { SwipeableNotifItem } from './SwipeableNotifItem'
+import { getReactionLabel } from '@/components/notifications/NotifItem'
 import type { NotificationType } from '@/services/notificationService'
 import {
   groupNotifications,
@@ -94,7 +95,11 @@ function NotifIcon({ type }: { type: NotificationType }) {
       bg: 'bg-[var(--color-warning-bg)]',
       color: 'text-[var(--color-warning)]',
     },
-    follow: { Icon: UserPlus, bg: 'bg-teal-light/30', color: 'text-teal-dark' },
+    follow: {
+      Icon: UserPlus,
+      bg: 'bg-[var(--color-success-bg)]',
+      color: 'text-[var(--color-success)]',
+    },
     post: { Icon: FileText, bg: 'bg-primary-light', color: 'text-primary' },
     species_digest: { Icon: Leaf, bg: 'bg-teal-light/30', color: 'text-teal-dark' },
     comment: { Icon: MessageCircle, bg: 'bg-primary-light', color: 'text-primary' },
@@ -129,7 +134,7 @@ function NotifChip({ type }: { type: NotificationType }) {
   }
   const chipCls: Record<NotificationType, string> = {
     reaction: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
-    follow: 'bg-teal-light/30 text-teal-dark',
+    follow: 'bg-[var(--color-success-bg)] text-[var(--color-success)]',
     post: 'bg-primary-light text-primary',
     species_digest: 'bg-teal-light/30 text-teal-dark',
     comment: 'bg-primary-light text-primary',
@@ -417,16 +422,24 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
                         <span className="text-muted-foreground">{getMessage(notif, t)}</span>
                       </p>
                       {/*
-                        Corps de la notification, affiche sur plusieurs lignes quand present
-                        (Nicolas 2026-05-25). Utilise principalement par les notifs type=system
-                        ou l administrateur ecrit un message libre. whitespace-pre-line preserve
-                        les retours a la ligne du texte stocke en base.
+                        Corps de la notification. Utilise principalement par les notifs
+                        type=system ou l administrateur ecrit un message libre, ainsi que
+                        les captions de posts. Pour type=reaction, le body brut stocke en
+                        base est la cle anglaise du trigger SQL (ex: "love") : on le
+                        traduit via getReactionLabel (emoji + libelle FR, NG-046 #2).
+                        line-clamp-2 : evite les pavés de texte denses dans le panneau
+                        mobile (NG-046 #1). whitespace-pre-line preserve les retours a la
+                        ligne du texte stocke en base pour les notifs system.
                       */}
-                      {notif.body && !(notif.type === 'post' && notif.group_count > 1) && (
-                        <p className="mt-1 text-sm text-muted-foreground leading-snug whitespace-pre-line">
-                          {notif.body}
-                        </p>
-                      )}
+                      {notif.body &&
+                        !(notif.type === 'post' && notif.group_count > 1) &&
+                        (notif.type !== 'reaction' || getReactionLabel(notif.body, t)) && (
+                          <p className="mt-1 text-sm text-muted-foreground leading-snug whitespace-pre-line line-clamp-2">
+                            {notif.type === 'reaction'
+                              ? getReactionLabel(notif.body, t)
+                              : notif.body}
+                          </p>
+                        )}
                     </div>
 
                     {/* Heure + point non-lu */}

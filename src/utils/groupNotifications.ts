@@ -6,6 +6,9 @@
  *
  * Règles :
  *   - Même `type` + même `reference_type` + même `reference_id` + fenêtre < 24h
+ *   - Exception `post` : regroupé par auteur (reference_id differe a chaque post)
+ *   - Exception `follow` : regroupé par type seul (reference_id = id du follower,
+ *     donc toujours different d'une notif a l'autre, cf. NG-046 #3)
  *   - La notif représentante = la plus récente
  *   - On stocke les actors dans `grouped_actors` pour le rendu
  *   - `read` = TRUE uniquement si toutes les notifs du groupe sont lues
@@ -75,11 +78,39 @@ export function groupNotifications(notifs: Notification[]): GroupedNotification[
       continue
     }
 
+    // Regroupement des "follow" (nouveaux migrateurs) sur 24h, indépendant de
+    // reference_id : chaque follow a un reference_id different (l'id du
+    // follower, cf. migration 20260416_notify_on_follow.sql), donc le
+    // regroupement generique par reference ne collapse rien (NG-046 #3 :
+    // l'utilisateur voyait N lignes separees "X a commence a te suivre").
+    // On groupe ici par type sur 24h, comme pour "post".
+    if (n.type === 'follow') {
+      const nDateFollow = new Date(n.created_at).getTime()
+      let allReadFollow = n.read
+      for (const other of notifs) {
+        if (usedIds.has(other.id)) continue
+        if (other.type !== 'follow') continue
+        if (Math.abs(nDateFollow - new Date(other.created_at).getTime()) > WINDOW_MS) continue
+        usedIds.add(other.id)
+        group.group_count += 1
+        group.group_ids.push(other.id)
+        allReadFollow = allReadFollow && other.read
+        if (!group.grouped_actors.some((a) => a.id && a.id === other.actor_id)) {
+          group.grouped_actors.push({
+            id: other.actor_id,
+            username: other.actor_username,
+            avatar_url: other.actor_avatar_url,
+          })
+        }
+      }
+      group.read = allReadFollow
+      result.push(group)
+      continue
+    }
+
     // Pas de regroupement pour les types sans "cible" commune
     const groupable =
-      !!n.reference_id &&
-      !!n.reference_type &&
-      (n.type === 'reaction' || n.type === 'comment' || n.type === 'follow')
+      !!n.reference_id && !!n.reference_type && (n.type === 'reaction' || n.type === 'comment')
 
     if (!groupable) {
       result.push(group)
