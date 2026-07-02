@@ -109,6 +109,61 @@ describe('groupNotifications', () => {
     expect(out).toHaveLength(2)
   })
 
+  it('groupe les "follow" en < 24h meme si reference_id differe (NG-046 #3)', () => {
+    const now = Date.now()
+    // 3 nouveaux followers, reference_id = id du follower -> toujours different
+    const input: Notification[] = [
+      mk({
+        id: 'n1',
+        type: 'follow',
+        reference_id: 'follower-1',
+        reference_type: 'profile',
+        actor_id: 'u1',
+        actor_username: 'alice',
+        created_at: new Date(now).toISOString(),
+      }),
+      mk({
+        id: 'n2',
+        type: 'follow',
+        reference_id: 'follower-2',
+        reference_type: 'profile',
+        actor_id: 'u2',
+        actor_username: 'bob',
+        created_at: new Date(now - 3_600_000).toISOString(),
+      }),
+      mk({
+        id: 'n3',
+        type: 'follow',
+        reference_id: 'follower-3',
+        reference_type: 'profile',
+        actor_id: 'u3',
+        actor_username: 'charlie',
+        created_at: new Date(now - 7_200_000).toISOString(),
+      }),
+    ]
+    const out = groupNotifications(input)
+    expect(out).toHaveLength(1)
+    expect(out[0].group_count).toBe(3)
+    expect(out[0].grouped_actors.map((a) => a.username)).toEqual(['alice', 'bob', 'charlie'])
+  })
+
+  it('ne groupe pas les "follow" au-delà de 24h', () => {
+    const now = Date.now()
+    const input: Notification[] = [
+      mk({ id: 'n1', type: 'follow', reference_id: 'follower-1', reference_type: 'profile' }),
+      mk({
+        id: 'n2',
+        type: 'follow',
+        reference_id: 'follower-2',
+        reference_type: 'profile',
+        actor_id: 'u2',
+        created_at: new Date(now - 25 * 3600_000).toISOString(),
+      }),
+    ]
+    const out = groupNotifications(input)
+    expect(out).toHaveLength(2)
+  })
+
   it('ne groupe pas species_digest', () => {
     const input: Notification[] = [
       mk({ id: 'n1', type: 'species_digest', reference_id: null, reference_type: null }),

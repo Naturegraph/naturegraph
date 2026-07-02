@@ -10,6 +10,7 @@
   --warm-beige: var(--color-bg-tertiary);
   --teal-dark: var(--color-highlight-primary);
   --teal-darker: var(--color-highlight-secondary);
+  --teal-light: var(--color-highlight-tertiary);
   --text-light: var(--color-text-inverse);
   --text-dark: var(--color-text-secondary);
 
@@ -44,6 +45,7 @@
   --color-warm-beige: var(--warm-beige);
   --color-teal-dark: var(--teal-dark);
   --color-teal-darker: var(--teal-darker);
+  --color-teal-light: var(--teal-light);
   --color-cream-lighter: var(--cream-lighter);
   --color-cream: var(--cream);
   --color-card: var(--card);

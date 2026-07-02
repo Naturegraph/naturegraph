@@ -645,7 +645,7 @@
       "typeSystem": "System",
       "messageReaction": "reacted to your post",
       "messageFollow": "started following you",
-      "messagePost": "published a new post",
+      "messagePost": "published a new nature encounter",
       "messageSpeciesDigest": "New activity on a species you follow",
       "othersOne": "+ 1 other",
       "othersMany": "+ {{count}} others",

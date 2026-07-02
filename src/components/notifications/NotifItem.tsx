@@ -13,6 +13,7 @@
 
 import { Heart, UserPlus, FileText, Leaf, MessageCircle, AtSign, Award, Bell } from 'lucide-react'
 import type { Notification, NotificationType } from '@/services/notificationService'
+import { REACTION_CONFIG } from '@/components/home/FeedPost'
 
 // ─── Icône par type ───────────────────────────────────────────────────────────
 
@@ -23,7 +24,11 @@ export function NotifIcon({ type }: { type: NotificationType }) {
       bg: 'bg-[var(--color-warning-bg)]',
       color: 'text-[var(--color-warning)]',
     },
-    follow: { Icon: UserPlus, bg: 'bg-teal-light/30', color: 'text-teal-dark' },
+    follow: {
+      Icon: UserPlus,
+      bg: 'bg-[var(--color-success-bg)]',
+      color: 'text-[var(--color-success)]',
+    },
     post: { Icon: FileText, bg: 'bg-primary-light', color: 'text-primary' },
     species_digest: { Icon: Leaf, bg: 'bg-teal-light/30', color: 'text-teal-dark' },
     comment: { Icon: MessageCircle, bg: 'bg-primary-light', color: 'text-primary' },
@@ -57,7 +62,7 @@ export function NotifChip({ type, t }: { type: NotificationType; t: (k: string) 
   }
   const chipCls: Record<NotificationType, string> = {
     reaction: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
-    follow: 'bg-teal-light/30 text-teal-dark',
+    follow: 'bg-[var(--color-success-bg)] text-[var(--color-success)]',
     post: 'bg-primary-light text-primary',
     species_digest: 'bg-teal-light/30 text-teal-dark',
     comment: 'bg-primary-light text-primary',
@@ -115,6 +120,29 @@ export function getMessage(type: NotificationType, t: (k: string) => string): st
     default:
       return ''
   }
+}
+
+/** Emoji des réactions legacy retirées de REACTION_CONFIG (cf. FeedPost.tsx). */
+const LEGACY_REACTION_EMOJI: Record<string, string> = {
+  disappointed: '😕',
+}
+
+/**
+ * Libellé FR (emoji + texte) d'une notification de réaction.
+ *
+ * `raw` = notif.body, stocké tel quel côté DB par le trigger SQL
+ * (ex: "love", cf. supabase/migrations/20260413_reactions_notifications.sql).
+ * Réutilise REACTION_CONFIG (source de vérité unique, cf. FeedPost.tsx) pour
+ * éviter d'afficher la clé anglaise brute (NG-046 #2).
+ *
+ * Retourne null si le type de réaction est inconnu (aucun body à afficher).
+ */
+export function getReactionLabel(raw: string | null, t: (k: string) => string): string | null {
+  if (!raw) return null
+  const config = REACTION_CONFIG.find((r) => r.key === raw)
+  if (config) return `${config.emoji} ${t(config.labelKey)}`
+  const emoji = LEGACY_REACTION_EMOJI[raw]
+  return emoji ?? null
 }
 
 /** Retourne la route vers laquelle naviguer selon reference_type/id. */
