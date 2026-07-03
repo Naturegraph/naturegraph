@@ -4,9 +4,10 @@
  *
  * Concentre la logique de persistance des 3 inputs onboarding :
  *
- *   1. `interests`        → `profiles.interests` (text[])           : DB
- *   2. `notif_frequency`  → `user_settings.notif_frequency` (text)  : DB
- *   3. `motivations`      → localStorage (Phase MVP)                : client
+ *   1. `interests`        → `profiles.interests` (text[])                    : DB
+ *   2. `notif_frequency`  → `user_settings.notif_frequency` (text)           : DB
+ *      + `weekly_goal`    → `user_settings.weekly_goal` (int, NG-045)        : DB
+ *   3. `motivations`      → localStorage (Phase MVP)                        : client
  *
  * Pourquoi `motivations` côté client ?
  * ────────────────────────────────────
@@ -43,35 +44,58 @@ export type FrequencyOption = 'daily' | 'weekly' | 'monthly' | 'occasionally'
  * Mappe les 4 options UI vers les 3 valeurs autorisées par la CHECK
  * constraint DB (`'realtime' | 'daily' | 'weekly'`).
  *
- * Choix de mapping :
- *   - 'daily'        → 'daily'   (1:1)
- *   - 'weekly'       → 'weekly'  (1:1)
- *   - 'monthly'      → 'weekly'  (rounding down : l'utilisateur préfère peu
- *                                  de notifs, on garde le minimum non-zéro)
- *   - 'occasionally' → 'weekly'  (idem : pas d'option moins fréquente que
- *                                  weekly côté DB)
+ * Correspondance officielle (brief NG-045, table de correspondance
+ * onboarding -> notifications) :
+ *   - 'daily'        (Tous les jours)          -> 'realtime'
+ *   - 'weekly'       (Quelques fois/semaine)   -> 'daily'
+ *   - 'monthly'      (Quelques fois/mois)      -> 'weekly'
+ *   - 'occasionally' (Occasionnellement)       -> 'realtime'
  *
- * À terme, la DB pourrait gagner les valeurs `'monthly'` / `'never'` mais
- * c'est hors scope MVP (contrainte RC-E : pas de schema change).
+ * Remplace l'ancien mapping (daily->daily, weekly->weekly, monthly/
+ * occasionally->weekly) qui datait d'une contrainte MVP différente
+ * (RC-E : pas de vrai objectif hebdo à l'époque). Le mapping "occasionally
+ * -> realtime" n'est pas intuitif au premier regard : la logique métier est
+ * qu'un utilisateur occasionnel ne recevra de toute façon quasiment aucun
+ * signal (objectif hebdo = 1), donc autant le prévenir tout de suite plutôt
+ * que d'attendre un digest hebdomadaire qui n'aura souvent rien à montrer.
  */
 export function mapFrequencyOptionToNotifFrequency(option: FrequencyOption): NotifFrequency {
-  if (option === 'daily') return 'daily'
-  if (option === 'weekly') return 'weekly'
-  // 'monthly' et 'occasionally' tombent sur le minimum DB ('weekly').
-  // L'utilisateur peut affiner ensuite dans Settings > Notifications.
-  return 'weekly'
+  if (option === 'daily') return 'realtime'
+  if (option === 'weekly') return 'daily'
+  if (option === 'monthly') return 'weekly'
+  return 'realtime' // 'occasionally'
+}
+
+/**
+ * Mappe les 4 options UI vers l'objectif hebdomadaire par défaut
+ * (`user_settings.weekly_goal`, CHECK 1-20). Modifiable ensuite par
+ * l'utilisateur dans Settings > Notifications.
+ *
+ * Correspondance officielle (brief NG-045) :
+ *   - 'daily'        -> 7 publications/semaine
+ *   - 'weekly'       -> 3 publications/semaine
+ *   - 'monthly'      -> 1 publication/semaine
+ *   - 'occasionally' -> 1 publication/semaine
+ */
+export function mapFrequencyOptionToWeeklyGoal(option: FrequencyOption): number {
+  if (option === 'daily') return 7
+  if (option === 'weekly') return 3
+  return 1 // 'monthly' et 'occasionally'
 }
 
 // ─── Persistance user_settings (notif_frequency) ──────────────────────────────
 
 /**
- * Persiste la fréquence de notification choisie à l'onboarding step 2.
+ * Persiste la fréquence de notification et l'objectif hebdomadaire choisis
+ * à l'onboarding step 2 (NG-045 : la fréquence détermine le paramétrage
+ * par défaut des notifications ET l'objectif hebdo).
  *
  * Comportement :
  *   - Crée la row `user_settings` si elle n'existe pas (upsert)
- *   - Met à jour seulement `notif_frequency` (les autres défauts DB
+ *   - Met à jour `notif_frequency` et `weekly_goal` (les autres défauts DB
  *     sont conservés)
  *   - Idempotent : peut être rappelé sans risque
+ *   - Modifiable ensuite à tout moment dans Settings > Notifications
  *
  * @param userId  UUID de l'user authentifié
  * @param option  Fréquence UI ('daily' | 'weekly' | 'monthly' | 'occasionally')
@@ -82,14 +106,16 @@ export async function persistNotifFrequency(
   option: FrequencyOption,
 ): Promise<NotifFrequency> {
   const dbValue = mapFrequencyOptionToNotifFrequency(option)
+  const weeklyGoal = mapFrequencyOptionToWeeklyGoal(option)
   // Logs RC-E : permettent de valider en console que la persistance
   // se déclenche correctement à la fin de l'onboarding (dev uniquement).
   debugLog('onboarding-persistence', 'persistNotifFrequency', {
     userId,
     uiOption: option,
     dbValue,
+    weeklyGoal,
   })
-  await updateSettings(userId, { notif_frequency: dbValue })
+  await updateSettings(userId, { notif_frequency: dbValue, weekly_goal: weeklyGoal })
   return dbValue
 }
 
