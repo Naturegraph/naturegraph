@@ -6,8 +6,14 @@
  *
  *   1. `interests`        → `profiles.interests` (text[])                    : DB
  *   2. `notif_frequency`  → `user_settings.notif_frequency` (text)           : DB
- *      + `weekly_goal`    → `user_settings.weekly_goal` (int, NG-045)        : DB
+ *      + `week_goal`      → `profiles.week_goal` (int, NG-045)               : DB
  *   3. `motivations`      → localStorage (Phase MVP)                        : client
+ *
+ * Piège évité (NG-045) : `user_settings.weekly_goal` existe aussi en DB mais
+ * n'est JAMAIS lue nulle part (cf. commentaire statsService.ts, 2026-05-24,
+ * même piège déjà rencontré par Nicolas). La vraie source de vérité pour
+ * l'objectif hebdo affiché/édité sur le profil est `profiles.week_goal`.
+ * On écrit uniquement là, `user_settings.weekly_goal` reste une colonne morte.
  *
  * Pourquoi `motivations` côté client ?
  * ────────────────────────────────────
@@ -32,6 +38,7 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { debugLog } from '@/lib/debugLog'
 import { updateSettings, type NotifFrequency } from './settingsService'
+import { updateProfile } from './profileService'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -68,8 +75,8 @@ export function mapFrequencyOptionToNotifFrequency(option: FrequencyOption): Not
 
 /**
  * Mappe les 4 options UI vers l'objectif hebdomadaire par défaut
- * (`user_settings.weekly_goal`, CHECK 1-20). Modifiable ensuite par
- * l'utilisateur dans Settings > Notifications.
+ * (`profiles.week_goal`, saisi/modifiable ensuite via EditInfoTab sur le
+ * profil, cf. profileService.ts).
  *
  * Correspondance officielle (brief NG-045) :
  *   - 'daily'        -> 7 publications/semaine
@@ -83,7 +90,7 @@ export function mapFrequencyOptionToWeeklyGoal(option: FrequencyOption): number 
   return 1 // 'monthly' et 'occasionally'
 }
 
-// ─── Persistance user_settings (notif_frequency) ──────────────────────────────
+// ─── Persistance notif_frequency (user_settings) + week_goal (profiles) ───────
 
 /**
  * Persiste la fréquence de notification et l'objectif hebdomadaire choisis
@@ -91,11 +98,12 @@ export function mapFrequencyOptionToWeeklyGoal(option: FrequencyOption): number 
  * par défaut des notifications ET l'objectif hebdo).
  *
  * Comportement :
- *   - Crée la row `user_settings` si elle n'existe pas (upsert)
- *   - Met à jour `notif_frequency` et `weekly_goal` (les autres défauts DB
- *     sont conservés)
+ *   - `notif_frequency` : upsert `user_settings` (crée la row si absente)
+ *   - `week_goal` : update `profiles` (la row existe déjà à ce stade de
+ *     l'onboarding, créée par le trigger `handle_new_auth_user`)
  *   - Idempotent : peut être rappelé sans risque
- *   - Modifiable ensuite à tout moment dans Settings > Notifications
+ *   - Modifiable ensuite à tout moment (fréquence dans Settings >
+ *     Notifications, objectif hebdo dans l'édition du profil)
  *
  * @param userId  UUID de l'user authentifié
  * @param option  Fréquence UI ('daily' | 'weekly' | 'monthly' | 'occasionally')
@@ -106,16 +114,19 @@ export async function persistNotifFrequency(
   option: FrequencyOption,
 ): Promise<NotifFrequency> {
   const dbValue = mapFrequencyOptionToNotifFrequency(option)
-  const weeklyGoal = mapFrequencyOptionToWeeklyGoal(option)
+  const weekGoal = mapFrequencyOptionToWeeklyGoal(option)
   // Logs RC-E : permettent de valider en console que la persistance
   // se déclenche correctement à la fin de l'onboarding (dev uniquement).
   debugLog('onboarding-persistence', 'persistNotifFrequency', {
     userId,
     uiOption: option,
     dbValue,
-    weeklyGoal,
+    weekGoal,
   })
-  await updateSettings(userId, { notif_frequency: dbValue, weekly_goal: weeklyGoal })
+  await Promise.all([
+    updateSettings(userId, { notif_frequency: dbValue }),
+    updateProfile(userId, { week_goal: weekGoal }),
+  ])
   return dbValue
 }
 
