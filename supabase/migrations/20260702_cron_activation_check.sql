@@ -3,16 +3,24 @@
 --
 -- Déclenche l'edge function `check-activation-emails` tous les jours à 8h UTC
 -- (décalé du digest espèces hebdo à 9h UTC pour ne pas cumuler la charge sur
--- le même créneau). Requiert pg_cron/pg_net, déjà actives (cf.
--- 20260417_cron_species_digest.sql).
+-- le même créneau).
 --
--- Réutilise les mêmes settings que le digest espèces :
---   app.settings.supabase_url, app.settings.cron_secret (Vault, déjà en place).
+-- IMPORTANT (2026-07-02) : la première version de cette migration reprenait
+-- le pattern `current_setting('app.settings.supabase_url/cron_secret')` de
+-- 20260417_cron_species_digest.sql. Audit fait avant application : ces
+-- settings ne sont PAS configurés en prod (aucune ligne dans
+-- pg_db_role_setting), et le cron job weekly_species_digest lui-meme
+-- n'existe pas dans cron.job malgre la migration listee comme appliquee.
+-- Ce pattern n'a donc jamais fonctionne. On reprend a la place le pattern
+-- PROUVE fonctionnel du trigger waitlist (20260515_waitlist_send_confirmation_trigger.sql,
+-- confirme operationnel) : URL du projet en dur (valeur publique, pas un
+-- secret) + secret d'auth stocke dans Supabase Vault et resolu a l'execution.
 --
--- NOTE déploiement : cette migration planifie l'appel côté Postgres, mais
--- l'Edge Function elle-même (check-activation-emails) doit être déployée
--- séparément via `supabase functions deploy check-activation-emails`, de
--- même que send-notification-email et email-unsubscribe dont elle dépend.
+-- Le secret 'cron_secret' a ete cree dans Vault via vault.create_secret()
+-- avant cette migration. Sa valeur doit AUSSI etre posee comme secret Edge
+-- Function CRON_SECRET (Dashboard -> Edge Functions -> Secrets) pour que
+-- check-activation-emails / send-notification-email valident le header
+-- x-cron-secret correctement.
 
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 CREATE EXTENSION IF NOT EXISTS pg_net;
@@ -28,10 +36,10 @@ SELECT cron.schedule(
   '0 8 * * *',
   $$
   SELECT net.http_post(
-    url := current_setting('app.settings.supabase_url', true) || '/functions/v1/check-activation-emails',
+    url := 'https://hrxgduvworofnrjmgpcj.supabase.co/functions/v1/check-activation-emails',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'x-cron-secret', current_setting('app.settings.cron_secret', true)
+      'x-cron-secret', (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'cron_secret')
     ),
     body := '{}'::jsonb,
     timeout_milliseconds := 30000
