@@ -29,7 +29,7 @@ function ctaButtonHtml(cta: { label: string; url: string } | undefined): string 
   if (!cta) return ''
   return `
       <tr>
-        <td align="left" style="padding:8px 48px 32px 48px;">
+        <td align="center" style="padding:8px 48px 32px 48px;">
           <a href="${cta.url}" style="display:inline-block;background-color:#5f5dd8;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 32px;border-radius:999px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
             ${cta.label}
           </a>
@@ -73,7 +73,7 @@ export function buildEmailShell(params: EmailShellParams): string {
           <!-- Hero + corps -->
           <tr>
             <td style="padding:40px 48px 8px 48px;">
-              <h1 style="margin:0 0 20px 0;font-size:24px;font-weight:700;color:#13131a;font-family:'Quicksand',-apple-system,sans-serif;line-height:1.3;text-align:left;">
+              <h1 style="margin:0 0 20px 0;font-size:20px;font-weight:700;color:#13131a;font-family:'Quicksand',-apple-system,sans-serif;line-height:1.3;text-align:left;">
                 ${heroTitle}
               </h1>
               <div style="font-size:15px;line-height:1.6;color:#4a4869;">
