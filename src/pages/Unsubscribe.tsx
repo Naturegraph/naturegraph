@@ -30,7 +30,6 @@ import { usePageTitle } from '@/hooks/usePageTitle'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 
 interface UnsubContent {
-  emoji: string
   title: string
   body: string
 }
@@ -39,14 +38,12 @@ interface UnsubContent {
 function resolveContent(status: string | null, scope: string | null): UnsubContent {
   if (status === 'invalid') {
     return {
-      emoji: '🔗',
       title: 'Lien invalide',
       body: "Ce lien de désabonnement n'est pas reconnu ou a été altéré. Si le problème persiste, écris-nous à support@naturegraph.ca.",
     }
   }
   if (status === 'error') {
     return {
-      emoji: '🌱',
       title: 'Une erreur est survenue',
       body: "Ton désabonnement n'a pas pu être enregistré. Écris-nous à support@naturegraph.ca et on s'en occupe manuellement.",
     }
@@ -54,13 +51,11 @@ function resolveContent(status: string | null, scope: string | null): UnsubConte
   // status = 'ok' (défaut)
   if (scope === 'all') {
     return {
-      emoji: '🌿',
       title: 'Désabonnement confirmé',
       body: 'Tu ne recevras plus aucun email automatique de Naturegraph. Tu peux réactiver ça à tout moment dans Paramètres puis Notifications.',
     }
   }
   return {
-    emoji: '🌿',
     title: 'Désabonnement confirmé',
     body: "Tu ne recevras plus ce type d'email. Les autres notifications par email restent actives, modifiables dans Paramètres puis Notifications.",
   }
@@ -70,7 +65,7 @@ export default function Unsubscribe() {
   const [params] = useSearchParams()
   const status = params.get('status')
   const scope = params.get('scope')
-  const { emoji, title, body } = resolveContent(status, scope)
+  const { title, body } = resolveContent(status, scope)
 
   usePageTitle(title)
 
@@ -88,9 +83,6 @@ export default function Unsubscribe() {
           height={56}
           className="mx-auto mb-4 size-14 rounded-full bg-primary-light"
         />
-        <div className="text-4xl mb-3" aria-hidden="true">
-          {emoji}
-        </div>
         <h1 className="font-title font-bold text-xl text-foreground mb-3">{title}</h1>
         <p className="text-sm text-muted-foreground leading-relaxed mb-6">{body}</p>
         <Link
