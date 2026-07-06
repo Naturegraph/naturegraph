@@ -108,7 +108,9 @@ Deno.serve(async (req: Request) => {
             <p style="margin:0 0 16px 0;">Une fleur sur ton balcon, un oiseau croisé en marchant, une feuille qui a attiré ton œil : tout compte.</p>
             <p style="margin:0;">Si tu as une question, on est là : support@naturegraph.ca</p>
           `,
-          cta: { label: 'Publier ma première observation', url: `${APP_URL}/contribute` },
+          // Label court : "Publier ma première observation" débordait sur 3
+          // lignes dans le bouton en mobile (retour test Nicolas 2026-07-06).
+          cta: { label: 'Publier une observation', url: `${APP_URL}/contribute` },
         }),
       })
 
