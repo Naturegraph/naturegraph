@@ -152,7 +152,7 @@ Deno.serve(async (req: Request) => {
           url: postId ? `${APP_URL}/post/${postId}` : `${APP_URL}/home`,
         }
       } else {
-        subject = `${rows.length} nouvelles observations à découvrir 🌿`
+        subject = `${rows.length} nouvelles observations à découvrir`
         bodyInner = `<p style="margin:0 0 16px 0;">${joinNames(authors)} ont publié de nouvelles observations aujourd'hui.</p>`
         cta = { label: 'Voir le fil', url: `${APP_URL}/home` }
       }

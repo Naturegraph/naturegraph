@@ -152,7 +152,7 @@ Deno.serve(async (req: Request) => {
           category: 'weekly_marketing',
           pref_type: 'goal_reminder',
           min_interval_hours: 144,
-          subject: `Tu es à ${obsWeek}/${weekGoal} cette semaine 🌿`,
+          subject: `Tu es à ${obsWeek}/${weekGoal} cette semaine`,
           heroTitle: 'Ton objectif de la semaine',
           bodyHtml,
           cta: { label: 'Publier une observation', url: `${APP_URL}/contribute` },

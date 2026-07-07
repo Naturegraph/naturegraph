@@ -100,7 +100,7 @@ Deno.serve(async (req: Request) => {
           // Pas de pref_type : email de cycle de vie, seule la coupure
           // globale email_notifications s'applique (pas de toggle dédié).
           min_interval_hours: 24 * 365, // envoi unique par compte
-          subject: "Ta première observation t'attend 🌿",
+          subject: "Ta première observation t'attend",
           heroTitle: "Ta première observation t'attend",
           bodyHtml: `
             <p style="margin:0 0 16px 0;">${greeting}</p>

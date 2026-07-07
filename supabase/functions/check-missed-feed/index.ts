@@ -140,7 +140,7 @@ Deno.serve(async (req: Request) => {
           category: 'weekly_marketing',
           pref_type: 'weekly_digest',
           min_interval_hours: 144,
-          subject: 'Tu as manqué de belles observations 🌿',
+          subject: 'Tu as manqué de belles observations',
           heroTitle: "Ce qui s'est passé pendant ton absence",
           bodyHtml,
           cta: { label: 'Voir les observations', url: `${APP_URL}/home` },

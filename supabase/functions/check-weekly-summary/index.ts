@@ -154,7 +154,7 @@ Deno.serve(async (req: Request) => {
           category: 'weekly_marketing',
           pref_type: 'weekly_digest',
           min_interval_hours: 144,
-          subject: 'Ta semaine sur Naturegraph 🌿',
+          subject: 'Ta semaine sur Naturegraph',
           heroTitle: 'Ta semaine sur Naturegraph',
           bodyHtml,
           cta,

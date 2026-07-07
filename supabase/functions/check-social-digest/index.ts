@@ -157,9 +157,7 @@ Deno.serve(async (req: Request) => {
         ? `${prof.first_name.toString().trim()},`
         : 'Bonjour,'
       const subject =
-        reactionNames.length > 0
-          ? 'On a réagi à tes observations 🌿'
-          : 'Tu as de nouveaux migrateurs 🌿'
+        reactionNames.length > 0 ? 'On a réagi à tes observations' : 'Tu as de nouveaux migrateurs'
       const bodyHtml =
         `<p style="margin:0 0 16px 0;">${greeting}</p>` +
         lines.map((l) => `<p style="margin:0 0 16px 0;">${l}</p>`).join('') +

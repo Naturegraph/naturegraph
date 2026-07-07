@@ -153,7 +153,7 @@ Deno.serve(async (req: Request) => {
           category: 'weekly_marketing',
           pref_type: 'streak',
           min_interval_hours: 144,
-          subject: 'Ne perds pas ta série 🌿',
+          subject: 'Ne perds pas ta série',
           heroTitle: `Ta série de ${streak} semaines`,
           bodyHtml,
           cta: { label: 'Publier maintenant', url: `${APP_URL}/contribute` },

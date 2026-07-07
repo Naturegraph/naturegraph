@@ -54,7 +54,7 @@ function milestoneEmail(threshold: number, greeting: string) {
     ? "Cent espèces, c'est un vrai cap de naturaliste. Merci de faire vivre la biodiversité avec autant de curiosité."
     : 'Merci de faire vivre la biodiversité, une observation à la fois.'
   return {
-    subject: `Tu as observé ${threshold} espèces différentes 🌿`,
+    subject: `Tu as observé ${threshold} espèces différentes`,
     heroTitle: `${threshold} espèces observées`,
     bodyHtml:
       `<p style="margin:0 0 16px 0;">${greeting}</p>` +
