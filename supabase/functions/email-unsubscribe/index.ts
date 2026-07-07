@@ -1,30 +1,23 @@
 /**
  * email-unsubscribe : lien de désabonnement sans login (NG-045)
  *
- * Endpoint public GET, appelé en un clic depuis un email. Le payload
- * (user_id + type de notification) est authentifié par une signature HMAC
- * (cf. _shared/unsubscribeToken.ts), pas par une session utilisateur : on ne
- * peut pas exiger un login pour un lien de désabonnement RGPD.
+ * Deux modes :
+ *   - GET  : clic humain depuis un email -> fait le travail serveur puis
+ *            REDIRIGE (302) vers la page frontend /desabonnement (Supabase
+ *            force text/plain sur les Edge Functions, donc pas de HTML ici).
+ *   - POST : désabonnement en un clic (RFC 8058, en-tête List-Unsubscribe-Post).
+ *            Gmail/Apple Mail appellent cette URL en POST quand l'utilisateur
+ *            clique le "Se désabonner" natif du client mail. On fait le même
+ *            travail et on répond 200 (pas de redirection, pas d'UI).
  *
- * type = 'all'    -> coupe user_settings.email_notifications (tout email automatique)
- * type = <autre>  -> coupe notification_preferences.email_enabled pour ce type seul
- *                     (ex: 'weekly_digest' désactive juste E1/E2, pas les emails
- *                     de réaction)
+ * Le payload (user_id + type) est authentifié par signature HMAC
+ * (cf. _shared/unsubscribeToken.ts), pas par session : un lien de
+ * désabonnement ne doit jamais exiger de login.
  *
- * Affichage : cette fonction fait UNIQUEMENT le travail serveur (vérif HMAC +
- * mise à jour DB) puis REDIRIGE (302) vers la page frontend /desabonnement.
- * Pourquoi : Supabase force `Content-Type: text/plain` + un CSP `sandbox` sur
- * les réponses des Edge Functions (anti-phishing), donc du HTML servi ici
- * s'affiche en code brut avec accents cassés. La page frontend, elle, rend
- * proprement le message brandé. Le désabonnement est effectué AVANT la
- * redirection : il fonctionne même si la page ne se charge pas.
+ * type = 'all'    -> coupe user_settings.email_notifications (tout email auto)
+ * type = <autre>  -> coupe notification_preferences.email_enabled pour ce type
  *
- * Variables d'env :
- *   - EMAIL_UNSUB_SECRET : secret HMAC partagé avec la génération des liens
- *   - APP_BASE_URL       : origine du site pour construire la redirection
- *   - SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY : injectées automatiquement
- *
- * verify_jwt : false (appel public depuis un client mail, pas de JWT user).
+ * verify_jwt : false (appel public depuis un client mail).
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
@@ -45,61 +38,72 @@ const PREF_TYPES = new Set([
   'streak',
 ])
 
-/** Redirige (302) vers la page frontend de confirmation avec le statut voulu. */
-function redirect(status: 'ok' | 'invalid' | 'error', scope?: 'all' | 'type'): Response {
-  const url = new URL('/desabonnement', APP_URL)
-  url.searchParams.set('status', status)
-  if (scope) url.searchParams.set('scope', scope)
-  return new Response(null, { status: 302, headers: { Location: url.toString() } })
-}
+type UnsubResult = 'ok_all' | 'ok_type' | 'invalid' | 'error'
 
-Deno.serve(async (req: Request) => {
-  if (req.method !== 'GET') {
-    return redirect('invalid')
-  }
-
-  const url = new URL(req.url)
-  const userId = url.searchParams.get('u') ?? ''
-  const type = url.searchParams.get('t') ?? ''
-  const sig = url.searchParams.get('sig') ?? ''
-
-  if (!userId || !type || !sig) {
-    return redirect('invalid')
-  }
-
+/** Vérifie la signature et applique le désabonnement. Aucune UI, juste le travail DB. */
+async function doUnsubscribe(userId: string, type: string, sig: string): Promise<UnsubResult> {
+  if (!userId || !type || !sig) return 'invalid'
   if (!UNSUB_SECRET) {
     console.error('[email-unsubscribe] EMAIL_UNSUB_SECRET non configuré')
-    return redirect('error')
+    return 'error'
   }
-
   const valid = await verifyUnsubscribeToken(UNSUB_SECRET, userId, type, sig)
-  if (!valid) {
-    return redirect('invalid')
-  }
-
-  if (type !== 'all' && !PREF_TYPES.has(type)) {
-    return redirect('invalid')
-  }
+  if (!valid) return 'invalid'
+  if (type !== 'all' && !PREF_TYPES.has(type)) return 'invalid'
 
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-
   try {
     if (type === 'all') {
       const { error } = await admin
         .from('user_settings')
         .upsert({ user_id: userId, email_notifications: false }, { onConflict: 'user_id' })
       if (error) throw error
-      return redirect('ok', 'all')
+      return 'ok_all'
     }
-
     const { error } = await admin
       .from('notification_preferences')
       .upsert({ user_id: userId, type, email_enabled: false }, { onConflict: 'user_id,type' })
     if (error) throw error
-
-    return redirect('ok', 'type')
+    return 'ok_type'
   } catch (err) {
     console.error('[email-unsubscribe] DB error:', err)
-    return redirect('error')
+    return 'error'
   }
+}
+
+/** Redirige (302) vers la page frontend de confirmation (mode GET, clic humain). */
+function redirect(result: UnsubResult): Response {
+  const url = new URL('/desabonnement', APP_URL)
+  if (result === 'ok_all') {
+    url.searchParams.set('status', 'ok')
+    url.searchParams.set('scope', 'all')
+  } else if (result === 'ok_type') {
+    url.searchParams.set('status', 'ok')
+    url.searchParams.set('scope', 'type')
+  } else {
+    url.searchParams.set('status', result) // 'invalid' | 'error'
+  }
+  return new Response(null, { status: 302, headers: { Location: url.toString() } })
+}
+
+Deno.serve(async (req: Request) => {
+  const url = new URL(req.url)
+  const userId = url.searchParams.get('u') ?? ''
+  const type = url.searchParams.get('t') ?? ''
+  const sig = url.searchParams.get('sig') ?? ''
+
+  // POST : désabonnement en un clic (RFC 8058). Réponse minimale 200, sans UI.
+  if (req.method === 'POST') {
+    const result = await doUnsubscribe(userId, type, sig)
+    const ok = result === 'ok_all' || result === 'ok_type'
+    return new Response(ok ? 'unsubscribed' : result, { status: ok ? 200 : 400 })
+  }
+
+  // GET : clic humain -> travail serveur puis redirection vers la page brandée.
+  if (req.method === 'GET') {
+    const result = await doUnsubscribe(userId, type, sig)
+    return redirect(result)
+  }
+
+  return redirect('invalid')
 })

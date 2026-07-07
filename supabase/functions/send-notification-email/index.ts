@@ -207,6 +207,15 @@ Deno.serve(async (req: Request) => {
         to: payload.to_email,
         subject: payload.subject,
         html,
+        // List-Unsubscribe (RFC 8058) : desabonnement natif un clic dans
+        // Gmail/Apple Mail. Exige par Gmail/Yahoo pour l'envoi en volume,
+        // ameliore la delivrabilite et reduit le classement en Promotions/spam.
+        // L'URL pointe sur email-unsubscribe (GET pour le clic humain, POST
+        // pour le un-clic natif).
+        headers: {
+          'List-Unsubscribe': `<${unsubscribeUrl}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
       }),
     })
 
