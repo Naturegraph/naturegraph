@@ -117,6 +117,28 @@ Deno.serve(async (req: Request) => {
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE)
 
   try {
+    // 0. Eligibilite : ne JAMAIS emailer un profil seulement invite (auto-cree
+    // a l'invitation mais qui n'a jamais termine son inscription/onboarding).
+    // On exige un profil onboarde : prenom OU centres d'interet renseignes
+    // (meme definition que isProfileAlreadyOnboarded cote app). Garde-fou
+    // central : vaut pour les 8 emails, quel que soit le job appelant.
+    const { data: prof, error: profErr } = await admin
+      .from('profiles')
+      .select('first_name, interests')
+      .eq('id', payload.user_id)
+      .maybeSingle()
+    if (profErr) throw profErr
+    const onboarded = !!(
+      prof &&
+      (prof.first_name?.toString().trim() ||
+        (Array.isArray(prof.interests) && prof.interests.length > 0))
+    )
+    if (!onboarded) {
+      return new Response(JSON.stringify({ ok: true, sent: false, reason: 'not_onboarded' }), {
+        headers: { ...CORS, 'Content-Type': 'application/json' },
+      })
+    }
+
     // 1. Préférences (global + par type)
     if (payload.pref_type) {
       const { data: allowed, error: prefErr } = await admin.rpc('is_email_enabled', {
