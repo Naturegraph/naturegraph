@@ -29,11 +29,19 @@ export function useActivityHeartbeat(userId: string | undefined | null): void {
   useEffect(() => {
     if (!userId || !isSupabaseConfigured || !supabase) return
 
+    // `touch_last_active` a été ajouté par une migration NG-045 mais n'est pas
+    // encore présent dans les types générés (src/types/supabase.ts). On caste
+    // l'appel RPC de façon ciblée en attendant une régénération propre des types
+    // (convention projet : supabase.ts est généré, jamais édité à la main).
+    const callTouchLastActive = supabase!.rpc.bind(supabase) as (
+      fn: string,
+    ) => PromiseLike<{ error: { message: string } | null }>
+
     const ping = () => {
       const now = Date.now()
       if (now - lastPingRef.current < HEARTBEAT_THROTTLE_MS) return
       lastPingRef.current = now
-      supabase!.rpc('touch_last_active').then(({ error }) => {
+      callTouchLastActive('touch_last_active').then(({ error }) => {
         if (error) {
           // Best-effort : un heartbeat manqué n'a aucun impact utilisateur
           // visible, juste une fenêtre E7 légèrement moins précise.
