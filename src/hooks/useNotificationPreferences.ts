@@ -2,16 +2,19 @@
  * useNotificationPreferences : React Query hook pour les préférences par type
  *
  * - Query : liste des rows persistées
- * - Helper `isEnabled(type)` : applique le défaut SQL si pas de row
- * - Mutation `set({ type, enabled })` : upsert optimiste
+ * - Helpers `isEnabled(type)` (cloche) / `isEmailEnabled(type)` (email) :
+ *   appliquent le défaut SQL si pas de row
+ * - Mutation `setChannels({ type, enabled, emailEnabled })` : upsert optimiste
+ *   des DEUX canaux d'un type (couper un type coupe cloche + email)
  */
 
 import { useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   listPreferences,
-  setPreference,
+  setPreferenceChannels,
   defaultEnabled,
+  defaultEmailEnabled,
   type NotificationPreference,
 } from '@/services/notificationPreferencesService'
 import type { NotificationType } from '@/services/notificationService'
@@ -28,37 +31,54 @@ export function useNotificationPreferences(userId: string | undefined) {
     staleTime: 60 * 1000,
   })
 
-  // Map type → enabled pour un lookup O(1)
-  const map = useMemo(() => {
-    const m = new Map<NotificationType, boolean>()
-    for (const p of query.data ?? []) m.set(p.type, p.enabled)
-    return m
+  // Maps type → canal pour un lookup O(1)
+  const { enabledMap, emailMap } = useMemo(() => {
+    const en = new Map<NotificationType, boolean>()
+    const em = new Map<NotificationType, boolean>()
+    for (const p of query.data ?? []) {
+      en.set(p.type, p.enabled)
+      em.set(p.type, p.email_enabled)
+    }
+    return { enabledMap: en, emailMap: em }
   }, [query.data])
 
-  /** État effectif (row persistée sinon défaut du type). */
+  /** État cloche effectif (row persistée sinon défaut du type). */
   const isEnabled = (type: NotificationType): boolean =>
-    map.has(type) ? !!map.get(type) : defaultEnabled(type)
+    enabledMap.has(type) ? !!enabledMap.get(type) : defaultEnabled(type)
+
+  /** État email effectif (row persistée sinon défaut du type). */
+  const isEmailEnabled = (type: NotificationType): boolean =>
+    emailMap.has(type) ? !!emailMap.get(type) : defaultEmailEnabled(type)
 
   const mutation = useMutation({
-    mutationFn: ({ type, enabled }: { type: NotificationType; enabled: boolean }) => {
+    mutationFn: ({
+      type,
+      enabled,
+      emailEnabled,
+    }: {
+      type: NotificationType
+      enabled: boolean
+      emailEnabled: boolean
+    }) => {
       if (!userId) throw new Error('Utilisateur non connecte')
-      return setPreference(userId, type, enabled)
+      return setPreferenceChannels(userId, type, enabled, emailEnabled)
     },
-    // Optimiste : patch le cache immédiatement
-    onMutate: async ({ type, enabled }) => {
+    // Optimiste : patch le cache immédiatement (les 2 canaux)
+    onMutate: async ({ type, enabled, emailEnabled }) => {
       if (!userId) return
       const key = notifPrefsQueryKey(userId)
       await qc.cancelQueries({ queryKey: key })
       const prev = qc.getQueryData<NotificationPreference[]>(key) ?? []
       const existing = prev.find((p) => p.type === type)
       const next = existing
-        ? prev.map((p) => (p.type === type ? { ...p, enabled } : p))
+        ? prev.map((p) => (p.type === type ? { ...p, enabled, email_enabled: emailEnabled } : p))
         : [
             ...prev,
             {
               user_id: userId,
               type,
               enabled,
+              email_enabled: emailEnabled,
               updated_at: new Date().toISOString(),
             } as NotificationPreference,
           ]
@@ -75,5 +95,11 @@ export function useNotificationPreferences(userId: string | undefined) {
     },
   })
 
-  return { query, isEnabled, set: mutation.mutate, isPending: mutation.isPending }
+  return {
+    query,
+    isEnabled,
+    isEmailEnabled,
+    setChannels: mutation.mutate,
+    isPending: mutation.isPending,
+  }
 }
