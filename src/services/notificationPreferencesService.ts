@@ -79,15 +79,18 @@ export async function setPreferenceChannels(
   emailEnabled: boolean,
 ): Promise<void> {
   if (!isSupabaseConfigured || !supabase) return
-  const { error } = await supabase.from('notification_preferences').upsert(
-    {
-      user_id: userId,
-      type,
-      enabled,
-      email_enabled: emailEnabled,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'user_id,type' },
-  )
+  // La colonne email_enabled (ajoutee par migration NG-045) n'est pas encore
+  // dans les types generes (src/types/supabase.ts). Cast cible du payload en
+  // attendant une regeneration propre des types.
+  const payload = {
+    user_id: userId,
+    type,
+    enabled,
+    email_enabled: emailEnabled,
+    updated_at: new Date().toISOString(),
+  } as never
+  const { error } = await supabase
+    .from('notification_preferences')
+    .upsert(payload, { onConflict: 'user_id,type' })
   if (error) throw new Error(error.message)
 }
