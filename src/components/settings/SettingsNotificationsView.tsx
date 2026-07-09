@@ -98,38 +98,16 @@ import { useNotificationPreferences } from '@/hooks/useNotificationPreferences'
 
 type DeliveryMethod = 'in_app' | 'email' | 'none'
 /**
- * Fréquence de notification (digest) : stockée dans `user_settings.notif_frequency`
- * (colonne ajoutée par migration `20260502_settings_notif_frequency.sql`).
+ * Fréquence de notification (digest) : stockée dans `user_settings.notif_frequency`.
  *
  * 'realtime' = notif immédiate dès qu'un événement survient.
- * 'daily'    = digest quotidien (cron 8h UTC).
- * 'weekly'   = digest hebdomadaire (cron lundi 8h UTC).
+ * 'daily'    = digest quotidien (NG-045 : E7/E8 respectent cette valeur).
+ * 'weekly'   = digest hebdomadaire (couvert par le resume E1).
  */
 type Frequency = 'realtime' | 'daily' | 'weekly'
 
-// ─── Helpers : mapping settings DB <-> UI radios ─────────────────────────────
-//
-// Le DS UI propose des **radios exclusifs** ("Dans l'application | Par courriel
-// | Aucune"), mais la DB (table `user_settings`) stocke 2 booléens indépendants
-// `email_notifications` + `push_notifications`. On dérive l'un depuis l'autre
-// pour respecter le pattern radio sans changer le schéma existant.
-
-function deliveryFromSettings(email: boolean, push: boolean): DeliveryMethod {
-  // Si les deux sont actifs (legacy), on privilégie 'email' (plus fiable).
-  if (email) return 'email'
-  if (push) return 'in_app'
-  return 'none'
-}
-
-function deliveryToSettings(d: DeliveryMethod): {
-  email_notifications: boolean
-  push_notifications: boolean
-} {
-  return {
-    email_notifications: d === 'email',
-    push_notifications: d === 'in_app',
-  }
-}
+/** Types de notification exposes dans "Quelles notifications recevoir". */
+const NOTIF_TYPES = ['reaction', 'follow', 'post'] as const
 
 // ─── Composant ────────────────────────────────────────────────────────────────
 
@@ -142,26 +120,24 @@ export function SettingsNotificationsView() {
   const { data: settings, isLoading } = useSettings(user?.id)
   const updateSettings = useUpdateSettings(user?.id)
 
-  // Préférences PAR TYPE (table notification_preferences) : FONCTIONNEL des
-  // maintenant. Les triggers DB respectent deja `is_notif_enabled`, donc
-  // desactiver un type coupe reellement ces notifs. C'est le controle que
-  // l'utilisateur attend au prelancement.
-  const {
-    isEnabled: isTypeEnabled,
-    set: setTypePref,
-    isPending: typePrefPending,
-  } = useNotificationPreferences(user?.id)
-  const typePrefsDisabled = !user?.id || typePrefPending
+  // Préférences PAR TYPE (table notification_preferences). Couper un type coupe
+  // la cloche ET l'email de ce type (is_notif_enabled + is_email_enabled cote
+  // backend NG-045).
+  const { isEnabled: isTypeEnabled, setChannels: setTypePref } = useNotificationPreferences(
+    user?.id,
+  )
 
-  // Valeurs courantes : fallback sur les défauts si pas encore chargé/persisté.
-  // ⚠️ On lit directement depuis `settings` (pas de state local) pour rester
-  // synchronisé avec React Query : l'optimistic update se fait via `setQueryData`.
-  const delivery: DeliveryMethod = settings
-    ? deliveryFromSettings(settings.email_notifications, settings.push_notifications)
-    : 'email'
-  const productUpdates: boolean = settings?.newsletter ?? true
-  const frequency: Frequency =
-    (settings as unknown as { notif_frequency?: Frequency } | null)?.notif_frequency ?? 'weekly'
+  // Valeurs courantes : lues directement depuis `settings` (pas de state local)
+  // pour rester synchro avec React Query (optimistic update via setQueryData).
+  // email_notifications = master email global (NG-045 : is_email_enabled le
+  // verifie en premier). Defaut true si pas de row (compte existant).
+  const emailOn: boolean = settings?.email_notifications ?? true
+  const allTypesOff = NOTIF_TYPES.every((tp) => !isTypeEnabled(tp))
+  // Radio "Methodes" derivee : email actif -> "Par courriel" ; sinon selon qu'il
+  // reste au moins un type actif (cloche) ou plus rien du tout.
+  const delivery: DeliveryMethod = emailOn ? 'email' : allTypesOff ? 'none' : 'in_app'
+  const productUpdates: boolean = settings?.newsletter ?? false
+  const frequency: Frequency = settings?.notif_frequency ?? 'weekly'
 
   /**
    * Wrapper mutation : update settings + toast d'erreur si échec.
@@ -180,12 +156,31 @@ export function SettingsNotificationsView() {
     })
   }
 
-  // Nicolas 2026-05-22 : la livraison réelle des notifications (email cron,
-  // digest hebdo) n'est pas encore wired backend → on bloque tous les toggles
-  // pour éviter que l'utilisateur croie avoir activé un canal qui ne
-  // déclenchera rien. Banner « Bientôt » en haut de la vue + disabled global.
-  const SOON_FEATURE = true
-  const disabled = SOON_FEATURE || isLoading || !user?.id
+  /** Active/coupe les 3 types d'un coup (les 2 canaux). Utilise par "Aucune". */
+  function setAllTypes(value: boolean) {
+    for (const tp of NOTIF_TYPES) setTypePref({ type: tp, enabled: value, emailEnabled: value })
+  }
+
+  /**
+   * Choix de la methode (radio exclusif) :
+   *   - 'email'  : master email ON (les types actifs partent aussi par email)
+   *   - 'in_app' : master email OFF (cloche seule)
+   *   - 'none'   : master email OFF + tous les types coupes (silence total)
+   * En sortant d'un etat "Aucune" (tout coupe), 'email'/'in_app' reactivent les
+   * types pour que la cloche reparte ; sinon on respecte les choix par type.
+   */
+  function handleDelivery(method: DeliveryMethod) {
+    if (method === 'none') {
+      handleUpdate({ email_notifications: false })
+      setAllTypes(false)
+      return
+    }
+    handleUpdate({ email_notifications: method === 'email' })
+    if (allTypesOff) setAllTypes(true)
+  }
+
+  const disabled = isLoading || !user?.id
+  const typePrefsDisabled = !user?.id
 
   return (
     <div className="flex flex-col">
@@ -205,7 +200,7 @@ export function SettingsNotificationsView() {
             })}
             checked={isTypeEnabled('reaction')}
             disabled={typePrefsDisabled}
-            onChange={(v) => setTypePref({ type: 'reaction', enabled: v })}
+            onChange={(v) => setTypePref({ type: 'reaction', enabled: v, emailEnabled: v })}
           />
           <ToggleCard
             label={t('settings.notifications.typeFollow', {
@@ -213,7 +208,7 @@ export function SettingsNotificationsView() {
             })}
             checked={isTypeEnabled('follow')}
             disabled={typePrefsDisabled}
-            onChange={(v) => setTypePref({ type: 'follow', enabled: v })}
+            onChange={(v) => setTypePref({ type: 'follow', enabled: v, emailEnabled: v })}
           />
           <ToggleCard
             label={t('settings.notifications.typePost', {
@@ -221,24 +216,15 @@ export function SettingsNotificationsView() {
             })}
             checked={isTypeEnabled('post')}
             disabled={typePrefsDisabled}
-            onChange={(v) => setTypePref({ type: 'post', enabled: v })}
+            onChange={(v) => setTypePref({ type: 'post', enabled: v, emailEnabled: v })}
           />
         </div>
       </section>
 
       <div className="h-1 bg-border" aria-hidden="true" />
 
-      {/* Les sections ci-dessous (livraison email + fréquence/digest) ne sont
-          pas encore wired backend -> tag « Bientôt » + toggles désactivés. */}
-      {SOON_FEATURE && (
-        <div className="px-6 pt-4">
-          <span className="inline-block text-[10px] font-bold uppercase tracking-wide text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-            Bientôt
-          </span>
-        </div>
-      )}
-      {/* ── Section 1 : Méthodes de notification ───────────────────────── */}
-      <section className="flex flex-col gap-4 px-6 pt-2 pb-6">
+      {/* ── Section 1 : Méthodes de notification (master email) ─────────── */}
+      <section className="flex flex-col gap-4 px-6 pt-6 pb-6">
         <h3 className="font-title font-bold text-lg text-foreground leading-tight">
           {t('settings.notifications.methodTitle', {
             defaultValue: 'Méthodes de notification',
@@ -251,7 +237,7 @@ export function SettingsNotificationsView() {
             })}
             checked={delivery === 'in_app'}
             disabled={disabled}
-            onChange={(v) => v && handleUpdate(deliveryToSettings('in_app'))}
+            onChange={(v) => v && handleDelivery('in_app')}
           />
           <ToggleCard
             label={t('settings.notifications.methodEmail', {
@@ -259,7 +245,7 @@ export function SettingsNotificationsView() {
             })}
             checked={delivery === 'email'}
             disabled={disabled}
-            onChange={(v) => v && handleUpdate(deliveryToSettings('email'))}
+            onChange={(v) => v && handleDelivery('email')}
           />
           <ToggleCard
             label={t('settings.notifications.methodNone', {
@@ -267,7 +253,7 @@ export function SettingsNotificationsView() {
             })}
             checked={delivery === 'none'}
             disabled={disabled}
-            onChange={(v) => v && handleUpdate(deliveryToSettings('none'))}
+            onChange={(v) => v && handleDelivery('none')}
           />
         </div>
       </section>
