@@ -65,6 +65,7 @@ const NotFound = lazy(() => import('./pages/NotFound'))
 const Forbidden = lazy(() => import('./pages/Forbidden'))
 const Waitlist = lazy(() => import('./pages/Waitlist'))
 const PostDetail = lazy(() => import('./pages/PostDetail'))
+const Unsubscribe = lazy(() => import('./pages/Unsubscribe'))
 
 // Admin (BATCH 31-32) : chunks separes (eco-conception : code admin lazy)
 const AdminLayout = lazy(() => import('./pages/Admin/AdminLayout'))
@@ -123,6 +124,20 @@ export const router = createBrowserRouter([
         element: (
           <LazyPage>
             <Waitlist />
+          </LazyPage>
+        ),
+      },
+
+      // Desabonnement email (NG-045) : cible de la redirection 302 de l'Edge
+      // Function email-unsubscribe. PUBLIQUE (pas de BetaAccessGuard, pas
+      // d'auth) : l'utilisateur clique depuis son client mail. Le
+      // desabonnement est deja fait cote serveur, cette page ne fait
+      // qu'afficher la confirmation.
+      {
+        path: 'desabonnement',
+        element: (
+          <LazyPage>
+            <Unsubscribe />
           </LazyPage>
         ),
       },
