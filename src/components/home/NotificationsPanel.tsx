@@ -342,9 +342,19 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
       {/* Header : pas de badge unreadCount ici : doublon avec la cloche header
           qui porte déjà le compteur (Nicolas 2026-05-19). */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-        <p className="font-title font-bold text-base text-foreground">
+        {/* Titre cliquable : mene a la page complete /notifications (filtres +
+            pagination). Retour Nicolas 2026-07-06 : donner acces au systeme
+            complet depuis la cloche. On ferme le panneau avant de naviguer. */}
+        <button
+          type="button"
+          onClick={() => {
+            onClose()
+            navigate('/notifications')
+          }}
+          className="font-title font-bold text-base text-foreground hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded transition-colors"
+        >
           {t('home.notifications.title')}
-        </p>
+        </button>
         <button
           type="button"
           onClick={onClose}
