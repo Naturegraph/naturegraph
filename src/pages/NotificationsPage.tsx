@@ -199,7 +199,7 @@ export default function NotificationsPage() {
             variant="skeleton"
             rows={6}
             label={t('home.notifications.page.loading')}
-            className="bg-cream-lighter border border-border rounded-xl"
+            className="bg-cream-lighter border border-border rounded-lg"
           />
         )}
 
@@ -211,7 +211,7 @@ export default function NotificationsPage() {
         )}
 
         {grouped.length > 0 && (
-          <ul className="divide-y divide-border bg-cream-lighter border border-border rounded-xl overflow-hidden">
+          <ul className="divide-y divide-border bg-cream-lighter border border-border rounded-lg overflow-hidden">
             {grouped.map((n) => (
               <li key={n.id}>
                 <button
