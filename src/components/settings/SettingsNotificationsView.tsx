@@ -2,89 +2,31 @@
  * SettingsNotificationsView : Sous-vue "Notifications" du SettingsPanel
  * =====================================================================
  *
- * Pixel-perfect Figma : 3 sections séparées par dividers :
+ * Panneau ENTIEREMENT FONCTIONNEL depuis NG-045 (systeme email live). Chaque
+ * section ecrit dans la vraie source et est respectee par le backend :
  *
- *   1. Méthodes de notification (RADIO exclusif via switches stylisés)
- *      - Dans l'application
- *      - Par courriel
- *      - Aucune notification
+ *   1. "Quelles notifications recevoir" (reaction / follow / post)
+ *      -> notification_preferences.enabled + email_enabled (les 2 canaux).
+ *         Couper un type coupe la cloche (is_notif_enabled, triggers) ET
+ *         l'email de ce type (is_email_enabled, dispatcher NG-045).
  *
- *   2. Nouvelles et mises à jour (TOGGLE simple)
- *      - "Obtenez des informations sur les mises à jour du produit
- *         et des fonctionnalités"
+ *   2. "Methodes de notification" (radio exclusif in-app / email / none)
+ *      -> user_settings.email_notifications (master email global) :
+ *         · 'email'  : emails ON (is_email_enabled le verifie en premier)
+ *         · 'in_app' : emails OFF, cloche seule
+ *         · 'none'   : emails OFF + tous les types coupes (silence total)
  *
- *   3. Fréquence de notification (RADIO exclusif via switches stylisés)
- *      - Temps réel
- *      - Une fois par semaine
- *      - Une fois par jour
+ *   3. "Nouvelles et mises a jour" -> user_settings.newsletter.
  *
- * Layout : chaque option est dans une "card" bordured (rounded-md
- * border-[0.5px]) avec label gauche + ToggleSwitch droite.
+ *   4. "Frequence de notification" -> user_settings.notif_frequency
+ *      (realtime / daily / weekly). Respecte par les digests E7/E8/E1.
  *
- * ── CONNEXION AVEC L'ONBOARDING ──────────────────────────────────────
+ * Layout : chaque option est une "card" bordured (rounded-md border-[0.5px])
+ * avec label gauche + ToggleSwitch droite. Ecritures optimistes via React Query.
  *
- * L'onboarding (étape 2) collecte une préférence `frequency` parmi :
- *   `daily | weekly | monthly | occasionally`
- *
- * Ce choix est utilisé dans `onboarding/index.tsx` pour activer ou non
- * `notification_preferences.species_digest` (digest hebdomadaire opt-in
- * RGPD). Cf. service `notificationPreferencesService.setPreference()`.
- *
- * Mapping onboarding → settings (à confirmer Phase 2 avec Nicolas) :
- *   - onboarding 'daily'        → settings.frequency = 'realtime'
- *   - onboarding 'weekly'       → settings.frequency = 'weekly'
- *   - onboarding 'monthly'      → settings.frequency = 'monthly' (à ajouter)
- *   - onboarding 'occasionally' → settings.delivery = 'none'
- *
- * Pour la **cohérence de l'écosystème**, cette vue doit lire/écrire dans la
- * MÊME source que l'onboarding (la table `notification_preferences` +
- * éventuellement une nouvelle table `user_notification_settings` plus
- * granulaire : voir notes backend ci-dessous).
- *
- * ── TODO [BACKEND] Phase 2 ────────────────────────────────────────────
- *
- *   ## Tables à enrichir / créer
- *
- *   Option A : Étendre `notification_preferences` existante :
- *     ALTER TABLE notification_preferences ADD COLUMN delivery TEXT
- *       NOT NULL DEFAULT 'in_app'
- *       CHECK (delivery IN ('in_app','email','none'));
- *     ALTER TABLE notification_preferences ADD COLUMN frequency TEXT
- *       NOT NULL DEFAULT 'realtime'
- *       CHECK (frequency IN ('realtime','daily','weekly','monthly'));
- *
- *   Option B (recommandée) : Nouvelle table de réglages globaux user :
- *     CREATE TABLE user_notification_settings (
- *       user_id    UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
- *       delivery   TEXT NOT NULL DEFAULT 'in_app'
- *                       CHECK (delivery IN ('in_app','email','none')),
- *       frequency  TEXT NOT NULL DEFAULT 'realtime'
- *                       CHECK (frequency IN ('realtime','daily','weekly')),
- *       product_updates BOOLEAN NOT NULL DEFAULT TRUE,
- *       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
- *     );
- *     -- RLS : SELECT/UPDATE owner only (auth.uid() = user_id)
- *
- *   ## Hooks React Query
- *
- *   - `useNotificationSettings()` → SELECT settings actuels
- *   - `useUpdateNotificationSettings()` → UPDATE optimistic
- *
- *   ## Synchronisation onboarding
- *
- *   Au moment où l'onboarding sauvegarde la frequency :
- *     1. INSERT dans `user_notification_settings (user_id, frequency)`
- *     2. Ce settings page lit/met à jour cette même row
- *     → l'utilisateur retrouve son choix dans Settings après onboarding
- *
- *   ## Délivery des notifications côté backend
- *
- *   Edge Function ou pg_cron qui consomme la table `notifications` (queue) :
- *     - Pour chaque notif, lit `user_notification_settings.delivery` :
- *       · 'in_app' → INSERT dans table notifications (Phase 1 actuelle)
- *       · 'email'  → envoyer via Resend / Supabase email avec template
- *       · 'none'   → drop la notif
- *     - Si `frequency` != 'realtime', mise en buffer + cron daily/weekly digest
+ * Note design (a revoir avec Nicolas) : le radio 3 etats "Methodes" est un peu
+ * ambigu vs le modele de donnees (un simple booleen email). Il pourrait etre
+ * simplifie en un seul toggle "Recevoir par courriel".
  */
 
 import { useTranslation } from 'react-i18next'
