@@ -10,11 +10,13 @@
  *         Couper un type coupe la cloche (is_notif_enabled, triggers) ET
  *         l'email de ce type (is_email_enabled, dispatcher NG-045).
  *
- *   2. "Methodes de notification" (radio exclusif in-app / email / none)
- *      -> user_settings.email_notifications (master email global) :
- *         · 'email'  : emails ON (is_email_enabled le verifie en premier)
- *         · 'in_app' : emails OFF, cloche seule
- *         · 'none'   : emails OFF + tous les types coupes (silence total)
+ *   2. "Methodes de notification" : 2 toggles INDEPENDANTS (cochables ensemble)
+ *      · "Dans l'application" : cloche = au moins un type actif (enabled).
+ *        La bascule active/coupe les 3 types en preservant leur canal email.
+ *      · "Par courriel" : user_settings.email_notifications (master email
+ *        global, is_email_enabled le verifie en premier).
+ *      · "Aucune notification" : raccourci, coche quand tout est coupe et
+ *        coupe cloche + email au clic.
  *
  *   3. "Nouvelles et mises a jour" -> user_settings.newsletter.
  *
@@ -38,7 +40,6 @@ import { useNotificationPreferences } from '@/hooks/useNotificationPreferences'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type DeliveryMethod = 'in_app' | 'email' | 'none'
 /**
  * Fréquence de notification (digest) : stockée dans `user_settings.notif_frequency`.
  *
@@ -65,19 +66,20 @@ export function SettingsNotificationsView() {
   // Préférences PAR TYPE (table notification_preferences). Couper un type coupe
   // la cloche ET l'email de ce type (is_notif_enabled + is_email_enabled cote
   // backend NG-045).
-  const { isEnabled: isTypeEnabled, setChannels: setTypePref } = useNotificationPreferences(
-    user?.id,
-  )
+  const {
+    isEnabled: isTypeEnabled,
+    isEmailEnabled: isTypeEmailEnabled,
+    setChannels: setTypePref,
+  } = useNotificationPreferences(user?.id)
 
   // Valeurs courantes : lues directement depuis `settings` (pas de state local)
   // pour rester synchro avec React Query (optimistic update via setQueryData).
-  // email_notifications = master email global (NG-045 : is_email_enabled le
-  // verifie en premier). Defaut true si pas de row (compte existant).
+  // Les 2 methodes sont INDEPENDANTES (cochables ensemble) :
+  //   - "Par courriel" = user_settings.email_notifications (master email global).
+  //   - "Dans l'application" = cloche = au moins un type actif (enabled).
+  // email_notifications defaut true si pas de row (compte existant).
   const emailOn: boolean = settings?.email_notifications ?? true
-  const allTypesOff = NOTIF_TYPES.every((tp) => !isTypeEnabled(tp))
-  // Radio "Methodes" derivee : email actif -> "Par courriel" ; sinon selon qu'il
-  // reste au moins un type actif (cloche) ou plus rien du tout.
-  const delivery: DeliveryMethod = emailOn ? 'email' : allTypesOff ? 'none' : 'in_app'
+  const inAppOn = NOTIF_TYPES.some((tp) => isTypeEnabled(tp))
   const productUpdates: boolean = settings?.newsletter ?? false
   const frequency: Frequency = settings?.notif_frequency ?? 'weekly'
 
@@ -98,27 +100,21 @@ export function SettingsNotificationsView() {
     })
   }
 
-  /** Active/coupe les 3 types d'un coup (les 2 canaux). Utilise par "Aucune". */
-  function setAllTypes(value: boolean) {
-    for (const tp of NOTIF_TYPES) setTypePref({ type: tp, enabled: value, emailEnabled: value })
+  /**
+   * Canal "Dans l'application" (independant de l'email) : active/coupe la cloche
+   * pour les 3 types d'un coup, en PRESERVANT le canal email de chaque type
+   * (les 2 canaux sont independants : couper la cloche ne coupe pas l'email).
+   */
+  function setInAppChannel(value: boolean) {
+    for (const tp of NOTIF_TYPES) {
+      setTypePref({ type: tp, enabled: value, emailEnabled: isTypeEmailEnabled(tp) })
+    }
   }
 
-  /**
-   * Choix de la methode (radio exclusif) :
-   *   - 'email'  : master email ON (les types actifs partent aussi par email)
-   *   - 'in_app' : master email OFF (cloche seule)
-   *   - 'none'   : master email OFF + tous les types coupes (silence total)
-   * En sortant d'un etat "Aucune" (tout coupe), 'email'/'in_app' reactivent les
-   * types pour que la cloche reparte ; sinon on respecte les choix par type.
-   */
-  function handleDelivery(method: DeliveryMethod) {
-    if (method === 'none') {
-      handleUpdate({ email_notifications: false })
-      setAllTypes(false)
-      return
-    }
-    handleUpdate({ email_notifications: method === 'email' })
-    if (allTypesOff) setAllTypes(true)
+  /** "Aucune notification" : coupe TOUT (cloche + email + les 2 canaux par type). */
+  function setNoneAll() {
+    handleUpdate({ email_notifications: false })
+    for (const tp of NOTIF_TYPES) setTypePref({ type: tp, enabled: false, emailEnabled: false })
   }
 
   const disabled = isLoading || !user?.id
@@ -172,30 +168,34 @@ export function SettingsNotificationsView() {
             defaultValue: 'Méthodes de notification',
           })}
         </h3>
-        <div className="flex flex-col gap-3" role="radiogroup">
+        {/* Toggles INDEPENDANTS : in-app et email peuvent etre actifs ensemble.
+            "Aucune" est un raccourci (coche quand tout est coupe, coupe tout au clic). */}
+        <div className="flex flex-col gap-3" role="group">
           <ToggleCard
             label={t('settings.notifications.methodInApp', {
               defaultValue: "Dans l'application",
             })}
-            checked={delivery === 'in_app'}
+            checked={inAppOn}
             disabled={disabled}
-            onChange={(v) => v && handleDelivery('in_app')}
+            onChange={(v) => setInAppChannel(v)}
           />
           <ToggleCard
             label={t('settings.notifications.methodEmail', {
               defaultValue: 'Par courriel',
             })}
-            checked={delivery === 'email'}
+            checked={emailOn}
             disabled={disabled}
-            onChange={(v) => v && handleDelivery('email')}
+            onChange={(v) => handleUpdate({ email_notifications: v })}
           />
           <ToggleCard
             label={t('settings.notifications.methodNone', {
               defaultValue: 'Aucune notification',
             })}
-            checked={delivery === 'none'}
+            checked={!inAppOn && !emailOn}
             disabled={disabled}
-            onChange={(v) => v && handleDelivery('none')}
+            onChange={(v) => {
+              if (v) setNoneAll()
+            }}
           />
         </div>
       </section>
