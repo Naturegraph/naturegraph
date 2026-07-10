@@ -53,15 +53,34 @@ Deno.serve(async (req: Request) => {
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE)
 
+  // Mode "campagne" (envoi one-shot manuel) : cible TOUS les inscrits non
+  // internes, pas seulement la fenêtre J+3. Le filtre "0 publication" en aval
+  // isole les onboardés inactifs. Le garde-fou onboarding + préférence email +
+  // anti-spam du dispatcher s'appliquent quand même. Le contenu E5 est inchangé.
+  // Déclenché manuellement : POST body { "campaign": true }.
+  // preview_email : envoi de contrôle à UNE seule adresse (validation Nicolas
+  // avant blast). Ignore le filtre "0 publication" pour toucher un compte de
+  // test même s'il a déjà publié. Body : { "preview_email": "x@y.z" }.
+  let campaign = false
+  let previewEmail: string | null = null
+  try {
+    const body = await req.json()
+    campaign = body?.campaign === true
+    previewEmail = typeof body?.preview_email === 'string' ? body.preview_email : null
+  } catch {
+    // pas de body : mode cron J+3 normal
+  }
+
   try {
     const { start, end } = dayBounds(3)
 
-    // 1. Candidats : inscrits il y a exactement 3 jours (fenêtre d'une journée)
-    const { data: candidates, error: candErr } = await admin
-      .from('profiles')
-      .select('id, email, first_name')
-      .gte('created_at', start)
-      .lt('created_at', end)
+    // 1. Candidats : preview (1 adresse), campagne (tous non-internes) ou J+3 (cron)
+    const baseQuery = admin.from('profiles').select('id, email, first_name')
+    const { data: candidates, error: candErr } = previewEmail
+      ? await baseQuery.eq('email', previewEmail)
+      : campaign
+        ? await baseQuery.eq('is_internal', false)
+        : await baseQuery.gte('created_at', start).lt('created_at', end)
 
     if (candErr) throw candErr
     if (!candidates || candidates.length === 0) {
@@ -70,56 +89,72 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    // 2. Qui a déjà publié (n'importe quel statut != draft compte comme "a partagé")
-    const candidateIds = candidates.map((c) => c.id as string)
-    const { data: publishedAuthors, error: postsErr } = await admin
-      .from('posts')
-      .select('user_id')
-      .in('user_id', candidateIds)
-      .eq('status', 'published')
+    // 2. Filtre "0 publication" (sauté en preview : on veut toucher le testeur)
+    let eligible = candidates
+    if (!previewEmail) {
+      const candidateIds = candidates.map((c) => c.id as string)
+      const { data: publishedAuthors, error: postsErr } = await admin
+        .from('posts')
+        .select('user_id')
+        .in('user_id', candidateIds)
+        .eq('status', 'published')
 
-    if (postsErr) throw postsErr
-    const publishedSet = new Set((publishedAuthors ?? []).map((p) => p.user_id as string))
+      if (postsErr) throw postsErr
+      const publishedSet = new Set((publishedAuthors ?? []).map((p) => p.user_id as string))
+      eligible = candidates.filter((c) => !publishedSet.has(c.id as string))
+    }
 
-    const eligible = candidates.filter((c) => !publishedSet.has(c.id as string))
-
-    // 3. Dispatch un email par user éligible
+    // 3. Dispatch un email par user éligible.
+    //    Chaque envoi est ISOLE (try/catch par user) : un echec ponctuel
+    //    (reseau, quota Resend) ne doit jamais interrompre le reste du lot.
+    //    Petite pause entre 2 envois pour rester sous la cadence Resend.
     let sent = 0
     for (const user of eligible) {
       const firstName = (user.first_name as string | null)?.trim()
       const greeting = firstName ? `${firstName},` : 'Bonjour,'
 
-      const resp = await fetch(`${SUPABASE_URL}/functions/v1/send-notification-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-cron-secret': CRON_SECRET },
-        body: JSON.stringify({
-          user_id: user.id,
-          to_email: user.email,
-          email_type: 'e5_activation',
-          category: 'event',
-          // Pas de pref_type : email de cycle de vie, seule la coupure
-          // globale email_notifications s'applique (pas de toggle dédié).
-          min_interval_hours: 24 * 365, // envoi unique par compte
-          subject: "Ta première observation t'attend",
-          heroTitle: "Ta première observation t'attend",
-          bodyHtml: `
-            <p style="margin:0 0 16px 0;">${greeting}</p>
-            <p style="margin:0 0 16px 0;">Ça fait quelques jours que tu as rejoint Naturegraph. Pas de pression : il n'y a pas de bonne façon de commencer, juste une première observation qui donne envie de partager la suivante.</p>
-            <p style="margin:0 0 16px 0;">Une fleur sur ton balcon, un oiseau croisé en marchant, une feuille qui a attiré ton œil : tout compte.</p>
-            <p style="margin:0;">Si tu as une question, on est là : support@naturegraph.ca</p>
-          `,
-          // Label court : "Publier ma première observation" débordait sur 3
-          // lignes dans le bouton en mobile (retour test Nicolas 2026-07-06).
-          cta: { label: 'Publier une observation', url: `${APP_URL}/contribute` },
-        }),
-      })
+      try {
+        const resp = await fetch(`${SUPABASE_URL}/functions/v1/send-notification-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-cron-secret': CRON_SECRET },
+          body: JSON.stringify({
+            user_id: user.id,
+            to_email: user.email,
+            email_type: 'e5_activation',
+            category: 'event',
+            // Pas de pref_type : email de cycle de vie, seule la coupure
+            // globale email_notifications s'applique (pas de toggle dédié).
+            min_interval_hours: 24 * 365, // envoi unique par compte
+            subject: "Ta première observation t'attend",
+            heroTitle: "Ta première observation t'attend",
+            bodyHtml: `
+              <p style="margin:0 0 16px 0;">${greeting}</p>
+              <p style="margin:0 0 16px 0;">Ça fait quelques jours que tu as rejoint Naturegraph. Pas de pression : il n'y a pas de bonne façon de commencer, juste une première observation qui donne envie de partager la suivante.</p>
+              <p style="margin:0;">Nous t'invitons alors à partager ta première rencontre en cliquant sur le bouton ci-dessous.</p>
+            `,
+            // Le bouton ouvre directement le compositeur de rencontre nature
+            // (?type=nature_encounter). Sans ce param, /contribute redirige vers
+            // le fil : c'est l'action de publication qu'on veut, pas le feed.
+            cta: {
+              label: 'Partager ma rencontre',
+              url: `${APP_URL}/contribute?type=nature_encounter`,
+            },
+          }),
+        })
 
-      if (resp.ok) {
-        const body = await resp.json()
-        if (body.sent) sent += 1
-      } else {
-        console.error('[check-activation-emails] dispatch failed for', user.id, await resp.text())
+        if (resp.ok) {
+          const body = await resp.json()
+          if (body.sent) sent += 1
+        } else {
+          console.error('[check-activation-emails] dispatch failed for', user.id, await resp.text())
+        }
+      } catch (dispatchErr) {
+        // On loggue et on continue : les autres users doivent partir.
+        console.error('[check-activation-emails] dispatch threw for', user.id, dispatchErr)
       }
+
+      // Throttle doux (~4 envois/s max) pour ne pas saturer Resend.
+      await new Promise((r) => setTimeout(r, 250))
     }
 
     return new Response(
