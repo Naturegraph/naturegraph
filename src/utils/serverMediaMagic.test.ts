@@ -1,8 +1,8 @@
 /**
  * Test unitaire de la detection magic-bytes serveur (NG-001).
  *
- * La logique testee vit dans supabase/functions/_shared/mediaMagic.ts (module
- * pur importe aussi par l'Edge Function validate-media). On la teste ici, cote
+ * La logique testee vit dans supabase/functions/validate-media/mediaMagic.ts
+ * (module pur importe aussi par l'Edge Function validate-media). On la teste ici, cote
  * vitest, de facon deterministe et hors prod : c'est la garantie que le coeur
  * de securite du ticket (detecter un format spoofe) est correct avant tout
  * deploiement.
