@@ -4,12 +4,16 @@
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-import { buildCors } from '../_shared/cors.ts'
+import { buildCors, rejectDisallowedOrigin } from '../_shared/cors.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 Deno.serve(async (req: Request) => {
+  // NG-041 : rejet actif (403) des origines tierces. Les appels serveur (sans
+  // Origin) passent ; seule une origine navigateur hors allowlist est rejetee.
+  const originReject = rejectDisallowedOrigin(req)
+  if (originReject) return originReject
   // CORS restreint (NG-032) : allowlist d'origines, calcule par requete.
   const CORS = buildCors(req)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
