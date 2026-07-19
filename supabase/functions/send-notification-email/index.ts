@@ -51,7 +51,7 @@ interface SendRequest {
   user_id: string
   to_email: string
   email_type: string
-  /** 'weekly_marketing' (E1-E4, quota partagé 1/semaine) ou 'event' (E5-E8, hors quota). */
+  /** 'weekly_marketing' (E1-E4, quota partagé 2/semaine) ou 'event' (E5-E8, hors quota). */
   category: 'weekly_marketing' | 'event'
   /**
    * Type dans notification_preferences.type à vérifier avant envoi. Omis
@@ -167,14 +167,23 @@ Deno.serve(async (req: Request) => {
     }
 
     // 2. Anti-spam
-    const since = new Date(Date.now() - payload.min_interval_hours * 3600_000).toISOString()
+    // weekly_marketing (E1-E4) : plafond de 2 emails / 7 jours glissants (decision
+    // Nicolas 2026-07-18 : passage de 1 a 2 par semaine pour ameliorer le retour
+    // des users). La fenetre (168h) et le plafond (2) sont geres ici, de facon
+    // centrale, quel que soit le min_interval_hours passe par les crons E1-E4.
+    // event (E5-E8) : dedup fine par email_type (+ reference_key) sur la fenetre
+    // min_interval_hours fournie par l'appelant (comportement inchange).
+    const isWeeklyMarketing = payload.category === 'weekly_marketing'
+    const windowHours = isWeeklyMarketing ? 168 : payload.min_interval_hours
+    const maxInWindow = isWeeklyMarketing ? 2 : 1
+    const since = new Date(Date.now() - windowHours * 3600_000).toISOString()
     let recentQuery = admin
       .from('email_send_log')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', payload.user_id)
       .gte('sent_at', since)
 
-    if (payload.category === 'weekly_marketing') {
+    if (isWeeklyMarketing) {
       recentQuery = recentQuery.eq('category', 'weekly_marketing')
     } else {
       recentQuery = recentQuery.eq('email_type', payload.email_type)
@@ -185,7 +194,7 @@ Deno.serve(async (req: Request) => {
 
     const { count: recentCount, error: recentErr } = await recentQuery
     if (recentErr) throw recentErr
-    if ((recentCount ?? 0) > 0) {
+    if ((recentCount ?? 0) >= maxInWindow) {
       return new Response(JSON.stringify({ ok: true, sent: false, reason: 'anti_spam_window' }), {
         headers: { ...CORS, 'Content-Type': 'application/json' },
       })
