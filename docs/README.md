@@ -47,6 +47,10 @@
 - [`design-system/audit.md`](design-system/audit.md), audit du DS
 - `design-system/components/` : atoms, molecules, organisms, templates
 
+### Briefs de chantier (a lire avant de demarrer le chantier concerne)
+
+- [`BRIEF_COMMENTAIRES.md`](BRIEF_COMMENTAIRES.md), chantier commentaires sous les publications (fondation DB posee, frontend a construire)
+
 ### Roadmaps actives
 
 - [`AUTH_ROADMAP.md`](AUTH_ROADMAP.md), plan reduction OTP (Google OAuth, refresh 90j)

@@ -11,6 +11,7 @@ import { NotebookProvider } from '@/contexts/NotebookContext'
 import { CookieBanner } from '@/components/layout/CookieBanner'
 import { InstallPromptBanner } from '@/components/layout/InstallPromptBanner'
 import { AppBadgeSync } from '@/components/layout/AppBadgeSync'
+import { ActivityHeartbeat } from '@/components/layout/ActivityHeartbeat'
 import loadingVideo from '@/assets/branding/app-loading.webm'
 
 /**
@@ -156,6 +157,7 @@ export default function App() {
                     {/* AppBadgeSync : pastille "non lues" sur l'icône PWA, pilotée
                       au niveau app (active sur toutes les pages, pas seulement Home). */}
                     <AppBadgeSync />
+                    <ActivityHeartbeat />
                   </ToastProvider>
                 </NotebookProvider>
               </SpeciesProvider>

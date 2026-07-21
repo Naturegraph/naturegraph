@@ -2,89 +2,33 @@
  * SettingsNotificationsView : Sous-vue "Notifications" du SettingsPanel
  * =====================================================================
  *
- * Pixel-perfect Figma : 3 sections séparées par dividers :
+ * Panneau ENTIEREMENT FONCTIONNEL depuis NG-045 (systeme email live). Chaque
+ * section ecrit dans la vraie source et est respectee par le backend :
  *
- *   1. Méthodes de notification (RADIO exclusif via switches stylisés)
- *      - Dans l'application
- *      - Par courriel
- *      - Aucune notification
+ *   1. "Quelles notifications recevoir" (reaction / follow / post)
+ *      -> notification_preferences.enabled + email_enabled (les 2 canaux).
+ *         Couper un type coupe la cloche (is_notif_enabled, triggers) ET
+ *         l'email de ce type (is_email_enabled, dispatcher NG-045).
  *
- *   2. Nouvelles et mises à jour (TOGGLE simple)
- *      - "Obtenez des informations sur les mises à jour du produit
- *         et des fonctionnalités"
+ *   2. "Methodes de notification" : 2 toggles INDEPENDANTS (cochables ensemble)
+ *      · "Dans l'application" : cloche = au moins un type actif (enabled).
+ *        La bascule active/coupe les 3 types en preservant leur canal email.
+ *      · "Par courriel" : user_settings.email_notifications (master email
+ *        global, is_email_enabled le verifie en premier).
+ *      · "Aucune notification" : raccourci, coche quand tout est coupe et
+ *        coupe cloche + email au clic.
  *
- *   3. Fréquence de notification (RADIO exclusif via switches stylisés)
- *      - Temps réel
- *      - Une fois par semaine
- *      - Une fois par jour
+ *   3. "Nouvelles et mises a jour" -> user_settings.newsletter.
  *
- * Layout : chaque option est dans une "card" bordured (rounded-md
- * border-[0.5px]) avec label gauche + ToggleSwitch droite.
+ *   4. "Frequence de notification" -> user_settings.notif_frequency
+ *      (realtime / daily / weekly). Respecte par les digests E7/E8/E1.
  *
- * ── CONNEXION AVEC L'ONBOARDING ──────────────────────────────────────
+ * Layout : chaque option est une "card" bordured (rounded-md border-[0.5px])
+ * avec label gauche + ToggleSwitch droite. Ecritures optimistes via React Query.
  *
- * L'onboarding (étape 2) collecte une préférence `frequency` parmi :
- *   `daily | weekly | monthly | occasionally`
- *
- * Ce choix est utilisé dans `onboarding/index.tsx` pour activer ou non
- * `notification_preferences.species_digest` (digest hebdomadaire opt-in
- * RGPD). Cf. service `notificationPreferencesService.setPreference()`.
- *
- * Mapping onboarding → settings (à confirmer Phase 2 avec Nicolas) :
- *   - onboarding 'daily'        → settings.frequency = 'realtime'
- *   - onboarding 'weekly'       → settings.frequency = 'weekly'
- *   - onboarding 'monthly'      → settings.frequency = 'monthly' (à ajouter)
- *   - onboarding 'occasionally' → settings.delivery = 'none'
- *
- * Pour la **cohérence de l'écosystème**, cette vue doit lire/écrire dans la
- * MÊME source que l'onboarding (la table `notification_preferences` +
- * éventuellement une nouvelle table `user_notification_settings` plus
- * granulaire : voir notes backend ci-dessous).
- *
- * ── TODO [BACKEND] Phase 2 ────────────────────────────────────────────
- *
- *   ## Tables à enrichir / créer
- *
- *   Option A : Étendre `notification_preferences` existante :
- *     ALTER TABLE notification_preferences ADD COLUMN delivery TEXT
- *       NOT NULL DEFAULT 'in_app'
- *       CHECK (delivery IN ('in_app','email','none'));
- *     ALTER TABLE notification_preferences ADD COLUMN frequency TEXT
- *       NOT NULL DEFAULT 'realtime'
- *       CHECK (frequency IN ('realtime','daily','weekly','monthly'));
- *
- *   Option B (recommandée) : Nouvelle table de réglages globaux user :
- *     CREATE TABLE user_notification_settings (
- *       user_id    UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
- *       delivery   TEXT NOT NULL DEFAULT 'in_app'
- *                       CHECK (delivery IN ('in_app','email','none')),
- *       frequency  TEXT NOT NULL DEFAULT 'realtime'
- *                       CHECK (frequency IN ('realtime','daily','weekly')),
- *       product_updates BOOLEAN NOT NULL DEFAULT TRUE,
- *       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
- *     );
- *     -- RLS : SELECT/UPDATE owner only (auth.uid() = user_id)
- *
- *   ## Hooks React Query
- *
- *   - `useNotificationSettings()` → SELECT settings actuels
- *   - `useUpdateNotificationSettings()` → UPDATE optimistic
- *
- *   ## Synchronisation onboarding
- *
- *   Au moment où l'onboarding sauvegarde la frequency :
- *     1. INSERT dans `user_notification_settings (user_id, frequency)`
- *     2. Ce settings page lit/met à jour cette même row
- *     → l'utilisateur retrouve son choix dans Settings après onboarding
- *
- *   ## Délivery des notifications côté backend
- *
- *   Edge Function ou pg_cron qui consomme la table `notifications` (queue) :
- *     - Pour chaque notif, lit `user_notification_settings.delivery` :
- *       · 'in_app' → INSERT dans table notifications (Phase 1 actuelle)
- *       · 'email'  → envoyer via Resend / Supabase email avec template
- *       · 'none'   → drop la notif
- *     - Si `frequency` != 'realtime', mise en buffer + cron daily/weekly digest
+ * Note design (a revoir avec Nicolas) : le radio 3 etats "Methodes" est un peu
+ * ambigu vs le modele de donnees (un simple booleen email). Il pourrait etre
+ * simplifie en un seul toggle "Recevoir par courriel".
  */
 
 import { useTranslation } from 'react-i18next'
@@ -96,40 +40,17 @@ import { useNotificationPreferences } from '@/hooks/useNotificationPreferences'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type DeliveryMethod = 'in_app' | 'email' | 'none'
 /**
- * Fréquence de notification (digest) : stockée dans `user_settings.notif_frequency`
- * (colonne ajoutée par migration `20260502_settings_notif_frequency.sql`).
+ * Fréquence de notification (digest) : stockée dans `user_settings.notif_frequency`.
  *
  * 'realtime' = notif immédiate dès qu'un événement survient.
- * 'daily'    = digest quotidien (cron 8h UTC).
- * 'weekly'   = digest hebdomadaire (cron lundi 8h UTC).
+ * 'daily'    = digest quotidien (NG-045 : E7/E8 respectent cette valeur).
+ * 'weekly'   = digest hebdomadaire (couvert par le resume E1).
  */
 type Frequency = 'realtime' | 'daily' | 'weekly'
 
-// ─── Helpers : mapping settings DB <-> UI radios ─────────────────────────────
-//
-// Le DS UI propose des **radios exclusifs** ("Dans l'application | Par courriel
-// | Aucune"), mais la DB (table `user_settings`) stocke 2 booléens indépendants
-// `email_notifications` + `push_notifications`. On dérive l'un depuis l'autre
-// pour respecter le pattern radio sans changer le schéma existant.
-
-function deliveryFromSettings(email: boolean, push: boolean): DeliveryMethod {
-  // Si les deux sont actifs (legacy), on privilégie 'email' (plus fiable).
-  if (email) return 'email'
-  if (push) return 'in_app'
-  return 'none'
-}
-
-function deliveryToSettings(d: DeliveryMethod): {
-  email_notifications: boolean
-  push_notifications: boolean
-} {
-  return {
-    email_notifications: d === 'email',
-    push_notifications: d === 'in_app',
-  }
-}
+/** Types de notification exposes dans "Quelles notifications recevoir". */
+const NOTIF_TYPES = ['reaction', 'follow', 'post'] as const
 
 // ─── Composant ────────────────────────────────────────────────────────────────
 
@@ -142,26 +63,25 @@ export function SettingsNotificationsView() {
   const { data: settings, isLoading } = useSettings(user?.id)
   const updateSettings = useUpdateSettings(user?.id)
 
-  // Préférences PAR TYPE (table notification_preferences) : FONCTIONNEL des
-  // maintenant. Les triggers DB respectent deja `is_notif_enabled`, donc
-  // desactiver un type coupe reellement ces notifs. C'est le controle que
-  // l'utilisateur attend au prelancement.
+  // Préférences PAR TYPE (table notification_preferences). Couper un type coupe
+  // la cloche ET l'email de ce type (is_notif_enabled + is_email_enabled cote
+  // backend NG-045).
   const {
     isEnabled: isTypeEnabled,
-    set: setTypePref,
-    isPending: typePrefPending,
+    isEmailEnabled: isTypeEmailEnabled,
+    setChannels: setTypePref,
   } = useNotificationPreferences(user?.id)
-  const typePrefsDisabled = !user?.id || typePrefPending
 
-  // Valeurs courantes : fallback sur les défauts si pas encore chargé/persisté.
-  // ⚠️ On lit directement depuis `settings` (pas de state local) pour rester
-  // synchronisé avec React Query : l'optimistic update se fait via `setQueryData`.
-  const delivery: DeliveryMethod = settings
-    ? deliveryFromSettings(settings.email_notifications, settings.push_notifications)
-    : 'email'
-  const productUpdates: boolean = settings?.newsletter ?? true
-  const frequency: Frequency =
-    (settings as unknown as { notif_frequency?: Frequency } | null)?.notif_frequency ?? 'weekly'
+  // Valeurs courantes : lues directement depuis `settings` (pas de state local)
+  // pour rester synchro avec React Query (optimistic update via setQueryData).
+  // Les 2 methodes sont INDEPENDANTES (cochables ensemble) :
+  //   - "Par courriel" = user_settings.email_notifications (master email global).
+  //   - "Dans l'application" = cloche = au moins un type actif (enabled).
+  // email_notifications defaut true si pas de row (compte existant).
+  const emailOn: boolean = settings?.email_notifications ?? true
+  const inAppOn = NOTIF_TYPES.some((tp) => isTypeEnabled(tp))
+  const productUpdates: boolean = settings?.newsletter ?? false
+  const frequency: Frequency = settings?.notif_frequency ?? 'weekly'
 
   /**
    * Wrapper mutation : update settings + toast d'erreur si échec.
@@ -180,12 +100,25 @@ export function SettingsNotificationsView() {
     })
   }
 
-  // Nicolas 2026-05-22 : la livraison réelle des notifications (email cron,
-  // digest hebdo) n'est pas encore wired backend → on bloque tous les toggles
-  // pour éviter que l'utilisateur croie avoir activé un canal qui ne
-  // déclenchera rien. Banner « Bientôt » en haut de la vue + disabled global.
-  const SOON_FEATURE = true
-  const disabled = SOON_FEATURE || isLoading || !user?.id
+  /**
+   * Canal "Dans l'application" (independant de l'email) : active/coupe la cloche
+   * pour les 3 types d'un coup, en PRESERVANT le canal email de chaque type
+   * (les 2 canaux sont independants : couper la cloche ne coupe pas l'email).
+   */
+  function setInAppChannel(value: boolean) {
+    for (const tp of NOTIF_TYPES) {
+      setTypePref({ type: tp, enabled: value, emailEnabled: isTypeEmailEnabled(tp) })
+    }
+  }
+
+  /** "Aucune notification" : coupe TOUT (cloche + email + les 2 canaux par type). */
+  function setNoneAll() {
+    handleUpdate({ email_notifications: false })
+    for (const tp of NOTIF_TYPES) setTypePref({ type: tp, enabled: false, emailEnabled: false })
+  }
+
+  const disabled = isLoading || !user?.id
+  const typePrefsDisabled = !user?.id
 
   return (
     <div className="flex flex-col">
@@ -205,7 +138,7 @@ export function SettingsNotificationsView() {
             })}
             checked={isTypeEnabled('reaction')}
             disabled={typePrefsDisabled}
-            onChange={(v) => setTypePref({ type: 'reaction', enabled: v })}
+            onChange={(v) => setTypePref({ type: 'reaction', enabled: v, emailEnabled: v })}
           />
           <ToggleCard
             label={t('settings.notifications.typeFollow', {
@@ -213,7 +146,7 @@ export function SettingsNotificationsView() {
             })}
             checked={isTypeEnabled('follow')}
             disabled={typePrefsDisabled}
-            onChange={(v) => setTypePref({ type: 'follow', enabled: v })}
+            onChange={(v) => setTypePref({ type: 'follow', enabled: v, emailEnabled: v })}
           />
           <ToggleCard
             label={t('settings.notifications.typePost', {
@@ -221,53 +154,48 @@ export function SettingsNotificationsView() {
             })}
             checked={isTypeEnabled('post')}
             disabled={typePrefsDisabled}
-            onChange={(v) => setTypePref({ type: 'post', enabled: v })}
+            onChange={(v) => setTypePref({ type: 'post', enabled: v, emailEnabled: v })}
           />
         </div>
       </section>
 
       <div className="h-1 bg-border" aria-hidden="true" />
 
-      {/* Les sections ci-dessous (livraison email + fréquence/digest) ne sont
-          pas encore wired backend -> tag « Bientôt » + toggles désactivés. */}
-      {SOON_FEATURE && (
-        <div className="px-6 pt-4">
-          <span className="inline-block text-[10px] font-bold uppercase tracking-wide text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-            Bientôt
-          </span>
-        </div>
-      )}
-      {/* ── Section 1 : Méthodes de notification ───────────────────────── */}
-      <section className="flex flex-col gap-4 px-6 pt-2 pb-6">
+      {/* ── Section 1 : Méthodes de notification (master email) ─────────── */}
+      <section className="flex flex-col gap-4 px-6 pt-6 pb-6">
         <h3 className="font-title font-bold text-lg text-foreground leading-tight">
           {t('settings.notifications.methodTitle', {
             defaultValue: 'Méthodes de notification',
           })}
         </h3>
-        <div className="flex flex-col gap-3" role="radiogroup">
+        {/* Toggles INDEPENDANTS : in-app et email peuvent etre actifs ensemble.
+            "Aucune" est un raccourci (coche quand tout est coupe, coupe tout au clic). */}
+        <div className="flex flex-col gap-3" role="group">
           <ToggleCard
             label={t('settings.notifications.methodInApp', {
               defaultValue: "Dans l'application",
             })}
-            checked={delivery === 'in_app'}
+            checked={inAppOn}
             disabled={disabled}
-            onChange={(v) => v && handleUpdate(deliveryToSettings('in_app'))}
+            onChange={(v) => setInAppChannel(v)}
           />
           <ToggleCard
             label={t('settings.notifications.methodEmail', {
               defaultValue: 'Par courriel',
             })}
-            checked={delivery === 'email'}
+            checked={emailOn}
             disabled={disabled}
-            onChange={(v) => v && handleUpdate(deliveryToSettings('email'))}
+            onChange={(v) => handleUpdate({ email_notifications: v })}
           />
           <ToggleCard
             label={t('settings.notifications.methodNone', {
               defaultValue: 'Aucune notification',
             })}
-            checked={delivery === 'none'}
+            checked={!inAppOn && !emailOn}
             disabled={disabled}
-            onChange={(v) => v && handleUpdate(deliveryToSettings('none'))}
+            onChange={(v) => {
+              if (v) setNoneAll()
+            }}
           />
         </div>
       </section>

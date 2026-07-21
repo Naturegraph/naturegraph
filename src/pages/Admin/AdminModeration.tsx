@@ -160,6 +160,8 @@ export default function AdminModeration() {
 
   const [statusFilter, setStatusFilter] = useState<'all' | ReportStatus>('new')
   const [priorityFilter, setPriorityFilter] = useState<'all' | ReportPriority>('all')
+  // NG-036 : filtre par type de contenu signale (post / commentaire / profil).
+  const [typeFilter, setTypeFilter] = useState<'all' | 'post' | 'comment' | 'profile'>('all')
   const [page, setPage] = useState(0)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   // BATCH 109 : rect du bouton trigger pour positionner le menu via portal
@@ -176,11 +178,11 @@ export default function AdminModeration() {
   // Reset page on filter change
   useEffect(() => {
     setPage(0)
-  }, [statusFilter, priorityFilter])
+  }, [statusFilter, priorityFilter, typeFilter])
 
   // Fetch reports
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-reports', statusFilter, priorityFilter, page],
+    queryKey: ['admin-reports', statusFilter, priorityFilter, typeFilter, page],
     queryFn: async () => {
       if (!supabase) return { rows: [] as ReportRow[], total: 0 }
 
@@ -192,6 +194,7 @@ export default function AdminModeration() {
 
       if (statusFilter !== 'all') query = query.eq('status', statusFilter)
       if (priorityFilter !== 'all') query = query.eq('priority', priorityFilter)
+      if (typeFilter !== 'all') query = query.eq('target_type', typeFilter)
 
       const { data: reports, count, error } = await query
       if (error) throw error
@@ -478,6 +481,17 @@ export default function AdminModeration() {
           <option value="high">Haute</option>
           <option value="medium">Moyenne</option>
           <option value="low">Basse</option>
+        </select>
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value as typeof typeFilter)}
+          aria-label="Filtrer par type de contenu"
+          className="h-10 px-3 rounded-md border border-border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <option value="all">Tous les contenus</option>
+          <option value="post">Publications</option>
+          <option value="comment">Commentaires</option>
+          <option value="profile">Profils</option>
         </select>
       </div>
 

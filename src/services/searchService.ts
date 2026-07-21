@@ -290,9 +290,15 @@ export async function searchTaxonomy(
     )
     const { data, error } = result
 
+    // NG-042 : une erreur RPC (token expire non rattrape, panne reseau transitoire,
+    // cold start) ne doit PAS retomber sur un `return []` silencieux : l'UI
+    // affichait alors un faux "Aucune espece trouvee" (bug "suggestions vides une
+    // fois sur deux, resolu au redemarrage"). On THROW, comme la branche catch plus
+    // bas : EncounterStep2 affiche "connexion lente, reessaye" et SearchPanel
+    // (React Query) retente automatiquement. Coherent entre les deux branches.
     if (error) {
-      console.warn('[searchService] taxonomy search failed:', (error as Error).message ?? error)
-      return []
+      console.error('[searchService] taxonomy search failed:', (error as Error).message ?? error)
+      throw error instanceof Error ? error : new Error('Taxonomy search failed')
     }
 
     return ((data ?? []) as Record<string, unknown>[]).map(

@@ -34,7 +34,7 @@
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-import { buildCors } from '../_shared/cors.ts'
+import { buildCors, rejectDisallowedOrigin } from '../_shared/cors.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -116,6 +116,10 @@ const WAITLIST_INVITE_BATCH = 99
 const INVITE_KEY_EXPIRES_DAYS = 365
 
 Deno.serve(async (req: Request) => {
+  // NG-041 : rejet actif (403) des origines tierces. Les appels serveur (sans
+  // Origin) passent ; seule une origine navigateur hors allowlist est rejetee.
+  const originReject = rejectDisallowedOrigin(req)
+  if (originReject) return originReject
   // CORS restreint (NG-032) : allowlist d'origines, calcule par requete.
   // json() est une closure ici pour capturer le corsHeaders de cette requete
   // (evite un etat module mutable partage entre requetes concurrentes).
