@@ -253,11 +253,19 @@ export default function NotificationsPage() {
                     </p>
                     {/*
                       Body sur plusieurs lignes (whitespace-pre-line preserve les \n).
-                      Pas de line-clamp ici, volontairement : contrairement au panneau
-                      mobile, cette page plein écran doit laisser respirer les notifs
-                      system longues (Nicolas 2026-05-25).
 
-                      Deux règles alignées sur le panneau (NG-046), qui manquaient ici :
+                      Troncature à 2 lignes, même règle que le panneau (Nicolas
+                      2026-07-21) : les légendes de rencontres restaient trop longues
+                      et rendaient la liste dense.
+
+                      UNE exception : type=system. Le panneau tronque tout, et c'est
+                      acceptable parce que cette page sert justement de version
+                      complète : l'utilisateur clique pour lire la suite. Si la page
+                      tronquait aussi, il n'existerait plus AUCUN endroit où lire une
+                      annonce officielle en entier. La règle du 2026-05-25 (laisser
+                      respirer les notifs system) reste donc valable pour ce seul type.
+
+                      Deux règles alignées sur le panneau (NG-046) :
                         - type=reaction : le body brut en base est la clé anglaise du
                           trigger SQL (ex "love"), il faut la traduire.
                         - publications regroupées : le body d'UNE seule publication
@@ -266,7 +274,11 @@ export default function NotificationsPage() {
                     {n.body &&
                       !(n.type === 'post' && n.group_count > 1) &&
                       (n.type !== 'reaction' || getReactionLabel(n.body, t)) && (
-                        <p className="mt-1 text-sm text-muted-foreground leading-snug whitespace-pre-line">
+                        <p
+                          className={`mt-1 text-sm text-muted-foreground leading-snug whitespace-pre-line ${
+                            n.type === 'system' ? '' : 'line-clamp-2'
+                          }`}
+                        >
                           {n.type === 'reaction' ? getReactionLabel(n.body, t) : n.body}
                         </p>
                       )}
