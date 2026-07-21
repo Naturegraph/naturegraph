@@ -111,12 +111,18 @@ export function SettingsSecurityView() {
       const { error } = await supabase.auth.updateUser({ email: trimmed })
       if (error) throw error
 
+      // L'option "Secure email change" est ACTIVE sur le projet (vérifié le
+      // 2026-07-21) : Supabase envoie un lien sur l'ancienne ET la nouvelle
+      // adresse, et les DEUX doivent être confirmées. Le message doit donc
+      // mentionner les deux boîtes. Ne dire que "vérifie ta nouvelle adresse"
+      // laissait l'utilisateur croire que c'était terminé alors que son email
+      // de connexion n'avait pas changé, sans qu'il comprenne pourquoi.
       toast.success(
         t('settings.security.emailUpdateSuccessTitle', {
-          defaultValue: 'Lien de confirmation envoyé',
+          defaultValue: 'Confirme depuis tes deux adresses',
         }),
         t('settings.security.emailUpdateSuccessDesc', {
-          defaultValue: `Vérifie ${trimmed} et clique sur le lien pour valider le changement.`,
+          defaultValue: `Un lien a été envoyé à ${trimmed} et à ton adresse actuelle. Clique sur les deux liens pour valider le changement.`,
           email: trimmed,
         }),
       )
