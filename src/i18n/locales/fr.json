@@ -646,6 +646,7 @@
       "messageReaction": "a réagi à ton post",
       "messageFollow": "a commencé à te suivre",
       "messagePost": "a publié une nouvelle rencontre nature",
+      "messagePostGrouped": "a publié {{count}} nouvelles rencontres nature",
       "messageSpeciesDigest": "Nouvelle activité sur une espèce que tu suis",
       "othersOne": "+ 1 autre",
       "othersMany": "+ {{count}} autres",
