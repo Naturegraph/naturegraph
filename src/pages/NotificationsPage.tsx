@@ -41,6 +41,7 @@ import {
   NotifChip,
   Avatar,
   getMessage,
+  getReactionLabel,
   resolveDeepLink,
 } from '@/components/notifications/NotifItem'
 import { trackNotifEvent } from '@/utils/notificationAnalytics'
@@ -246,18 +247,29 @@ export default function NotificationsPage() {
                           n.title ??
                           ''}
                       </span>{' '}
-                      <span className="text-muted-foreground">{getMessage(n.type, t)}</span>
+                      <span className="text-muted-foreground">
+                        {getMessage(n.type, t, n.group_count)}
+                      </span>
                     </p>
                     {/*
                       Body sur plusieurs lignes (whitespace-pre-line preserve les \n).
-                      Plus de line-clamp pour laisser respirer les notifs system longues.
-                      Nicolas 2026-05-25.
+                      Pas de line-clamp ici, volontairement : contrairement au panneau
+                      mobile, cette page plein écran doit laisser respirer les notifs
+                      system longues (Nicolas 2026-05-25).
+
+                      Deux règles alignées sur le panneau (NG-046), qui manquaient ici :
+                        - type=reaction : le body brut en base est la clé anglaise du
+                          trigger SQL (ex "love"), il faut la traduire.
+                        - publications regroupées : le body d'UNE seule publication
+                          n'a plus de sens sous "a publié 3 publications".
                     */}
-                    {n.body && (
-                      <p className="mt-1 text-sm text-muted-foreground leading-snug whitespace-pre-line">
-                        {n.body}
-                      </p>
-                    )}
+                    {n.body &&
+                      !(n.type === 'post' && n.group_count > 1) &&
+                      (n.type !== 'reaction' || getReactionLabel(n.body, t)) && (
+                        <p className="mt-1 text-sm text-muted-foreground leading-snug whitespace-pre-line">
+                          {n.type === 'reaction' ? getReactionLabel(n.body, t) : n.body}
+                        </p>
+                      )}
                   </div>
 
                   {/* Heure + point non-lu */}

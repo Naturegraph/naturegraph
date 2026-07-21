@@ -14,6 +14,7 @@
 import { Heart, UserPlus, FileText, Leaf, MessageCircle, AtSign, Award, Bell } from 'lucide-react'
 import type { Notification, NotificationType } from '@/services/notificationService'
 import { REACTION_CONFIG } from '@/components/home/FeedPost'
+import hermineIcon from '@/assets/images/hermine-icon.png'
 
 // ─── Icône par type ───────────────────────────────────────────────────────────
 
@@ -81,40 +82,57 @@ export function NotifChip({ type, t }: { type: NotificationType; t: (k: string) 
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
-export function Avatar({ url, fallback }: { url: string | null; fallback: string }) {
-  if (url) {
-    return (
-      <img
-        src={url}
-        alt=""
-        aria-hidden="true"
-        loading="lazy"
-        width={40}
-        height={40}
-        className="size-10 rounded-full object-cover bg-primary-light"
-      />
-    )
-  }
+/**
+ * Avatar de l'acteur. Sans photo, on affiche l'hermine officielle plutôt que
+ * des initiales (décision Nicolas 2026-05-19, pour rester cohérent avec
+ * MobileBottomNav, ProfileHeader, EditPhotoTab, GuestSidebar).
+ *
+ * Cette règle n'était appliquée que dans le panneau, qui gardait sa propre
+ * copie du composant : la page plein écran, elle, affichait encore des
+ * initiales. `fallback` reste accepté pour ne casser aucun appel existant,
+ * mais n'est plus utilisé.
+ */
+export function Avatar({ url }: { url: string | null; fallback?: string }) {
   return (
-    <div className="size-10 rounded-full bg-primary-light flex items-center justify-center overflow-hidden">
-      <span className="text-sm font-bold text-primary" aria-hidden="true">
-        {fallback.slice(0, 2).toUpperCase()}
-      </span>
-    </div>
+    <img
+      src={url ?? hermineIcon}
+      alt=""
+      aria-hidden="true"
+      loading="lazy"
+      width={40}
+      height={40}
+      className="size-10 rounded-full object-cover bg-primary-light"
+    />
   )
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Phrase secondaire affichée sous le username + chip. */
-export function getMessage(type: NotificationType, t: (k: string) => string): string {
+/**
+ * Phrase secondaire affichée sous le username + chip.
+ *
+ * `groupCount` = nombre d'événements fusionnés par groupNotifications. À 1, on
+ * garde la formulation unitaire. Au-delà, on annonce le total : sans ça, trois
+ * publications regroupées s'annoncent au singulier, ce qui contredit la ligne
+ * juste au-dessus (NG-046 #3).
+ */
+export function getMessage(
+  type: NotificationType,
+  t: (k: string, opts?: Record<string, unknown>) => string,
+  groupCount = 1,
+): string {
   switch (type) {
     case 'reaction':
       return t('home.notifications.messageReaction')
     case 'follow':
       return t('home.notifications.messageFollow')
     case 'post':
-      return t('home.notifications.messagePost')
+      // Pas de defaultValue : la cle existe dans fr.json et en.json. En mettre
+      // un masquerait une cle manquante, ce qui est exactement ce qui laissait
+      // l'interface anglaise afficher du francais sans que personne le voie.
+      return groupCount > 1
+        ? t('home.notifications.messagePostGrouped', { count: groupCount })
+        : t('home.notifications.messagePost')
     case 'species_digest':
       return t('home.notifications.messageSpeciesDigest')
     default:
