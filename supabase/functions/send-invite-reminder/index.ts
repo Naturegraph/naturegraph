@@ -2,6 +2,14 @@
  * send-invite-reminder : relance unique des invitations non finalisées (one-off)
  * =============================================================================
  *
+ * ⛔ PHASE TERMINÉE, NE PAS REDÉPLOYER NI RÉUTILISER.
+ * Envoi effectué une seule fois le 2026-07-21 (78 destinataires). Décision
+ * Nicolas le même jour : la phase des invitations est close, on ne relance plus
+ * jamais, ni ces 78 personnes ni de futurs profils non onboardés. Le
+ * déploiement Supabase correspondant est retiré : ce fichier est conservé
+ * UNIQUEMENT pour expliquer l'origine des lignes `invite_reminder` dans
+ * email_send_log. Ne pas le redéployer.
+ *
  * Contexte : des personnes ont reçu une invitation à rejoindre Naturegraph mais
  * n'ont jamais terminé leur inscription (profil créé à l'invitation, sans
  * prénom ni centres d'intérêt). La très grande majorité vient de la waitlist,
