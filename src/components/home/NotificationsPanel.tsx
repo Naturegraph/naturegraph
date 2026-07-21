@@ -29,17 +29,7 @@ import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import {
-  X,
-  Heart,
-  UserPlus,
-  FileText,
-  Leaf,
-  MessageCircle,
-  AtSign,
-  Award,
-  Bell,
-} from 'lucide-react'
+import { X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import {
@@ -49,8 +39,14 @@ import {
   useDeleteNotification,
 } from '@/hooks/useNotifications'
 import { SwipeableNotifItem } from './SwipeableNotifItem'
-import { getReactionLabel } from '@/components/notifications/NotifItem'
-import type { NotificationType } from '@/services/notificationService'
+import {
+  NotifIcon,
+  NotifChip,
+  Avatar,
+  getMessage,
+  getReactionLabel,
+  resolveDeepLink,
+} from '@/components/notifications/NotifItem'
 import {
   groupNotifications,
   formatGroupedActors,
@@ -58,7 +54,6 @@ import {
 } from '@/utils/groupNotifications'
 import { trackNotifEvent } from '@/utils/notificationAnalytics'
 import { EmptyState, LoadingState } from '@/components/ui'
-import hermineIcon from '@/assets/images/hermine-icon.png'
 
 // ─── Helpers date ─────────────────────────────────────────────────────────────
 
@@ -85,116 +80,14 @@ function dateGroupKey(iso: string): GroupKey {
   return { kind: 'absolute', label: d.toLocaleDateString('fr-FR') }
 }
 
-// ─── Icône par type ───────────────────────────────────────────────────────────
+// ─── Sous-composants et helpers ───────────────────────────────────────────────
 
-/** Icône Lucide associée à chaque type de notification. */
-function NotifIcon({ type }: { type: NotificationType }) {
-  const map: Record<NotificationType, { Icon: typeof Heart; bg: string; color: string }> = {
-    reaction: {
-      Icon: Heart,
-      bg: 'bg-[var(--color-warning-bg)]',
-      color: 'text-[var(--color-warning)]',
-    },
-    follow: {
-      Icon: UserPlus,
-      bg: 'bg-[var(--color-success-bg)]',
-      color: 'text-[var(--color-success)]',
-    },
-    post: { Icon: FileText, bg: 'bg-primary-light', color: 'text-primary' },
-    species_digest: { Icon: Leaf, bg: 'bg-teal-light/30', color: 'text-teal-dark' },
-    comment: { Icon: MessageCircle, bg: 'bg-primary-light', color: 'text-primary' },
-    mention: { Icon: AtSign, bg: 'bg-primary-light', color: 'text-primary' },
-    identification: { Icon: Award, bg: 'bg-teal-light/30', color: 'text-teal-dark' },
-    system: { Icon: Bell, bg: 'bg-muted', color: 'text-muted-foreground' },
-  }
-  const { Icon, bg, color } = map[type] ?? map.system
-  return (
-    <span
-      aria-hidden="true"
-      className={`absolute -bottom-1 -right-1 size-5 rounded-full ${bg} ${color} flex items-center justify-center ring-2 ring-cream-lighter`}
-    >
-      <Icon className="size-3" />
-    </span>
-  )
-}
-
-// ─── Chip type notification (label texte) ─────────────────────────────────────
-
-function NotifChip({ type }: { type: NotificationType }) {
-  const { t } = useTranslation()
-  const labelKey: Record<NotificationType, string> = {
-    reaction: 'home.notifications.typeReaction',
-    follow: 'home.notifications.typeFollow',
-    post: 'home.notifications.typePost',
-    species_digest: 'home.notifications.typeSpeciesDigest',
-    comment: 'home.notifications.typeComment',
-    mention: 'home.notifications.typeMention',
-    identification: 'home.notifications.typeIdentification',
-    system: 'home.notifications.typeSystem',
-  }
-  const chipCls: Record<NotificationType, string> = {
-    reaction: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
-    follow: 'bg-[var(--color-success-bg)] text-[var(--color-success)]',
-    post: 'bg-primary-light text-primary',
-    species_digest: 'bg-teal-light/30 text-teal-dark',
-    comment: 'bg-primary-light text-primary',
-    mention: 'bg-primary-light text-primary',
-    identification: 'bg-teal-light/30 text-teal-dark',
-    system: 'bg-muted text-muted-foreground',
-  }
-  return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${chipCls[type] ?? chipCls.system}`}
-    >
-      {t(labelKey[type] ?? labelKey.system)}
-    </span>
-  )
-}
-
-// ─── Message par type ─────────────────────────────────────────────────────────
-
-/** Phrase secondaire affichée sous le username + chip. */
-function getMessage(
-  notif: GroupedNotification,
-  t: (k: string, opts?: Record<string, unknown>) => string,
-): string {
-  switch (notif.type) {
-    case 'reaction':
-      return t('home.notifications.messageReaction')
-    case 'follow':
-      return t('home.notifications.messageFollow')
-    case 'post':
-      // Regroupe par auteur : "a publié N publications" si plusieurs, sinon
-      // le message unitaire historique.
-      return notif.group_count > 1
-        ? t('home.notifications.messagePostGrouped', {
-            count: notif.group_count,
-            defaultValue: 'a publié {{count}} publications',
-          })
-        : t('home.notifications.messagePost')
-    case 'species_digest':
-      return t('home.notifications.messageSpeciesDigest')
-    default:
-      return ''
-  }
-}
-
-// ─── Deep-link ────────────────────────────────────────────────────────────────
-
-/** Retourne la route vers laquelle naviguer selon reference_type/id. */
-function resolveDeepLink(n: GroupedNotification): string | null {
-  if (!n.reference_id || !n.reference_type) return null
-  switch (n.reference_type) {
-    case 'post':
-      return `/post/${n.reference_id}`
-    case 'profile':
-      return n.actor_username ? `/profile/${n.actor_username}` : `/profile/${n.reference_id}`
-    case 'species':
-      return `/species/${n.reference_id}`
-    default:
-      return null
-  }
-}
+// NotifIcon, NotifChip, Avatar, getMessage et resolveDeepLink vivaient ici en
+// double, recopies a l'identique dans components/notifications/NotifItem.tsx.
+// Les deux copies avaient deja diverge (le regroupement des publications ne
+// s'appliquait qu'ici, les libelles de reaction aussi), ce qui donnait deux
+// centres de notifications differents selon la surface. Source unique desormais :
+// tout est importe de NotifItem, cf. l'import en haut de fichier.
 
 // ─── Groupement par date ──────────────────────────────────────────────────────
 
@@ -230,27 +123,6 @@ function formatGroupLabel(
   if (k.kind === 'yesterday') return t('home.notifications.groupYesterday')
   if (k.kind === 'days_ago') return t('home.notifications.groupDaysAgo', { count: k.count })
   return k.label
-}
-
-// ─── Avatar ───────────────────────────────────────────────────────────────────
-
-/**
- * Avatar de l'acteur. Si pas de photo, on affiche l'hermine officielle
- * (cohérence avec le reste de l'app : MobileBottomNav, ProfileHeader,
- * EditPhotoTab, GuestSidebar, etc.). Plus d'initiales (Nicolas 2026-05-19).
- */
-function Avatar({ url }: { url: string | null; fallback?: string }) {
-  return (
-    <img
-      src={url ?? hermineIcon}
-      alt=""
-      aria-hidden="true"
-      loading="lazy"
-      width={40}
-      height={40}
-      className="size-10 rounded-full object-cover bg-primary-light"
-    />
-  )
 }
 
 // ─── Composant principal ──────────────────────────────────────────────────────
@@ -416,7 +288,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
                     {/* Contenu */}
                     <div className="flex-1 min-w-0">
                       <div className="mb-1">
-                        <NotifChip type={notif.type} />
+                        <NotifChip type={notif.type} t={t} />
                       </div>
                       <p className="text-sm text-foreground leading-snug">
                         <span className="font-bold">
@@ -429,7 +301,9 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
                             notif.title ??
                             ''}
                         </span>{' '}
-                        <span className="text-muted-foreground">{getMessage(notif, t)}</span>
+                        <span className="text-muted-foreground">
+                          {getMessage(notif.type, t, notif.group_count)}
+                        </span>
                       </p>
                       {/*
                         Corps de la notification. Utilise principalement par les notifs
