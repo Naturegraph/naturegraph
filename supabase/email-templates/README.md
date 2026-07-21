@@ -24,16 +24,27 @@ L'app Naturegraph utilise `supabase.auth.signInWithOtp()` qui attend que l'utili
 
 ## Templates à configurer
 
-| Template Supabase  | Fichier               | Subject                                                |
-| ------------------ | --------------------- | ------------------------------------------------------ |
-| **Confirm signup** | `confirm-signup.html` | `Bienvenue sur Naturegraph : ton code de vérification` |
-| **Magic Link**     | `magic-link.html`     | `Ton code de connexion Naturegraph`                    |
-| **Invite user**    | `invite-user.html`    | `Ton invitation à la beta Naturegraph`                 |
+| Template Supabase        | Fichier               | Subject                                                |
+| ------------------------ | --------------------- | ------------------------------------------------------ |
+| **Confirm signup**       | `confirm-signup.html` | `Bienvenue sur Naturegraph : ton code de vérification` |
+| **Magic Link**           | `magic-link.html`     | `Ton code de connexion Naturegraph`                    |
+| **Change Email Address** | `change-email.html`   | `Confirme ton nouveau courriel Naturegraph`            |
+| **Invite user**          | `invite-user.html`    | `Ton invitation à la beta Naturegraph`                 |
 
-> **Invite user** : utilisé par l'invitation beta depuis l'admin (waitlist →
-> bouton « Inviter »). Variable `{{ .ConfirmationURL }}` = lien d'activation du
-> compte. Tant que ce template n'est pas appliqué, l'invité reçoit le template
-> Supabase par défaut (fonctionnel mais non brandé).
+> **Change Email Address** : déclenché depuis Réglages → Sécurité
+> (`SettingsSecurityView`, appel `supabase.auth.updateUser({ email })`).
+> Sans ce template, l'utilisateur reçoit le template Supabase par défaut,
+> **en anglais et sans marque**, ce qui ressemble à du hameçonnage juste après
+> une action sensible.
+>
+> Si l'option **Secure email change** est active (Authentication → Sign In /
+> Providers), le même template part sur l'ancienne ET la nouvelle adresse, et
+> les deux doivent confirmer. Le texte est rédigé pour rester juste dans les
+> deux cas. À noter : dans cette configuration, un changement d'email consomme
+> **2 emails** du quota Resend journalier.
+
+> **Invite user** : phase d'invitation **close** (décision 2026-07-21, on ne
+> relance plus). Template conservé pour mémoire, il n'est plus utilisé.
 
 ## Variables Supabase utilisées
 
@@ -41,7 +52,18 @@ L'app Naturegraph utilise `supabase.auth.signInWithOtp()` qui attend que l'utili
 - `{{ .Email }}` : Email de l'utilisateur (optionnel)
 - `{{ .SiteURL }}` : URL de l'app (optionnel)
 
-⚠️ **Ne pas utiliser `{{ .ConfirmationURL }}`** : ça enverrait un magic link au lieu d'un code.
+- `{{ .NewEmail }}` : nouvelle adresse demandée (template Change Email uniquement)
+- `{{ .ConfirmationURL }}` : lien de confirmation
+
+⚠️ **Ne pas utiliser `{{ .ConfirmationURL }}` pour Confirm signup ni Magic Link** :
+ça enverrait un lien au lieu d'un code, alors que ces deux écrans attendent la
+saisie d'un code à 6 chiffres.
+
+En revanche, **Change Email Address fonctionne bien par lien** : l'interface
+affiche « clique sur le lien pour valider » et aucun écran ne permet de saisir
+un code de changement d'email. Ce template doit donc utiliser
+`{{ .ConfirmationURL }}`, et surtout pas `{{ .Token }}`. La règle ci-dessus
+dépend de l'écran, elle n'est pas globale.
 
 ## Design system appliqué
 

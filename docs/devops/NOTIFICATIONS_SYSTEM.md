@@ -290,3 +290,44 @@ A maintenir manuellement dans `releases/NOTIFICATIONS_HISTORY.md` (a creer au fi
 | Date       | Version | Type | Titre                          | Cible        | Resultat  |
 | ---------- | ------- | ---- | ------------------------------ | ------------ | --------- |
 | 2026-05-25 | V1.0.0  | Info | Merci de tester Naturegraph 🌿 | 7 users beta | Envoye OK |
+
+---
+
+## Delivrabilite : mesures mail-tester
+
+Cible fixee par NG-030 : **>= 9/10**.
+
+| Date       | Score      | Chaine testee                                 |
+| ---------- | ---------- | --------------------------------------------- |
+| 2026-07-21 | **9,6/10** | Envoi reel via `send-notification-email` (E5) |
+
+Detail de la mesure du 2026-07-21 :
+
+- Authentification **parfaite** : SPF, DKIM et DMARC valides ensemble.
+- Serveur d'envoi **non blockliste**.
+- Message **sain et bien formate**, aucun lien casse.
+- Seule retenue : **-0,4 cote SpamAssassin**, sans regle bloquante. Le detail
+  n'est pas expose par mail-tester a ce niveau de score. Non traite : sous le
+  seuil ou l'effort en vaut la peine.
+
+### Comment refaire ce test
+
+Le tester avec un **vrai envoi de la chaine de production**, jamais avec un
+email bricole a la main : ce qui est mesure, c'est l'expediteur reel, la
+signature DKIM du domaine et le gabarit reel. Un test hors chaine mesurerait
+autre chose.
+
+1. Ouvrir https://www.mail-tester.com et recuperer l'adresse de test unique.
+2. Appeler `send-notification-email` avec `to_email` = cette adresse, un
+   `user_id` interne **opte-in**, et une `reference_key` unique pour ne pas
+   tomber sur l'anti-spam.
+3. Relire le score sur la meme page.
+
+Deux pieges rencontres, a connaitre avant de perdre du temps :
+
+- Le compte **Admin.naturegraph est opte-out** (`user_settings.email_notifications
+= false`). Le dispatcher repond `{"sent": false, "reason": "opted_out"}` : ce
+  n'est pas une panne, c'est le respect de la preference. Utiliser un autre
+  compte interne opte-in.
+- L'envoi consomme **1 email du quota Resend journalier** (100/jour, partage
+  avec les codes de connexion). Ne pas enchainer les tests inutilement.
