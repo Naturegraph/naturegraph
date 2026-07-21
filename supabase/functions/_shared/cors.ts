@@ -46,3 +46,27 @@ export function buildCors(req: Request): Record<string, string> {
     Vary: 'Origin',
   }
 }
+
+/**
+ * Rejet actif des origines tierces (NG-041).
+ *
+ * A appeler tout en tete de handler. Renvoie une reponse 403 si la requete
+ * provient d'une origine NAVIGATEUR non autorisee (en-tete Origin present et
+ * hors allowlist), sinon null (la requete continue son cours).
+ *
+ * Un appel serveur a serveur (cron, webhook DB, invocation interne) n'envoie pas
+ * d'en-tete Origin : il est donc laisse passer (return null), ce qui evite de
+ * casser les fonctions declenchees en interne. Le CORS ne concerne que les
+ * navigateurs ; ce 403 est de la defense en profondeur, doublee de l'auth
+ * (verify_jwt / secret) qui reste la vraie barriere.
+ */
+export function rejectDisallowedOrigin(req: Request): Response | null {
+  const origin = req.headers.get('origin')
+  // Pas d'Origin = appel serveur/interne : on laisse passer.
+  if (!origin) return null
+  if (isAllowedOrigin(origin)) return null
+  return new Response(JSON.stringify({ error: 'origin_not_allowed' }), {
+    status: 403,
+    headers: { 'Content-Type': 'application/json', Vary: 'Origin' },
+  })
+}

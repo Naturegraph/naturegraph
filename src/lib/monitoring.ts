@@ -90,6 +90,18 @@ export async function initMonitoring(): Promise<void> {
       replaysOnErrorSampleRate: 1.0,
       // RGPD : pas de PII
       sendDefaultPii: false,
+      // Bruit connu a ignorer : ce ne sont PAS des erreurs de notre app.
+      //  - `window.webkit.messageHandlers` / sendDataToNative / sendPageHideMessage :
+      //    scripts injectes par les navigateurs in-app Instagram/Facebook (iOS
+      //    WKWebView). Ils plantent chez EUX, pas dans notre code, et polluent
+      //    Sentry des qu'un lien est ouvert depuis Insta/FB.
+      //  - ResizeObserver loop : avertissement navigateur benin, sans impact.
+      ignoreErrors: [
+        /window\.webkit\.messageHandlers/i,
+        'sendDataToNative',
+        'sendPageHideMessage',
+        /ResizeObserver loop/i,
+      ],
       beforeSend(event: { user?: { email?: string; ip_address?: string } }) {
         if (event.user) {
           event.user.email = undefined

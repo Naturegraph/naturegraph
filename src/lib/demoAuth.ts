@@ -20,7 +20,14 @@ interface OtpEntry {
 /** Map email → { otp, expiresAt } : vidée après chaque utilisation réussie */
 const otpStore = new Map<string, OtpEntry>()
 
-/** Durée de validité de l'OTP : 2 minutes (identique au TTL Supabase configuré en prod) */
+/**
+ * Durée de validité de l'OTP de démo : 2 minutes.
+ *
+ * Attention, ce n'est PAS le TTL de production : Supabase est réglé à 600 s
+ * (10 minutes), cf. Authentication > Sign In / Providers > Email OTP expiration.
+ * L'écart est volontaire et sans conséquence, ce mode ne sert qu'aux comptes de
+ * démo hors Supabase. Le commentaire précédent affirmait l'inverse.
+ */
 const OTP_TTL_MS = 2 * 60 * 1000
 
 // ─── API publique ─────────────────────────────────────────────────────────────
