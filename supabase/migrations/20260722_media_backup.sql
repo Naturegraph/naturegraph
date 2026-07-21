@@ -89,6 +89,29 @@ REVOKE EXECUTE ON FUNCTION public.list_media_backup_pending(integer) FROM PUBLIC
 REVOKE EXECUTE ON FUNCTION public.list_media_backup_pending(integer) FROM anon;
 REVOKE EXECUTE ON FUNCTION public.list_media_backup_pending(integer) FROM authenticated;
 
+-- 5. Cron quotidien -----------------------------------------------------------
+-- Protege les nouvelles photos au fil de l'eau. 50 par passage suffit largement
+-- au rythme actuel (quelques publications par jour) ; en cas de pic, le retard
+-- est rattrape les jours suivants puisque la fonction reprend toujours ce qui
+-- n'est pas encore copie.
+-- 05h UTC (1h du matin a Montreal) : creneau calme, hors des crons email.
+SELECT cron.unschedule('daily_media_backup')
+WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'daily_media_backup');
+
+SELECT cron.schedule(
+  'daily_media_backup',
+  '0 5 * * *',
+  $$
+  SELECT net.http_post(
+    url := 'https://hrxgduvworofnrjmgpcj.supabase.co/functions/v1/backup-media',
+    headers := jsonb_build_object('Content-Type', 'application/json',
+      'x-cron-secret', (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'cron_secret')),
+    body := jsonb_build_object('limit', 50),
+    timeout_milliseconds := 150000
+  );
+  $$
+);
+
 -- Rollback (reference) : ne JAMAIS supprimer le bucket media-backup sans avoir
 -- verifie qu'une autre copie existe.
 --   DROP VIEW IF EXISTS public.media_backup_status;
