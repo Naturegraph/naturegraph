@@ -4,3 +4,42 @@
 // Supprimé : ces utilitaires sont fournis par Tailwind CSS v4
 // (.text-center, .flex, .items-center, .gap-*, etc.)
 // Les garder ici en non-layered cassait la spécificité Tailwind.
+
+// ── Barre de défilement fine ────────────────────────────────────────────────
+//
+// Tailwind ne stylise pas les barres de défilement, et le rendu natif de
+// Windows est large et gris : très visible dans un panneau étroit comme celui
+// des notifications (retour Nicolas 2026-07-21).
+//
+// Placée ici et non en classe inline parce qu'elle repose sur des
+// pseudo-éléments, donc sans conflit possible avec les utilitaires Tailwind
+// (l'avertissement ci-dessus ne s'applique pas), et parce qu'elle a vocation à
+// resservir sur toute liste défilante.
+//
+// Couleurs via tokens : le curseur reste lisible en thème clair comme sombre.
+// 6px plutôt que les 2 ou 3px souvent vus : en dessous, la cible devient trop
+// petite à saisir à la souris, ce qui pénalise la motricité fine.
+.scrollbar-thin {
+  scrollbar-width: thin; // Firefox
+  scrollbar-color: var(--color-border-dark) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-dark);
+    border-radius: 999px;
+  }
+
+  // Le curseur ne s'affiche qu'au survol de la zone : moins de bruit visuel au
+  // repos, tout en restant present des que l'utilisateur approche la souris.
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-primary);
+  }
+}

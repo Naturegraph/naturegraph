@@ -5,7 +5,7 @@
  *   id, user_id, type, title, body, reference_id, reference_type, read, created_at
  *
  * Realtime : channel `notif:${userId}` ecoute les INSERT pour ce user.
- * Voir useNotifications() pour le wiring React Query + Realtime.
+ * Voir useNotificationsInfinite() pour le wiring React Query + Realtime.
  */
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
@@ -34,24 +34,6 @@ export interface Notification {
   actor_id: string | null
   actor_username: string | null
   actor_avatar_url: string | null
-}
-
-/** Liste les N dernieres notifications du user courant (vue enrichie avec actor).
- *  Nicolas 2026-05-22 : cap par défaut à 10 (panel mobile + desktop) pour
- *  garder la liste digeste : l'historique long reste accessible via
- *  /notifications (pagination par curseur via listNotificationsPage). */
-export async function listNotifications(userId: string, limit = 10): Promise<Notification[]> {
-  if (!isSupabaseConfigured || !supabase) return []
-
-  const { data, error } = await supabase
-    .from('notifications_with_actor')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(limit)
-
-  if (error) throw new Error(error.message)
-  return (data ?? []) as unknown as Notification[]
 }
 
 /**

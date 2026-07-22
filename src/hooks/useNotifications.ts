@@ -6,20 +6,37 @@
  */
 
 import { useEffect } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  listNotifications,
+  listNotificationsPage,
   countUnread,
   markAsRead,
   markManyAsRead,
   markAllAsRead,
   deleteNotification,
-  type Notification,
+  type NotificationType,
 } from '@/services/notificationService'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 
 export const notificationsQueryKey = (userId: string) => ['notifications', userId] as const
 export const unreadCountQueryKey = (userId: string) => ['notifications', userId, 'unread'] as const
+
+/**
+ * Nombre de notifications chargees par page, et nombre maximum de pages
+ * chargees automatiquement au scroll.
+ *
+ * 20 x 10 = 200 elements au plus en memoire. Au-dela, le chargement auto
+ * s'arrete et un bouton explicite prend le relais : c'est le garde-fou
+ * eco-conception impose par CLAUDE.md pour le scroll infini (NG-026).
+ *
+ * Pourquoi ce plafond plutot que l'option `maxPages` de React Query : celle-ci
+ * exige un curseur bidirectionnel (getPreviousPageParam), que notre service
+ * n'expose pas, et elle SUPPRIME les premieres pages quand le plafond est
+ * atteint. L'utilisateur qui remonte verrait alors la liste se vider par le
+ * haut. Un plafond dur borne la memoire sans ce defaut.
+ */
+export const NOTIF_PAGE_SIZE = 20
+export const NOTIF_MAX_AUTO_PAGES = 10
 
 /**
  * Compteur module-level : garantit un topic de canal Realtime UNIQUE par
@@ -38,16 +55,15 @@ export const unreadCountQueryKey = (userId: string) => ['notifications', userId,
  */
 let realtimeSubSeq = 0
 
-/** Liste des notifications du user + subscription Realtime. */
-export function useNotifications(userId: string | undefined) {
+/**
+ * Abonnement Realtime aux nouvelles notifications.
+ *
+ * Extrait de useNotifications pour etre partage avec la version paginee :
+ * sans ca, le panneau paginé aurait perdu le temps reel, ou pire, deux
+ * abonnements concurrents auraient ete crees.
+ */
+function useNotificationsRealtime(userId: string | undefined) {
   const qc = useQueryClient()
-
-  const query = useQuery<Notification[], Error>({
-    queryKey: notificationsQueryKey(userId ?? ''),
-    queryFn: () => listNotifications(userId!),
-    enabled: !!userId,
-    staleTime: 30 * 1000,
-  })
 
   useEffect(() => {
     if (!userId || !isSupabaseConfigured || !supabase) return
@@ -75,8 +91,35 @@ export function useNotifications(userId: string | undefined) {
       supabase?.removeChannel(channel)
     }
   }, [userId, qc])
+}
 
-  return query
+/**
+ * Liste paginee par curseur + filtre par type + Realtime.
+ *
+ * Utilisee par le panneau de la cloche, devenu le centre de notifications
+ * complet. La cle de cache commence par ['notifications', userId], donc les
+ * mutations existantes (lu, tout lu, supprime) l'invalident deja par prefixe :
+ * rien a changer de ce cote.
+ */
+export function useNotificationsInfinite(
+  userId: string | undefined,
+  types: NotificationType[] | undefined,
+) {
+  useNotificationsRealtime(userId)
+
+  // La cle inclut les types filtres : changer d'onglet change de cache, sans
+  // melanger les listes.
+  const cle = [...notificationsQueryKey(userId ?? ''), 'infinite', types?.join(',') ?? 'all']
+
+  return useInfiniteQuery({
+    queryKey: cle,
+    enabled: !!userId,
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) =>
+      listNotificationsPage(userId!, { before: pageParam, limit: NOTIF_PAGE_SIZE, types }),
+    getNextPageParam: (derniere) => derniere.nextCursor ?? undefined,
+    staleTime: 30 * 1000,
+  })
 }
 
 /** Compteur non lues. */
