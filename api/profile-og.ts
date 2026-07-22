@@ -114,6 +114,16 @@ async function fetchProfileForOg(username: string): Promise<OgProfile | null> {
 
 // ─── Helpers HTML ─────────────────────────────────────────────────────────────
 
+/**
+ * Retourne le texte nettoyé, ou `null` s'il est absent OU vide.
+ * Voir `post-og.ts` : un `??` seul ne bascule pas sur le repli quand le champ
+ * contient une chaîne vide plutôt que `null`.
+ */
+function texte(valeur: string | null | undefined): string | null {
+  const nettoye = (valeur ?? '').trim()
+  return nettoye.length > 0 ? nettoye : null
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -131,9 +141,15 @@ function truncate(s: string, max = 200): string {
 function buildCrawlerHtml(profile: OgProfile, profileUrl: string, origin: string): string {
   const safeName = escapeHtml(profile.displayName)
   const safeUsername = escapeHtml(profile.username)
+  // `texte()` plutot que `??` : un champ vide en base est aujourd'hui `null`
+  // cote profils, mais les publications, elles, stockent des CHAINES VIDES.
+  // Le meme oubli y laissait 25 % des liens partages sans description
+  // (cf. post-og.ts). Precaution, pas correctif : aucun profil n'est concerne
+  // a ce jour.
   const safeBio = escapeHtml(
     truncate(
-      profile.bio ?? `Découvre les observations nature de @${profile.username} sur Naturegraph.`,
+      texte(profile.bio) ??
+        `Découvre les observations nature de @${profile.username} sur Naturegraph.`,
     ),
   )
   // Préférence banner > avatar pour og:image (la bannière est en 1500×500
@@ -142,7 +158,7 @@ function buildCrawlerHtml(profile: OgProfile, profileUrl: string, origin: string
   // timeout sur les images lourdes en data mobile).
   // V1.1.4 NG-012 : fallback og-preview.png si pas d avatar ni banner pour
   // garantir une preview visuelle (vs blank).
-  const rawOgImage = profile.bannerUrl ?? profile.avatarUrl ?? ''
+  const rawOgImage = texte(profile.bannerUrl) ?? texte(profile.avatarUrl) ?? ''
   const ogImage = rawOgImage
     ? rawOgImage.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') +
       (rawOgImage.includes('?') ? '&' : '?') +
