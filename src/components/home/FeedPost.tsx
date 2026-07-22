@@ -897,6 +897,24 @@ export function FeedPost({
               <span className="text-xs text-muted-foreground">{t('home.post.noReactions')}</span>
             )}
           </div>
+
+          {/*
+            Slot droit de la rangee reactions : compteur d'echanges, comme sur
+            la maquette. Simple indicateur, pas un bouton : l'action se fait par
+            le bouton "Échanges" de la rangee du dessous. Masque a zero, pour ne
+            pas afficher un compteur vide sur chaque publication.
+          */}
+          {comments > 0 && (
+            <span
+              className="flex items-center gap-1 text-sm text-foreground"
+              aria-label={`${comments} échange${comments > 1 ? 's' : ''}`}
+            >
+              <MessageCircle className="size-4" aria-hidden="true" />
+              <span className="tabular-nums" aria-hidden="true">
+                {comments}
+              </span>
+            </span>
+          )}
         </div>
 
         {/* Séparateur */}
@@ -994,21 +1012,20 @@ export function FeedPost({
                 </div>
               </>
             )}
-          </div>
-          <div className="flex gap-1">
+
             {/*
-              Bouton Echanges (NG-049), a l'emplacement prevu de longue date
-              (Figma node 6385:60494).
+              Bouton Échanges (NG-049), a cote de "Réagir" comme sur la maquette
+              (Figma node 6385:60494, slot laisse libre dans le code depuis le
+              MVP). Le COMPTEUR, lui, est dans la rangee des reactions au-dessus.
 
               Deux comportements selon le contexte :
-                - page detail : ouvre ou ferme le fil, c'est la que les
-                  echanges vivent ;
+                - page detail : ouvre ou ferme le fil, c'est la qu'il vit ;
                 - fil d'accueil : renvoie vers la publication. On ne charge pas
                   les echanges de chaque carte du feed, ce serait autant de
                   requetes pour du contenu que personne ne lit encore.
 
-              Accessible aux visiteurs : LIRE les echanges ne demande pas de
-              compte (suite de NG-054). C'est ecrire qui en demande un.
+              Accessible aux visiteurs : LIRE ne demande pas de compte (suite de
+              NG-054). C'est ecrire qui en demande un.
             */}
             <button
               type="button"
@@ -1017,25 +1034,17 @@ export function FeedPost({
                 else navigate(buildPostPath(id, { title, species }))
               }}
               aria-expanded={onBasculerEchanges ? echangesOuverts : undefined}
-              aria-label={
-                comments > 0 ? `Échanges : ${comments}` : 'Échanges : aucun pour le moment'
-              }
               className={[
-                'flex items-center gap-1 h-8 px-2 rounded-full transition-colors',
+                'flex items-center gap-2 h-8 px-2 rounded-full transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
-                echangesOuverts
-                  ? 'text-primary bg-primary-light/40'
-                  : 'text-foreground hover:bg-muted/50',
+                echangesOuverts ? 'text-primary' : 'text-foreground hover:bg-muted/50',
               ].join(' ')}
             >
               <MessageCircle className="size-4" aria-hidden="true" />
-              {comments > 0 && (
-                <span className="text-sm tabular-nums" aria-hidden="true">
-                  {comments}
-                </span>
-              )}
+              <span className="text-sm font-medium">Échanges</span>
             </button>
-
+          </div>
+          <div className="flex gap-1">
             {/*
               Bouton Sauvegarder : second-agent/13.
               État optimiste local, TODO BACKEND : câbler à `saved_posts`.
