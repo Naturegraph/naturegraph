@@ -373,7 +373,9 @@ export type Database = {
         Row: {
           content: string
           created_at: string | null
+          helpful: boolean
           id: string
+          intention: string
           post_id: string
           updated_at: string | null
           user_id: string
@@ -381,7 +383,9 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string | null
+          helpful?: boolean
           id?: string
+          intention?: string
           post_id: string
           updated_at?: string | null
           user_id: string
@@ -389,7 +393,9 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string | null
+          helpful?: boolean
           id?: string
+          intention?: string
           post_id?: string
           updated_at?: string | null
           user_id?: string
@@ -634,6 +640,36 @@ export type Database = {
           population?: number | null
           region_code?: string
           region_name?: string
+        }
+        Relationships: []
+      }
+      ghost_profiles_archive: {
+        Row: {
+          archived_at: string
+          email: string | null
+          emails_envoyes: Json | null
+          id: string
+          motif: string
+          profile_created_at: string | null
+          username: string | null
+        }
+        Insert: {
+          archived_at?: string
+          email?: string | null
+          emails_envoyes?: Json | null
+          id: string
+          motif?: string
+          profile_created_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          archived_at?: string
+          email?: string | null
+          emails_envoyes?: Json | null
+          id?: string
+          motif?: string
+          profile_created_at?: string | null
+          username?: string | null
         }
         Relationships: []
       }
@@ -3460,6 +3496,10 @@ export type Database = {
       st_wrapx: {
         Args: { geom: unknown; move: number; wrap: number }
         Returns: unknown
+      }
+      toggle_comment_helpful: {
+        Args: { p_comment_id: string }
+        Returns: boolean
       }
       touch_last_active: { Args: never; Returns: undefined }
       unaccent: { Args: { '': string }; Returns: string }

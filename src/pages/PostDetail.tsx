@@ -50,6 +50,7 @@ import { MobileNavLayer } from '@/components/home/MobileNavLayer'
 import { GuestSidebar } from '@/components/home/GuestSidebar'
 import { ProfileSidebar } from '@/components/home/ProfileSidebar'
 import { RelatedPostCard } from '@/components/home/RelatedPostCard'
+import { EchangesSection } from '@/components/echanges/EchangesSection'
 import { useToggleReaction } from '@/hooks/usePost'
 import { useEditPostFlow } from '@/hooks/useEditPostFlow'
 import type { ReactionType, PostFeedItem } from '@/types/database'
@@ -295,6 +296,12 @@ export default function PostDetail() {
                 </Suspense>
               )}
             </div>
+
+            {/* Echanges (NG-049) : sous la publication, avant les suggestions.
+                Lecture ouverte aux visiteurs, ecriture reservee aux comptes. */}
+            {!isLoading && post && (
+              <EchangesSection postId={post.id} auteurPublicationId={post.authorId} />
+            )}
 
             {/* NG-028 : section "Observations susceptibles de t'interesser".
                 Jusqu'a 4 observations similaires (meme espece > groupe >
