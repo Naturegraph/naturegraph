@@ -21,6 +21,7 @@ import {
   Bird,
   MountainSnow,
   Heart,
+  MessageCircle,
 } from 'lucide-react'
 import { SharePopover } from './SharePopover'
 import { useSavedPostIds, useToggleSavedPost } from '@/hooks/useSavedPosts'
@@ -129,7 +130,7 @@ export interface MockPost {
   userReaction: ReactionType | null
   /** Total des réactions (likes_count) */
   totalReactions: number
-  /** Nombre de commentaires (préservé pour usage post-MVP : non affiché en MVP). */
+  /** Nombre d'echanges sous la publication (NG-049). */
   comments: number
 }
 
@@ -268,6 +269,15 @@ interface FeedPostProps extends MockPost {
    * les autres posts chargent en `lazy`. Defaut false.
    */
   priority?: boolean
+  /**
+   * Ouvre ou ferme les Echanges sous la publication (NG-049).
+   * Fourni UNIQUEMENT par la page detail, seul endroit ou le fil existe.
+   * Absent dans le feed : le bouton y renvoie alors vers la page detail,
+   * plutot que de charger des echanges dans chaque carte du fil.
+   */
+  onBasculerEchanges?: () => void
+  /** Etat courant du fil, pour aria-expanded et le style actif. */
+  echangesOuverts?: boolean
 }
 
 export function FeedPost({
@@ -300,6 +310,7 @@ export function FeedPost({
   reactions,
   userReaction,
   totalReactions,
+  comments,
   canInteract = true,
   linkToDetail = true,
   isOwnPost = false,
@@ -310,6 +321,8 @@ export function FeedPost({
   expandContent = false,
   disableChipFilters = false,
   priority = false,
+  onBasculerEchanges,
+  echangesOuverts = false,
 }: FeedPostProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -983,6 +996,46 @@ export function FeedPost({
             )}
           </div>
           <div className="flex gap-1">
+            {/*
+              Bouton Echanges (NG-049), a l'emplacement prevu de longue date
+              (Figma node 6385:60494).
+
+              Deux comportements selon le contexte :
+                - page detail : ouvre ou ferme le fil, c'est la que les
+                  echanges vivent ;
+                - fil d'accueil : renvoie vers la publication. On ne charge pas
+                  les echanges de chaque carte du feed, ce serait autant de
+                  requetes pour du contenu que personne ne lit encore.
+
+              Accessible aux visiteurs : LIRE les echanges ne demande pas de
+              compte (suite de NG-054). C'est ecrire qui en demande un.
+            */}
+            <button
+              type="button"
+              onClick={() => {
+                if (onBasculerEchanges) onBasculerEchanges()
+                else navigate(buildPostPath(id, { title, species }))
+              }}
+              aria-expanded={onBasculerEchanges ? echangesOuverts : undefined}
+              aria-label={
+                comments > 0 ? `Échanges : ${comments}` : 'Échanges : aucun pour le moment'
+              }
+              className={[
+                'flex items-center gap-1 h-8 px-2 rounded-full transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+                echangesOuverts
+                  ? 'text-primary bg-primary-light/40'
+                  : 'text-foreground hover:bg-muted/50',
+              ].join(' ')}
+            >
+              <MessageCircle className="size-4" aria-hidden="true" />
+              {comments > 0 && (
+                <span className="text-sm tabular-nums" aria-hidden="true">
+                  {comments}
+                </span>
+              )}
+            </button>
+
             {/*
               Bouton Sauvegarder : second-agent/13.
               État optimiste local, TODO BACKEND : câbler à `saved_posts`.

@@ -30,7 +30,7 @@
  *     d'écran.
  */
 
-import { Suspense, lazy, useRef, useEffect } from 'react'
+import { Suspense, lazy, useRef, useEffect, useState } from 'react'
 import { Link, useParams, useNavigate, useNavigationType } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -111,6 +111,9 @@ export default function PostDetail() {
   const { t } = useTranslation()
   const { postId: routeParam } = useParams<{ postId: string }>()
   const { isAuthenticated, profile, user } = useAuth()
+  // Fil d'echanges replie par defaut : la publication reste l'element principal
+  // de la page, on n'impose pas la discussion avant la photo (NG-049).
+  const [echangesOuverts, setEchangesOuverts] = useState(false)
 
   // Le segment `:postId` peut être :
   //   - un UUID nu (anciens liens) → on l'utilise tel quel
@@ -292,6 +295,8 @@ export default function PostDetail() {
                     // (pas de "Voir plus") + chips categorie/espece passifs.
                     expandContent
                     disableChipFilters
+                    onBasculerEchanges={() => setEchangesOuverts((v) => !v)}
+                    echangesOuverts={echangesOuverts}
                   />
                 </Suspense>
               )}
@@ -299,7 +304,7 @@ export default function PostDetail() {
 
             {/* Echanges (NG-049) : sous la publication, avant les suggestions.
                 Lecture ouverte aux visiteurs, ecriture reservee aux comptes. */}
-            {!isLoading && post && (
+            {!isLoading && post && echangesOuverts && (
               <EchangesSection postId={post.id} auteurPublicationId={post.authorId} />
             )}
 
