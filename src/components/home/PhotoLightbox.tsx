@@ -17,6 +17,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { X, ChevronLeft, ChevronRight, Share2 } from 'lucide-react'
 import { SharePopover } from './SharePopover'
 import { ImagePresets } from '@/lib/supabaseImage'
+import hermineIcon from '@/assets/images/hermine-icon.png'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -255,13 +256,17 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
 
         {authorName && (
           <div className="flex items-center gap-2 mb-3">
-            {authorAvatar && (
-              <img
-                src={authorAvatar}
-                alt=""
-                className="size-7 rounded-full object-cover ring-1 ring-white/30"
-              />
-            )}
+            {/*
+              Toujours une image, jamais rien : sans photo on affiche l'hermine
+              officielle, comme partout ailleurs dans l'app (cloche, navigation,
+              profil). Un pseudo seul, sans pastille, cassait l'alignement et
+              l'identite visuelle (retour Nicolas 2026-07-22).
+            */}
+            <img
+              src={authorAvatar || hermineIcon}
+              alt=""
+              className="size-7 rounded-full object-cover ring-1 ring-white/30 bg-white/10"
+            />
             <span className="text-white text-sm font-medium">
               @{authorName.toLowerCase().replace(/[.\s]/g, '')}
             </span>
