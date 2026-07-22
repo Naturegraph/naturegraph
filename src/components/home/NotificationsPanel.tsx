@@ -21,11 +21,11 @@
  *
  * Données :
  *   - Vue SQL notifications_with_actor → actor_id/username/avatar_url joints
- *   - Realtime via Supabase channel (voir useNotifications)
+ *   - Realtime via Supabase channel (voir useNotificationsInfinite)
  *   - Deep-link onClick selon reference_type (post | profile | species)
  */
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -33,11 +33,19 @@ import { X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import {
-  useNotifications,
+  useNotificationsInfinite,
   useMarkManyAsRead,
   useMarkAllAsRead,
   useDeleteNotification,
+  NOTIF_MAX_AUTO_PAGES,
 } from '@/hooks/useNotifications'
+import {
+  FILTER_TYPES,
+  FILTER_KEYS,
+  FILTER_LABEL_KEYS,
+  FILTER_EMPTY_KEYS,
+  type FilterKey,
+} from '@/utils/notificationFilters'
 import { SwipeableNotifItem } from './SwipeableNotifItem'
 import {
   NotifIcon,
@@ -138,14 +146,48 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
   const navigate = useNavigate()
   const { user } = useAuth()
   const toast = useToast()
-  const { data: rawNotifs = [], isLoading } = useNotifications(user?.id)
+
+  // Onglet de filtrage. Les categories sont partagees avec la page plein
+  // ecran (notificationFilters), jamais redefinies ici.
+  const [filtre, setFiltre] = useState<FilterKey>('all')
+  const types = FILTER_TYPES[filtre] ?? undefined
+
+  const query = useNotificationsInfinite(user?.id, types)
+  const isLoading = query.isLoading
   const markManyAsRead = useMarkManyAsRead(user?.id)
   const markAllAsRead = useMarkAllAsRead(user?.id)
   const deleteNotif = useDeleteNotification(user?.id)
-  // Regroupe les notifs identiques < 24h (ex : "Alice & Bob ont réagi à ton post")
-  const notifs = groupNotifications(rawNotifs)
-  const groups = groupByDate(notifs)
+
+  // Aplatit les pages, puis regroupe les notifs identiques < 24h
+  // (ex : "Alice & Bob ont réagi à ton post").
+  const brutes = useMemo(() => query.data?.pages.flatMap((p) => p.items) ?? [], [query.data])
+  const notifs = useMemo(() => groupNotifications(brutes), [brutes])
+  const groups = useMemo(() => groupByDate(notifs), [notifs])
   const unreadCount = notifs.filter((n) => !n.read).length
+
+  // Plafond du chargement automatique : au-dela, un bouton explicite prend le
+  // relais pour ne pas empiler indefiniment des elements en memoire.
+  const pagesChargees = query.data?.pages.length ?? 0
+  const plafondAtteint = pagesChargees >= NOTIF_MAX_AUTO_PAGES
+  const peutCharger = query.hasNextPage && !query.isFetchingNextPage
+
+  // Sentinelle de fin de liste : IntersectionObserver et non un écouteur de
+  // scroll, qui s'exécuterait en continu (règle éco-conception NG-026).
+  const sentinelleRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const cible = sentinelleRef.current
+    if (!cible || !peutCharger || plafondAtteint) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) query.fetchNextPage()
+      },
+      // Déclenche un peu avant le bas pour éviter un temps mort visible.
+      { rootMargin: '120px' },
+    )
+    observer.observe(cible)
+    return () => observer.disconnect()
+  }, [peutCharger, plafondAtteint, query])
 
   // Analytics : ouverture/fermeture du panel (mount/unmount)
   useEffect(() => {
@@ -212,21 +254,16 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
   const panelContent = (
     <>
       {/* Header : pas de badge unreadCount ici : doublon avec la cloche header
-          qui porte déjà le compteur (Nicolas 2026-05-19). */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-        {/* Titre cliquable : mene a la page complete /notifications (filtres +
-            pagination). Retour Nicolas 2026-07-06 : donner acces au systeme
-            complet depuis la cloche. On ferme le panneau avant de naviguer. */}
-        <button
-          type="button"
-          onClick={() => {
-            onClose()
-            navigate('/notifications')
-          }}
-          className="font-title font-bold text-base text-foreground hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded transition-colors"
-        >
+          qui porte déjà le compteur (Nicolas 2026-05-19).
+          Le titre n'est plus un lien vers /notifications : le panneau EST
+          desormais le centre complet (filtres + chargement progressif). */}
+      {/* Pas de border-b ici : la rangee d'onglets juste en dessous porte deja
+          son propre trait, deux lignes collees alourdissaient l'en-tete
+          (retour Nicolas 2026-07-21). */}
+      <div className="flex items-center justify-between px-5 pt-4 pb-1">
+        <h2 className="font-title font-bold text-base text-foreground">
           {t('home.notifications.title')}
-        </button>
+        </h2>
         <button
           type="button"
           onClick={onClose}
@@ -237,15 +274,53 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
         </button>
       </div>
 
+      {/* Onglets de filtrage par type. */}
+      <div
+        role="tablist"
+        aria-label={t('home.notifications.title')}
+        // Barre de defilement masquee : sur une rangee de 4 onglets qui tient
+        // presque toujours dans la largeur, la barre native n'apporte rien et
+        // salit le rendu (retour Nicolas). Le defilement reste possible au
+        // doigt et a la molette. Meme motif que ImageSlider et ProfileTabs.
+        className="flex gap-1 px-3 border-b border-border overflow-x-auto touch-pan-x [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {FILTER_KEYS.map((k) => {
+          const actif = filtre === k
+          return (
+            <button
+              key={k}
+              role="tab"
+              type="button"
+              aria-selected={actif}
+              onClick={() => {
+                trackNotifEvent('tab_changed', { tab: k })
+                setFiltre(k)
+              }}
+              className={`relative px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-t ${
+                actif ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {t(FILTER_LABEL_KEYS[k])}
+              {actif && (
+                <span
+                  aria-hidden="true"
+                  className="absolute left-2 right-2 -bottom-px h-0.5 bg-primary rounded-full"
+                />
+              )}
+            </button>
+          )
+        })}
+      </div>
+
       {/* Liste groupée par date (BATCH 114 : max-h responsive : 60vh sur mobile pour gérer le clavier virtuel) */}
-      <div className="max-h-[60vh] md:max-h-[420px] overflow-y-auto">
+      <div className="max-h-[60vh] md:max-h-[420px] overflow-y-auto scrollbar-thin">
         {isLoading && (
           <LoadingState variant="skeleton" rows={4} label={t('home.notifications.loading')} />
         )}
         {!isLoading && notifs.length === 0 && (
           <EmptyState
-            title={t('home.notifications.empty')}
-            description={t('home.notifications.emptyHint')}
+            title={t(FILTER_EMPTY_KEYS[filtre].title)}
+            description={t(FILTER_EMPTY_KEYS[filtre].hint)}
           />
         )}
         {groups.map((group, gi) => (
@@ -341,9 +416,48 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
             ))}
           </div>
         ))}
+
+        {/*
+          Bas de liste. La sentinelle est observee par IntersectionObserver :
+          quand elle entre dans le champ, la page suivante se charge. Elle n'est
+          rendue que tant que le chargement automatique est autorise.
+        */}
+        {!isLoading && query.hasNextPage && !plafondAtteint && (
+          <div ref={sentinelleRef} className="py-4 text-center" aria-live="polite">
+            <span className="text-xs text-muted-foreground">
+              {query.isFetchingNextPage ? t('home.notifications.page.loading') : ''}
+            </span>
+          </div>
+        )}
+
+        {/*
+          Plafond atteint : on rend la main a l'utilisateur plutot que de
+          continuer a empiler des elements en memoire (eco-conception NG-026).
+        */}
+        {query.hasNextPage && plafondAtteint && (
+          <div className="py-4 text-center">
+            <button
+              type="button"
+              onClick={() => query.fetchNextPage()}
+              disabled={query.isFetchingNextPage}
+              className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              {query.isFetchingNextPage
+                ? t('home.notifications.page.loading')
+                : t('home.notifications.page.loadMore')}
+            </button>
+          </div>
+        )}
+
+        {/* Fin de liste atteinte : on le dit, sinon l'utilisateur doute. */}
+        {!isLoading && !query.hasNextPage && notifs.length > 0 && (
+          <p className="py-4 text-center text-xs text-muted-foreground">
+            {t('home.notifications.endOfList')}
+          </p>
+        )}
       </div>
 
-      {/* Footer : tout marquer comme lu (la page /notifications n'existe pas, BATCH 107) */}
+      {/* Footer : tout marquer comme lu (BATCH 107) */}
       {unreadCount > 0 && (
         <div className="px-5 py-3 border-t border-border">
           <button

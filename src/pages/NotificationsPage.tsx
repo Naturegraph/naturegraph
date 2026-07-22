@@ -18,7 +18,7 @@
  *   - Bouton "charger plus" visible clavier + aria-live pour l'état "you're all caught up"
  *
  * Eco-conception :
- *   - Pas de polling : Realtime déjà actif dans useNotifications côté panel
+ *   - Pas de polling : Realtime actif via useNotificationsInfinite (panneau cloche)
  *   - LIMIT 20 par requête, pas de scroll infini
  *   - Lazy-loadée dans le router
  */
@@ -30,11 +30,7 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import { ArrowLeft, CheckCheck } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMarkAsRead, useMarkAllAsRead } from '@/hooks/useNotifications'
-import {
-  listNotificationsPage,
-  type Notification,
-  type NotificationType,
-} from '@/services/notificationService'
+import { listNotificationsPage, type Notification } from '@/services/notificationService'
 import { groupNotifications, formatGroupedActors } from '@/utils/groupNotifications'
 import {
   NotifIcon,
@@ -44,21 +40,21 @@ import {
   getReactionLabel,
   resolveDeepLink,
 } from '@/components/notifications/NotifItem'
+import {
+  FILTER_TYPES,
+  FILTER_KEYS,
+  FILTER_LABEL_KEYS,
+  FILTER_EMPTY_KEYS,
+  type FilterKey,
+} from '@/utils/notificationFilters'
 import { trackNotifEvent } from '@/utils/notificationAnalytics'
 import { EmptyState, LoadingState } from '@/components/ui'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
 // ─── Catégories de filtres ────────────────────────────────────────────────────
-
-type FilterKey = 'all' | 'social' | 'species' | 'system'
-
-/** Types de notifs inclus dans chaque onglet. `null` = pas de filtre (tous). */
-const FILTER_TYPES: Record<FilterKey, NotificationType[] | null> = {
-  all: null,
-  social: ['reaction', 'follow', 'comment', 'mention'],
-  species: ['post', 'species_digest', 'identification'],
-  system: ['system'],
-}
+// Definies dans utils/notificationFilters, partagees avec le panneau de la
+// cloche. Ne jamais en refaire une copie locale : c'est exactement ce qui avait
+// fait diverger les deux surfaces (NG-046).
 
 const PAGE_SIZE = 20
 
@@ -157,9 +153,12 @@ export default function NotificationsPage() {
         <div
           role="tablist"
           aria-label={t('home.notifications.page.title')}
-          className="max-w-3xl mx-auto flex gap-1 px-4 overflow-x-auto"
+          // Barre de defilement masquee, comme dans le panneau : sur 4 onglets
+          // elle n'apporte rien et salit le rendu. Le defilement reste possible
+          // au doigt et a la molette.
+          className="max-w-3xl mx-auto flex gap-1 px-4 overflow-x-auto touch-pan-x [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {(['all', 'social', 'species', 'system'] as FilterKey[]).map((k) => {
+          {FILTER_KEYS.map((k) => {
             const active = filter === k
             return (
               <button
@@ -172,15 +171,7 @@ export default function NotificationsPage() {
                   active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                {t(
-                  k === 'all'
-                    ? 'home.notifications.page.tabAll'
-                    : k === 'social'
-                      ? 'home.notifications.page.tabSocial'
-                      : k === 'species'
-                        ? 'home.notifications.page.tabSpecies'
-                        : 'home.notifications.page.tabSystem',
-                )}
+                {t(FILTER_LABEL_KEYS[k])}
                 {active && (
                   <span
                     aria-hidden="true"
@@ -206,8 +197,8 @@ export default function NotificationsPage() {
 
         {!query.isLoading && grouped.length === 0 && (
           <EmptyState
-            title={t('home.notifications.page.empty')}
-            description={t('home.notifications.page.emptyHint')}
+            title={t(FILTER_EMPTY_KEYS[filter].title)}
+            description={t(FILTER_EMPTY_KEYS[filter].hint)}
           />
         )}
 
