@@ -386,14 +386,21 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
                         les captions de posts. Pour type=reaction, le body brut stocke en
                         base est la cle anglaise du trigger SQL (ex: "love") : on le
                         traduit via getReactionLabel (emoji + libelle FR, NG-046 #2).
-                        line-clamp-2 : evite les pavés de texte denses dans le panneau
-                        mobile (NG-046 #1). whitespace-pre-line preserve les retours a la
-                        ligne du texte stocke en base pour les notifs system.
+
+                        line-clamp-2 evite les paves denses (NG-046 #1), SAUF pour
+                        type=system : une annonce officielle doit rester lisible en
+                        entier, sinon elle est tronquee sans aucun endroit ou lire la
+                        suite (decision Nicolas 2026-07-21, meme regle que la page).
+                        whitespace-pre-line preserve les retours a la ligne.
                       */}
                       {notif.body &&
                         !(notif.type === 'post' && notif.group_count > 1) &&
                         (notif.type !== 'reaction' || getReactionLabel(notif.body, t)) && (
-                          <p className="mt-1 text-sm text-muted-foreground leading-snug whitespace-pre-line line-clamp-2">
+                          <p
+                            className={`mt-1 text-sm text-muted-foreground leading-snug whitespace-pre-line ${
+                              notif.type === 'system' ? '' : 'line-clamp-2'
+                            }`}
+                          >
                             {notif.type === 'reaction'
                               ? getReactionLabel(notif.body, t)
                               : notif.body}
