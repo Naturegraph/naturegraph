@@ -312,16 +312,29 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
         })}
       </div>
 
-      {/* Liste groupée par date (BATCH 114 : max-h responsive : 60vh sur mobile pour gérer le clavier virtuel) */}
-      <div className="max-h-[60vh] md:max-h-[420px] overflow-y-auto scrollbar-thin">
+      {/*
+        Zone de liste.
+        Mobile : flex-1 min-h-0 pour REMPLIR la feuille a hauteur fixe (voir le
+        conteneur mobile plus bas). Sans ca, un onglet vide contractait toute la
+        feuille (bug signale par Nicolas 2026-07-21 : la hauteur sautait d'un
+        onglet a l'autre).
+        Desktop : dropdown, donc hauteur dictee par le contenu, plafonnee a 420px.
+        flex flex-col pour pouvoir centrer verticalement l'etat vide et le
+        chargement dans la zone haute.
+      */}
+      <div className="flex-1 min-h-0 md:flex-none md:max-h-[420px] overflow-y-auto scrollbar-thin flex flex-col">
         {isLoading && (
-          <LoadingState variant="skeleton" rows={4} label={t('home.notifications.loading')} />
+          <div className="flex-1 flex items-center justify-center py-8">
+            <LoadingState variant="skeleton" rows={4} label={t('home.notifications.loading')} />
+          </div>
         )}
         {!isLoading && notifs.length === 0 && (
-          <EmptyState
-            title={t(FILTER_EMPTY_KEYS[filtre].title)}
-            description={t(FILTER_EMPTY_KEYS[filtre].hint)}
-          />
+          <div className="flex-1 flex items-center justify-center">
+            <EmptyState
+              title={t(FILTER_EMPTY_KEYS[filtre].title)}
+              description={t(FILTER_EMPTY_KEYS[filtre].hint)}
+            />
+          </div>
         )}
         {groups.map((group, gi) => (
           <div key={group.key}>
@@ -503,7 +516,10 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
               role="dialog"
               aria-modal="true"
               aria-label={t('home.notifications.title')}
-              className="md:hidden fixed inset-x-0 bottom-0 z-[61] bg-cream-lighter border-t border-border rounded-t-xl shadow-xl overflow-hidden max-h-[85vh] flex flex-col"
+              // Hauteur FIXE (h, pas max-h) : la feuille garde la meme taille
+              // quel que soit l'onglet ou le nombre de notifications. Le contenu
+              // interne (liste flex-1) s'adapte, la feuille ne saute plus.
+              className="md:hidden fixed inset-x-0 bottom-0 z-[61] bg-cream-lighter border-t border-border rounded-t-xl shadow-xl overflow-hidden h-[85vh] flex flex-col"
               style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
             >
               <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
