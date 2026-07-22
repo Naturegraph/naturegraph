@@ -317,20 +317,29 @@ export const router = createBrowserRouter([
             ),
           },
 
-          // Deep-link post : accessible aux utilisateurs ayant passé le beta
-          // gate (route sous BetaGatedLayout). OnboardingGuard plutôt que
-          // Nicolas 2026-05-25 : ProtectedRoute ajoute pour interdire l acces aux
-          // non-authentifies. Avant, OnboardingGuard seul laissait un visiteur avec
-          // beta key consulter un post detail sans avoir de compte. Maintenant on
-          // exige une session valide, sinon redirect /welcome via la chaine
-          // BetaAccessGuard / ProtectedRoute.
+          // Deep-link post : PUBLIQUE, accessible sans compte (NG-054).
+          //
+          // Historique : ProtectedRoute avait ete ajoute le 2026-05-25 pour
+          // interdire la lecture aux non-authentifies, a l'epoque de la beta
+          // fermee (un visiteur muni d'une cle beta pouvait lire sans compte).
+          // Ce contexte n'existe plus : l'acces ouvert est actif depuis V0.0.6 et
+          // BetaAccessGuard est devenu un passe-plat.
+          //
+          // Decision Nicolas 2026-07-22 : le lien partage est le vecteur
+          // d'acquisition principal. Renvoyer le destinataire vers le signup
+          // avant qu'il ait vu le contenu fait fuir des gens. On revient donc a
+          // OnboardingGuard, comme la route profil.
+          //
+          // Sans risque : la RLS n'expose que les publications publiees, publiques
+          // et hors comptes internes (verifie en role anon), et PostDetail gere
+          // deja le visiteur (GuestSidebar + canInteract={isAuthenticated}).
           {
             path: 'post/:postId',
             element: (
               <LazyPage>
-                <ProtectedRoute>
+                <OnboardingGuard>
                   <PostDetail />
-                </ProtectedRoute>
+                </OnboardingGuard>
               </LazyPage>
             ),
           },
