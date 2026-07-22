@@ -841,6 +841,12 @@ export function FeedPost({
           author={author}
           postId={id}
           postTitle={title}
+          // NG-053 : on transmet l'espece et le lieu DEJA affiches par la
+          // publication, pour que le plein ecran garde le contexte naturaliste.
+          // Reutiliser la meme chaine de lieu garantit que le viewer ne montre
+          // jamais plus que l'en-tete du post (filtrage location_hidden en amont).
+          speciesName={species}
+          location={location}
           priority={priority}
         />
 

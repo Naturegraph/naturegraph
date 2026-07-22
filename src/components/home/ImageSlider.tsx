@@ -197,6 +197,13 @@ interface ImageSliderProps {
   postId?: string
   postTitle?: string
   /**
+   * Contexte naturaliste propagé à la lightbox (NG-053).
+   * `location` doit être la chaîne DEJA affichée par la publication : elle est
+   * filtrée en amont quand l'auteur a masqué son lieu.
+   */
+  speciesName?: string | null
+  location?: string | null
+  /**
    * NG-026 : true UNIQUEMENT pour le 1er post du feed (above-the-fold, candidat
    * LCP) -> chargement `eager`. Tous les autres posts chargent en `lazy` pour
    * ne pas telecharger d'un coup toutes les couvertures d'un feed de 200 items
@@ -211,6 +218,8 @@ export function ImageSlider({
   author,
   postId,
   postTitle,
+  speciesName,
+  location,
   priority = false,
 }: ImageSliderProps) {
   const { t } = useTranslation()
@@ -258,6 +267,9 @@ export function ImageSlider({
       // (second-agent/20).
       postId,
       postTitle,
+      // Espece + lieu : evite de perdre le contexte en plein ecran (NG-053).
+      speciesName,
+      locationLabel: location,
     })
   }
 
