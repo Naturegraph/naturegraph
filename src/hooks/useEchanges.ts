@@ -35,7 +35,14 @@ export function useEchanges(postId: string | undefined) {
   })
 }
 
-/** Publie un echange, avec affichage optimiste. */
+/**
+ * Publie un echange, avec affichage optimiste.
+ *
+ * `auteur` ne sert QU'A l'affichage provisoire. L'identifiant reellement
+ * enregistre est lu depuis la session dans le service : la policy RLS exige
+ * `auth.uid() = user_id`, et se fier a une valeur passee par le composant
+ * faisait echouer l'insertion quand elle etait vide ou perimee.
+ */
 export function usePublierEchange(
   postId: string,
   auteur: {
@@ -50,7 +57,6 @@ export function usePublierEchange(
     mutationFn: (params: { contenu: string; intention: IntentionEchange }) =>
       publierEchange({
         postId,
-        auteurId: auteur.id,
         contenu: params.contenu,
         intention: params.intention,
       }),

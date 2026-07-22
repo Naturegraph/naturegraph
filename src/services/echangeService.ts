@@ -103,10 +103,18 @@ export async function listerEchanges(postId: string): Promise<Echange[]> {
 
 // ─── Ecriture ─────────────────────────────────────────────────────────────────
 
-/** Ajoute un echange. Le serveur revalide le contenu, quoi qu'envoie le client. */
+/**
+ * Ajoute un echange. Le serveur revalide le contenu, quoi qu'envoie le client.
+ *
+ * L'auteur est lu depuis la SESSION au moment de l'envoi, jamais recu en
+ * parametre. La policy RLS exige `auth.uid() = user_id` : passer l'identifiant
+ * depuis le composant laissait la porte ouverte a une valeur vide ou perimee,
+ * et l'insertion echouait avec "new row violates row-level security policy"
+ * (constate en dev le 2026-07-22). Lire la session ici garantit que les deux
+ * valeurs coincident toujours.
+ */
 export async function publierEchange(params: {
   postId: string
-  auteurId: string
   contenu: string
   intention: IntentionEchange
 }): Promise<Echange> {
@@ -118,11 +126,16 @@ export async function publierEchange(params: {
     throw new Error(`Ton echange depasse ${LONGUEUR_MAX_ECHANGE} caracteres`)
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error('Il faut etre connecte pour echanger')
+
   const { data, error } = await supabase
     .from('comments')
     .insert({
       post_id: params.postId,
-      user_id: params.auteurId,
+      user_id: user.id,
       content: contenu,
       intention: params.intention,
     })
