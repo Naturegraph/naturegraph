@@ -16,7 +16,7 @@
  * et l'invitation vient au premier geste, sans banniere.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { MessageCircle } from 'lucide-react'
 import {
   useEchanges,
@@ -29,6 +29,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { LoadingState } from '@/components/ui'
 import { EchangeComposer } from './EchangeComposer'
 import { EchangeItem } from './EchangeItem'
+import { EchangeFiltres } from './EchangeFiltres'
 import type { IntentionEchange } from '@/services/echangeService'
 
 interface EchangesSectionProps {
@@ -52,12 +53,16 @@ export function EchangesSection({ postId, auteurPublicationId }: EchangesSection
 
   const estAuteurPublication = !!profile && profile.id === auteurPublicationId
 
+  // Filtre par intention, utile seulement sur un fil dense (cf. EchangeFiltres).
+  const [filtre, setFiltre] = useState<IntentionEchange | null>(null)
+
   // L'echange distingue passe en tete, le reste garde l'ordre de la discussion.
   const ordonnes = useMemo(() => {
-    const utile = echanges.filter((e) => e.utile)
-    const autres = echanges.filter((e) => !e.utile)
+    const vus = filtre ? echanges.filter((e) => e.intention === filtre) : echanges
+    const utile = vus.filter((e) => e.utile)
+    const autres = vus.filter((e) => !e.utile)
     return [...utile, ...autres]
-  }, [echanges])
+  }, [echanges, filtre])
 
   // "A ouvert la discussion" revient au plus ancien, quel que soit l'ordre
   // d'affichage : c'est une question de chronologie, pas de position.
@@ -118,6 +123,10 @@ export function EchangesSection({ postId, auteurPublicationId }: EchangesSection
             Une question, une piste d’identification, un encouragement : ouvre la discussion.
           </p>
         </div>
+      )}
+
+      {!isLoading && echanges.length > 0 && (
+        <EchangeFiltres echanges={echanges} actif={filtre} onChanger={setFiltre} />
       )}
 
       {ordonnes.length > 0 && (

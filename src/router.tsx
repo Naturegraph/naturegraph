@@ -66,6 +66,8 @@ const Forbidden = lazy(() => import('./pages/Forbidden'))
 const Waitlist = lazy(() => import('./pages/Waitlist'))
 const PostDetail = lazy(() => import('./pages/PostDetail'))
 const Unsubscribe = lazy(() => import('./pages/Unsubscribe'))
+// TEMPORAIRE : demonstration Echanges, a retirer apres relecture.
+const DevEchangesPreview = lazy(() => import('./pages/DevEchangesPreview'))
 
 // Admin (BATCH 31-32) : chunks separes (eco-conception : code admin lazy)
 const AdminLayout = lazy(() => import('./pages/Admin/AdminLayout'))
@@ -138,6 +140,16 @@ export const router = createBrowserRouter([
         element: (
           <LazyPage>
             <Unsubscribe />
+          </LazyPage>
+        ),
+      },
+
+      // TEMPORAIRE : demonstration Echanges, a retirer apres relecture.
+      {
+        path: 'dev-echanges',
+        element: (
+          <LazyPage>
+            <DevEchangesPreview />
           </LazyPage>
         ),
       },

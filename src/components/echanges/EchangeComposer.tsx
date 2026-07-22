@@ -95,6 +95,15 @@ export function EchangeComposer({ peutEcrire, enCours, onPublier }: EchangeCompo
         onFocus={auGeste}
         placeholder={config.invite}
         rows={3}
+        // Ctrl/Cmd + Entree envoie, convention attendue par qui ecrit souvent.
+        // Entree seul insere un retour a la ligne : sur un champ multiligne,
+        // envoyer a la moindre pression couperait les messages en deux.
+        onKeyDown={(e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault()
+            soumettre(e as unknown as React.FormEvent)
+          }
+        }}
         // maxLength volontairement absent : on prefere laisser depasser et le
         // dire clairement plutot que bloquer la frappe sans explication.
         className="w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
