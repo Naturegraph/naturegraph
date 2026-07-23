@@ -2,15 +2,19 @@
  * SuggestionEspecePanel : proposer une espece depuis le fil d'Echanges
  * =============================================================================
  *
- * Demande Nicolas 2026-07-22 : proposer une espece doit chercher dans NOTRE
- * base, pas se contenter de texte libre. Une suggestion ecrite a la main
- * ("un bihoreau je crois") n'est reliee a rien : impossible d'en faire une
- * statistique, de la comparer aux autres, ou de la rattacher au referentiel.
+ * Calque sur la maquette Figma 6824:13039 (Nicolas 2026-07-23). Mesures reprises
+ * telles quelles : padding 16, champ 48 de haut, pastilles de confiance 40 de
+ * haut avec 16 de padding lateral, zone de texte 180, deux boutons de 48 en
+ * moitie-moitie separes de 16.
  *
- * Le champ reprend exactement le motif de recherche du reste de l'app (pilule
- * bordee, loupe a gauche, spinner a droite, listbox en dessous) : c'est le
- * meme geste que dans le formulaire de contribution, il n'y a rien de nouveau
- * a apprendre.
+ * Demande initiale : proposer une espece doit chercher dans NOTRE base, pas se
+ * contenter de texte libre. Une suggestion ecrite a la main ("un bihoreau je
+ * crois") n'est reliee a rien : impossible d'en faire une statistique, de la
+ * comparer aux autres, ou de la rattacher au referentiel.
+ *
+ * Le champ et son bouton de filtre reprennent le motif de recherche du
+ * formulaire de contribution : c'est le meme geste, il n'y a rien de nouveau a
+ * apprendre.
  *
  * TROIS ETAPES, dans cet ordre :
  *   1. chercher et choisir l'espece ;
@@ -24,7 +28,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, Loader2, X, MessageSquarePlus } from 'lucide-react'
+import { Search, Loader2, X, MessageSquarePlus, Filter } from 'lucide-react'
 import { searchTaxonomy, type TaxonomyHit } from '@/services/searchService'
 import {
   LONGUEUR_MAX_ECHANGE,
@@ -49,6 +53,21 @@ interface SuggestionEspecePanelProps {
 /** Delai avant requete : evite une requete par touche frappee (eco-conception). */
 const DELAI_FRAPPE = 300
 
+/**
+ * Filtre par grande categorie, meme jeu que le formulaire de contribution.
+ * La valeur envoyee a `searchTaxonomy` est la classe iNaturalist.
+ */
+const CATEGORIES: { classe: string; libelle: string }[] = [
+  { classe: 'Aves', libelle: 'Oiseaux' },
+  { classe: 'Mammalia', libelle: 'Mammifères' },
+  { classe: 'Insecta', libelle: 'Insectes' },
+  { classe: 'Amphibia', libelle: 'Amphibiens' },
+  { classe: 'Reptilia', libelle: 'Reptiles' },
+  { classe: 'Arachnida', libelle: 'Arachnides' },
+  { classe: 'Mollusca', libelle: 'Mollusques' },
+  { classe: 'Actinopterygii', libelle: 'Poissons' },
+]
+
 export function SuggestionEspecePanel({
   onSuggerer,
   onAnnuler,
@@ -64,6 +83,8 @@ export function SuggestionEspecePanel({
   const [choisie, setChoisie] = useState<TaxonomyHit | null>(null)
   const [confiance, setConfiance] = useState<NiveauConfiance>(2)
   const [commentaire, setCommentaire] = useState('')
+  const [filtreOuvert, setFiltreOuvert] = useState(false)
+  const [categorie, setCategorie] = useState<string | null>(null)
 
   // Le focus part sur le champ : le panneau s'ouvre suite a un geste explicite,
   // la personne sait deja ce qu'elle vient y faire.
@@ -77,8 +98,13 @@ export function SuggestionEspecePanel({
   }, [saisie])
 
   const { data: resultats = [], isFetching } = useQuery({
-    queryKey: ['echanges', 'especes', saisieDifferee],
-    queryFn: () => searchTaxonomy(saisieDifferee, { ranks: ['species', 'genus'], limit: 8 }),
+    queryKey: ['echanges', 'especes', saisieDifferee, categorie],
+    queryFn: () =>
+      searchTaxonomy(saisieDifferee, {
+        ranks: ['species', 'genus'],
+        classFilter: categorie,
+        limit: 8,
+      }),
     // Sous deux caracteres, tout ressort : la requete coute sans rien apprendre.
     enabled: saisieDifferee.trim().length >= 2 && !choisie,
     staleTime: 5 * 60 * 1000,
@@ -102,8 +128,10 @@ export function SuggestionEspecePanel({
       cleEspece({ noeudId: choisie.taxonomy_node_id, label: nomAffiche(choisie) }),
     )
 
+  const pret = !!choisie && !tropLong && !doublon
+
   function valider() {
-    if (!choisie || tropLong || doublon) return
+    if (!pret || !choisie) return
     onSuggerer(
       {
         label: nomAffiche(choisie),
@@ -116,21 +144,19 @@ export function SuggestionEspecePanel({
   }
 
   return (
-    <div className="rounded-md border border-primary bg-cream-lighter p-3">
-      <p className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
-        <MessageSquarePlus className="size-4 text-primary" aria-hidden="true" />
+    <div className="rounded-md border border-border bg-background p-4">
+      <p className="mb-4 flex items-center gap-2 text-base font-bold text-foreground">
+        <MessageSquarePlus className="size-5 shrink-0" aria-hidden="true" />
         Suggérer une identification
       </p>
 
       {/* ── 1. Espece ─────────────────────────────────────────────────────── */}
       {choisie ? (
         <div className="flex items-center gap-2">
-          <span className="inline-flex min-w-0 items-center gap-2 rounded-full bg-primary-light px-3 py-1.5 text-sm">
-            <span className="truncate font-medium text-foreground">{nomAffiche(choisie)}</span>
+          <span className="inline-flex min-w-0 items-center gap-2 rounded-full bg-primary-light px-4 py-2 text-sm">
+            <span className="truncate font-bold text-foreground">{nomAffiche(choisie)}</span>
             {choisie.common_name_fr && (
-              <span className="truncate italic text-muted-foreground">
-                {choisie.scientific_name}
-              </span>
+              <span className="truncate text-muted-foreground">{choisie.scientific_name}</span>
             )}
           </span>
           <button
@@ -141,39 +167,88 @@ export function SuggestionEspecePanel({
               champRecherche.current?.focus()
             }}
             aria-label="Changer d’espèce"
-            className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <X className="size-4" aria-hidden="true" />
+            <X className="size-5" aria-hidden="true" />
           </button>
         </div>
       ) : (
         <div className="relative">
-          <label htmlFor={idRecherche} className="sr-only">
-            Chercher une espèce
-          </label>
-          <div className="flex h-12 items-center gap-2 rounded-full border border-border bg-background px-4 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-            <Search className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
-            <input
-              id={idRecherche}
-              ref={champRecherche}
-              type="search"
-              value={saisie}
-              onChange={(e) => setSaisie(e.target.value)}
-              placeholder="Ex : Bihoreau gris, Nycticorax…"
-              role="combobox"
-              aria-expanded={chercheEnCours}
-              aria-autocomplete="list"
-              aria-controls={idListe}
-              autoComplete="off"
-              className="min-w-0 flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
-            />
-            {isFetching && (
-              <Loader2
-                className="size-4 shrink-0 text-primary motion-safe:animate-spin"
-                aria-label="Recherche en cours"
-              />
-            )}
+          <div className="flex items-center gap-4">
+            <div className="relative min-w-0 flex-1">
+              <label htmlFor={idRecherche} className="sr-only">
+                Chercher une espèce
+              </label>
+              <div className="flex h-12 items-center gap-2 rounded-full border border-border bg-background px-4 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+                <Search className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <input
+                  id={idRecherche}
+                  ref={champRecherche}
+                  type="search"
+                  value={saisie}
+                  onChange={(e) => setSaisie(e.target.value)}
+                  placeholder="Nom de l’espèce…"
+                  role="combobox"
+                  aria-expanded={chercheEnCours}
+                  aria-autocomplete="list"
+                  aria-controls={idListe}
+                  autoComplete="off"
+                  className="min-w-0 flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+                />
+                {isFetching && (
+                  <Loader2
+                    className="size-4 shrink-0 text-primary motion-safe:animate-spin"
+                    aria-label="Recherche en cours"
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Filtre par categorie : meme bouton rond que le formulaire de
+                contribution. Il restreint vraiment la recherche plutot que
+                d'etre decoratif, sinon autant ne pas l'afficher. */}
+            <button
+              type="button"
+              onClick={() => setFiltreOuvert((v) => !v)}
+              aria-label="Filtrer par catégorie"
+              aria-expanded={filtreOuvert}
+              className={[
+                'relative flex size-12 shrink-0 items-center justify-center rounded-full border transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                filtreOuvert || categorie
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border text-foreground hover:border-foreground/40 hover:bg-muted/40',
+              ].join(' ')}
+            >
+              <Filter className="size-5" aria-hidden="true" />
+            </button>
           </div>
+
+          {filtreOuvert && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {CATEGORIES.map((c) => {
+                const actif = categorie === c.classe
+                return (
+                  <button
+                    key={c.classe}
+                    type="button"
+                    role="checkbox"
+                    aria-checked={actif}
+                    onClick={() => setCategorie(actif ? null : c.classe)}
+                    className={[
+                      'inline-flex h-8 items-center rounded-full border px-3 text-sm transition-colors',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+                      actif
+                        ? 'border-primary bg-primary-light text-foreground'
+                        : 'border-border text-foreground hover:border-foreground/40',
+                    ].join(' ')}
+                  >
+                    {c.libelle}
+                  </button>
+                )
+              })}
+            </div>
+          )}
 
           {chercheEnCours && (resultats.length > 0 || aucunResultat) && (
             <ul
@@ -192,13 +267,11 @@ export function SuggestionEspecePanel({
                   <button
                     type="button"
                     onClick={() => setChoisie(hit)}
-                    className="flex w-full flex-col items-start gap-0.5 border-b border-border px-4 py-2.5 text-left transition-colors last:border-b-0 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
+                    className="flex w-full flex-col items-start gap-0.5 border-b border-border px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
                   >
-                    <span className="text-sm font-medium text-foreground">{nomAffiche(hit)}</span>
+                    <span className="text-sm font-bold text-foreground">{nomAffiche(hit)}</span>
                     {hit.common_name_fr && (
-                      <span className="text-xs italic text-muted-foreground">
-                        {hit.scientific_name}
-                      </span>
+                      <span className="text-xs text-muted-foreground">{hit.scientific_name}</span>
                     )}
                   </button>
                 </li>
@@ -211,17 +284,17 @@ export function SuggestionEspecePanel({
       {doublon && (
         <p
           role="alert"
-          className="mt-2 rounded-sm border border-[var(--color-warning)] bg-[var(--color-warning-bg)] px-3 py-2 text-xs text-[var(--color-warning)]"
+          className="mt-3 rounded-sm bg-[var(--color-warning-bg)] px-3 py-2 text-sm text-[var(--color-warning)]"
         >
           {MESSAGE_ESPECE_DEJA_PROPOSEE}
         </p>
       )}
 
       {/* ── 2. Confiance ──────────────────────────────────────────────────── */}
-      {/* Chips plutot qu'une liste deroulante : les quatre niveaux se comparent
-          d'un regard, et le geste tient en un tap sur mobile. */}
-      <div className="mt-3">
-        <p className="mb-2 text-xs text-muted-foreground" id={`${idRecherche}-confiance`}>
+      {/* Pastilles plutot qu'une liste deroulante : les quatre niveaux se
+          comparent d'un regard, et le geste tient en un tap sur mobile. */}
+      <div className="mt-4">
+        <p className="mb-2 text-base text-foreground" id={`${idRecherche}-confiance`}>
           Niveau de confiance
         </p>
         <div
@@ -239,11 +312,11 @@ export function SuggestionEspecePanel({
                 aria-checked={actif}
                 onClick={() => setConfiance(n.valeur)}
                 className={[
-                  'inline-flex h-8 items-center rounded-full px-3 text-sm transition-colors',
+                  'inline-flex h-10 items-center rounded-full border px-4 text-base transition-colors',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
                   actif
-                    ? 'border border-primary bg-primary-light font-medium text-foreground'
-                    : 'border border-border bg-transparent text-foreground hover:border-foreground/40',
+                    ? 'border-primary bg-primary-light text-foreground'
+                    : 'border-border text-foreground hover:border-foreground/40',
                 ].join(' ')}
               >
                 {n.libelle}
@@ -254,52 +327,67 @@ export function SuggestionEspecePanel({
       </div>
 
       {/* ── 3. Mot facultatif ─────────────────────────────────────────────── */}
-      <div className="mt-3">
-        <label htmlFor={idMot} className="mb-2 block text-xs text-muted-foreground">
-          Ce qui te met sur la piste <span className="italic">(facultatif)</span>
+      <div className="mt-4">
+        <label htmlFor={idMot} className="mb-2 block text-base text-foreground">
+          Ce qui te met sur la piste
         </label>
-        <textarea
-          id={idMot}
-          value={commentaire}
-          onChange={(e) => setCommentaire(e.target.value)}
-          rows={2}
-          placeholder="Le bec, la calotte, le cri…"
+        {/* Le compteur vit DANS le cadre, en bas a droite, comme la maquette :
+            hors du cadre il flotterait entre deux blocs sans qu'on sache a quoi
+            il se rapporte. */}
+        <div
           className={[
-            'w-full resize-none rounded-md border bg-background px-3 py-2 text-sm text-foreground',
-            'placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+            'relative min-h-[180px] rounded-sm border bg-background transition-colors',
+            'focus-within:ring-2 focus-within:ring-primary',
             tropLong ? 'border-[var(--color-error)]' : 'border-border',
           ].join(' ')}
-        />
-        {commentaire.length > LONGUEUR_MAX_ECHANGE - 150 && (
-          <p
+        >
+          <textarea
+            id={idMot}
+            value={commentaire}
+            onChange={(e) => setCommentaire(e.target.value)}
+            rows={6}
+            placeholder="Le bec, la calotte, le cri…"
+            className="w-full resize-none bg-transparent px-3 py-3 pb-8 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none"
+          />
+          <span
             aria-live="polite"
-            className={`mt-1 text-right text-xs tabular-nums ${
-              tropLong
-                ? 'font-medium text-[var(--color-error)]'
-                : 'font-medium text-[var(--color-warning)]'
+            className={`pointer-events-none absolute bottom-2 right-3 text-xs tabular-nums ${
+              tropLong ? 'font-medium text-[var(--color-error)]' : 'text-muted-foreground'
             }`}
           >
-            {commentaire.length}/{LONGUEUR_MAX_ECHANGE}
-          </p>
-        )}
+            {commentaire.length > 0
+              ? `${commentaire.length}/${LONGUEUR_MAX_ECHANGE}`
+              : `${LONGUEUR_MAX_ECHANGE} max`}
+          </span>
+        </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={valider}
-          disabled={!choisie || tropLong || doublon}
-          className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-        >
-          <MessageSquarePlus className="size-4" aria-hidden="true" />
-          Suggérer
-        </button>
+      {/* Deux boutons de meme largeur, comme la maquette : aucun des deux n'est
+          un repli honteux, annuler une suggestion est une decision normale. */}
+      <div className="mt-4 flex gap-4">
         <button
           type="button"
           onClick={onAnnuler}
-          className="inline-flex h-10 items-center rounded-full border border-border px-4 text-sm text-foreground transition-colors hover:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="inline-flex h-12 flex-1 items-center justify-center rounded-full border border-border bg-cream-lighter text-base font-bold text-foreground transition-colors hover:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           Annuler
+        </button>
+        <button
+          type="button"
+          onClick={valider}
+          disabled={!pret}
+          className={[
+            'inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full text-base font-bold transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+            // Desactive : fond lavande et texte grise, comme le DS. Une simple
+            // opacite delave aussi le texte et donne un bouton "sale" plutot
+            // qu'un bouton clairement indisponible.
+            pret
+              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+              : 'cursor-not-allowed bg-primary-light text-[var(--color-action-disabled)]',
+          ].join(' ')}
+        >
+          Suggérer
         </button>
       </div>
     </div>

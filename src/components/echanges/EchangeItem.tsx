@@ -49,6 +49,8 @@ interface EchangeItemProps {
   estUneReponse?: boolean
   /** Repondre, avec l'intention voulue. Absent = on ne repond pas ici. */
   onRepondre?: (intention: 'reaction' | 'identification') => void
+  /** Panneau de redaction actuellement ouvert sous ce message, pour l'etat actif. */
+  redactionOuverte?: 'reaction' | 'identification' | null
   onSupprimer: () => void
   /** Bascule la reaction "coeur", seule reaction prevue par les maquettes. */
   onReagir: () => void
@@ -107,23 +109,29 @@ function Action({
   icone: Icone,
   children,
   onClick,
+  actif = false,
   danger = false,
 }: {
   icone: typeof Heart
   children: React.ReactNode
   onClick: () => void
+  /** Le panneau ouvert par cette action est visible : pastille lavande. */
+  actif?: boolean
   danger?: boolean
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-expanded={actif || undefined}
       className={[
-        'inline-flex h-6 items-center gap-1.5 rounded text-xs transition-colors',
+        'inline-flex h-6 items-center gap-1 rounded-full px-2 text-xs transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
         danger
           ? 'text-muted-foreground hover:text-[var(--color-error)]'
-          : 'text-foreground hover:text-primary',
+          : actif
+            ? 'bg-primary-light font-medium text-foreground'
+            : 'text-foreground hover:text-primary',
       ].join(' ')}
     >
       <Icone className="size-3.5 shrink-0" aria-hidden="true" />
@@ -171,7 +179,7 @@ function BoutonReagir({
       aria-pressed={actif}
       aria-label={libelle}
       className={[
-        'inline-flex h-6 items-center gap-1.5 rounded text-xs transition-colors',
+        'inline-flex h-6 items-center gap-1 rounded-full px-2 text-xs transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
         actif ? 'font-semibold text-foreground' : 'text-foreground hover:text-primary',
       ].join(' ')}
@@ -228,9 +236,12 @@ const COULEURS_CONFIANCE: Record<number, string> = {
  * 2026-07-22). Le contraste de fond suffit a detacher le bloc et lui donne le
  * poids d'une donnee, pas d'une decoration.
  *
- * Ni bordure ni icone (retours Nicolas) : la bordure ajoutait un trait sans
- * information sur une zone deja dense, et l'icone ne disait rien que le texte
- * ne dise deja.
+ * Pas de bordure (retour Nicolas) : elle ajoutait un trait sans information sur
+ * une zone deja dense. L'icone reprise est celle de "Proposer une espèce", ce
+ * qui relie visuellement le geste et son resultat.
+ *
+ * Le bloc EPOUSE son contenu, comme la bulle qui l'entoure : etale sur toute la
+ * largeur, il redonnerait au fil l'allure de formulaire qu'on cherche a eviter.
  */
 function BlocSuggestion({ suggestion }: { suggestion: NonNullable<Echange['suggestion']> }) {
   const scientifiqueUtile =
@@ -239,14 +250,14 @@ function BlocSuggestion({ suggestion }: { suggestion: NonNullable<Echange['sugge
       : null
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-sm bg-background px-2.5 py-1.5">
-      <span className="text-xs text-muted-foreground">Identification</span>
+    <div className="mt-2 inline-flex max-w-full flex-wrap items-center gap-2 rounded-sm bg-background px-3 py-2">
+      <MessageSquarePlus className="size-4 shrink-0 text-foreground" aria-hidden="true" />
       <span className="text-sm font-bold text-foreground">{suggestion.label}</span>
       {scientifiqueUtile && (
-        <span className="text-xs italic text-muted-foreground">{scientifiqueUtile}</span>
+        <span className="text-sm text-muted-foreground">{scientifiqueUtile}</span>
       )}
       <span
-        className={`ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+        className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
           COULEURS_CONFIANCE[suggestion.confiance] ?? COULEURS_CONFIANCE[1]
         }`}
       >
@@ -262,6 +273,7 @@ export function EchangeItem({
   ecritParAuteurPublication,
   estUneReponse = false,
   onRepondre,
+  redactionOuverte = null,
   onSupprimer,
   onReagir,
 }: EchangeItemProps) {
@@ -285,7 +297,7 @@ export function EchangeItem({
             EN DESSOUS, sur le fond de la publication : garder le fond gris sous
             des boutons les ferait lire comme une barre d'outils rattachee au
             texte, alors que ce sont des gestes du lecteur. */}
-        <div className="w-fit max-w-full rounded-sm bg-surface-bubble px-3 py-2">
+        <div className="w-fit max-w-full rounded-sm bg-surface-bubble p-3">
           {/* Ligne d'identite : pseudo, badge Auteur, date */}
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="text-sm font-bold text-foreground">{pseudo}</span>
@@ -322,11 +334,19 @@ export function EchangeItem({
           {onRepondre && (
             <>
               <Puce />
-              <Action icone={Pencil} onClick={() => onRepondre('reaction')}>
+              <Action
+                icone={Pencil}
+                actif={redactionOuverte === 'reaction'}
+                onClick={() => onRepondre('reaction')}
+              >
                 Répondre
               </Action>
               <Puce />
-              <Action icone={MessageSquarePlus} onClick={() => onRepondre('identification')}>
+              <Action
+                icone={MessageSquarePlus}
+                actif={redactionOuverte === 'identification'}
+                onClick={() => onRepondre('identification')}
+              >
                 Proposer une espèce
               </Action>
             </>

@@ -73,6 +73,7 @@ export function EchangeFil({
           peutSupprimer={!!moiId && moiId === parent.auteurId}
           ecritParAuteurPublication={parent.auteurId === auteurPublicationId}
           onRepondre={(intention) => setRedaction((v) => (v === intention ? null : intention))}
+          redactionOuverte={redaction}
           onSupprimer={() => onSupprimer(parent.id)}
           onReagir={() => onReagir(parent)}
         />

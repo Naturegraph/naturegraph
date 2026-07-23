@@ -118,7 +118,7 @@ export function EchangeComposer({
       <div className="flex items-end gap-3">
         <div
           className={[
-            'relative flex-1 rounded-lg border bg-cream-lighter transition-colors',
+            'relative min-h-12 flex-1 rounded-3xl border bg-cream-lighter transition-colors',
             'focus-within:ring-2 focus-within:ring-primary',
             trop ? 'border-[var(--color-error)]' : 'border-border',
           ].join(' ')}
@@ -143,7 +143,7 @@ export function EchangeComposer({
             // maxLength volontairement absent : on prefere laisser depasser et
             // le dire clairement plutot que bloquer la frappe sans explication.
             className={[
-              'max-h-40 w-full resize-none bg-transparent py-3 pl-4 text-sm text-foreground',
+              'max-h-40 w-full resize-none bg-transparent py-3.5 pl-4 text-base text-foreground',
               'placeholder:text-muted-foreground focus-visible:outline-none',
               compact ? 'pr-4' : 'pr-14',
             ].join(' ')}
@@ -158,7 +158,7 @@ export function EchangeComposer({
               aria-label="Proposer une espèce"
               title="Proposer une espèce"
               className={[
-                'absolute bottom-1 right-2 inline-flex size-10 items-center justify-center rounded-full transition-colors',
+                'absolute bottom-1 right-1 inline-flex size-10 items-center justify-center rounded-full transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                 'text-foreground hover:bg-muted/40',
               ].join(' ')}
@@ -172,21 +172,39 @@ export function EchangeComposer({
             48px : a cette largeur, "Envoyer" ecrit en toutes lettres prend la
             place du champ lui-meme. La cible tactile reste a 48px, au-dessus du
             minimum WCAG, et le libelle reste lu par les lecteurs d'ecran. */}
+        {/*
+          Etat DESACTIVE du design system : fond lavande + texte grise
+          (`--color-action-disabled`), et non une opacite. Une opacite delave
+          aussi le fond et donne un bouton "sale" ; ici il reste net, seulement
+          clairement indisponible.
+
+          Sous 640px le libelle disparait et le bouton devient un rond de 48px :
+          a cette largeur, "Envoyer" ecrit en toutes lettres prend la place du
+          champ. La cible tactile reste a 48px et le libelle reste lu par les
+          lecteurs d'ecran.
+        */}
         <button
           type="submit"
           disabled={peutEcrire && !pret}
           aria-label={enCours ? 'Envoi en cours' : 'Envoyer'}
-          className="inline-flex size-12 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-sm font-medium text-primary-foreground transition-opacity hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:size-auto sm:h-12 sm:px-5"
+          className={[
+            'inline-flex size-12 shrink-0 items-center justify-center gap-2 rounded-full text-base font-bold transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+            'sm:size-auto sm:h-12 sm:px-4',
+            peutEcrire && !pret
+              ? 'cursor-not-allowed bg-primary-light text-[var(--color-action-disabled)]'
+              : 'bg-primary text-primary-foreground hover:bg-primary/90',
+          ].join(' ')}
         >
-          <Send className="size-4" aria-hidden="true" />
+          <Send className="size-5" aria-hidden="true" />
           <span className="hidden sm:inline">{enCours ? 'Envoi…' : 'Envoyer'}</span>
         </button>
       </div>
 
       {/* Compteur aligne a droite, comme dans le formulaire de contribution.
-          Trois etats : discret, orange a l'approche, rouge au depassement, avec
-          en plus une phrase explicite quand l'envoi devient impossible : un
-          bouton grise sans explication laisse chercher la cause. */}
+          Deux etats : orange a l'approche, rouge au depassement, avec en plus
+          une phrase explicite quand l'envoi devient impossible : un bouton
+          grise sans explication laisse chercher la cause. */}
       {contenu.length > SEUIL_COMPTEUR && (
         <div className="mt-1.5 flex items-baseline justify-between gap-3">
           <p role={trop ? 'alert' : undefined} className="text-xs text-[var(--color-error)]">
