@@ -20,6 +20,7 @@
  */
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { validerEchange } from '@/lib/echangeValidation'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -296,9 +297,10 @@ export async function publierEchange(params: {
   // Une suggestion sans un mot de la personne reste comprehensible grace a la
   // phrase generique : mieux vaut un message complet qu'un champ obligatoire de
   // plus a remplir avant de pouvoir aider.
-  const contenu = (params.contenu.trim() || phraseGenerique(suggestion)).trim()
+  // `validerEchange` nettoie (caracteres invisibles, lignes vides en trop) puis
+  // refuse liens et remplissage. Il leve un message deja affichable.
+  const contenu = validerEchange(params.contenu.trim() || phraseGenerique(suggestion))
 
-  if (contenu.length === 0) throw new Error('Ton echange est vide')
   if (contenu.length > LONGUEUR_MAX_ECHANGE) {
     throw new Error(`Ton echange depasse ${LONGUEUR_MAX_ECHANGE} caracteres`)
   }
@@ -343,8 +345,9 @@ export async function publierEchange(params: {
 export async function modifierEchange(echangeId: string, contenu: string): Promise<Echange> {
   if (!isSupabaseConfigured || !supabase) throw new Error('Supabase non configure')
 
-  const texte = contenu.trim()
-  if (texte.length === 0) throw new Error('Ton echange est vide')
+  // Memes garde-fous a l'edition qu'a la publication : sans ca, il suffisait
+  // de publier un texte propre puis de le remplacer par un lien.
+  const texte = validerEchange(contenu)
   if (texte.length > LONGUEUR_MAX_ECHANGE) {
     throw new Error(`Ton echange depasse ${LONGUEUR_MAX_ECHANGE} caracteres`)
   }

@@ -2,27 +2,31 @@
  * EchangeMenu : actions rapides sur un echange
  * =============================================================================
  *
- * Meme principe que le menu d'options d'une publication : les actions rares ou
- * engageantes vivent derriere un bouton discret plutot que dans la barre
- * principale. Reagir et repondre restent visibles ; modifier, suivre, signaler
- * et supprimer se rangent ici.
+ * Reprend la DA du menu d'options d'une publication (`PostOptionsMenu`) :
+ * icone, libelle en gras, phrase d'explication en dessous. Deux menus de la
+ * meme application ne doivent pas se lire differemment.
+ *
+ * VOCABULAIRE DU PRODUIT : on ne "suit" pas quelqu'un, on MIGRE VERS. C'est le
+ * verbe employe partout (profil, communaute, menu des publications), et l'icone
+ * `TreeDeciduous` l'incarne. Ecrire "Suivre" ici aurait introduit un second
+ * vocabulaire pour la meme action.
  *
  * LE CONTENU DEPEND DE QUI REGARDE :
- *   - son propre echange  -> Modifier, Supprimer
- *   - celui de quelqu'un  -> Suivre la personne, Signaler
+ *   - son propre echange -> Modifier, Supprimer
+ *   - celui d'un autre   -> Migrer vers, Signaler
  *
  * On n'affiche JAMAIS "Signaler" sur son propre message : se signaler soi-meme
  * n'a aucun sens et brouille la lecture du menu.
  */
 
 import { useEffect, useRef, useState } from 'react'
-import { MoreHorizontal, Pencil, Trash2, Flag, UserPlus, UserCheck } from 'lucide-react'
+import { MoreHorizontal, Pencil, Trash2, Flag, TreeDeciduous, UserX } from 'lucide-react'
 
 interface EchangeMenuProps {
   estLeMien: boolean
   /** Visiteur sans compte : le menu ne propose rien d'actionnable. */
   peutAgir: boolean
-  /** `null` tant que l'etat d'abonnement n'est pas connu. */
+  /** Migre deja vers cette personne ? */
   suit?: boolean | null
   onModifier: () => void
   onSupprimer: () => void
@@ -73,7 +77,7 @@ export function EchangeMenu({
   }
 
   return (
-    <div ref={conteneur} className="relative">
+    <div ref={conteneur} className="relative shrink-0">
       <button
         type="button"
         onClick={() => setOuvert((v) => !v)}
@@ -88,28 +92,47 @@ export function EchangeMenu({
       {ouvert && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-30 mt-1 min-w-52 overflow-hidden rounded-md border-[0.5px] border-border bg-card shadow-xl"
+          className="absolute right-0 top-full z-30 mt-1 w-72 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border-[0.5px] border-border bg-card shadow-xl"
         >
           {estLeMien ? (
             <>
-              <ElementMenu icone={Pencil} onClick={() => lancer(onModifier)}>
-                Modifier
-              </ElementMenu>
-              <ElementMenu icone={Trash2} danger onClick={() => lancer(onSupprimer)}>
-                Supprimer
-              </ElementMenu>
+              <ElementMenu
+                icone={<Pencil className="size-5" />}
+                libelle="Modifier mon échange"
+                description="Corriger le texte publié"
+                onClick={() => lancer(onModifier)}
+              />
+              <Separateur />
+              <ElementMenu
+                icone={<Trash2 className="size-5" />}
+                libelle="Supprimer mon échange"
+                description="Il disparaîtra pour tout le monde"
+                danger
+                onClick={() => lancer(onSupprimer)}
+              />
             </>
           ) : (
             <>
               <ElementMenu
-                icone={suit ? UserCheck : UserPlus}
+                icone={suit ? <UserX className="size-5" /> : <TreeDeciduous className="size-5" />}
+                libelle={
+                  suit ? `Ne plus migrer avec @${pseudoAuteur}` : `Migrer vers @${pseudoAuteur}`
+                }
+                description={
+                  suit
+                    ? 'Tu ne verras plus ses publications'
+                    : 'Tu verras ses publications dans ton feed'
+                }
                 onClick={() => lancer(onBasculerSuivi)}
-              >
-                {suit ? `Ne plus suivre ${pseudoAuteur}` : `Suivre ${pseudoAuteur}`}
-              </ElementMenu>
-              <ElementMenu icone={Flag} danger onClick={() => lancer(onSignaler)}>
-                Signaler cet échange
-              </ElementMenu>
+              />
+              <Separateur />
+              <ElementMenu
+                icone={<Flag className="size-5" />}
+                libelle="Signaler cet échange"
+                description="Contenu inapproprié ou spam"
+                danger
+                onClick={() => lancer(onSignaler)}
+              />
             </>
           )}
         </div>
@@ -118,14 +141,20 @@ export function EchangeMenu({
   )
 }
 
+function Separateur() {
+  return <div className="mx-5 h-px bg-border" aria-hidden="true" />
+}
+
 function ElementMenu({
-  icone: Icone,
-  children,
+  icone,
+  libelle,
+  description,
   onClick,
   danger = false,
 }: {
-  icone: typeof Pencil
-  children: React.ReactNode
+  icone: React.ReactNode
+  libelle: string
+  description: string
   onClick: () => void
   danger?: boolean
 }) {
@@ -135,15 +164,27 @@ function ElementMenu({
       role="menuitem"
       onClick={onClick}
       className={[
-        'flex w-full items-center gap-2 border-b border-border px-4 py-2.5 text-left text-sm transition-colors last:border-b-0',
-        'focus-visible:bg-muted/40 focus-visible:outline-none',
-        danger
-          ? 'text-[var(--color-error)] hover:bg-[var(--color-error-bg)]/40'
-          : 'text-foreground hover:bg-muted/40',
+        'flex w-full items-center gap-4 px-5 py-3.5 text-left transition-colors',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
+        danger ? 'hover:bg-[var(--color-error-bg)]/40' : 'hover:bg-muted/40',
       ].join(' ')}
     >
-      <Icone className="size-4 shrink-0" aria-hidden="true" />
-      <span className="truncate">{children}</span>
+      <span
+        className={['shrink-0', danger ? 'text-[var(--color-error)]' : 'text-foreground'].join(' ')}
+      >
+        {icone}
+      </span>
+      <span className="flex min-w-0 flex-col">
+        <span
+          className={[
+            'text-sm font-semibold leading-tight',
+            danger ? 'text-[var(--color-error)]' : 'text-foreground',
+          ].join(' ')}
+        >
+          {libelle}
+        </span>
+        <span className="mt-0.5 text-xs leading-snug text-muted-foreground">{description}</span>
+      </span>
     </button>
   )
 }

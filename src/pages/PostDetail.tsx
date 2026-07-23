@@ -31,7 +31,7 @@
  */
 
 import { Suspense, lazy, useRef, useEffect } from 'react'
-import { Link, useParams, useNavigate, useNavigationType } from 'react-router-dom'
+import { Link, useParams, useNavigate, useNavigationType, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -116,6 +116,12 @@ export default function PostDetail() {
   //   - un slug-uuid (« grand-duc-amerique-{uuid} ») → on extrait l'UUID en fin
   // extractPostId() gère les deux cas via regex.
   const postId = extractPostId(routeParam)
+
+  // `?echanges=1` : pose par les liens de notification d'echange
+  // (`resolveDeepLink`). On ouvre alors le fil d'emblee, la personne venant
+  // precisement pour un message.
+  const [parametresUrl] = useSearchParams()
+  const ouvrirEchanges = parametresUrl.get('echanges') === '1'
 
   // Nicolas 2026-06-06 : forcer le scroll en HAUT a l'ouverture de la page
   // detail. Sans ca, en SPA, la fenetre garde la position de scroll de la page
@@ -291,6 +297,7 @@ export default function PostDetail() {
                     // (pas de "Voir plus") + chips categorie/espece passifs.
                     expandContent
                     disableChipFilters
+                    echangesOuvertsParDefaut={ouvrirEchanges}
                   />
                 </Suspense>
               )}

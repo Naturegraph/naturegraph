@@ -135,6 +135,15 @@ export function getMessage(
         : t('home.notifications.messagePost')
     case 'species_digest':
       return t('home.notifications.messageSpeciesDigest')
+    // NG-049 : ces deux types etaient EMIS par la base mais absents d'ici, donc
+    // affiches sans aucune phrase. Une notification qui ne dit pas ce qui s'est
+    // passe ne sert a rien : on la lit, on ne comprend pas, on l'ignore.
+    case 'comment':
+      return groupCount > 1
+        ? t('home.notifications.messagePostGrouped', { count: groupCount })
+        : t('home.notifications.messageComment')
+    case 'identification':
+      return t('home.notifications.messageIdentification')
     default:
       return ''
   }
@@ -168,7 +177,13 @@ export function resolveDeepLink(n: Notification): string | null {
   if (!n.reference_id || !n.reference_type) return null
   switch (n.reference_type) {
     case 'post':
-      return `/post/${n.reference_id}`
+      // NG-049 : une notification d'echange doit ouvrir LE FIL, pas seulement
+      // la publication. Depuis que le fil est replie par defaut, atterrir sur
+      // la photo sans voir le message dont on vient d'etre prevenu donne
+      // l'impression d'une notification cassee.
+      return n.type === 'comment' || n.type === 'identification'
+        ? `/post/${n.reference_id}?echanges=1`
+        : `/post/${n.reference_id}`
     case 'profile':
       return n.actor_username ? `/profile/${n.actor_username}` : `/profile/${n.reference_id}`
     case 'species':

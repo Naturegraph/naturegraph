@@ -283,6 +283,15 @@ interface FeedPostProps extends MockPost {
    * les autres posts chargent en `lazy`. Defaut false.
    */
   priority?: boolean
+  /**
+   * Ouvre le fil d'Echanges des l'affichage.
+   *
+   * Sert a l'arrivee depuis une notification d'echange : la personne vient
+   * pour un message precis, lui faire cliquer une fois de plus pour le voir
+   * donnerait l'impression d'une notification cassee. Non pilote ensuite :
+   * c'est une valeur INITIALE, la carte garde la main sur son etat.
+   */
+  echangesOuvertsParDefaut?: boolean
 }
 
 export function FeedPost({
@@ -326,6 +335,7 @@ export function FeedPost({
   expandContent = false,
   disableChipFilters = false,
   priority = false,
+  echangesOuvertsParDefaut = false,
 }: FeedPostProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -337,7 +347,7 @@ export function FeedPost({
    * la meme mecanique. C'est aussi ce qui evite qu'un ecran oublie de la
    * brancher et renvoie l'utilisateur ailleurs pour une action identique.
    */
-  const [echangesOuverts, setEchangesOuverts] = useState(false)
+  const [echangesOuverts, setEchangesOuverts] = useState(echangesOuvertsParDefaut)
   const { setActiveSpecies } = useSpecies()
   const [isExpanded, setIsExpanded] = useState(false)
   const [showOptions, setShowOptions] = useState(false)

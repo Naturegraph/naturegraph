@@ -24,7 +24,6 @@
     "add": "Ajouter",
     "reset": "Réinitialiser"
   },
-
   "taxonomy": {
     "birds": "Oiseaux",
     "mammals": "Mammifères",
@@ -37,7 +36,6 @@
     "plants": "Plantes",
     "other": "Autre"
   },
-
   "nav": {
     "home": "Accueil",
     "discover": "Découvrir",
@@ -48,7 +46,6 @@
     "profile": "Profil",
     "settings": "Paramètres"
   },
-
   "landing": {
     "nav": {
       "discover": "Découvrir",
@@ -145,10 +142,39 @@
       "closing": "L'hermine nous rappelle que la force d'une communauté réside dans l'attention portée à chaque détail de la nature."
     }
   },
-
   "auth": {
-    "login": "Se connecter",
-    "signup": "S'inscrire",
+    "login": {
+      "title": "Bon retour !",
+      "description": "Content de te revoir. Connecte-toi pour retrouver tes observations et continuer l'aventure.",
+      "emailLabel": "Adresse e-mail ou nom d'utilisateur",
+      "passwordLabel": "Mot de passe",
+      "rememberMe": "Se souvenir de moi",
+      "forgotPassword": "Mot de passe oublié ?",
+      "connect": "Se connecter",
+      "discoverWithout": "Découvrir sans compte",
+      "orContinueWith": "ou continuer avec",
+      "noAccount": "Pas encore de compte ?",
+      "signup": "Créer un compte"
+    },
+    "signup": {
+      "title": "Rejoins-nous !",
+      "description": "Découvre et partage la nature qui t'entoure. Crée ton compte en quelques secondes ou explore Naturegraph librement, sans engagement.",
+      "emailLabel": "Adresse e-mail",
+      "emailHelper": "Nous t'enverrons un code de connexion sécurisé.",
+      "createAccount": "Créer mon compte",
+      "discoverWithout": "Découvrir sans compte",
+      "orContinueWith": "ou continuer avec",
+      "alreadyAccount": "Tu as déjà un compte ?",
+      "login": "Se connecter",
+      "legalIntro": "En créant ton compte, tu acceptes nos",
+      "legalTerms": "conditions d'utilisation",
+      "legalAnd": "et notre",
+      "legalPrivacy": "politique de confidentialité",
+      "legalAge": ".",
+      "legalEarlyAccess": "Naturegraph est en accès anticipé (phase de test) : le service est fourni tel quel, des imperfections peuvent subsister.",
+      "photoCredit": "Crédit photo",
+      "photographer": "@emie_photographie_nature"
+    },
     "logout": "Se déconnecter",
     "email": "Adresse email",
     "emailPlaceholder": "ton@email.com",
@@ -208,38 +234,6 @@
       "passwordReset": "Mot de passe mis à jour",
       "passwordResetDesc": "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe"
     },
-    "signup": {
-      "title": "Rejoins-nous !",
-      "description": "Découvre et partage la nature qui t'entoure. Crée ton compte en quelques secondes ou explore Naturegraph librement, sans engagement.",
-      "emailLabel": "Adresse e-mail",
-      "emailHelper": "Nous t'enverrons un code de connexion sécurisé.",
-      "createAccount": "Créer mon compte",
-      "discoverWithout": "Découvrir sans compte",
-      "orContinueWith": "ou continuer avec",
-      "alreadyAccount": "Tu as déjà un compte ?",
-      "login": "Se connecter",
-      "legalIntro": "En créant ton compte, tu acceptes nos",
-      "legalTerms": "conditions d'utilisation",
-      "legalAnd": "et notre",
-      "legalPrivacy": "politique de confidentialité",
-      "legalAge": ".",
-      "legalEarlyAccess": "Naturegraph est en accès anticipé (phase de test) : le service est fourni tel quel, des imperfections peuvent subsister.",
-      "photoCredit": "Crédit photo",
-      "photographer": "@emie_photographie_nature"
-    },
-    "login": {
-      "title": "Bon retour !",
-      "description": "Content de te revoir. Connecte-toi pour retrouver tes observations et continuer l'aventure.",
-      "emailLabel": "Adresse e-mail ou nom d'utilisateur",
-      "passwordLabel": "Mot de passe",
-      "rememberMe": "Se souvenir de moi",
-      "forgotPassword": "Mot de passe oublié ?",
-      "connect": "Se connecter",
-      "discoverWithout": "Découvrir sans compte",
-      "orContinueWith": "ou continuer avec",
-      "noAccount": "Pas encore de compte ?",
-      "signup": "Créer un compte"
-    },
     "verify": {
       "title": "Vérifie ta messagerie",
       "description": "Nous t'avons envoyé un code à 6 chiffres à {{email}}. S'il n'arrive pas tout de suite, pense à vérifier tes courriers indésirables (spam).",
@@ -268,7 +262,6 @@
       "errorGeneric": "Une erreur est survenue."
     }
   },
-
   "onboarding": {
     "stepLabel": "Étape",
     "back": "Retour",
@@ -356,7 +349,6 @@
       "continue": "Continuer l'onboarding"
     }
   },
-
   "location": {
     "autocomplete": {
       "label": "Ville",
@@ -425,7 +417,6 @@
       "skipCta": "Plus tard"
     }
   },
-
   "home": {
     "title": "Explorez la biodiversité",
     "subtitle": "Observez, documentez et partagez vos découvertes nature",
@@ -577,9 +568,7 @@
         "edit": "Modifier mon observation",
         "editDesc": "Vous pouvez corriger les informations",
         "delete": "Supprimer mon observation",
-        "deleteDesc": "Êtes-vous sûr de vouloir supprimer ?",
-        "report": "Signaler la publication",
-        "reportDesc": "Contenu inapproprié ou spam"
+        "deleteDesc": "Êtes-vous sûr de vouloir supprimer ?"
       },
       "reportModal": {
         "title": "Signaler",
@@ -621,7 +610,7 @@
       "clearAll": "Tout effacer",
       "placeholder": "Espèce, utilisateur...",
       "empty": "Recherche une espèce ou un utilisateur…",
-      "noResults": "Aucun résultat pour «\u00a0{{query}}\u00a0»"
+      "noResults": "Aucun résultat pour « {{query}} »"
     },
     "notifications": {
       "title": "Notifications",
@@ -671,7 +660,11 @@
         "tabSystem": "Système",
         "empty": "Aucune notification dans cette catégorie",
         "emptyHint": "Reviens plus tard ou explore un autre filtre."
-      }
+      },
+      "messageComment": "a réagi dans les échanges de ta rencontre",
+      "messageCommentReply": "a répondu à ton échange",
+      "messageIdentification": "a proposé une espèce sur ta rencontre",
+      "messageEchangeReaction": "a aimé ton échange"
     },
     "profileMenu": {
       "principal": "Principal",
@@ -698,7 +691,6 @@
       "share": "Partager"
     }
   },
-
   "contribute": {
     "pageTitle": "Nouvelle observation",
     "instantTitle": "Instant Nature",
@@ -880,7 +872,6 @@
       "emptyPost": "Ajoute au moins une photo, une espèce ou une description avant de publier."
     }
   },
-
   "observation": {
     "instantNature": "Instant Nature",
     "meetingNature": "Rencontre Nature",
@@ -892,7 +883,6 @@
     "comments": "Commentaires",
     "propose": "Proposer une identification"
   },
-
   "notebook": {
     "title": "Carnets d'observations",
     "create": "Créer un carnet",
@@ -900,7 +890,6 @@
     "public": "Public",
     "collaborative": "Collaboratif"
   },
-
   "profile": {
     "userNotFound": "Utilisateur introuvable",
     "userNotFoundDesc": "Ce profil n'existe pas ou a été supprimé.",
@@ -979,7 +968,6 @@
       "copied": "Lien copié !"
     }
   },
-
   "settings": {
     "title": "Paramètres",
     "general": "Général",
@@ -1079,7 +1067,6 @@
     "weeklyGoalDecrease": "Diminuer l'objectif",
     "weeklyGoalIncrease": "Augmenter l'objectif"
   },
-
   "mobileNav": {
     "home": "Accueil",
     "explore": "Explorer",
@@ -1087,7 +1074,6 @@
     "search": "Recherche",
     "profile": "Profil"
   },
-
   "footer": {
     "tagline": "Naturegraph est un espace pour partager tes rencontres et découvrir les regards des autres.",
     "product": {
@@ -1111,7 +1097,6 @@
     "madeWithLove": "Fait avec cœur",
     "team": "par l'équipe Naturegraph"
   },
-
   "legal": {
     "privacy": {
       "title": "Politique de confidentialité",
@@ -1166,7 +1151,6 @@
       "backHome": "Retour à l'accueil"
     }
   },
-
   "cookies": {
     "banner": {
       "title": "Cookies essentiels uniquement",
@@ -1176,7 +1160,6 @@
       "ariaRegion": "Information sur les cookies"
     }
   },
-
   "rgpd": {
     "export": {
       "title": "Exporter mes données",
@@ -1188,7 +1171,6 @@
       "filenamePrefix": "naturegraph-export"
     }
   },
-
   "contact": {
     "title": "Contactez-nous",
     "description": "Une question, une idée ou un retour à partager ? Nous serions ravis d'échanger avec toi.",
@@ -1206,14 +1188,12 @@
       "success": "Message envoyé ! Nous te répondrons rapidement."
     }
   },
-
   "notifications": {
     "success": "Succès",
     "error": "Erreur",
     "warning": "Attention",
     "info": "Information"
   },
-
   "welcome": {
     "title": "Bienvenue",
     "heading": "Bienvenue",
@@ -1230,7 +1210,6 @@
     "success": "Bienvenue dans la beta Naturegraph !",
     "slogan": "Partageons nos émotions"
   },
-
   "waitlist": {
     "title": "Liste d'attente",
     "formTitle": "Rejoindre la waitlist",
@@ -1251,7 +1230,6 @@
     "privacyNotice": "Ton email sert à t'envoyer ta clé d'accès dès qu'une place se libère.",
     "privacyLink": "Politique de confidentialité"
   },
-
   "admin": {
     "nav": {
       "dashboard": "Dashboard",

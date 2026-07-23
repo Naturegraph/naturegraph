@@ -357,8 +357,15 @@ export function EchangeItem({
           </p>
         )}
 
-        <div className="w-fit max-w-full rounded-sm bg-surface-bubble p-3">
-          {/* Ligne d'identite : pseudo, badge Auteur, date */}
+        {/* La bulle prend toute la largeur quand elle porte le menu : un bouton
+            colle au texte d'une bulle courte se lirait comme une ponctuation.
+            Elle epouse son contenu sinon, pour garder le rythme du fil. */}
+        <div
+          className={`max-w-full rounded-sm bg-surface-bubble p-3 ${peutAgir ? 'w-full' : 'w-fit'}`}
+        >
+          {/* Ligne d'identite : pseudo, badge Auteur, date, puis le menu tout a
+              droite. Place en bas de la barre d'actions, il se retrouvait seul
+              et sans rattachement visible au message (retour Nicolas). */}
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="text-sm font-bold text-foreground">{pseudo}</span>
 
@@ -381,6 +388,21 @@ export function EchangeItem({
                   le texte n'est plus celui d'origine. */}
               {echange.modifieLe && <span className="ml-1">(modifié)</span>}
             </span>
+
+            {peutAgir && (
+              <div className="ml-auto">
+                <EchangeMenu
+                  estLeMien={estLeMien}
+                  peutAgir={peutAgir}
+                  suit={suitAuteur}
+                  pseudoAuteur={pseudo}
+                  onModifier={ouvrirEdition}
+                  onSupprimer={onSupprimer}
+                  onSignaler={onSignaler}
+                  onBasculerSuivi={onBasculerSuivi}
+                />
+              </div>
+            )}
           </div>
 
           {enEdition ? (
@@ -461,25 +483,6 @@ export function EchangeItem({
                 Proposer une espèce
               </Action>
             </>
-          )}
-
-          {/* Actions rares ou engageantes derriere un bouton discret, comme
-              sur une publication : modifier, suivre, signaler, supprimer. Les
-              laisser dans la barre principale ferait quatre libelles de plus
-              sous chaque message. */}
-          {peutAgir && (
-            <div className="ml-auto">
-              <EchangeMenu
-                estLeMien={estLeMien}
-                peutAgir={peutAgir}
-                suit={suitAuteur}
-                pseudoAuteur={pseudo}
-                onModifier={ouvrirEdition}
-                onSupprimer={onSupprimer}
-                onSignaler={onSignaler}
-                onBasculerSuivi={onBasculerSuivi}
-              />
-            </div>
           )}
         </div>
       </div>
