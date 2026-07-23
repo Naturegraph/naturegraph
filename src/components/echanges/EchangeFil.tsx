@@ -44,6 +44,8 @@ interface EchangeFilProps {
   ) => void
   onSupprimer: (echangeId: string) => void
   onReagir: (echange: Echange) => void
+  /** Especes deja proposees par la personne connectee, pour bloquer le doublon. */
+  especesDejaProposees?: string[]
 }
 
 export function EchangeFil({
@@ -55,6 +57,7 @@ export function EchangeFil({
   onRepondre,
   onSupprimer,
   onReagir,
+  especesDejaProposees,
 }: EchangeFilProps) {
   // `null` = champ ferme. Sinon, l'intention du geste en cours.
   const [redaction, setRedaction] = useState<'reaction' | 'identification' | null>(null)
@@ -96,6 +99,7 @@ export function EchangeFil({
       {redaction === 'identification' && (
         <div className="mt-2 pl-4 sm:pl-11">
           <SuggestionEspecePanel
+            especesDejaProposees={especesDejaProposees}
             onAnnuler={() => setRedaction(null)}
             onSuggerer={(suggestion, commentaire) => {
               onRepondre(commentaire, 'identification', parent.id, suggestion)

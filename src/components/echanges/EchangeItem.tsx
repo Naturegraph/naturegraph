@@ -7,13 +7,19 @@
  *   [avatar 32] [bulle grise, radius 8]
  *                 pseudo gras 14  [Auteur]  il y a 39 minutes
  *                 texte 14 / interligne 1.5
- *                 [pastille espece · niveau de confiance]
+ *                 [Identification  Nom  nom scientifique   niveau]
  *   ♡ Réagir  •  ✎ Répondre  •  ⊞ Proposer une espèce
  *
  * La bulle porte le fond, pas la ligne : c'est ce qui distingue une
- * conversation d'une liste. Les actions vivent SOUS la bulle, sur le fond de la
- * publication : garder le fond gris sous des boutons les ferait lire comme une
- * barre d'outils rattachee au texte, alors que ce sont des gestes du lecteur.
+ * conversation d'une liste. Elle EPOUSE son contenu (`w-fit`) plutot que de
+ * tirer sur toute la largeur : une phrase de six mots dans un bandeau pleine
+ * largeur se lit comme un formulaire, alors qu'une bulle courte donne le rythme
+ * d'une vraie conversation. `max-w-full` garde les messages longs dans la
+ * colonne, qui redeviennent alors pleine largeur d'eux-memes.
+ *
+ * Les actions vivent SOUS la bulle, sur le fond de la publication : garder le
+ * fond gris sous des boutons les ferait lire comme une barre d'outils rattachee
+ * au texte, alors que ce sont des gestes du lecteur.
  *
  * Les trois actions sont separees par des puces de 4px plutot que par des
  * cadres : a cette taille, trois boutons dessines cote a cote pesent plus que
@@ -27,7 +33,8 @@
  * ajoutee pour formater une date (regle eco-conception).
  */
 
-import { Heart, Pencil, MessageSquarePlus, Trash2, Leaf, Sprout } from 'lucide-react'
+import { Heart, Pencil, MessageSquarePlus, Trash2, Leaf } from 'lucide-react'
+import { joursCivilsEcoules } from './grouperParJour'
 import type { Echange } from '@/services/echangeService'
 import { libelleConfiance } from '@/services/echangeService'
 import hermineIcon from '@/assets/images/hermine-icon.png'
@@ -49,17 +56,27 @@ interface EchangeItemProps {
 
 const rtf = new Intl.RelativeTimeFormat('fr', { numeric: 'auto' })
 
-/** "il y a 3 minutes", "hier"… Repli sur la date absolue au-dela d'une semaine. */
+/**
+ * "il y a 3 minutes", "hier"… Repli sur la date absolue au-dela d'une semaine.
+ *
+ * Au-dela de 24 heures, le calcul porte sur le JOUR CIVIL et non sur un ecart
+ * arrondi en jours : un message d'hier 11h affichait "avant-hier" alors que son
+ * separateur de groupe disait "Hier", parce que 29 heures s'arrondissaient a
+ * deux jours. Les deux doivent toujours raconter la meme chose, sinon le fil se
+ * contredit sous les yeux du lecteur.
+ */
 function dateRelative(iso: string): string {
-  const secondes = Math.round((Date.now() - new Date(iso).getTime()) / 1000)
+  const date = new Date(iso)
+  const secondes = Math.round((Date.now() - date.getTime()) / 1000)
   if (secondes < 60) return 'à l’instant'
   const minutes = Math.round(secondes / 60)
   if (minutes < 60) return rtf.format(-minutes, 'minute')
   const heures = Math.round(minutes / 60)
   if (heures < 24) return rtf.format(-heures, 'hour')
-  const jours = Math.round(heures / 24)
+
+  const jours = joursCivilsEcoules(iso)
   if (jours < 7) return rtf.format(-jours, 'day')
-  return new Date(iso).toLocaleDateString('fr-FR')
+  return date.toLocaleDateString('fr-FR')
 }
 
 /**
@@ -176,6 +193,69 @@ function BoutonReagir({
   )
 }
 
+/**
+ * Couleurs du niveau de confiance : ECHELLE DE TEMPERATURE, du froid au chaud
+ * (decision Nicolas 2026-07-22). Uniquement des tokens semantiques du DS, qui
+ * s'inversent seuls en dark.
+ *
+ *   1  Pas sûr    info     bleu     froid
+ *   2  Assez sûr  success  vert     tiede
+ *   3  Très sûr   warning  orange   chaud
+ *   4  Certain    error    rouge    brulant
+ *
+ * Le froid-chaud dit une INTENSITE, pas un jugement, contrairement a une
+ * echelle rouge-vers-vert qui se lirait "mauvais vers bon" et punirait la
+ * prudence. Ici le rouge marque l'affirmation la plus forte, pas une faute, et
+ * le bleu n'est pas une sanction : dire qu'on hesite reste exactement ce qu'on
+ * veut encourager chez qui debute.
+ *
+ * Le niveau porte la couleur, PAS le bloc entier : c'est la seule information
+ * qui varie d'une suggestion a l'autre, donc la seule qui merite d'attirer
+ * l'oeil. Deux suggestions se comparent alors d'un coup d'oeil.
+ */
+const COULEURS_CONFIANCE: Record<number, string> = {
+  1: 'bg-[var(--color-info-bg)] text-[var(--color-info)]',
+  2: 'bg-[var(--color-success-bg)] text-[var(--color-success)]',
+  3: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
+  4: 'bg-[var(--color-error-bg)] text-[var(--color-error)]',
+}
+
+/**
+ * Bloc de suggestion d'espece, sous le texte du message.
+ *
+ * Rendu en carte CLAIRE plutot qu'en pastille lavande : sur la bulle grise, du
+ * violet pale sur violet pale ne se lisait pratiquement pas (retour Nicolas
+ * 2026-07-22). Le contraste de fond suffit a detacher le bloc et lui donne le
+ * poids d'une donnee, pas d'une decoration.
+ *
+ * Ni bordure ni icone (retours Nicolas) : la bordure ajoutait un trait sans
+ * information sur une zone deja dense, et l'icone ne disait rien que le texte
+ * ne dise deja.
+ */
+function BlocSuggestion({ suggestion }: { suggestion: NonNullable<Echange['suggestion']> }) {
+  const scientifiqueUtile =
+    suggestion.scientifique && suggestion.scientifique !== suggestion.label
+      ? suggestion.scientifique
+      : null
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-sm bg-background px-2.5 py-1.5">
+      <span className="text-xs text-muted-foreground">Identification</span>
+      <span className="text-sm font-bold text-foreground">{suggestion.label}</span>
+      {scientifiqueUtile && (
+        <span className="text-xs italic text-muted-foreground">{scientifiqueUtile}</span>
+      )}
+      <span
+        className={`ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+          COULEURS_CONFIANCE[suggestion.confiance] ?? COULEURS_CONFIANCE[1]
+        }`}
+      >
+        {libelleConfiance(suggestion.confiance)}
+      </span>
+    </div>
+  )
+}
+
 export function EchangeItem({
   echange,
   peutSupprimer,
@@ -205,13 +285,18 @@ export function EchangeItem({
             EN DESSOUS, sur le fond de la publication : garder le fond gris sous
             des boutons les ferait lire comme une barre d'outils rattachee au
             texte, alors que ce sont des gestes du lecteur. */}
-        <div className="rounded-sm bg-surface-bubble px-3 py-2">
+        <div className="w-fit max-w-full rounded-sm bg-surface-bubble px-3 py-2">
           {/* Ligne d'identite : pseudo, badge Auteur, date */}
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="text-sm font-bold text-foreground">{pseudo}</span>
 
+            {/* Badge NEUTRE et non vert (retour Nicolas 2026-07-22) : depuis que
+                le niveau de confiance porte une rampe de quatre couleurs, un
+                badge colore de plus ferait cinq teintes dans la meme bulle. Le
+                fond clair sur la bulle grise suffit a le detacher, et la
+                couleur ne signale plus qu'UNE chose : la confiance. */}
             {ecritParAuteurPublication && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-success-bg)] px-2 py-0.5 text-xs font-medium text-[var(--color-success)]">
+              <span className="inline-flex items-center gap-1 rounded-full bg-background px-2 py-0.5 text-xs font-medium text-foreground">
                 <Leaf className="size-3" aria-hidden="true" />
                 Auteur
               </span>
@@ -228,28 +313,7 @@ export function EchangeItem({
             {echange.contenu}
           </p>
 
-          {/* Pastille de suggestion : l'espece proposee et le niveau de
-              confiance, sous le texte. Separer les deux permet de lire d'un
-              coup d'oeil CE QUI est propose sans avoir a decoder la phrase,
-              et de comparer plusieurs suggestions entre elles. */}
-          {echange.suggestion && (
-            <p className="mt-2 inline-flex max-w-full flex-wrap items-center gap-1.5 rounded-full bg-primary-light px-2.5 py-1 text-xs">
-              <Sprout className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
-              <span className="font-medium text-foreground">{echange.suggestion.label}</span>
-              {echange.suggestion.scientifique &&
-                echange.suggestion.scientifique !== echange.suggestion.label && (
-                  <span className="italic text-muted-foreground">
-                    {echange.suggestion.scientifique}
-                  </span>
-                )}
-              <span aria-hidden="true" className="text-muted-foreground">
-                ·
-              </span>
-              <span className="text-muted-foreground">
-                {libelleConfiance(echange.suggestion.confiance)}
-              </span>
-            </p>
-          )}
+          {echange.suggestion && <BlocSuggestion suggestion={echange.suggestion} />}
         </div>
 
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">

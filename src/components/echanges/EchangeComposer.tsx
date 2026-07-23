@@ -53,6 +53,8 @@ interface EchangeComposerProps {
   compact?: boolean
   /** Invite du champ. Par defaut celle des maquettes. */
   invite?: string
+  /** Especes deja proposees par la personne connectee, pour bloquer le doublon. */
+  especesDejaProposees?: string[]
 }
 
 /** Seuil d'apparition du compteur : on ne stresse qu'a l'approche de la limite. */
@@ -66,6 +68,7 @@ export function EchangeComposer({
   onPublier,
   compact = false,
   invite,
+  especesDejaProposees,
 }: EchangeComposerProps) {
   const navigate = useNavigate()
   const champ = useRef<HTMLTextAreaElement>(null)
@@ -100,6 +103,7 @@ export function EchangeComposer({
   if (panneauEspece) {
     return (
       <SuggestionEspecePanel
+        especesDejaProposees={especesDejaProposees}
         onAnnuler={() => setPanneauEspece(false)}
         onSuggerer={(suggestion, commentaire) => {
           onPublier(commentaire, 'identification', suggestion)

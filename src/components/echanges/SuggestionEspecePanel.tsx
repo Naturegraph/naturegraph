@@ -28,7 +28,9 @@ import { Search, Loader2, X, MessageSquarePlus } from 'lucide-react'
 import { searchTaxonomy, type TaxonomyHit } from '@/services/searchService'
 import {
   LONGUEUR_MAX_ECHANGE,
+  MESSAGE_ESPECE_DEJA_PROPOSEE,
   NIVEAUX_CONFIANCE,
+  cleEspece,
   type NiveauConfiance,
   type SuggestionEspece,
 } from '@/services/echangeService'
@@ -37,12 +39,21 @@ interface SuggestionEspecePanelProps {
   /** Publie la suggestion. `commentaire` vide = phrase generique cote service. */
   onSuggerer: (suggestion: SuggestionEspece, commentaire: string) => void
   onAnnuler: () => void
+  /**
+   * Cles des especes que la personne connectee a DEJA proposees sur cette
+   * publication (`cleEspece`). Une meme espece ne se propose qu'une fois.
+   */
+  especesDejaProposees?: string[]
 }
 
 /** Delai avant requete : evite une requete par touche frappee (eco-conception). */
 const DELAI_FRAPPE = 300
 
-export function SuggestionEspecePanel({ onSuggerer, onAnnuler }: SuggestionEspecePanelProps) {
+export function SuggestionEspecePanel({
+  onSuggerer,
+  onAnnuler,
+  especesDejaProposees = [],
+}: SuggestionEspecePanelProps) {
   const idRecherche = useId()
   const idListe = useId()
   const idMot = useId()
@@ -82,8 +93,17 @@ export function SuggestionEspecePanel({ onSuggerer, onAnnuler }: SuggestionEspec
     return hit.common_name_fr?.trim() || hit.scientific_name
   }
 
+  // Le doublon est signale des le CHOIX de l'espece, pas au moment d'envoyer :
+  // laisser rediger un argumentaire complet avant de refuser serait du travail
+  // perdu, et se vivrait comme un piege.
+  const doublon =
+    !!choisie &&
+    especesDejaProposees.includes(
+      cleEspece({ noeudId: choisie.taxonomy_node_id, label: nomAffiche(choisie) }),
+    )
+
   function valider() {
-    if (!choisie || tropLong) return
+    if (!choisie || tropLong || doublon) return
     onSuggerer(
       {
         label: nomAffiche(choisie),
@@ -188,6 +208,15 @@ export function SuggestionEspecePanel({ onSuggerer, onAnnuler }: SuggestionEspec
         </div>
       )}
 
+      {doublon && (
+        <p
+          role="alert"
+          className="mt-2 rounded-sm border border-[var(--color-warning)] bg-[var(--color-warning-bg)] px-3 py-2 text-xs text-[var(--color-warning)]"
+        >
+          {MESSAGE_ESPECE_DEJA_PROPOSEE}
+        </p>
+      )}
+
       {/* ── 2. Confiance ──────────────────────────────────────────────────── */}
       {/* Chips plutot qu'une liste deroulante : les quatre niveaux se comparent
           d'un regard, et le geste tient en un tap sur mobile. */}
@@ -259,7 +288,7 @@ export function SuggestionEspecePanel({ onSuggerer, onAnnuler }: SuggestionEspec
         <button
           type="button"
           onClick={valider}
-          disabled={!choisie || tropLong}
+          disabled={!choisie || tropLong || doublon}
           className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           <MessageSquarePlus className="size-4" aria-hidden="true" />

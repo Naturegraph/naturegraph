@@ -37,6 +37,7 @@ import { LoadingState } from '@/components/ui'
 import { EchangeComposer } from './EchangeComposer'
 import { EchangeFil } from './EchangeFil'
 import { construireFils } from './grouperParJour'
+import { cleEspece } from '@/services/echangeService'
 import type { Echange, IntentionEchange, SuggestionEspece } from '@/services/echangeService'
 
 interface EchangesSectionProps {
@@ -60,6 +61,22 @@ export function EchangesSection({ postId, auteurPublicationId }: EchangesSection
   // Groupes de jours, du plus recent au plus ancien. Voir `construireFils`
   // pour le detail des deux sens de lecture.
   const groupes = useMemo(() => construireFils(echanges), [echanges])
+
+  /**
+   * Especes que MOI j'ai deja proposees sur cette publication.
+   *
+   * Sert a bloquer le doublon des le choix de l'espece. Le calcul porte sur le
+   * fil deja charge : c'est un confort d'interface, la garantie reelle revient
+   * a l'index unique en base (voir la migration `echanges_une_espece_par
+   * _personne`), sans quoi deux onglets ouverts contourneraient la regle.
+   */
+  const mesEspeces = useMemo(
+    () =>
+      echanges
+        .filter((e) => e.suggestion && e.auteurId === profile?.id)
+        .map((e) => cleEspece(e.suggestion!)),
+    [echanges, profile?.id],
+  )
 
   function envoyer(
     contenu: string,
@@ -134,6 +151,7 @@ export function EchangesSection({ postId, auteurPublicationId }: EchangesSection
                   })
                 }
                 onReagir={onReagir}
+                especesDejaProposees={mesEspeces}
               />
             ))}
           </ul>
@@ -144,6 +162,7 @@ export function EchangesSection({ postId, auteurPublicationId }: EchangesSection
         <EchangeComposer
           peutEcrire={isAuthenticated}
           enCours={publier.isPending}
+          especesDejaProposees={mesEspeces}
           onPublier={(contenu, intention, suggestion) =>
             envoyer(contenu, intention, null, suggestion)
           }

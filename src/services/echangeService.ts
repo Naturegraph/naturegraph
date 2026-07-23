@@ -102,6 +102,30 @@ export function libelleConfiance(valeur: number): string {
   return NIVEAUX_CONFIANCE.find((n) => n.valeur === valeur)?.libelle ?? 'Pas sûr'
 }
 
+/**
+ * Cle d'unicite d'une espece dans un fil.
+ *
+ * On s'appuie sur l'identifiant du referentiel quand il existe, et seulement a
+ * defaut sur le nom normalise : deux personnes peuvent avoir choisi la meme
+ * espece a des moments ou elle portait des libelles differents, seul
+ * l'identifiant les rapproche de facon fiable.
+ */
+export function cleEspece(suggestion: { noeudId?: string | null; label: string }): string {
+  return suggestion.noeudId ?? `nom:${suggestion.label.trim().toLowerCase()}`
+}
+
+/**
+ * Message affiche quand on propose une espece deja proposee (regle Nicolas
+ * 2026-07-22 : une personne ne propose une meme espece qu'UNE fois par
+ * publication).
+ *
+ * Sans cette regle, cinq "Buse variable" du meme compte donneraient l'illusion
+ * d'un consensus alors qu'une seule personne parle, ce qui fausserait la
+ * lecture de l'identification collaborative.
+ */
+export const MESSAGE_ESPECE_DEJA_PROPOSEE =
+  'Tu as déjà proposé cette espèce sur cette publication. Modifie ou supprime ta proposition existante.'
+
 export interface SuggestionEspece {
   /** Nom affiche, tel que choisi au moment de la suggestion. */
   label: string

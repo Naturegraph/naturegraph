@@ -34,10 +34,19 @@ const MS_PAR_JOUR = 86_400_000
  * Au-dela d'une semaine on bascule sur la date absolue : "il y a 34 jours" ne
  * dit rien a personne, alors qu'une date se situe immediatement.
  */
+/**
+ * Nombre de JOURS CIVILS ecoules depuis `iso`.
+ *
+ * Expose parce que la date relative affichee sur chaque message doit s'appuyer
+ * sur le meme calcul que les separateurs : sinon un message d'hier 11h peut
+ * afficher "avant-hier" sous un separateur "Hier", et le fil se contredit.
+ */
+export function joursCivilsEcoules(iso: string, maintenant: Date = new Date()): number {
+  return Math.round((debutDeJournee(maintenant) - debutDeJournee(new Date(iso))) / MS_PAR_JOUR)
+}
+
 export function libelleJour(iso: string, maintenant: Date = new Date()): string {
-  const jours = Math.round(
-    (debutDeJournee(maintenant) - debutDeJournee(new Date(iso))) / MS_PAR_JOUR,
-  )
+  const jours = joursCivilsEcoules(iso, maintenant)
 
   if (jours <= 0) return "Aujourd'hui"
   if (jours === 1) return 'Hier'
