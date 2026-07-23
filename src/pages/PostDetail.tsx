@@ -30,7 +30,7 @@
  *     d'écran.
  */
 
-import { Suspense, lazy, useRef, useEffect, useState } from 'react'
+import { Suspense, lazy, useRef, useEffect } from 'react'
 import { Link, useParams, useNavigate, useNavigationType } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -50,7 +50,6 @@ import { MobileNavLayer } from '@/components/home/MobileNavLayer'
 import { GuestSidebar } from '@/components/home/GuestSidebar'
 import { ProfileSidebar } from '@/components/home/ProfileSidebar'
 import { RelatedPostCard } from '@/components/home/RelatedPostCard'
-import { EchangesSection } from '@/components/echanges/EchangesSection'
 import { useToggleReaction } from '@/hooks/usePost'
 import { useEditPostFlow } from '@/hooks/useEditPostFlow'
 import type { ReactionType, PostFeedItem } from '@/types/database'
@@ -111,9 +110,6 @@ export default function PostDetail() {
   const { t } = useTranslation()
   const { postId: routeParam } = useParams<{ postId: string }>()
   const { isAuthenticated, profile, user } = useAuth()
-  // Fil d'echanges replie par defaut : la publication reste l'element principal
-  // de la page, on n'impose pas la discussion avant la photo (NG-049).
-  const [echangesOuverts, setEchangesOuverts] = useState(false)
 
   // Le segment `:postId` peut être :
   //   - un UUID nu (anciens liens) → on l'utilise tel quel
@@ -295,24 +291,13 @@ export default function PostDetail() {
                     // (pas de "Voir plus") + chips categorie/espece passifs.
                     expandContent
                     disableChipFilters
-                    onBasculerEchanges={() => setEchangesOuverts((v) => !v)}
-                    echangesOuverts={echangesOuverts}
                   />
                 </Suspense>
               )}
-
-              {/* Echanges (NG-049) : DANS la carte de la publication, comme les
-                  maquettes, et non dans un bloc separe. Le fil prolonge la
-                  publication au lieu de commencer une nouvelle section, ce qui
-                  evite au lecteur de se demander a quoi il repond.
-                  Meme largeur et meme fond que FeedPost pour que la carte se
-                  lise d'un seul tenant. Lecture ouverte aux visiteurs, ecriture
-                  reservee aux comptes. */}
-              {!isLoading && post && echangesOuverts && (
-                <div className="bg-background w-full md:mx-auto md:max-w-[704px] md:rounded-b-card md:border-border md:border-[0.5px] md:border-t-0">
-                  <EchangesSection postId={post.id} auteurPublicationId={post.authorId} />
-                </div>
-              )}
+              {/* Le fil d'Echanges (NG-049) est rendu PAR FeedPost, a l'interieur
+                  de la carte : le feed et la page detail se comportent alors
+                  exactement pareil, sans que cette page ait a recabler quoi que
+                  ce soit. */}
             </div>
 
             {/* NG-028 : section "Observations susceptibles de t'interesser".

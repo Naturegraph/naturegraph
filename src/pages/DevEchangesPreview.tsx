@@ -6,16 +6,16 @@
  * vraies personnes, qui les verraient sur leur compte, n'est pas acceptable
  * (regle formelle Nicolas 2026-07-22).
  *
- * Utilise les VRAIS composants, donc ce qui s'affiche ici est exactement ce que
- * verront les utilisateurs. La carte reprend la largeur et le fond de FeedPost
- * pour juger le fil dans son contexte reel.
+ * Utilise le MEME composant de rendu que le fil reel (`FilEchanges`) : ce qui
+ * s'affiche ici est donc exactement ce que verront les utilisateurs, et ne peut
+ * pas deriver de son cote. Seule la source des donnees change.
  */
 
 import { useState } from 'react'
-import { EchangeFil } from '@/components/echanges/EchangeFil'
-import { EchangeComposer } from '@/components/echanges/EchangeComposer'
+import { FilEchanges } from '@/components/echanges/FilEchanges'
 import { construireFils } from '@/components/echanges/grouperParJour'
 import { ECHANGES_MOCK, AUTEUR_PUBLICATION_MOCK } from '@/data/mock/echangesMock'
+import { cleEspece } from '@/services/echangeService'
 import type { Echange, IntentionEchange, SuggestionEspece } from '@/services/echangeService'
 
 const MOI = 'moi'
@@ -24,6 +24,9 @@ export default function DevEchangesPreview() {
   const [echanges, setEchanges] = useState<Echange[]>(ECHANGES_MOCK)
 
   const groupes = construireFils(echanges)
+  const mesEspeces = echanges
+    .filter((e) => e.suggestion && e.auteurId === MOI)
+    .map((e) => cleEspece(e.suggestion!))
 
   function ajouter(
     contenu: string,
@@ -77,43 +80,21 @@ export default function DevEchangesPreview() {
           Page temporaire. Données fictives, aucune écriture en base. Composants réels.
         </p>
 
+        {/* Meme enveloppe que la carte de publication, pour juger le fil dans
+            son contexte reel. */}
         <div className="bg-background w-full md:rounded-card md:border-[0.5px] md:border-border">
           <section aria-label="Échanges">
-            <div className="px-4 py-4 md:px-6 md:py-6">
-              {groupes.map((groupe) => (
-                <div key={groupe.libelle} className="mb-6 last:mb-0">
-                  <p className="mb-3 text-xs text-muted-foreground">{groupe.libelle}</p>
-                  <ul className="flex flex-col gap-4">
-                    {groupe.fils.map(({ parent, reponses }) => (
-                      <EchangeFil
-                        key={parent.id}
-                        parent={parent}
-                        reponses={reponses}
-                        moiId={MOI}
-                        peutEcrire
-                        auteurPublicationId={AUTEUR_PUBLICATION_MOCK}
-                        onRepondre={(contenu, intention, parentId, suggestion) =>
-                          ajouter(contenu, intention, parentId, suggestion)
-                        }
-                        onSupprimer={(id) => setEchanges((l) => l.filter((x) => x.id !== id))}
-                        onReagir={reagir}
-                      />
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-
-            {/* Bandeau de saisie en pied de carte, cf. EchangesSection. */}
-            <div className="rounded-b-card bg-surface-bubble px-4 py-4 md:px-6 md:py-6">
-              <EchangeComposer
-                peutEcrire
-                enCours={false}
-                onPublier={(contenu, intention, suggestion) =>
-                  ajouter(contenu, intention, null, suggestion)
-                }
-              />
-            </div>
+            <FilEchanges
+              groupes={groupes}
+              moiId={MOI}
+              peutEcrire
+              auteurPublicationId={AUTEUR_PUBLICATION_MOCK}
+              especesDejaProposees={mesEspeces}
+              etatVide={echanges.length === 0}
+              onEnvoyer={ajouter}
+              onSupprimer={(id) => setEchanges((l) => l.filter((x) => x.id !== id))}
+              onReagir={reagir}
+            />
           </section>
         </div>
       </div>

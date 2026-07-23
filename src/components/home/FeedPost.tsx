@@ -10,7 +10,7 @@
  * - "Voir plus / Voir moins" annonce le changement d'état
  */
 
-import React, { useLayoutEffect, useRef, useState } from 'react'
+import React, { lazy, Suspense, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import {
@@ -28,6 +28,7 @@ import { useSavedPostIds, useToggleSavedPost } from '@/hooks/useSavedPosts'
 import { PostOptionsMenu } from './PostOptionsMenu'
 import { ImageSlider } from './ImageSlider'
 import hermineIcon from '@/assets/images/hermine-icon.png'
+
 import { ImagePresets } from '@/lib/supabaseImage'
 import type { ReactionType } from '@/types/database'
 import { useSpecies } from '@/contexts/SpeciesContext'
@@ -36,6 +37,19 @@ import { buildPostPath } from '@/lib/postSlug'
 import { NotebookCardInFeed } from '@/components/notebook/NotebookCardInFeed'
 import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
 import { RevealableText } from '@/components/ui/RevealableText'
+
+/**
+ * Fil d'Echanges charge a la DEMANDE (NG-049).
+ *
+ * Le fil, sa recherche d'especes et son panneau de suggestion pesent plus lourd
+ * qu'une carte de publication. Les embarquer dans le paquet du feed ferait payer
+ * a chaque visiteur du code que la plupart n'ouvriront jamais : contraire au
+ * budget de performance du projet. `lazy` le charge au premier clic sur
+ * "Échanges", et une seule fois pour toute la session.
+ */
+const EchangesSection = lazy(() =>
+  import('@/components/echanges/EchangesSection').then((m) => ({ default: m.EchangesSection })),
+)
 
 // ─── Type UI pour les posts du feed ──────────────────────────────────────────
 // Bridge entre le type DB (PostFeedItem) et le composant FeedPost.
@@ -269,15 +283,6 @@ interface FeedPostProps extends MockPost {
    * les autres posts chargent en `lazy`. Defaut false.
    */
   priority?: boolean
-  /**
-   * Ouvre ou ferme les Echanges sous la publication (NG-049).
-   * Fourni UNIQUEMENT par la page detail, seul endroit ou le fil existe.
-   * Absent dans le feed : le bouton y renvoie alors vers la page detail,
-   * plutot que de charger des echanges dans chaque carte du fil.
-   */
-  onBasculerEchanges?: () => void
-  /** Etat courant du fil, pour aria-expanded et le style actif. */
-  echangesOuverts?: boolean
 }
 
 export function FeedPost({
@@ -321,11 +326,18 @@ export function FeedPost({
   expandContent = false,
   disableChipFilters = false,
   priority = false,
-  onBasculerEchanges,
-  echangesOuverts = false,
 }: FeedPostProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  /**
+   * Fil d'Echanges ouvert sous la publication.
+   *
+   * L'etat vit DANS la carte, pas chez le parent : le feed et la page detail se
+   * comportent alors exactement pareil, sans que chaque appelant ait a recabler
+   * la meme mecanique. C'est aussi ce qui evite qu'un ecran oublie de la
+   * brancher et renvoie l'utilisateur ailleurs pour une action identique.
+   */
+  const [echangesOuverts, setEchangesOuverts] = useState(false)
   const { setActiveSpecies } = useSpecies()
   const [isExpanded, setIsExpanded] = useState(false)
   const [showOptions, setShowOptions] = useState(false)
@@ -386,22 +398,11 @@ export function FeedPost({
     setShowReactionPicker(false)
   }
 
-  // Le fil d'echanges ne s'ouvre EN DESSOUS que sur la page detail, la ou un
-  // parent fournit `onBasculerEchanges`. Dans le feed, le bouton navigue.
-  const filOuvertDessous = Boolean(onBasculerEchanges) && echangesOuverts
-
   return (
     // Largeur Figma : colonne post = 656px + p-6 (24px ×2) = 704px max sur desktop.
     // Centré (mx-auto) pour s'aligner dans la zone feed quel que soit son parent.
     // Sur mobile : pleine largeur (rounded-none, le cap ne joue pas).
-    <article
-      className={[
-        'bg-background relative rounded-none md:max-w-[704px] md:mx-auto w-full',
-        // Fil d'echanges ouvert juste en dessous : on coupe l'arrondi bas pour
-        // que la carte et le fil se lisent d'un seul tenant, comme la maquette.
-        filOuvertDessous ? 'md:rounded-t-card' : 'md:rounded-card',
-      ].join(' ')}
-    >
+    <article className="bg-background relative rounded-none md:max-w-[704px] md:mx-auto w-full md:rounded-card">
       {/* Bordure de la carte : quand hideEndBorder=true on retire la
           bordure inférieure mobile (border-b-4) qui flotte dans le vide
           sur PostDetail ou en dernier item de feed. La border-[0.5px]
@@ -409,8 +410,7 @@ export function FeedPost({
       <div
         aria-hidden="true"
         className={[
-          'absolute md:border-border md:border-[0.5px] border-border inset-0 pointer-events-none',
-          filOuvertDessous ? 'md:rounded-t-card md:border-b-0' : 'md:rounded-card',
+          'absolute md:border-border md:border-[0.5px] border-border inset-0 pointer-events-none md:rounded-card',
           hideEndBorder ? '' : 'border-b-4',
         ].join(' ')}
       />
@@ -1041,11 +1041,8 @@ export function FeedPost({
             */}
             <button
               type="button"
-              onClick={() => {
-                if (onBasculerEchanges) onBasculerEchanges()
-                else navigate(buildPostPath(id, { title, species }))
-              }}
-              aria-expanded={onBasculerEchanges ? echangesOuverts : undefined}
+              onClick={() => setEchangesOuverts((v) => !v)}
+              aria-expanded={echangesOuverts}
               className={[
                 'flex items-center gap-2 h-8 px-3 rounded-full transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
@@ -1058,7 +1055,10 @@ export function FeedPost({
               ].join(' ')}
             >
               <MessageCircle className="size-4" aria-hidden="true" />
-              <span className="text-sm font-medium">Échanges</span>
+              {/* Meme typographie et meme comportement que "Réagir" juste a
+                  cote : deux actions voisines de la meme barre ne doivent pas
+                  se distinguer par leur graisse. */}
+              <span className="text-base font-bold hidden md:inline">Échanges</span>
             </button>
           </div>
           <div className="flex gap-1">
@@ -1124,6 +1124,24 @@ export function FeedPost({
           </div>
         </div>
       </div>
+
+      {/*
+        Fil d'Echanges DANS la carte, jamais dans un bloc separe : il prolonge
+        la publication au lieu d'ouvrir une nouvelle section, ce qui evite au
+        lecteur de se demander a quoi il repond.
+
+        Le repli du Suspense reprend la hauteur du bandeau de saisie pour que la
+        page ne saute pas pendant le chargement du morceau de code.
+      */}
+      {echangesOuverts && (
+        <Suspense
+          fallback={
+            <div className="h-24 animate-pulse bg-surface-bubble md:rounded-b-card" aria-hidden />
+          }
+        >
+          <EchangesSection postId={id} auteurPublicationId={authorId} />
+        </Suspense>
+      )}
     </article>
   )
 }
