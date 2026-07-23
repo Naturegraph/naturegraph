@@ -19,8 +19,10 @@ import {
   publierEchange,
   supprimerEchange,
   basculerEchangeUtile,
+  basculerReactionEchange,
   type Echange,
   type IntentionEchange,
+  type TypeReactionEchange,
 } from '@/services/echangeService'
 
 export const cleEchanges = (postId: string) => ['echanges', postId] as const
@@ -54,11 +56,16 @@ export function usePublierEchange(
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: (params: { contenu: string; intention: IntentionEchange }) =>
+    mutationFn: (params: {
+      contenu: string
+      intention: IntentionEchange
+      parentId?: string | null
+    }) =>
       publierEchange({
         postId,
         contenu: params.contenu,
         intention: params.intention,
+        parentId: params.parentId,
       }),
 
     onMutate: async (params) => {
@@ -76,6 +83,9 @@ export function usePublierEchange(
         creeLe: new Date().toISOString(),
         auteurPseudo: auteur.pseudo,
         auteurAvatar: auteur.avatar,
+        parentId: params.parentId ?? null,
+        reactions: { coeur: 0, accord: 0, confirme: 0 },
+        maReaction: null,
       }
       qc.setQueryData<Echange[]>(cleEchanges(postId), [...(precedent ?? []), provisoire])
       return { precedent }
@@ -116,6 +126,47 @@ export function useBasculerEchangeUtile(postId: string) {
 
   return useMutation({
     mutationFn: (echangeId: string) => basculerEchangeUtile(echangeId),
+    onSettled: () => qc.invalidateQueries({ queryKey: cleEchanges(postId) }),
+  })
+}
+
+/**
+ * Pose, change ou retire sa reaction sur un echange.
+ *
+ * Affichage optimiste : sur mobile, attendre l'aller retour pour voir un emoji
+ * changer d'etat donne l'impression que le clic n'a pas pris.
+ */
+export function useBasculerReactionEchange(postId: string) {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: (p: {
+      echangeId: string
+      type: TypeReactionEchange
+      actuelle: TypeReactionEchange | null
+    }) => basculerReactionEchange(p.echangeId, p.type, p.actuelle),
+
+    onMutate: async (p) => {
+      await qc.cancelQueries({ queryKey: cleEchanges(postId) })
+      const precedent = qc.getQueryData<Echange[]>(cleEchanges(postId))
+
+      qc.setQueryData<Echange[]>(cleEchanges(postId), (liste) =>
+        (liste ?? []).map((e) => {
+          if (e.id !== p.echangeId) return e
+          const compte = { ...e.reactions }
+          if (e.maReaction) compte[e.maReaction] = Math.max(0, compte[e.maReaction] - 1)
+          const retire = e.maReaction === p.type
+          if (!retire) compte[p.type] += 1
+          return { ...e, reactions: compte, maReaction: retire ? null : p.type }
+        }),
+      )
+      return { precedent }
+    },
+
+    onError: (_e, _p, ctx) => {
+      if (ctx?.precedent) qc.setQueryData(cleEchanges(postId), ctx.precedent)
+    },
+
     onSettled: () => qc.invalidateQueries({ queryKey: cleEchanges(postId) }),
   })
 }

@@ -11,7 +11,17 @@
  * regardant les cas penibles qu'on voit si une interface tient.
  */
 
-import type { Echange } from '@/services/echangeService'
+import type { Echange, TypeReactionEchange } from '@/services/echangeService'
+
+/** Raccourci : compteurs de reactions, tout a zero sauf ce qu'on precise. */
+const reacs = (
+  p: Partial<Record<TypeReactionEchange, number>> = {},
+): Record<TypeReactionEchange, number> => ({
+  coeur: 0,
+  accord: 0,
+  confirme: 0,
+  ...p,
+})
 
 const ilYA = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString()
 
@@ -30,6 +40,9 @@ export const ECHANGES_MOCK: Echange[] = [
     creeLe: ilYA(38),
     auteurPseudo: 'Claire_obs',
     auteurAvatar: null,
+    parentId: null,
+    reactions: reacs({ confirme: 3, coeur: 1 }),
+    maReaction: 'confirme',
   },
   {
     id: 'e2',
@@ -41,6 +54,9 @@ export const ECHANGES_MOCK: Echange[] = [
     creeLe: ilYA(180),
     auteurPseudo: 'Marie_Nature',
     auteurAvatar: null,
+    parentId: null,
+    reactions: reacs({ coeur: 2 }),
+    maReaction: null,
   },
   {
     id: 'e3',
@@ -53,6 +69,9 @@ export const ECHANGES_MOCK: Echange[] = [
     creeLe: ilYA(300),
     auteurPseudo: 'LucDesMarais',
     auteurAvatar: null,
+    parentId: null,
+    reactions: reacs({ accord: 1 }),
+    maReaction: null,
   },
   {
     id: 'e4',
@@ -64,6 +83,9 @@ export const ECHANGES_MOCK: Echange[] = [
     creeLe: ilYA(20),
     auteurPseudo: 'Papidou',
     auteurAvatar: null,
+    parentId: 'e1',
+    reactions: reacs({ coeur: 1 }),
+    maReaction: null,
   },
   {
     id: 'e5',
@@ -75,6 +97,9 @@ export const ECHANGES_MOCK: Echange[] = [
     creeLe: ilYA(8),
     auteurPseudo: 'Tom',
     auteurAvatar: null,
+    parentId: null,
+    reactions: reacs(),
+    maReaction: null,
   },
   {
     id: 'e6',
@@ -87,5 +112,22 @@ export const ECHANGES_MOCK: Echange[] = [
     creeLe: ilYA(2),
     auteurPseudo: 'Jean_Philippe_Ornitho_Bretagne',
     auteurAvatar: null,
+    parentId: null,
+    reactions: reacs({ accord: 4, coeur: 2 }),
+    maReaction: null,
+  },
+  {
+    id: 'e7',
+    postId: 'demo',
+    auteurId: 'u-tom',
+    contenu: 'Je confirme aussi, le bihoreau a ce port trapu tres reconnaissable.',
+    intention: 'identification',
+    utile: false,
+    creeLe: ilYA(15),
+    auteurPseudo: 'Tom',
+    auteurAvatar: null,
+    parentId: 'e1',
+    reactions: reacs({ confirme: 1 }),
+    maReaction: null,
   },
 ]

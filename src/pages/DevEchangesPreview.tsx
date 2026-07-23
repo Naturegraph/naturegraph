@@ -3,7 +3,8 @@
  *
  * Montre le fil d'Echanges avec un jeu d'essai couvrant tous les cas, sans
  * ecrire une seule ligne en base : inventer des propos et les attribuer a de
- * vraies personnes, qui les verraient sur leur compte, n'est pas acceptable.
+ * vraies personnes, qui les verraient sur leur compte, n'est pas acceptable
+ * (regle formelle Nicolas 2026-07-22).
  *
  * Utilise les VRAIS composants, donc ce qui s'affiche ici est exactement ce que
  * verront les utilisateurs.
@@ -11,24 +12,57 @@
 
 import { useState } from 'react'
 import { MessageCircle } from 'lucide-react'
-import { EchangeItem } from '@/components/echanges/EchangeItem'
+import { EchangeFil } from '@/components/echanges/EchangeFil'
 import { EchangeFiltres } from '@/components/echanges/EchangeFiltres'
 import { EchangeComposer } from '@/components/echanges/EchangeComposer'
 import { ECHANGES_MOCK, AUTEUR_PUBLICATION_MOCK } from '@/data/mock/echangesMock'
-import type { Echange, IntentionEchange } from '@/services/echangeService'
+import type { Echange, IntentionEchange, TypeReactionEchange } from '@/services/echangeService'
+
+const MOI = 'moi'
 
 export default function DevEchangesPreview() {
   const [echanges, setEchanges] = useState<Echange[]>(ECHANGES_MOCK)
   const [filtre, setFiltre] = useState<IntentionEchange | null>(null)
-  // On se met dans la peau de l'auteur de la publication : c'est lui qui peut
-  // distinguer un echange utile, l'action la plus interessante a essayer.
-  const [jeSuisAuteur, setJeSuisAuteur] = useState(true)
 
-  const vus = filtre ? echanges.filter((e) => e.intention === filtre) : echanges
-  const ordonnes = [...vus.filter((e) => e.utile), ...vus.filter((e) => !e.utile)]
-  const idPremier = echanges.length
-    ? echanges.reduce((a, b) => (a.creeLe <= b.creeLe ? a : b)).id
+  const racines = echanges.filter((e) => !e.parentId)
+  const vues = filtre ? racines.filter((e) => e.intention === filtre) : racines
+  const idPremier = racines.length
+    ? racines.reduce((a, b) => (a.creeLe <= b.creeLe ? a : b)).id
     : null
+
+  function ajouter(contenu: string, intention: IntentionEchange, parentId: string | null) {
+    if (!contenu.trim()) return
+    setEchanges((liste) => [
+      ...liste,
+      {
+        id: `local-${Date.now()}`,
+        postId: 'demo',
+        auteurId: MOI,
+        contenu,
+        intention,
+        utile: false,
+        creeLe: new Date().toISOString(),
+        auteurPseudo: 'Toi',
+        auteurAvatar: null,
+        parentId,
+        reactions: { coeur: 0, accord: 0, confirme: 0 },
+        maReaction: null,
+      },
+    ])
+  }
+
+  function reagir(cible: Echange, type: TypeReactionEchange) {
+    setEchanges((liste) =>
+      liste.map((e) => {
+        if (e.id !== cible.id) return e
+        const compte = { ...e.reactions }
+        if (e.maReaction) compte[e.maReaction] = Math.max(0, compte[e.maReaction] - 1)
+        const retire = e.maReaction === type
+        if (!retire) compte[type] += 1
+        return { ...e, reactions: compte, maReaction: retire ? null : type }
+      }),
+    )
+  }
 
   return (
     <div className="min-h-screen bg-off-white px-4 py-8">
@@ -37,16 +71,6 @@ export default function DevEchangesPreview() {
         <p className="mt-1 text-sm text-muted-foreground">
           Page temporaire. Données fictives, aucune écriture en base. Composants réels.
         </p>
-
-        <label className="mt-4 flex items-center gap-2 text-sm text-foreground">
-          <input
-            type="checkbox"
-            checked={jeSuisAuteur}
-            onChange={(e) => setJeSuisAuteur(e.target.checked)}
-            className="size-4 accent-[var(--color-primary)]"
-          />
-          Je suis l’auteur de la publication (permet de distinguer un échange)
-        </label>
 
         <section className="mt-6">
           <div className="mb-3 flex items-center gap-2">
@@ -59,44 +83,25 @@ export default function DevEchangesPreview() {
             <EchangeComposer
               peutEcrire
               enCours={false}
-              onPublier={(contenu, intention) =>
-                setEchanges((liste) => [
-                  ...liste,
-                  {
-                    id: `local-${Date.now()}`,
-                    postId: 'demo',
-                    auteurId: 'moi',
-                    contenu,
-                    intention,
-                    utile: false,
-                    creeLe: new Date().toISOString(),
-                    auteurPseudo: 'Toi',
-                    auteurAvatar: null,
-                  },
-                ])
-              }
+              onPublier={(contenu, intention) => ajouter(contenu, intention, null)}
             />
           </div>
 
-          <EchangeFiltres echanges={echanges} actif={filtre} onChanger={setFiltre} />
+          <EchangeFiltres echanges={racines} actif={filtre} onChanger={setFiltre} />
 
-          <ul className="divide-y divide-border">
-            {ordonnes.map((e) => (
-              <EchangeItem
-                key={e.id}
-                echange={e}
-                estAuteurPublication={jeSuisAuteur}
-                peutSupprimer={e.auteurId === 'moi'}
-                estPremier={e.id === idPremier}
-                ecritParAuteurPublication={e.auteurId === AUTEUR_PUBLICATION_MOCK}
-                onSupprimer={() => setEchanges((l) => l.filter((x) => x.id !== e.id))}
-                onBasculerUtile={() =>
-                  setEchanges((l) =>
-                    l.map((x) =>
-                      x.id === e.id ? { ...x, utile: !x.utile } : { ...x, utile: false },
-                    ),
-                  )
-                }
+          <ul>
+            {vues.map((parent) => (
+              <EchangeFil
+                key={parent.id}
+                parent={parent}
+                reponses={echanges.filter((e) => e.parentId === parent.id)}
+                moiId={MOI}
+                peutEcrire
+                auteurPublicationId={AUTEUR_PUBLICATION_MOCK}
+                estPremier={parent.id === idPremier}
+                onRepondre={(contenu, intention, parentId) => ajouter(contenu, intention, parentId)}
+                onSupprimer={(id) => setEchanges((l) => l.filter((x) => x.id !== id))}
+                onReagir={reagir}
               />
             ))}
           </ul>

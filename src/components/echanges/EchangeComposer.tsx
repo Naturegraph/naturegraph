@@ -28,12 +28,26 @@ interface EchangeComposerProps {
   peutEcrire: boolean
   enCours: boolean
   onPublier: (contenu: string, intention: IntentionEchange) => void
+  /**
+   * Mode reponse : sans cadre, sans choix d'intention, champ plus court.
+   * Repondre est un geste rapide ; demander une intention a ce moment-la
+   * ajouterait une decision de plus pour une phrase de dix mots.
+   */
+  compact?: boolean
+  /** Remplace l'invite du champ, pour nommer la personne a qui l'on repond. */
+  invitePersonnalisee?: string
 }
 
 /** Seuil d'apparition du compteur : on ne stresse qu'a l'approche de la limite. */
 const SEUIL_COMPTEUR = LONGUEUR_MAX_ECHANGE - 150
 
-export function EchangeComposer({ peutEcrire, enCours, onPublier }: EchangeComposerProps) {
+export function EchangeComposer({
+  peutEcrire,
+  enCours,
+  onPublier,
+  compact = false,
+  invitePersonnalisee,
+}: EchangeComposerProps) {
   const navigate = useNavigate()
   const [intention, setIntention] = useState<IntentionEchange>('reaction')
   const [contenu, setContenu] = useState('')
@@ -56,9 +70,13 @@ export function EchangeComposer({ peutEcrire, enCours, onPublier }: EchangeCompo
   }
 
   return (
-    <form onSubmit={soumettre} className="rounded-2xl border border-border bg-cream-lighter p-4">
-      {/* Choix de l'intention */}
+    <form
+      onSubmit={soumettre}
+      className={compact ? '' : 'rounded-2xl border border-border bg-cream-lighter p-4'}
+    >
+      {/* Choix de l'intention : masque en mode reponse */}
       <div
+        hidden={compact}
         role="radiogroup"
         aria-label="Type d’échange"
         className="flex gap-2 overflow-x-auto pb-3 touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -93,8 +111,8 @@ export function EchangeComposer({ peutEcrire, enCours, onPublier }: EchangeCompo
         value={contenu}
         onChange={(e) => setContenu(e.target.value)}
         onFocus={auGeste}
-        placeholder={config.invite}
-        rows={3}
+        placeholder={invitePersonnalisee ?? config.invite}
+        rows={compact ? 2 : 3}
         // Ctrl/Cmd + Entree envoie, convention attendue par qui ecrit souvent.
         // Entree seul insere un retour a la ligne : sur un champ multiligne,
         // envoyer a la moindre pression couperait les messages en deux.

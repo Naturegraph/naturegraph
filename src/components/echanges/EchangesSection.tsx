@@ -6,14 +6,14 @@
  * commentaire est connote et souvent mal vecu. Le vocabulaire suit celui du
  * produit, qui dit deja Migrateurs et Rencontre Nature.
  *
- * Ordre de lecture : chronologique, comme une vraie conversation. Seule
- * exception, l'echange distingue "utile" remonte en tete, parce que c'est
- * l'information que quelqu'un qui arrive sur la publication cherche en premier
- * (souvent l'identification de l'espece).
+ * Ordre de lecture : chronologique, comme une vraie conversation. Les reponses
+ * sont regroupees sous le message auquel elles repondent, sur UN SEUL niveau
+ * (regle appliquee aussi en base par un trigger) : au-dela, un fil devient
+ * illisible sur mobile, chaque niveau divisant la largeur utile.
  *
- * Lecture ouverte a tous, y compris aux visiteurs sans compte : c'est la suite
- * logique de NG-054, qui a ouvert les publications. Ecrire demande un compte,
- * et l'invitation vient au premier geste, sans banniere.
+ * Lecture ouverte a tous, y compris aux visiteurs sans compte : suite logique
+ * de NG-054. Ecrire demande un compte, et l'invitation vient au premier geste,
+ * sans banniere.
  */
 
 import { useMemo, useState } from 'react'
@@ -22,19 +22,18 @@ import {
   useEchanges,
   usePublierEchange,
   useSupprimerEchange,
-  useBasculerEchangeUtile,
+  useBasculerReactionEchange,
 } from '@/hooks/useEchanges'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { LoadingState } from '@/components/ui'
 import { EchangeComposer } from './EchangeComposer'
-import { EchangeItem } from './EchangeItem'
+import { EchangeFil } from './EchangeFil'
 import { EchangeFiltres } from './EchangeFiltres'
-import type { IntentionEchange } from '@/services/echangeService'
+import type { Echange, IntentionEchange, TypeReactionEchange } from '@/services/echangeService'
 
 interface EchangesSectionProps {
   postId: string
-  /** Auteur de la publication : lui seul peut distinguer un echange utile. */
   auteurPublicationId: string
 }
 
@@ -49,31 +48,37 @@ export function EchangesSection({ postId, auteurPublicationId }: EchangesSection
     avatar: profile?.avatar_url ?? null,
   })
   const supprimer = useSupprimerEchange(postId)
-  const basculerUtile = useBasculerEchangeUtile(postId)
+  const reagir = useBasculerReactionEchange(postId)
 
-  const estAuteurPublication = !!profile && profile.id === auteurPublicationId
-
-  // Filtre par intention, utile seulement sur un fil dense (cf. EchangeFiltres).
   const [filtre, setFiltre] = useState<IntentionEchange | null>(null)
 
-  // L'echange distingue passe en tete, le reste garde l'ordre de la discussion.
-  const ordonnes = useMemo(() => {
-    const vus = filtre ? echanges.filter((e) => e.intention === filtre) : echanges
-    const utile = vus.filter((e) => e.utile)
-    const autres = vus.filter((e) => !e.utile)
-    return [...utile, ...autres]
+  /**
+   * Regroupe chaque message de premier niveau avec ses reponses.
+   *
+   * Le filtre ne s'applique QU'AUX messages de premier niveau : masquer une
+   * reponse parce que son intention differe de celle du parent couperait la
+   * conversation en deux et la rendrait incomprehensible.
+   */
+  const fils = useMemo(() => {
+    const racines = echanges.filter((e) => !e.parentId)
+    const vues = filtre ? racines.filter((e) => e.intention === filtre) : racines
+    return vues.map((parent) => ({
+      parent,
+      reponses: echanges.filter((e) => e.parentId === parent.id),
+    }))
   }, [echanges, filtre])
 
-  // "A ouvert la discussion" revient au plus ancien, quel que soit l'ordre
-  // d'affichage : c'est une question de chronologie, pas de position.
+  // "A ouvert la discussion" revient au plus ancien message de premier niveau.
   const idPremier = useMemo(() => {
-    if (echanges.length === 0) return null
-    return echanges.reduce((a, b) => (a.creeLe <= b.creeLe ? a : b)).id
+    const racines = echanges.filter((e) => !e.parentId)
+    if (racines.length === 0) return null
+    return racines.reduce((a, b) => (a.creeLe <= b.creeLe ? a : b)).id
   }, [echanges])
 
-  function onPublier(contenu: string, intention: IntentionEchange) {
+  function envoyer(contenu: string, intention: IntentionEchange, parentId?: string) {
+    if (!contenu.trim()) return
     publier.mutate(
-      { contenu, intention },
+      { contenu, intention, parentId: parentId ?? null },
       {
         onError: (e) =>
           toast.error(
@@ -83,6 +88,16 @@ export function EchangesSection({ postId, auteurPublicationId }: EchangesSection
       },
     )
   }
+
+  function onReagir(echange: Echange, type: TypeReactionEchange) {
+    if (!isAuthenticated) return
+    reagir.mutate(
+      { echangeId: echange.id, type, actuelle: echange.maReaction },
+      { onError: () => toast.error('Ta réaction n’a pas pu être enregistrée') },
+    )
+  }
+
+  const racinesCount = echanges.filter((e) => !e.parentId).length
 
   return (
     <section aria-labelledby="titre-echanges" className="mt-6">
@@ -100,16 +115,16 @@ export function EchangesSection({ postId, auteurPublicationId }: EchangesSection
         <EchangeComposer
           peutEcrire={isAuthenticated}
           enCours={publier.isPending}
-          onPublier={onPublier}
+          onPublier={(contenu, intention) => envoyer(contenu, intention)}
         />
       </div>
 
       {isLoading && <LoadingState variant="skeleton" rows={2} label="Chargement des échanges" />}
 
       {/*
-        Etat vide volontairement chaleureux et incitatif. "Aucun commentaire"
-        constate un manque ; ici on propose un geste, ce qui est exactement le
-        besoin d'une communaute qui demarre.
+        Etat vide chaleureux et incitatif : "Aucun commentaire" constate un
+        manque, ici on propose un geste, ce dont a besoin une communaute qui
+        demarre.
       */}
       {!isLoading && echanges.length === 0 && (
         <div className="rounded-2xl border border-dashed border-border px-4 py-8 text-center">
@@ -125,32 +140,32 @@ export function EchangesSection({ postId, auteurPublicationId }: EchangesSection
         </div>
       )}
 
-      {!isLoading && echanges.length > 0 && (
-        <EchangeFiltres echanges={echanges} actif={filtre} onChanger={setFiltre} />
+      {!isLoading && racinesCount > 0 && (
+        <EchangeFiltres
+          echanges={echanges.filter((e) => !e.parentId)}
+          actif={filtre}
+          onChanger={setFiltre}
+        />
       )}
 
-      {ordonnes.length > 0 && (
-        <ul className="divide-y divide-border">
-          {ordonnes.map((e) => (
-            <EchangeItem
-              key={e.id}
-              echange={e}
-              estAuteurPublication={estAuteurPublication}
-              // Son propre echange. La moderation supprime depuis le panel
-              // admin, pas depuis le fil public.
-              peutSupprimer={!!profile && profile.id === e.auteurId}
-              estPremier={e.id === idPremier}
-              ecritParAuteurPublication={e.auteurId === auteurPublicationId}
-              onSupprimer={() =>
-                supprimer.mutate(e.id, {
+      {fils.length > 0 && (
+        <ul>
+          {fils.map(({ parent, reponses }) => (
+            <EchangeFil
+              key={parent.id}
+              parent={parent}
+              reponses={reponses}
+              moiId={profile?.id ?? null}
+              peutEcrire={isAuthenticated}
+              auteurPublicationId={auteurPublicationId}
+              estPremier={parent.id === idPremier}
+              onRepondre={(contenu, intention, parentId) => envoyer(contenu, intention, parentId)}
+              onSupprimer={(id) =>
+                supprimer.mutate(id, {
                   onError: () => toast.error('Suppression impossible pour le moment'),
                 })
               }
-              onBasculerUtile={() =>
-                basculerUtile.mutate(e.id, {
-                  onError: () => toast.error('Action impossible pour le moment'),
-                })
-              }
+              onReagir={onReagir}
             />
           ))}
         </ul>

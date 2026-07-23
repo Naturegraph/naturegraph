@@ -28,6 +28,26 @@ export type IntentionEchange = 'reaction' | 'identification' | 'info_locale' | '
 
 export const LONGUEUR_MAX_ECHANGE = 1000
 
+/**
+ * Reactions possibles sur un echange.
+ *
+ * Jeu volontairement COURT, et different des 5 reactions des publications : sur
+ * un message, trois choix suffisent et evitent la barre d'emojis a rallonge.
+ * `confirme` a une vraie valeur naturaliste : confirmer une identification
+ * proposee par quelqu'un d'autre est un acte de la communaute, pas un like.
+ */
+export type TypeReactionEchange = 'coeur' | 'accord' | 'confirme'
+
+export const REACTIONS_ECHANGE: Array<{
+  cle: TypeReactionEchange
+  emoji: string
+  libelle: string
+}> = [
+  { cle: 'coeur', emoji: '❤️', libelle: 'Merci' },
+  { cle: 'accord', emoji: '👍', libelle: 'D’accord' },
+  { cle: 'confirme', emoji: '✅', libelle: 'Je confirme' },
+]
+
 export interface Echange {
   id: string
   postId: string
@@ -38,6 +58,12 @@ export interface Echange {
   creeLe: string
   auteurPseudo: string | null
   auteurAvatar: string | null
+  /** `null` = echange de premier niveau ; sinon, reponse a cet echange. */
+  parentId: string | null
+  /** Nombre de reactions par type, pour l'affichage des compteurs. */
+  reactions: Record<TypeReactionEchange, number>
+  /** Reaction posee par la personne connectee, `null` si aucune. */
+  maReaction: TypeReactionEchange | null
 }
 
 /** Ligne brute renvoyee par PostgREST, avec la jointure profil. */
@@ -49,10 +75,21 @@ interface LigneEchange {
   intention: string
   helpful: boolean
   created_at: string
+  parent_id: string | null
   auteur: { username: string | null; avatar_url: string | null } | null
+  reactions: Array<{ type: string; user_id: string }>
 }
 
-function versEchange(row: LigneEchange): Echange {
+function versEchange(row: LigneEchange, moi: string | null): Echange {
+  const compte: Record<TypeReactionEchange, number> = { coeur: 0, accord: 0, confirme: 0 }
+  let maReaction: TypeReactionEchange | null = null
+  for (const r of row.reactions ?? []) {
+    if (r.type in compte) {
+      compte[r.type as TypeReactionEchange] += 1
+      if (moi && r.user_id === moi) maReaction = r.type as TypeReactionEchange
+    }
+  }
+
   return {
     id: row.id,
     postId: row.post_id,
@@ -69,11 +106,14 @@ function versEchange(row: LigneEchange): Echange {
     creeLe: row.created_at,
     auteurPseudo: row.auteur?.username ?? null,
     auteurAvatar: row.auteur?.avatar_url ?? null,
+    parentId: row.parent_id,
+    reactions: compte,
+    maReaction,
   }
 }
 
 const SELECT_ECHANGE =
-  'id, post_id, user_id, content, intention, helpful, created_at, auteur:profiles!user_id(username, avatar_url)'
+  'id, post_id, user_id, content, intention, helpful, created_at, parent_id, auteur:profiles!user_id(username, avatar_url), reactions:comment_reactions(type, user_id)'
 
 // ─── Lecture ──────────────────────────────────────────────────────────────────
 
@@ -90,6 +130,12 @@ const SELECT_ECHANGE =
 export async function listerEchanges(postId: string): Promise<Echange[]> {
   if (!isSupabaseConfigured || !supabase) return []
 
+  // Identifiant du lecteur : sert uniquement a savoir quelle reaction il a
+  // deja posee. Un visiteur sans compte lit la conversation normalement.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   const { data, error } = await supabase
     .from('comments')
     .select(SELECT_ECHANGE)
@@ -98,7 +144,7 @@ export async function listerEchanges(postId: string): Promise<Echange[]> {
     .limit(200)
 
   if (error) throw new Error(error.message)
-  return ((data ?? []) as unknown as LigneEchange[]).map(versEchange)
+  return ((data ?? []) as unknown as LigneEchange[]).map((r) => versEchange(r, user?.id ?? null))
 }
 
 // ─── Ecriture ─────────────────────────────────────────────────────────────────
@@ -117,6 +163,8 @@ export async function publierEchange(params: {
   postId: string
   contenu: string
   intention: IntentionEchange
+  /** Renseigne pour une REPONSE. Un seul niveau, verifie par trigger. */
+  parentId?: string | null
 }): Promise<Echange> {
   if (!isSupabaseConfigured || !supabase) throw new Error('Supabase non configure')
 
@@ -138,12 +186,13 @@ export async function publierEchange(params: {
       user_id: user.id,
       content: contenu,
       intention: params.intention,
+      parent_id: params.parentId ?? null,
     })
     .select(SELECT_ECHANGE)
     .single()
 
   if (error) throw new Error(error.message)
-  return versEchange(data as unknown as LigneEchange)
+  return versEchange(data as unknown as LigneEchange, user.id)
 }
 
 /** Supprime un echange. La RLS n'autorise que son auteur ou la moderation. */
@@ -167,4 +216,38 @@ export async function basculerEchangeUtile(echangeId: string): Promise<boolean> 
   })
   if (error) throw new Error(error.message)
   return Boolean(data)
+}
+
+/**
+ * Pose, change ou retire sa reaction sur un echange.
+ *
+ * Une seule reaction par personne et par echange (cle primaire composee) :
+ * on change d'avis, on n'empile pas. Recliquer sur la meme la retire.
+ */
+export async function basculerReactionEchange(
+  echangeId: string,
+  type: TypeReactionEchange,
+  actuelle: TypeReactionEchange | null,
+): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase non configure')
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error('Il faut etre connecte pour reagir')
+
+  if (actuelle === type) {
+    const { error } = await supabase
+      .from('comment_reactions')
+      .delete()
+      .eq('comment_id', echangeId)
+      .eq('user_id', user.id)
+    if (error) throw new Error(error.message)
+    return
+  }
+
+  const { error } = await supabase
+    .from('comment_reactions')
+    .upsert({ comment_id: echangeId, user_id: user.id, type }, { onConflict: 'comment_id,user_id' })
+  if (error) throw new Error(error.message)
 }
