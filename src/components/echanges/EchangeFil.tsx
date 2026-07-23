@@ -2,18 +2,32 @@
  * EchangeFil : un echange et ses reponses
  * =============================================================================
  *
- * Regroupe un message de premier niveau avec les reponses qui lui sont
- * rattachees, et gere l'ouverture du champ de reponse juste en dessous.
+ * Calque sur les maquettes (Figma 6819-12903) :
+ *
+ *   [message parent]
+ *   1 réponse ⌃          <- repliable, en couleur d'action
+ *   │  [reponse indentee, filet vertical a gauche]
+ *
+ * Le compteur "N réponse(s)" est REPLIABLE et ouvert par defaut. Replier plutot
+ * que tronquer : on ne cache jamais une partie des reponses, on cache le bloc
+ * entier, et le compteur dit toujours combien il y en a.
  *
  * Le champ de reponse s'ouvre EN LIGNE, sous le message concerne, plutot que
  * dans une fenetre ou en bas de page : on garde sous les yeux ce a quoi on
  * repond, ce qui evite les reponses a cote du sujet.
+ *
+ * Le decalage des reponses vaut 44px sur desktop (avatar 32 + gouttiere 12,
+ * pour aligner sur la bulle du parent) mais tombe a 16px sous 640px : sur un
+ * ecran etroit, 44px de marge gauche mangent une part visible de la largeur de
+ * lecture, et le filet vertical suffit deja a marquer la hierarchie.
  */
 
 import { useState } from 'react'
+import { ChevronUp, ChevronDown } from 'lucide-react'
 import { EchangeItem } from './EchangeItem'
 import { EchangeComposer } from './EchangeComposer'
-import type { Echange, IntentionEchange, TypeReactionEchange } from '@/services/echangeService'
+import { SuggestionEspecePanel } from './SuggestionEspecePanel'
+import type { Echange, IntentionEchange, SuggestionEspece } from '@/services/echangeService'
 
 interface EchangeFilProps {
   parent: Echange
@@ -22,10 +36,14 @@ interface EchangeFilProps {
   moiId: string | null
   peutEcrire: boolean
   auteurPublicationId: string
-  estPremier: boolean
-  onRepondre: (contenu: string, intention: IntentionEchange, parentId: string) => void
+  onRepondre: (
+    contenu: string,
+    intention: IntentionEchange,
+    parentId: string,
+    suggestion?: SuggestionEspece | null,
+  ) => void
   onSupprimer: (echangeId: string) => void
-  onReagir: (echange: Echange, type: TypeReactionEchange) => void
+  onReagir: (echange: Echange) => void
 }
 
 export function EchangeFil({
@@ -34,56 +52,96 @@ export function EchangeFil({
   moiId,
   peutEcrire,
   auteurPublicationId,
-  estPremier,
   onRepondre,
   onSupprimer,
   onReagir,
 }: EchangeFilProps) {
-  const [repondEnCours, setRepondEnCours] = useState(false)
+  // `null` = champ ferme. Sinon, l'intention du geste en cours.
+  const [redaction, setRedaction] = useState<'reaction' | 'identification' | null>(null)
+  const [replie, setReplie] = useState(false)
+
+  const pseudoParent = parent.auteurPseudo ?? 'ce message'
 
   return (
-    <li className="border-b border-border last:border-b-0">
+    <li>
       <ul>
         <EchangeItem
           echange={parent}
           peutSupprimer={!!moiId && moiId === parent.auteurId}
-          estPremier={estPremier}
           ecritParAuteurPublication={parent.auteurId === auteurPublicationId}
-          onRepondre={() =>
-            peutEcrire ? setRepondEnCours((v) => !v) : onRepondre('', 'reaction', parent.id)
-          }
+          onRepondre={(intention) => setRedaction((v) => (v === intention ? null : intention))}
           onSupprimer={() => onSupprimer(parent.id)}
-          onReagir={(type) => onReagir(parent, type)}
+          onReagir={() => onReagir(parent)}
         />
-
-        {reponses.map((r) => (
-          <EchangeItem
-            key={r.id}
-            echange={r}
-            peutSupprimer={!!moiId && moiId === r.auteurId}
-            estPremier={false}
-            ecritParAuteurPublication={r.auteurId === auteurPublicationId}
-            estUneReponse
-            // Pas de bouton "Répondre" sur une reponse : un seul niveau, la
-            // regle est aussi appliquee en base par un trigger.
-            onSupprimer={() => onSupprimer(r.id)}
-            onReagir={(type) => onReagir(r, type)}
-          />
-        ))}
       </ul>
 
-      {repondEnCours && (
-        <div className="ml-6 mb-3 border-l-2 border-l-border pl-3">
+      {/* Repondre : champ simple. Proposer une espece : panneau de recherche.
+          Les deux publient une REPONSE au meme message, seule la facon de la
+          composer change. */}
+      {redaction === 'reaction' && (
+        <div className="mt-2 pl-4 sm:pl-11">
           <EchangeComposer
             peutEcrire={peutEcrire}
             enCours={false}
             compact
-            invitePersonnalisee={`Répondre à ${parent.auteurPseudo ?? 'ce message'}…`}
-            onPublier={(contenu, intention) => {
-              onRepondre(contenu, intention, parent.id)
-              setRepondEnCours(false)
+            invite={`Répondre à ${pseudoParent}…`}
+            onPublier={(contenu) => {
+              onRepondre(contenu, 'reaction', parent.id, null)
+              setRedaction(null)
             }}
           />
+        </div>
+      )}
+
+      {redaction === 'identification' && (
+        <div className="mt-2 pl-4 sm:pl-11">
+          <SuggestionEspecePanel
+            onAnnuler={() => setRedaction(null)}
+            onSuggerer={(suggestion, commentaire) => {
+              onRepondre(commentaire, 'identification', parent.id, suggestion)
+              setRedaction(null)
+            }}
+          />
+        </div>
+      )}
+
+      {reponses.length > 0 && (
+        <div className="mt-2 pl-4 sm:pl-11">
+          <button
+            type="button"
+            onClick={() => setReplie((v) => !v)}
+            aria-expanded={!replie}
+            // h-6 : cible tactile de 24px minimum (WCAG 2.2), le texte seul
+            // n'en ferait que 16.
+            className="inline-flex h-6 items-center gap-1.5 rounded text-xs font-medium text-primary transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            {reponses.length} réponse{reponses.length > 1 ? 's' : ''}
+            {replie ? (
+              <ChevronDown className="size-4" aria-hidden="true" />
+            ) : (
+              <ChevronUp className="size-4" aria-hidden="true" />
+            )}
+          </button>
+
+          {!replie && (
+            // Filet vertical continu a gauche : le lien avec le message parent
+            // se lit d'un coup d'oeil, sans repeter "en reponse a".
+            <ul className="mt-2 flex flex-col gap-3 border-l border-border pl-3 sm:pl-5">
+              {reponses.map((r) => (
+                <EchangeItem
+                  key={r.id}
+                  echange={r}
+                  peutSupprimer={!!moiId && moiId === r.auteurId}
+                  ecritParAuteurPublication={r.auteurId === auteurPublicationId}
+                  estUneReponse
+                  // Pas de "Répondre" sur une reponse : un seul niveau, la regle
+                  // est aussi appliquee en base par un trigger.
+                  onSupprimer={() => onSupprimer(r.id)}
+                  onReagir={() => onReagir(r)}
+                />
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </li>

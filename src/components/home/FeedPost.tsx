@@ -386,11 +386,22 @@ export function FeedPost({
     setShowReactionPicker(false)
   }
 
+  // Le fil d'echanges ne s'ouvre EN DESSOUS que sur la page detail, la ou un
+  // parent fournit `onBasculerEchanges`. Dans le feed, le bouton navigue.
+  const filOuvertDessous = Boolean(onBasculerEchanges) && echangesOuverts
+
   return (
     // Largeur Figma : colonne post = 656px + p-6 (24px ×2) = 704px max sur desktop.
     // Centré (mx-auto) pour s'aligner dans la zone feed quel que soit son parent.
     // Sur mobile : pleine largeur (rounded-none, le cap ne joue pas).
-    <article className="bg-background relative md:rounded-card rounded-none md:max-w-[704px] md:mx-auto w-full">
+    <article
+      className={[
+        'bg-background relative rounded-none md:max-w-[704px] md:mx-auto w-full',
+        // Fil d'echanges ouvert juste en dessous : on coupe l'arrondi bas pour
+        // que la carte et le fil se lisent d'un seul tenant, comme la maquette.
+        filOuvertDessous ? 'md:rounded-t-card' : 'md:rounded-card',
+      ].join(' ')}
+    >
       {/* Bordure de la carte : quand hideEndBorder=true on retire la
           bordure inférieure mobile (border-b-4) qui flotte dans le vide
           sur PostDetail ou en dernier item de feed. La border-[0.5px]
@@ -398,7 +409,8 @@ export function FeedPost({
       <div
         aria-hidden="true"
         className={[
-          'absolute md:border-border md:border-[0.5px] border-border inset-0 pointer-events-none md:rounded-card',
+          'absolute md:border-border md:border-[0.5px] border-border inset-0 pointer-events-none',
+          filOuvertDessous ? 'md:rounded-t-card md:border-b-0' : 'md:rounded-card',
           hideEndBorder ? '' : 'border-b-4',
         ].join(' ')}
       />
@@ -1035,9 +1047,14 @@ export function FeedPost({
               }}
               aria-expanded={onBasculerEchanges ? echangesOuverts : undefined}
               className={[
-                'flex items-center gap-2 h-8 px-2 rounded-full transition-colors',
+                'flex items-center gap-2 h-8 px-3 rounded-full transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
-                echangesOuverts ? 'text-primary' : 'text-foreground hover:bg-muted/50',
+                // Etat actif des maquettes (Figma 6819-13138) : pastille
+                // lavande, texte inchange. Colorer le texte ne suffisait pas,
+                // rien ne montrait que le fil etait ouvert JUSTE en dessous.
+                echangesOuverts
+                  ? 'bg-primary-light text-foreground'
+                  : 'text-foreground hover:bg-muted/50',
               ].join(' ')}
             >
               <MessageCircle className="size-4" aria-hidden="true" />

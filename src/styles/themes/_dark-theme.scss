@@ -63,6 +63,10 @@
   --color-surface-hover: #{$greyscale-700};
   --color-surface-cream: #{$greyscale-800}; // #20203D : remplace crème clair en dark
   --color-surface-cream-light: #{$greyscale-700}; // #13131A : variante plus sombre
+  // Bulles d'echange : en dark on ECLAIRCIT au lieu d'assombrir. Une bulle plus
+  // sombre que le fond se lirait comme un trou, alors que la maquette la veut
+  // en relief par rapport a la publication.
+  --color-surface-bubble: #{$greyscale-600}; // #565666
   --color-overlay: rgba(0, 0, 0, 0.7);
 
   // ── Text / Muted ──

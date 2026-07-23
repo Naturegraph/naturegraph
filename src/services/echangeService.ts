@@ -11,7 +11,7 @@
  * Securite (regle "securite des le depart") :
  *   - la RLS filtre deja la lecture (echanges visibles seulement sur une
  *     publication accessible, comptes internes exclus) ;
- *   - le serveur refuse un contenu vide ou de plus de 1000 caracteres via un
+ *   - le serveur refuse un contenu vide ou de plus de 500 caracteres via un
  *     trigger : les controles ci-dessous sont un confort d'interface, jamais
  *     la seule barriere ;
  *   - la distinction "utile" passe par une RPC, pas par un UPDATE direct : une
@@ -26,7 +26,18 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 /** A quoi sert l'echange. Guide la personne qui ne sait pas quoi ecrire. */
 export type IntentionEchange = 'reaction' | 'identification' | 'info_locale' | 'encouragement'
 
-export const LONGUEUR_MAX_ECHANGE = 1000
+/**
+ * Longueur maximale d'un echange (decision Nicolas 2026-07-22).
+ *
+ * 500 et non 1000 : la limite haute autorisait des pavés qui deforment le fil,
+ * alors que 500 laissent la place a une identification argumentee tout en
+ * gardant des messages lisibles d'un coup d'oeil sur mobile.
+ *
+ * Valeur DUPLIQUEE volontairement cote base (trigger `validate_comment_content`)
+ * : le controle client informe, le controle serveur protege. Les deux doivent
+ * etre modifies ensemble.
+ */
+export const LONGUEUR_MAX_ECHANGE = 500
 
 /**
  * Reactions possibles sur un echange.
@@ -64,6 +75,41 @@ export interface Echange {
   reactions: Record<TypeReactionEchange, number>
   /** Reaction posee par la personne connectee, `null` si aucune. */
   maReaction: TypeReactionEchange | null
+  /** Suggestion d'espece attachee au message, `null` si c'est un simple texte. */
+  suggestion: SuggestionEspece | null
+}
+
+/**
+ * Niveaux de confiance d'une suggestion d'identification.
+ *
+ * Quatre paliers et pas davantage : au-dela, personne ne sait plus choisir, et
+ * la nuance devient du bruit. L'ordre va du plus prudent au plus affirme, ce
+ * qui est aussi l'ordre dans lequel on ose s'exprimer quand on debute.
+ *
+ * L'entier est ce qui part en base ; il permet de trier et de comparer deux
+ * suggestions sans dependre du libelle affiche.
+ */
+export const NIVEAUX_CONFIANCE = [
+  { valeur: 1, libelle: 'Pas sûr' },
+  { valeur: 2, libelle: 'Assez sûr' },
+  { valeur: 3, libelle: 'Très sûr' },
+  { valeur: 4, libelle: 'Certain' },
+] as const
+
+export type NiveauConfiance = (typeof NIVEAUX_CONFIANCE)[number]['valeur']
+
+export function libelleConfiance(valeur: number): string {
+  return NIVEAUX_CONFIANCE.find((n) => n.valeur === valeur)?.libelle ?? 'Pas sûr'
+}
+
+export interface SuggestionEspece {
+  /** Nom affiche, tel que choisi au moment de la suggestion. */
+  label: string
+  /** Nom scientifique, affiche en second et en italique. */
+  scientifique: string | null
+  /** Lien vers le referentiel, `null` si le taxon a disparu depuis. */
+  noeudId: string | null
+  confiance: NiveauConfiance
 }
 
 /** Ligne brute renvoyee par PostgREST, avec la jointure profil. */
@@ -78,6 +124,10 @@ interface LigneEchange {
   parent_id: string | null
   auteur: { username: string | null; avatar_url: string | null } | null
   reactions: Array<{ type: string; user_id: string }>
+  species_label: string | null
+  species_scientific: string | null
+  taxonomy_node_id: string | null
+  confidence: number | null
 }
 
 function versEchange(row: LigneEchange, moi: string | null): Echange {
@@ -109,11 +159,25 @@ function versEchange(row: LigneEchange, moi: string | null): Echange {
     parentId: row.parent_id,
     reactions: compte,
     maReaction,
+    // La contrainte `comments_suggestion_complete` garantit que les deux champs
+    // sont poses ensemble ; on reverifie ici pour ne pas dependre d'une regle
+    // ecrite ailleurs, et pour rester robuste a une ligne ancienne.
+    suggestion:
+      row.species_label && row.confidence
+        ? {
+            label: row.species_label,
+            scientifique: row.species_scientific,
+            noeudId: row.taxonomy_node_id,
+            confiance: Math.min(4, Math.max(1, row.confidence)) as NiveauConfiance,
+          }
+        : null,
   }
 }
 
 const SELECT_ECHANGE =
-  'id, post_id, user_id, content, intention, helpful, created_at, parent_id, auteur:profiles!user_id(username, avatar_url), reactions:comment_reactions(type, user_id)'
+  'id, post_id, user_id, content, intention, helpful, created_at, parent_id, ' +
+  'species_label, species_scientific, taxonomy_node_id, confidence, ' +
+  'auteur:profiles!user_id(username, avatar_url), reactions:comment_reactions(type, user_id)'
 
 // ─── Lecture ──────────────────────────────────────────────────────────────────
 
@@ -150,6 +214,20 @@ export async function listerEchanges(postId: string): Promise<Echange[]> {
 // ─── Ecriture ─────────────────────────────────────────────────────────────────
 
 /**
+ * Phrase posee a la place du texte quand on suggere une espece sans rien
+ * ecrire.
+ *
+ * Publier un message vide surmonte d'une pastille laisserait un blanc bizarre
+ * dans le fil ; obliger a ecrire ajouterait un frein juste avant le geste
+ * utile. La phrase generique tranche : le message se lit tout seul, et qui veut
+ * argumenter le remplace par ses propres mots.
+ */
+function phraseGenerique(suggestion: SuggestionEspece | null): string {
+  if (!suggestion) return ''
+  return `Je pense qu’il s’agit plutôt de : ${suggestion.label}`
+}
+
+/**
  * Ajoute un echange. Le serveur revalide le contenu, quoi qu'envoie le client.
  *
  * L'auteur est lu depuis la SESSION au moment de l'envoi, jamais recu en
@@ -165,10 +243,18 @@ export async function publierEchange(params: {
   intention: IntentionEchange
   /** Renseigne pour une REPONSE. Un seul niveau, verifie par trigger. */
   parentId?: string | null
+  /** Suggestion d'espece attachee, pour un echange d'identification. */
+  suggestion?: SuggestionEspece | null
 }): Promise<Echange> {
   if (!isSupabaseConfigured || !supabase) throw new Error('Supabase non configure')
 
-  const contenu = params.contenu.trim()
+  const suggestion = params.suggestion ?? null
+
+  // Une suggestion sans un mot de la personne reste comprehensible grace a la
+  // phrase generique : mieux vaut un message complet qu'un champ obligatoire de
+  // plus a remplir avant de pouvoir aider.
+  const contenu = (params.contenu.trim() || phraseGenerique(suggestion)).trim()
+
   if (contenu.length === 0) throw new Error('Ton echange est vide')
   if (contenu.length > LONGUEUR_MAX_ECHANGE) {
     throw new Error(`Ton echange depasse ${LONGUEUR_MAX_ECHANGE} caracteres`)
@@ -187,6 +273,10 @@ export async function publierEchange(params: {
       content: contenu,
       intention: params.intention,
       parent_id: params.parentId ?? null,
+      species_label: suggestion?.label ?? null,
+      species_scientific: suggestion?.scientifique ?? null,
+      taxonomy_node_id: suggestion?.noeudId ?? null,
+      confidence: suggestion?.confiance ?? null,
     })
     .select(SELECT_ECHANGE)
     .single()

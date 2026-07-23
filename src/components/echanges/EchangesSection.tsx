@@ -6,7 +6,15 @@
  * commentaire est connote et souvent mal vecu. Le vocabulaire suit celui du
  * produit, qui dit deja Migrateurs et Rencontre Nature.
  *
- * Ordre de lecture : chronologique, comme une vraie conversation. Les reponses
+ * Rendu calque sur les maquettes (Figma 6819-12903) : le fil est DANS la carte
+ * de la publication, sans titre repete, groupe par jour ("Hier", "Il y a 3
+ * jours"), et le champ de saisie ferme la carte en bas.
+ *
+ * Les separateurs de jour remplacent le tri par pertinence : sur une
+ * conversation naturaliste, savoir QUAND une identification a ete proposee
+ * compte plus que savoir laquelle a recu le plus de reactions.
+ *
+ * Ordre de lecture chronologique, comme une vraie conversation. Les reponses
  * sont regroupees sous le message auquel elles repondent, sur UN SEUL niveau
  * (regle appliquee aussi en base par un trigger) : au-dela, un fil devient
  * illisible sur mobile, chaque niveau divisant la largeur utile.
@@ -16,8 +24,7 @@
  * sans banniere.
  */
 
-import { useMemo, useState } from 'react'
-import { MessageCircle } from 'lucide-react'
+import { useMemo } from 'react'
 import {
   useEchanges,
   usePublierEchange,
@@ -29,8 +36,8 @@ import { useToast } from '@/contexts/ToastContext'
 import { LoadingState } from '@/components/ui'
 import { EchangeComposer } from './EchangeComposer'
 import { EchangeFil } from './EchangeFil'
-import { EchangeFiltres } from './EchangeFiltres'
-import type { Echange, IntentionEchange, TypeReactionEchange } from '@/services/echangeService'
+import { construireFils } from './grouperParJour'
+import type { Echange, IntentionEchange, SuggestionEspece } from '@/services/echangeService'
 
 interface EchangesSectionProps {
   postId: string
@@ -50,35 +57,21 @@ export function EchangesSection({ postId, auteurPublicationId }: EchangesSection
   const supprimer = useSupprimerEchange(postId)
   const reagir = useBasculerReactionEchange(postId)
 
-  const [filtre, setFiltre] = useState<IntentionEchange | null>(null)
+  // Groupes de jours, du plus recent au plus ancien. Voir `construireFils`
+  // pour le detail des deux sens de lecture.
+  const groupes = useMemo(() => construireFils(echanges), [echanges])
 
-  /**
-   * Regroupe chaque message de premier niveau avec ses reponses.
-   *
-   * Le filtre ne s'applique QU'AUX messages de premier niveau : masquer une
-   * reponse parce que son intention differe de celle du parent couperait la
-   * conversation en deux et la rendrait incomprehensible.
-   */
-  const fils = useMemo(() => {
-    const racines = echanges.filter((e) => !e.parentId)
-    const vues = filtre ? racines.filter((e) => e.intention === filtre) : racines
-    return vues.map((parent) => ({
-      parent,
-      reponses: echanges.filter((e) => e.parentId === parent.id),
-    }))
-  }, [echanges, filtre])
-
-  // "A ouvert la discussion" revient au plus ancien message de premier niveau.
-  const idPremier = useMemo(() => {
-    const racines = echanges.filter((e) => !e.parentId)
-    if (racines.length === 0) return null
-    return racines.reduce((a, b) => (a.creeLe <= b.creeLe ? a : b)).id
-  }, [echanges])
-
-  function envoyer(contenu: string, intention: IntentionEchange, parentId?: string) {
-    if (!contenu.trim()) return
+  function envoyer(
+    contenu: string,
+    intention: IntentionEchange,
+    parentId?: string | null,
+    suggestion?: SuggestionEspece | null,
+  ) {
+    // Un message vide est refuse, SAUF s'il porte une suggestion d'espece : le
+    // service pose alors une phrase generique a la place (`phraseGenerique`).
+    if (!contenu.trim() && !suggestion) return
     publier.mutate(
-      { contenu, intention, parentId: parentId ?? null },
+      { contenu, intention, parentId: parentId ?? null, suggestion: suggestion ?? null },
       {
         onError: (e) =>
           toast.error(
@@ -89,36 +82,16 @@ export function EchangesSection({ postId, auteurPublicationId }: EchangesSection
     )
   }
 
-  function onReagir(echange: Echange, type: TypeReactionEchange) {
+  function onReagir(echange: Echange) {
     if (!isAuthenticated) return
     reagir.mutate(
-      { echangeId: echange.id, type, actuelle: echange.maReaction },
+      { echangeId: echange.id, type: 'coeur', actuelle: echange.maReaction },
       { onError: () => toast.error('Ta réaction n’a pas pu être enregistrée') },
     )
   }
 
-  const racinesCount = echanges.filter((e) => !e.parentId).length
-
   return (
-    <section aria-labelledby="titre-echanges" className="mt-6">
-      <div className="mb-3 flex items-center gap-2">
-        <MessageCircle className="size-5 text-primary" aria-hidden="true" />
-        <h2 id="titre-echanges" className="font-title text-lg font-bold text-foreground">
-          Échanges
-        </h2>
-        {echanges.length > 0 && (
-          <span className="text-sm text-muted-foreground tabular-nums">{echanges.length}</span>
-        )}
-      </div>
-
-      <div className="mb-4">
-        <EchangeComposer
-          peutEcrire={isAuthenticated}
-          enCours={publier.isPending}
-          onPublier={(contenu, intention) => envoyer(contenu, intention)}
-        />
-      </div>
-
+    <section aria-label="Échanges" className="px-4 pb-4 md:px-6 md:pb-6">
       {isLoading && <LoadingState variant="skeleton" rows={2} label="Chargement des échanges" />}
 
       {/*
@@ -127,7 +100,7 @@ export function EchangesSection({ postId, auteurPublicationId }: EchangesSection
         demarre.
       */}
       {!isLoading && echanges.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-border px-4 py-8 text-center">
+        <div className="rounded-sm border border-dashed border-border px-4 py-8 text-center">
           <p className="text-2xl" aria-hidden="true">
             🌱
           </p>
@@ -140,36 +113,42 @@ export function EchangesSection({ postId, auteurPublicationId }: EchangesSection
         </div>
       )}
 
-      {!isLoading && racinesCount > 0 && (
-        <EchangeFiltres
-          echanges={echanges.filter((e) => !e.parentId)}
-          actif={filtre}
-          onChanger={setFiltre}
-        />
-      )}
+      {groupes.map((groupe) => (
+        <div key={groupe.libelle} className="mb-6 last:mb-0">
+          <p className="mb-3 text-xs text-muted-foreground">{groupe.libelle}</p>
+          <ul className="flex flex-col gap-4">
+            {groupe.fils.map(({ parent, reponses }) => (
+              <EchangeFil
+                key={parent.id}
+                parent={parent}
+                reponses={reponses}
+                moiId={profile?.id ?? null}
+                peutEcrire={isAuthenticated}
+                auteurPublicationId={auteurPublicationId}
+                onRepondre={(contenu, intention, parentId, suggestion) =>
+                  envoyer(contenu, intention, parentId, suggestion)
+                }
+                onSupprimer={(id) =>
+                  supprimer.mutate(id, {
+                    onError: () => toast.error('Suppression impossible pour le moment'),
+                  })
+                }
+                onReagir={onReagir}
+              />
+            ))}
+          </ul>
+        </div>
+      ))}
 
-      {fils.length > 0 && (
-        <ul>
-          {fils.map(({ parent, reponses }) => (
-            <EchangeFil
-              key={parent.id}
-              parent={parent}
-              reponses={reponses}
-              moiId={profile?.id ?? null}
-              peutEcrire={isAuthenticated}
-              auteurPublicationId={auteurPublicationId}
-              estPremier={parent.id === idPremier}
-              onRepondre={(contenu, intention, parentId) => envoyer(contenu, intention, parentId)}
-              onSupprimer={(id) =>
-                supprimer.mutate(id, {
-                  onError: () => toast.error('Suppression impossible pour le moment'),
-                })
-              }
-              onReagir={onReagir}
-            />
-          ))}
-        </ul>
-      )}
+      <div className="mt-6">
+        <EchangeComposer
+          peutEcrire={isAuthenticated}
+          enCours={publier.isPending}
+          onPublier={(contenu, intention, suggestion) =>
+            envoyer(contenu, intention, null, suggestion)
+          }
+        />
+      </div>
     </section>
   )
 }

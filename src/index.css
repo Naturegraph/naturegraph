@@ -70,6 +70,9 @@
   /* Bordure */
   --color-border: var(--color-border);
 
+  /* Bulles d'echange (NG-049) : defini par theme dans _light/_dark-theme.scss */
+  --color-surface-bubble: var(--color-surface-bubble);
+
   /* Rayons de bordure : alignés sur tokens Figma (Radius/XXS..XL + Full) */
   --radius-xs: 4px; /* Figma Radius/XS */
   --radius-sm: 8px; /* Figma Radius/S */

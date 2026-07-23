@@ -300,13 +300,20 @@ export default function PostDetail() {
                   />
                 </Suspense>
               )}
-            </div>
 
-            {/* Echanges (NG-049) : sous la publication, avant les suggestions.
-                Lecture ouverte aux visiteurs, ecriture reservee aux comptes. */}
-            {!isLoading && post && echangesOuverts && (
-              <EchangesSection postId={post.id} auteurPublicationId={post.authorId} />
-            )}
+              {/* Echanges (NG-049) : DANS la carte de la publication, comme les
+                  maquettes, et non dans un bloc separe. Le fil prolonge la
+                  publication au lieu de commencer une nouvelle section, ce qui
+                  evite au lecteur de se demander a quoi il repond.
+                  Meme largeur et meme fond que FeedPost pour que la carte se
+                  lise d'un seul tenant. Lecture ouverte aux visiteurs, ecriture
+                  reservee aux comptes. */}
+              {!isLoading && post && echangesOuverts && (
+                <div className="bg-background w-full md:mx-auto md:max-w-[704px] md:rounded-b-card md:border-border md:border-[0.5px] md:border-t-0">
+                  <EchangesSection postId={post.id} auteurPublicationId={post.authorId} />
+                </div>
+              )}
+            </div>
 
             {/* NG-028 : section "Observations susceptibles de t'interesser".
                 Jusqu'a 4 observations similaires (meme espece > groupe >

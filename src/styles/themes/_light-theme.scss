@@ -69,6 +69,10 @@
   --color-surface-hover: #{$brand-bg-100};
   --color-surface-cream: #{$surface-cream}; // #F4F1E8
   --color-surface-cream-light: #{$surface-cream-light}; // #F9F7F0
+  // Fond des bulles d'echange (maquettes NG-049) : un gris neutre tres clair,
+  // volontairement different du creme des cartes pour que la bulle se detache
+  // du fond de la publication sans introduire une bordure de plus.
+  --color-surface-bubble: #{$greyscale-50}; // #F0F0F5
   --color-overlay: rgba(0, 0, 0, 0.5);
 
   // ── Text / Muted ──

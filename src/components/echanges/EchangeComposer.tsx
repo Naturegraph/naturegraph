@@ -2,148 +2,205 @@
  * EchangeComposer : champ de saisie d'un Echange
  * =============================================================================
  *
- * Deux partis pris.
+ * Calque sur les maquettes (Figma 6819-12903) : un champ arrondi, invite
+ * "Partage ce que cette rencontre t'inspire…", un bouton "Proposer une espèce"
+ * DANS le champ a droite, puis le bouton "Envoyer" en couleur d'action.
  *
- * 1. On demande l'INTENTION avant le texte. Le champ vide est le premier frein
- *    sur une jeune communaute ; choisir "Aider a identifier" ou "Info du coin"
- *    suggere quoi ecrire, et l'invite du champ change en consequence.
+ * Le champ est un `textarea` d'une ligne qui grandit avec le texte, et non un
+ * `input` : un message d'identification fait souvent trois lignes, et un champ
+ * qui defile horizontalement empeche de se relire.
  *
- * 2. Le compteur de caracteres n'apparait qu'a l'approche de la limite. Afficher
- *    "0 / 1000" des le depart donne l'impression d'un devoir a rendre, ce qui
- *    est exactement l'inverse de l'effet recherche.
+ * L'INTENTION n'est plus choisie dans une barre de pastilles (absente des
+ * maquettes) : elle decoule du geste. Ecrire librement vaut `reaction`, passer
+ * par "Proposer une espèce" vaut `identification`. La colonne en base ne bouge
+ * pas, seule la facon de la renseigner change.
+ *
+ * Ctrl/Cmd + Entree envoie. Entree seul insere un retour a la ligne : sur un
+ * champ multiligne, envoyer a la moindre pression couperait les messages en
+ * deux.
+ *
+ * COMPTEUR DE CARACTERES : meme motif que le formulaire de contribution
+ * (compteur "n/max" aligne a droite, passage en rouge au depassement), pour que
+ * l'etat se lise pareil partout dans l'app. Il n'apparait qu'a l'approche de la
+ * limite : afficher "0 / 500" des le depart donne l'impression d'un devoir a
+ * rendre, ce qui est exactement l'inverse de l'effet recherche.
+ *
+ * La frappe n'est PAS bloquee a 500 (`maxLength` volontairement absent). Un
+ * champ qui cesse silencieusement d'accepter les touches laisse croire au
+ * clavier casse ; ici on laisse depasser, on le dit, et on desactive l'envoi.
  *
  * Le visiteur non connecte voit le champ mais est redirige vers l'inscription
  * au premier geste, comme partout ailleurs dans l'app (regle Nicolas : pas de
  * banniere, l'invitation vient a l'action).
  */
 
-import { useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Send } from 'lucide-react'
-import { INTENTIONS, trouverIntention } from './intentions'
-import type { IntentionEchange } from '@/services/echangeService'
+import { Send, MessageSquarePlus } from 'lucide-react'
+import { SuggestionEspecePanel } from './SuggestionEspecePanel'
+import type { IntentionEchange, SuggestionEspece } from '@/services/echangeService'
 import { LONGUEUR_MAX_ECHANGE } from '@/services/echangeService'
 
 interface EchangeComposerProps {
   peutEcrire: boolean
   enCours: boolean
-  onPublier: (contenu: string, intention: IntentionEchange) => void
-  /**
-   * Mode reponse : sans cadre, sans choix d'intention, champ plus court.
-   * Repondre est un geste rapide ; demander une intention a ce moment-la
-   * ajouterait une decision de plus pour une phrase de dix mots.
-   */
+  onPublier: (
+    contenu: string,
+    intention: IntentionEchange,
+    suggestion?: SuggestionEspece | null,
+  ) => void
+  /** Mode reponse : plus discret, sans bouton "Proposer une espèce". */
   compact?: boolean
-  /** Remplace l'invite du champ, pour nommer la personne a qui l'on repond. */
-  invitePersonnalisee?: string
+  /** Invite du champ. Par defaut celle des maquettes. */
+  invite?: string
 }
 
 /** Seuil d'apparition du compteur : on ne stresse qu'a l'approche de la limite. */
 const SEUIL_COMPTEUR = LONGUEUR_MAX_ECHANGE - 150
+
+const INVITE_PAR_DEFAUT = 'Partage ce que cette rencontre t’inspire…'
 
 export function EchangeComposer({
   peutEcrire,
   enCours,
   onPublier,
   compact = false,
-  invitePersonnalisee,
+  invite,
 }: EchangeComposerProps) {
   const navigate = useNavigate()
-  const [intention, setIntention] = useState<IntentionEchange>('reaction')
+  const champ = useRef<HTMLTextAreaElement>(null)
+  const idChamp = useId()
   const [contenu, setContenu] = useState('')
+  // Le panneau d'espece REMPLACE le champ au lieu de s'ouvrir a cote : les deux
+  // aboutissent au meme message, en afficher deux laisserait croire a deux
+  // envois possibles.
+  const [panneauEspece, setPanneauEspece] = useState(false)
 
-  const config = trouverIntention(intention)
   const trop = contenu.length > LONGUEUR_MAX_ECHANGE
   const pret = contenu.trim().length > 0 && !trop && !enCours
+  const placeholder = invite ?? INVITE_PAR_DEFAUT
 
   function auGeste() {
     if (!peutEcrire) navigate('/signup')
+  }
+
+  function proposerEspece() {
+    if (!peutEcrire) return navigate('/signup')
+    setPanneauEspece(true)
   }
 
   function soumettre(e: React.FormEvent) {
     e.preventDefault()
     if (!peutEcrire) return navigate('/signup')
     if (!pret) return
-    onPublier(contenu, intention)
+    onPublier(contenu, 'reaction', null)
     setContenu('')
-    setIntention('reaction')
+  }
+
+  if (panneauEspece) {
+    return (
+      <SuggestionEspecePanel
+        onAnnuler={() => setPanneauEspece(false)}
+        onSuggerer={(suggestion, commentaire) => {
+          onPublier(commentaire, 'identification', suggestion)
+          setPanneauEspece(false)
+        }}
+      />
+    )
   }
 
   return (
-    <form
-      onSubmit={soumettre}
-      className={compact ? '' : 'rounded-2xl border border-border bg-cream-lighter p-4'}
-    >
-      {/* Choix de l'intention : masque en mode reponse */}
-      <div
-        hidden={compact}
-        role="radiogroup"
-        aria-label="Type d’échange"
-        className="flex gap-2 overflow-x-auto pb-3 touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {INTENTIONS.map((i) => {
-          const actif = i.cle === intention
-          return (
-            <button
-              key={i.cle}
-              type="button"
-              role="radio"
-              aria-checked={actif}
-              onClick={() => (peutEcrire ? setIntention(i.cle) : navigate('/signup'))}
-              className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                actif
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted/40 text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <span aria-hidden="true">{i.emoji}</span>
-              {i.libelle}
-            </button>
-          )
-        })}
-      </div>
-
-      <label htmlFor="echange-contenu" className="sr-only">
-        Ton échange
-      </label>
-      <textarea
-        id="echange-contenu"
-        value={contenu}
-        onChange={(e) => setContenu(e.target.value)}
-        onFocus={auGeste}
-        placeholder={invitePersonnalisee ?? config.invite}
-        rows={compact ? 2 : 3}
-        // Ctrl/Cmd + Entree envoie, convention attendue par qui ecrit souvent.
-        // Entree seul insere un retour a la ligne : sur un champ multiligne,
-        // envoyer a la moindre pression couperait les messages en deux.
-        onKeyDown={(e) => {
-          if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-            e.preventDefault()
-            soumettre(e as unknown as React.FormEvent)
-          }
-        }}
-        // maxLength volontairement absent : on prefere laisser depasser et le
-        // dire clairement plutot que bloquer la frappe sans explication.
-        className="w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-      />
-
-      <div className="mt-2 flex items-center justify-between gap-3">
-        <span
-          className={`text-xs tabular-nums ${trop ? 'text-[var(--color-error)] font-medium' : 'text-muted-foreground'}`}
-          aria-live="polite"
+    <form onSubmit={soumettre}>
+      <div className="flex items-end gap-3">
+        <div
+          className={[
+            'relative flex-1 rounded-lg border bg-cream-lighter transition-colors',
+            'focus-within:ring-2 focus-within:ring-primary',
+            trop ? 'border-[var(--color-error)]' : 'border-border',
+          ].join(' ')}
         >
-          {contenu.length > SEUIL_COMPTEUR ? `${contenu.length} / ${LONGUEUR_MAX_ECHANGE}` : ''}
-        </span>
+          <label htmlFor={idChamp} className="sr-only">
+            Ton échange
+          </label>
+          <textarea
+            id={idChamp}
+            ref={champ}
+            value={contenu}
+            onChange={(e) => setContenu(e.target.value)}
+            onFocus={auGeste}
+            placeholder={placeholder}
+            rows={1}
+            onKeyDown={(e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault()
+                soumettre(e as unknown as React.FormEvent)
+              }
+            }}
+            // maxLength volontairement absent : on prefere laisser depasser et
+            // le dire clairement plutot que bloquer la frappe sans explication.
+            className={[
+              'max-h-40 w-full resize-none bg-transparent py-3 pl-4 text-sm text-foreground',
+              'placeholder:text-muted-foreground focus-visible:outline-none',
+              compact ? 'pr-4' : 'pr-14',
+            ].join(' ')}
+          />
 
+          {/* "Proposer une espèce" : dans le champ a droite, comme la maquette.
+              Masque en mode reponse, ou l'action existe deja sur le message. */}
+          {!compact && (
+            <button
+              type="button"
+              onClick={proposerEspece}
+              aria-label="Proposer une espèce"
+              title="Proposer une espèce"
+              className={[
+                'absolute bottom-1 right-2 inline-flex size-10 items-center justify-center rounded-full transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                'text-foreground hover:bg-muted/40',
+              ].join(' ')}
+            >
+              <MessageSquarePlus className="size-5" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+
+        {/* Sous 640px le libelle disparait et le bouton devient un rond de
+            48px : a cette largeur, "Envoyer" ecrit en toutes lettres prend la
+            place du champ lui-meme. La cible tactile reste a 48px, au-dessus du
+            minimum WCAG, et le libelle reste lu par les lecteurs d'ecran. */}
         <button
           type="submit"
           disabled={peutEcrire && !pret}
-          className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          aria-label={enCours ? 'Envoi en cours' : 'Envoyer'}
+          className="inline-flex size-12 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-sm font-medium text-primary-foreground transition-opacity hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:size-auto sm:h-12 sm:px-5"
         >
           <Send className="size-4" aria-hidden="true" />
-          {enCours ? 'Envoi…' : 'Partager'}
+          <span className="hidden sm:inline">{enCours ? 'Envoi…' : 'Envoyer'}</span>
         </button>
       </div>
+
+      {/* Compteur aligne a droite, comme dans le formulaire de contribution.
+          Trois etats : discret, orange a l'approche, rouge au depassement, avec
+          en plus une phrase explicite quand l'envoi devient impossible : un
+          bouton grise sans explication laisse chercher la cause. */}
+      {contenu.length > SEUIL_COMPTEUR && (
+        <div className="mt-1.5 flex items-baseline justify-between gap-3">
+          <p role={trop ? 'alert' : undefined} className="text-xs text-[var(--color-error)]">
+            {trop ? `Retire ${contenu.length - LONGUEUR_MAX_ECHANGE} caractères pour envoyer.` : ''}
+          </p>
+          <span
+            aria-live="polite"
+            className={[
+              'shrink-0 text-xs tabular-nums',
+              trop
+                ? 'font-medium text-[var(--color-error)]'
+                : 'font-medium text-[var(--color-warning)]',
+            ].join(' ')}
+          >
+            {contenu.length}/{LONGUEUR_MAX_ECHANGE}
+          </span>
+        </div>
+      )}
     </form>
   )
 }

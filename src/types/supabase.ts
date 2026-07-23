@@ -414,35 +414,53 @@ export type Database = {
       }
       comments: {
         Row: {
+          confidence: number | null
           content: string
           created_at: string | null
+          edited_at: string | null
           helpful: boolean
           id: string
           intention: string
+          moderation_status: string
           parent_id: string | null
           post_id: string
+          species_label: string | null
+          species_scientific: string | null
+          taxonomy_node_id: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          confidence?: number | null
           content: string
           created_at?: string | null
+          edited_at?: string | null
           helpful?: boolean
           id?: string
           intention?: string
+          moderation_status?: string
           parent_id?: string | null
           post_id: string
+          species_label?: string | null
+          species_scientific?: string | null
+          taxonomy_node_id?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          confidence?: number | null
           content?: string
           created_at?: string | null
+          edited_at?: string | null
           helpful?: boolean
           id?: string
           intention?: string
+          moderation_status?: string
           parent_id?: string | null
           post_id?: string
+          species_label?: string | null
+          species_scientific?: string | null
+          taxonomy_node_id?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -466,6 +484,13 @@ export type Database = {
             columns: ['post_id']
             isOneToOne: false
             referencedRelation: 'posts_public'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'comments_taxonomy_node_id_fkey'
+            columns: ['taxonomy_node_id']
+            isOneToOne: false
+            referencedRelation: 'taxonomy_nodes'
             referencedColumns: ['id']
           },
           {
@@ -3555,6 +3580,10 @@ export type Database = {
         Returns: boolean
       }
       touch_last_active: { Args: never; Returns: undefined }
+      trancher_echange_signale: {
+        Args: { p_comment_id: string; p_decision: string }
+        Returns: string
+      }
       unaccent: { Args: { '': string }; Returns: string }
       unlockrows: { Args: { '': string }; Returns: number }
       update_user_location: {

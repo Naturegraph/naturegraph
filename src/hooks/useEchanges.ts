@@ -23,6 +23,7 @@ import {
   type Echange,
   type IntentionEchange,
   type TypeReactionEchange,
+  type SuggestionEspece,
 } from '@/services/echangeService'
 
 export const cleEchanges = (postId: string) => ['echanges', postId] as const
@@ -60,12 +61,14 @@ export function usePublierEchange(
       contenu: string
       intention: IntentionEchange
       parentId?: string | null
+      suggestion?: SuggestionEspece | null
     }) =>
       publierEchange({
         postId,
         contenu: params.contenu,
         intention: params.intention,
         parentId: params.parentId,
+        suggestion: params.suggestion,
       }),
 
     onMutate: async (params) => {
@@ -77,7 +80,11 @@ export function usePublierEchange(
         id: `provisoire-${Date.now()}`,
         postId,
         auteurId: auteur.id,
-        contenu: params.contenu.trim(),
+        // Meme repli que le service : sans ce texte, une suggestion sans mot
+        // afficherait une bulle vide pendant l'aller-retour serveur.
+        contenu:
+          params.contenu.trim() ||
+          (params.suggestion ? `Je pense qu’il s’agit plutôt de : ${params.suggestion.label}` : ''),
         intention: params.intention,
         utile: false,
         creeLe: new Date().toISOString(),
@@ -86,6 +93,7 @@ export function usePublierEchange(
         parentId: params.parentId ?? null,
         reactions: { coeur: 0, accord: 0, confirme: 0 },
         maReaction: null,
+        suggestion: params.suggestion ?? null,
       }
       qc.setQueryData<Echange[]>(cleEchanges(postId), [...(precedent ?? []), provisoire])
       return { precedent }
