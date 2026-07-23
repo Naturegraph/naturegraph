@@ -1,0 +1,28 @@
+-- NG-049 : garde-fous de contenu, PREMIERE VERSION (remplacee le jour meme)
+-- =============================================================================
+-- APPLIQUEE sur naturegraph-prod le 2026-07-23 (version 20260723171144), puis
+-- IMMEDIATEMENT REMPLACEE par `20260723171322_echanges_garde_fous_contenu.sql`.
+--
+-- POURQUOI CE FICHIER EXISTE MALGRE TOUT. La version 20260723171144 est
+-- enregistree dans `supabase_migrations.schema_migrations` en production. Sans
+-- fichier correspondant, le repo et la base divergent dans leur historique, et
+-- la prochaine personne qui compare les deux perd du temps a chercher une
+-- migration fantome. On archive donc la version telle qu'appliquee.
+--
+-- CE QUI A CHANGE ENTRE LES DEUX. Rien sur le comportement : meme regles, memes
+-- messages. La premiere version portait la classe de caracteres invisibles en
+-- CARACTERES LITTERAUX, ce qui la rendait illisible dans un fichier SQL comme
+-- dans un diff (un caractere invisible l'est aussi pour le relecteur). La
+-- seconde la reconstruit avec `chr()` et le code point annote en clair.
+--
+-- La fonction etant remplacee par `CREATE OR REPLACE`, rejouer les deux
+-- fichiers dans l'ordre donne exactement le meme etat final que rejouer le
+-- second seul. Ce fichier n'a donc AUCUN contenu executable : le reproduire a
+-- l'identique reintroduirait precisement les caracteres litteraux qu'on a
+-- voulu retirer du depot.
+--
+-- Voir `20260723171322_echanges_garde_fous_contenu.sql` pour la definition
+-- reelle et commentee.
+-- =============================================================================
+
+-- Volontairement vide. Aucun effet a rejouer.

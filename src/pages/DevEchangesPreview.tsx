@@ -16,6 +16,7 @@ import { FilEchanges } from '@/components/echanges/FilEchanges'
 import { construireFils } from '@/components/echanges/grouperParJour'
 import { ECHANGES_MOCK, AUTEUR_PUBLICATION_MOCK } from '@/data/mock/echangesMock'
 import { cleEspece } from '@/services/echangeService'
+import { validerEchange, EchangeInvalideError } from '@/lib/echangeValidation'
 import type { Echange, IntentionEchange, SuggestionEspece } from '@/services/echangeService'
 
 const MOI = 'moi'
@@ -28,6 +29,8 @@ export default function DevEchangesPreview() {
     .filter((e) => e.suggestion && e.auteurId === MOI)
     .map((e) => cleEspece(e.suggestion!))
 
+  const [refus, setRefus] = useState<string | null>(null)
+
   function ajouter(
     contenu: string,
     intention: IntentionEchange,
@@ -36,15 +39,30 @@ export default function DevEchangesPreview() {
   ) {
     // Meme regle que le service : un message vide passe s'il porte une espece.
     if (!contenu.trim() && !suggestion) return
+
+    // La demonstration applique les MEMES garde-fous que le service reel
+    // (`validerEchange`). Sans ca, taper un lien ici publierait sans broncher et
+    // laisserait croire que les liens sont autorises : une demonstration qui
+    // ment sur le comportement reel est pire que pas de demonstration.
+    let texte: string
+    try {
+      texte =
+        contenu.trim() || !suggestion
+          ? validerEchange(contenu)
+          : `Je pense qu’il s’agit plutôt de : ${suggestion.label}`
+      setRefus(null)
+    } catch (e) {
+      setRefus(e instanceof EchangeInvalideError ? e.message : 'Message refusé')
+      return
+    }
+
     setEchanges((liste) => [
       ...liste,
       {
         id: `local-${Date.now()}`,
         postId: 'demo',
         auteurId: MOI,
-        contenu:
-          contenu.trim() ||
-          (suggestion ? `Je pense qu’il s’agit plutôt de : ${suggestion.label}` : ''),
+        contenu: texte,
         intention,
         utile: false,
         creeLe: new Date().toISOString(),
@@ -81,6 +99,15 @@ export default function DevEchangesPreview() {
         <p className="px-4 py-4 text-sm text-muted-foreground md:px-0 md:pt-0">
           Page temporaire. Données fictives, aucune écriture en base. Composants réels.
         </p>
+
+        {refus && (
+          <p
+            role="alert"
+            className="mx-4 mb-4 rounded-sm bg-[var(--color-error-bg)] px-3 py-2 text-sm text-[var(--color-error)] md:mx-0"
+          >
+            {refus}
+          </p>
+        )}
 
         {/* Meme enveloppe que la carte de publication, pour juger le fil dans
             son contexte reel. */}
