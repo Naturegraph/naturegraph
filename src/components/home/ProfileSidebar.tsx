@@ -53,7 +53,7 @@ function StatCard({
     warning: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
   }
   return (
-    <div className="bg-white rounded-md p-2 flex flex-col items-center justify-center gap-2 text-center">
+    <div className="bg-card rounded-md p-2 flex flex-col items-center justify-center gap-2 text-center">
       <span
         aria-hidden="true"
         className={`size-7 rounded-full flex items-center justify-center ${toneCls[tone]}`}
@@ -199,8 +199,11 @@ export function ProfileSidebar() {
             />
           </div>
 
-          {/* Objectif semaine : carte cream-lighter contenant barre gradient */}
-          <div className="bg-cream-lighter rounded-lg p-4 flex flex-col gap-2">
+          {/* Objectif semaine : MEME fond que les trois cartes de stats juste
+              au-dessus (retour Nicolas 2026-07-23). Elle etait en creme sur un
+              fond creme, donc invisible comme carte : quatre elements de meme
+              nature dans la meme colonne doivent porter le meme fond. */}
+          <div className="bg-card rounded-lg p-4 flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <p className="text-xs text-foreground tracking-[0.04em]">
                 {t('home.profile.thisWeek')}
@@ -218,7 +221,7 @@ export function ProfileSidebar() {
                 current: weekCurrent,
                 goal: weekGoal,
               })}
-              className="h-2 rounded-full bg-cream-lighter border-[0.5px] border-border overflow-hidden relative"
+              className="h-2 rounded-full bg-muted/30 border-[0.5px] border-border overflow-hidden relative"
             >
               {/*
                 Gradient figé sur 100% de largeur, révélé via clip-path à
@@ -338,7 +341,7 @@ export function ProfileSidebar() {
                     {/* Chevron : indicateur navigation vers profil */}
                     <span
                       aria-hidden="true"
-                      className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center shrink-0 text-foreground group-hover:bg-white transition-colors"
+                      className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center shrink-0 text-foreground group-hover:bg-card transition-colors"
                     >
                       <ChevronRight className="size-4" />
                     </span>

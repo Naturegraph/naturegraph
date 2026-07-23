@@ -54,6 +54,8 @@ export default function DevEchangesPreview() {
         reactions: { coeur: 0, accord: 0, confirme: 0 },
         maReaction: null,
         suggestion: suggestion ?? null,
+        modifieLe: null,
+        etatModeration: 'visible',
       },
     ])
   }
@@ -93,6 +95,19 @@ export default function DevEchangesPreview() {
               etatVide={echanges.length === 0}
               onEnvoyer={ajouter}
               onSupprimer={(id) => setEchanges((l) => l.filter((x) => x.id !== id))}
+              onModifier={(id, contenu) =>
+                setEchanges((l) =>
+                  l.map((e) =>
+                    e.id === id
+                      ? { ...e, contenu: contenu.trim(), modifieLe: new Date().toISOString() }
+                      : e,
+                  ),
+                )
+              }
+              // Signalement et abonnement ne sont pas simulables sans base :
+              // les gestes existent, ils ne font rien ici.
+              onSignaler={() => {}}
+              onBasculerSuivi={() => {}}
               onReagir={reagir}
             />
           </section>

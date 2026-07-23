@@ -33,6 +33,8 @@ function echange(id: string, creeLe: string, parentId: string | null = null): Ec
     reactions: { coeur: 0, accord: 0, confirme: 0 },
     maReaction: null,
     suggestion: null,
+    modifieLe: null,
+    etatModeration: 'visible',
   }
 }
 

@@ -11,7 +11,12 @@
  * RLS : la policy `moderation_reports_insert` autorise tout user authentifie a
  * inserer un report tant que `reporter_id = auth.uid()`.
  *
- * Utilise par ReportModal (post) et ProfileOptionsMenu (profil).
+ * Utilise par ReportModal (post et echange) et ProfileOptionsMenu (profil).
+ *
+ * NG-049 : la cible `comment` etait deja autorisee par la contrainte CHECK de
+ * `moderation_reports.target_type`, mais aucun code ne l'emettait. Un trigger
+ * masque automatiquement un echange des que TROIS personnes DISTINCTES l'ont
+ * signale, le temps qu'un humain tranche.
  */
 
 import { supabase } from '@/lib/supabase'
@@ -20,6 +25,8 @@ import type { ReportReason } from '@/types/database'
 export interface CreateReportPayload {
   postId?: string
   profileId?: string
+  /** NG-049 : signalement d'un echange (table `comments`). */
+  commentId?: string
   reason: ReportReason
   details?: string
 }
@@ -57,17 +64,23 @@ export async function createReport(payload: CreateReportPayload): Promise<void> 
   if (!user) throw new Error('Non authentifié')
 
   // moderation_reports impose un couple (target_type, target_id) NOT NULL.
-  // Branche explicite pour garantir un targetId typé `string` (post prioritaire).
-  let targetType: 'post' | 'profile'
+  // Branche explicite pour garantir un targetId typé `string`.
+  // L'echange passe AVANT le post : signaler un echange se fait toujours depuis
+  // une publication, les deux identifiants sont donc souvent disponibles, et
+  // c'est le plus precis qui doit gagner.
+  let targetType: 'post' | 'profile' | 'comment'
   let targetId: string
-  if (payload.postId) {
+  if (payload.commentId) {
+    targetType = 'comment'
+    targetId = payload.commentId
+  } else if (payload.postId) {
     targetType = 'post'
     targetId = payload.postId
   } else if (payload.profileId) {
     targetType = 'profile'
     targetId = payload.profileId
   } else {
-    throw new Error('Un report doit cibler un post ou un profil')
+    throw new Error('Un report doit cibler un echange, un post ou un profil')
   }
 
   const { error } = await supabase.from('moderation_reports').insert({

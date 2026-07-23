@@ -57,6 +57,8 @@ export const ECHANGES_MOCK: Echange[] = [
     reactions: reacs({ coeur: 1 }),
     maReaction: null,
     suggestion: null,
+    modifieLe: null,
+    etatModeration: 'visible',
   },
 
   // ── Hier ──
@@ -77,6 +79,8 @@ export const ECHANGES_MOCK: Echange[] = [
     reactions: reacs({ coeur: 6 }),
     maReaction: 'coeur',
     suggestion: null,
+    modifieLe: null,
+    etatModeration: 'visible',
   },
   {
     // Message court et sans aucune reaction : verifie que la bulle tient sur
@@ -94,6 +98,8 @@ export const ECHANGES_MOCK: Echange[] = [
     reactions: reacs(),
     maReaction: null,
     suggestion: null,
+    modifieLe: null,
+    etatModeration: 'visible',
   },
 
   // ── Aujourd'hui ──
@@ -112,6 +118,8 @@ export const ECHANGES_MOCK: Echange[] = [
     reactions: reacs({ coeur: 4 }),
     maReaction: null,
     suggestion: null,
+    modifieLe: null,
+    etatModeration: 'visible',
   },
   {
     id: 'e4',
@@ -127,6 +135,8 @@ export const ECHANGES_MOCK: Echange[] = [
     reactions: reacs({ coeur: 1 }),
     maReaction: null,
     suggestion: null,
+    modifieLe: null,
+    etatModeration: 'visible',
   },
   {
     // Suggestion d'espece AVEC un mot de la personne : le cas complet.
@@ -148,6 +158,8 @@ export const ECHANGES_MOCK: Echange[] = [
       noeudId: null,
       confiance: 4,
     },
+    modifieLe: null,
+    etatModeration: 'visible',
   },
   {
     id: 'e5',
@@ -163,6 +175,8 @@ export const ECHANGES_MOCK: Echange[] = [
     reactions: reacs({ coeur: 2 }),
     maReaction: null,
     suggestion: null,
+    modifieLe: null,
+    etatModeration: 'visible',
   },
   {
     // Suggestion SANS commentaire : le texte est la phrase generique posee par
@@ -185,6 +199,8 @@ export const ECHANGES_MOCK: Echange[] = [
       noeudId: null,
       confiance: 1,
     },
+    modifieLe: null,
+    etatModeration: 'visible',
   },
   {
     // Les quatre niveaux de confiance doivent etre visibles cote a cote pour
@@ -207,6 +223,8 @@ export const ECHANGES_MOCK: Echange[] = [
       noeudId: null,
       confiance: 2,
     },
+    modifieLe: null,
+    etatModeration: 'visible',
   },
   {
     id: 'e10',
@@ -227,5 +245,7 @@ export const ECHANGES_MOCK: Echange[] = [
       noeudId: null,
       confiance: 3,
     },
+    modifieLe: null,
+    etatModeration: 'visible',
   },
 ]

@@ -77,6 +77,14 @@ export interface Echange {
   maReaction: TypeReactionEchange | null
   /** Suggestion d'espece attachee au message, `null` si c'est un simple texte. */
   suggestion: SuggestionEspece | null
+  /** Date de derniere modification, `null` si le texte n'a jamais change. */
+  modifieLe: string | null
+  /**
+   * Etat de moderation. Un echange `auto_hidden` n'est visible QUE par son
+   * auteur et la moderation (garanti par la RLS) : l'auteur doit savoir
+   * pourquoi son message a disparu pour les autres, sinon il croit a un bug.
+   */
+  etatModeration: 'visible' | 'auto_hidden' | 'removed'
 }
 
 /**
@@ -152,6 +160,8 @@ interface LigneEchange {
   species_scientific: string | null
   taxonomy_node_id: string | null
   confidence: number | null
+  edited_at: string | null
+  moderation_status: string | null
 }
 
 function versEchange(row: LigneEchange, moi: string | null): Echange {
@@ -195,12 +205,21 @@ function versEchange(row: LigneEchange, moi: string | null): Echange {
             confiance: Math.min(4, Math.max(1, row.confidence)) as NiveauConfiance,
           }
         : null,
+    modifieLe: row.edited_at,
+    // Une valeur inconnue retombe sur 'visible' : mieux vaut afficher un
+    // message de trop que faire disparaitre une conversation sur un etat que
+    // le front ne connait pas encore.
+    etatModeration: (['visible', 'auto_hidden', 'removed'] as const).includes(
+      row.moderation_status as 'visible',
+    )
+      ? (row.moderation_status as 'visible' | 'auto_hidden' | 'removed')
+      : 'visible',
   }
 }
 
 const SELECT_ECHANGE =
   'id, post_id, user_id, content, intention, helpful, created_at, parent_id, ' +
-  'species_label, species_scientific, taxonomy_node_id, confidence, ' +
+  'species_label, species_scientific, taxonomy_node_id, confidence, edited_at, moderation_status, ' +
   'auteur:profiles!user_id(username, avatar_url), reactions:comment_reactions(type, user_id)'
 
 // ─── Lecture ──────────────────────────────────────────────────────────────────
@@ -302,6 +321,43 @@ export async function publierEchange(params: {
       taxonomy_node_id: suggestion?.noeudId ?? null,
       confidence: suggestion?.confiance ?? null,
     })
+    .select(SELECT_ECHANGE)
+    .single()
+
+  if (error) throw new Error(error.message)
+  return versEchange(data as unknown as LigneEchange, user.id)
+}
+
+/**
+ * Modifie le TEXTE d'un echange. Reserve a son auteur (policy RLS existante).
+ *
+ * Seul le contenu part : un trigger en base refuse toute autre modification
+ * (publication, auteur, parent, etat de moderation) et pose lui-meme
+ * `edited_at`. Un client ne doit pas pouvoir mentir sur la date de
+ * modification, ni se re-rendre visible apres un masquage.
+ *
+ * La suggestion d'espece n'est volontairement PAS modifiable : changer l'espece
+ * apres coup rendrait incomprehensibles les reponses deja publiees dessous.
+ * Pour proposer autre chose, on supprime et on repropose.
+ */
+export async function modifierEchange(echangeId: string, contenu: string): Promise<Echange> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase non configure')
+
+  const texte = contenu.trim()
+  if (texte.length === 0) throw new Error('Ton echange est vide')
+  if (texte.length > LONGUEUR_MAX_ECHANGE) {
+    throw new Error(`Ton echange depasse ${LONGUEUR_MAX_ECHANGE} caracteres`)
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error('Il faut etre connecte pour modifier un echange')
+
+  const { data, error } = await supabase
+    .from('comments')
+    .update({ content: texte })
+    .eq('id', echangeId)
     .select(SELECT_ECHANGE)
     .single()
 

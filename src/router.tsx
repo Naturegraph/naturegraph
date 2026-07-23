@@ -41,6 +41,7 @@ import App from './App'
 import { MainLayout } from '@/components/layout'
 import { ProtectedRoute, PublicRoute, OnboardingGuard } from '@/components/guards'
 import { BetaAccessGuard } from '@/components/guards/BetaAccessGuard'
+import { LABS_ENABLED } from '@/lib/featureFlags'
 import { AdminGuard } from '@/components/admin/AdminGuard'
 import { AppLoader } from '@/components/ui/AppLoader'
 
@@ -144,15 +145,28 @@ export const router = createBrowserRouter([
         ),
       },
 
-      // TEMPORAIRE : demonstration Echanges, a retirer apres relecture.
-      {
-        path: 'dev-echanges',
-        element: (
-          <LazyPage>
-            <DevEchangesPreview />
-          </LazyPage>
-        ),
-      },
+      /*
+        Demonstration du fil d'Echanges, MASQUEE sur le site public.
+        Elle sert a juger le rendu sur un jeu d'essai complet (message long,
+        pseudo a rallonge, suggestion avec et sans commentaire, quatre niveaux
+        de confiance), ce qu'une publication reelle ne permet pas tant que la
+        communaute n'a rien ecrit.
+        Le drapeau `LABS_ENABLED` la garde accessible en local, sur les previews
+        et sur beta, et la retire de naturegraph.ca : rien a supprimer plus tard,
+        rien a redeployer pour la retrouver.
+      */
+      ...(LABS_ENABLED
+        ? [
+            {
+              path: 'dev-echanges',
+              element: (
+                <LazyPage>
+                  <DevEchangesPreview />
+                </LazyPage>
+              ),
+            },
+          ]
+        : []),
 
       // ════════════════════════════════════════════════════════════════
       // ADMIN : gate propre (AdminGuard + RLS), pas de BetaAccessGuard

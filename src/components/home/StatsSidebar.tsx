@@ -298,7 +298,7 @@ export function StatsSidebar({ onItemSelected }: { onItemSelected?: () => void }
                     {/* Chevron droite : cercle 32px border 0.5px */}
                     <span
                       aria-hidden="true"
-                      className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center shrink-0 text-foreground group-hover:bg-white transition-colors"
+                      className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center shrink-0 text-foreground group-hover:bg-card transition-colors"
                     >
                       <ChevronRight className="size-4" />
                     </span>

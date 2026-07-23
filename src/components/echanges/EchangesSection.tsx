@@ -24,13 +24,16 @@
  * sans banniere.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   useEchanges,
   usePublierEchange,
   useSupprimerEchange,
+  useModifierEchange,
   useBasculerReactionEchange,
 } from '@/hooks/useEchanges'
+import { useFollowing, useToggleFollow } from '@/hooks/useFollow'
+import { ReportModal } from '@/components/home/ReportModal'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { LoadingState } from '@/components/ui'
@@ -55,7 +58,36 @@ export function EchangesSection({ postId, auteurPublicationId }: EchangesSection
     avatar: profile?.avatar_url ?? null,
   })
   const supprimer = useSupprimerEchange(postId)
+  const modifier = useModifierEchange(postId)
   const reagir = useBasculerReactionEchange(postId)
+
+  // Echange en cours de signalement : la fenetre est celle des publications,
+  // seul le libelle de la cible change. Reutiliser le meme formulaire evite
+  // d'inventer un second parcours de signalement.
+  const [echangeSignale, setEchangeSignale] = useState<Echange | null>(null)
+
+  /**
+   * Personnes deja suivies, pour que le menu dise "Suivre" ou "Ne plus suivre"
+   * plutot que de proposer un abonnement qui existe deja.
+   *
+   * On charge la liste UNE fois plutot qu'un `useIsFollowing` par message : un
+   * fil de trente echanges declencherait trente requetes pour la meme
+   * information.
+   */
+  const { data: suivis = [] } = useFollowing(profile?.id, isAuthenticated)
+  const auteursSuivis = useMemo(() => suivis.map((p) => p.id), [suivis])
+  const basculerSuivi = useToggleFollow()
+
+  function onBasculerSuivi(echange: Echange) {
+    if (!isAuthenticated) return
+    basculerSuivi.mutate(
+      {
+        targetUserId: echange.auteurId,
+        currentlyFollowing: auteursSuivis.includes(echange.auteurId),
+      },
+      { onError: () => toast.error('L’abonnement n’a pas pu être modifié') },
+    )
+  }
 
   // Groupes de jours, du plus recent au plus ancien. Voir `construireFils`
   // pour le detail des deux sens de lecture.
@@ -114,6 +146,14 @@ export function EchangesSection({ postId, auteurPublicationId }: EchangesSection
         </div>
       )}
 
+      {echangeSignale && (
+        <ReportModal
+          postId={postId}
+          commentId={echangeSignale.id}
+          onClose={() => setEchangeSignale(null)}
+        />
+      )}
+
       {!isLoading && (
         <FilEchanges
           groupes={groupes}
@@ -129,6 +169,15 @@ export function EchangesSection({ postId, auteurPublicationId }: EchangesSection
               onError: () => toast.error('Suppression impossible pour le moment'),
             })
           }
+          onModifier={(id, contenu) =>
+            modifier.mutate(
+              { echangeId: id, contenu },
+              { onError: () => toast.error('Ta modification n’a pas pu être enregistrée') },
+            )
+          }
+          onSignaler={setEchangeSignale}
+          onBasculerSuivi={onBasculerSuivi}
+          auteursSuivis={auteursSuivis}
           onReagir={onReagir}
         />
       )}

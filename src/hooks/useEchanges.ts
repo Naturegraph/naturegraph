@@ -18,6 +18,7 @@ import {
   listerEchanges,
   publierEchange,
   supprimerEchange,
+  modifierEchange,
   basculerEchangeUtile,
   basculerReactionEchange,
   type Echange,
@@ -94,6 +95,8 @@ export function usePublierEchange(
         reactions: { coeur: 0, accord: 0, confirme: 0 },
         maReaction: null,
         suggestion: params.suggestion ?? null,
+        modifieLe: null,
+        etatModeration: 'visible',
       }
       qc.setQueryData<Echange[]>(cleEchanges(postId), [...(precedent ?? []), provisoire])
       return { precedent }
@@ -111,6 +114,41 @@ export function usePublierEchange(
       qc.invalidateQueries({ queryKey: ['posts'] })
       qc.invalidateQueries({ queryKey: ['post', postId] })
     },
+  })
+}
+
+/**
+ * Modifie le texte d'un echange (son auteur uniquement).
+ *
+ * Mise a jour OPTIMISTE : le texte corrige apparait immediatement. Attendre
+ * l'aller-retour donnerait l'impression que la correction n'a pas ete prise,
+ * et pousserait a cliquer deux fois.
+ */
+export function useModifierEchange(postId: string) {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ echangeId, contenu }: { echangeId: string; contenu: string }) =>
+      modifierEchange(echangeId, contenu),
+
+    onMutate: async ({ echangeId, contenu }) => {
+      await qc.cancelQueries({ queryKey: cleEchanges(postId) })
+      const precedent = qc.getQueryData<Echange[]>(cleEchanges(postId))
+      qc.setQueryData<Echange[]>(cleEchanges(postId), (liste) =>
+        (liste ?? []).map((e) =>
+          e.id === echangeId
+            ? { ...e, contenu: contenu.trim(), modifieLe: new Date().toISOString() }
+            : e,
+        ),
+      )
+      return { precedent }
+    },
+
+    onError: (_err, _params, contexte) => {
+      if (contexte?.precedent) qc.setQueryData(cleEchanges(postId), contexte.precedent)
+    },
+
+    onSettled: () => qc.invalidateQueries({ queryKey: cleEchanges(postId) }),
   })
 }
 

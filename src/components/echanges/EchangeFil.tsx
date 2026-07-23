@@ -43,9 +43,14 @@ interface EchangeFilProps {
     suggestion?: SuggestionEspece | null,
   ) => void
   onSupprimer: (echangeId: string) => void
+  onModifier: (echangeId: string, contenu: string) => void
+  onSignaler: (echange: Echange) => void
+  onBasculerSuivi: (echange: Echange) => void
   onReagir: (echange: Echange) => void
   /** Especes deja proposees par la personne connectee, pour bloquer le doublon. */
   especesDejaProposees?: string[]
+  /** Auteurs deja suivis, pour le libelle du menu. */
+  auteursSuivis?: string[]
 }
 
 export function EchangeFil({
@@ -56,8 +61,12 @@ export function EchangeFil({
   auteurPublicationId,
   onRepondre,
   onSupprimer,
+  onModifier,
+  onSignaler,
+  onBasculerSuivi,
   onReagir,
   especesDejaProposees,
+  auteursSuivis = [],
 }: EchangeFilProps) {
   // `null` = champ ferme. Sinon, l'intention du geste en cours.
   const [redaction, setRedaction] = useState<'reaction' | 'identification' | null>(null)
@@ -70,11 +79,16 @@ export function EchangeFil({
       <ul>
         <EchangeItem
           echange={parent}
-          peutSupprimer={!!moiId && moiId === parent.auteurId}
+          estLeMien={!!moiId && moiId === parent.auteurId}
+          peutAgir={peutEcrire}
+          suitAuteur={auteursSuivis.includes(parent.auteurId)}
           ecritParAuteurPublication={parent.auteurId === auteurPublicationId}
           onRepondre={(intention) => setRedaction((v) => (v === intention ? null : intention))}
           redactionOuverte={redaction}
           onSupprimer={() => onSupprimer(parent.id)}
+          onModifier={(contenu) => onModifier(parent.id, contenu)}
+          onSignaler={() => onSignaler(parent)}
+          onBasculerSuivi={() => onBasculerSuivi(parent)}
           onReagir={() => onReagir(parent)}
         />
       </ul>
@@ -136,12 +150,17 @@ export function EchangeFil({
                 <EchangeItem
                   key={r.id}
                   echange={r}
-                  peutSupprimer={!!moiId && moiId === r.auteurId}
+                  estLeMien={!!moiId && moiId === r.auteurId}
+                  peutAgir={peutEcrire}
+                  suitAuteur={auteursSuivis.includes(r.auteurId)}
                   ecritParAuteurPublication={r.auteurId === auteurPublicationId}
                   estUneReponse
                   // Pas de "Répondre" sur une reponse : un seul niveau, la regle
                   // est aussi appliquee en base par un trigger.
                   onSupprimer={() => onSupprimer(r.id)}
+                  onModifier={(contenu) => onModifier(r.id, contenu)}
+                  onSignaler={() => onSignaler(r)}
+                  onBasculerSuivi={() => onBasculerSuivi(r)}
                   onReagir={() => onReagir(r)}
                 />
               ))}

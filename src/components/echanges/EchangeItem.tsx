@@ -33,7 +33,10 @@
  * ajoutee pour formater une date (regle eco-conception).
  */
 
-import { Heart, Pencil, MessageSquarePlus, Trash2, Leaf } from 'lucide-react'
+import { Heart, Pencil, MessageSquarePlus, Leaf, EyeOff } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { EchangeMenu } from './EchangeMenu'
+import { LONGUEUR_MAX_ECHANGE } from '@/services/echangeService'
 import { joursCivilsEcoules } from './grouperParJour'
 import type { Echange } from '@/services/echangeService'
 import { libelleConfiance } from '@/services/echangeService'
@@ -41,8 +44,12 @@ import hermineIcon from '@/assets/images/hermine-icon.png'
 
 interface EchangeItemProps {
   echange: Echange
-  /** Le lecteur peut-il supprimer cet echange (le sien, ou moderation) ? */
-  peutSupprimer: boolean
+  /** L'echange appartient a la personne connectee : elle peut le modifier. */
+  estLeMien: boolean
+  /** Personne connectee : sans compte, le menu d'actions n'a rien a proposer. */
+  peutAgir: boolean
+  /** Suit deja l'auteur ? `null` tant que l'information n'est pas connue. */
+  suitAuteur?: boolean | null
   /** Auteur de l'echange = auteur de la publication. */
   ecritParAuteurPublication: boolean
   /** Une reponse : avatar et bulle legerement resserres. */
@@ -52,6 +59,10 @@ interface EchangeItemProps {
   /** Panneau de redaction actuellement ouvert sous ce message, pour l'etat actif. */
   redactionOuverte?: 'reaction' | 'identification' | null
   onSupprimer: () => void
+  /** Enregistre le texte corrige. */
+  onModifier: (contenu: string) => void
+  onSignaler: () => void
+  onBasculerSuivi: () => void
   /** Bascule la reaction "coeur", seule reaction prevue par les maquettes. */
   onReagir: () => void
 }
@@ -269,16 +280,51 @@ function BlocSuggestion({ suggestion }: { suggestion: NonNullable<Echange['sugge
 
 export function EchangeItem({
   echange,
-  peutSupprimer,
+  estLeMien,
+  peutAgir,
+  suitAuteur = null,
   ecritParAuteurPublication,
   estUneReponse = false,
   onRepondre,
   redactionOuverte = null,
   onSupprimer,
+  onModifier,
+  onSignaler,
+  onBasculerSuivi,
   onReagir,
 }: EchangeItemProps) {
   const pseudo = echange.auteurPseudo ?? 'Migrateur'
   const jaimeCoeur = echange.maReaction === 'coeur'
+
+  const [enEdition, setEnEdition] = useState(false)
+  const [brouillon, setBrouillon] = useState(echange.contenu)
+  const champEdition = useRef<HTMLTextAreaElement>(null)
+
+  // Focus par effet plutot que par `autoFocus` : la regle d'accessibilite
+  // interdit `autoFocus` parce qu'il vole le focus au chargement d'une page.
+  // Ici l'ouverture suit un clic explicite sur "Modifier", donner le focus est
+  // exactement ce qu'on attend, mais on le fait au bon moment.
+  useEffect(() => {
+    if (!enEdition) return
+    const champ = champEdition.current
+    if (!champ) return
+    champ.focus()
+    // Curseur en FIN de texte : on vient corriger, pas tout reecrire.
+    champ.setSelectionRange(champ.value.length, champ.value.length)
+  }, [enEdition])
+  const editionTropLongue = brouillon.length > LONGUEUR_MAX_ECHANGE
+  const editionPrete = brouillon.trim().length > 0 && !editionTropLongue
+
+  function ouvrirEdition() {
+    setBrouillon(echange.contenu)
+    setEnEdition(true)
+  }
+
+  function enregistrer() {
+    if (!editionPrete) return
+    onModifier(brouillon)
+    setEnEdition(false)
+  }
 
   return (
     <li className="flex gap-3">
@@ -297,6 +343,20 @@ export function EchangeItem({
             EN DESSOUS, sur le fond de la publication : garder le fond gris sous
             des boutons les ferait lire comme une barre d'outils rattachee au
             texte, alors que ce sont des gestes du lecteur. */}
+        {/*
+          Echange masque par les signalements : SEUL son auteur (et la
+          moderation) le voit encore, la RLS l'ecarte pour tout le monde. On le
+          dit explicitement : sans ce bandeau, l'auteur croirait a un bug ou a
+          une perte de donnee, et republierait le meme message.
+        */}
+        {echange.etatModeration === 'auto_hidden' && (
+          <p className="mb-2 flex items-center gap-2 rounded-sm bg-[var(--color-warning-bg)] px-3 py-2 text-xs text-[var(--color-warning)]">
+            <EyeOff className="size-4 shrink-0" aria-hidden="true" />
+            Cet échange a été signalé et n’est plus visible par les autres, le temps qu’il soit
+            examiné.
+          </p>
+        )}
+
         <div className="w-fit max-w-full rounded-sm bg-surface-bubble p-3">
           {/* Ligne d'identite : pseudo, badge Auteur, date */}
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -314,17 +374,68 @@ export function EchangeItem({
               </span>
             )}
 
-            <span className="text-xs text-muted-foreground">{dateRelative(echange.creeLe)}</span>
+            <span className="text-xs text-muted-foreground">
+              {dateRelative(echange.creeLe)}
+              {/* "modifié" plutot que la date de modification : la date de
+                  publication reste le repere du fil, on signale seulement que
+                  le texte n'est plus celui d'origine. */}
+              {echange.modifieLe && <span className="ml-1">(modifié)</span>}
+            </span>
           </div>
 
-          <p
-            className={`mt-1 whitespace-pre-line text-sm text-foreground ${
-              estUneReponse ? 'leading-normal' : 'leading-relaxed'
-            }`}
-          >
-            {echange.contenu}
-          </p>
+          {enEdition ? (
+            <div className="mt-2">
+              <label htmlFor={`edition-${echange.id}`} className="sr-only">
+                Modifier ton échange
+              </label>
+              <textarea
+                id={`edition-${echange.id}`}
+                value={brouillon}
+                onChange={(e) => setBrouillon(e.target.value)}
+                ref={champEdition}
+                rows={3}
+                className={[
+                  'block w-full resize-y rounded-sm border bg-card px-3 py-2 text-sm text-foreground',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                  editionTropLongue ? 'border-[var(--color-error)]' : 'border-border',
+                ].join(' ')}
+              />
+              {editionTropLongue && (
+                <p role="alert" className="mt-1 text-xs text-[var(--color-error)]">
+                  Retire {brouillon.length - LONGUEUR_MAX_ECHANGE} caractères pour enregistrer.
+                </p>
+              )}
+              <div className="mt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={enregistrer}
+                  disabled={!editionPrete}
+                  className="inline-flex h-8 items-center rounded-full bg-primary px-3 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                >
+                  Enregistrer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEnEdition(false)}
+                  className="inline-flex h-8 items-center rounded-full border border-border px-3 text-xs text-foreground transition-colors hover:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p
+              className={`mt-1 whitespace-pre-line text-sm text-foreground ${
+                estUneReponse ? 'leading-normal' : 'leading-relaxed'
+              }`}
+            >
+              {echange.contenu}
+            </p>
+          )}
 
+          {/* La suggestion n'est PAS modifiable : changer l'espece apres coup
+              rendrait incomprehensibles les reponses deja publiees dessous.
+              Pour proposer autre chose, on supprime et on repropose. */}
           {echange.suggestion && <BlocSuggestion suggestion={echange.suggestion} />}
         </div>
 
@@ -352,13 +463,23 @@ export function EchangeItem({
             </>
           )}
 
-          {peutSupprimer && (
-            <>
-              <Puce />
-              <Action icone={Trash2} onClick={onSupprimer} danger>
-                Supprimer
-              </Action>
-            </>
+          {/* Actions rares ou engageantes derriere un bouton discret, comme
+              sur une publication : modifier, suivre, signaler, supprimer. Les
+              laisser dans la barre principale ferait quatre libelles de plus
+              sous chaque message. */}
+          {peutAgir && (
+            <div className="ml-auto">
+              <EchangeMenu
+                estLeMien={estLeMien}
+                peutAgir={peutAgir}
+                suit={suitAuteur}
+                pseudoAuteur={pseudo}
+                onModifier={ouvrirEdition}
+                onSupprimer={onSupprimer}
+                onSignaler={onSignaler}
+                onBasculerSuivi={onBasculerSuivi}
+              />
+            </div>
           )}
         </div>
       </div>

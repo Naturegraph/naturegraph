@@ -34,7 +34,12 @@ interface FilEchangesProps {
     suggestion?: SuggestionEspece | null,
   ) => void
   onSupprimer: (echangeId: string) => void
+  onModifier: (echangeId: string, contenu: string) => void
+  onSignaler: (echange: Echange) => void
+  onBasculerSuivi: (echange: Echange) => void
   onReagir: (echange: Echange) => void
+  /** Auteurs deja suivis, pour le libelle du menu d'actions. */
+  auteursSuivis?: string[]
   /** Affiche invitant, quand la publication n'a encore aucun echange. */
   etatVide?: boolean
 }
@@ -48,7 +53,11 @@ export function FilEchanges({
   especesDejaProposees,
   onEnvoyer,
   onSupprimer,
+  onModifier,
+  onSignaler,
+  onBasculerSuivi,
   onReagir,
+  auteursSuivis,
   etatVide = false,
 }: FilEchangesProps) {
   return (
@@ -85,7 +94,11 @@ export function FilEchanges({
                     onEnvoyer(contenu, intention, parentId, suggestion)
                   }
                   onSupprimer={onSupprimer}
+                  onModifier={onModifier}
+                  onSignaler={onSignaler}
+                  onBasculerSuivi={onBasculerSuivi}
                   onReagir={onReagir}
+                  auteursSuivis={auteursSuivis}
                 />
               ))}
             </ul>
