@@ -37,6 +37,7 @@
 import { useId, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Send, MessageSquarePlus } from 'lucide-react'
+import { Button } from '@/components/ui'
 import { SuggestionEspecePanel } from './SuggestionEspecePanel'
 import type { IntentionEchange, SuggestionEspece } from '@/services/echangeService'
 import { LONGUEUR_MAX_ECHANGE } from '@/services/echangeService'
@@ -60,7 +61,10 @@ interface EchangeComposerProps {
 /** Seuil d'apparition du compteur : on ne stresse qu'a l'approche de la limite. */
 const SEUIL_COMPTEUR = LONGUEUR_MAX_ECHANGE - 150
 
-const INVITE_PAR_DEFAUT = 'Partage ce que cette rencontre t’inspire…'
+// Invite volontairement COURTE : la version longue ("Partage ce que cette
+// rencontre t'inspire…") debordait du champ sur mobile et se faisait couper en
+// plein milieu, ce qui donne l'inverse de l'accueil recherche.
+const INVITE_PAR_DEFAUT = 'Partage ton ressenti…'
 
 export function EchangeComposer({
   peutEcrire,
@@ -116,9 +120,12 @@ export function EchangeComposer({
   return (
     <form onSubmit={soumettre}>
       <div className="flex items-end gap-3">
+        {/* Fond BLANC (`bg-card` = --color-surface) et non creme : sur la carte,
+            elle aussi creme, le champ disparaissait et ne tenait que par sa
+            bordure (retour Nicolas 2026-07-23). */}
         <div
           className={[
-            'relative min-h-12 flex-1 rounded-3xl border bg-cream-lighter transition-colors',
+            'relative min-h-12 flex-1 rounded-[24px] border bg-card transition-colors',
             'focus-within:ring-2 focus-within:ring-primary',
             trop ? 'border-[var(--color-error)]' : 'border-border',
           ].join(' ')}
@@ -143,7 +150,11 @@ export function EchangeComposer({
             // maxLength volontairement absent : on prefere laisser depasser et
             // le dire clairement plutot que bloquer la frappe sans explication.
             className={[
-              'max-h-40 w-full resize-none bg-transparent py-3.5 pl-4 text-base text-foreground',
+              // py-[11px] + interligne 24 + bordure 1 = 48 exactement, la
+              // hauteur de champ du design system.
+              // `block` retire l'espace de descente que laisse un textarea en
+              // inline-block : sans lui le champ mesurait 54 au lieu de 48.
+              'block max-h-40 w-full resize-none bg-transparent py-[11px] pl-4 text-base leading-6 text-foreground',
               'placeholder:text-muted-foreground focus-visible:outline-none',
               compact ? 'pr-4' : 'pr-14',
             ].join(' ')}
@@ -173,32 +184,29 @@ export function EchangeComposer({
             place du champ lui-meme. La cible tactile reste a 48px, au-dessus du
             minimum WCAG, et le libelle reste lu par les lecteurs d'ecran. */}
         {/*
-          Etat DESACTIVE du design system : fond lavande + texte grise
-          (`--color-action-disabled`), et non une opacite. Une opacite delave
-          aussi le fond et donne un bouton "sale" ; ici il reste net, seulement
-          clairement indisponible.
+          Bouton du DESIGN SYSTEM (`Button`), variante primaire, taille md
+          (48px) : couleurs, arrondi et hauteur viennent d'une source unique.
 
-          Sous 640px le libelle disparait et le bouton devient un rond de 48px :
-          a cette largeur, "Envoyer" ecrit en toutes lettres prend la place du
-          champ. La cible tactile reste a 48px et le libelle reste lu par les
-          lecteurs d'ecran.
+          ETAT DESACTIVE : aucune surcharge, on laisse le composant faire.
+          C'est exactement ce que fait l'onboarding quand le pseudo manque
+          (`OnboardingStep4`), et c'est la reference dans le projet. Toute
+          recette locale finirait par diverger du reste de l'app, ce qui est
+          precisement le probleme qu'un design system existe pour eviter.
+
+          LE LIBELLE RESTE ECRIT en toutes lettres, y compris sur mobile : une
+          icone seule oblige a deviner, et un `aria-label` ne repare cela que
+          pour les lecteurs d'ecran, pas pour qui lit l'ecran.
         */}
-        <button
+        <Button
           type="submit"
+          variant="primary"
+          size="md"
           disabled={peutEcrire && !pret}
-          aria-label={enCours ? 'Envoi en cours' : 'Envoyer'}
-          className={[
-            'inline-flex size-12 shrink-0 items-center justify-center gap-2 rounded-full text-base font-bold transition-colors',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
-            'sm:size-auto sm:h-12 sm:px-4',
-            peutEcrire && !pret
-              ? 'cursor-not-allowed bg-primary-light text-[var(--color-action-disabled)]'
-              : 'bg-primary text-primary-foreground hover:bg-primary/90',
-          ].join(' ')}
+          icon={<Send className="size-5" aria-hidden="true" />}
+          className="shrink-0"
         >
-          <Send className="size-5" aria-hidden="true" />
-          <span className="hidden sm:inline">{enCours ? 'Envoi…' : 'Envoyer'}</span>
-        </button>
+          {enCours ? 'Envoi…' : 'Envoyer'}
+        </Button>
       </div>
 
       {/* Compteur aligne a droite, comme dans le formulaire de contribution.

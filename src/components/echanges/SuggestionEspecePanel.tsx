@@ -30,6 +30,8 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Search, Loader2, X, MessageSquarePlus, Filter } from 'lucide-react'
 import { searchTaxonomy, type TaxonomyHit } from '@/services/searchService'
+import { Button } from '@/components/ui'
+import { SpeciesResultsList } from '@/components/ui/SpeciesResultsList'
 import {
   LONGUEUR_MAX_ECHANGE,
   MESSAGE_ESPECE_DEJA_PROPOSEE,
@@ -250,33 +252,17 @@ export function SuggestionEspecePanel({
             </div>
           )}
 
-          {chercheEnCours && (resultats.length > 0 || aucunResultat) && (
-            <ul
-              id={idListe}
-              role="listbox"
-              aria-label="Espèces trouvées"
-              className="absolute inset-x-0 top-full z-20 mt-2 max-h-64 overflow-y-auto rounded-md border-[0.5px] border-border bg-background shadow-xl"
-            >
-              {aucunResultat && (
-                <li className="px-4 py-3 text-center text-sm text-muted-foreground">
-                  Aucune espèce trouvée. Essaie le nom scientifique.
-                </li>
-              )}
-              {resultats.map((hit) => (
-                <li key={hit.taxonomy_node_id} role="option" aria-selected={false}>
-                  <button
-                    type="button"
-                    onClick={() => setChoisie(hit)}
-                    className="flex w-full flex-col items-start gap-0.5 border-b border-border px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
-                  >
-                    <span className="text-sm font-bold text-foreground">{nomAffiche(hit)}</span>
-                    {hit.common_name_fr && (
-                      <span className="text-xs text-muted-foreground">{hit.scientific_name}</span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
+          {chercheEnCours && (resultats.length > 0 || aucunResultat || isFetching) && (
+            <div className="mt-3">
+              <SpeciesResultsList
+                id={idListe}
+                resultats={resultats}
+                requete={saisieDifferee}
+                enChargement={isFetching}
+                vide={aucunResultat}
+                onChoisir={setChoisie}
+              />
+            </div>
           )}
         </div>
       )}
@@ -364,31 +350,27 @@ export function SuggestionEspecePanel({
 
       {/* Deux boutons de meme largeur, comme la maquette : aucun des deux n'est
           un repli honteux, annuler une suggestion est une decision normale. */}
+      {/* Boutons du DESIGN SYSTEM (`Button`), et non des boutons refaits a la
+          main : les couleurs, l'arrondi et la hauteur viennent alors d'une
+          source unique et ne peuvent plus diverger du reste de l'app.
+
+          `secondary` pour annuler, `primary` pour valider, taille `md` (48px),
+          moitie-moitie comme la maquette : annuler une suggestion est une
+          decision normale, pas un repli honteux. */}
       <div className="mt-4 flex gap-4">
-        <button
-          type="button"
-          onClick={onAnnuler}
-          className="inline-flex h-12 flex-1 items-center justify-center rounded-full border border-border bg-cream-lighter text-base font-bold text-foreground transition-colors hover:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        >
+        <Button variant="secondary" size="md" className="flex-1" onClick={onAnnuler}>
           Annuler
-        </button>
-        <button
-          type="button"
-          onClick={valider}
+        </Button>
+        <Button
+          variant="primary"
+          size="md"
+          // Etat desactive laisse au composant, comme dans l'onboarding.
+          className="flex-1"
           disabled={!pret}
-          className={[
-            'inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full text-base font-bold transition-colors',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
-            // Desactive : fond lavande et texte grise, comme le DS. Une simple
-            // opacite delave aussi le texte et donne un bouton "sale" plutot
-            // qu'un bouton clairement indisponible.
-            pret
-              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-              : 'cursor-not-allowed bg-primary-light text-[var(--color-action-disabled)]',
-          ].join(' ')}
+          onClick={valider}
         >
           Suggérer
-        </button>
+        </Button>
       </div>
     </div>
   )

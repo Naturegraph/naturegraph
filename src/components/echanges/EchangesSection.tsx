@@ -108,57 +108,66 @@ export function EchangesSection({ postId, auteurPublicationId }: EchangesSection
   }
 
   return (
-    <section aria-label="Échanges" className="px-4 pb-4 md:px-6 md:pb-6">
-      {isLoading && <LoadingState variant="skeleton" rows={2} label="Chargement des échanges" />}
+    <section aria-label="Échanges">
+      <div className="px-4 pb-4 md:px-6 md:pb-6">
+        {isLoading && <LoadingState variant="skeleton" rows={2} label="Chargement des échanges" />}
 
-      {/*
+        {/*
         Etat vide chaleureux et incitatif : "Aucun commentaire" constate un
         manque, ici on propose un geste, ce dont a besoin une communaute qui
         demarre.
       */}
-      {!isLoading && echanges.length === 0 && (
-        <div className="rounded-sm border border-dashed border-border px-4 py-8 text-center">
-          <p className="text-2xl" aria-hidden="true">
-            🌱
-          </p>
-          <p className="mt-2 text-sm font-medium text-foreground">
-            Personne n’a encore réagi à cette rencontre
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Une question, une piste d’identification, un encouragement : ouvre la discussion.
-          </p>
-        </div>
-      )}
+        {!isLoading && echanges.length === 0 && (
+          <div className="rounded-sm border border-dashed border-border px-4 py-8 text-center">
+            <p className="text-2xl" aria-hidden="true">
+              🌱
+            </p>
+            <p className="mt-2 text-sm font-medium text-foreground">
+              Personne n’a encore réagi à cette rencontre
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Une question, une piste d’identification, un encouragement : ouvre la discussion.
+            </p>
+          </div>
+        )}
 
-      {groupes.map((groupe) => (
-        <div key={groupe.libelle} className="mb-6 last:mb-0">
-          <p className="mb-3 text-xs text-muted-foreground">{groupe.libelle}</p>
-          <ul className="flex flex-col gap-4">
-            {groupe.fils.map(({ parent, reponses }) => (
-              <EchangeFil
-                key={parent.id}
-                parent={parent}
-                reponses={reponses}
-                moiId={profile?.id ?? null}
-                peutEcrire={isAuthenticated}
-                auteurPublicationId={auteurPublicationId}
-                onRepondre={(contenu, intention, parentId, suggestion) =>
-                  envoyer(contenu, intention, parentId, suggestion)
-                }
-                onSupprimer={(id) =>
-                  supprimer.mutate(id, {
-                    onError: () => toast.error('Suppression impossible pour le moment'),
-                  })
-                }
-                onReagir={onReagir}
-                especesDejaProposees={mesEspeces}
-              />
-            ))}
-          </ul>
-        </div>
-      ))}
+        {groupes.map((groupe) => (
+          <div key={groupe.libelle} className="mb-6 last:mb-0">
+            <p className="mb-3 text-xs text-muted-foreground">{groupe.libelle}</p>
+            <ul className="flex flex-col gap-4">
+              {groupe.fils.map(({ parent, reponses }) => (
+                <EchangeFil
+                  key={parent.id}
+                  parent={parent}
+                  reponses={reponses}
+                  moiId={profile?.id ?? null}
+                  peutEcrire={isAuthenticated}
+                  auteurPublicationId={auteurPublicationId}
+                  onRepondre={(contenu, intention, parentId, suggestion) =>
+                    envoyer(contenu, intention, parentId, suggestion)
+                  }
+                  onSupprimer={(id) =>
+                    supprimer.mutate(id, {
+                      onError: () => toast.error('Suppression impossible pour le moment'),
+                    })
+                  }
+                  onReagir={onReagir}
+                  especesDejaProposees={mesEspeces}
+                />
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
 
-      <div className="mt-6">
+      {/*
+        Bandeau de saisie : fond distinct sur TOUTE la largeur de la carte, en
+        pied (maquette 6822-39589). Le fond separe l'ecriture de la lecture sans
+        tracer un trait de plus, et ancre le champ comme la barre de saisie
+        d'une messagerie. Sans lui, le champ flottait a la suite du dernier
+        message comme s'il en faisait partie.
+      */}
+      <div className="rounded-b-card bg-surface-bubble px-4 py-4 md:px-6 md:py-6">
         <EchangeComposer
           peutEcrire={isAuthenticated}
           enCours={publier.isPending}

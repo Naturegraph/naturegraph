@@ -78,31 +78,34 @@ export default function DevEchangesPreview() {
         </p>
 
         <div className="bg-background w-full md:rounded-card md:border-[0.5px] md:border-border">
-          <section aria-label="Échanges" className="px-4 py-4 md:px-6 md:py-6">
-            {groupes.map((groupe) => (
-              <div key={groupe.libelle} className="mb-6 last:mb-0">
-                <p className="mb-3 text-xs text-muted-foreground">{groupe.libelle}</p>
-                <ul className="flex flex-col gap-4">
-                  {groupe.fils.map(({ parent, reponses }) => (
-                    <EchangeFil
-                      key={parent.id}
-                      parent={parent}
-                      reponses={reponses}
-                      moiId={MOI}
-                      peutEcrire
-                      auteurPublicationId={AUTEUR_PUBLICATION_MOCK}
-                      onRepondre={(contenu, intention, parentId, suggestion) =>
-                        ajouter(contenu, intention, parentId, suggestion)
-                      }
-                      onSupprimer={(id) => setEchanges((l) => l.filter((x) => x.id !== id))}
-                      onReagir={reagir}
-                    />
-                  ))}
-                </ul>
-              </div>
-            ))}
+          <section aria-label="Échanges">
+            <div className="px-4 py-4 md:px-6 md:py-6">
+              {groupes.map((groupe) => (
+                <div key={groupe.libelle} className="mb-6 last:mb-0">
+                  <p className="mb-3 text-xs text-muted-foreground">{groupe.libelle}</p>
+                  <ul className="flex flex-col gap-4">
+                    {groupe.fils.map(({ parent, reponses }) => (
+                      <EchangeFil
+                        key={parent.id}
+                        parent={parent}
+                        reponses={reponses}
+                        moiId={MOI}
+                        peutEcrire
+                        auteurPublicationId={AUTEUR_PUBLICATION_MOCK}
+                        onRepondre={(contenu, intention, parentId, suggestion) =>
+                          ajouter(contenu, intention, parentId, suggestion)
+                        }
+                        onSupprimer={(id) => setEchanges((l) => l.filter((x) => x.id !== id))}
+                        onReagir={reagir}
+                      />
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
 
-            <div className="mt-6">
+            {/* Bandeau de saisie en pied de carte, cf. EchangesSection. */}
+            <div className="rounded-b-card bg-surface-bubble px-4 py-4 md:px-6 md:py-6">
               <EchangeComposer
                 peutEcrire
                 enCours={false}
