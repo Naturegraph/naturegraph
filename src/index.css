@@ -32,7 +32,16 @@
  */
 :root {
   --primary-light: var(--color-action-light, rgba(231, 233, 247, 1));
-  --primary-foreground: var(--color-text-inverse, #ffffff);
+  /*
+    NG-058 : le libelle d'un bouton primaire est TOUJOURS clair, dans les deux
+    themes. Il suivait `--color-text-inverse`, qui bascule au noir en dark : le
+    fond du bouton restant le meme violet (#5F5DD8), on obtenait du #0C0C14 sur
+    #5F5DD8, soit 3,75:1 (sous le 4,5:1 exige en AA) et un libelle qui semblait
+    eteint. `--color-text-white` (#FFFDF8) ne bascule pas, ce qui est correct :
+    ce n'est pas le theme qui decide ici, c'est la couleur du bouton, et elle ne
+    change pas. Verifie sur la maquette dark : libelle releve a #FFFCF8.
+  */
+  --primary-foreground: var(--color-text-white, #ffffff);
   --muted-foreground: var(--color-text-secondary, rgba(32, 32, 61, 1));
   --destructive: var(--color-error-bg, rgba(253, 232, 232, 1));
   --destructive-foreground: var(--color-error, rgba(204, 82, 82, 1));

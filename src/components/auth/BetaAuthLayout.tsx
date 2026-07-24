@@ -40,7 +40,6 @@ export function BetaAuthLayout({ children, mainId = 'main-content' }: BetaAuthLa
     <main
       id={mainId}
       ref={containerRef}
-      data-theme="light"
       onMouseMove={prefersReducedMotion ? undefined : handleMouseMove}
       onMouseLeave={prefersReducedMotion ? undefined : handleMouseLeave}
       className="flex items-center justify-center min-h-screen w-full relative overflow-hidden bg-off-white md:bg-teal-dark"

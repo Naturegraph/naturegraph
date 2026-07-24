@@ -7,9 +7,15 @@
 
 [data-theme='dark'] {
   // ── Background / Neutral ──
-  --color-bg-primary: #{$greyscale-900}; // #0C0C14
-  --color-bg-secondary: #{$greyscale-800}; // #20203D
-  --color-bg-tertiary: #{$greyscale-700}; // #13131A : remplace le crème #FFF4E0 en dark
+  // NG-058 : ELEVATION RETABLIE. En light, `bg-primary` (#FFFDF8, la carte) est
+  // plus CLAIR que `bg-secondary` (#FFFAF0, la page) : la carte avance vers le
+  // lecteur. Le dark inversait ce rapport, avec une carte plus sombre que la
+  // page, et une page VIOLETTE (#20203D) qu'on ne trouve nulle part dans la
+  // maquette. Valeurs relevees au pixel sur Figma 6385-37942 : page #0C0C14,
+  // carte #13131A.
+  --color-bg-primary: #{$greyscale-700}; // #13131A : CARTE, un cran au-dessus de la page
+  --color-bg-secondary: #{$greyscale-900}; // #0C0C14 : PAGE, le niveau le plus bas
+  --color-bg-tertiary: #{$greyscale-800}; // #20203D : troisieme niveau, le plus haut
   --color-bg-menthe: #{$color-menthe}; // #99FFCC
 
   // ── Background / Highlight ──
@@ -59,14 +65,19 @@
   --color-neutral-999: #{$greyscale-0}; // #FFFFFF
 
   // ── Surfaces ──
-  --color-surface: #{$greyscale-800};
-  --color-surface-hover: #{$greyscale-700};
-  --color-surface-cream: #{$greyscale-800}; // #20203D : remplace crème clair en dark
-  --color-surface-cream-light: #{$greyscale-700}; // #13131A : variante plus sombre
+  // NG-058 : valeurs RELEVEES AU PIXEL sur la maquette dark (Figma 6385-37942).
+  // Le fond de page y est #0C0C14 et les cartes #13131A : une carte est donc
+  // LEGEREMENT PLUS CLAIRE que la page, ce qui la fait avancer vers le lecteur.
+  // La surface valait auparavant #20203D, un violet qui n'apparait nulle part
+  // comme fond de carte dans la maquette : les cartes ressortaient bleutees.
+  --color-surface: #{$greyscale-700}; // #13131A : carte, releve sur la maquette
+  --color-surface-hover: #{$greyscale-800}; // #20203D : survol, plus clair que la carte
+  --color-surface-cream: #{$greyscale-700}; // #13131A : remplace le crème en dark
+  --color-surface-cream-light: #{$greyscale-900}; // #0C0C14 : fond de page
   // Bulles d'echange : en dark on ECLAIRCIT au lieu d'assombrir. Une bulle plus
   // sombre que le fond se lirait comme un trou, alors que la maquette la veut
   // en relief par rapport a la publication.
-  --color-surface-bubble: #{$greyscale-600}; // #565666
+  --color-surface-bubble: #{$greyscale-800}; // #20203D : un cran au-dessus de la carte
   --color-overlay: rgba(0, 0, 0, 0.7);
 
   // ── Text / Muted ──

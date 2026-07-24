@@ -26,7 +26,6 @@ export function BetaInfoLayout({ children }: BetaInfoLayoutProps) {
   return (
     <div
       ref={containerRef}
-      data-theme="light"
       onMouseMove={prefersReducedMotion ? undefined : handleMouseMove}
       onMouseLeave={prefersReducedMotion ? undefined : handleMouseLeave}
       className="min-h-screen w-full relative bg-off-white md:bg-teal-dark"

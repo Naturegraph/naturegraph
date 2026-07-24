@@ -16,8 +16,36 @@
     <!-- Viewport (BATCH 115 : viewport-fit=cover pour notch iPhone X+ / safe areas) -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-    <!-- Compat navigateurs (BATCH 115) -->
-    <meta name="color-scheme" content="light" />
+    <!-- Compat navigateurs (BATCH 115).
+         NG-058 : "light dark" annonce que les DEUX themes sont supportes, pour
+         que le navigateur dessine ses propres elements (ascenseurs, champs
+         natifs) dans le bon sens. Le theme reellement applique est pose juste
+         en dessous, avant tout rendu. -->
+    <meta name="color-scheme" content="light dark" />
+
+    <!-- NG-058 : theme applique AVANT le premier rendu.
+         Sans ce script, la page s'affiche en clair puis bascule quand React
+         monte : un eclair blanc en pleine nuit, exactement ce que le mode
+         sombre est cense eviter. Il est volontairement inline et minuscule,
+         car il doit s'executer avant la feuille de style.
+         Meme logique que `useTheme` : choix explicite d'abord, systeme sinon. -->
+    <script>
+      (function () {
+        try {
+          var choix = localStorage.getItem('naturegraph:theme')
+          var theme =
+            choix === 'light' || choix === 'dark'
+              ? choix
+              : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+          document.documentElement.setAttribute('data-theme', theme)
+          document.documentElement.style.colorScheme = theme
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light')
+        }
+      })()
+    </script>
     <!-- mobile-web-app-capable est la nouvelle clé standard. apple-mobile-web-app-capable
          reste pour iOS Safari uniquement (deprecated dans Chrome 116+ mais necessaire pour iOS). -->
     <meta name="mobile-web-app-capable" content="yes" />

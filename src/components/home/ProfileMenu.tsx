@@ -6,7 +6,7 @@
  * Sections :
  *   - Entête       : avatar 56px + border + username + @handle
  *   - Principal    : Mon profil (bientôt) | Paramètres (bientôt)
- *   - Thème        : Apparence (bientôt)
+ *   - Thème        : bascule clair / sombre (NG-058)
  *   - Accessibilité: Taille (row → valeur courante + expand)
  *   - Déconnexion  : ouvre LogoutModal saisonnière
  *   - Version      : "App version X.X.X" (caption, aligné gauche)
@@ -36,10 +36,11 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { User, Settings, LogOut, Palette, ChevronRight, Type, ShieldCheck } from 'lucide-react'
+import { User, Settings, LogOut, ChevronRight, Type, ShieldCheck, Moon, Sun } from 'lucide-react'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAccessibility, type TextSize } from '@/contexts/AccessibilityContext'
+import { useThemeContext } from '@/contexts/ThemeContext'
 import { useIsAdmin } from '@/hooks/useIsAdmin'
 import { LogoutModal } from './LogoutModal'
 
@@ -99,6 +100,54 @@ function IconWrap({ children, danger = false }: { children: React.ReactNode; dan
  * disabled → rendu en <div aria-disabled> + SoonBadge automatique.
  * highlighted → fond lavande bg-primary/10 (item principal mis en avant).
  */
+/**
+ * Ligne "Mode sombre" du menu profil.
+ *
+ * NG-058 : l'emplacement "Thème > Apparence" existait deja mais etait grise
+ * ("bientot"), le theme etant force en clair depuis le MVP. On l'active ici
+ * plutot que d'inventer un autre endroit.
+ *
+ * C'EST LA LIGNE ELLE-MEME QUI PORTE `role="switch"`, et non un interrupteur
+ * glisse a l'interieur. Imbriquer un bouton dans un bouton produit du HTML
+ * invalide, et surtout un clic sur l'interrupteur declenchait DEUX bascules
+ * (celle du bouton interne puis celle de la ligne par propagation) : le theme
+ * revenait a son point de depart. La pastille de droite est donc purement
+ * decorative, et toute la ligne de 48px sert de cible.
+ *
+ * Un interrupteur et non trois choix (Clair / Sombre / Systeme) : au premier
+ * lancement l'app suit deja le systeme, le seul geste restant a offrir est de
+ * s'en ecarter.
+ */
+function ThemeRow({ sombre, onToggle }: { sombre: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={sombre}
+      onClick={onToggle}
+      className="w-full flex items-center gap-2 px-3 h-12 rounded-md text-left transition-colors cursor-pointer hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+    >
+      <IconWrap>{sombre ? <Moon className="size-5" /> : <Sun className="size-5" />}</IconWrap>
+      <span className="flex-1 text-sm font-medium text-foreground">Mode sombre</span>
+      {/* Pastille decorative : l'element interactif est la ligne. */}
+      <span
+        aria-hidden="true"
+        className={[
+          'relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors',
+          sombre ? 'bg-[var(--color-action-default)]' : 'bg-[var(--color-border)]',
+        ].join(' ')}
+      >
+        <span
+          className={[
+            'inline-block size-5 rounded-full bg-white shadow-sm transition-transform',
+            sombre ? 'translate-x-[18px]' : 'translate-x-0.5',
+          ].join(' ')}
+        />
+      </span>
+    </button>
+  )
+}
+
 function MenuItem({
   icon,
   label,
@@ -273,6 +322,8 @@ export function ProfileMenu({ onClose, onOpenSettings }: ProfileMenuProps) {
   const { profile, signOut } = useAuth()
   const navigate = useNavigate()
   const { textSize, setTextSize } = useAccessibility()
+  const { theme, toggleTheme } = useThemeContext()
+  const sombre = theme === 'dark'
   // BATCH 85 : lien direct vers /admin pour les comptes admin (super_admin/moderator/support).
   // Lecture cachée 5 min via React Query, donc pas de re-fetch a chaque ouverture du menu.
   const { isAdmin, role } = useIsAdmin()
@@ -421,8 +472,7 @@ export function ProfileMenu({ onClose, onOpenSettings }: ProfileMenuProps) {
         <div className="flex flex-col gap-2">
           <SectionLabel label="Thème" />
           <div>
-            {/* Apparence : feature gated (dark mode non implémenté) */}
-            <MenuItem icon={<Palette className="size-5" />} label="Apparence" disabled />
+            <ThemeRow sombre={sombre} onToggle={toggleTheme} />
           </div>
         </div>
 

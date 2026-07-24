@@ -1065,7 +1065,10 @@
     "weeklyGoal": "Weekly goal",
     "weeklyGoalDesc": "Number of observations per week",
     "weeklyGoalDecrease": "Decrease goal",
-    "weeklyGoalIncrease": "Increase goal"
+    "weeklyGoalIncrease": "Increase goal",
+    "items": {
+      "darkMode": "Dark mode"
+    }
   },
   "mobileNav": {
     "home": "Home",

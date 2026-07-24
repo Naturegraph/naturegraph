@@ -1065,7 +1065,10 @@
     "weeklyGoal": "Objectif hebdomadaire",
     "weeklyGoalDesc": "Nombre de partages visés par semaine",
     "weeklyGoalDecrease": "Diminuer l'objectif",
-    "weeklyGoalIncrease": "Augmenter l'objectif"
+    "weeklyGoalIncrease": "Augmenter l'objectif",
+    "items": {
+      "darkMode": "Mode sombre"
+    }
   },
   "mobileNav": {
     "home": "Accueil",

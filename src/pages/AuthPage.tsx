@@ -221,7 +221,6 @@ export default function AuthPage({
   return (
     <div
       ref={containerRef}
-      data-theme="light"
       onMouseMove={prefersReducedMotion || mode === 'onboarding' ? undefined : handleMouseMove}
       onMouseLeave={prefersReducedMotion || mode === 'onboarding' ? undefined : handleMouseLeave}
       className={`flex items-center justify-center min-h-screen w-full relative overflow-hidden ${

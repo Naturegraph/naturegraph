@@ -177,64 +177,74 @@ export function ProfileSidebar() {
           )}
 
           {/* Stats cards : fond cream-lighter, icône pastille + valeur + label */}
-          <div className="grid grid-cols-3 gap-2">
-            <StatCard
-              icon={Bird}
-              value={observations}
-              label={t('home.profile.obs')}
-              tone="primary"
-            />
-            <StatCard
-              icon={ClipboardList}
-              value={species}
-              label={t('home.profile.species')}
-              tone="teal"
-            />
-            <StatCard
-              icon={Flame}
-              value={streakDays}
-              // FR : 0/1 -> singulier, 2+ -> pluriel (retour QA Nicolas)
-              label={streakDays <= 1 ? 'Semaine' : 'Semaines'}
-              tone="warning"
-            />
-          </div>
+          {/*
+            Les trois cartes de stats et la carte d'objectif forment UN SEUL
+            bloc : meme fond, meme arrondi, meme famille d'information. On les
+            regroupe donc dans un conteneur a `gap-2`, l'ecart qui separe deja
+            les trois cartes entre elles. Le `gap-4` du parent creusait un vide
+            plus large sous la grille qu'a l'interieur, ce qui detachait
+            l'objectif du groupe auquel il appartient (retour Nicolas).
+          */}
+          <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-3 gap-2">
+              <StatCard
+                icon={Bird}
+                value={observations}
+                label={t('home.profile.obs')}
+                tone="primary"
+              />
+              <StatCard
+                icon={ClipboardList}
+                value={species}
+                label={t('home.profile.species')}
+                tone="teal"
+              />
+              <StatCard
+                icon={Flame}
+                value={streakDays}
+                // FR : 0/1 -> singulier, 2+ -> pluriel (retour QA Nicolas)
+                label={streakDays <= 1 ? 'Semaine' : 'Semaines'}
+                tone="warning"
+              />
+            </div>
 
-          {/* Objectif semaine : MEME fond que les trois cartes de stats juste
+            {/* Objectif semaine : MEME fond que les trois cartes de stats juste
               au-dessus (retour Nicolas 2026-07-23). Elle etait en creme sur un
               fond creme, donc invisible comme carte : quatre elements de meme
               nature dans la meme colonne doivent porter le meme fond. */}
-          <div className="bg-card rounded-lg p-4 flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-foreground tracking-[0.04em]">
-                {t('home.profile.thisWeek')}
-              </p>
-              <p className="text-xs text-foreground tracking-[0.04em]">
-                {weekCurrent}/{weekGoal} {t('home.profile.obs').toLowerCase()}
-              </p>
-            </div>
-            <div
-              role="progressbar"
-              aria-valuenow={weekCurrent}
-              aria-valuemin={0}
-              aria-valuemax={weekGoal}
-              aria-label={t('home.profile.progressLabel', {
-                current: weekCurrent,
-                goal: weekGoal,
-              })}
-              className="h-2 rounded-full bg-muted/30 border-[0.5px] border-border overflow-hidden relative"
-            >
-              {/*
+            <div className="bg-card rounded-md p-4 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-foreground tracking-[0.04em]">
+                  {t('home.profile.thisWeek')}
+                </p>
+                <p className="text-xs text-foreground tracking-[0.04em]">
+                  {weekCurrent}/{weekGoal} {t('home.profile.obs').toLowerCase()}
+                </p>
+              </div>
+              <div
+                role="progressbar"
+                aria-valuenow={weekCurrent}
+                aria-valuemin={0}
+                aria-valuemax={weekGoal}
+                aria-label={t('home.profile.progressLabel', {
+                  current: weekCurrent,
+                  goal: weekGoal,
+                })}
+                className="h-2 rounded-full bg-muted/30 overflow-hidden relative"
+              >
+                {/*
                 Gradient figé sur 100% de largeur, révélé via clip-path à
                 `progressPercent%`. Le bord droit visible du fill indique la
                 "chaleur" (jaune = début, orange = objectif atteint).
               */}
-              <div
-                className="absolute inset-0 rounded-full transition-[clip-path] duration-500 motion-reduce:transition-none"
-                style={{
-                  backgroundImage: heatGradient,
-                  clipPath: `inset(0 ${100 - progressPercent}% 0 0)`,
-                }}
-              />
+                <div
+                  className="absolute inset-0 rounded-full transition-[clip-path] duration-500 motion-reduce:transition-none"
+                  style={{
+                    backgroundImage: heatGradient,
+                    clipPath: `inset(0 ${100 - progressPercent}% 0 0)`,
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
