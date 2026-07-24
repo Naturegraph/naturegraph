@@ -53,7 +53,7 @@ import { LocationModal } from './LocationModal'
 import { ProfileMenu } from './ProfileMenu'
 import { StatsSheet } from './StatsSheet'
 import { SettingsPanel } from '@/components/settings/SettingsPanel'
-import logoColor from '@/assets/logos/logo-wordmark-color.svg'
+import { LogoWordmark } from '@/components/ui/LogoWordmark'
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -187,7 +187,7 @@ export function HomeNavbar({
             >
               {/* Mobile : h-6 (24px) pour laisser de la place aux boutons d'action.
                   Desktop md+ : h-8 (32px), taille de base inchangée. */}
-              <img src={logoColor} alt="Naturegraph" className="h-6 md:h-8 w-auto" />
+              <LogoWordmark className="h-6 md:h-8 w-auto" />
             </Link>
 
             {/* Actions droite */}

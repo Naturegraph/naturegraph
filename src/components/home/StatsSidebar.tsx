@@ -112,7 +112,7 @@ export function StatsSidebar({ onItemSelected }: { onItemSelected?: () => void }
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="bg-teal-dark size-8 rounded-full flex items-center justify-center shrink-0">
-              <Globe className="size-5 text-white" aria-hidden="true" />
+              <Globe className="size-5 text-[var(--color-on-highlight)]" aria-hidden="true" />
             </div>
             <p className="text-base text-foreground">{t('home.stats.impact')}</p>
           </div>
@@ -201,7 +201,7 @@ export function StatsSidebar({ onItemSelected }: { onItemSelected?: () => void }
         <div className="flex items-center justify-between gap-6 px-6">
           <div className="flex items-center gap-3">
             <div className="bg-teal-dark size-8 rounded-full flex items-center justify-center shrink-0">
-              <TrendingUp className="size-5 text-white" aria-hidden="true" />
+              <TrendingUp className="size-5 text-[var(--color-on-highlight)]" aria-hidden="true" />
             </div>
             <p className="text-base text-foreground">{t('home.trending.title')}</p>
           </div>

@@ -44,6 +44,8 @@ interface ContributionType {
   description: string
   /** Couleur CSS du fond de la carte (token ou hex commenté) */
   cardBg: string
+  /** Retiree de l'affichage sans etre supprimee du code. */
+  hidden?: boolean
   /** Couleur CSS du fond du cercle-icône */
   iconBg: string
   /** Composant Lucide pour l'icône */
@@ -62,6 +64,10 @@ const CONTRIBUTION_TYPES: ContributionType[] = [
     // usages : (1) mode terrain au fil d'une sortie sur smartphone, (2) saisie
     // au calme sur PC pour reporter des notes papier. On ne restreint plus au
     // mobile pour couvrir l'ensemble des cas d'usage.
+    // Masque le 2026-07-23 (Nicolas) : plus utile pour le moment. L'entree est
+    // conservee mais filtree a l'affichage, pour pouvoir la remettre sans avoir
+    // a la reecrire.
+    hidden: true,
     id: 'nature_notebook',
     title: "Carnet d'observations",
     description: 'Démarre une sortie nature : ajoute progressivement les espèces observées.',
@@ -76,10 +82,16 @@ const CONTRIBUTION_TYPES: ContributionType[] = [
     id: 'nature_instant',
     title: 'Instant nature',
     description: "Partage un paysage ou un phénomène naturel qui t'a marqué.",
-    /** Background/Neutral/Tertiary (--color-bg-tertiary = #FFF4E0). */
-    cardBg: 'var(--color-bg-tertiary)',
-    /** Amber brand primary (--color-amber-primary = #CC7A00). */
-    iconBg: 'var(--color-amber-primary)',
+    /**
+     * Background/Neutral/Tertiary. Valeur FIGEE (#FFF4E0) et non le token :
+     * celui-ci bascule au violet sombre en mode sombre, ce qui rendait cette
+     * carte illisible et desaccordait les trois cartes entre elles. Decision
+     * Nicolas 2026-07-23 : les trois gardent leur teinte claire dans les deux
+     * themes, leur texte etant fixe par `--color-on-pale`.
+     */
+    cardBg: '#fff4e0',
+    /** Amber brand primary. Valeur FIGEE (#CC7A00), meme raison que le teal. */
+    iconBg: '#cc7a00',
     Icon: MountainSnow,
     // Nicolas 2026-05-23 : activé en preview, branche feat/instant-nature-preview.
     disabled: false,
@@ -90,8 +102,13 @@ const CONTRIBUTION_TYPES: ContributionType[] = [
     description: 'Contribue en ajoutant une observation animale, avec ou sans photo.',
     /** Background/Highlight/Secondary : teal-50 (#E5F7F7, $brand-highlight-50). */
     cardBg: '#e5f7f7',
-    /** Background/Highlight/Primary (--color-highlight-primary = #006666). */
-    iconBg: 'var(--color-highlight-primary)',
+    /**
+     * Background/Highlight/Primary. Valeur FIGEE (#006666) et non le token :
+     * `--color-highlight-primary` passe au teal VIF (#33B6B6) en mode sombre,
+     * ce qui delavait la pastille et desaccordait la carte de sa version
+     * claire. La carte etant elle-meme figee, sa pastille doit l'etre aussi.
+     */
+    iconBg: '#006666',
     Icon: Bird,
     disabled: false,
   },
@@ -192,7 +209,10 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
    *   uniquement côté desktop (le dropdown mobile est aussi monté dans le DOM ;
    *   un seul des deux doit porter le ref pour éviter un focus sur un nœud caché).
    */
-  function renderCards(types: ContributionType[], attachRef: boolean) {
+  function renderCards(tousLesTypes: ContributionType[], attachRef: boolean) {
+    // Le filtre vit ICI, au rendu : les entrees masquees restent declarees
+    // (donc faciles a remettre) mais ne sont ni affichees ni focalisables.
+    const types = tousLesTypes.filter((t) => !t.hidden)
     const firstFocusableIndex = types.findIndex((t) => !t.disabled)
     return (
       <div role="menu" aria-label="Type de contribution" className="flex flex-col gap-1">
@@ -221,12 +241,12 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
                 {/* Texte */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="font-title font-bold text-base leading-[1.2] text-foreground">
+                    <p className="font-title font-bold text-base leading-[1.2] text-[var(--color-on-pale)]">
                       {type.title}
                     </p>
                     <SoonBadge />
                   </div>
-                  <p className="text-sm text-[var(--color-text-secondary)] mt-1 leading-normal">
+                  <p className="text-sm text-[var(--color-on-pale)]/70 mt-1 leading-normal">
                     {type.description}
                   </p>
                 </div>
@@ -256,10 +276,10 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
 
               {/* Texte */}
               <div className="flex-1 min-w-0">
-                <p className="font-title font-bold text-base leading-[1.2] text-foreground">
+                <p className="font-title font-bold text-base leading-[1.2] text-[var(--color-on-pale)]">
                   {type.title}
                 </p>
-                <p className="text-sm text-[var(--color-text-secondary)] mt-1 leading-normal">
+                <p className="text-sm text-[var(--color-on-pale)]/70 mt-1 leading-normal">
                   {type.description}
                 </p>
               </div>
@@ -274,7 +294,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
     <>
       {/* ── Backdrop mobile uniquement ──────────────────────────────────────── */}
       <div
-        className="md:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40"
+        className="md:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
         aria-hidden="true"
         onClick={onClose}
       />

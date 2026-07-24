@@ -434,7 +434,7 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-foreground/30 backdrop-blur-sm md:block hidden"
+        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm md:block hidden"
         aria-hidden="true"
         onClick={onClose}
       />

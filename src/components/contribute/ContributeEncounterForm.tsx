@@ -720,7 +720,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
     <>
       {/* ── Backdrop : clic ferme le panneau ────────────────────────────── */}
       <div
-        className="fixed inset-0 z-40 bg-foreground/30 backdrop-blur-sm md:block hidden"
+        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm md:block hidden"
         aria-hidden="true"
         onClick={onClose}
       />
@@ -743,7 +743,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
         <div className="shrink-0 pt-6 px-4 pb-3 flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
             {/* Badge type : pill teal avec label */}
-            <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-teal-dark text-white text-sm leading-none">
+            <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-teal-dark text-[var(--color-on-highlight)] text-sm leading-none">
               <span className="font-body">{t('contribute.encounterTitle')}</span>
             </span>
 

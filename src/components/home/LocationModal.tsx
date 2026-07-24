@@ -542,7 +542,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
     <>
       {/* ── Backdrop : mobile uniquement (desktop : click-outside via panelRef) ── */}
       <div
-        className="md:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-50"
+        className="md:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
         aria-hidden="true"
         onClick={onClose}
       />

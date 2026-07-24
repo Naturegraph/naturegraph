@@ -213,7 +213,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-foreground/40 backdrop-blur-sm"
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
         aria-hidden="true"
         onClick={onClose}
       />

@@ -44,7 +44,7 @@ export function GuestSidebar() {
       <div className="bg-cream-lighter border-[0.5px] border-border rounded-card px-6 py-6">
         <div className="flex items-center gap-3 mb-1">
           <div className="bg-teal-dark size-8 rounded-full flex items-center justify-center shrink-0">
-            <Users className="size-4 text-white" aria-hidden="true" />
+            <Users className="size-4 text-[var(--color-on-highlight)]" aria-hidden="true" />
           </div>
           <p className="font-bold">{t('home.sidebar.migratorsTitle')}</p>
         </div>

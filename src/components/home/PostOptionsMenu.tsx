@@ -472,7 +472,7 @@ export function PostOptionsMenu({
     <>
       {/* ── Backdrop mobile uniquement ─────────────────────────────────────── */}
       <div
-        className="md:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40"
+        className="md:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
         aria-hidden="true"
         onClick={onClose}
       />

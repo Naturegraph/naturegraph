@@ -64,6 +64,19 @@
   --color-neutral-0: #{$greyscale-999}; // #000000
   --color-neutral-999: #{$greyscale-0}; // #FFFFFF
 
+  // ── Contenu POSE SUR une pastille coloree (NG-058) ──
+  // Dark : `highlight-primary` devient un teal VIF (#33B6B6), sur lequel du
+  // blanc tombe sous le seuil AA -> contenu fonce.
+  --color-on-highlight: #{$greyscale-900};
+  // Dark : `action-light` devient un violet SOMBRE (#262B55) -> contenu clair.
+  --color-on-action-light: #{$greyscale-50};
+
+  // Contenu pose sur une surface PALE FIGEE (cartes du menu Contribuer, dont
+  // le fond vient de la maquette et ne bascule pas). Ce token ne bascule donc
+  // pas non plus : sinon le texte virait au clair sur un fond reste pale, et
+  // devenait illisible en mode sombre.
+  --color-on-pale: #{$greyscale-900};
+
   // ── Surfaces ──
   // NG-058 : valeurs RELEVEES AU PIXEL sur la maquette dark (Figma 6385-37942).
   // Le fond de page y est #0C0C14 et les cartes #13131A : une carte est donc

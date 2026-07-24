@@ -508,7 +508,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
       ? createPortal(
           <>
             <div
-              className="md:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-[60]"
+              className="md:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-[60]"
               aria-hidden="true"
               onClick={onClose}
             />

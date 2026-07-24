@@ -3,7 +3,7 @@
  * Navigue vers la landing page au clic si onNavigateToLanding est fourni.
  */
 
-import logoColor from '@/assets/logos/logo-wordmark-color.svg'
+import { LogoWordmark } from '@/components/ui/LogoWordmark'
 
 interface LogoProps {
   /** Callback pour naviguer vers la landing. Si absent, le logo est non-cliquable. */
@@ -19,10 +19,10 @@ export function Logo({ onNavigateToLanding }: LogoProps) {
         className="focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-primary)] rounded"
         aria-label="Naturegraph, Retour à l'accueil"
       >
-        <img src={logoColor} alt="Naturegraph" className="h-8 w-auto" />
+        <LogoWordmark />
       </button>
     )
   }
 
-  return <img src={logoColor} alt="Naturegraph" className="h-8 w-auto" />
+  return <LogoWordmark />
 }

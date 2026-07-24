@@ -120,7 +120,7 @@ export function OnboardingExitModal({
       aria-labelledby="exit-modal-title"
     >
       {/* Overlay semi-transparent avec flou */}
-      <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" aria-hidden="true" />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
 
       {/* Card modale : stopPropagation pour éviter la fermeture au clic interne */}
       {/* role="presentation" : conteneur décoratif, pas d'interaction propre */}

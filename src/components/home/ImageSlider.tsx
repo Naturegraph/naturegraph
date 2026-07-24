@@ -379,7 +379,7 @@ export function ImageSlider({
             className={[
               'absolute bottom-2 right-2 inline-flex items-center justify-center',
               'min-w-[31px] h-6 px-1 pb-0.5 rounded',
-              'bg-foreground/30 backdrop-blur-md',
+              'bg-black/30 backdrop-blur-md',
               'text-[14px] leading-none font-body text-white tabular-nums',
             ].join(' ')}
           >
@@ -401,8 +401,8 @@ export function ImageSlider({
               className={[
                 'hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10',
                 'size-9 items-center justify-center rounded-full',
-                'bg-foreground/40 backdrop-blur-md text-white',
-                'hover:bg-foreground/60 transition-colors',
+                'bg-black/40 backdrop-blur-md text-white',
+                'hover:bg-black/60 transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
               ].join(' ')}
             >
@@ -417,8 +417,8 @@ export function ImageSlider({
               className={[
                 'hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10',
                 'size-9 items-center justify-center rounded-full',
-                'bg-foreground/40 backdrop-blur-md text-white',
-                'hover:bg-foreground/60 transition-colors',
+                'bg-black/40 backdrop-blur-md text-white',
+                'hover:bg-black/60 transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
               ].join(' ')}
             >

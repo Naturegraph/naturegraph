@@ -47,9 +47,16 @@ function StatCard({
   tone: 'primary' | 'teal' | 'warning'
 }) {
   // Figma : primary + teal = action-light (#E7E9F7) ; streak = warning-bg (#FEE1C8)
+  //
+  // NG-058 : l'icone prend `--color-on-action-light`, qui suit la CLARTE de la
+  // pastille et non le theme. En clair la pastille est un lavande pale, donc
+  // l'icone reste violette ; en sombre elle devient un violet fonce (#262B55)
+  // sur lequel du violet #5F5DD8 etait illisible, donc l'icone passe au clair.
+  // Le ton `warning` n'a pas ce probleme : ses deux tokens s'inversent deja
+  // ensemble d'un theme a l'autre.
   const toneCls: Record<typeof tone, string> = {
-    primary: 'bg-[var(--color-action-light)] text-primary',
-    teal: 'bg-[var(--color-action-light)] text-teal-dark',
+    primary: 'bg-[var(--color-action-light)] text-[var(--color-on-action-light)]',
+    teal: 'bg-[var(--color-action-light)] text-[var(--color-on-action-light)]',
     warning: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
   }
   return (
@@ -265,7 +272,10 @@ export function ProfileSidebar() {
         {/* Header */}
         <div className="flex items-center gap-3 px-6">
           <div className="bg-teal-dark size-8 rounded-full flex items-center justify-center shrink-0">
-            <UsersRound className="size-5 text-white" aria-hidden="true" />
+            {/* NG-058 : `text-white` etait fige. En sombre la pastille devient
+                un teal VIF (#33B6B6) sur lequel le blanc passe sous le seuil
+                AA : le token suit la clarte de la pastille. */}
+            <UsersRound className="size-5 text-[var(--color-on-highlight)]" aria-hidden="true" />
           </div>
           <p className="text-base text-foreground">{t('home.sidebar.migratorsTitle')}</p>
         </div>

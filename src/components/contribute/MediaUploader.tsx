@@ -218,7 +218,7 @@ export function MediaUploader({ files, onChange, maxFiles = 4, error }: MediaUpl
                 type="button"
                 onClick={() => removeFile(i)}
                 aria-label={t('contribute.media.remove', { index: i + 1 })}
-                className="absolute top-1 right-1 size-6 rounded-full bg-foreground/70 text-cream-lighter flex items-center justify-center hover:bg-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="absolute top-1 right-1 size-6 rounded-full bg-black/70 text-cream-lighter flex items-center justify-center hover:bg-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 <X className="size-3.5" aria-hidden="true" />
               </button>

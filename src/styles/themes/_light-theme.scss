@@ -64,6 +64,21 @@
   --color-neutral-0: #{$greyscale-0}; // #FFFFFF
   --color-neutral-999: #{$greyscale-999}; // #000000
 
+  // ── Contenu POSE SUR une pastille coloree (NG-058) ──
+  // La couleur d'une icone dans une pastille ne depend pas du theme mais de la
+  // CLARTE de la pastille. Ces deux tokens portent cette regle une seule fois,
+  // au lieu de la reecrire a chaque composant.
+  // Light : `highlight-primary` est un teal FONCE (#006666) -> contenu clair.
+  --color-on-highlight: #{$greyscale-white};
+  // Light : `action-light` est un lavande PALE (#E7E9F7) -> contenu fonce.
+  --color-on-action-light: #{$brand-main-500};
+
+  // Contenu pose sur une surface PALE FIGEE (cartes du menu Contribuer, dont
+  // le fond vient de la maquette et ne bascule pas). Ce token ne bascule donc
+  // pas non plus : sinon le texte virait au clair sur un fond reste pale, et
+  // devenait illisible en mode sombre.
+  --color-on-pale: #{$greyscale-900};
+
   // ── Surfaces ──
   --color-surface: #{$greyscale-white};
   --color-surface-hover: #{$brand-bg-100};

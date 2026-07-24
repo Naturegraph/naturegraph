@@ -58,7 +58,7 @@ export function MobileNavDrawer({ onClose }: MobileNavDrawerProps) {
     <>
       {/* Backdrop : clique pour fermer */}
       <div
-        className="md:hidden fixed inset-0 bg-foreground/30 backdrop-blur-sm z-[55]"
+        className="md:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-[55]"
         aria-hidden="true"
         onClick={onClose}
       />
