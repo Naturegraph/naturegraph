@@ -67,6 +67,15 @@ interface SendRequest {
   min_interval_hours: number
   /** Clé de dédup fine pour les events (E8 : id de l'auteur suivi). */
   reference_key?: string
+  /**
+   * NG-045 refonte E2 (2026-07-27). Donne a un email `weekly_marketing` sa
+   * PROPRE dedup (par `email_type`, max 1 sur la fenetre) au lieu du cap partage
+   * a 2 de la categorie. Sert a garantir le rendez-vous hebdo E2 du dimanche,
+   * meme si E3/E4 ont deja consomme le cap partage en semaine. L'opt-out reste
+   * applique en amont (`is_email_enabled` via `pref_type`) : ce drapeau ne
+   * touche QUE l'anti-spam, jamais le consentement.
+   */
+  ownDedup?: boolean
   subject: string
   heroTitle: string
   bodyHtml: string
@@ -173,9 +182,13 @@ Deno.serve(async (req: Request) => {
     // centrale, quel que soit le min_interval_hours passe par les crons E1-E4.
     // event (E5-E8) : dedup fine par email_type (+ reference_key) sur la fenetre
     // min_interval_hours fournie par l'appelant (comportement inchange).
+    // E2 (ownDedup, NG-045) : compte propre par email_type, hors du cap partage
+    // weekly_marketing, pour garantir le rendez-vous du dimanche. Effet de bord
+    // assume (spec 5) : jusqu'a 3 marketing/semaine dans de rares cas.
     const isWeeklyMarketing = payload.category === 'weekly_marketing'
-    const windowHours = isWeeklyMarketing ? 168 : payload.min_interval_hours
-    const maxInWindow = isWeeklyMarketing ? 2 : 1
+    const capPartage = isWeeklyMarketing && !payload.ownDedup
+    const windowHours = capPartage ? 168 : payload.ownDedup ? 168 : payload.min_interval_hours
+    const maxInWindow = capPartage ? 2 : 1
     const since = new Date(Date.now() - windowHours * 3600_000).toISOString()
     let recentQuery = admin
       .from('email_send_log')
@@ -183,7 +196,7 @@ Deno.serve(async (req: Request) => {
       .eq('user_id', payload.user_id)
       .gte('sent_at', since)
 
-    if (isWeeklyMarketing) {
+    if (capPartage) {
       recentQuery = recentQuery.eq('category', 'weekly_marketing')
     } else {
       recentQuery = recentQuery.eq('email_type', payload.email_type)
