@@ -86,21 +86,28 @@ semaine : le bloc n apparait pas (repli sur le socle seul).
 Cout : une petite requete par destinataire (obs recentes des comptes suivis).
 A ~45 envois/semaine, negligeable. Le socle reste partage.
 
-## 5. Anti-spam et priorite (A DECIDER a l implementation)
+## 5. Anti-spam et priorite (TRANCHE 2026-07-27)
 
 E2 doit partir a coup sur le dimanche. Or le cap `weekly_marketing` = 2 emails /
 168h est **partage avec E3/E4** (rappel objectif, serie), qui peuvent l avoir
-consomme en semaine. Deux options :
+consomme en semaine.
 
-- **(Reco)** E2 obtient sa **propre dedup** (max 1 `e2_missed` / 7j), hors du cap
-  partage. On garde `category = weekly_marketing` pour l opt-out et le
-  desabonnement, mais l anti-spam d E2 ne compte que les envois `e2_missed`. Ceci
-  garantit le rendez-vous du dimanche. Effet de bord : jusqu a 3 marketing/semaine
-  dans de rares cas (E3 + E4 + E2).
-- (Alt) Garder le cap 2 partage et accepter que E2 saute pour les users tres
-  sollicites en semaine. Non recommande (contredit "priorite max E2").
+**Decision Nicolas (2026-07-27)** : E2 sort du groupe marketing. Il passe en
+`category = 'event'` (comme E5-E8). Le dispatcher lui applique alors sa dedup
+propre (max 1 `e2_missed` / 168h), hors du cap partage E3/E4. Aucun code special
+dans le dispatcher : le comportement 'event' existant suffit, donc pas de
+redeploiement de `send-notification-email`.
 
-Trancher avec Nicolas avant de coder.
+Justification "dimanche = ce mail uniquement" : les crons le garantissent deja.
+E3 tombe le jeudi (`0 16 * * 4`), E4 le samedi (`0 16 * * 6`), E1 est desactive.
+Le dimanche, seul E2 tourne, donc le sortir du cap ne cree aucun cumul reel ce
+jour-la ; ca garantit juste qu il ne saute pas a cause d un E3/E4 recu en semaine.
+
+Opt-out inchange : `is_email_enabled(user, 'weekly_digest')` et le lien de
+desabonnement dependent de `pref_type`, pas de `category`. CASL / Loi 25 respecte.
+
+Option ecartee : garder le cap 2 partage (E2 aurait saute pour les users tres
+sollicites en semaine, contredit "priorite max E2").
 
 ## 6. Planification (crons pg_cron)
 

@@ -266,13 +266,15 @@ Deno.serve(async (req: Request) => {
           user_id: dest.id,
           to_email: dest.email,
           email_type: 'e2_missed',
-          category: 'weekly_marketing',
+          // Categorie 'event' (decision Nicolas 2026-07-27) : E2 sort du cap
+          // partage 'weekly_marketing' (E1-E4). Le dispatcher lui applique alors
+          // une dedup PROPRE (max 1 `e2_missed` / 168h), ce qui garantit le
+          // rendez-vous du dimanche sans etre bloque par E3/E4 (semaine) ni les
+          // faire sauter. Le dimanche, seul E2 tourne de toute facon (E3 jeudi,
+          // E4 samedi, E1 desactive). L'opt-out reste applique en amont via
+          // `pref_type` (independant de la categorie), donc CASL / Loi 25 OK.
+          category: 'event',
           pref_type: 'weekly_digest',
-          // E2 a sa PROPRE dedup (section 5, option recommandee) : le dispatcher
-          // ne compte que les envois `e2_missed` de la semaine, hors du cap
-          // partage avec E3/E4, pour garantir le rendez-vous du dimanche.
-          // L'opt-out reste applique en amont via `pref_type`.
-          ownDedup: true,
           min_interval_hours: 168,
           subject: 'Cette semaine sur Naturegraph',
           heroTitle: 'Cette semaine sur Naturegraph',
