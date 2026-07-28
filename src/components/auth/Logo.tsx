@@ -19,10 +19,11 @@ export function Logo({ onNavigateToLanding }: LogoProps) {
         className="focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-primary)] rounded"
         aria-label="Naturegraph, Retour à l'accueil"
       >
-        <LogoWordmark />
+        {/* forceVariant light : pages auth toujours claires (cf. LogoWordmark). */}
+        <LogoWordmark forceVariant="light" />
       </button>
     )
   }
 
-  return <LogoWordmark />
+  return <LogoWordmark forceVariant="light" />
 }
