@@ -63,6 +63,18 @@
   // dans 3+ composants.
   --color-amber-primary: #cc7a00;
 
+  // ── Contribuer : cartes teintees (pendant clair de _dark-theme.scss) ──
+  // En clair, les cartes gardent leur teinte pastel et le glyphe reste clair
+  // (quasi blanc) sur la pastille foncee. Cf. Figma 6858:13212.
+  --color-contribute-encounter-bg: #{$brand-highlight-50}; // #E5F7F7
+  --color-contribute-encounter-circle: #{$brand-highlight-500}; // #006666
+  --color-contribute-encounter-glyph: #{$greyscale-white}; // #FFFFFF (icone blanche)
+  --color-contribute-instant-bg: #fff4e0;
+  --color-contribute-instant-circle: #cc7a00;
+  --color-contribute-instant-glyph: #{$greyscale-white}; // #FFFFFF (icone blanche)
+  --color-contribute-title: #{$greyscale-800}; // #20203D
+  --color-contribute-desc: #{$greyscale-600}; // #565666
+
   // ── Semantic / Background ──
   --color-success-bg: #{$semantic-green-100}; // #C7F2DF
   --color-warning-bg: #{$semantic-orange-100}; // #FEE1C8

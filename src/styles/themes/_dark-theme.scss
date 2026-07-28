@@ -62,6 +62,19 @@
   --color-error: #{$semantic-red-100}; // #FCCDD5
   --color-info: #{$semantic-blue-100}; // #BADEFA
 
+  // ── Contribuer : cartes teintees (Figma dark 6858:13212, Nicolas 2026-07-28) ──
+  // En sombre, chaque carte prend une teinte TRES foncee de son accent, et le
+  // glyphe de l'icone reprend cette meme teinte sombre (il se "decoupe" dans la
+  // pastille vive). Remplace l'ancien figeage clair des trois cartes.
+  --color-contribute-encounter-bg: #032222; // teal quasi noir
+  --color-contribute-encounter-circle: #{$brand-highlight-400}; // #33B6B6
+  --color-contribute-encounter-glyph: #032222; // glyphe = teinte sombre de la carte
+  --color-contribute-instant-bg: #281203; // ambre quasi noir
+  --color-contribute-instant-circle: #cc7a00;
+  --color-contribute-instant-glyph: #281203; // glyphe = teinte sombre de la carte
+  --color-contribute-title: #fffcf8; // creme
+  --color-contribute-desc: #{$greyscale-100}; // #EBEBF0
+
   // ── Brand secondary (Instant nature : BATCH 42) ──
   // Spec Figma identique en dark (couleur brand specifique).
   --color-amber-primary: #cc7a00;

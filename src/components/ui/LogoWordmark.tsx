@@ -9,8 +9,8 @@
  * VARIANTE SOMBRE (2026-07-28). L'ancien `logo-wordmark-white.svg` (lettrage
  * tout blanc a plat, sans l'accent) a ete retire : il perdait l'identite de la
  * marque. `logo-wordmark-dark.svg` reprend le wordmark couleur avec les lettres
- * en creme (#FFFDF8) et le « g » au teal du theme sombre (#33B6B6,
- * `--color-highlight-primary`), pour rester lisible ET fidele a la marque.
+ * en creme (#FFFDF8) et le « g » en menthe (#99FFCC, `$color-menthe`, choix
+ * Nicolas), pour rester lisible ET fidele a la marque.
  *
  * SOURCE UNIQUE. Le choix de la variante vit ici et nulle part ailleurs : c'est
  * precisement parce qu'il etait duplique que le mode sombre a ete oublie des
