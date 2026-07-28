@@ -333,7 +333,17 @@ export function EchangeItem({
   if (echange.supprime) {
     return (
       <li className="flex gap-3">
-        <div className="size-8 shrink-0 rounded-full bg-surface-bubble" aria-hidden="true" />
+        {/* Hermine par defaut (pas l'avatar reel) : le message est supprime,
+            on n'expose plus son auteur. */}
+        <img
+          src={hermineIcon}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          width={32}
+          height={32}
+          className="size-8 shrink-0 rounded-full object-cover bg-primary-light"
+        />
         <div className="min-w-0 flex-1">
           <div className="w-fit max-w-full rounded-sm bg-surface-bubble p-3">
             <p className="text-sm italic text-muted-foreground">Échange supprimé</p>
