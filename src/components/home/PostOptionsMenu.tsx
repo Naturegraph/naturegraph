@@ -83,7 +83,15 @@ interface MenuItemProps {
   label: string
   description: string
   onClick: () => void
-  /** Variante destructive : texte + icône rouges */
+  /**
+   * Variante destructive : texte + icone rouges.
+   * A11y : le TEXTE utilise `--color-error` (rouge texte haute lisibilite :
+   * #9E0F22 en clair, #FCCDD5 en sombre) et NON `--color-error-action`, car ce
+   * dernier (#E8122C) ne donne que 4,54:1 sur blanc et tombe a 3,85:1 des qu'on
+   * ajoute la teinte de survol : sous le 4,5:1 AA. Avec `--color-error` on reste
+   * >= 6,8:1 dans les deux themes, au repos comme au survol. Le survol garde une
+   * teinte rouge legere (`error-action` a 10%) pour l'affordance destructive.
+   */
   danger?: boolean
   /** Variante mise en avant : fond légèrement teinté */
   highlighted?: boolean
@@ -109,20 +117,22 @@ function MenuItem({
         'w-full flex items-center gap-4 px-5 py-3.5 text-left transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
         danger
-          ? 'hover:bg-red-50 text-red-600'
+          ? 'hover:bg-[var(--color-error-action)]/10 text-[var(--color-error)]'
           : highlighted
             ? 'bg-primary-light/30 hover:bg-primary-light/50'
             : 'hover:bg-muted/40',
       ].join(' ')}
     >
-      <span className={['shrink-0', danger ? 'text-red-500' : 'text-foreground'].join(' ')}>
+      <span
+        className={['shrink-0', danger ? 'text-[var(--color-error)]' : 'text-foreground'].join(' ')}
+      >
         {icon}
       </span>
       <span className="flex flex-col min-w-0">
         <span
           className={[
             'text-sm font-semibold leading-tight',
-            danger ? 'text-red-600' : 'text-foreground',
+            danger ? 'text-[var(--color-error)]' : 'text-foreground',
           ].join(' ')}
         >
           {label}

@@ -176,7 +176,7 @@ export function ReportModal({ postId, commentId, onClose }: ReportModalProps) {
       </fieldset>
 
       {errorMsg && (
-        <p role="alert" className="text-xs text-red-600 mt-3">
+        <p role="alert" className="text-xs text-[var(--color-error)] mt-3">
           {errorMsg}
         </p>
       )}
