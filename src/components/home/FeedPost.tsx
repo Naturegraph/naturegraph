@@ -922,20 +922,24 @@ export function FeedPost({
 
           {/*
             Slot droit de la rangee reactions : compteur d'echanges, comme sur
-            la maquette. Simple indicateur, pas un bouton : l'action se fait par
-            le bouton "Échanges" de la rangee du dessous. Masque a zero, pour ne
-            pas afficher un compteur vide sur chaque publication.
+            la maquette. CLIQUABLE (Nicolas 2026-07-28) : ouvre le fil, comme le
+            bouton "Échanges" de la rangee du dessous, car apres un refresh le
+            panneau est referme et l'utilisateur cherchait a rouvrir ses
+            echanges en cliquant le compteur. Masque a zero.
           */}
           {comments > 0 && (
-            <span
-              className="flex items-center gap-1 text-sm text-foreground"
-              aria-label={`${comments} échange${comments > 1 ? 's' : ''}`}
+            <button
+              type="button"
+              onClick={() => setEchangesOuverts((v) => !v)}
+              aria-expanded={echangesOuverts}
+              className="flex items-center gap-1 rounded text-sm text-foreground transition-colors hover:text-[var(--color-link)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              aria-label={`${comments} échange${comments > 1 ? 's' : ''}, ouvrir le fil`}
             >
               <MessageCircle className="size-4" aria-hidden="true" />
               <span className="tabular-nums" aria-hidden="true">
                 {comments}
               </span>
-            </span>
+            </button>
           )}
         </div>
 
