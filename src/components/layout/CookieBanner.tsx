@@ -39,12 +39,23 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useLocation } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Heading } from '@/components/ui/Heading'
 
 const STORAGE_KEY = 'naturegraph-cookies-acknowledged'
 const STORAGE_VERSION = 'v1'
+
+/**
+ * Pages d'accueil TOUJOURS en clair (landing, login, signup, onboarding), cf.
+ * decision Nicolas 2026-07-28. Le banner est monte globalement dans App.tsx
+ * (fixed, hors des wrappers de route), il ne peut donc PAS heriter du
+ * `data-theme="light"` que ces pages posent sur leur propre conteneur. On force
+ * donc le clair ici quand on est sur l'une de ces routes, pour eviter un banner
+ * sombre sur une page claire. Ailleurs (app connectee), il suit le theme normal.
+ */
+const ROUTES_ACCUEIL_LIGHT = new Set(['/', '/login', '/signup', '/onboarding'])
 
 /**
  * Lit le state d'acceptation depuis le localStorage.
@@ -72,6 +83,10 @@ function writeAcknowledged(): void {
 
 export function CookieBanner() {
   const { t } = useTranslation()
+  const { pathname } = useLocation()
+  // Sur les routes d'accueil (toujours claires), on force le banner en clair
+  // pour qu'il s'accorde a la page ; sinon il suit le theme de l'app.
+  const forceLight = ROUTES_ACCUEIL_LIGHT.has(pathname)
   // Lazy initial state : lu une seule fois au montage côté client.
   // Évite un useEffect avec setState (anti-pattern + erreur ESLint).
   // `typeof window` est défensif (Vite SPA n'a pas de SSR mais bonne pratique).
@@ -104,6 +119,7 @@ export function CookieBanner() {
   return (
     <div
       role="region"
+      {...(forceLight ? { 'data-theme': 'light' } : {})}
       aria-label={t('cookies.banner.ariaRegion', {
         defaultValue: 'Information sur les cookies',
       })}
