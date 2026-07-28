@@ -107,7 +107,7 @@ function categoryStyle(cat: Exclude<Category, 'all'>): {
     case 'user':
       return {
         bg: 'bg-primary-light',
-        text: 'text-primary',
+        text: 'text-[var(--color-link)]',
         Icon: User,
         label: 'Utilisateur',
       }

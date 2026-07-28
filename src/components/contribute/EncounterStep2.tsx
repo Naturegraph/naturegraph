@@ -365,7 +365,7 @@ function SpeciesSearchBar({
                 qu'on cherche dans la base. */}
             {isLoading && (
               <Loader2
-                className="size-4 text-primary motion-safe:animate-spin shrink-0"
+                className="size-4 text-[var(--color-link)] motion-safe:animate-spin shrink-0"
                 aria-label={t('common.loading')}
               />
             )}
@@ -397,7 +397,7 @@ function SpeciesSearchBar({
                 count: groupFilters.size,
                 defaultValue: '{{count}} filtre(s) actif(s)',
               })}
-              className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary-light text-primary text-[11px] font-bold leading-none border border-background"
+              className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary-light text-[var(--color-link)] text-[11px] font-bold leading-none border border-background"
             >
               {groupFilters.size}
             </span>
@@ -459,7 +459,7 @@ function SpeciesSearchBar({
                         {nb.species_count} espèce{nb.species_count > 1 ? 's' : ''}
                         {pickingId === nb.id && (
                           <Loader2
-                            className="size-4 text-primary motion-safe:animate-spin"
+                            className="size-4 text-[var(--color-link)] motion-safe:animate-spin"
                             aria-hidden="true"
                           />
                         )}
@@ -627,7 +627,7 @@ function SpeciesSearchBar({
                 type="button"
                 onClick={() => setGroupFilters(new Set())}
                 className={[
-                  'font-body font-bold text-base leading-[1.5] text-primary underline underline-offset-4',
+                  'font-body font-bold text-base leading-[1.5] text-[var(--color-link)] underline underline-offset-4',
                   'hover:opacity-80 transition-opacity',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded',
                 ].join(' ')}
@@ -657,7 +657,7 @@ function SpeciesSearchBar({
           {isLoading && results.length === 0 && (
             <div className="px-5 py-6 flex items-center justify-center gap-3 text-sm text-muted-foreground">
               <Loader2
-                className="size-4 text-primary motion-safe:animate-spin"
+                className="size-4 text-[var(--color-link)] motion-safe:animate-spin"
                 aria-hidden="true"
               />
               <span>
@@ -718,7 +718,7 @@ function SpeciesSearchBar({
                             <p className="text-sm font-semibold text-foreground truncate">
                               {highlightMatch(commonName, query)}
                               {isFamily && (
-                                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-primary-light text-primary align-middle">
+                                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-primary-light text-[var(--color-link)] align-middle">
                                   {t('contribute.panel.familyBadge', { defaultValue: 'Famille' })}
                                 </span>
                               )}
@@ -796,7 +796,7 @@ function ObservationRow({
           aria-hidden="true"
         >
           {entry.isUnknown ? (
-            <HelpCircle className="size-5 text-primary" />
+            <HelpCircle className="size-5 text-[var(--color-link)]" />
           ) : (
             groupConfig(entry.species?.group ?? null).emoji
           )}
@@ -805,7 +805,7 @@ function ObservationRow({
           <span className="text-sm font-bold text-foreground truncate">
             {entry.isUnknown ? t('contribute.panel.unknownSpecies') : entry.species?.commonName}
             {entry.species?.rank === 'family' && (
-              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-[#e7e9f7] text-primary align-middle">
+              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-[#e7e9f7] text-[var(--color-link)] align-middle">
                 {t('contribute.panel.familyBadge', { defaultValue: 'Famille' })}
               </span>
             )}

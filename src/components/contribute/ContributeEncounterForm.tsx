@@ -996,7 +996,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
             className="shrink-0 mx-5 mb-3 rounded-card bg-background border border-border shadow-md overflow-hidden"
           >
             <div className="flex items-start gap-3 p-4">
-              <div className="size-10 shrink-0 rounded-full bg-primary-light/40 text-primary flex items-center justify-center">
+              <div className="size-10 shrink-0 rounded-full bg-primary-light/40 text-[var(--color-link)] flex items-center justify-center">
                 <ImageUp className="size-5" aria-hidden="true" />
               </div>
               <div className="flex-1 min-w-0">

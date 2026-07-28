@@ -613,7 +613,7 @@ export function FeedPost({
                     <button
                       type="button"
                       onClick={() => setIsExpanded(true)}
-                      className="self-start text-sm text-primary underline decoration-solid focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                      className="self-start text-sm text-[var(--color-link)] underline decoration-solid focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
                     >
                       {t('home.post.seeMore')}
                     </button>
@@ -622,7 +622,7 @@ export function FeedPost({
                     <button
                       type="button"
                       onClick={() => setIsExpanded(false)}
-                      className="self-start text-sm text-primary underline decoration-solid focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                      className="self-start text-sm text-[var(--color-link)] underline decoration-solid focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
                     >
                       {t('home.post.seeLess')}
                     </button>
@@ -904,7 +904,7 @@ export function FeedPost({
                       // Couleur primary si c'est la réaction posée par l'user, foreground sinon.
                       // Hover discret pour signaler l'interactivité.
                       userReaction === key
-                        ? 'text-primary font-semibold reaction-active hover:bg-primary-light/40'
+                        ? 'text-[var(--color-link)] font-semibold reaction-active hover:bg-primary-light/40'
                         : 'text-foreground hover:bg-muted/30',
                     ].join(' ')}
                   >
@@ -969,7 +969,7 @@ export function FeedPost({
                 // État actif (réaction posée) : fond primary-light + couleur primary +
                 // label toujours visible : second-agent/10 (Figma 6385:128317).
                 activeReaction
-                  ? 'bg-primary-light text-primary font-semibold'
+                  ? 'bg-primary-light text-[var(--color-link)] font-semibold'
                   : 'text-foreground hover:bg-muted/50',
               ].join(' ')}
             >
@@ -1093,7 +1093,7 @@ export function FeedPost({
               className={[
                 'flex items-center justify-center h-8 w-8 rounded-full transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
-                isSaved ? 'text-primary' : 'text-foreground hover:bg-muted/50',
+                isSaved ? 'text-[var(--color-link)]' : 'text-foreground hover:bg-muted/50',
               ].join(' ')}
             >
               {isSaved ? (

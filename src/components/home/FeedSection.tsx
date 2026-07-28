@@ -534,7 +534,11 @@ export function FeedSection({
               className="flex-1 flex items-center gap-2 min-w-0 focus-visible:outline-none rounded-full"
               aria-label="Modifier la recherche"
             >
-              <Search className="size-4 text-primary shrink-0" strokeWidth={3} aria-hidden="true" />
+              <Search
+                className="size-4 text-[var(--color-link)] shrink-0"
+                strokeWidth={3}
+                aria-hidden="true"
+              />
               <span className="text-sm font-medium text-foreground truncate text-left">
                 {activeSpecies.common_name ?? activeSpecies.scientific_name}
               </span>
@@ -654,7 +658,7 @@ export function FeedSection({
                     count: activeFiltersCount,
                     defaultValue: '{{count}} filtre(s) actif(s)',
                   })}
-                  className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary-light text-primary text-[11px] font-bold leading-none border border-background"
+                  className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary-light text-[var(--color-link)] text-[11px] font-bold leading-none border border-background"
                 >
                   {activeFiltersCount}
                 </span>

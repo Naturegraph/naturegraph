@@ -132,7 +132,7 @@ export function EchangeFil({
             aria-expanded={!replie}
             // h-6 : cible tactile de 24px minimum (WCAG 2.2), le texte seul
             // n'en ferait que 16.
-            className="inline-flex h-6 items-center gap-1.5 rounded text-xs font-medium text-primary transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="inline-flex h-6 items-center gap-1.5 rounded text-xs font-medium text-[var(--color-link)] transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             {reponses.length} réponse{reponses.length > 1 ? 's' : ''}
             {replie ? (

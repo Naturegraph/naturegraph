@@ -199,7 +199,7 @@ export function SuggestionEspecePanel({
                 />
                 {isFetching && (
                   <Loader2
-                    className="size-4 shrink-0 text-primary motion-safe:animate-spin"
+                    className="size-4 shrink-0 text-[var(--color-link)] motion-safe:animate-spin"
                     aria-label="Recherche en cours"
                   />
                 )}

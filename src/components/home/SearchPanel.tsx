@@ -376,7 +376,7 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
               <button
                 type="button"
                 onClick={clearRecent}
-                className="text-xs text-primary font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                className="text-xs text-[var(--color-link)] font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
               >
                 Tout effacer
               </button>

@@ -215,7 +215,7 @@ export function ContributeInstantForm() {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+            className="flex items-center gap-2 text-sm text-foreground hover:text-[var(--color-link)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
           >
             <ArrowLeft className="size-4" aria-hidden="true" />
             <span className="hidden sm:inline">{t('contribute.backToFeed')}</span>
@@ -334,7 +334,7 @@ export function ContributeInstantForm() {
                   className={[
                     'px-3 py-1.5 rounded-full text-sm border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                     form.timeOfDay === opt
-                      ? 'border-primary bg-primary-light text-primary font-medium'
+                      ? 'border-primary bg-primary-light text-[var(--color-link)] font-medium'
                       : 'border-border text-foreground hover:border-primary/50',
                   ].join(' ')}
                 >

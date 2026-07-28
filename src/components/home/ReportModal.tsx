@@ -105,7 +105,7 @@ export function ReportModal({ postId, commentId, onClose }: ReportModalProps) {
   const modalContent = submitted ? (
     /* État succès */
     <div className="flex flex-col items-center gap-4 py-8 px-6 text-center">
-      <CheckCircle className="size-12 text-primary" aria-hidden="true" />
+      <CheckCircle className="size-12 text-[var(--color-link)]" aria-hidden="true" />
       <div className="flex flex-col gap-1">
         <p className="font-bold text-foreground text-lg">
           {t('home.post.reportModal.successTitle')}

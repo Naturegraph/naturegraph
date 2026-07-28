@@ -23,7 +23,7 @@
  *   - Titre section : Muli 16px 400 color text-muted-foreground
  *   - Titre panneau : Quicksand 32px 700
  *   - Bouton save   : bg-primary, rounded-full, h-12, Muli 700 16px white
- *   - Reset         : text-primary Muli 700 16px souligné
+ *   - Reset         : text-[var(--color-link)] Muli 700 16px souligné
  */
 
 import { useState } from 'react'
@@ -409,7 +409,7 @@ export function FeedFilterPanel({
         type="button"
         onClick={handleReset}
         className={[
-          'font-body font-bold text-base leading-[1.5] text-primary underline underline-offset-4',
+          'font-body font-bold text-base leading-[1.5] text-[var(--color-link)] underline underline-offset-4',
           'hover:opacity-80 transition-opacity',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded',
         ].join(' ')}

@@ -163,10 +163,10 @@ export function ProfileTabs({
               // premier tab puisse override pl-4 sur desktop sans conflit.
               className={`${visibilityClass} ${leftPaddingClass} items-center gap-2 pr-4 py-3 text-base font-bold whitespace-nowrap transition-colors border-b-2 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${
                 isActive
-                  ? 'border-primary text-primary'
+                  ? 'border-primary text-[var(--color-link)]'
                   : isDisabled
                     ? 'border-transparent text-muted-foreground/60 cursor-not-allowed opacity-60'
-                    : 'border-transparent text-foreground hover:text-primary'
+                    : 'border-transparent text-foreground hover:text-[var(--color-link)]'
               }`}
             >
               <Icon className="size-5" aria-hidden={true} />
@@ -179,7 +179,9 @@ export function ProfileTabs({
                 <span
                   aria-hidden="true"
                   className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                    isActive ? 'bg-primary-light text-primary' : 'bg-warm-beige text-foreground'
+                    isActive
+                      ? 'bg-primary-light text-[var(--color-link)]'
+                      : 'bg-warm-beige text-foreground'
                   }`}
                 >
                   {count}
@@ -191,7 +193,7 @@ export function ProfileTabs({
               {tab.soonBadge && (
                 <span
                   aria-label="Bientôt disponible"
-                  className="text-[10px] font-bold uppercase tracking-wide text-primary bg-primary-light px-2 py-0.5 rounded-full"
+                  className="text-[10px] font-bold uppercase tracking-wide text-[var(--color-link)] bg-primary-light px-2 py-0.5 rounded-full"
                 >
                   Bientôt
                 </span>

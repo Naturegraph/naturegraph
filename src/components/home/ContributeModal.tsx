@@ -118,7 +118,7 @@ const CONTRIBUTION_TYPES: ContributionType[] = [
 
 function SoonBadge() {
   return (
-    <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+    <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-[var(--color-link)] bg-primary/10 px-2 py-0.5 rounded-full">
       Bientôt
     </span>
   )

@@ -96,7 +96,7 @@ const PAGE_SIZE = PAGE_SIZES.ADMIN_DEFAULT
  * et hook useIsAdmin. developpeur = tag technique sans acces panneau.
  */
 const ROLE_META: Record<string, { label: string; className: string }> = {
-  super_admin: { label: 'Super-admin', className: 'bg-primary-light text-primary' },
+  super_admin: { label: 'Super-admin', className: 'bg-primary-light text-[var(--color-link)]' },
   moderator: {
     label: 'Modérateur',
     className: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
@@ -679,7 +679,7 @@ export default function AdminUsers() {
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                             u.admin_is_active
                               ? (ROLE_META[u.admin_role]?.className ??
-                                'bg-primary-light text-primary')
+                                'bg-primary-light text-[var(--color-link)]')
                               : 'bg-muted text-muted-foreground'
                           }`}
                         >

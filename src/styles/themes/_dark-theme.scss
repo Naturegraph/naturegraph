@@ -30,13 +30,15 @@
   --color-action-disabled: #{$brand-main-700}; // #3C4380
   --color-action-light: #{$brand-main-800}; // #262B55
 
-  // ── Lien textuel ──
-  // Token DEDIE aux liens (texte violet cliquable), distinct de
-  // `action-default` qui sert de FOND aux boutons. Sur fond sombre, le violet
-  // de marque #5F5DD8 ne donne que 3,56:1 (sous le 4,5:1 AA). On releve donc au
-  // cran superieur de l'echelle, $brand-main-400 #9BA6E3 : ~7,9:1 sur la carte
-  // sombre (#13131A), conforme AA. Les boutons pleins ne changent pas (leur
-  // libelle blanc sur #5F5DD8 reste correct). Decision Nicolas 2026-07-28.
+  // ── Violet de premier plan (liens, icones, accents, etats actifs) ──
+  // Token du violet utilise en COULEUR DE TEXTE/ICONE (classe Tailwind
+  // `text-[var(--color-link)]`), distinct de `action-default` qui sert de FOND
+  // aux boutons. Sur fond sombre, le violet de marque #5F5DD8 ne donne que
+  // 3,56:1 (sous le 4,5:1 AA). On releve donc au cran superieur de l'echelle,
+  // $brand-main-400 #9BA6E3 : ~7,9:1 sur la carte sombre (#13131A), conforme AA.
+  // Les boutons pleins ne changent pas (leur libelle blanc sur #5F5DD8 reste
+  // correct). Toute la couleur de texte violette de l'app pointe ici (les 136
+  // usages `text-primary` ont ete migres). Decision Nicolas 2026-07-28.
   --color-link: #{$brand-main-400}; // #9BA6E3
   --color-link-hover: #{$brand-main-300}; // #B5BDEA
 

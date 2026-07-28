@@ -299,7 +299,7 @@ export default function Profile() {
           <p className="text-sm text-muted-foreground text-center">
             {t('profile.userNotFoundDesc')}
           </p>
-          <Link to="/home" className="text-sm text-primary font-medium hover:underline">
+          <Link to="/home" className="text-sm text-[var(--color-link)] font-medium hover:underline">
             {t('profile.backToFeed')}
           </Link>
         </main>
@@ -327,7 +327,7 @@ export default function Profile() {
           <p className="text-sm text-muted-foreground text-center">
             {t('profile.userNotFoundDesc')}
           </p>
-          <Link to="/home" className="text-sm text-primary font-medium hover:underline">
+          <Link to="/home" className="text-sm text-[var(--color-link)] font-medium hover:underline">
             {t('profile.backToFeed')}
           </Link>
         </main>

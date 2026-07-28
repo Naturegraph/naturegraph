@@ -142,7 +142,7 @@ export default function NotificationsPage() {
             type="button"
             onClick={handleMarkAllRead}
             disabled={markAllAsRead.isPending || grouped.every((g) => g.read)}
-            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded px-2 py-1"
+            className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-link)] hover:underline disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded px-2 py-1"
           >
             <CheckCheck className="size-4" aria-hidden="true" />
             <span className="hidden sm:inline">{t('home.notifications.page.markAllRead')}</span>
@@ -168,7 +168,9 @@ export default function NotificationsPage() {
                 aria-selected={active}
                 onClick={() => handleTabChange(k)}
                 className={`relative px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-t ${
-                  active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                  active
+                    ? 'text-[var(--color-link)]'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {t(FILTER_LABEL_KEYS[k])}

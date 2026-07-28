@@ -240,7 +240,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               type="button"
               onClick={() => setSection(null)}
               aria-label={t('common.back', { defaultValue: 'Retour' })}
-              className="size-10 shrink-0 inline-flex items-center justify-center rounded-full border-[0.5px] border-border bg-background hover:border-primary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="size-10 shrink-0 inline-flex items-center justify-center rounded-full border-[0.5px] border-border bg-background hover:border-primary hover:text-[var(--color-link)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <ArrowLeft className="size-5" aria-hidden="true" />
             </button>
@@ -469,7 +469,7 @@ interface SettingsItemProps {
   disabled?: boolean
   /**
    * Compteur affiche en pill avant le chevron (Confidentialite).
-   * 0 ou undefined : masque. Affiche bg-primary-light + text-primary.
+   * 0 ou undefined : masque. Affiche bg-primary-light + text-[var(--color-link)].
    */
   badge?: number
 }
@@ -512,7 +512,7 @@ function SettingsItem({
       {badge !== undefined && badge > 0 && (
         <span
           aria-label={`${badge}`}
-          className="shrink-0 text-xs font-bold tabular-nums bg-primary-light text-primary px-2 py-0.5 rounded-full"
+          className="shrink-0 text-xs font-bold tabular-nums bg-primary-light text-[var(--color-link)] px-2 py-0.5 rounded-full"
         >
           {badge}
         </span>

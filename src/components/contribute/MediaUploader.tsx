@@ -181,7 +181,7 @@ export function MediaUploader({ files, onChange, maxFiles = 4, error }: MediaUpl
           <ImagePlus className="size-6 text-muted-foreground" aria-hidden="true" />
           <p className="text-sm text-muted-foreground text-center px-4">
             {t('contribute.media.dragDrop')}{' '}
-            <span className="text-primary font-medium underline">
+            <span className="text-[var(--color-link)] font-medium underline">
               {t('contribute.media.browse')}
             </span>
           </p>

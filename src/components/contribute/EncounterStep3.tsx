@@ -355,7 +355,7 @@ export function EncounterStep3({
             className="date-input-clean w-full h-11 pl-4 pr-10 rounded-full border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
           />
           <Calendar
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-primary pointer-events-none"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-[var(--color-link)] pointer-events-none"
             aria-hidden="true"
           />
         </div>
@@ -375,7 +375,7 @@ export function EncounterStep3({
               defaultValue: 'En savoir plus sur la localisation',
             })}
             aria-expanded={locationInfoOpen}
-            className="inline-flex items-center justify-center size-5 rounded-full text-primary hover:bg-primary-light/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="inline-flex items-center justify-center size-5 rounded-full text-[var(--color-link)] hover:bg-primary-light/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <Info className="size-3.5" aria-hidden="true" />
           </button>
@@ -432,7 +432,7 @@ export function EncounterStep3({
 
         <div className="relative" ref={locInputRef}>
           <MapPin
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-primary pointer-events-none z-10"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[var(--color-link)] pointer-events-none z-10"
             aria-hidden="true"
           />
           <input
@@ -490,7 +490,10 @@ export function EncounterStep3({
                     }}
                     className="w-full flex items-start gap-2 px-4 py-2.5 text-left hover:bg-primary-light/30 transition-colors focus-visible:outline-none focus-visible:bg-primary-light/40"
                   >
-                    <MapPin className="size-4 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                    <MapPin
+                      className="size-4 text-[var(--color-link)] shrink-0 mt-0.5"
+                      aria-hidden="true"
+                    />
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-medium text-foreground truncate">
                         {city.name}

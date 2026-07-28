@@ -244,7 +244,7 @@ export function ProfileHeader({
                   <button
                     type="button"
                     onClick={onSettings}
-                    className="inline-flex items-center gap-2 h-10 px-5 rounded-full bg-background border-[0.5px] border-border text-foreground text-sm font-bold hover:border-primary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    className="inline-flex items-center gap-2 h-10 px-5 rounded-full bg-background border-[0.5px] border-border text-foreground text-sm font-bold hover:border-primary hover:text-[var(--color-link)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                   >
                     <Settings className="size-4" aria-hidden="true" />
                     {t('profile.settings', { defaultValue: 'Paramètres' })}

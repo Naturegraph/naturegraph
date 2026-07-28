@@ -166,7 +166,7 @@ export function BetaKeyGate({ onValidated, onSwitchToLogin }: BetaKeyGateProps) 
       {/* Header */}
       <div className="flex flex-col gap-2 text-center">
         <div className="mx-auto size-16 rounded-full bg-primary-light flex items-center justify-center">
-          <Key className="size-8 text-primary" aria-hidden="true" />
+          <Key className="size-8 text-[var(--color-link)]" aria-hidden="true" />
         </div>
         <h1 className="text-2xl font-bold text-foreground">
           {t('auth.beta.title', { defaultValue: 'Beta fermee' })}
@@ -256,7 +256,7 @@ export function BetaKeyGate({ onValidated, onSwitchToLogin }: BetaKeyGateProps) 
         <button
           type="button"
           onClick={() => navigate('/waitlist')}
-          className="underline hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+          className="underline hover:text-[var(--color-link)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
         >
           {t('auth.beta.noKey', { defaultValue: 'Pas de cle ? Rejoindre la waitlist' })}
         </button>
@@ -266,7 +266,7 @@ export function BetaKeyGate({ onValidated, onSwitchToLogin }: BetaKeyGateProps) 
             <button
               type="button"
               onClick={onSwitchToLogin}
-              className="underline text-primary font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              className="underline text-[var(--color-link)] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
             >
               {t('auth.beta.login', { defaultValue: 'Connexion' })}
             </button>

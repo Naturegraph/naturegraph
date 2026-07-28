@@ -30,10 +30,10 @@ export function NotifIcon({ type }: { type: NotificationType }) {
       bg: 'bg-[var(--color-success-bg)]',
       color: 'text-[var(--color-success)]',
     },
-    post: { Icon: FileText, bg: 'bg-primary-light', color: 'text-primary' },
+    post: { Icon: FileText, bg: 'bg-primary-light', color: 'text-[var(--color-link)]' },
     species_digest: { Icon: Leaf, bg: 'bg-teal-light/30', color: 'text-teal-dark' },
-    comment: { Icon: MessageCircle, bg: 'bg-primary-light', color: 'text-primary' },
-    mention: { Icon: AtSign, bg: 'bg-primary-light', color: 'text-primary' },
+    comment: { Icon: MessageCircle, bg: 'bg-primary-light', color: 'text-[var(--color-link)]' },
+    mention: { Icon: AtSign, bg: 'bg-primary-light', color: 'text-[var(--color-link)]' },
     identification: { Icon: Award, bg: 'bg-teal-light/30', color: 'text-teal-dark' },
     system: { Icon: Bell, bg: 'bg-muted', color: 'text-muted-foreground' },
   }
@@ -64,10 +64,10 @@ export function NotifChip({ type, t }: { type: NotificationType; t: (k: string) 
   const chipCls: Record<NotificationType, string> = {
     reaction: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
     follow: 'bg-[var(--color-success-bg)] text-[var(--color-success)]',
-    post: 'bg-primary-light text-primary',
+    post: 'bg-primary-light text-[var(--color-link)]',
     species_digest: 'bg-teal-light/30 text-teal-dark',
-    comment: 'bg-primary-light text-primary',
-    mention: 'bg-primary-light text-primary',
+    comment: 'bg-primary-light text-[var(--color-link)]',
+    mention: 'bg-primary-light text-[var(--color-link)]',
     identification: 'bg-teal-light/30 text-teal-dark',
     system: 'bg-muted text-muted-foreground',
   }

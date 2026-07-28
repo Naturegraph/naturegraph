@@ -384,7 +384,7 @@ export default function AdminDashboard() {
             </h2>
             <Link
               to="/admin/moderation"
-              className="text-xs text-primary inline-flex items-center gap-0.5 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              className="text-xs text-[var(--color-link)] inline-flex items-center gap-0.5 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
             >
               Tout voir <ArrowRight className="size-3" aria-hidden="true" />
             </Link>
@@ -424,7 +424,7 @@ export default function AdminDashboard() {
             </h2>
             <Link
               to="/admin/analytics"
-              className="text-xs text-primary inline-flex items-center gap-0.5 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              className="text-xs text-[var(--color-link)] inline-flex items-center gap-0.5 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
             >
               Analytics <ArrowRight className="size-3" aria-hidden="true" />
             </Link>
@@ -468,7 +468,7 @@ export default function AdminDashboard() {
             </h2>
             <Link
               to="/admin/users"
-              className="text-xs text-primary inline-flex items-center gap-0.5 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              className="text-xs text-[var(--color-link)] inline-flex items-center gap-0.5 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
             >
               Voir tous <ArrowRight className="size-3" aria-hidden="true" />
             </Link>
@@ -524,7 +524,7 @@ interface KPIBoxProps {
 
 function KPIBox({ label, value, icon: Icon, color, linkTo }: KPIBoxProps) {
   const colorClasses: Record<KPIBoxProps['color'], string> = {
-    blue: 'text-primary bg-primary-light',
+    blue: 'text-[var(--color-link)] bg-primary-light',
     green: 'text-[var(--color-success)] bg-[var(--color-success-bg)]',
     yellow: 'text-[var(--color-warning)] bg-[var(--color-warning-bg)]',
     red: 'text-[var(--color-error)] bg-[var(--color-error-bg)]',

@@ -71,7 +71,7 @@ function SectionLabel({ label }: { label: string }) {
 /** Badge "Bientôt" pour les features non disponibles */
 function SoonBadge() {
   return (
-    <span className="ml-auto shrink-0 text-[10px] font-bold uppercase tracking-wide text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+    <span className="ml-auto shrink-0 text-[10px] font-bold uppercase tracking-wide text-[var(--color-link)] bg-primary/10 px-2 py-0.5 rounded-full">
       Bientôt
     </span>
   )

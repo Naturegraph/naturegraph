@@ -14,8 +14,8 @@
  *
  * Style du dropdown :
  *   - Trigger : pill rounded-full bordured + chevron down (chevron up si ouvert)
- *   - Liste : card border 0.5px, items au hover bg-primary-light + text-primary
- *   - Item sélectionné : bg-primary-light + text-primary persistant
+ *   - Liste : card border 0.5px, items au hover bg-primary-light + text-[var(--color-link)]
+ *   - Item sélectionné : bg-primary-light + text-[var(--color-link)] persistant
  *
  * TODO [BACKEND] Phase 2 : voir second-agent/03-profil-backend-notes.md §15
  *
@@ -229,8 +229,8 @@ export function SettingsHelpView() {
                       }}
                       className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${
                         isSelected
-                          ? 'bg-primary-light text-primary'
-                          : 'text-foreground hover:bg-primary-light hover:text-primary'
+                          ? 'bg-primary-light text-[var(--color-link)]'
+                          : 'text-foreground hover:bg-primary-light hover:text-[var(--color-link)]'
                       }`}
                     >
                       {t(`settings.help.subjects.${id}`, {

@@ -218,8 +218,8 @@ export function VerificationForm({
               BATCH 17 / T-105 : couleurs hardcodees remplacees par tokens DS. */}
           {!isSupabaseConfigured && demoOtp && (
             <div className="mb-6 flex items-center gap-2 px-4 py-3 rounded-lg bg-primary-light border border-primary/40">
-              <span className="text-primary text-lg">🔐</span>
-              <p className="text-sm font-semibold text-primary">
+              <span className="text-[var(--color-link)] text-lg">🔐</span>
+              <p className="text-sm font-semibold text-[var(--color-link)]">
                 {t('auth.verify.demoCode', { code: demoOtp })}
               </p>
             </div>

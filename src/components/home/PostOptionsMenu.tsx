@@ -388,7 +388,7 @@ export function PostOptionsMenu({
       <MenuItem
         icon={
           isSavedFavorite ? (
-            <BookmarkCheck className="size-5 text-primary fill-primary" />
+            <BookmarkCheck className="size-5 text-[var(--color-link)] fill-primary" />
           ) : (
             <Bookmark className="size-5" />
           )

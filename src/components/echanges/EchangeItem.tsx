@@ -142,7 +142,7 @@ function Action({
           ? 'text-muted-foreground hover:text-[var(--color-error)]'
           : actif
             ? 'bg-primary-light font-medium text-foreground'
-            : 'text-foreground hover:text-primary',
+            : 'text-foreground hover:text-[var(--color-link)]',
       ].join(' ')}
     >
       <Icone className="size-3.5 shrink-0" aria-hidden="true" />
@@ -192,7 +192,7 @@ function BoutonReagir({
       className={[
         'inline-flex h-6 items-center gap-1 rounded-full px-2 text-xs transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-        actif ? 'font-semibold text-foreground' : 'text-foreground hover:text-primary',
+        actif ? 'font-semibold text-foreground' : 'text-foreground hover:text-[var(--color-link)]',
       ].join(' ')}
     >
       {actif ? (

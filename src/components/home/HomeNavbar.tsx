@@ -236,7 +236,7 @@ export function HomeNavbar({
                     {feedActiveFiltersCount > 0 && (
                       <span
                         aria-label={`${feedActiveFiltersCount} filtres actifs`}
-                        className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary-light text-primary text-[11px] font-bold leading-none pointer-events-none border border-cream-lighter"
+                        className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary-light text-[var(--color-link)] text-[11px] font-bold leading-none pointer-events-none border border-cream-lighter"
                       >
                         {feedActiveFiltersCount}
                       </span>
@@ -295,7 +295,7 @@ export function HomeNavbar({
                     <Locate
                       className={[
                         'size-5 shrink-0',
-                        locationLabel ? 'text-primary' : 'text-foreground',
+                        locationLabel ? 'text-[var(--color-link)]' : 'text-foreground',
                       ].join(' ')}
                       strokeWidth={locationLabel ? 3 : 2}
                       aria-hidden="true"
@@ -310,7 +310,7 @@ export function HomeNavbar({
                         ou réduit (Nicolas 2026-05-22). */}
                     {locationLabel && (
                       <span
-                        className="shrink-0 text-[11px] font-bold leading-none px-2 py-1 rounded-full bg-primary-light text-primary"
+                        className="shrink-0 text-[11px] font-bold leading-none px-2 py-1 rounded-full bg-primary-light text-[var(--color-link)]"
                         aria-label={t('home.navbar.radiusKm', {
                           defaultValue: 'Rayon {{km}} km',
                           km: locationDistance,
@@ -338,7 +338,7 @@ export function HomeNavbar({
                     })}
                   >
                     <Search
-                      className="size-4 text-primary shrink-0"
+                      className="size-4 text-[var(--color-link)] shrink-0"
                       strokeWidth={3}
                       aria-hidden="true"
                     />

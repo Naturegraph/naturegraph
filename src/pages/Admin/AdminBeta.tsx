@@ -857,7 +857,7 @@ export default function AdminBeta() {
           </h1>
           {quota && (
             <div className="flex flex-wrap items-center gap-4 text-sm">
-              <span className="px-3 py-1 rounded-full bg-primary-light text-primary font-medium">
+              <span className="px-3 py-1 rounded-full bg-primary-light text-[var(--color-link)] font-medium">
                 Phase {quota.current_phase}
               </span>
               <span className="text-foreground">
@@ -1058,7 +1058,7 @@ export default function AdminBeta() {
                             <div className="flex flex-col gap-0.5">
                               <Link
                                 to={`/profile/${usedBy.username}`}
-                                className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+                                className="inline-flex items-center gap-1 text-[var(--color-link)] hover:underline font-medium"
                                 title={`${usedBy.first_name} ${usedBy.last_name}`}
                               >
                                 @{usedBy.username}
@@ -1076,7 +1076,7 @@ export default function AdminBeta() {
                                   )}&body=${encodeURIComponent(
                                     `Bonjour ${usedBy.first_name ?? usedBy.username},\n\nJe te recontacte au sujet de ta clé d'accès Naturegraph (${k.code}).\n\n[ton message]\n\nÀ très vite,\nNicolas\nNaturegraph`,
                                   )}`}
-                                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary hover:underline"
+                                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-[var(--color-link)] hover:underline"
                                   title="Contacter par email"
                                 >
                                   <Mail className="size-3 shrink-0 opacity-70" aria-hidden="true" />
@@ -1093,14 +1093,14 @@ export default function AdminBeta() {
                             <div className="flex flex-col gap-0.5">
                               <Link
                                 to={`/profile/${superAdminProfile.username}`}
-                                className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+                                className="inline-flex items-center gap-1 text-[var(--color-link)] hover:underline font-medium"
                                 title="Super admin"
                               >
                                 @{superAdminProfile.username}
                                 <ExternalLink className="size-3 opacity-60" aria-hidden="true" />
                               </Link>
                               <span className="text-muted-foreground inline-flex items-center gap-1">
-                                <span className="px-1.5 py-0.5 rounded bg-primary-light text-primary text-[10px] font-bold uppercase tracking-wide">
+                                <span className="px-1.5 py-0.5 rounded bg-primary-light text-[var(--color-link)] text-[10px] font-bold uppercase tracking-wide">
                                   Super admin
                                 </span>
                               </span>
@@ -1115,7 +1115,7 @@ export default function AdminBeta() {
                             <div className="flex flex-col gap-0.5">
                               <Link
                                 to={`/profile/${inviteProfile.username}`}
-                                className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+                                className="inline-flex items-center gap-1 text-[var(--color-link)] hover:underline font-medium"
                                 title="Invité·e (compte créé)"
                               >
                                 @{inviteProfile.username}
@@ -1123,7 +1123,7 @@ export default function AdminBeta() {
                               </Link>
                               <a
                                 href={`mailto:${inviteEmail}`}
-                                className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary hover:underline"
+                                className="inline-flex items-center gap-1 text-muted-foreground hover:text-[var(--color-link)] hover:underline"
                                 title="Contacter par email"
                               >
                                 <Mail className="size-3 shrink-0 opacity-70" aria-hidden="true" />
@@ -1136,7 +1136,7 @@ export default function AdminBeta() {
                             <div className="flex flex-col gap-0.5">
                               <a
                                 href={`mailto:${inviteEmail}`}
-                                className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary hover:underline font-medium"
+                                className="inline-flex items-center gap-1 text-muted-foreground hover:text-[var(--color-link)] hover:underline font-medium"
                                 title="Destinataire de l'invitation (compte non créé)"
                               >
                                 <Mail className="size-3 shrink-0 opacity-70" aria-hidden="true" />
@@ -1323,7 +1323,7 @@ export default function AdminBeta() {
                               {entry.email}
                             </span>
                             {entry.source === 'prelaunch' && (
-                              <span className="inline-flex w-fit items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-primary-light text-primary">
+                              <span className="inline-flex w-fit items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-primary-light text-[var(--color-link)]">
                                 Prélancement
                                 {entry.wave ? ` · vague ${entry.wave}` : ''}
                               </span>
@@ -1608,10 +1608,12 @@ export default function AdminBeta() {
                         </span>
                       </div>
                       <div className="bg-primary-light rounded-lg p-4 flex flex-col gap-1">
-                        <span className="text-xs uppercase tracking-wider text-primary">
+                        <span className="text-xs uppercase tracking-wider text-[var(--color-link)]">
                           Conversion
                         </span>
-                        <span className="text-2xl font-bold text-primary">{conversionRate}%</span>
+                        <span className="text-2xl font-bold text-[var(--color-link)]">
+                          {conversionRate}%
+                        </span>
                       </div>
                     </div>
 

@@ -140,7 +140,9 @@ export function StatsSidebar({ onItemSelected }: { onItemSelected?: () => void }
                       setImpactDropdownOpen(false)
                     }}
                     className={`w-full text-left px-3 py-2 text-xs transition-colors hover:bg-muted/50 ${
-                      impactPeriod === p.value ? 'font-bold text-primary' : 'text-foreground'
+                      impactPeriod === p.value
+                        ? 'font-bold text-[var(--color-link)]'
+                        : 'text-foreground'
                     }`}
                   >
                     {t(p.labelKey)}
@@ -229,7 +231,9 @@ export function StatsSidebar({ onItemSelected }: { onItemSelected?: () => void }
                       setTrendingDropdownOpen(false)
                     }}
                     className={`w-full text-left px-3 py-2 text-xs transition-colors hover:bg-muted/50 ${
-                      trendingPeriod === p.value ? 'font-bold text-primary' : 'text-foreground'
+                      trendingPeriod === p.value
+                        ? 'font-bold text-[var(--color-link)]'
+                        : 'text-foreground'
                     }`}
                   >
                     {t(p.labelKey)}

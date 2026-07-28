@@ -724,7 +724,7 @@ function StartView({
       <div className="flex flex-col gap-1">
         <span className="inline-flex items-center gap-1 text-sm text-[var(--color-text-secondary)]">
           Localisation
-          <Info className="size-4 text-primary" aria-hidden="true" />
+          <Info className="size-4 text-[var(--color-link)]" aria-hidden="true" />
         </span>
 
         <div className="relative">
@@ -754,7 +754,7 @@ function StartView({
           />
           {locLoading && location.trim().length >= 2 && (
             <Loader2
-              className="absolute right-4 top-1/2 -translate-y-1/2 size-4 text-primary motion-safe:animate-spin"
+              className="absolute right-4 top-1/2 -translate-y-1/2 size-4 text-[var(--color-link)] motion-safe:animate-spin"
               aria-hidden="true"
             />
           )}
@@ -912,7 +912,7 @@ function SpeciesSearch({
           />
           {isLoading && (
             <Loader2
-              className="size-4 text-primary motion-safe:animate-spin shrink-0"
+              className="size-4 text-[var(--color-link)] motion-safe:animate-spin shrink-0"
               aria-hidden="true"
             />
           )}
@@ -927,7 +927,7 @@ function SpeciesSearch({
           className={[
             'relative size-12 shrink-0 rounded-full border flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
             groupKey
-              ? 'border-primary text-primary bg-primary-light/40'
+              ? 'border-primary text-[var(--color-link)] bg-primary-light/40'
               : 'border-border text-foreground bg-background hover:bg-muted/50',
           ].join(' ')}
         >
