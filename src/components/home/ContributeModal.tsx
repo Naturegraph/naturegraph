@@ -267,7 +267,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
                 style={{ backgroundColor: type.iconBg }}
                 aria-hidden="true"
               >
-                <Icon className="size-6 text-white" strokeWidth={2} />
+                <Icon className="size-6" style={{ color: type.glyph }} strokeWidth={2} />
               </div>
 
               {/* Texte */}
