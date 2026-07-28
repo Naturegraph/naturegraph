@@ -86,6 +86,12 @@ export interface Echange {
    * pourquoi son message a disparu pour les autres, sinon il croit a un bug.
    */
   etatModeration: 'visible' | 'auto_hidden' | 'removed'
+  /**
+   * `true` quand l'auteur a supprime son echange mais qu'il portait des
+   * reponses : la ligne est gardee en "tombstone" (contenu efface) pour ne pas
+   * detruire les reponses des autres. Le fil affiche alors "Echange supprime".
+   */
+  supprime: boolean
 }
 
 /**
@@ -163,6 +169,7 @@ interface LigneEchange {
   confidence: number | null
   edited_at: string | null
   moderation_status: string | null
+  deleted_at: string | null
 }
 
 function versEchange(row: LigneEchange, moi: string | null): Echange {
@@ -215,12 +222,13 @@ function versEchange(row: LigneEchange, moi: string | null): Echange {
     )
       ? (row.moderation_status as 'visible' | 'auto_hidden' | 'removed')
       : 'visible',
+    supprime: row.deleted_at != null,
   }
 }
 
 const SELECT_ECHANGE =
   'id, post_id, user_id, content, intention, helpful, created_at, parent_id, ' +
-  'species_label, species_scientific, taxonomy_node_id, confidence, edited_at, moderation_status, ' +
+  'species_label, species_scientific, taxonomy_node_id, confidence, edited_at, moderation_status, deleted_at, ' +
   'auteur:profiles!user_id(username, avatar_url), reactions:comment_reactions(type, user_id)'
 
 // ─── Lecture ──────────────────────────────────────────────────────────────────
@@ -368,11 +376,26 @@ export async function modifierEchange(echangeId: string, contenu: string): Promi
   return versEchange(data as unknown as LigneEchange, user.id)
 }
 
-/** Supprime un echange. La RLS n'autorise que son auteur ou la moderation. */
+/**
+ * Supprime un echange via la fonction `supprimer_echange` (SECURITY DEFINER).
+ *
+ * On ne fait PLUS un simple DELETE : `comments.parent_id` est en ON DELETE
+ * CASCADE, donc supprimer un echange parent effacait toutes ses reponses (et
+ * celles des autres). La fonction tranche cote base :
+ *   - echange sans reponse  -> suppression definitive ;
+ *   - echange avec reponses -> "tombstone" (contenu efface, ligne gardee) pour
+ *     preserver les reponses. Cf. migration 20260728150000.
+ * La fonction verifie elle-meme que l'appelant est l'auteur ou un moderateur.
+ */
 export async function supprimerEchange(echangeId: string): Promise<void> {
   if (!isSupabaseConfigured || !supabase) throw new Error('Supabase non configure')
 
-  const { error } = await supabase.from('comments').delete().eq('id', echangeId)
+  // Types Supabase pas encore regeneres pour cette fonction : cast localise,
+  // meme pattern que les autres RPC recentes du projet (LocationContext, stats).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any).rpc('supprimer_echange', {
+    p_echange_id: echangeId,
+  })
   if (error) throw new Error(error.message)
 }
 

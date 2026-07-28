@@ -326,6 +326,23 @@ export function EchangeItem({
     setEnEdition(false)
   }
 
+  // Echange supprime par son auteur mais garde en tombstone (il portait des
+  // reponses). On n'affiche ni identite, ni actions, ni suggestion : juste un
+  // marqueur neutre, pour que les reponses conservees restent rattachees a
+  // quelque chose sans exposer un message qui n'existe plus.
+  if (echange.supprime) {
+    return (
+      <li className="flex gap-3">
+        <div className="size-8 shrink-0 rounded-full bg-surface-bubble" aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <div className="w-fit max-w-full rounded-sm bg-surface-bubble p-3">
+            <p className="text-sm italic text-muted-foreground">Échange supprimé</p>
+          </div>
+        </div>
+      </li>
+    )
+  }
+
   return (
     <li className="flex gap-3">
       <img
