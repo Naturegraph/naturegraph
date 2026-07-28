@@ -90,8 +90,13 @@ export interface Echange {
    * `true` quand l'auteur a supprime son echange mais qu'il portait des
    * reponses : la ligne est gardee en "tombstone" (contenu efface) pour ne pas
    * detruire les reponses des autres. Le fil affiche alors "Echange supprime".
+   *
+   * OPTIONNEL : `versEchange` le pose toujours a partir du serveur
+   * (`deleted_at != null`). Absent (mocks, echange optimiste avant retour
+   * serveur) = non supprime, ce qui est le bon defaut : un echange qu'on vient
+   * de creer n'est jamais un tombstone.
    */
-  supprime: boolean
+  supprime?: boolean
 }
 
 /**
