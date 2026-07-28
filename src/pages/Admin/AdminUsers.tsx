@@ -104,7 +104,7 @@ const ROLE_META: Record<string, { label: string; className: string }> = {
   support: { label: 'Support', className: 'bg-[var(--color-info-bg)] text-[var(--color-info)]' },
   equipe_produit: {
     label: 'Équipe produit',
-    className: 'bg-[var(--color-action-soft)] text-[var(--color-action-default)]',
+    className: 'bg-[var(--color-action-soft)] text-[var(--color-link)]',
   },
   developpeur: {
     label: 'Développeur',
@@ -475,16 +475,13 @@ export default function AdminUsers() {
           aria-label="Définition des rôles"
         >
           <h2 className="text-sm font-bold text-foreground inline-flex items-center gap-2">
-            <Info className="size-4 text-[var(--color-action-default)]" aria-hidden="true" />
+            <Info className="size-4 text-[var(--color-link)]" aria-hidden="true" />
             Permissions et objectifs de chaque rôle
           </h2>
           <ul className="grid md:grid-cols-3 gap-3 text-sm">
             <li className="bg-[var(--color-bg-primary)] rounded-lg p-3 border border-[var(--color-border)]">
               <p className="font-semibold text-foreground inline-flex items-center gap-1.5 mb-1">
-                <ShieldCheck
-                  className="size-4 text-[var(--color-action-default)]"
-                  aria-hidden="true"
-                />
+                <ShieldCheck className="size-4 text-[var(--color-link)]" aria-hidden="true" />
                 Super-admin
               </p>
               <p className="text-xs text-muted-foreground leading-relaxed">
@@ -512,10 +509,7 @@ export default function AdminUsers() {
             </li>
             <li className="bg-[var(--color-bg-primary)] rounded-lg p-3 border border-[var(--color-border)]">
               <p className="font-semibold text-foreground inline-flex items-center gap-1.5 mb-1">
-                <ShieldCheck
-                  className="size-4 text-[var(--color-action-default)]"
-                  aria-hidden="true"
-                />
+                <ShieldCheck className="size-4 text-[var(--color-link)]" aria-hidden="true" />
                 Équipe produit
               </p>
               <p className="text-xs text-muted-foreground leading-relaxed">
@@ -568,7 +562,7 @@ export default function AdminUsers() {
               onClick={() => setFilter(tab.key)}
               className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-action-default)] whitespace-nowrap ${
                 isActive
-                  ? 'border-[var(--color-action-default)] text-[var(--color-action-default)]'
+                  ? 'border-[var(--color-action-default)] text-[var(--color-link)]'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >

@@ -42,7 +42,7 @@ export default function ServerError() {
           {t('serverError.support', { defaultValue: 'Le souci persiste ?' })}{' '}
           <a
             href="mailto:support@naturegraph.ca"
-            className="font-semibold text-[var(--color-action-default)] underline underline-offset-2"
+            className="font-semibold text-[var(--color-link)] underline underline-offset-2"
           >
             support@naturegraph.ca
           </a>

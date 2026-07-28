@@ -123,9 +123,7 @@ export default function AdminLayout() {
               to={item.to}
               end={item.end}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] rounded transition-colors ${
-                isActive
-                  ? 'text-[var(--color-action-default)]'
-                  : 'text-[var(--color-text-secondary)]'
+                isActive ? 'text-[var(--color-link)]' : 'text-[var(--color-text-secondary)]'
               }`}
             >
               <Icon className="size-5" aria-hidden="true" />

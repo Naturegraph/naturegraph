@@ -139,9 +139,7 @@ export function OnboardingInterests({ onContinue, onSkip, onExit }: OnboardingIn
                   </span>
                   <span
                     className={
-                      isSelected
-                        ? 'text-[var(--color-action-default)]'
-                        : 'text-[var(--color-text-primary)]'
+                      isSelected ? 'text-[var(--color-link)]' : 'text-[var(--color-text-primary)]'
                     }
                   >
                     {t(`onboarding.interests.categories.${id}`)}

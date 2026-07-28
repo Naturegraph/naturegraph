@@ -1023,7 +1023,7 @@ function SpeciesSearch({
         <div className="rounded-md border-[0.5px] border-border bg-background flex flex-col items-center overflow-hidden">
           <img src={hermineImg} alt="" width={230} height={128} className="mt-6" loading="lazy" />
           <div className="flex flex-col items-center gap-3 p-6 w-full">
-            <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-primary-light text-[var(--color-action-default)] text-sm font-body font-medium leading-none">
+            <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-primary-light text-[var(--color-link)] text-sm font-body font-medium leading-none">
               Aucun résultat
             </span>
             <p className="font-title font-bold text-lg text-foreground text-center">

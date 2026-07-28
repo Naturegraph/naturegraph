@@ -76,7 +76,7 @@ export function ErrorPageLayout({
 
         <div className="flex flex-col gap-3">
           <p
-            className="text-xs font-bold tracking-widest text-[var(--color-action-default)] uppercase"
+            className="text-xs font-bold tracking-widest text-[var(--color-link)] uppercase"
             aria-label={`Erreur ${code}`}
           >
             {code} · {eyebrow}

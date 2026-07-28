@@ -26,6 +26,15 @@
   --color-action-disabled: #{$brand-main-200}; // #CED3F0
   --color-action-light: #{$brand-main-100}; // #E7E9F7
 
+  // ── Lien textuel ──
+  // Pendant clair du token `--color-link` (cf. _dark-theme.scss). Sur fond
+  // creme (#FFFDF8), le violet de marque #5F5DD8 donne deja 5,1:1 (AA OK) : on
+  // le conserve. Le token existe pour que les liens aient UNE source de verite
+  // qui bascule proprement d'un theme a l'autre (le violet clair du dark
+  // echouerait sur fond clair, et inversement). Decision Nicolas 2026-07-28.
+  --color-link: #{$brand-main-500}; // #5F5DD8
+  --color-link-hover: #{$brand-main-700}; // #3C4380
+
   // ── Content / Neutral ──
   --color-text-primary: #{$greyscale-900}; // #0C0C14
   --color-text-secondary: #{$greyscale-800}; // #20203D

@@ -296,14 +296,14 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               <button
                 type="button"
                 onClick={() => setSection('terms')}
-                className="font-title font-bold text-base leading-6 underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                className="font-title font-bold text-base leading-6 underline text-[var(--color-link)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
               >
                 {t('settings.footer.terms', { defaultValue: 'CGU' })}
               </button>
               <button
                 type="button"
                 onClick={() => setSection('privacy')}
-                className="font-title font-bold text-base leading-6 underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                className="font-title font-bold text-base leading-6 underline text-[var(--color-link)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
               >
                 {t('settings.footer.privacy', {
                   defaultValue: 'Politique de confidentialité',
@@ -499,7 +499,7 @@ function SettingsItem({
 
   const stateClasses = danger
     ? 'text-[var(--color-error,_#9E0F22)]'
-    : 'text-foreground hover:text-[var(--color-action-default)]'
+    : 'text-foreground hover:text-[var(--color-link)]'
 
   const content = (
     <>
@@ -806,7 +806,7 @@ function SettingsLicenseView({ onOpenTerms }: { onOpenTerms?: () => void }) {
               href={INATURALIST_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-bold underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              className="font-bold underline text-[var(--color-link)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
             >
               iNaturalist
             </a>
@@ -821,7 +821,7 @@ function SettingsLicenseView({ onOpenTerms }: { onOpenTerms?: () => void }) {
               href={GBIF_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-bold underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              className="font-bold underline text-[var(--color-link)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
             >
               GBIF
             </a>
@@ -836,7 +836,7 @@ function SettingsLicenseView({ onOpenTerms }: { onOpenTerms?: () => void }) {
               href={WIKIDATA_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-bold underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              className="font-bold underline text-[var(--color-link)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
             >
               Wikidata
             </a>
@@ -897,7 +897,7 @@ function SettingsLicenseView({ onOpenTerms }: { onOpenTerms?: () => void }) {
           <button
             type="button"
             onClick={() => onOpenTerms?.()}
-            className="font-bold underline text-[var(--color-action-default)] hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+            className="font-bold underline text-[var(--color-link)] hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
           >
             {t('settings.license.moreCguLink', {
               defaultValue: "Conditions générales d'utilisation",

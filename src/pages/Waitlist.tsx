@@ -291,7 +291,7 @@ export default function Waitlist() {
               })}{' '}
               <Link
                 to="/privacy"
-                className="underline text-[var(--color-action-default)] hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] rounded"
+                className="underline text-[var(--color-link)] hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] rounded"
               >
                 {t('waitlist.privacyLink', { defaultValue: 'Politique de confidentialité' })}
               </Link>

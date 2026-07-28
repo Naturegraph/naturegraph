@@ -983,7 +983,7 @@ function ReportDetailDrawer({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)]">
           <h3 className="text-base font-bold text-foreground inline-flex items-center gap-2">
-            <ShieldAlert className="size-4 text-[var(--color-action-default)]" aria-hidden="true" />
+            <ShieldAlert className="size-4 text-[var(--color-link)]" aria-hidden="true" />
             Détail du signalement
           </h3>
           <button
@@ -1244,7 +1244,7 @@ function ReportDetailDrawer({
                   href={targetExternalLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs text-[var(--color-action-default)] hover:underline self-start"
+                  className="inline-flex items-center gap-1.5 text-xs text-[var(--color-link)] hover:underline self-start"
                 >
                   <ExternalLink className="size-3" aria-hidden="true" />
                   Ouvrir dans un nouvel onglet

@@ -974,7 +974,7 @@ export default function AdminAnalytics() {
             onClick={() => setActivePhase('p1')}
             className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-action-default)] ${
               activePhase === 'p1'
-                ? 'border-b-2 border-[var(--color-action-default)] text-[var(--color-action-default)]'
+                ? 'border-b-2 border-[var(--color-action-default)] text-[var(--color-link)]'
                 : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
             }`}
           >
@@ -987,7 +987,7 @@ export default function AdminAnalytics() {
             onClick={() => setActivePhase('p2')}
             className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-action-default)] ${
               activePhase === 'p2'
-                ? 'border-b-2 border-[var(--color-action-default)] text-[var(--color-action-default)]'
+                ? 'border-b-2 border-[var(--color-action-default)] text-[var(--color-link)]'
                 : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
             }`}
           >

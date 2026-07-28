@@ -39,7 +39,7 @@ export function SignupForm({
   // la phase de test). Liens cliquables vers /legal et /privacy. L'age minimum
   // (13 ans) reste defini dans les CGU, pas affiche ici (demande Nicolas).
   const linkClass =
-    'underline text-[var(--color-action-default)] hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] rounded'
+    'underline text-[var(--color-link)] hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] rounded'
   const legalNotice = (
     <p className="m-0">
       {t('auth.signup.legalIntro', { defaultValue: 'En créant ton compte, tu acceptes nos' })}{' '}

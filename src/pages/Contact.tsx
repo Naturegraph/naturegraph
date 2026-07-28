@@ -120,7 +120,7 @@ export default function Contact() {
               })}{' '}
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
-                className="text-[var(--color-action-default)] underline font-medium"
+                className="text-[var(--color-link)] underline font-medium"
               >
                 {CONTACT_EMAIL}
               </a>
@@ -344,7 +344,7 @@ export default function Contact() {
             {t('contact.directInfo', { defaultValue: 'Tu peux aussi nous écrire directement à' })}{' '}
             <a
               href={`mailto:${CONTACT_EMAIL}`}
-              className="text-[var(--color-action-default)] underline font-medium"
+              className="text-[var(--color-link)] underline font-medium"
             >
               {CONTACT_EMAIL}
             </a>

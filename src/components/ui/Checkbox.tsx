@@ -1,13 +1,13 @@
-import { forwardRef, type InputHTMLAttributes } from "react";
+import { forwardRef, type InputHTMLAttributes } from 'react'
 
-interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
-  label: string;
-  description?: string;
+interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
+  label: string
+  description?: string
 }
 
 const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ label, description, id, className = "", ...props }, ref) => {
-    const checkboxId = id || label.toLowerCase().replace(/\s+/g, "-");
+  ({ label, description, id, className = '', ...props }, ref) => {
+    const checkboxId = id || label.toLowerCase().replace(/\s+/g, '-')
 
     return (
       <label
@@ -18,7 +18,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           ref={ref}
           id={checkboxId}
           type="checkbox"
-          className="mt-0.5 w-4 h-4 shrink-0 rounded border-[var(--color-border)] text-[var(--color-action-default)] focus:ring-2 focus:ring-[var(--color-action-default)] focus:ring-offset-0 cursor-pointer accent-[var(--color-action-default)]"
+          className="mt-0.5 w-4 h-4 shrink-0 rounded border-[var(--color-border)] text-[var(--color-link)] focus:ring-2 focus:ring-[var(--color-action-default)] focus:ring-offset-0 cursor-pointer accent-[var(--color-action-default)]"
           {...props}
         />
         <span className="flex flex-col gap-0.5">
@@ -26,16 +26,14 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             {label}
           </span>
           {description && (
-            <span className="text-xs text-[var(--color-text-tertiary)]">
-              {description}
-            </span>
+            <span className="text-xs text-[var(--color-text-tertiary)]">{description}</span>
           )}
         </span>
       </label>
-    );
+    )
   },
-);
+)
 
-Checkbox.displayName = "Checkbox";
-export { Checkbox };
-export type { CheckboxProps };
+Checkbox.displayName = 'Checkbox'
+export { Checkbox }
+export type { CheckboxProps }
