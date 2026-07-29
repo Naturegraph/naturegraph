@@ -662,6 +662,7 @@
         "emptyHint": "Reviens plus tard ou explore un autre filtre."
       },
       "messageComment": "a réagi dans les échanges de ta rencontre",
+      "messageCommentGrouped": "ont réagi dans tes échanges",
       "messageCommentReply": "a répondu à ton échange",
       "messageIdentification": "a proposé une espèce sur ta rencontre",
       "messageEchangeReaction": "a aimé ton échange"

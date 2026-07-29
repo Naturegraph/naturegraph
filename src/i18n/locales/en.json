@@ -662,6 +662,7 @@
         "emptyHint": "Come back later or try another filter."
       },
       "messageComment": "joined the exchanges on your encounter",
+      "messageCommentGrouped": "joined your exchanges",
       "messageCommentReply": "replied to your exchange",
       "messageIdentification": "suggested a species on your encounter",
       "messageEchangeReaction": "liked your exchange"

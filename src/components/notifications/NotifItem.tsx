@@ -11,7 +11,16 @@
  * la flexibilité (tailles, hover, heures, etc.).
  */
 
-import { Heart, UserPlus, FileText, Leaf, MessageCircle, AtSign, Award, Bell } from 'lucide-react'
+import {
+  Heart,
+  UserPlus,
+  FileText,
+  Leaf,
+  MessageCircle,
+  AtSign,
+  MessageSquarePlus,
+  Bell,
+} from 'lucide-react'
 import type { Notification, NotificationType } from '@/services/notificationService'
 import { REACTION_CONFIG } from '@/components/home/FeedPost'
 import hermineIcon from '@/assets/images/hermine-icon.png'
@@ -31,7 +40,14 @@ export function NotifIcon({ type }: { type: NotificationType }) {
       color: 'text-[var(--color-success)]',
     },
     post: { Icon: FileText, bg: 'bg-primary-light', color: 'text-[var(--color-link)]' },
-    species_digest: { Icon: Leaf, bg: 'bg-teal-light/30', color: 'text-teal-dark' },
+    // Meme MODELE que le violet et l'orange : fond -bg (teinte claire en clair,
+    // foncee en sombre) + icone saturee. Le vert suit enfin la meme logique et
+    // ne tranche plus (retour Nicolas 2026-07-28).
+    species_digest: {
+      Icon: Leaf,
+      bg: 'bg-[var(--color-highlight-bg)]',
+      color: 'text-[var(--color-highlight-primary)]',
+    },
     // Echange = interaction SOCIALE : meme famille de couleur que les reactions
     // (amber) plutot que le violet d'action, pour ne pas melanger la couleur de
     // marque avec les notifs sociales (decision Nicolas 2026-07-28). L'icone
@@ -42,7 +58,13 @@ export function NotifIcon({ type }: { type: NotificationType }) {
       color: 'text-[var(--color-warning)]',
     },
     mention: { Icon: AtSign, bg: 'bg-primary-light', color: 'text-[var(--color-link)]' },
-    identification: { Icon: Award, bg: 'bg-teal-light/30', color: 'text-teal-dark' },
+    // Icone "Proposer une espece" (MessageSquarePlus), pas une medaille (Award)
+    // qui n'avait aucun rapport. Fond -bg highlight comme le violet/orange.
+    identification: {
+      Icon: MessageSquarePlus,
+      bg: 'bg-[var(--color-highlight-bg)]',
+      color: 'text-[var(--color-highlight-primary)]',
+    },
     system: { Icon: Bell, bg: 'bg-muted', color: 'text-muted-foreground' },
   }
   const { Icon, bg, color } = map[type] ?? map.system
@@ -73,11 +95,11 @@ export function NotifChip({ type, t }: { type: NotificationType; t: (k: string) 
     reaction: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
     follow: 'bg-[var(--color-success-bg)] text-[var(--color-success)]',
     post: 'bg-primary-light text-[var(--color-link)]',
-    species_digest: 'bg-teal-light/30 text-teal-dark',
+    species_digest: 'bg-[var(--color-highlight-bg)] text-[var(--color-highlight-primary)]',
     // Echange = social : meme amber que les reactions (cf. NotifIcon).
     comment: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
     mention: 'bg-primary-light text-[var(--color-link)]',
-    identification: 'bg-teal-light/30 text-teal-dark',
+    identification: 'bg-[var(--color-highlight-bg)] text-[var(--color-highlight-primary)]',
     system: 'bg-muted text-muted-foreground',
   }
   return (
@@ -148,8 +170,10 @@ export function getMessage(
     // affiches sans aucune phrase. Une notification qui ne dit pas ce qui s'est
     // passe ne sert a rien : on la lit, on ne comprend pas, on l'ignore.
     case 'comment':
+      // Groupes : message PROPRE aux echanges (avant, ils reprenaient le message
+      // des publications "a publie N rencontres", ce qui n'avait aucun sens).
       return groupCount > 1
-        ? t('home.notifications.messagePostGrouped', { count: groupCount })
+        ? t('home.notifications.messageCommentGrouped')
         : t('home.notifications.messageComment')
     case 'identification':
       return t('home.notifications.messageIdentification')

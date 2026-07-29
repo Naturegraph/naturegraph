@@ -80,6 +80,10 @@
   --color-warning-bg: #{$semantic-orange-100}; // #FEE1C8
   --color-error-bg: #{$semantic-red-100}; // #FCCDD5
   --color-info-bg: #{$semantic-blue-100}; // #BADEFA
+  // Fond teal clair pour les pastilles/chips "identification" et "species", sur
+  // le meme modele que les autres -bg (teinte claire en clair, foncee en
+  // sombre), afin que le vert se comporte comme le violet et l'orange.
+  --color-highlight-bg: #{$brand-highlight-100}; // #CCEDED
 
   // ── Neutral ──
   --color-neutral-0: #{$greyscale-0}; // #FFFFFF

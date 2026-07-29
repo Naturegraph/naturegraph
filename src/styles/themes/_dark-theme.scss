@@ -84,6 +84,9 @@
   --color-warning-bg: #{$semantic-orange-700}; // #AF5115
   --color-error-bg: #{$semantic-red-700}; // #9E0F22
   --color-info-bg: #{$semantic-blue-700}; // #004178
+  // Pendant sombre de --color-highlight-bg (teinte teal foncee, comme les autres
+  // -bg en sombre) : l'icone teal vive ressort dessus.
+  --color-highlight-bg: #{$brand-highlight-700}; // #003F3F
 
   // ── Neutral ──
   --color-neutral-0: #{$greyscale-999}; // #000000
