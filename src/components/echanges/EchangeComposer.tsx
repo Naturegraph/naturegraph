@@ -183,23 +183,14 @@ export function EchangeComposer({
           )}
         </div>
 
-        {/* Sous 640px le libelle disparait et le bouton devient un rond de
-            48px : a cette largeur, "Envoyer" ecrit en toutes lettres prend la
-            place du champ lui-meme. La cible tactile reste a 48px, au-dessus du
-            minimum WCAG, et le libelle reste lu par les lecteurs d'ecran. */}
         {/*
-          Bouton du DESIGN SYSTEM (`Button`), variante primaire, taille md
-          (48px) : couleurs, arrondi et hauteur viennent d'une source unique.
+          Bouton du DESIGN SYSTEM (`Button`), variante primaire, taille md.
 
-          ETAT DESACTIVE : aucune surcharge, on laisse le composant faire.
-          C'est exactement ce que fait l'onboarding quand le pseudo manque
-          (`OnboardingStep4`), et c'est la reference dans le projet. Toute
-          recette locale finirait par diverger du reste de l'app, ce qui est
-          precisement le probleme qu'un design system existe pour eviter.
-
-          LE LIBELLE RESTE ECRIT en toutes lettres, y compris sur mobile : une
-          icone seule oblige a deviner, et un `aria-label` ne repare cela que
-          pour les lecteurs d'ecran, pas pour qui lit l'ecran.
+          MOBILE (< 640px) : ICONE SEULE (decision Nicolas 2026-07-29). Le
+          libelle "Envoyer" en toutes lettres ecrasait le champ, poussant le
+          placeholder sur deux lignes. On le masque sous `sm` (le champ reprend
+          sa largeur, le placeholder tient sur une ligne) et il reste lu par les
+          lecteurs d'ecran via `aria-label`. Desktop : icone + libelle.
         */}
         <Button
           type="submit"
@@ -207,9 +198,10 @@ export function EchangeComposer({
           size="md"
           disabled={peutEcrire && !pret}
           icon={<Send className="size-5" aria-hidden="true" />}
+          aria-label={enCours ? 'Envoi en cours' : 'Envoyer'}
           className="shrink-0"
         >
-          {enCours ? 'Envoi…' : 'Envoyer'}
+          <span className="hidden sm:inline">{enCours ? 'Envoi…' : 'Envoyer'}</span>
         </Button>
       </div>
 

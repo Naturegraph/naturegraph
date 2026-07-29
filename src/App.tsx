@@ -92,7 +92,7 @@ function BootSplash({ children }: { children: React.ReactNode }) {
     if (skipSplash) {
       return (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-cream-lighter"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-background"
           aria-busy="true"
           aria-label="Restauration de la session"
         />

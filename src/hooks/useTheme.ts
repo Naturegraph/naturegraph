@@ -6,15 +6,11 @@
  * `setTheme` etaient des no-ops assumes), alors que la feuille de tokens
  * `_dark-theme.scss` existait deja et fonctionnait.
  *
- * TROIS SOURCES, dans cet ordre de priorite :
- *   1. le choix explicite de la personne, garde dans `localStorage` ;
- *   2. a defaut, la preference du systeme (`prefers-color-scheme`) ;
- *   3. a defaut, clair.
- *
- * Respecter le systeme d'emblee evite le flash blanc en pleine nuit a quelqu'un
- * dont tout l'appareil est en sombre. Mais un choix explicite l'emporte
- * TOUJOURS et n'est jamais ecrase : quelqu'un qui veut Naturegraph en clair sur
- * un telephone en sombre doit pouvoir l'obtenir, et le garder.
+ * DEFAUT CLAIR POUR TOUS (decision Nicolas 2026-07-29). Le mode sombre est un
+ * choix OPT-IN : on NE suit PAS `prefers-color-scheme`. Tant que la personne
+ * n'active pas explicitement le sombre, l'app reste claire, quel que soit le
+ * reglage de son appareil. Son choix est garde dans `localStorage` et l'emporte
+ * ensuite toujours.
  *
  * Le theme s'applique sur `<html>` via `data-theme`, ou les deux feuilles de
  * tokens sont branchees. Les pages qui doivent rester claires quoi qu'il arrive
@@ -39,14 +35,9 @@ function themeEnregistre(): Theme | null {
   }
 }
 
-function themeSysteme(): Theme {
-  if (typeof window === 'undefined' || !window.matchMedia) return 'light'
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
-
-/** Theme a appliquer au premier rendu. */
+/** Theme a appliquer au premier rendu : le choix enregistre, sinon CLAIR. */
 export function themeInitial(): Theme {
-  return themeEnregistre() ?? themeSysteme()
+  return themeEnregistre() ?? 'light'
 }
 
 function appliquer(theme: Theme) {
@@ -63,19 +54,6 @@ export function useTheme() {
   useEffect(() => {
     appliquer(theme)
   }, [theme])
-
-  // Suivre le systeme TANT QUE la personne n'a pas choisi elle-meme. Une fois
-  // qu'elle a tranche, changer le reglage de l'appareil ne doit plus rien
-  // imposer : ce serait revenir sur une decision explicite.
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return
-    const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    const auChangement = (e: MediaQueryListEvent) => {
-      if (themeEnregistre() === null) setThemeState(e.matches ? 'dark' : 'light')
-    }
-    mq.addEventListener('change', auChangement)
-    return () => mq.removeEventListener('change', auChangement)
-  }, [])
 
   const setTheme = useCallback((t: Theme) => {
     try {
