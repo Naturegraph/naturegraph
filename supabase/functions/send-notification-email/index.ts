@@ -172,7 +172,9 @@ Deno.serve(async (req: Request) => {
     // des users). La fenetre (168h) et le plafond (2) sont geres ici, de facon
     // centrale, quel que soit le min_interval_hours passe par les crons E1-E4.
     // event (E5-E8) : dedup fine par email_type (+ reference_key) sur la fenetre
-    // min_interval_hours fournie par l'appelant (comportement inchange).
+    // min_interval_hours fournie par l'appelant (comportement inchange). E2 est
+    // dans cette branche depuis NG-045 (categorie 'event') : rendez-vous hebdo
+    // du dimanche garanti par sa propre dedup, hors du cap partage E3/E4.
     const isWeeklyMarketing = payload.category === 'weekly_marketing'
     const windowHours = isWeeklyMarketing ? 168 : payload.min_interval_hours
     const maxInWindow = isWeeklyMarketing ? 2 : 1

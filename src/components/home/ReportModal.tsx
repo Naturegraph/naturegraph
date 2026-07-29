@@ -20,6 +20,12 @@ import type { ReportReason } from '@/types/database'
 
 interface ReportModalProps {
   postId: string
+  /**
+   * NG-049 : si renseigne, c'est l'ECHANGE qui est signale, pas la publication.
+   * Le formulaire, les motifs et le retour restent identiques : signaler est le
+   * meme geste, quelle que soit la cible.
+   */
+  commentId?: string
   onClose: () => void
 }
 
@@ -34,7 +40,7 @@ const REASON_OPTIONS: Array<{ value: ReportReason; labelKey: string }> = [
   { value: 'other', labelKey: 'home.post.reportModal.reason5' },
 ]
 
-export function ReportModal({ postId, onClose }: ReportModalProps) {
+export function ReportModal({ postId, commentId, onClose }: ReportModalProps) {
   const { t } = useTranslation()
   const [reason, setReason] = useState<ReportReason | ''>('')
   const [submitted, setSubmitted] = useState(false)
@@ -74,7 +80,7 @@ export function ReportModal({ postId, onClose }: ReportModalProps) {
     setSubmitting(true)
     setErrorMsg(null)
     try {
-      await createReport({ postId, reason })
+      await createReport(commentId ? { commentId, reason } : { postId, reason })
       setSubmitted(true)
       setTimeout(() => onClose(), 2000)
     } catch (err) {
@@ -99,7 +105,7 @@ export function ReportModal({ postId, onClose }: ReportModalProps) {
   const modalContent = submitted ? (
     /* État succès */
     <div className="flex flex-col items-center gap-4 py-8 px-6 text-center">
-      <CheckCircle className="size-12 text-primary" aria-hidden="true" />
+      <CheckCircle className="size-12 text-[var(--color-link)]" aria-hidden="true" />
       <div className="flex flex-col gap-1">
         <p className="font-bold text-foreground text-lg">
           {t('home.post.reportModal.successTitle')}
@@ -170,7 +176,7 @@ export function ReportModal({ postId, onClose }: ReportModalProps) {
       </fieldset>
 
       {errorMsg && (
-        <p role="alert" className="text-xs text-red-600 mt-3">
+        <p role="alert" className="text-xs text-[var(--color-error)] mt-3">
           {errorMsg}
         </p>
       )}

@@ -108,7 +108,7 @@ export function OnboardingStep3({
                      * invalide dans <button> (qui accepte uniquement du phrasing content).
                      */}
                     <span
-                      className={`font-bold ${isSelected ? 'text-[var(--color-action-default)]' : 'text-[var(--color-text-primary)]'}`}
+                      className={`font-bold ${isSelected ? 'text-[var(--color-link)]' : 'text-[var(--color-text-primary)]'}`}
                     >
                       {t(`onboarding.motivations.options.${key}`)}
                     </span>

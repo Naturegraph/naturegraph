@@ -190,7 +190,7 @@ export function InstallPromptBanner() {
           <button
             type="button"
             onClick={handleInstall}
-            className="shrink-0 h-9 px-4 rounded-full bg-primary-foreground text-primary text-sm font-bold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+            className="shrink-0 h-9 px-4 rounded-full bg-primary-foreground text-[var(--color-link)] text-sm font-bold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
           >
             {t('pwa.installCta', { defaultValue: 'Installer' })}
           </button>

@@ -369,32 +369,109 @@ export type Database = {
           },
         ]
       }
+      comment_reactions: {
+        Row: {
+          comment_id: string
+          created_at: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'comment_reactions_comment_id_fkey'
+            columns: ['comment_id']
+            isOneToOne: false
+            referencedRelation: 'comments'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'comment_reactions_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'comment_reactions_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       comments: {
         Row: {
+          confidence: number | null
           content: string
           created_at: string | null
+          edited_at: string | null
+          helpful: boolean
           id: string
+          intention: string
+          moderation_status: string
+          parent_id: string | null
           post_id: string
+          species_label: string | null
+          species_scientific: string | null
+          taxonomy_node_id: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          confidence?: number | null
           content: string
           created_at?: string | null
+          edited_at?: string | null
+          helpful?: boolean
           id?: string
+          intention?: string
+          moderation_status?: string
+          parent_id?: string | null
           post_id: string
+          species_label?: string | null
+          species_scientific?: string | null
+          taxonomy_node_id?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          confidence?: number | null
           content?: string
           created_at?: string | null
+          edited_at?: string | null
+          helpful?: boolean
           id?: string
+          intention?: string
+          moderation_status?: string
+          parent_id?: string | null
           post_id?: string
+          species_label?: string | null
+          species_scientific?: string | null
+          taxonomy_node_id?: string | null
           updated_at?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: 'comments_parent_id_fkey'
+            columns: ['parent_id']
+            isOneToOne: false
+            referencedRelation: 'comments'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'comments_post_id_fkey'
             columns: ['post_id']
@@ -407,6 +484,13 @@ export type Database = {
             columns: ['post_id']
             isOneToOne: false
             referencedRelation: 'posts_public'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'comments_taxonomy_node_id_fkey'
+            columns: ['taxonomy_node_id']
+            isOneToOne: false
+            referencedRelation: 'taxonomy_nodes'
             referencedColumns: ['id']
           },
           {
@@ -460,6 +544,99 @@ export type Database = {
           tagline?: string
         }
         Relationships: []
+      }
+      email_blocklist: {
+        Row: {
+          created_at: string
+          domain: string
+          note: string | null
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          note?: string | null
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          note?: string | null
+        }
+        Relationships: []
+      }
+      email_events: {
+        Row: {
+          created_at: string
+          event: string
+          id: string
+          metadata: Json | null
+          resend_email_id: string | null
+          subject: string | null
+          to_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event: string
+          id?: string
+          metadata?: Json | null
+          resend_email_id?: string | null
+          subject?: string | null
+          to_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          id?: string
+          metadata?: Json | null
+          resend_email_id?: string | null
+          subject?: string | null
+          to_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      email_send_log: {
+        Row: {
+          category: string
+          email_type: string
+          id: string
+          reference_key: string | null
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          email_type: string
+          id?: string
+          reference_key?: string | null
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          email_type?: string
+          id?: string
+          reference_key?: string | null
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'email_send_log_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'email_send_log_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles_public'
+            referencedColumns: ['id']
+          },
+        ]
       }
       follows: {
         Row: {
@@ -541,6 +718,36 @@ export type Database = {
           population?: number | null
           region_code?: string
           region_name?: string
+        }
+        Relationships: []
+      }
+      ghost_profiles_archive: {
+        Row: {
+          archived_at: string
+          email: string | null
+          emails_envoyes: Json | null
+          id: string
+          motif: string
+          profile_created_at: string | null
+          username: string | null
+        }
+        Insert: {
+          archived_at?: string
+          email?: string | null
+          emails_envoyes?: Json | null
+          id: string
+          motif?: string
+          profile_created_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          archived_at?: string
+          email?: string | null
+          emails_envoyes?: Json | null
+          id?: string
+          motif?: string
+          profile_created_at?: string | null
+          username?: string | null
         }
         Relationships: []
       }
@@ -661,6 +868,24 @@ export type Database = {
             referencedColumns: ['id']
           },
         ]
+      }
+      infra_alert_state: {
+        Row: {
+          id: number
+          last_alerted_at: string | null
+          last_payload: Json | null
+        }
+        Insert: {
+          id?: number
+          last_alerted_at?: string | null
+          last_payload?: Json | null
+        }
+        Update: {
+          id?: number
+          last_alerted_at?: string | null
+          last_payload?: Json | null
+        }
+        Relationships: []
       }
       media: {
         Row: {
@@ -823,6 +1048,33 @@ export type Database = {
             referencedColumns: ['id']
           },
         ]
+      }
+      media_backup_log: {
+        Row: {
+          backup_path: string
+          copied_at: string
+          id: string
+          source_bucket: string
+          source_path: string
+          taille_octets: number | null
+        }
+        Insert: {
+          backup_path: string
+          copied_at?: string
+          id?: string
+          source_bucket: string
+          source_path: string
+          taille_octets?: number | null
+        }
+        Update: {
+          backup_path?: string
+          copied_at?: string
+          id?: string
+          source_bucket?: string
+          source_path?: string
+          taille_octets?: number | null
+        }
+        Relationships: []
       }
       moderation_reports: {
         Row: {
@@ -1034,18 +1286,21 @@ export type Database = {
       }
       notification_preferences: {
         Row: {
+          email_enabled: boolean
           enabled: boolean
           type: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          email_enabled?: boolean
           enabled?: boolean
           type: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          email_enabled?: boolean
           enabled?: boolean
           type?: string
           updated_at?: string
@@ -1072,6 +1327,7 @@ export type Database = {
         Row: {
           body: string | null
           created_at: string | null
+          emailed_at: string | null
           id: string
           read: boolean | null
           reference_id: string | null
@@ -1083,6 +1339,7 @@ export type Database = {
         Insert: {
           body?: string | null
           created_at?: string | null
+          emailed_at?: string | null
           id?: string
           read?: boolean | null
           reference_id?: string | null
@@ -1094,6 +1351,7 @@ export type Database = {
         Update: {
           body?: string | null
           created_at?: string | null
+          emailed_at?: string | null
           id?: string
           read?: boolean | null
           reference_id?: string | null
@@ -1322,6 +1580,7 @@ export type Database = {
           interests: string[] | null
           is_internal: boolean
           is_public: boolean | null
+          last_active_at: string | null
           last_login_at: string | null
           last_name: string
           location_consent_source: string | null
@@ -1362,6 +1621,7 @@ export type Database = {
           interests?: string[] | null
           is_internal?: boolean
           is_public?: boolean | null
+          last_active_at?: string | null
           last_login_at?: string | null
           last_name: string
           location_consent_source?: string | null
@@ -1402,6 +1662,7 @@ export type Database = {
           interests?: string[] | null
           is_internal?: boolean
           is_public?: boolean | null
+          last_active_at?: string | null
           last_login_at?: string | null
           last_name?: string
           location_consent_source?: string | null
@@ -1645,6 +1906,24 @@ export type Database = {
             referencedColumns: ['id']
           },
         ]
+      }
+      signup_surge_alert_state: {
+        Row: {
+          id: number
+          last_alerted_at: string | null
+          last_count: number | null
+        }
+        Insert: {
+          id?: number
+          last_alerted_at?: string | null
+          last_count?: number | null
+        }
+        Update: {
+          id?: number
+          last_alerted_at?: string | null
+          last_count?: number | null
+        }
+        Relationships: []
       }
       spatial_ref_sys: {
         Row: {
@@ -2001,6 +2280,15 @@ export type Database = {
         }
         Relationships: []
       }
+      media_backup_status: {
+        Row: {
+          bucket: string | null
+          fichiers_sauvegardes: number | null
+          fichiers_source: number | null
+          restants: number | null
+        }
+        Relationships: []
+      }
       notifications_with_actor: {
         Row: {
           actor_avatar_url: string | null
@@ -2053,6 +2341,8 @@ export type Database = {
           location_point: unknown
           longitude: number | null
           multiple_observations: boolean | null
+          notebook_id: string | null
+          notebook_species_count: number | null
           phenomenon: string | null
           published_at: string | null
           region: string | null
@@ -2097,6 +2387,8 @@ export type Database = {
           location_point?: never
           longitude?: never
           multiple_observations?: boolean | null
+          notebook_id?: string | null
+          notebook_species_count?: never
           phenomenon?: string | null
           published_at?: string | null
           region?: never
@@ -2141,6 +2433,8 @@ export type Database = {
           location_point?: never
           longitude?: never
           multiple_observations?: boolean | null
+          notebook_id?: string | null
+          notebook_species_count?: never
           phenomenon?: string | null
           published_at?: string | null
           region?: never
@@ -2167,6 +2461,13 @@ export type Database = {
           weather?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: 'posts_notebook_id_fkey'
+            columns: ['notebook_id']
+            isOneToOne: false
+            referencedRelation: 'notebooks'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'posts_user_id_fkey'
             columns: ['user_id']
@@ -2245,10 +2546,6 @@ export type Database = {
       }
     }
     Functions: {
-      admin_set_user_role: {
-        Args: { p_target: string; p_role: string }
-        Returns: string
-      }
       _postgis_deprecate: {
         Args: { newname: string; oldname: string; version: string }
         Returns: undefined
@@ -2376,9 +2673,13 @@ export type Database = {
             }
             Returns: string
           }
+      admin_set_user_role: {
+        Args: { p_role: string; p_target: string }
+        Returns: string
+      }
       anonymize_beta_signup_log: { Args: never; Returns: number }
       anonymize_orphan_audit_logs: { Args: never; Returns: number }
-      can_see_notebook: { Args: { p_notebook_id: string }; Returns: boolean }
+      can_moderate: { Args: { p_user_id: string }; Returns: boolean }
       can_see_post: { Args: { p_post_id: string }; Returns: boolean }
       check_beta_access_key_validity: {
         Args: { p_code: string }
@@ -2387,11 +2688,13 @@ export type Database = {
           valid: boolean
         }[]
       }
+      check_infra_health: { Args: never; Returns: Json }
       claim_beta_access_key: {
         Args: { p_code: string; p_user_id?: string }
         Returns: string
       }
       clear_user_location: { Args: { p_user_id: string }; Returns: undefined }
+      current_admin_role: { Args: { p_user_id: string }; Returns: string }
       disablelongtransactions: { Args: never; Returns: string }
       dropgeometrycolumn:
         | {
@@ -2552,14 +2855,36 @@ export type Database = {
         Returns: boolean
       }
       geomfromewkt: { Args: { '': string }; Returns: unknown }
+      get_observations_count: {
+        Args: { p_end?: string; p_start: string }
+        Returns: number
+      }
+      get_user_observation_stats: {
+        Args: { p_user_id: string; p_week_start?: string }
+        Returns: Json
+      }
       gettransactionid: { Args: never; Returns: unknown }
+      hook_block_disposable_email: { Args: { event: Json }; Returns: Json }
       immutable_unaccent: { Args: { '': string }; Returns: string }
       increment_beta_user_count: { Args: never; Returns: undefined }
       is_admin: { Args: { p_user_id: string }; Returns: boolean }
+      is_email_enabled: {
+        Args: { p_type: string; p_user_id: string }
+        Returns: boolean
+      }
       is_internal_user: { Args: { p_user_id: string }; Returns: boolean }
       is_notif_enabled: {
         Args: { p_type: string; p_user_id: string }
         Returns: boolean
+      }
+      is_super_admin: { Args: { p_user_id: string }; Returns: boolean }
+      list_media_backup_pending: {
+        Args: { p_limit?: number }
+        Returns: {
+          source_bucket: string
+          source_path: string
+          taille: number
+        }[]
       }
       longtransactionsenabled: { Args: never; Returns: boolean }
       nearby_posts: {
@@ -3249,6 +3574,15 @@ export type Database = {
       st_wrapx: {
         Args: { geom: unknown; move: number; wrap: number }
         Returns: unknown
+      }
+      toggle_comment_helpful: {
+        Args: { p_comment_id: string }
+        Returns: boolean
+      }
+      touch_last_active: { Args: never; Returns: undefined }
+      trancher_echange_signale: {
+        Args: { p_comment_id: string; p_decision: string }
+        Returns: string
       }
       unaccent: { Args: { '': string }; Returns: string }
       unlockrows: { Args: { '': string }; Returns: number }

@@ -331,12 +331,17 @@ export function LocationModal({ onClose }: LocationModalProps) {
             className="shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-0.5"
           >
             {isGps || isSearching ? (
-              <Loader2 className="size-5 text-primary animate-spin" aria-hidden="true" />
+              <Loader2
+                className="size-5 text-[var(--color-link)] animate-spin"
+                aria-hidden="true"
+              />
             ) : (
               <LocateFixed
                 className={[
                   'size-5',
-                  gpsState === 'confirm' ? 'text-primary/50' : 'text-primary',
+                  gpsState === 'confirm'
+                    ? 'text-[var(--color-link)]/50'
+                    : 'text-[var(--color-link)]',
                 ].join(' ')}
                 aria-hidden="true"
               />
@@ -364,7 +369,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
               <button
                 type="button"
                 onClick={handleGpsConfirm}
-                className="text-xs font-medium text-primary hover:text-primary/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded px-2 py-1"
+                className="text-xs font-medium text-[var(--color-link)] hover:text-[var(--color-link)]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded px-2 py-1"
               >
                 Oui
               </button>
@@ -405,7 +410,10 @@ export function LocationModal({ onClose }: LocationModalProps) {
                       onClick={() => selectSuggestion(city)}
                       className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-primary-light/40 transition-colors"
                     >
-                      <MapPin className="size-4 text-primary shrink-0" aria-hidden="true" />
+                      <MapPin
+                        className="size-4 text-[var(--color-link)] shrink-0"
+                        aria-hidden="true"
+                      />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{city.name}</p>
                         <p className="text-xs text-muted-foreground truncate">
@@ -464,7 +472,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
           <button
             type="button"
             onClick={handleReset}
-            className="self-start text-xs text-primary underline decoration-solid mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+            className="self-start text-xs text-[var(--color-link)] underline decoration-solid mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
           >
             Supprimer ma localisation
           </button>
@@ -542,7 +550,7 @@ export function LocationModal({ onClose }: LocationModalProps) {
     <>
       {/* ── Backdrop : mobile uniquement (desktop : click-outside via panelRef) ── */}
       <div
-        className="md:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-50"
+        className="md:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
         aria-hidden="true"
         onClick={onClose}
       />

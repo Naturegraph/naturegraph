@@ -57,7 +57,7 @@ export function LocationRadiusSlider({
           {t('location.radius.label')}
         </label>
         <span
-          className="text-sm font-semibold text-[var(--color-action-default)]"
+          className="text-sm font-semibold text-[var(--color-link)]"
           aria-live="polite"
           aria-atomic="true"
         >

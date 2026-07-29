@@ -168,11 +168,7 @@ export function CityAutocomplete({
       >
         {/* Icône gauche : MapPin si sélectionné, Search sinon */}
         {value ? (
-          <MapPin
-            size={16}
-            className="shrink-0 text-[var(--color-action-default)]"
-            aria-hidden="true"
-          />
+          <MapPin size={16} className="shrink-0 text-[var(--color-link)]" aria-hidden="true" />
         ) : isLoading ? (
           <Loader2
             size={16}
@@ -263,7 +259,7 @@ export function CityAutocomplete({
               className={[
                 'flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors text-sm',
                 i === activeIndex
-                  ? 'bg-[var(--color-action-light)] text-[var(--color-action-default)]'
+                  ? 'bg-[var(--color-action-light)] text-[var(--color-link)]'
                   : 'text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]',
               ].join(' ')}
             >

@@ -5,12 +5,13 @@
  *   - Rencontre nature  : observation documentée d'une espèce : icône oiseau teal (disponible)
  *   - Instant nature    : capture spontanée paysage/ambiance : icône montagne orange (bientôt)
  *
- * Design :
- *   - Conteneur : bg cream, border gris-clair 0.5px, rounded-lg, shadow-lg, padding 4px
- *   - Cartes    : fond coloré (teal-50 / warm-bg-tertiary), gap-5, padding 16px, rounded-xl
- *   - Icône     : cercle 56px (teal `#006666` | amber `#cc7a00`), icône blanche 28px
- *   - Titre     : Quicksand Bold 18px
- *   - Desc.     : Mulish Regular 14px, text-muted-foreground
+ * Design (couleurs theme-aware, Figma dark 6858:13212, Nicolas 2026-07-28) :
+ *   - Conteneur : bg surface, border gris-clair 0.5px, rounded-lg, shadow-lg
+ *   - Cartes    : teinte de l'accent, PASTEL en clair / TRES FONCEE en sombre
+ *     (teal #E5F7F7->#032222, ambre #FFF4E0->#281203) via tokens
+ *     `--color-contribute-*`. Le glyphe de l'icone reprend le fond de carte.
+ *   - Icône     : cercle 48px (teal #006666->#33B6B6 | amber #CC7A00)
+ *   - Titre/Desc: tokens `--color-contribute-title` / `-desc` (clair -> sombre)
  *   - Bientôt   : badge pill primary/10, item opacity-60, cursor-not-allowed
  *
  * Responsive :
@@ -27,9 +28,6 @@
  *   2. Créer le formulaire /contribute?type=nature_instant
  *   3. POST /posts { type: 'nature_instant', ... } via postService
  *   4. Invalider le cache TanStack Query ['feed']
- *
- * TODO [TOKEN] `#cc7a00` (cercle Instant nature) : ajouter `--color-amber-primary`
- *   dans _light-theme.scss quand le design system sera mis à jour.
  */
 
 import { useEffect, useRef } from 'react'
@@ -42,10 +40,18 @@ interface ContributionType {
   id: string
   title: string
   description: string
-  /** Couleur CSS du fond de la carte (token ou hex commenté) */
+  /** Couleur CSS du fond de la carte (token theme-aware) */
   cardBg: string
-  /** Couleur CSS du fond du cercle-icône */
+  /** Retiree de l'affichage sans etre supprimee du code. */
+  hidden?: boolean
+  /** Couleur CSS du fond du cercle-icône (token theme-aware) */
   iconBg: string
+  /**
+   * Couleur du GLYPHE de l'icone (token theme-aware dedie). En clair : blanc.
+   * En sombre : la teinte foncee de la carte, si bien que l'icone se decoupe
+   * dans la pastille vive (design Figma 6858:13212).
+   */
+  glyph: string
   /** Composant Lucide pour l'icône */
   Icon: React.ElementType
   /** Si true, carte grisée + badge "Bientôt" : non cliquable */
@@ -62,13 +68,17 @@ const CONTRIBUTION_TYPES: ContributionType[] = [
     // usages : (1) mode terrain au fil d'une sortie sur smartphone, (2) saisie
     // au calme sur PC pour reporter des notes papier. On ne restreint plus au
     // mobile pour couvrir l'ensemble des cas d'usage.
+    // Masque le 2026-07-23 (Nicolas) : plus utile pour le moment. L'entree est
+    // conservee mais filtree a l'affichage, pour pouvoir la remettre sans avoir
+    // a la reecrire.
+    hidden: true,
     id: 'nature_notebook',
     title: "Carnet d'observations",
     description: 'Démarre une sortie nature : ajoute progressivement les espèces observées.',
-    /** Background/Neutral/Secondary : gris clair (#F4F4F4, Figma Frame 2985). */
+    /** Carte masquee : couleurs laissees en dur (non affichee). */
     cardBg: '#f4f4f4',
-    /** Content/Neutral/Secondary : bleu nuit (#20203D = $greyscale-800). */
     iconBg: '#20203d',
+    glyph: '#ffffff',
     Icon: BookOpen,
     disabled: false,
   },
@@ -76,10 +86,11 @@ const CONTRIBUTION_TYPES: ContributionType[] = [
     id: 'nature_instant',
     title: 'Instant nature',
     description: "Partage un paysage ou un phénomène naturel qui t'a marqué.",
-    /** Background/Neutral/Tertiary (--color-bg-tertiary = #FFF4E0). */
-    cardBg: 'var(--color-bg-tertiary)',
-    /** Amber brand primary (--color-amber-primary = #CC7A00). */
-    iconBg: 'var(--color-amber-primary)',
+    // Tokens theme-aware (Figma 6858:13212) : ambre pastel #FFF4E0 en clair,
+    // ambre quasi noir #281203 en sombre. Le glyphe reprend le fond.
+    cardBg: 'var(--color-contribute-instant-bg)',
+    iconBg: 'var(--color-contribute-instant-circle)',
+    glyph: 'var(--color-contribute-instant-glyph)',
     Icon: MountainSnow,
     // Nicolas 2026-05-23 : activé en preview, branche feat/instant-nature-preview.
     disabled: false,
@@ -88,10 +99,12 @@ const CONTRIBUTION_TYPES: ContributionType[] = [
     id: 'nature_encounter',
     title: 'Rencontre nature',
     description: 'Contribue en ajoutant une observation animale, avec ou sans photo.',
-    /** Background/Highlight/Secondary : teal-50 (#E5F7F7, $brand-highlight-50). */
-    cardBg: '#e5f7f7',
-    /** Background/Highlight/Primary (--color-highlight-primary = #006666). */
-    iconBg: 'var(--color-highlight-primary)',
+    // Tokens theme-aware (Figma 6858:13212) : teal pastel #E5F7F7 + pastille
+    // #006666 en clair ; teal quasi noir #032222 + pastille vive #33B6B6 en
+    // sombre. Le glyphe reprend le fond de carte.
+    cardBg: 'var(--color-contribute-encounter-bg)',
+    iconBg: 'var(--color-contribute-encounter-circle)',
+    glyph: 'var(--color-contribute-encounter-glyph)',
     Icon: Bird,
     disabled: false,
   },
@@ -101,7 +114,7 @@ const CONTRIBUTION_TYPES: ContributionType[] = [
 
 function SoonBadge() {
   return (
-    <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+    <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-[var(--color-link)] bg-primary/10 px-2 py-0.5 rounded-full">
       Bientôt
     </span>
   )
@@ -192,7 +205,10 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
    *   uniquement côté desktop (le dropdown mobile est aussi monté dans le DOM ;
    *   un seul des deux doit porter le ref pour éviter un focus sur un nœud caché).
    */
-  function renderCards(types: ContributionType[], attachRef: boolean) {
+  function renderCards(tousLesTypes: ContributionType[], attachRef: boolean) {
+    // Le filtre vit ICI, au rendu : les entrees masquees restent declarees
+    // (donc faciles a remettre) mais ne sont ni affichees ni focalisables.
+    const types = tousLesTypes.filter((t) => !t.hidden)
     const firstFocusableIndex = types.findIndex((t) => !t.disabled)
     return (
       <div role="menu" aria-label="Type de contribution" className="flex flex-col gap-1">
@@ -215,18 +231,18 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
                   style={{ backgroundColor: type.iconBg }}
                   aria-hidden="true"
                 >
-                  <Icon className="size-6 text-white" strokeWidth={2} />
+                  <Icon className="size-6" style={{ color: type.glyph }} strokeWidth={2} />
                 </div>
 
                 {/* Texte */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="font-title font-bold text-base leading-[1.2] text-foreground">
+                    <p className="font-title font-bold text-base leading-[1.2] text-[var(--color-contribute-title)]">
                       {type.title}
                     </p>
                     <SoonBadge />
                   </div>
-                  <p className="text-sm text-[var(--color-text-secondary)] mt-1 leading-normal">
+                  <p className="text-sm text-[var(--color-contribute-desc)] mt-1 leading-normal">
                     {type.description}
                   </p>
                 </div>
@@ -251,15 +267,15 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
                 style={{ backgroundColor: type.iconBg }}
                 aria-hidden="true"
               >
-                <Icon className="size-6 text-white" strokeWidth={2} />
+                <Icon className="size-6" style={{ color: type.glyph }} strokeWidth={2} />
               </div>
 
               {/* Texte */}
               <div className="flex-1 min-w-0">
-                <p className="font-title font-bold text-base leading-[1.2] text-foreground">
+                <p className="font-title font-bold text-base leading-[1.2] text-[var(--color-contribute-title)]">
                   {type.title}
                 </p>
-                <p className="text-sm text-[var(--color-text-secondary)] mt-1 leading-normal">
+                <p className="text-sm text-[var(--color-contribute-desc)] mt-1 leading-normal">
                   {type.description}
                 </p>
               </div>
@@ -274,7 +290,7 @@ export function ContributeModal({ onClose, onTypeSelect }: ContributeModalProps)
     <>
       {/* ── Backdrop mobile uniquement ──────────────────────────────────────── */}
       <div
-        className="md:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40"
+        className="md:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
         aria-hidden="true"
         onClick={onClose}
       />

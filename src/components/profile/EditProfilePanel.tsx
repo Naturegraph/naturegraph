@@ -81,7 +81,7 @@ export function EditProfilePanel({ profile, onClose, onSave }: EditProfilePanelP
     <>
       {/* ── Backdrop ── */}
       <div
-        className="fixed inset-0 z-40 bg-foreground/40 backdrop-blur-sm"
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
         aria-hidden="true"
         onClick={onClose}
       />
@@ -135,8 +135,8 @@ export function EditProfilePanel({ profile, onClose, onSave }: EditProfilePanelP
               onClick={() => setActiveTab(tab.id)}
               className={`relative py-3 text-sm md:text-base font-medium whitespace-nowrap transition-colors -mb-px border-b-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${
                 activeTab === tab.id
-                  ? 'border-primary text-primary font-bold'
-                  : 'border-transparent text-foreground hover:text-primary'
+                  ? 'border-primary text-[var(--color-link)] font-bold'
+                  : 'border-transparent text-foreground hover:text-[var(--color-link)]'
               }`}
             >
               {tab.label}

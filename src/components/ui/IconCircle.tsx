@@ -39,7 +39,7 @@ const sizeClasses: Record<IconCircleSize, string> = {
 }
 
 const colorClasses: Record<IconCircleColor, string> = {
-  primary: 'bg-[var(--color-action-light)] text-[var(--color-action-default)]',
+  primary: 'bg-[var(--color-action-light)] text-[var(--color-link)]',
   highlight: 'bg-[var(--color-bg-menthe)] text-[var(--color-highlight-primary)]',
   warm: 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)]',
   solid: 'bg-[var(--color-action-default)] text-[var(--color-text-white)]',

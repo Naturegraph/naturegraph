@@ -69,6 +69,13 @@ interface AnalyticsData {
   postsLast7d: number
   postsLast30d: number
   uniquePostersLast7d: number
+  /**
+   * Utilisateurs actifs selon la DEFINITION OFFICIELLE (NG-035, Nicolas
+   * 2026-07-21) : session de moins de 7 jours (last_active_at) OU publication
+   * de moins de 30 jours. Comptes internes exclus. Plus large et plus fidele
+   * que "publieurs 7j", qui ignore les visiteurs qui reviennent sans publier.
+   */
+  activeUsersOfficial: number
   avgPostsPerActiveUser: number
   totalReactions: number
   totalComments: number
@@ -278,6 +285,7 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     postsLast7d: 0,
     postsLast30d: 0,
     uniquePostersLast7d: 0,
+    activeUsersOfficial: 0,
     avgPostsPerActiveUser: 0,
     totalReactions: 0,
     totalComments: 0,
@@ -313,8 +321,11 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     mediaRes,
     speciesRes,
   ] = await Promise.all([
-    // Profils + intérêts (ARRAY) + posts_count (denormalisé)
-    supabase.from('profiles').select('id, interests, posts_count, last_login_at'),
+    // Profils + intérêts (ARRAY) + posts_count (denormalisé) + last_active_at
+    // et is_internal (definition officielle utilisateur actif, NG-035)
+    supabase
+      .from('profiles')
+      .select('id, interests, posts_count, last_login_at, last_active_at, is_internal'),
     supabase.from('posts').select('id', { count: 'exact', head: true }),
     supabase
       .from('posts')
@@ -328,8 +339,9 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     supabase.from('comments').select('id', { count: 'exact', head: true }),
     // Auteurs distincts ayant publié sur les 7 derniers jours
     supabase.from('posts').select('user_id').gte('created_at', sevenDaysAgo),
-    // Heures de publication (30j) : on agrège côté client (< 1k rows attendus)
-    supabase.from('posts').select('created_at').gte('created_at', thirtyDaysAgo),
+    // Heures de publication (30j) + user_id : on agrège côté client (< 1k rows
+    // attendus). user_id sert aussi aux publieurs 30j (utilisateur actif NG-035).
+    supabase.from('posts').select('created_at, user_id').gte('created_at', thirtyDaysAgo),
     // last_login_at récents (30j)
     supabase.from('profiles').select('last_login_at').gte('last_login_at', thirtyDaysAgo),
     // Posts par pays
@@ -453,6 +465,25 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
   const avgPostsPerActiveUser = uniquePosters7d > 0 ? postsLast7d / uniquePosters7d : 0
   const avgReactionsPerPost = totalPosts > 0 ? totalReactions / totalPosts : 0
 
+  // ── Utilisateurs actifs, DEFINITION OFFICIELLE (NG-035) ──────────────────
+  // Actif = session de moins de 7 jours (last_active_at) OU publication de
+  // moins de 30 jours. Comptes internes exclus. Source unique de cette regle,
+  // documentee dans docs/devops/DEFINITION_UTILISATEUR_ACTIF.md.
+  const posters30d = new Set(
+    (postsByHourRes.data ?? []).map((r) => (r as { user_id: string }).user_id),
+  )
+  const activeUsersOfficial = (
+    (profilesRes.data ?? []) as Array<{
+      id: string
+      last_active_at: string | null
+      is_internal: boolean | null
+    }>
+  ).filter((p) => {
+    if (p.is_internal) return false
+    const sessionRecente = p.last_active_at != null && p.last_active_at >= sevenDaysAgo
+    return sessionRecente || posters30d.has(p.id)
+  }).length
+
   // ── Distribution photos par observation ────────────────────────────────
   // Group by post_id, puis bucket le compte. Pour les posts SANS aucune
   // photo (texte seul), ils ne sont pas dans `media` → bucket "0 photo".
@@ -507,6 +538,7 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
     postsLast7d,
     postsLast30d,
     uniquePostersLast7d: uniquePosters7d,
+    activeUsersOfficial,
     avgPostsPerActiveUser,
     totalReactions,
     totalComments,
@@ -765,7 +797,7 @@ export default function AdminAnalytics() {
           icon={Users}
           label="Utilisateurs"
           value={data.totalUsers}
-          hint={`${data.uniquePostersLast7d} actifs (7j)`}
+          hint={`${data.activeUsersOfficial} actifs (session 7j ou publication 30j)`}
         />
         <StatTile
           icon={TrendingUp}
@@ -942,7 +974,7 @@ export default function AdminAnalytics() {
             onClick={() => setActivePhase('p1')}
             className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-action-default)] ${
               activePhase === 'p1'
-                ? 'border-b-2 border-[var(--color-action-default)] text-[var(--color-action-default)]'
+                ? 'border-b-2 border-[var(--color-action-default)] text-[var(--color-link)]'
                 : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
             }`}
           >
@@ -955,7 +987,7 @@ export default function AdminAnalytics() {
             onClick={() => setActivePhase('p2')}
             className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-action-default)] ${
               activePhase === 'p2'
-                ? 'border-b-2 border-[var(--color-action-default)] text-[var(--color-action-default)]'
+                ? 'border-b-2 border-[var(--color-action-default)] text-[var(--color-link)]'
                 : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
             }`}
           >

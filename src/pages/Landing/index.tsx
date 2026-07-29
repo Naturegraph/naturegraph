@@ -47,6 +47,13 @@ export default function Landing() {
 
   return (
     <div
+      /*
+        NG-058 : la landing reste TOUJOURS claire (decision Nicolas 2026-07-23).
+        C'est la seule page vue par des gens qui ne connaissent pas encore le
+        produit : son rendu ne doit pas dependre du reglage systeme d'un
+        visiteur. Cet attribut, plus proche que celui pose sur <html>, gagne
+        sans qu'aucun code conditionnel soit necessaire. NE PAS RETIRER.
+      */
       data-theme="light"
       className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
       style={{ overflowX: 'clip' }}

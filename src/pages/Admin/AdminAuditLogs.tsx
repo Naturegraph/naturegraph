@@ -107,7 +107,7 @@ function categoryStyle(cat: Exclude<Category, 'all'>): {
     case 'user':
       return {
         bg: 'bg-primary-light',
-        text: 'text-primary',
+        text: 'text-[var(--color-link)]',
         Icon: User,
         label: 'Utilisateur',
       }
@@ -265,7 +265,7 @@ export default function AdminAuditLogs() {
               }}
               className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-action-default)] whitespace-nowrap ${
                 isActive
-                  ? 'border-[var(--color-action-default)] text-[var(--color-action-default)]'
+                  ? 'border-[var(--color-action-default)] text-[var(--color-link)]'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -274,7 +274,7 @@ export default function AdminAuditLogs() {
               <span
                 className={`text-xs px-1.5 py-0.5 rounded-full ${
                   isActive
-                    ? 'bg-[var(--color-action-default)]/10 text-[var(--color-action-default)]'
+                    ? 'bg-[var(--color-action-default)]/10 text-[var(--color-link)]'
                     : 'bg-[var(--color-bg-secondary)] text-muted-foreground'
                 }`}
               >

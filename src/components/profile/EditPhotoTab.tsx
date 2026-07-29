@@ -104,7 +104,7 @@ function DeleteButton({ label, onClick, disabled }: ButtonProps) {
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="w-full inline-flex items-center justify-center gap-2 h-10 px-3 rounded-full bg-background border-[0.5px] border-border text-foreground text-sm font-bold hover:border-primary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground"
+      className="w-full inline-flex items-center justify-center gap-2 h-10 px-3 rounded-full bg-background border-[0.5px] border-border text-foreground text-sm font-bold hover:border-primary hover:text-[var(--color-link)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-foreground"
     >
       <Trash2 className="size-4 shrink-0" aria-hidden="true" />
       {label}

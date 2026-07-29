@@ -56,7 +56,7 @@ export function StatsSheet({ onClose }: StatsSheetProps) {
     <>
       {/* Backdrop : clic ferme */}
       <div
-        className="fixed inset-0 z-40 bg-foreground/30 backdrop-blur-sm"
+        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
         aria-hidden="true"
         onClick={onClose}
       />

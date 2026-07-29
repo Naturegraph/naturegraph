@@ -108,7 +108,7 @@ export default function Contact() {
         <>
           <div className="flex flex-col gap-3 items-center text-center w-full">
             <div className="size-20 rounded-full bg-primary-light flex items-center justify-center">
-              <Send className="size-10 text-primary" aria-hidden="true" />
+              <Send className="size-10 text-[var(--color-link)]" aria-hidden="true" />
             </div>
             <h2 className="text-[var(--color-text-primary)]">
               {t('contact.sentTitle', { defaultValue: 'Message prêt à partir' })}
@@ -120,7 +120,7 @@ export default function Contact() {
               })}{' '}
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
-                className="text-[var(--color-action-default)] underline font-medium"
+                className="text-[var(--color-link)] underline font-medium"
               >
                 {CONTACT_EMAIL}
               </a>
@@ -142,7 +142,7 @@ export default function Contact() {
           {/* Header */}
           <div className="flex flex-col gap-2 items-center text-center w-full">
             <div className="size-14 md:size-16 rounded-full bg-primary-light flex items-center justify-center">
-              <Mail className="size-7 md:size-8 text-primary" aria-hidden="true" />
+              <Mail className="size-7 md:size-8 text-[var(--color-link)]" aria-hidden="true" />
             </div>
             <h2 className="text-[var(--color-text-primary)]">
               {t('contact.title', { defaultValue: 'Contacte-nous' })}
@@ -268,8 +268,8 @@ export default function Contact() {
                             }}
                             className={`w-full text-left px-4 py-3 text-sm transition-colors ${
                               isSelected
-                                ? 'bg-primary-light text-primary font-medium'
-                                : 'text-[var(--color-text-primary)] hover:bg-primary-light hover:text-primary'
+                                ? 'bg-primary-light text-[var(--color-link)] font-medium'
+                                : 'text-[var(--color-text-primary)] hover:bg-primary-light hover:text-[var(--color-link)]'
                             }`}
                           >
                             {t(`contact.subjects.${id}`, { defaultValue: SUBJECT_LABELS[id] })}
@@ -344,7 +344,7 @@ export default function Contact() {
             {t('contact.directInfo', { defaultValue: 'Tu peux aussi nous écrire directement à' })}{' '}
             <a
               href={`mailto:${CONTACT_EMAIL}`}
-              className="text-[var(--color-action-default)] underline font-medium"
+              className="text-[var(--color-link)] underline font-medium"
             >
               {CONTACT_EMAIL}
             </a>

@@ -40,7 +40,7 @@ export default function Legal() {
     <BetaInfoLayout>
       <Link
         to="/"
-        className="inline-flex items-center gap-2 text-sm text-[var(--color-action-default)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] focus-visible:ring-offset-2 rounded mb-8"
+        className="inline-flex items-center gap-2 text-sm text-[var(--color-link)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] focus-visible:ring-offset-2 rounded mb-8"
         aria-label={t('legal.terms.backHome', { defaultValue: "Retour à l'accueil" })}
       >
         <ArrowLeft size={16} aria-hidden="true" />

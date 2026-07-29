@@ -84,7 +84,7 @@ export function LogoutModal({ onConfirm, onCancel, isLoading = false }: LogoutMo
   return (
     /* Backdrop */
     <div
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-foreground/30 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/30 backdrop-blur-sm p-4"
       role="presentation"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isLoading) onCancel()

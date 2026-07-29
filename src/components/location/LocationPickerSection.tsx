@@ -128,7 +128,7 @@ export function LocationPickerSection({
             aria-hidden="true"
             className={
               isExpanded || city
-                ? 'text-[var(--color-action-default)] shrink-0'
+                ? 'text-[var(--color-link)] shrink-0'
                 : 'text-[var(--color-text-secondary)] shrink-0'
             }
           />
@@ -138,7 +138,7 @@ export function LocationPickerSection({
               className={[
                 'text-sm font-medium',
                 isExpanded || city
-                  ? 'text-[var(--color-action-default)]'
+                  ? 'text-[var(--color-link)]'
                   : 'text-[var(--color-text-primary)]',
               ].join(' ')}
             >

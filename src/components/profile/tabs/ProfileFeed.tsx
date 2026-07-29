@@ -131,7 +131,7 @@ export function ProfileFeed({
               className={`px-4 py-1 rounded-full text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 sort === mode
                   ? 'bg-primary text-primary-foreground'
-                  : 'text-foreground hover:text-primary'
+                  : 'text-foreground hover:text-[var(--color-link)]'
               }`}
             >
               {mode === 'recent' ? t('profile.journal.recent') : t('profile.journal.popular')}
@@ -156,7 +156,7 @@ export function ProfileFeed({
             className={`size-8 rounded-full flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
               viewMode === 'list'
                 ? 'bg-primary text-primary-foreground'
-                : 'text-foreground hover:text-primary'
+                : 'text-foreground hover:text-[var(--color-link)]'
             }`}
           >
             <LayoutList className="size-4" aria-hidden="true" />
@@ -169,7 +169,7 @@ export function ProfileFeed({
             className={`size-8 rounded-full flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
               viewMode === 'grid'
                 ? 'bg-primary text-primary-foreground'
-                : 'text-foreground hover:text-primary'
+                : 'text-foreground hover:text-[var(--color-link)]'
             }`}
           >
             <LayoutGrid className="size-4" aria-hidden="true" />

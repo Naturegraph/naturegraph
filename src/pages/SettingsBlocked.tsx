@@ -167,7 +167,7 @@ function BlockedUserCard({ row, isUnblocking, onUnblock }: BlockedUserCardProps)
           username: displayName,
           defaultValue: `Debloquer @${displayName}`,
         })}
-        className="shrink-0 h-9 px-4 inline-flex items-center gap-2 rounded-full text-sm font-bold bg-primary-light text-primary hover:bg-primary/15 transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        className="shrink-0 h-9 px-4 inline-flex items-center gap-2 rounded-full text-sm font-bold bg-primary-light text-[var(--color-link)] hover:bg-primary/15 transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       >
         <ShieldCheck className="size-4" aria-hidden="true" />
         {isUnblocking
@@ -183,7 +183,7 @@ function EmptyState() {
   return (
     <div className="bg-background border-[0.5px] border-border rounded-card p-8 flex flex-col items-center text-center gap-3">
       <div className="size-12 rounded-full bg-primary-light flex items-center justify-center">
-        <ShieldOff className="size-6 text-primary" aria-hidden="true" />
+        <ShieldOff className="size-6 text-[var(--color-link)]" aria-hidden="true" />
       </div>
       <h2 className="text-base font-bold text-foreground">
         {t('settings.blocked.emptyTitle', { defaultValue: 'Aucun compte bloque' })}

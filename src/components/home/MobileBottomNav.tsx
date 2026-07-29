@@ -85,7 +85,7 @@ export function MobileBottomNav({
     return [
       'flex items-center justify-center flex-1 h-full transition-colors',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full',
-      active ? 'text-primary' : 'text-foreground',
+      active ? 'text-[var(--color-link)]' : 'text-foreground',
     ].join(' ')
   }
 

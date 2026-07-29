@@ -25,10 +25,7 @@ export default function Onboarding() {
   }
 
   return (
-    <div
-      data-theme="light"
-      className="min-h-screen bg-warm-beige flex items-center justify-center p-0 lg:p-6"
-    >
+    <div className="min-h-screen bg-warm-beige flex items-center justify-center p-0 lg:p-6">
       <div className="w-full lg:w-auto lg:h-[832px] flex items-center justify-center">
         <OnboardingComponent
           onComplete={handleComplete}

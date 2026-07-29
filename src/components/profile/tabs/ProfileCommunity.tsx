@@ -130,7 +130,7 @@ function UserCard({ user }: UserCardProps) {
           className={`shrink-0 size-9 rounded-full border-[0.5px] flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 ${
             isFollowing
               ? 'bg-primary text-primary-foreground border-primary hover:bg-primary/90'
-              : 'bg-background text-foreground border-border hover:text-primary hover:border-primary'
+              : 'bg-background text-foreground border-border hover:text-[var(--color-link)] hover:border-primary'
           }`}
         >
           {/* Même icône arbre dans les deux états, pleine quand on suit
@@ -283,7 +283,7 @@ function PillToggle({ active, onClick, label, count }: PillToggleProps) {
           Le label reste foreground dans les 2 cas. */}
       <span
         aria-hidden="true"
-        className={`font-bold ${active ? 'text-primary' : 'text-muted-foreground'}`}
+        className={`font-bold ${active ? 'text-[var(--color-link)]' : 'text-muted-foreground'}`}
       >
         {count}
       </span>

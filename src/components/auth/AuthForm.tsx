@@ -170,7 +170,15 @@ export function AuthForm({
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex items-center overflow-hidden relative rounded-sm md:rounded-[32px] md:h-[832px] w-full md:w-auto">
+    // `data-theme="light"` : login / signup / verification restent TOUJOURS en
+    // clair, quel que soit le theme choisi pour l'app (decision Nicolas
+    // 2026-07-28). Comme la landing, ces pages d'accueil gardent l'identite
+    // claire. Le selecteur de tokens cible `[data-theme]` (pas seulement
+    // `:root`), donc cet attribut plus proche gagne, sans code conditionnel.
+    <div
+      data-theme="light"
+      className="flex items-center overflow-hidden relative rounded-sm md:rounded-[32px] md:h-[832px] w-full md:w-auto"
+    >
       {/* ── Colonne formulaire ──────────────────────────────────────────── */}
       <div className="bg-[var(--color-bg-primary)] flex flex-col gap-6 md:gap-8 items-start justify-center overflow-hidden p-6 md:p-16 h-full w-full md:w-[512px]">
         <Logo onNavigateToLanding={onNavigateToLanding} />
@@ -233,7 +241,7 @@ export function AuthForm({
                 checked={remember}
                 onChange={(e) => setRemember(e.target.checked)}
                 disabled={isLoading}
-                className="size-4 rounded border-[var(--color-border)] text-[var(--color-action-default)] focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] focus-visible:ring-offset-2 cursor-pointer disabled:cursor-not-allowed"
+                className="size-4 rounded border-[var(--color-border)] text-[var(--color-link)] focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] focus-visible:ring-offset-2 cursor-pointer disabled:cursor-not-allowed"
               />
               <span>{rememberMe.label}</span>
             </label>
@@ -318,7 +326,7 @@ export function AuthForm({
             type="button"
             onClick={onSwitch}
             disabled={isLoading}
-            className="text-[var(--color-action-default)] underline decoration-solid font-bold hover:opacity-80 active:opacity-60 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            className="text-[var(--color-link)] underline decoration-solid font-bold hover:opacity-80 active:opacity-60 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {switchLabel}
           </button>

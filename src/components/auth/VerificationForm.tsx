@@ -131,7 +131,12 @@ export function VerificationForm({
   }
 
   return (
-    <div className="flex items-center overflow-hidden relative rounded-sm md:rounded-[32px] md:h-[832px] w-full md:w-auto">
+    // `data-theme="light"` : etape de verification du signup, reste TOUJOURS en
+    // clair comme le reste du parcours d'accueil (decision Nicolas 2026-07-28).
+    <div
+      data-theme="light"
+      className="flex items-center overflow-hidden relative rounded-sm md:rounded-[32px] md:h-[832px] w-full md:w-auto"
+    >
       {/* ── Colonne formulaire ─────────────────────────────────────────────── */}
       <div className="bg-[var(--color-bg-primary)] flex flex-col overflow-hidden p-6 md:p-16 h-full w-full md:w-[512px]">
         {/* Back + Logo */}
@@ -213,8 +218,8 @@ export function VerificationForm({
               BATCH 17 / T-105 : couleurs hardcodees remplacees par tokens DS. */}
           {!isSupabaseConfigured && demoOtp && (
             <div className="mb-6 flex items-center gap-2 px-4 py-3 rounded-lg bg-primary-light border border-primary/40">
-              <span className="text-primary text-lg">🔐</span>
-              <p className="text-sm font-semibold text-primary">
+              <span className="text-[var(--color-link)] text-lg">🔐</span>
+              <p className="text-sm font-semibold text-[var(--color-link)]">
                 {t('auth.verify.demoCode', { code: demoOtp })}
               </p>
             </div>
@@ -227,7 +232,7 @@ export function VerificationForm({
               type="button"
               onClick={handleResend}
               disabled={timer > 0 || isLoading}
-              className="text-sm font-semibold text-[var(--color-action-default)] hover:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+              className="text-sm font-semibold text-[var(--color-link)] hover:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {t('auth.verify.resend')}
             </button>

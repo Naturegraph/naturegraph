@@ -41,6 +41,7 @@ import App from './App'
 import { MainLayout } from '@/components/layout'
 import { ProtectedRoute, PublicRoute, OnboardingGuard } from '@/components/guards'
 import { BetaAccessGuard } from '@/components/guards/BetaAccessGuard'
+import { LABS_ENABLED } from '@/lib/featureFlags'
 import { AdminGuard } from '@/components/admin/AdminGuard'
 import { AppLoader } from '@/components/ui/AppLoader'
 
@@ -66,6 +67,8 @@ const Forbidden = lazy(() => import('./pages/Forbidden'))
 const Waitlist = lazy(() => import('./pages/Waitlist'))
 const PostDetail = lazy(() => import('./pages/PostDetail'))
 const Unsubscribe = lazy(() => import('./pages/Unsubscribe'))
+// TEMPORAIRE : demonstration Echanges, a retirer apres relecture.
+const DevEchangesPreview = lazy(() => import('./pages/DevEchangesPreview'))
 
 // Admin (BATCH 31-32) : chunks separes (eco-conception : code admin lazy)
 const AdminLayout = lazy(() => import('./pages/Admin/AdminLayout'))
@@ -141,6 +144,29 @@ export const router = createBrowserRouter([
           </LazyPage>
         ),
       },
+
+      /*
+        Demonstration du fil d'Echanges, MASQUEE sur le site public.
+        Elle sert a juger le rendu sur un jeu d'essai complet (message long,
+        pseudo a rallonge, suggestion avec et sans commentaire, quatre niveaux
+        de confiance), ce qu'une publication reelle ne permet pas tant que la
+        communaute n'a rien ecrit.
+        Le drapeau `LABS_ENABLED` la garde accessible en local, sur les previews
+        et sur beta, et la retire de naturegraph.ca : rien a supprimer plus tard,
+        rien a redeployer pour la retrouver.
+      */
+      ...(LABS_ENABLED
+        ? [
+            {
+              path: 'dev-echanges',
+              element: (
+                <LazyPage>
+                  <DevEchangesPreview />
+                </LazyPage>
+              ),
+            },
+          ]
+        : []),
 
       // ════════════════════════════════════════════════════════════════
       // ADMIN : gate propre (AdminGuard + RLS), pas de BetaAccessGuard
@@ -317,20 +343,29 @@ export const router = createBrowserRouter([
             ),
           },
 
-          // Deep-link post : accessible aux utilisateurs ayant passé le beta
-          // gate (route sous BetaGatedLayout). OnboardingGuard plutôt que
-          // Nicolas 2026-05-25 : ProtectedRoute ajoute pour interdire l acces aux
-          // non-authentifies. Avant, OnboardingGuard seul laissait un visiteur avec
-          // beta key consulter un post detail sans avoir de compte. Maintenant on
-          // exige une session valide, sinon redirect /welcome via la chaine
-          // BetaAccessGuard / ProtectedRoute.
+          // Deep-link post : PUBLIQUE, accessible sans compte (NG-054).
+          //
+          // Historique : ProtectedRoute avait ete ajoute le 2026-05-25 pour
+          // interdire la lecture aux non-authentifies, a l'epoque de la beta
+          // fermee (un visiteur muni d'une cle beta pouvait lire sans compte).
+          // Ce contexte n'existe plus : l'acces ouvert est actif depuis V0.0.6 et
+          // BetaAccessGuard est devenu un passe-plat.
+          //
+          // Decision Nicolas 2026-07-22 : le lien partage est le vecteur
+          // d'acquisition principal. Renvoyer le destinataire vers le signup
+          // avant qu'il ait vu le contenu fait fuir des gens. On revient donc a
+          // OnboardingGuard, comme la route profil.
+          //
+          // Sans risque : la RLS n'expose que les publications publiees, publiques
+          // et hors comptes internes (verifie en role anon), et PostDetail gere
+          // deja le visiteur (GuestSidebar + canInteract={isAuthenticated}).
           {
             path: 'post/:postId',
             element: (
               <LazyPage>
-                <ProtectedRoute>
+                <OnboardingGuard>
                   <PostDetail />
-                </ProtectedRoute>
+                </OnboardingGuard>
               </LazyPage>
             ),
           },

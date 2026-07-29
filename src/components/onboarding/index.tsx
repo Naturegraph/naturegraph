@@ -237,7 +237,14 @@ export default function OnboardingComponent({ onComplete, onGoHome, onGoLogin }:
   )
 
   return (
-    <div className="flex items-center overflow-clip relative rounded-sm md:rounded-xl w-full h-full">
+    // `data-theme="light"` : l'onboarding reste TOUJOURS en clair, comme la
+    // landing et le login/signup (decision Nicolas 2026-07-28). Ces parcours
+    // d'accueil gardent l'identite claire ; seule l'app connectee bascule en
+    // sombre. L'attribut le plus proche gagne (tokens cibles sur `[data-theme]`).
+    <div
+      data-theme="light"
+      className="flex items-center overflow-clip relative rounded-sm md:rounded-xl w-full h-full"
+    >
       {/* Fond blanc : contenu centré */}
       <div className="bg-[var(--color-bg-primary)] flex flex-col items-center justify-center w-full md:w-[636px] h-full">
         {step === 'interests' && (

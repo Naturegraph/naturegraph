@@ -25,7 +25,7 @@ export function ProfileStats() {
       compact
     >
       {/* Badge "Bientôt" cohérent avec ProfileTabs (primary-light + uppercase). */}
-      <span className="mt-2 inline-flex px-3 py-1 rounded-full bg-primary-light text-primary text-xs font-bold uppercase tracking-wide">
+      <span className="mt-2 inline-flex px-3 py-1 rounded-full bg-primary-light text-[var(--color-link)] text-xs font-bold uppercase tracking-wide">
         {t('profile.stats.comingSoon', { defaultValue: 'Bientôt' })}
       </span>
     </ProfileEmptyState>

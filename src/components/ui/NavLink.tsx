@@ -18,7 +18,7 @@ function NavLink({ icon, size = 'md', className = '', children, ...props }: NavL
       className={({ isActive }) =>
         `inline-flex items-center gap-2 font-medium rounded-lg transition-colors ${sizeClasses[size]} ${
           isActive
-            ? 'text-[var(--color-action-default)] bg-[var(--color-action-light)]'
+            ? 'text-[var(--color-link)] bg-[var(--color-action-light)]'
             : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]'
         } ${className}`
       }

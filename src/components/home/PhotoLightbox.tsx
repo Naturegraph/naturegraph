@@ -17,6 +17,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { X, ChevronLeft, ChevronRight, Share2 } from 'lucide-react'
 import { SharePopover } from './SharePopover'
 import { ImagePresets } from '@/lib/supabaseImage'
+import hermineIcon from '@/assets/images/hermine-icon.png'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -46,6 +47,20 @@ export interface LightboxData {
    */
   postId?: string
   postTitle?: string
+  /**
+   * Contexte naturaliste affiché en plein écran (NG-053, retour FB-006).
+   *
+   * Sans lui, ouvrir une photo faisait perdre l'espèce et le lieu : il ne
+   * restait qu'une image. Or sur Naturegraph, contrairement à un réseau de
+   * photos, l'espèce fait partie de l'information.
+   *
+   * `locationLabel` doit être la chaîne DÉJÀ affichée par la publication, et
+   * non une valeur recomposée : elle est filtrée en amont par la vue
+   * `posts_public`, qui masque le lieu quand `location_hidden` est actif. Le
+   * viewer ne peut donc jamais en montrer plus que la publication elle-même.
+   */
+  speciesName?: string | null
+  locationLabel?: string | null
 }
 
 /** Mapping format → classe Tailwind d'aspect-ratio (aligné avec ImageSlider) */
@@ -64,7 +79,17 @@ interface PhotoLightboxProps {
 // ─── Composant ────────────────────────────────────────────────────────────────
 
 export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps) {
-  const { images, currentIndex, authorName, authorAvatar, format, postId, postTitle } = data
+  const {
+    images,
+    currentIndex,
+    authorName,
+    authorAvatar,
+    format,
+    postId,
+    postTitle,
+    speciesName,
+    locationLabel,
+  } = data
   const aspectClass = FORMAT_ASPECT[format ?? '16:9']
   const [showShare, setShowShare] = useState(false)
   const current = images[currentIndex]
@@ -212,15 +237,36 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
 
       {/* ── Barre inférieure ────────────────────────────────────────────── */}
       <div className="shrink-0 px-4 pb-4 pt-2 relative z-10">
+        {/*
+          Contexte naturaliste (NG-053). Permanent et non auto-masqué : c'est
+          precisement ce que l'utilisateur perdait en ouvrant une photo, le
+          cacher apres quelques secondes recreerait le probleme.
+          Le lieu vient tel quel de la publication, deja filtre par la RLS.
+        */}
+        {(speciesName || locationLabel) && (
+          <div className="mb-3">
+            {speciesName && (
+              <p className="text-white text-base font-bold leading-tight">{speciesName}</p>
+            )}
+            {locationLabel && (
+              <p className="text-white/70 text-sm leading-tight mt-0.5">{locationLabel}</p>
+            )}
+          </div>
+        )}
+
         {authorName && (
           <div className="flex items-center gap-2 mb-3">
-            {authorAvatar && (
-              <img
-                src={authorAvatar}
-                alt=""
-                className="size-7 rounded-full object-cover ring-1 ring-white/30"
-              />
-            )}
+            {/*
+              Toujours une image, jamais rien : sans photo on affiche l'hermine
+              officielle, comme partout ailleurs dans l'app (cloche, navigation,
+              profil). Un pseudo seul, sans pastille, cassait l'alignement et
+              l'identite visuelle (retour Nicolas 2026-07-22).
+            */}
+            <img
+              src={authorAvatar || hermineIcon}
+              alt=""
+              className="size-7 rounded-full object-cover ring-1 ring-white/30 bg-white/10"
+            />
             <span className="text-white text-sm font-medium">
               @{authorName.toLowerCase().replace(/[.\s]/g, '')}
             </span>

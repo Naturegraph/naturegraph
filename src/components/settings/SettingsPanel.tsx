@@ -213,7 +213,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-foreground/40 backdrop-blur-sm"
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
         aria-hidden="true"
         onClick={onClose}
       />
@@ -240,7 +240,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               type="button"
               onClick={() => setSection(null)}
               aria-label={t('common.back', { defaultValue: 'Retour' })}
-              className="size-10 shrink-0 inline-flex items-center justify-center rounded-full border-[0.5px] border-border bg-background hover:border-primary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="size-10 shrink-0 inline-flex items-center justify-center rounded-full border-[0.5px] border-border bg-background hover:border-primary hover:text-[var(--color-link)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <ArrowLeft className="size-5" aria-hidden="true" />
             </button>
@@ -296,14 +296,14 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               <button
                 type="button"
                 onClick={() => setSection('terms')}
-                className="font-title font-bold text-base leading-6 underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                className="font-title font-bold text-base leading-6 underline text-[var(--color-link)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
               >
                 {t('settings.footer.terms', { defaultValue: 'CGU' })}
               </button>
               <button
                 type="button"
                 onClick={() => setSection('privacy')}
-                className="font-title font-bold text-base leading-6 underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                className="font-title font-bold text-base leading-6 underline text-[var(--color-link)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
               >
                 {t('settings.footer.privacy', {
                   defaultValue: 'Politique de confidentialité',
@@ -469,7 +469,7 @@ interface SettingsItemProps {
   disabled?: boolean
   /**
    * Compteur affiche en pill avant le chevron (Confidentialite).
-   * 0 ou undefined : masque. Affiche bg-primary-light + text-primary.
+   * 0 ou undefined : masque. Affiche bg-primary-light + text-[var(--color-link)].
    */
   badge?: number
 }
@@ -499,7 +499,7 @@ function SettingsItem({
 
   const stateClasses = danger
     ? 'text-[var(--color-error,_#9E0F22)]'
-    : 'text-foreground hover:text-[var(--color-action-default)]'
+    : 'text-foreground hover:text-[var(--color-link)]'
 
   const content = (
     <>
@@ -512,7 +512,7 @@ function SettingsItem({
       {badge !== undefined && badge > 0 && (
         <span
           aria-label={`${badge}`}
-          className="shrink-0 text-xs font-bold tabular-nums bg-primary-light text-primary px-2 py-0.5 rounded-full"
+          className="shrink-0 text-xs font-bold tabular-nums bg-primary-light text-[var(--color-link)] px-2 py-0.5 rounded-full"
         >
           {badge}
         </span>
@@ -806,7 +806,7 @@ function SettingsLicenseView({ onOpenTerms }: { onOpenTerms?: () => void }) {
               href={INATURALIST_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-bold underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              className="font-bold underline text-[var(--color-link)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
             >
               iNaturalist
             </a>
@@ -821,7 +821,7 @@ function SettingsLicenseView({ onOpenTerms }: { onOpenTerms?: () => void }) {
               href={GBIF_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-bold underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              className="font-bold underline text-[var(--color-link)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
             >
               GBIF
             </a>
@@ -836,7 +836,7 @@ function SettingsLicenseView({ onOpenTerms }: { onOpenTerms?: () => void }) {
               href={WIKIDATA_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-bold underline text-[var(--color-action-default)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              className="font-bold underline text-[var(--color-link)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
             >
               Wikidata
             </a>
@@ -897,7 +897,7 @@ function SettingsLicenseView({ onOpenTerms }: { onOpenTerms?: () => void }) {
           <button
             type="button"
             onClick={() => onOpenTerms?.()}
-            className="font-bold underline text-[var(--color-action-default)] hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+            className="font-bold underline text-[var(--color-link)] hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
           >
             {t('settings.license.moreCguLink', {
               defaultValue: "Conditions générales d'utilisation",

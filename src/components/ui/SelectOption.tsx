@@ -53,7 +53,7 @@ export function SelectOption({
         <div className="flex flex-col gap-1 flex-1 min-w-0">
           <span
             className={`font-bold leading-tight ${
-              selected ? 'text-[var(--color-action-default)]' : 'text-[var(--color-text-primary)]'
+              selected ? 'text-[var(--color-link)]' : 'text-[var(--color-text-primary)]'
             }`}
           >
             {label}

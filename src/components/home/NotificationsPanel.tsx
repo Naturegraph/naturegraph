@@ -297,7 +297,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
                 setFiltre(k)
               }}
               className={`relative px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-t ${
-                actif ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                actif ? 'text-[var(--color-link)]' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {t(FILTER_LABEL_KEYS[k])}
@@ -490,7 +490,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
               })
             }}
             disabled={markAllAsRead.isPending}
-            className="w-full text-sm text-primary font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full text-sm text-[var(--color-link)] font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {t('home.notifications.markAllRead')}
           </button>
@@ -508,7 +508,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
       ? createPortal(
           <>
             <div
-              className="md:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-[60]"
+              className="md:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-[60]"
               aria-hidden="true"
               onClick={onClose}
             />

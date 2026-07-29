@@ -141,7 +141,7 @@ export function ProfileAboutCard({ profile, compact = false }: ProfileAboutCardP
             href={websiteHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 text-primary hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
+            className="flex items-center gap-2 text-[var(--color-link)] hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
           >
             <Globe className="size-[18px] shrink-0" aria-hidden="true" />
             <span className="font-bold underline underline-offset-2">{hostLabel(websiteHref)}</span>
@@ -154,7 +154,7 @@ export function ProfileAboutCard({ profile, compact = false }: ProfileAboutCardP
             href={instagramHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 text-primary hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
+            className="flex items-center gap-2 text-[var(--color-link)] hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
           >
             <Instagram className="size-[18px] shrink-0" aria-hidden="true" />
             <span className="font-bold underline underline-offset-2">
@@ -169,7 +169,7 @@ export function ProfileAboutCard({ profile, compact = false }: ProfileAboutCardP
             href={facebookHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 text-primary hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
+            className="flex items-center gap-2 text-[var(--color-link)] hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
           >
             <Facebook className="size-[18px] shrink-0" aria-hidden="true" />
             <span className="font-bold underline underline-offset-2">

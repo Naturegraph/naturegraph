@@ -87,7 +87,7 @@ export function NotebookCardInFeed({
           aria-label={open ? 'Replier le carnet' : 'Déplier le carnet'}
           className="inline-flex items-center gap-2 shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <span className="text-base font-bold leading-tight text-[var(--color-action-default)] border-b-[1.5px] border-[var(--color-action-default)]">
+          <span className="text-base font-bold leading-tight text-[var(--color-link)] border-b-[1.5px] border-[var(--color-action-default)]">
             Carnet d&apos;observations
           </span>
           {/* Chevron (plus clair que le X pour ouvrir/fermer), Nicolas 2026-06-08 */}

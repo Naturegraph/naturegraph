@@ -112,7 +112,7 @@ function InterestTile({ emoji, label, isSelected, selectionIndex, onClick }: Int
         className={[
           'font-body text-base leading-[150%]',
           isSelected
-            ? 'font-bold text-[var(--color-action-default)]'
+            ? 'font-bold text-[var(--color-link)]'
             : 'font-normal text-[var(--color-text-primary)]',
         ].join(' ')}
       >

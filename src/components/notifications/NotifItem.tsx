@@ -11,7 +11,16 @@
  * la flexibilité (tailles, hover, heures, etc.).
  */
 
-import { Heart, UserPlus, FileText, Leaf, MessageCircle, AtSign, Award, Bell } from 'lucide-react'
+import {
+  Heart,
+  UserPlus,
+  FileText,
+  Leaf,
+  MessageCircle,
+  AtSign,
+  MessageSquarePlus,
+  Bell,
+} from 'lucide-react'
 import type { Notification, NotificationType } from '@/services/notificationService'
 import { REACTION_CONFIG } from '@/components/home/FeedPost'
 import hermineIcon from '@/assets/images/hermine-icon.png'
@@ -30,11 +39,32 @@ export function NotifIcon({ type }: { type: NotificationType }) {
       bg: 'bg-[var(--color-success-bg)]',
       color: 'text-[var(--color-success)]',
     },
-    post: { Icon: FileText, bg: 'bg-primary-light', color: 'text-primary' },
-    species_digest: { Icon: Leaf, bg: 'bg-teal-light/30', color: 'text-teal-dark' },
-    comment: { Icon: MessageCircle, bg: 'bg-primary-light', color: 'text-primary' },
-    mention: { Icon: AtSign, bg: 'bg-primary-light', color: 'text-primary' },
-    identification: { Icon: Award, bg: 'bg-teal-light/30', color: 'text-teal-dark' },
+    post: { Icon: FileText, bg: 'bg-primary-light', color: 'text-[var(--color-link)]' },
+    // Meme MODELE que le violet et l'orange : fond -bg (teinte claire en clair,
+    // foncee en sombre) + icone saturee. Le vert suit enfin la meme logique et
+    // ne tranche plus (retour Nicolas 2026-07-28).
+    species_digest: {
+      Icon: Leaf,
+      bg: 'bg-[var(--color-highlight-bg)]',
+      color: 'text-[var(--color-highlight-primary)]',
+    },
+    // Echange = interaction SOCIALE : meme famille de couleur que les reactions
+    // (amber) plutot que le violet d'action, pour ne pas melanger la couleur de
+    // marque avec les notifs sociales (decision Nicolas 2026-07-28). L'icone
+    // (bulle) le distingue d'un coeur.
+    comment: {
+      Icon: MessageCircle,
+      bg: 'bg-[var(--color-warning-bg)]',
+      color: 'text-[var(--color-warning)]',
+    },
+    mention: { Icon: AtSign, bg: 'bg-primary-light', color: 'text-[var(--color-link)]' },
+    // Icone "Proposer une espece" (MessageSquarePlus), pas une medaille (Award)
+    // qui n'avait aucun rapport. Fond -bg highlight comme le violet/orange.
+    identification: {
+      Icon: MessageSquarePlus,
+      bg: 'bg-[var(--color-highlight-bg)]',
+      color: 'text-[var(--color-highlight-primary)]',
+    },
     system: { Icon: Bell, bg: 'bg-muted', color: 'text-muted-foreground' },
   }
   const { Icon, bg, color } = map[type] ?? map.system
@@ -64,11 +94,12 @@ export function NotifChip({ type, t }: { type: NotificationType; t: (k: string) 
   const chipCls: Record<NotificationType, string> = {
     reaction: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
     follow: 'bg-[var(--color-success-bg)] text-[var(--color-success)]',
-    post: 'bg-primary-light text-primary',
-    species_digest: 'bg-teal-light/30 text-teal-dark',
-    comment: 'bg-primary-light text-primary',
-    mention: 'bg-primary-light text-primary',
-    identification: 'bg-teal-light/30 text-teal-dark',
+    post: 'bg-primary-light text-[var(--color-link)]',
+    species_digest: 'bg-[var(--color-highlight-bg)] text-[var(--color-highlight-primary)]',
+    // Echange = social : meme amber que les reactions (cf. NotifIcon).
+    comment: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
+    mention: 'bg-primary-light text-[var(--color-link)]',
+    identification: 'bg-[var(--color-highlight-bg)] text-[var(--color-highlight-primary)]',
     system: 'bg-muted text-muted-foreground',
   }
   return (
@@ -135,6 +166,17 @@ export function getMessage(
         : t('home.notifications.messagePost')
     case 'species_digest':
       return t('home.notifications.messageSpeciesDigest')
+    // NG-049 : ces deux types etaient EMIS par la base mais absents d'ici, donc
+    // affiches sans aucune phrase. Une notification qui ne dit pas ce qui s'est
+    // passe ne sert a rien : on la lit, on ne comprend pas, on l'ignore.
+    case 'comment':
+      // Groupes : message PROPRE aux echanges (avant, ils reprenaient le message
+      // des publications "a publie N rencontres", ce qui n'avait aucun sens).
+      return groupCount > 1
+        ? t('home.notifications.messageCommentGrouped')
+        : t('home.notifications.messageComment')
+    case 'identification':
+      return t('home.notifications.messageIdentification')
     default:
       return ''
   }
@@ -168,7 +210,13 @@ export function resolveDeepLink(n: Notification): string | null {
   if (!n.reference_id || !n.reference_type) return null
   switch (n.reference_type) {
     case 'post':
-      return `/post/${n.reference_id}`
+      // NG-049 : une notification d'echange doit ouvrir LE FIL, pas seulement
+      // la publication. Depuis que le fil est replie par defaut, atterrir sur
+      // la photo sans voir le message dont on vient d'etre prevenu donne
+      // l'impression d'une notification cassee.
+      return n.type === 'comment' || n.type === 'identification'
+        ? `/post/${n.reference_id}?echanges=1`
+        : `/post/${n.reference_id}`
     case 'profile':
       return n.actor_username ? `/profile/${n.actor_username}` : `/profile/${n.reference_id}`
     case 'species':

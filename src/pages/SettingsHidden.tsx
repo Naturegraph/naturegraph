@@ -199,7 +199,7 @@ function HiddenPostCard({ row, isUnhiding, onUnhide }: HiddenPostCardProps) {
             username: row.author_username,
             defaultValue: `Reafficher la publication de @${row.author_username}`,
           })}
-          className="w-full h-9 inline-flex items-center justify-center gap-2 rounded-full text-sm font-bold bg-primary-light text-primary hover:bg-primary/15 transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className="w-full h-9 inline-flex items-center justify-center gap-2 rounded-full text-sm font-bold bg-primary-light text-[var(--color-link)] hover:bg-primary/15 transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           <Eye className="size-4" aria-hidden="true" />
           {isUnhiding
@@ -216,7 +216,7 @@ function EmptyState() {
   return (
     <div className="bg-background border-[0.5px] border-border rounded-card p-8 flex flex-col items-center text-center gap-3">
       <div className="size-12 rounded-full bg-primary-light flex items-center justify-center">
-        <EyeOff className="size-6 text-primary" aria-hidden="true" />
+        <EyeOff className="size-6 text-[var(--color-link)]" aria-hidden="true" />
       </div>
       <h2 className="text-base font-bold text-foreground">
         {t('settings.hidden.emptyTitle', { defaultValue: 'Aucune publication masquee' })}

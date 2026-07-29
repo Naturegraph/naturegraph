@@ -108,7 +108,7 @@ export default function Waitlist() {
         <>
           <div className="flex flex-col gap-3 items-center text-center w-full">
             <div className="size-20 rounded-full bg-primary-light flex items-center justify-center">
-              <Sparkles className="size-10 text-primary" aria-hidden="true" />
+              <Sparkles className="size-10 text-[var(--color-link)]" aria-hidden="true" />
             </div>
             <h2 className="text-[var(--color-text-primary)]">
               {alreadyOnList
@@ -138,7 +138,7 @@ export default function Waitlist() {
           {/* Header : icon Mail + titre + description */}
           <div className="flex flex-col gap-2 items-center text-center w-full">
             <div className="size-14 md:size-16 rounded-full bg-primary-light flex items-center justify-center">
-              <Mail className="size-7 md:size-8 text-primary" aria-hidden="true" />
+              <Mail className="size-7 md:size-8 text-[var(--color-link)]" aria-hidden="true" />
             </div>
             <h2 className="text-[var(--color-text-primary)]">
               {t('waitlist.formTitle', { defaultValue: 'Rejoindre la waitlist' })}
@@ -291,7 +291,7 @@ export default function Waitlist() {
               })}{' '}
               <Link
                 to="/privacy"
-                className="underline text-[var(--color-action-default)] hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] rounded"
+                className="underline text-[var(--color-link)] hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] rounded"
               >
                 {t('waitlist.privacyLink', { defaultValue: 'Politique de confidentialité' })}
               </Link>

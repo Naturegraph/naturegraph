@@ -112,7 +112,7 @@ export function StatsSidebar({ onItemSelected }: { onItemSelected?: () => void }
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="bg-teal-dark size-8 rounded-full flex items-center justify-center shrink-0">
-              <Globe className="size-5 text-white" aria-hidden="true" />
+              <Globe className="size-5 text-[var(--color-on-highlight)]" aria-hidden="true" />
             </div>
             <p className="text-base text-foreground">{t('home.stats.impact')}</p>
           </div>
@@ -140,7 +140,9 @@ export function StatsSidebar({ onItemSelected }: { onItemSelected?: () => void }
                       setImpactDropdownOpen(false)
                     }}
                     className={`w-full text-left px-3 py-2 text-xs transition-colors hover:bg-muted/50 ${
-                      impactPeriod === p.value ? 'font-bold text-primary' : 'text-foreground'
+                      impactPeriod === p.value
+                        ? 'font-bold text-[var(--color-link)]'
+                        : 'text-foreground'
                     }`}
                   >
                     {t(p.labelKey)}
@@ -201,7 +203,7 @@ export function StatsSidebar({ onItemSelected }: { onItemSelected?: () => void }
         <div className="flex items-center justify-between gap-6 px-6">
           <div className="flex items-center gap-3">
             <div className="bg-teal-dark size-8 rounded-full flex items-center justify-center shrink-0">
-              <TrendingUp className="size-5 text-white" aria-hidden="true" />
+              <TrendingUp className="size-5 text-[var(--color-on-highlight)]" aria-hidden="true" />
             </div>
             <p className="text-base text-foreground">{t('home.trending.title')}</p>
           </div>
@@ -229,7 +231,9 @@ export function StatsSidebar({ onItemSelected }: { onItemSelected?: () => void }
                       setTrendingDropdownOpen(false)
                     }}
                     className={`w-full text-left px-3 py-2 text-xs transition-colors hover:bg-muted/50 ${
-                      trendingPeriod === p.value ? 'font-bold text-primary' : 'text-foreground'
+                      trendingPeriod === p.value
+                        ? 'font-bold text-[var(--color-link)]'
+                        : 'text-foreground'
                     }`}
                   >
                     {t(p.labelKey)}
@@ -298,7 +302,7 @@ export function StatsSidebar({ onItemSelected }: { onItemSelected?: () => void }
                     {/* Chevron droite : cercle 32px border 0.5px */}
                     <span
                       aria-hidden="true"
-                      className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center shrink-0 text-foreground group-hover:bg-white transition-colors"
+                      className="size-8 rounded-full border-[0.5px] border-border flex items-center justify-center shrink-0 text-foreground group-hover:bg-card transition-colors"
                     >
                       <ChevronRight className="size-4" />
                     </span>

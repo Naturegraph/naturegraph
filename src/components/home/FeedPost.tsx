@@ -10,7 +10,7 @@
  * - "Voir plus / Voir moins" annonce le changement d'état
  */
 
-import React, { useLayoutEffect, useRef, useState } from 'react'
+import React, { lazy, Suspense, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import {
@@ -21,12 +21,14 @@ import {
   Bird,
   MountainSnow,
   Heart,
+  MessageCircle,
 } from 'lucide-react'
 import { SharePopover } from './SharePopover'
 import { useSavedPostIds, useToggleSavedPost } from '@/hooks/useSavedPosts'
 import { PostOptionsMenu } from './PostOptionsMenu'
 import { ImageSlider } from './ImageSlider'
 import hermineIcon from '@/assets/images/hermine-icon.png'
+
 import { ImagePresets } from '@/lib/supabaseImage'
 import type { ReactionType } from '@/types/database'
 import { useSpecies } from '@/contexts/SpeciesContext'
@@ -35,6 +37,19 @@ import { buildPostPath } from '@/lib/postSlug'
 import { NotebookCardInFeed } from '@/components/notebook/NotebookCardInFeed'
 import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
 import { RevealableText } from '@/components/ui/RevealableText'
+
+/**
+ * Fil d'Echanges charge a la DEMANDE (NG-049).
+ *
+ * Le fil, sa recherche d'especes et son panneau de suggestion pesent plus lourd
+ * qu'une carte de publication. Les embarquer dans le paquet du feed ferait payer
+ * a chaque visiteur du code que la plupart n'ouvriront jamais : contraire au
+ * budget de performance du projet. `lazy` le charge au premier clic sur
+ * "Échanges", et une seule fois pour toute la session.
+ */
+const EchangesSection = lazy(() =>
+  import('@/components/echanges/EchangesSection').then((m) => ({ default: m.EchangesSection })),
+)
 
 // ─── Type UI pour les posts du feed ──────────────────────────────────────────
 // Bridge entre le type DB (PostFeedItem) et le composant FeedPost.
@@ -129,7 +144,7 @@ export interface MockPost {
   userReaction: ReactionType | null
   /** Total des réactions (likes_count) */
   totalReactions: number
-  /** Nombre de commentaires (préservé pour usage post-MVP : non affiché en MVP). */
+  /** Nombre d'echanges sous la publication (NG-049). */
   comments: number
 }
 
@@ -268,6 +283,15 @@ interface FeedPostProps extends MockPost {
    * les autres posts chargent en `lazy`. Defaut false.
    */
   priority?: boolean
+  /**
+   * Ouvre le fil d'Echanges des l'affichage.
+   *
+   * Sert a l'arrivee depuis une notification d'echange : la personne vient
+   * pour un message precis, lui faire cliquer une fois de plus pour le voir
+   * donnerait l'impression d'une notification cassee. Non pilote ensuite :
+   * c'est une valeur INITIALE, la carte garde la main sur son etat.
+   */
+  echangesOuvertsParDefaut?: boolean
 }
 
 export function FeedPost({
@@ -300,6 +324,7 @@ export function FeedPost({
   reactions,
   userReaction,
   totalReactions,
+  comments,
   canInteract = true,
   linkToDetail = true,
   isOwnPost = false,
@@ -310,9 +335,19 @@ export function FeedPost({
   expandContent = false,
   disableChipFilters = false,
   priority = false,
+  echangesOuvertsParDefaut = false,
 }: FeedPostProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  /**
+   * Fil d'Echanges ouvert sous la publication.
+   *
+   * L'etat vit DANS la carte, pas chez le parent : le feed et la page detail se
+   * comportent alors exactement pareil, sans que chaque appelant ait a recabler
+   * la meme mecanique. C'est aussi ce qui evite qu'un ecran oublie de la
+   * brancher et renvoie l'utilisateur ailleurs pour une action identique.
+   */
+  const [echangesOuverts, setEchangesOuverts] = useState(echangesOuvertsParDefaut)
   const { setActiveSpecies } = useSpecies()
   const [isExpanded, setIsExpanded] = useState(false)
   const [showOptions, setShowOptions] = useState(false)
@@ -377,7 +412,7 @@ export function FeedPost({
     // Largeur Figma : colonne post = 656px + p-6 (24px ×2) = 704px max sur desktop.
     // Centré (mx-auto) pour s'aligner dans la zone feed quel que soit son parent.
     // Sur mobile : pleine largeur (rounded-none, le cap ne joue pas).
-    <article className="bg-background relative md:rounded-card rounded-none md:max-w-[704px] md:mx-auto w-full">
+    <article className="bg-background relative rounded-none md:max-w-[704px] md:mx-auto w-full md:rounded-card">
       {/* Bordure de la carte : quand hideEndBorder=true on retire la
           bordure inférieure mobile (border-b-4) qui flotte dans le vide
           sur PostDetail ou en dernier item de feed. La border-[0.5px]
@@ -578,7 +613,7 @@ export function FeedPost({
                     <button
                       type="button"
                       onClick={() => setIsExpanded(true)}
-                      className="self-start text-sm text-primary underline decoration-solid focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                      className="self-start text-sm text-[var(--color-link)] underline decoration-solid focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
                     >
                       {t('home.post.seeMore')}
                     </button>
@@ -587,7 +622,7 @@ export function FeedPost({
                     <button
                       type="button"
                       onClick={() => setIsExpanded(false)}
-                      className="self-start text-sm text-primary underline decoration-solid focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                      className="self-start text-sm text-[var(--color-link)] underline decoration-solid focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
                     >
                       {t('home.post.seeLess')}
                     </button>
@@ -841,6 +876,12 @@ export function FeedPost({
           author={author}
           postId={id}
           postTitle={title}
+          // NG-053 : on transmet l'espece et le lieu DEJA affiches par la
+          // publication, pour que le plein ecran garde le contexte naturaliste.
+          // Reutiliser la meme chaine de lieu garantit que le viewer ne montre
+          // jamais plus que l'en-tete du post (filtrage location_hidden en amont).
+          speciesName={species}
+          location={location}
           priority={priority}
         />
 
@@ -863,7 +904,7 @@ export function FeedPost({
                       // Couleur primary si c'est la réaction posée par l'user, foreground sinon.
                       // Hover discret pour signaler l'interactivité.
                       userReaction === key
-                        ? 'text-primary font-semibold reaction-active hover:bg-primary-light/40'
+                        ? 'text-[var(--color-link)] font-semibold reaction-active hover:bg-primary-light/40'
                         : 'text-foreground hover:bg-muted/30',
                     ].join(' ')}
                   >
@@ -878,6 +919,28 @@ export function FeedPost({
               <span className="text-xs text-muted-foreground">{t('home.post.noReactions')}</span>
             )}
           </div>
+
+          {/*
+            Slot droit de la rangee reactions : compteur d'echanges, comme sur
+            la maquette. CLIQUABLE (Nicolas 2026-07-28) : ouvre le fil, comme le
+            bouton "Échanges" de la rangee du dessous, car apres un refresh le
+            panneau est referme et l'utilisateur cherchait a rouvrir ses
+            echanges en cliquant le compteur. Masque a zero.
+          */}
+          {comments > 0 && (
+            <button
+              type="button"
+              onClick={() => setEchangesOuverts((v) => !v)}
+              aria-expanded={echangesOuverts}
+              className="flex items-center gap-1 rounded text-sm text-foreground transition-colors hover:text-[var(--color-link)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              aria-label={`${comments} échange${comments > 1 ? 's' : ''}, ouvrir le fil`}
+            >
+              <MessageCircle className="size-4" aria-hidden="true" />
+              <span className="tabular-nums" aria-hidden="true">
+                {comments}
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Séparateur */}
@@ -910,7 +973,7 @@ export function FeedPost({
                 // État actif (réaction posée) : fond primary-light + couleur primary +
                 // label toujours visible : second-agent/10 (Figma 6385:128317).
                 activeReaction
-                  ? 'bg-primary-light text-primary font-semibold'
+                  ? 'bg-primary-light text-[var(--color-link)] font-semibold'
                   : 'text-foreground hover:bg-muted/50',
               ].join(' ')}
             >
@@ -975,6 +1038,42 @@ export function FeedPost({
                 </div>
               </>
             )}
+
+            {/*
+              Bouton Échanges (NG-049), a cote de "Réagir" comme sur la maquette
+              (Figma node 6385:60494, slot laisse libre dans le code depuis le
+              MVP). Le COMPTEUR, lui, est dans la rangee des reactions au-dessus.
+
+              Deux comportements selon le contexte :
+                - page detail : ouvre ou ferme le fil, c'est la qu'il vit ;
+                - fil d'accueil : renvoie vers la publication. On ne charge pas
+                  les echanges de chaque carte du feed, ce serait autant de
+                  requetes pour du contenu que personne ne lit encore.
+
+              Accessible aux visiteurs : LIRE ne demande pas de compte (suite de
+              NG-054). C'est ecrire qui en demande un.
+            */}
+            <button
+              type="button"
+              onClick={() => setEchangesOuverts((v) => !v)}
+              aria-expanded={echangesOuverts}
+              className={[
+                'flex items-center gap-2 h-8 px-3 rounded-full transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+                // Etat actif des maquettes (Figma 6819-13138) : pastille
+                // lavande, texte inchange. Colorer le texte ne suffisait pas,
+                // rien ne montrait que le fil etait ouvert JUSTE en dessous.
+                echangesOuverts
+                  ? 'bg-primary-light text-foreground'
+                  : 'text-foreground hover:bg-muted/50',
+              ].join(' ')}
+            >
+              <MessageCircle className="size-4" aria-hidden="true" />
+              {/* Meme typographie et meme comportement que "Réagir" juste a
+                  cote : deux actions voisines de la meme barre ne doivent pas
+                  se distinguer par leur graisse. */}
+              <span className="text-base font-bold hidden md:inline">Échanges</span>
+            </button>
           </div>
           <div className="flex gap-1">
             {/*
@@ -998,7 +1097,7 @@ export function FeedPost({
               className={[
                 'flex items-center justify-center h-8 w-8 rounded-full transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
-                isSaved ? 'text-primary' : 'text-foreground hover:bg-muted/50',
+                isSaved ? 'text-[var(--color-link)]' : 'text-foreground hover:bg-muted/50',
               ].join(' ')}
             >
               {isSaved ? (
@@ -1039,6 +1138,30 @@ export function FeedPost({
           </div>
         </div>
       </div>
+
+      {/*
+        Fil d'Echanges DANS la carte, jamais dans un bloc separe : il prolonge
+        la publication au lieu d'ouvrir une nouvelle section, ce qui evite au
+        lecteur de se demander a quoi il repond.
+
+        Le repli du Suspense reprend la hauteur du bandeau de saisie pour que la
+        page ne saute pas pendant le chargement du morceau de code.
+      */}
+      {echangesOuverts && (
+        <Suspense
+          fallback={
+            <div className="h-24 animate-pulse bg-surface-bubble md:rounded-b-card" aria-hidden />
+          }
+        >
+          {/* Instant nature (paysage) : pas de proposition d'espece, juste les
+              echanges. Une identification n'a pas de sens sur un paysage. */}
+          <EchangesSection
+            postId={id}
+            auteurPublicationId={authorId}
+            especesAutorisees={postType !== 'nature_instant'}
+          />
+        </Suspense>
+      )}
     </article>
   )
 }

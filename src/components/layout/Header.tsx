@@ -14,7 +14,7 @@ export function Header() {
     <header className="sticky top-0 z-50 border-b border-[var(--color-border-light)] bg-[var(--color-bg-primary)]/95 backdrop-blur-sm">
       <div className="container mx-auto flex items-center justify-between h-16 px-4 lg:px-6">
         <Link to="/" className="flex items-center gap-2" aria-label={t('common.appName')}>
-          <span className="text-xl font-bold text-[var(--color-primary)]">Naturegraph</span>
+          <span className="text-xl font-bold text-[var(--color-link)]">Naturegraph</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-6" aria-label="Navigation principale">

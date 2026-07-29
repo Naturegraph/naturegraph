@@ -2,8 +2,13 @@
  * check-social-digest : E7 (digest social quotidien), NG-045
  *
  * Un email par jour MAXIMUM qui resume l'activite sociale qu'un user n'a PAS
- * encore vue : reactions recues + nouveaux migrateurs (follows). Objectif :
- * ramener 1x/jour ceux qui ont decroche, sans micro-spam.
+ * encore vue : reactions recues, nouveaux migrateurs (follows), echanges sous
+ * ses publications et propositions d'espece. Objectif : ramener 1x/jour ceux
+ * qui ont decroche, sans micro-spam.
+ *
+ * NG-045 residuel (2026-07-23) : ajout des types 'comment' et 'identification',
+ * livres par NG-049. Sans eux, quelqu'un pouvait recevoir dix echanges sur sa
+ * publication sans qu'aucun email ne le lui dise.
  *
  * Regles (validees avec Nicolas) :
  *   - Digest QUOTIDIEN, jamais toutes les 30 min.
@@ -14,6 +19,17 @@
  *   - N'envoie PAS si l'user est deja revenu aujourd'hui (last_active_at >= debut
  *     du jour UTC) : il a deja vu la cloche, inutile de doubler.
  *   - Marque emailed_at sur les notifs incluses -> jamais re-emailees.
+ *   - CONSENTEMENT PAR TYPE : le digest regroupe plusieurs types, mais chacun a
+ *     sa propre preference email (`is_email_enabled` est par type). On filtre
+ *     donc le CONTENU type par type : quelqu'un qui a coupe les emails
+ *     d'echanges ne recoit pas de lignes d'echanges, meme si le digest part
+ *     pour ses reactions. Sans ce filtre, l'ajout des echanges aurait contourne
+ *     un refus deja exprime.
+ *   - `pref_type` reste 'reaction' : c'est la cle du DIGEST SOCIAL dans son
+ *     ensemble, et c'est elle qui pilote le lien de desabonnement
+ *     (`unsubscribeType = pref_type ?? 'all'` dans le dispatcher). La changer
+ *     rendrait le desabonnement imprevisible d'un jour a l'autre, et l'omettre
+ *     couperait TOUS les emails au lieu du seul digest.
  *
  * Le titre de la notif contient deja le username de l'acteur (cf. triggers
  * notify_on_reaction / notify_on_follow : title = username). Pas besoin de la
@@ -41,6 +57,24 @@ interface NotifRow {
   id: string
   type: string
   title: string | null
+}
+
+/**
+ * Types regroupes dans le digest social.
+ *
+ * 'identification' est distinct de 'comment' depuis NG-049 : proposer une
+ * espece n'est pas bavarder, et l'auteur d'une publication doit pouvoir le
+ * reperer. Les deux restent gouvernes par la preference 'comment', qui est la
+ * seule entree existante cote reglages.
+ */
+const TYPES_DIGEST = ['reaction', 'follow', 'comment', 'identification'] as const
+
+/** Preference email qui gouverne chaque type (plusieurs types la partagent). */
+const PREFERENCE_PAR_TYPE: Record<string, string> = {
+  reaction: 'reaction',
+  follow: 'follow',
+  comment: 'comment',
+  identification: 'comment',
 }
 
 /** "Alice", "Alice et Bob", "Alice, Bob et 3 autres". */
@@ -79,7 +113,7 @@ Deno.serve(async (req: Request) => {
   const todayStart = startOfTodayUtc()
 
   try {
-    // 1. Candidats : users avec au moins une notif reaction/follow non vue et non emailee
+    // 1. Candidats : users avec au moins une notif du digest non vue et non emailee
     let userIds: string[] = []
     if (body.user_id) {
       userIds = [body.user_id]
@@ -87,7 +121,7 @@ Deno.serve(async (req: Request) => {
       const { data, error } = await admin
         .from('notifications')
         .select('user_id')
-        .in('type', ['reaction', 'follow'])
+        .in('type', TYPES_DIGEST as unknown as string[])
         .eq('read', false)
         .is('emailed_at', null)
       if (error) throw error
@@ -132,32 +166,73 @@ Deno.serve(async (req: Request) => {
         .from('notifications')
         .select('id, type, title')
         .eq('user_id', uid)
-        .in('type', ['reaction', 'follow'])
+        .in('type', TYPES_DIGEST as unknown as string[])
         .eq('read', false)
         .is('emailed_at', null)
       if (notifErr) throw notifErr
       const rows = (notifs ?? []) as NotifRow[]
       if (rows.length === 0) continue
 
-      const reactionNames = rows.filter((r) => r.type === 'reaction').map((r) => r.title ?? '')
-      const followNames = rows.filter((r) => r.type === 'follow').map((r) => r.title ?? '')
+      // CONSENTEMENT PAR TYPE. Chaque type a sa propre preference email : on
+      // ecarte d'abord ceux que cette personne a refuses, AVANT de composer le
+      // message. Ajouter les echanges au digest sans ce filtre aurait fait
+      // passer par email un contenu dont le refus etait deja enregistre.
+      const typesPresents = [...new Set(rows.map((r) => r.type))]
+      const typesAutorises = new Set<string>()
+      for (const type of typesPresents) {
+        const { data: autorise, error: prefErr } = await admin.rpc('is_email_enabled', {
+          p_user_id: uid,
+          p_type: PREFERENCE_PAR_TYPE[type] ?? type,
+        })
+        if (prefErr) throw prefErr
+        if (autorise) typesAutorises.add(type)
+      }
+
+      const retenues = rows.filter((r) => typesAutorises.has(r.type))
+      if (retenues.length === 0) continue
+
+      const noms = (type: string) =>
+        retenues.filter((r) => r.type === type).map((r) => r.title ?? '')
+      const reactionNames = noms('reaction')
+      const followNames = noms('follow')
+      const commentNames = noms('comment')
+      const identificationNames = noms('identification')
+
+      /** "a" ou "ont" selon le nombre de personnes DISTINCTES concernees. */
+      const verbe = (n: string[]) => (new Set(n).size > 1 ? 'ont' : 'a')
 
       const lines: string[] = []
       if (reactionNames.length > 0) {
-        const verb = new Set(reactionNames).size > 1 ? 'ont' : 'a'
-        lines.push(`${joinNames(reactionNames)} ${verb} réagi à tes observations.`)
+        lines.push(`${joinNames(reactionNames)} ${verbe(reactionNames)} réagi à tes observations.`)
+      }
+      if (commentNames.length > 0) {
+        lines.push(`${joinNames(commentNames)} ${verbe(commentNames)} réagi dans tes échanges.`)
+      }
+      if (identificationNames.length > 0) {
+        const v = verbe(identificationNames)
+        lines.push(
+          `${joinNames(identificationNames)} ${v} proposé une espèce sur tes observations.`,
+        )
       }
       if (followNames.length > 0) {
-        const verb = new Set(followNames).size > 1 ? 'ont' : 'a'
-        lines.push(`${joinNames(followNames)} ${verb} commencé à te suivre.`)
+        lines.push(`${joinNames(followNames)} ${verbe(followNames)} commencé à te suivre.`)
       }
       if (lines.length === 0) continue
 
       const greeting = prof.first_name?.toString().trim()
         ? `${prof.first_name.toString().trim()},`
         : 'Bonjour,'
+      // Le sujet annonce ce qui est REELLEMENT dans le mail, dans l'ordre
+      // d'importance pour la personne : une identification proposee vaut plus
+      // qu'un coeur, et un sujet qui ment sur le contenu use la confiance.
       const subject =
-        reactionNames.length > 0 ? 'On a réagi à tes observations' : 'Tu as de nouveaux migrateurs'
+        identificationNames.length > 0
+          ? 'On a proposé une espèce sur tes observations'
+          : commentNames.length > 0
+            ? 'Tu as de nouveaux échanges'
+            : reactionNames.length > 0
+              ? 'On a réagi à tes observations'
+              : 'Tu as de nouveaux migrateurs'
       const bodyHtml =
         `<p style="margin:0 0 16px 0;">${greeting}</p>` +
         lines.map((l) => `<p style="margin:0 0 16px 0;">${l}</p>`).join('') +
@@ -194,7 +269,10 @@ Deno.serve(async (req: Request) => {
       // (sinon on veut pouvoir reessayer demain).
       if (result.sent) {
         sent += 1
-        const ids = rows.map((r) => r.id)
+        // UNIQUEMENT les notifs reellement incluses : marquer "emailee" une
+        // notif ecartee par preference serait faux dans les donnees, et lui
+        // interdirait de partir si la personne reactive ce type plus tard.
+        const ids = retenues.map((r) => r.id)
         const { error: updErr } = await admin
           .from('notifications')
           .update({ emailed_at: new Date().toISOString() })

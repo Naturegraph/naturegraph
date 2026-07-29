@@ -95,6 +95,54 @@ interface OgPost {
 }
 
 /**
+ * Retourne le texte nettoyé, ou `null` s'il est absent OU vide.
+ *
+ * Indispensable ici : en base, les champs non remplis sont des chaînes vides et
+ * non `null`. Un simple `??` ne bascule donc jamais sur le repli.
+ */
+export function texte(valeur: string | null | undefined): string | null {
+  const nettoye = (valeur ?? '').trim()
+  return nettoye.length > 0 ? nettoye : null
+}
+
+/**
+ * Phrase de repli quand l'auteur n'a pas écrit de description.
+ *
+ * Reste naturaliste et informative (espèce + lieu) plutôt que promotionnelle :
+ * c'est ce que le destinataire du lien a besoin de savoir avant de cliquer.
+ *
+ * Le lieu n'est ajouté QUE si l'auteur ne l'a pas masqué (`location_hidden`).
+ * Une prévisualisation de lien ne doit jamais révéler ce que la personne a
+ * volontairement caché dans l'application. 97 publications sur 106 masquent
+ * leur lieu, ce cas est donc la norme et non l'exception.
+ *
+ * Seule la VILLE est utilisée, jamais le pays : « à + ville » est toujours
+ * correct en français, alors que les pays exigent des prépositions irrégulières
+ * (en France, au Canada, aux États-Unis). Écrire « observé à France » serait
+ * fautif, et aucune publication n'a un pays sans ville de toute façon.
+ */
+export function descriptionDeRepli(
+  row: {
+    species_name: string | null
+    city: string | null
+    country: string | null
+    location_hidden: boolean | null
+  },
+  username: string,
+): string {
+  const espece = texte(row.species_name)
+  const lieu = row.location_hidden ? null : texte(row.city)
+
+  if (espece && lieu) {
+    return `${espece} observé à ${lieu}, partagé par @${username} sur Naturegraph.`
+  }
+  if (espece) {
+    return `${espece}, une observation partagée par @${username} sur Naturegraph.`
+  }
+  return `Découvre cette observation nature partagée par @${username} sur Naturegraph.`
+}
+
+/**
  * Fetch le post via PostgREST avec la clé anon : les RLS Supabase filtrent
  * automatiquement les posts privés / supprimés. Aucun secret exposé.
  */
@@ -111,7 +159,7 @@ async function fetchPostForOg(postId: string): Promise<OgPost | null> {
   const filterKey = isShort ? 'short_id' : 'id'
   const url =
     `${supabaseUrl}/rest/v1/posts_public` +
-    `?select=id,title,description,species_name,user:profiles!user_id(username),media(url,is_cover,display_order)` +
+    `?select=id,title,description,species_name,city,country,location_hidden,user:profiles!user_id(username),media(url,is_cover,display_order)` +
     `&${filterKey}=eq.${encodeURIComponent(postId)}` +
     `&limit=1`
 
@@ -130,6 +178,9 @@ async function fetchPostForOg(postId: string): Promise<OgPost | null> {
       title: string | null
       description: string | null
       species_name: string | null
+      city: string | null
+      country: string | null
+      location_hidden: boolean | null
       user: { username: string | null } | null
       media: Array<{ url: string | null; is_cover: boolean | null; display_order: number | null }>
     }>
@@ -149,11 +200,15 @@ async function fetchPostForOg(postId: string): Promise<OgPost | null> {
         (rawUrl.includes('?') ? '&' : '?') +
         'width=1200&height=630&resize=cover&quality=80'
       : null
+    // `??` ne se declenche que sur null/undefined. Or en base AUCUNE description
+    // n'est null : les publications sans texte portent une CHAINE VIDE. Le repli
+    // n'a donc jamais fonctionne pour personne, et 25 % des liens partages
+    // affichaient une description vide sur WhatsApp et iMessage.
+    // `texte()` traite le vide et les espaces comme une absence, ce qui corrige
+    // la description ET le titre d'un coup.
     return {
-      title: row.title ?? row.species_name ?? 'Une observation Naturegraph',
-      description:
-        row.description ??
-        `Découvre cette observation nature partagée par @${username} sur Naturegraph.`,
+      title: texte(row.title) ?? texte(row.species_name) ?? 'Une observation Naturegraph',
+      description: texte(row.description) ?? descriptionDeRepli(row, username),
       imageUrl,
       authorUsername: username,
       species: row.species_name,

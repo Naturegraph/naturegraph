@@ -142,9 +142,9 @@ function Dropzone({ onClick, onDrop, isDragging, onDragState, label, hint }: Dro
       ].join(' ')}
     >
       <div className="size-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-        <ImagePlus className="size-7 text-primary" strokeWidth={2} aria-hidden="true" />
+        <ImagePlus className="size-7 text-[var(--color-link)]" strokeWidth={2} aria-hidden="true" />
       </div>
-      <span className="font-body font-bold text-primary text-base">{label}</span>
+      <span className="font-body font-bold text-[var(--color-link)] text-base">{label}</span>
       <span className="text-xs text-muted-foreground px-4 text-center">{hint}</span>
     </div>
   )
@@ -271,8 +271,8 @@ function EmptySlot({
         aspectClass,
       ].join(' ')}
     >
-      <Plus className="size-5 text-primary" strokeWidth={2.5} aria-hidden="true" />
-      <span className="text-primary text-xs font-body font-bold">{label}</span>
+      <Plus className="size-5 text-[var(--color-link)]" strokeWidth={2.5} aria-hidden="true" />
+      <span className="text-[var(--color-link)] text-xs font-body font-bold">{label}</span>
     </button>
   )
 }

@@ -23,7 +23,7 @@
  *   - Titre section : Muli 16px 400 color text-muted-foreground
  *   - Titre panneau : Quicksand 32px 700
  *   - Bouton save   : bg-primary, rounded-full, h-12, Muli 700 16px white
- *   - Reset         : text-primary Muli 700 16px souligné
+ *   - Reset         : text-[var(--color-link)] Muli 700 16px souligné
  */
 
 import { useState } from 'react'
@@ -196,7 +196,6 @@ export function FeedFilterPanel({
    *             On marque "Bientôt" pour transparence.
    */
   const showRadiusFilter = isLocalized
-  const helpOnlyComingSoon = true
 
   // État local : édition avant validation via "Sauvegarder". Initialisé
   // une seule fois au mount (panel unmount sur close → ré-initialisation
@@ -277,47 +276,13 @@ export function FeedFilterPanel({
         </div>
       </div>
 
-      {/* ───── 2. Demandes d'aide uniquement ─────
-          Filtre conditionnel : aujourd'hui pas de fonctionnalité "demande d'aide"
-          côté formulaire de contribution → on affiche le filtre désactivé avec
-          badge "Bientôt" pour transparence (second-agent/23). */}
-      {helpOnlyComingSoon ? (
-        <>
-          <hr className={dividerClass} />
-          <div
-            className="flex items-center gap-3 select-none opacity-60 cursor-not-allowed"
-            aria-disabled="true"
-          >
-            <FilterCheckbox
-              checked={false}
-              onChange={() => {}}
-              ariaLabel={t('home.filters.helpOnly')}
-            />
-            <span className="font-body text-base text-foreground">
-              {t('home.filters.helpOnly')}
-            </span>
-            <span className="ml-auto text-[10px] font-bold uppercase tracking-wide text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-              Bientôt
-            </span>
-          </div>
-          <hr className={dividerClass} />
-        </>
-      ) : (
-        <>
-          <hr className={dividerClass} />
-          <div className="flex items-center gap-3 select-none">
-            <FilterCheckbox
-              checked={local.helpOnly}
-              onChange={(next) => setLocal((prev) => ({ ...prev, helpOnly: next }))}
-              ariaLabel={t('home.filters.helpOnly')}
-            />
-            <span className="font-body text-base text-foreground">
-              {t('home.filters.helpOnly')}
-            </span>
-          </div>
-          <hr className={dividerClass} />
-        </>
-      )}
+      {/* Le filtre "Demandes d'aide uniquement" a ete RETIRE (Nicolas
+          2026-07-23) : la fonctionnalite ne verra pas le jour, et une case
+          grisee "Bientot" qui ne s'activera jamais est une promesse en trop
+          dans un panneau de filtres.
+          Le separateur, lui, RESTE : il ne dependait pas du filtre mais separe
+          les categories d'especes du type de partages. */}
+      <hr className={dividerClass} />
 
       {/* ───── 3. Par type de partages ─────
           Rencontre nature (actif) + Instant nature (badge "Bientôt", disabled).
@@ -444,7 +409,7 @@ export function FeedFilterPanel({
         type="button"
         onClick={handleReset}
         className={[
-          'font-body font-bold text-base leading-[1.5] text-primary underline underline-offset-4',
+          'font-body font-bold text-base leading-[1.5] text-[var(--color-link)] underline underline-offset-4',
           'hover:opacity-80 transition-opacity',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded',
         ].join(' ')}

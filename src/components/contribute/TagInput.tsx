@@ -71,7 +71,7 @@ export function TagInput({ tags, onTagsChange, maxTags = 10 }: TagInputProps) {
         {tags.map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-light text-primary text-xs font-medium"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-light text-[var(--color-link)] text-xs font-medium"
           >
             #{tag}
             <button

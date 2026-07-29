@@ -720,7 +720,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
     <>
       {/* ── Backdrop : clic ferme le panneau ────────────────────────────── */}
       <div
-        className="fixed inset-0 z-40 bg-foreground/30 backdrop-blur-sm md:block hidden"
+        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm md:block hidden"
         aria-hidden="true"
         onClick={onClose}
       />
@@ -743,7 +743,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
         <div className="shrink-0 pt-6 px-4 pb-3 flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
             {/* Badge type : pill teal avec label */}
-            <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-teal-dark text-white text-sm leading-none">
+            <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-teal-dark text-[var(--color-on-highlight)] text-sm leading-none">
               <span className="font-body">{t('contribute.encounterTitle')}</span>
             </span>
 
@@ -996,7 +996,7 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
             className="shrink-0 mx-5 mb-3 rounded-card bg-background border border-border shadow-md overflow-hidden"
           >
             <div className="flex items-start gap-3 p-4">
-              <div className="size-10 shrink-0 rounded-full bg-primary-light/40 text-primary flex items-center justify-center">
+              <div className="size-10 shrink-0 rounded-full bg-primary-light/40 text-[var(--color-link)] flex items-center justify-center">
                 <ImageUp className="size-5" aria-hidden="true" />
               </div>
               <div className="flex-1 min-w-0">

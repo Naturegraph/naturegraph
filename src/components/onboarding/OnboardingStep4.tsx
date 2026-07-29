@@ -622,7 +622,7 @@ export function OnboardingStep4({
                   />
                   <div className="shrink-0" aria-hidden="true">
                     {isChecking ? (
-                      <p className="text-[var(--color-action-default)] text-sm">
+                      <p className="text-[var(--color-link)] text-sm">
                         {t('onboarding.username.errors.checking')}
                       </p>
                     ) : (

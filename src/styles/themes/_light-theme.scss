@@ -26,6 +26,15 @@
   --color-action-disabled: #{$brand-main-200}; // #CED3F0
   --color-action-light: #{$brand-main-100}; // #E7E9F7
 
+  // ── Lien textuel ──
+  // Pendant clair du token `--color-link` (cf. _dark-theme.scss). Sur fond
+  // creme (#FFFDF8), le violet de marque #5F5DD8 donne deja 5,1:1 (AA OK) : on
+  // le conserve. Le token existe pour que les liens aient UNE source de verite
+  // qui bascule proprement d'un theme a l'autre (le violet clair du dark
+  // echouerait sur fond clair, et inversement). Decision Nicolas 2026-07-28.
+  --color-link: #{$brand-main-500}; // #5F5DD8
+  --color-link-hover: #{$brand-main-700}; // #3C4380
+
   // ── Content / Neutral ──
   --color-text-primary: #{$greyscale-900}; // #0C0C14
   --color-text-secondary: #{$greyscale-800}; // #20203D
@@ -54,21 +63,56 @@
   // dans 3+ composants.
   --color-amber-primary: #cc7a00;
 
+  // ── Contribuer : cartes teintees (pendant clair de _dark-theme.scss) ──
+  // En clair, les cartes gardent leur teinte pastel et le glyphe reste clair
+  // (quasi blanc) sur la pastille foncee. Cf. Figma 6858:13212.
+  --color-contribute-encounter-bg: #{$brand-highlight-50}; // #E5F7F7
+  --color-contribute-encounter-circle: #{$brand-highlight-500}; // #006666
+  --color-contribute-encounter-glyph: #{$greyscale-white}; // #FFFFFF (icone blanche)
+  --color-contribute-instant-bg: #fff4e0;
+  --color-contribute-instant-circle: #cc7a00;
+  --color-contribute-instant-glyph: #{$greyscale-white}; // #FFFFFF (icone blanche)
+  --color-contribute-title: #{$greyscale-800}; // #20203D
+  --color-contribute-desc: #{$greyscale-600}; // #565666
+
   // ── Semantic / Background ──
   --color-success-bg: #{$semantic-green-100}; // #C7F2DF
   --color-warning-bg: #{$semantic-orange-100}; // #FEE1C8
   --color-error-bg: #{$semantic-red-100}; // #FCCDD5
   --color-info-bg: #{$semantic-blue-100}; // #BADEFA
+  // Fond teal clair pour les pastilles/chips "identification" et "species", sur
+  // le meme modele que les autres -bg (teinte claire en clair, foncee en
+  // sombre), afin que le vert se comporte comme le violet et l'orange.
+  --color-highlight-bg: #{$brand-highlight-100}; // #CCEDED
 
   // ── Neutral ──
   --color-neutral-0: #{$greyscale-0}; // #FFFFFF
   --color-neutral-999: #{$greyscale-999}; // #000000
+
+  // ── Contenu POSE SUR une pastille coloree (NG-058) ──
+  // La couleur d'une icone dans une pastille ne depend pas du theme mais de la
+  // CLARTE de la pastille. Ces deux tokens portent cette regle une seule fois,
+  // au lieu de la reecrire a chaque composant.
+  // Light : `highlight-primary` est un teal FONCE (#006666) -> contenu clair.
+  --color-on-highlight: #{$greyscale-white};
+  // Light : `action-light` est un lavande PALE (#E7E9F7) -> contenu fonce.
+  --color-on-action-light: #{$brand-main-500};
+
+  // Contenu pose sur une surface PALE FIGEE (cartes du menu Contribuer, dont
+  // le fond vient de la maquette et ne bascule pas). Ce token ne bascule donc
+  // pas non plus : sinon le texte virait au clair sur un fond reste pale, et
+  // devenait illisible en mode sombre.
+  --color-on-pale: #{$greyscale-900};
 
   // ── Surfaces ──
   --color-surface: #{$greyscale-white};
   --color-surface-hover: #{$brand-bg-100};
   --color-surface-cream: #{$surface-cream}; // #F4F1E8
   --color-surface-cream-light: #{$surface-cream-light}; // #F9F7F0
+  // Fond des bulles d'echange (maquettes NG-049) : un gris neutre tres clair,
+  // volontairement different du creme des cartes pour que la bulle se detache
+  // du fond de la publication sans introduire une bordure de plus.
+  --color-surface-bubble: #{$greyscale-50}; // #F0F0F5
   --color-overlay: rgba(0, 0, 0, 0.5);
 
   // ── Text / Muted ──

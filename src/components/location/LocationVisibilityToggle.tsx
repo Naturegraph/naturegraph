@@ -116,9 +116,7 @@ export function LocationVisibilityToggle({
                 size={16}
                 aria-hidden={true}
                 className={
-                  isSelected
-                    ? 'text-[var(--color-action-default)]'
-                    : 'text-[var(--color-text-secondary)]'
+                  isSelected ? 'text-[var(--color-link)]' : 'text-[var(--color-text-secondary)]'
                 }
               />
             </div>
@@ -128,9 +126,7 @@ export function LocationVisibilityToggle({
               <span
                 className={[
                   'text-sm font-semibold',
-                  isSelected
-                    ? 'text-[var(--color-action-default)]'
-                    : 'text-[var(--color-text-primary)]',
+                  isSelected ? 'text-[var(--color-link)]' : 'text-[var(--color-text-primary)]',
                 ].join(' ')}
               >
                 {t(labelKey)}

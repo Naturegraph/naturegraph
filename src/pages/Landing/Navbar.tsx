@@ -164,7 +164,7 @@ export function Navbar({ onNavigate }: NavbarProps) {
                 <button
                   key={link.id}
                   onClick={() => handleNav(link.id)}
-                  className="w-full text-left px-4 py-3 rounded-xl text-base font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-action-default)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] transition-colors"
+                  className="w-full text-left px-4 py-3 rounded-xl text-base font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-link)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-default)] transition-colors"
                 >
                   {link.label}
                 </button>

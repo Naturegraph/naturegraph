@@ -7,9 +7,15 @@
 
 [data-theme='dark'] {
   // ── Background / Neutral ──
-  --color-bg-primary: #{$greyscale-900}; // #0C0C14
-  --color-bg-secondary: #{$greyscale-800}; // #20203D
-  --color-bg-tertiary: #{$greyscale-700}; // #13131A : remplace le crème #FFF4E0 en dark
+  // NG-058 : ELEVATION RETABLIE. En light, `bg-primary` (#FFFDF8, la carte) est
+  // plus CLAIR que `bg-secondary` (#FFFAF0, la page) : la carte avance vers le
+  // lecteur. Le dark inversait ce rapport, avec une carte plus sombre que la
+  // page, et une page VIOLETTE (#20203D) qu'on ne trouve nulle part dans la
+  // maquette. Valeurs relevees au pixel sur Figma 6385-37942 : page #0C0C14,
+  // carte #13131A.
+  --color-bg-primary: #{$greyscale-700}; // #13131A : CARTE, un cran au-dessus de la page
+  --color-bg-secondary: #{$greyscale-900}; // #0C0C14 : PAGE, le niveau le plus bas
+  --color-bg-tertiary: #{$greyscale-800}; // #20203D : troisieme niveau, le plus haut
   --color-bg-menthe: #{$color-menthe}; // #99FFCC
 
   // ── Background / Highlight ──
@@ -23,6 +29,18 @@
   --color-action-active: #{$brand-main-600}; // #525AAA
   --color-action-disabled: #{$brand-main-700}; // #3C4380
   --color-action-light: #{$brand-main-800}; // #262B55
+
+  // ── Violet de premier plan (liens, icones, accents, etats actifs) ──
+  // Token du violet utilise en COULEUR DE TEXTE/ICONE (classe Tailwind
+  // `text-[var(--color-link)]`), distinct de `action-default` qui sert de FOND
+  // aux boutons. Sur fond sombre, le violet de marque #5F5DD8 ne donne que
+  // 3,56:1 (sous le 4,5:1 AA). On releve donc au cran superieur de l'echelle,
+  // $brand-main-400 #9BA6E3 : ~7,9:1 sur la carte sombre (#13131A), conforme AA.
+  // Les boutons pleins ne changent pas (leur libelle blanc sur #5F5DD8 reste
+  // correct). Toute la couleur de texte violette de l'app pointe ici (les 136
+  // usages `text-primary` ont ete migres). Decision Nicolas 2026-07-28.
+  --color-link: #{$brand-main-400}; // #9BA6E3
+  --color-link-hover: #{$brand-main-300}; // #B5BDEA
 
   // ── Content / Neutral ──
   --color-text-primary: #{$greyscale-50}; // #F0F0F5
@@ -44,6 +62,19 @@
   --color-error: #{$semantic-red-100}; // #FCCDD5
   --color-info: #{$semantic-blue-100}; // #BADEFA
 
+  // ── Contribuer : cartes teintees (Figma dark 6858:13212, Nicolas 2026-07-28) ──
+  // En sombre, chaque carte prend une teinte TRES foncee de son accent, et le
+  // glyphe de l'icone reprend cette meme teinte sombre (il se "decoupe" dans la
+  // pastille vive). Remplace l'ancien figeage clair des trois cartes.
+  --color-contribute-encounter-bg: #032222; // teal quasi noir
+  --color-contribute-encounter-circle: #{$brand-highlight-400}; // #33B6B6
+  --color-contribute-encounter-glyph: #032222; // glyphe = teinte sombre de la carte
+  --color-contribute-instant-bg: #281203; // ambre quasi noir
+  --color-contribute-instant-circle: #cc7a00;
+  --color-contribute-instant-glyph: #281203; // glyphe = teinte sombre de la carte
+  --color-contribute-title: #fffcf8; // creme
+  --color-contribute-desc: #{$greyscale-100}; // #EBEBF0
+
   // ── Brand secondary (Instant nature : BATCH 42) ──
   // Spec Figma identique en dark (couleur brand specifique).
   --color-amber-primary: #cc7a00;
@@ -53,16 +84,41 @@
   --color-warning-bg: #{$semantic-orange-700}; // #AF5115
   --color-error-bg: #{$semantic-red-700}; // #9E0F22
   --color-info-bg: #{$semantic-blue-700}; // #004178
+  // Pendant sombre de --color-highlight-bg (teinte teal foncee, comme les autres
+  // -bg en sombre) : l'icone teal vive ressort dessus.
+  --color-highlight-bg: #{$brand-highlight-700}; // #003F3F
 
   // ── Neutral ──
   --color-neutral-0: #{$greyscale-999}; // #000000
   --color-neutral-999: #{$greyscale-0}; // #FFFFFF
 
+  // ── Contenu POSE SUR une pastille coloree (NG-058) ──
+  // Dark : `highlight-primary` devient un teal VIF (#33B6B6), sur lequel du
+  // blanc tombe sous le seuil AA -> contenu fonce.
+  --color-on-highlight: #{$greyscale-900};
+  // Dark : `action-light` devient un violet SOMBRE (#262B55) -> contenu clair.
+  --color-on-action-light: #{$greyscale-50};
+
+  // Contenu pose sur une surface PALE FIGEE (cartes du menu Contribuer, dont
+  // le fond vient de la maquette et ne bascule pas). Ce token ne bascule donc
+  // pas non plus : sinon le texte virait au clair sur un fond reste pale, et
+  // devenait illisible en mode sombre.
+  --color-on-pale: #{$greyscale-900};
+
   // ── Surfaces ──
-  --color-surface: #{$greyscale-800};
-  --color-surface-hover: #{$greyscale-700};
-  --color-surface-cream: #{$greyscale-800}; // #20203D : remplace crème clair en dark
-  --color-surface-cream-light: #{$greyscale-700}; // #13131A : variante plus sombre
+  // NG-058 : valeurs RELEVEES AU PIXEL sur la maquette dark (Figma 6385-37942).
+  // Le fond de page y est #0C0C14 et les cartes #13131A : une carte est donc
+  // LEGEREMENT PLUS CLAIRE que la page, ce qui la fait avancer vers le lecteur.
+  // La surface valait auparavant #20203D, un violet qui n'apparait nulle part
+  // comme fond de carte dans la maquette : les cartes ressortaient bleutees.
+  --color-surface: #{$greyscale-700}; // #13131A : carte, releve sur la maquette
+  --color-surface-hover: #{$greyscale-800}; // #20203D : survol, plus clair que la carte
+  --color-surface-cream: #{$greyscale-700}; // #13131A : remplace le crème en dark
+  --color-surface-cream-light: #{$greyscale-900}; // #0C0C14 : fond de page
+  // Bulles d'echange : en dark on ECLAIRCIT au lieu d'assombrir. Une bulle plus
+  // sombre que le fond se lirait comme un trou, alors que la maquette la veut
+  // en relief par rapport a la publication.
+  --color-surface-bubble: #{$greyscale-800}; // #20203D : un cran au-dessus de la carte
   --color-overlay: rgba(0, 0, 0, 0.7);
 
   // ── Text / Muted ──

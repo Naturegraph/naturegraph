@@ -208,12 +208,14 @@ function MenuItem({ icon, label, onClick, danger, done }: MenuItemProps) {
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
         // Hover identique à PostOptionsMenu pour cohérence (Nicolas 2026-05-01) :
         //   - normal : hover:bg-muted/40
-        //   - danger : hover:bg-red-50 text-red-600
-        danger ? 'hover:bg-red-50 text-red-600' : 'hover:bg-muted/40 text-foreground',
+        //   - danger : tokens DS error-action (thème-aware, AA en clair et sombre)
+        danger
+          ? 'hover:bg-[var(--color-error-action)]/10 text-[var(--color-error)]'
+          : 'hover:bg-muted/40 text-foreground',
         done ? 'bg-primary-light/30' : '',
       ].join(' ')}
     >
-      <span aria-hidden="true" className={danger ? 'text-red-500' : 'text-foreground'}>
+      <span aria-hidden="true" className={danger ? 'text-[var(--color-error)]' : 'text-foreground'}>
         {icon}
       </span>
       <span className={done ? 'font-bold' : ''}>{label}</span>

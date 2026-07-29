@@ -568,7 +568,7 @@ export default function AdminModeration() {
                         {reporterUsername ? (
                           <Link
                             to={`/profile/${reporterUsername}`}
-                            className="text-primary hover:underline"
+                            className="text-[var(--color-link)] hover:underline"
                           >
                             @{reporterUsername}
                           </Link>
@@ -983,7 +983,7 @@ function ReportDetailDrawer({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)]">
           <h3 className="text-base font-bold text-foreground inline-flex items-center gap-2">
-            <ShieldAlert className="size-4 text-[var(--color-action-default)]" aria-hidden="true" />
+            <ShieldAlert className="size-4 text-[var(--color-link)]" aria-hidden="true" />
             Détail du signalement
           </h3>
           <button
@@ -1133,7 +1133,7 @@ function ReportDetailDrawer({
                               loading="lazy"
                             />
                           ) : (
-                            <div className="size-8 rounded-full bg-primary-light flex items-center justify-center text-xs font-bold text-primary">
+                            <div className="size-8 rounded-full bg-primary-light flex items-center justify-center text-xs font-bold text-[var(--color-link)]">
                               {(
                                 targetPreview.author.first_name?.[0] ??
                                 targetPreview.author.username?.[0] ??
@@ -1183,7 +1183,7 @@ function ReportDetailDrawer({
                             loading="lazy"
                           />
                         ) : (
-                          <div className="size-16 rounded-full bg-primary-light flex items-center justify-center text-xl font-bold text-primary ring-4 ring-[var(--color-bg-primary)]">
+                          <div className="size-16 rounded-full bg-primary-light flex items-center justify-center text-xl font-bold text-[var(--color-link)] ring-4 ring-[var(--color-bg-primary)]">
                             {(
                               targetPreview.profile.first_name?.[0] ??
                               targetPreview.profile.username?.[0] ??
@@ -1244,7 +1244,7 @@ function ReportDetailDrawer({
                   href={targetExternalLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs text-[var(--color-action-default)] hover:underline self-start"
+                  className="inline-flex items-center gap-1.5 text-xs text-[var(--color-link)] hover:underline self-start"
                 >
                   <ExternalLink className="size-3" aria-hidden="true" />
                   Ouvrir dans un nouvel onglet
@@ -1436,7 +1436,7 @@ function ModStatCard({
       valueClass: 'text-[var(--color-error)]',
       dot: 'bg-[var(--color-error)]',
     },
-    info: { valueClass: 'text-primary', dot: 'bg-primary' },
+    info: { valueClass: 'text-[var(--color-link)]', dot: 'bg-primary' },
     muted: { valueClass: 'text-foreground', dot: 'bg-[var(--color-border)]' },
   }
   const c = colorMap[color]
