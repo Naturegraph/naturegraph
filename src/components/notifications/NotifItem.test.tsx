@@ -37,6 +37,15 @@ describe('getMessage, regroupement des publications', () => {
     expect(getMessage('reaction', t, 5)).toBe('home.notifications.messageReaction')
     expect(getMessage('follow', t, 5)).toBe('home.notifications.messageFollow')
   })
+
+  it("distingue une reaction sur echange d'une reaction sur publication", () => {
+    // reference_type='echange' (pose par notify_on_comment_reaction) => phrase
+    // dediee, pour ne pas dire "a reagi a ton post" sur un like d'echange.
+    expect(getMessage('reaction', t, 1, 'echange')).toBe(
+      'home.notifications.messageReactionEchange',
+    )
+    expect(getMessage('reaction', t, 1, 'post')).toBe('home.notifications.messageReaction')
+  })
 })
 
 describe('getReactionLabel, traduction des reactions', () => {

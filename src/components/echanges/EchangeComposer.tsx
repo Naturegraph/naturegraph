@@ -184,24 +184,42 @@ export function EchangeComposer({
         </div>
 
         {/*
-          Bouton du DESIGN SYSTEM (`Button`), variante primaire, taille md.
+          Envoi : deux rendus selon la largeur (decision Nicolas 2026-07-29).
 
-          MOBILE (< 640px) : ICONE SEULE (decision Nicolas 2026-07-29). Le
-          libelle "Envoyer" en toutes lettres ecrasait le champ, poussant le
-          placeholder sur deux lignes. On le masque sous `sm` (le champ reprend
-          sa largeur, le placeholder tient sur une ligne) et il reste lu par les
-          lecteurs d'ecran via `aria-label`. Desktop : icone + libelle.
+          MOBILE (< 640px) : un vrai bouton ROND de 40px, icone parfaitement
+          centree, jumeau visuel du bouton "Proposer une espece" (meme `size-10`,
+          memes tokens). On ne detourne PAS le `Button` du design system ici : sa
+          taille md est un pill de 48px avec une marge d'icone (`mr-2`) qui
+          subsiste meme libelle masque et decale le picto vers la gauche. Un
+          bouton dedie garantit le cercle et le centrage.
+
+          DESKTOP (>= 640px) : le `Button` du design system, icone + libelle.
+
+          Les deux portent `type="submit"` : un seul est visible par palier, le
+          second est retire du flux (`hidden`), donc non cliquable.
         */}
+        <button
+          type="submit"
+          disabled={peutEcrire && !pret}
+          aria-label={enCours ? 'Envoi en cours' : 'Envoyer'}
+          className={[
+            'inline-flex size-10 shrink-0 items-center justify-center rounded-full sm:hidden',
+            'bg-[var(--color-action-default)] text-[var(--color-text-white)] transition-all',
+            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action-default)]',
+            'disabled:cursor-not-allowed disabled:opacity-50',
+          ].join(' ')}
+        >
+          <Send className="size-5" aria-hidden="true" />
+        </button>
         <Button
           type="submit"
           variant="primary"
           size="md"
           disabled={peutEcrire && !pret}
           icon={<Send className="size-5" aria-hidden="true" />}
-          aria-label={enCours ? 'Envoi en cours' : 'Envoyer'}
-          className="shrink-0"
+          className="hidden shrink-0 sm:inline-flex"
         >
-          <span className="hidden sm:inline">{enCours ? 'Envoi…' : 'Envoyer'}</span>
+          {enCours ? 'Envoi…' : 'Envoyer'}
         </Button>
       </div>
 

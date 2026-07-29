@@ -640,6 +640,7 @@
       "typeIdentification": "Identification",
       "typeSystem": "Système",
       "messageReaction": "a réagi à ton post",
+      "messageReactionEchange": "a réagi à ton échange",
       "messageFollow": "a commencé à te suivre",
       "messagePost": "a publié une nouvelle rencontre nature",
       "messagePostGrouped": "a publié {{count}} nouvelles rencontres nature",

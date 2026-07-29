@@ -390,7 +390,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
                             ''}
                         </span>{' '}
                         <span className="text-muted-foreground">
-                          {getMessage(notif.type, t, notif.group_count)}
+                          {getMessage(notif.type, t, notif.group_count, notif.reference_type)}
                         </span>
                       </p>
                       {/*

@@ -241,7 +241,7 @@ export default function NotificationsPage() {
                           ''}
                       </span>{' '}
                       <span className="text-muted-foreground">
-                        {getMessage(n.type, t, n.group_count)}
+                        {getMessage(n.type, t, n.group_count, n.reference_type)}
                       </span>
                     </p>
                     {/*
