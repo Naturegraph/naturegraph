@@ -151,10 +151,17 @@ export function getMessage(
   type: NotificationType,
   t: (k: string, opts?: Record<string, unknown>) => string,
   groupCount = 1,
+  referenceType?: string | null,
 ): string {
   switch (type) {
     case 'reaction':
-      return t('home.notifications.messageReaction')
+      // Reaction sur un ECHANGE : le trigger `notify_on_comment_reaction` marque
+      // `reference_type = 'echange'`. Meme geste qu'un like de publication, mais
+      // cible differente : le dire clairement evite le "a reagi a ton post"
+      // trompeur qui se melangeait avec le reste (retour Nicolas 2026-07-29).
+      return referenceType === 'echange'
+        ? t('home.notifications.messageReactionEchange')
+        : t('home.notifications.messageReaction')
     case 'follow':
       return t('home.notifications.messageFollow')
     case 'post':
@@ -209,6 +216,11 @@ export function getReactionLabel(raw: string | null, t: (k: string) => string): 
 export function resolveDeepLink(n: Notification): string | null {
   if (!n.reference_id || !n.reference_type) return null
   switch (n.reference_type) {
+    // 'echange' : reaction sur un echange. `reference_id` pointe la publication
+    // hote ; on ouvre directement son fil, pile sur l'echange qui vient d'etre
+    // aime (retour Nicolas 2026-07-29).
+    case 'echange':
+      return `/post/${n.reference_id}?echanges=1`
     case 'post':
       // NG-049 : une notification d'echange doit ouvrir LE FIL, pas seulement
       // la publication. Depuis que le fil est replie par defaut, atterrir sur

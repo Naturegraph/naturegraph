@@ -640,6 +640,7 @@
       "typeIdentification": "Identification",
       "typeSystem": "System",
       "messageReaction": "reacted to your post",
+      "messageReactionEchange": "reacted to your exchange",
       "messageFollow": "started following you",
       "messagePost": "published a new nature encounter",
       "messagePostGrouped": "published {{count}} new nature encounters",
