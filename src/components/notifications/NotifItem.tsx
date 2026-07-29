@@ -32,7 +32,15 @@ export function NotifIcon({ type }: { type: NotificationType }) {
     },
     post: { Icon: FileText, bg: 'bg-primary-light', color: 'text-[var(--color-link)]' },
     species_digest: { Icon: Leaf, bg: 'bg-teal-light/30', color: 'text-teal-dark' },
-    comment: { Icon: MessageCircle, bg: 'bg-primary-light', color: 'text-[var(--color-link)]' },
+    // Echange = interaction SOCIALE : meme famille de couleur que les reactions
+    // (amber) plutot que le violet d'action, pour ne pas melanger la couleur de
+    // marque avec les notifs sociales (decision Nicolas 2026-07-28). L'icone
+    // (bulle) le distingue d'un coeur.
+    comment: {
+      Icon: MessageCircle,
+      bg: 'bg-[var(--color-warning-bg)]',
+      color: 'text-[var(--color-warning)]',
+    },
     mention: { Icon: AtSign, bg: 'bg-primary-light', color: 'text-[var(--color-link)]' },
     identification: { Icon: Award, bg: 'bg-teal-light/30', color: 'text-teal-dark' },
     system: { Icon: Bell, bg: 'bg-muted', color: 'text-muted-foreground' },
@@ -66,7 +74,8 @@ export function NotifChip({ type, t }: { type: NotificationType; t: (k: string) 
     follow: 'bg-[var(--color-success-bg)] text-[var(--color-success)]',
     post: 'bg-primary-light text-[var(--color-link)]',
     species_digest: 'bg-teal-light/30 text-teal-dark',
-    comment: 'bg-primary-light text-[var(--color-link)]',
+    // Echange = social : meme amber que les reactions (cf. NotifIcon).
+    comment: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
     mention: 'bg-primary-light text-[var(--color-link)]',
     identification: 'bg-teal-light/30 text-teal-dark',
     system: 'bg-muted text-muted-foreground',
