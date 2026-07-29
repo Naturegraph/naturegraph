@@ -54,6 +54,8 @@ interface EchangeItemProps {
   ecritParAuteurPublication: boolean
   /** Une reponse : avatar et bulle legerement resserres. */
   estUneReponse?: boolean
+  /** `false` sur un Instant nature (paysage) : pas d'action "Proposer une espèce". */
+  especesAutorisees?: boolean
   /** Repondre, avec l'intention voulue. Absent = on ne repond pas ici. */
   onRepondre?: (intention: 'reaction' | 'identification') => void
   /** Panneau de redaction actuellement ouvert sous ce message, pour l'etat actif. */
@@ -285,6 +287,7 @@ export function EchangeItem({
   suitAuteur = null,
   ecritParAuteurPublication,
   estUneReponse = false,
+  especesAutorisees = true,
   onRepondre,
   redactionOuverte = null,
   onSupprimer,
@@ -501,14 +504,20 @@ export function EchangeItem({
               >
                 Répondre
               </Action>
-              <Puce />
-              <Action
-                icone={MessageSquarePlus}
-                actif={redactionOuverte === 'identification'}
-                onClick={() => onRepondre('identification')}
-              >
-                Proposer une espèce
-              </Action>
+              {/* "Proposer une espèce" masque sur un Instant nature (paysage :
+                  rien a identifier). Les echanges classiques restent. */}
+              {especesAutorisees && (
+                <>
+                  <Puce />
+                  <Action
+                    icone={MessageSquarePlus}
+                    actif={redactionOuverte === 'identification'}
+                    onClick={() => onRepondre('identification')}
+                  >
+                    Proposer une espèce
+                  </Action>
+                </>
+              )}
             </>
           )}
         </div>

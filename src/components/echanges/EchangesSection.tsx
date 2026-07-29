@@ -45,9 +45,19 @@ import type { Echange, IntentionEchange, SuggestionEspece } from '@/services/ech
 interface EchangesSectionProps {
   postId: string
   auteurPublicationId: string
+  /**
+   * Autorise la proposition d'espece dans le fil. `false` sur un Instant nature
+   * (paysage/phenomene) : on n'identifie pas une espece sur ce qui n'en montre
+   * pas, mais les echanges classiques restent. Defaut `true`.
+   */
+  especesAutorisees?: boolean
 }
 
-export function EchangesSection({ postId, auteurPublicationId }: EchangesSectionProps) {
+export function EchangesSection({
+  postId,
+  auteurPublicationId,
+  especesAutorisees = true,
+}: EchangesSectionProps) {
   const { user, profile, isAuthenticated } = useAuth()
   const toast = useToast()
 
@@ -162,6 +172,7 @@ export function EchangesSection({ postId, auteurPublicationId }: EchangesSection
           auteurPublicationId={auteurPublicationId}
           enCours={publier.isPending}
           especesDejaProposees={mesEspeces}
+          especesAutorisees={especesAutorisees}
           etatVide={echanges.length === 0}
           onEnvoyer={envoyer}
           onSupprimer={(id) =>

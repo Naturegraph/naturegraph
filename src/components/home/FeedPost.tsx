@@ -1153,7 +1153,13 @@ export function FeedPost({
             <div className="h-24 animate-pulse bg-surface-bubble md:rounded-b-card" aria-hidden />
           }
         >
-          <EchangesSection postId={id} auteurPublicationId={authorId} />
+          {/* Instant nature (paysage) : pas de proposition d'espece, juste les
+              echanges. Une identification n'a pas de sens sur un paysage. */}
+          <EchangesSection
+            postId={id}
+            auteurPublicationId={authorId}
+            especesAutorisees={postType !== 'nature_instant'}
+          />
         </Suspense>
       )}
     </article>

@@ -49,6 +49,8 @@ interface EchangeFilProps {
   onReagir: (echange: Echange) => void
   /** Especes deja proposees par la personne connectee, pour bloquer le doublon. */
   especesDejaProposees?: string[]
+  /** `false` sur un Instant nature (paysage) : pas de proposition d'espèce. */
+  especesAutorisees?: boolean
   /** Auteurs deja suivis, pour le libelle du menu. */
   auteursSuivis?: string[]
 }
@@ -66,6 +68,7 @@ export function EchangeFil({
   onBasculerSuivi,
   onReagir,
   especesDejaProposees,
+  especesAutorisees = true,
   auteursSuivis = [],
 }: EchangeFilProps) {
   // `null` = champ ferme. Sinon, l'intention du geste en cours.
@@ -83,6 +86,7 @@ export function EchangeFil({
           peutAgir={peutEcrire}
           suitAuteur={auteursSuivis.includes(parent.auteurId)}
           ecritParAuteurPublication={parent.auteurId === auteurPublicationId}
+          especesAutorisees={especesAutorisees}
           onRepondre={(intention) => setRedaction((v) => (v === intention ? null : intention))}
           redactionOuverte={redaction}
           onSupprimer={() => onSupprimer(parent.id)}

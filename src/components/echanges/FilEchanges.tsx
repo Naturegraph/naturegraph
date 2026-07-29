@@ -27,6 +27,12 @@ interface FilEchangesProps {
   enCours?: boolean
   /** Especes deja proposees par la personne connectee, pour bloquer le doublon. */
   especesDejaProposees?: string[]
+  /**
+   * Autorise la proposition d'espece. `false` sur un "Instant nature" (paysage,
+   * phenomene) : on ne propose pas d'espece sur ce qui n'en montre pas, mais on
+   * garde les echanges classiques. Defaut `true` (rencontre animale).
+   */
+  especesAutorisees?: boolean
   onEnvoyer: (
     contenu: string,
     intention: IntentionEchange,
@@ -51,6 +57,7 @@ export function FilEchanges({
   auteurPublicationId,
   enCours = false,
   especesDejaProposees,
+  especesAutorisees = true,
   onEnvoyer,
   onSupprimer,
   onModifier,
@@ -90,6 +97,7 @@ export function FilEchanges({
                   peutEcrire={peutEcrire}
                   auteurPublicationId={auteurPublicationId}
                   especesDejaProposees={especesDejaProposees}
+                  especesAutorisees={especesAutorisees}
                   onRepondre={(contenu, intention, parentId, suggestion) =>
                     onEnvoyer(contenu, intention, parentId, suggestion)
                   }
@@ -118,6 +126,7 @@ export function FilEchanges({
           peutEcrire={peutEcrire}
           enCours={enCours}
           especesDejaProposees={especesDejaProposees}
+          especesAutorisees={especesAutorisees}
           onPublier={(contenu, intention, suggestion) =>
             onEnvoyer(contenu, intention, null, suggestion)
           }

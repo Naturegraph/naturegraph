@@ -56,6 +56,8 @@ interface EchangeComposerProps {
   invite?: string
   /** Especes deja proposees par la personne connectee, pour bloquer le doublon. */
   especesDejaProposees?: string[]
+  /** `false` sur un Instant nature (paysage) : pas de bouton "Proposer une espèce". */
+  especesAutorisees?: boolean
 }
 
 /** Seuil d'apparition du compteur : on ne stresse qu'a l'approche de la limite. */
@@ -73,6 +75,7 @@ export function EchangeComposer({
   compact = false,
   invite,
   especesDejaProposees,
+  especesAutorisees = true,
 }: EchangeComposerProps) {
   const navigate = useNavigate()
   const champ = useRef<HTMLTextAreaElement>(null)
@@ -156,13 +159,14 @@ export function EchangeComposer({
               // inline-block : sans lui le champ mesurait 54 au lieu de 48.
               'block max-h-40 w-full resize-none bg-transparent py-[11px] pl-4 text-base leading-6 text-foreground',
               'placeholder:text-muted-foreground focus-visible:outline-none',
-              compact ? 'pr-4' : 'pr-14',
+              compact || !especesAutorisees ? 'pr-4' : 'pr-14',
             ].join(' ')}
           />
 
           {/* "Proposer une espèce" : dans le champ a droite, comme la maquette.
-              Masque en mode reponse, ou l'action existe deja sur le message. */}
-          {!compact && (
+              Masque en mode reponse (action deja sur le message) ET sur un
+              Instant nature (paysage : rien a identifier). */}
+          {!compact && especesAutorisees && (
             <button
               type="button"
               onClick={proposerEspece}
