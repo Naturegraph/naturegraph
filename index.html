@@ -28,17 +28,14 @@
          monte : un eclair blanc en pleine nuit, exactement ce que le mode
          sombre est cense eviter. Il est volontairement inline et minuscule,
          car il doit s'executer avant la feuille de style.
-         Meme logique que `useTheme` : choix explicite d'abord, systeme sinon. -->
+         Meme logique que `useTheme` : choix explicite enregistre, sinon CLAIR.
+         On NE suit PAS le systeme (decision Nicolas 2026-07-29) : defaut light
+         pour tous, le sombre est opt-in. -->
     <script>
       (function () {
         try {
           var choix = localStorage.getItem('naturegraph:theme')
-          var theme =
-            choix === 'light' || choix === 'dark'
-              ? choix
-              : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-                ? 'dark'
-                : 'light'
+          var theme = choix === 'light' || choix === 'dark' ? choix : 'light'
           document.documentElement.setAttribute('data-theme', theme)
           document.documentElement.style.colorScheme = theme
         } catch (e) {
@@ -100,10 +97,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Mulish:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <script>
-      // MVP : thème forcé en light : dark mode post-MVP
-      document.documentElement.setAttribute('data-theme', 'light');
-    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
