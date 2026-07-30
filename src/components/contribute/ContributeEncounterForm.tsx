@@ -760,9 +760,10 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
                 type="button"
                 onClick={onClose}
                 aria-label={t('common.close')}
-                /* Figma 6385:47503 : bg Content/Neutral/Primary-Inverse #F0F0F5
-                   (très clair, subtil : pas le `bg-muted` plus foncé). */
-                className="size-8 shrink-0 rounded-full bg-[#f0f0f5] hover:bg-[#e5e5ea] flex items-center justify-center text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                /* Rond neutre subtil. Token `bg-muted` (et non un hex en dur)
+                   pour s'adapter au theme : en sombre, un #F0F0F5 fige laissait
+                   un rond blanc avec un X invisible (retour Nicolas 2026-07-30). */
+                className="size-8 shrink-0 rounded-full bg-muted hover:bg-muted/70 flex items-center justify-center text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 <X className="size-5" strokeWidth={2} aria-hidden="true" />
               </button>
