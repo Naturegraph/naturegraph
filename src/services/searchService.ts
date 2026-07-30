@@ -208,7 +208,11 @@ export async function searchSpecies(
           p_class_filter: classFilter ?? undefined,
           p_max_results: limit,
         }),
-      8000,
+      // 15 s (et non 8) : au 1er usage d'une session, le cold start serverless
+      // Supabase (3-5 s) + reseau mobile lent depassaient 8 s et l'UI affichait
+      // "connexion lente / reseau" alors que la requete aboutissait (retour users
+      // soft launch 2026-07-30). La requete elle-meme est rapide (~50 ms indexee).
+      15000,
       'species search',
     )
     const { data, error } = result
@@ -285,7 +289,9 @@ export async function searchTaxonomy(
           p_class_filter: classFilter ?? undefined,
           p_max_results: limit,
         }),
-      8000,
+      // 15 s (et non 8) : absorbe le cold start serverless + reseau mobile lent
+      // au 1er usage (cf. searchSpecies ci-dessus, retour users 2026-07-30).
+      15000,
       'taxonomy search',
     )
     const { data, error } = result
