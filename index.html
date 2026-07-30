@@ -43,6 +43,20 @@
         }
       })()
     </script>
+    <!-- Fond thematise pose DES LE PREMIER PAINT (avant le bundle CSS qui, lui,
+         n'arrive qu'apres). Sans ca, le navigateur peint du blanc le temps de
+         charger la feuille de styles : un residu blanc a chaque chargement /
+         refresh (retour Nicolas 2026-07-30). Le script ci-dessus a deja pose
+         data-theme, donc la bonne regle s'applique immediatement. Valeurs =
+         --color-bg-primary (light #FFFDF8, dark #13131A). -->
+    <style>
+      html {
+        background-color: #fffdf8;
+      }
+      html[data-theme='dark'] {
+        background-color: #13131a;
+      }
+    </style>
     <!-- mobile-web-app-capable est la nouvelle clé standard. apple-mobile-web-app-capable
          reste pour iOS Safari uniquement (deprecated dans Chrome 116+ mais necessaire pour iOS). -->
     <meta name="mobile-web-app-capable" content="yes" />

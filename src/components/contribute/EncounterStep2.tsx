@@ -792,7 +792,7 @@ function ObservationRow({
       {/* Identite : avatar emoji 40px (#E7E9F7) + nom + nom latin */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <span
-          className="size-10 shrink-0 rounded-full bg-[#e7e9f7] flex items-center justify-center text-lg leading-none"
+          className="size-10 shrink-0 rounded-full bg-primary-light flex items-center justify-center text-lg leading-none"
           aria-hidden="true"
         >
           {entry.isUnknown ? (
@@ -805,7 +805,7 @@ function ObservationRow({
           <span className="text-sm font-bold text-foreground truncate">
             {entry.isUnknown ? t('contribute.panel.unknownSpecies') : entry.species?.commonName}
             {entry.species?.rank === 'family' && (
-              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-[#e7e9f7] text-[var(--color-link)] align-middle">
+              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-primary-light text-[var(--color-link)] align-middle">
                 {t('contribute.panel.familyBadge', { defaultValue: 'Famille' })}
               </span>
             )}
@@ -926,8 +926,11 @@ export function EncounterStep2({
           </p>
           {groupObservations(observations).map((grp) => (
             <section key={grp.key} aria-label={grp.label} className="flex flex-col gap-4">
-              {/* Pill de groupe : bg #E7E9F7, label 14px bold */}
-              <span className="inline-flex items-center self-start h-8 px-3 rounded-full bg-[#e7e9f7] text-foreground text-sm font-bold">
+              {/* Pill de groupe : token theme-aware (avant : bg #E7E9F7 en dur +
+                  text-foreground = pilule blanche a texte invisible en dark,
+                  retour Nicolas 2026-07-30). Meme combo prouve que les autres
+                  pilules : bg-primary-light + texte --color-link. */}
+              <span className="inline-flex items-center self-start h-8 px-3 rounded-full bg-primary-light text-[var(--color-link)] text-sm font-bold">
                 {grp.label}
               </span>
               <ul className="flex flex-col gap-4">

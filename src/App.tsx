@@ -82,22 +82,20 @@ function BootSplash({ children }: { children: React.ReactNode }) {
   // on considere l'animation comme deja "finie" et on attend juste auth.
   // Sinon, on attend min 1800ms (animation video) ET auth resolu.
   // Le fail-safe (forceHide) libere apres 6s dans tous les cas.
-  const animMinReached = skipSplash || animFinished
-  const shouldBlock = !forceHide && (isAuthLoading || !animMinReached)
+  // REFRESH / navigation dans la MEME session : le splash ne sert QU'AU tout
+  // premier lancement de l'app ("on l'utilise uniquement pour lancer l'app",
+  // Nicolas). Ici on ne remet AUCUN ecran de chargement par-dessus : l'app rend
+  // directement, et chaque route gere son propre etat (ProtectedRoute ->
+  // AppLoader, Home -> squelette du feed). Avant, un ecran vide s'ajoutait au
+  // squelette = "deux loaders" + un residu blanc au refresh (2026-07-30).
+  if (skipSplash) return <>{children}</>
+
+  // Tout premier lancement de la session : splash video branded, le temps de
+  // l'animation ET de la resolution d'auth (evite que le Router decide Landing
+  // avant que la session Supabase soit restauree, NG-004B).
+  const shouldBlock = !forceHide && (isAuthLoading || !animFinished)
 
   if (shouldBlock) {
-    // Si on est juste en train d'attendre auth (skipSplash actif + anim deja
-    // skip), on n'affiche PAS la video lourde mais un simple ecran neutre
-    // pour ne pas surprendre l'user au refresh.
-    if (skipSplash) {
-      return (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-background"
-          aria-busy="true"
-          aria-label="Restauration de la session"
-        />
-      )
-    }
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-cream-lighter overflow-hidden">
         <video
