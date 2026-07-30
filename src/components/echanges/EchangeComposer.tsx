@@ -206,8 +206,12 @@ export function EchangeComposer({
             type="submit"
             disabled={peutEcrire && !pret}
             aria-label={enCours ? 'Envoi en cours' : 'Envoyer'}
+            // size-12 (48px) = MEME hauteur que le champ (`min-h-12`) : le rond
+            // et le champ font la meme taille et s'alignent exactement (avant :
+            // 40px, plus petit et decale vers le bas). Aligne aussi sur le DS
+            // Button desktop (taille md = 48px).
             className={[
-              'inline-flex size-10 items-center justify-center rounded-full',
+              'inline-flex size-12 items-center justify-center rounded-full',
               'bg-[var(--color-action-default)] text-[var(--color-text-white)] transition-all',
               'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action-default)]',
               'disabled:cursor-not-allowed disabled:opacity-50',
