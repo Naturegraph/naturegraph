@@ -184,43 +184,49 @@ export function EchangeComposer({
         </div>
 
         {/*
-          Envoi : deux rendus selon la largeur (decision Nicolas 2026-07-29).
+          Envoi : deux rendus selon la largeur (decision Nicolas 2026-07-29),
+          CHACUN dans un conteneur qui gere seul l'affichage responsive.
 
-          MOBILE (< 640px) : un vrai bouton ROND de 40px, icone parfaitement
-          centree, jumeau visuel du bouton "Proposer une espece" (meme `size-10`,
-          memes tokens). On ne detourne PAS le `Button` du design system ici : sa
-          taille md est un pill de 48px avec une marge d'icone (`mr-2`) qui
-          subsiste meme libelle masque et decale le picto vers la gauche. Un
-          bouton dedie garantit le cercle et le centrage.
+          Pourquoi des <div> d'enrobage et pas `hidden`/`sm:hidden` poses
+          directement sur les boutons : le `Button` du design system force
+          `inline-flex` dans ses classes de base, ce qui l'emportait sur un
+          `hidden` ajoute par-dessus (ordre des utilitaires Tailwind) -> les DEUX
+          boutons s'affichaient en meme temps. Un conteneur neutre (display block
+          par defaut) n'a pas ce conflit : exactement un bouton par palier.
 
-          DESKTOP (>= 640px) : le `Button` du design system, icone + libelle.
-
-          Les deux portent `type="submit"` : un seul est visible par palier, le
-          second est retire du flux (`hidden`), donc non cliquable.
+          MOBILE (< 640px) : un vrai bouton ROND de 40px, icone centree, jumeau
+          visuel du bouton "Proposer une espece" (meme `size-10`, memes tokens).
+          On ne detourne PAS le `Button` du design system : sa taille md est un
+          pill de 48px avec une marge d'icone qui decale le picto une fois le
+          libelle masque. DESKTOP (>= 640px) : `Button` du design system, icone +
+          libelle. Les deux sont `type="submit"` mais un seul est dans le flux.
         */}
-        <button
-          type="submit"
-          disabled={peutEcrire && !pret}
-          aria-label={enCours ? 'Envoi en cours' : 'Envoyer'}
-          className={[
-            'inline-flex size-10 shrink-0 items-center justify-center rounded-full sm:hidden',
-            'bg-[var(--color-action-default)] text-[var(--color-text-white)] transition-all',
-            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action-default)]',
-            'disabled:cursor-not-allowed disabled:opacity-50',
-          ].join(' ')}
-        >
-          <Send className="size-5" aria-hidden="true" />
-        </button>
-        <Button
-          type="submit"
-          variant="primary"
-          size="md"
-          disabled={peutEcrire && !pret}
-          icon={<Send className="size-5" aria-hidden="true" />}
-          className="hidden shrink-0 sm:inline-flex"
-        >
-          {enCours ? 'Envoi…' : 'Envoyer'}
-        </Button>
+        <div className="shrink-0 sm:hidden">
+          <button
+            type="submit"
+            disabled={peutEcrire && !pret}
+            aria-label={enCours ? 'Envoi en cours' : 'Envoyer'}
+            className={[
+              'inline-flex size-10 items-center justify-center rounded-full',
+              'bg-[var(--color-action-default)] text-[var(--color-text-white)] transition-all',
+              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action-default)]',
+              'disabled:cursor-not-allowed disabled:opacity-50',
+            ].join(' ')}
+          >
+            <Send className="size-5" aria-hidden="true" />
+          </button>
+        </div>
+        <div className="hidden shrink-0 sm:block">
+          <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            disabled={peutEcrire && !pret}
+            icon={<Send className="size-5" aria-hidden="true" />}
+          >
+            {enCours ? 'Envoi…' : 'Envoyer'}
+          </Button>
+        </div>
       </div>
 
       {/* Compteur aligne a droite, comme dans le formulaire de contribution.
