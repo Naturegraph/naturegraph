@@ -15,7 +15,7 @@ import { useState } from 'react'
 import { FilEchanges } from '@/components/echanges/FilEchanges'
 import { construireFils } from '@/components/echanges/grouperParJour'
 import { ECHANGES_MOCK, AUTEUR_PUBLICATION_MOCK } from '@/data/mock/echangesMock'
-import { cleEspece } from '@/services/echangeService'
+import { cleEspece, phraseGenerique } from '@/services/echangeService'
 import { validerEchange, EchangeInvalideError } from '@/lib/echangeValidation'
 import type { Echange, IntentionEchange, SuggestionEspece } from '@/services/echangeService'
 
@@ -46,10 +46,7 @@ export default function DevEchangesPreview() {
     // ment sur le comportement reel est pire que pas de demonstration.
     let texte: string
     try {
-      texte =
-        contenu.trim() || !suggestion
-          ? validerEchange(contenu)
-          : `Je pense qu’il s’agit plutôt de : ${suggestion.label}`
+      texte = contenu.trim() || !suggestion ? validerEchange(contenu) : phraseGenerique(suggestion)
       setRefus(null)
     } catch (e) {
       setRefus(e instanceof EchangeInvalideError ? e.message : 'Message refusé')

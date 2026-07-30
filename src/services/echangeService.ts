@@ -271,17 +271,32 @@ export async function listerEchanges(postId: string): Promise<Echange[]> {
 // ─── Ecriture ─────────────────────────────────────────────────────────────────
 
 /**
+ * Amorce de la phrase auto, ADAPTEE au niveau de confiance (du plus prudent au
+ * plus affirme). Le badge de certitude affiche deja le niveau exact juste a
+ * cote ; le texte ne fait que donner le bon ton. On evite ainsi l'ancien
+ * "il s'agit plutot de" qui sonnait hesitant meme quand la personne se disait
+ * "Certain" (retour Nicolas 2026-07-30).
+ */
+const AMORCE_PAR_CONFIANCE: Record<NiveauConfiance, string> = {
+  1: 'Une piste, à confirmer :',
+  2: 'Selon moi, ça pourrait être :',
+  3: 'Je pense que c’est :',
+  4: 'Aucun doute :',
+}
+
+/**
  * Phrase posee a la place du texte quand on suggere une espece sans rien
  * ecrire.
  *
  * Publier un message vide surmonte d'une pastille laisserait un blanc bizarre
  * dans le fil ; obliger a ecrire ajouterait un frein juste avant le geste
  * utile. La phrase generique tranche : le message se lit tout seul, et qui veut
- * argumenter le remplace par ses propres mots.
+ * argumenter le remplace par ses propres mots. Exportee pour rester la SOURCE
+ * UNIQUE : l'optimistic de useEchanges et la preview dev l'utilisent aussi.
  */
-function phraseGenerique(suggestion: SuggestionEspece | null): string {
+export function phraseGenerique(suggestion: SuggestionEspece | null): string {
   if (!suggestion) return ''
-  return `Je pense qu’il s’agit plutôt de : ${suggestion.label}`
+  return `${AMORCE_PAR_CONFIANCE[suggestion.confiance]} ${suggestion.label}`
 }
 
 /**

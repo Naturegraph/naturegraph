@@ -21,6 +21,7 @@ import {
   modifierEchange,
   basculerEchangeUtile,
   basculerReactionEchange,
+  phraseGenerique,
   type Echange,
   type IntentionEchange,
   type TypeReactionEchange,
@@ -81,11 +82,11 @@ export function usePublierEchange(
         id: `provisoire-${Date.now()}`,
         postId,
         auteurId: auteur.id,
-        // Meme repli que le service : sans ce texte, une suggestion sans mot
-        // afficherait une bulle vide pendant l'aller-retour serveur.
-        contenu:
-          params.contenu.trim() ||
-          (params.suggestion ? `Je pense qu’il s’agit plutôt de : ${params.suggestion.label}` : ''),
+        // Meme repli que le service (SOURCE UNIQUE phraseGenerique) : sans ce
+        // texte, une suggestion sans mot afficherait une bulle vide pendant
+        // l'aller-retour serveur, et avec un libelle DIFFERENT du serveur elle
+        // "sauterait" au remplacement de l'optimistic.
+        contenu: params.contenu.trim() || phraseGenerique(params.suggestion ?? null),
         intention: params.intention,
         utile: false,
         creeLe: new Date().toISOString(),
