@@ -44,16 +44,39 @@ export class SessionExpiredError extends Error {
 }
 
 /**
- * Verifie que la session courante est encore valide cote serveur.
+ * Detecte un refresh token DEFINITIVEMENT mort (revoque, absent, deja consomme).
+ * C'est le SEUL cas ou l'on doit reellement deconnecter : tout le reste (access
+ * token juste expire, coupure reseau) est rattrapable par un refresh ou un
+ * retry, et ne doit PAS faire perdre son brouillon a l'utilisateur.
+ */
+function isDeadRefreshToken(err: unknown): boolean {
+  const m = (err instanceof Error ? err.message : String(err ?? '')).toLowerCase()
+  return (
+    m.includes('refresh_token_not_found') ||
+    m.includes('invalid refresh token') ||
+    m.includes('refresh token not found') ||
+    m.includes('already used')
+  )
+}
+
+/**
+ * Verifie que la session courante est encore valide cote serveur, en la
+ * REPARANT d'abord si possible au lieu de la detruire.
  *
- * - Si valide, retourne { user }.
- * - Si invalide (JWT expire, refresh mort), purge le storage + signOut
- *   local + redirige vers /welcome avec un flag pour afficher un toast
- *   sur la page d arrivee, puis throw SessionExpiredError.
+ * Ordre (du moins destructif au plus destructif) :
+ *   1. getUser() OK -> session valide, on retourne { user }.
+ *   2. getUser() KO (le plus souvent : ACCESS token expire au retour
+ *      d'arriere-plan mobile, alors que le REFRESH token est encore bon)
+ *      -> on tente `refreshSession()`. Si ca marche, la session est reparee
+ *      de facon transparente : l'utilisateur ne voit RIEN, ne recommence RIEN.
+ *   3. Le refresh echoue avec un refresh token MORT -> la seulement on purge +
+ *      redirige vers /login (SessionExpiredError). Reste rare.
+ *   4. Le refresh echoue de facon TRANSITOIRE (reseau) -> on ne detruit RIEN :
+ *      on remonte une erreur normale, l'appelant affiche "reessaie" et le
+ *      brouillon (auto-save localStorage + photos IndexedDB) reste intact.
  *
- * Le throw est intentionnel, il interrompt le flux appelant (try/catch
- * dans le service / hook le capture proprement). Si l appelant ne capture
- * pas, l erreur remonte mais l user voit deja la nouvelle page.
+ * C'est ce qui evite le "il faut tout recommencer / relancer la session a la
+ * main" quand l'app revient de veille (retour Nicolas 2026-07-30, critique).
  */
 export async function assertActiveSession(): Promise<ActiveSession> {
   if (!supabase) {
@@ -61,15 +84,33 @@ export async function assertActiveSession(): Promise<ActiveSession> {
   }
 
   try {
+    // 1. Session deja valide ?
     const { data, error } = await supabase.auth.getUser()
-    if (error || !data?.user) {
+    if (!error && data?.user) {
+      return { user: { id: data.user.id, email: data.user.email ?? null } }
+    }
+
+    // 2. Access token probablement expire : on REPARE via le refresh token
+    //    avant tout, plutot que de deconnecter. Cas ultra frequent au retour
+    //    d'arriere-plan sur mobile.
+    const { data: refreshed, error: refreshErr } = await supabase.auth.refreshSession()
+    if (!refreshErr && refreshed?.user) {
+      return { user: { id: refreshed.user.id, email: refreshed.user.email ?? null } }
+    }
+
+    // 3. Refresh token reellement mort : la, on doit reauth.
+    if (isDeadRefreshToken(refreshErr)) {
       await forceReauth()
       throw new SessionExpiredError()
     }
-    return { user: { id: data.user.id, email: data.user.email ?? null } }
+
+    // 4. Echec transitoire (reseau) : on NE detruit PAS la session. On laisse
+    //    une chance a l'appelant (le pipeline de publication retente + le
+    //    watchdog gere), en gardant le brouillon intact.
+    throw new Error('Session momentanement indisponible, reessaie dans un instant.')
   } catch (err) {
     if (err instanceof SessionExpiredError) throw err
-    // Erreur reseau ou autre, on laisse passer une chance, l appelant gere
+    // Erreur reseau ou autre : on laisse passer une chance, l appelant gere.
     throw err
   }
 }

@@ -311,7 +311,7 @@ export function NotebookPanel({ onClose }: NotebookPanelProps) {
                 type="button"
                 onClick={onClose}
                 aria-label="Fermer"
-                className="size-8 shrink-0 rounded-full bg-[#f0f0f5] hover:bg-[#e5e5ea] flex items-center justify-center text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="size-8 shrink-0 rounded-full bg-muted hover:bg-muted/70 flex items-center justify-center text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 <X className="size-5" strokeWidth={2} aria-hidden="true" />
               </button>
