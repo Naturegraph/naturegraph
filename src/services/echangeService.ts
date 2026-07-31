@@ -281,7 +281,7 @@ const AMORCE_PAR_CONFIANCE: Record<NiveauConfiance, string> = {
   1: 'Une piste, à confirmer :',
   2: 'Selon moi, ça pourrait être :',
   3: 'Je pense que c’est :',
-  4: 'Aucun doute :',
+  4: 'Aucun doute, c’est :',
 }
 
 /**
