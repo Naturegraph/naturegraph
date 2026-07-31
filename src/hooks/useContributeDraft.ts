@@ -15,14 +15,18 @@
  *   serialisables). Seul le state metier (titre, description, dates, especes,
  *   localisation, etc.) est sauvegarde. Si l user refresh, les photos doivent
  *   etre re-uploadees mais le reste est intact.
- * - TTL court (30 min) volontaire (Nicolas : "pas 7 jours, quelques minutes").
- *   Au-dela on considere que le user a abandonne et on purge.
+ * - TTL 24 h (Nicolas 2026-07-30). AVANT : 30 min. Trop court pour l'usage reel
+ *   sur le terrain : on sort prendre des photos, on revient, on ressort chercher
+ *   son texte, on revient... ces va-et-vient (surtout quand l'OS mobile tue
+ *   l'app en arriere-plan) depassaient 30 min et le brouillon etait PURGE ->
+ *   "on perd des observations". 24 h couvre une sortie nature complete sans
+ *   laisser trainer un brouillon des jours. On purge au-dela, ou au submit.
  */
 
 import { useEffect, useRef } from 'react'
 
 const STORAGE_PREFIX = 'naturegraph-draft-'
-const DEFAULT_TTL_MS = 30 * 60 * 1000
+const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000
 
 interface DraftEnvelope<T> {
   /** Timestamp ms de la derniere ecriture, pour TTL */

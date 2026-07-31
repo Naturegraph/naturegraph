@@ -25,15 +25,19 @@
  */
 
 import { useMemo, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   useEchanges,
   usePublierEchange,
   useSupprimerEchange,
   useModifierEchange,
   useBasculerReactionEchange,
+  useRealtimeEchanges,
+  cleEchanges,
 } from '@/hooks/useEchanges'
 import { useFollowing, useToggleFollow } from '@/hooks/useFollow'
 import { ReportModal } from '@/components/home/ReportModal'
+import { SectionErrorBoundary } from '@/components/layout/SectionErrorBoundary'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { LoadingState } from '@/components/ui'
@@ -60,6 +64,11 @@ export function EchangesSection({
 }: EchangesSectionProps) {
   const { user, profile, isAuthenticated } = useAuth()
   const toast = useToast()
+  const qc = useQueryClient()
+
+  // Temps reel SOBRE : tant que ce fil est ouvert, les echanges des autres et
+  // le compteur se mettent a jour en direct, sans refresh (2026-07-30).
+  useRealtimeEchanges(postId)
 
   const { data: echanges = [], isLoading } = useEchanges(postId)
   const publier = usePublierEchange(postId, {
@@ -150,48 +159,54 @@ export function EchangesSection({
 
   return (
     <section aria-label="Échanges">
-      {isLoading && (
-        <div className="px-4 pb-4 md:px-6 md:pb-6">
-          <LoadingState variant="skeleton" rows={2} label="Chargement des échanges" />
-        </div>
-      )}
+      <SectionErrorBoundary
+        label="echanges"
+        onReset={() => qc.invalidateQueries({ queryKey: cleEchanges(postId) })}
+        resetKeys={[postId]}
+      >
+        {isLoading && (
+          <div className="px-4 pb-4 md:px-6 md:pb-6">
+            <LoadingState variant="skeleton" rows={2} label="Chargement des échanges" />
+          </div>
+        )}
 
-      {echangeSignale && (
-        <ReportModal
-          postId={postId}
-          commentId={echangeSignale.id}
-          onClose={() => setEchangeSignale(null)}
-        />
-      )}
+        {echangeSignale && (
+          <ReportModal
+            postId={postId}
+            commentId={echangeSignale.id}
+            onClose={() => setEchangeSignale(null)}
+          />
+        )}
 
-      {!isLoading && (
-        <FilEchanges
-          groupes={groupes}
-          moiId={profile?.id ?? null}
-          peutEcrire={isAuthenticated}
-          auteurPublicationId={auteurPublicationId}
-          enCours={publier.isPending}
-          especesDejaProposees={mesEspeces}
-          especesAutorisees={especesAutorisees}
-          etatVide={echanges.length === 0}
-          onEnvoyer={envoyer}
-          onSupprimer={(id) =>
-            supprimer.mutate(id, {
-              onError: () => toast.error('Suppression impossible pour le moment'),
-            })
-          }
-          onModifier={(id, contenu) =>
-            modifier.mutate(
-              { echangeId: id, contenu },
-              { onError: () => toast.error('Ta modification n’a pas pu être enregistrée') },
-            )
-          }
-          onSignaler={setEchangeSignale}
-          onBasculerSuivi={onBasculerSuivi}
-          auteursSuivis={auteursSuivis}
-          onReagir={onReagir}
-        />
-      )}
+        {!isLoading && (
+          <FilEchanges
+            groupes={groupes}
+            moiId={profile?.id ?? null}
+            peutEcrire={isAuthenticated}
+            auteurPublicationId={auteurPublicationId}
+            enCours={publier.isPending}
+            especesDejaProposees={mesEspeces}
+            especesAutorisees={especesAutorisees}
+            etatVide={echanges.length === 0}
+            onEnvoyer={envoyer}
+            onSupprimer={(id) =>
+              supprimer.mutate(id, {
+                onError: () => toast.error('Suppression impossible pour le moment'),
+              })
+            }
+            onModifier={(id, contenu) =>
+              modifier.mutate(
+                { echangeId: id, contenu },
+                { onError: () => toast.error('Ta modification n’a pas pu être enregistrée') },
+              )
+            }
+            onSignaler={setEchangeSignale}
+            onBasculerSuivi={onBasculerSuivi}
+            auteursSuivis={auteursSuivis}
+            onReagir={onReagir}
+          />
+        )}
+      </SectionErrorBoundary>
     </section>
   )
 }
