@@ -26,6 +26,8 @@ import { HomeNavbar } from '@/components/home/HomeNavbar'
 import { GuestSidebar } from '@/components/home/GuestSidebar'
 import { ProfileSidebar } from '@/components/home/ProfileSidebar'
 import { FeedSection } from '@/components/home/FeedSection'
+import { SectionErrorBoundary } from '@/components/layout/SectionErrorBoundary'
+import { useQueryClient } from '@tanstack/react-query'
 import { MobileNavLayer } from '@/components/home/MobileNavLayer'
 import { ContributeModal } from '@/components/home/ContributeModal'
 import { useEditPostFlow } from '@/hooks/useEditPostFlow'
@@ -45,6 +47,8 @@ const StatsSidebar = lazy(() =>
 export default function Home() {
   const { t } = useTranslation()
   const { isAuthenticated } = useAuth()
+  // Pour reinitialiser proprement le feed depuis le filet d'erreur local.
+  const queryClient = useQueryClient()
   // BATCH 10 / QW-UX1 : titre dynamique pour onglet navigateur (SEO + UX)
   usePageTitle(t('nav.home'))
   const [showContributeModal, setShowContributeModal] = useState(false)
@@ -187,17 +191,25 @@ export default function Home() {
 
           {/* Colonne centrale : Feed */}
           <main id="main-content" className="flex-1 min-w-0">
-            <FeedSection
-              viewMode={feedViewMode}
-              onViewModeChange={setFeedViewMode}
-              showFilters={feedShowFilters}
-              onShowFiltersChange={setFeedShowFilters}
-              onHasActiveFiltersChange={setFeedActiveFiltersCount}
-              // Empty state CTA "Partager une observation" → ouvre directement
-              // le panel Rencontre Nature (même flow que la navbar).
-              onContributeClick={() => openCreate('nature_encounter')}
-              onEditPost={onEditPost}
-            />
+            {/* Filet LOCAL : si un post mal forme casse au rendu, seul le feed
+                affiche un encart re-essayable, le reste de l'app (header, nav,
+                sidebars) reste debout. "Reessayer" repart d'un feed propre. */}
+            <SectionErrorBoundary
+              label="feed"
+              onReset={() => queryClient.resetQueries({ queryKey: ['feed'] })}
+            >
+              <FeedSection
+                viewMode={feedViewMode}
+                onViewModeChange={setFeedViewMode}
+                showFilters={feedShowFilters}
+                onShowFiltersChange={setFeedShowFilters}
+                onHasActiveFiltersChange={setFeedActiveFiltersCount}
+                // Empty state CTA "Partager une observation" → ouvre directement
+                // le panel Rencontre Nature (même flow que la navbar).
+                onContributeClick={() => openCreate('nature_encounter')}
+                onEditPost={onEditPost}
+              />
+            </SectionErrorBoundary>
           </main>
 
           {/* Colonne droite : Stats & Tendances : visible uniquement XL desktop
