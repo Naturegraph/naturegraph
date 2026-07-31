@@ -2,10 +2,12 @@
  * useEchanges : hooks React Query pour les Echanges d'une publication
  * =============================================================================
  *
- * Pas de Realtime ici (decision Nicolas 2026-07-22) : l'echange qu'on ecrit
- * apparait immediatement, ceux des autres au rechargement. Ouvrir un canal
- * permanent par lecteur de page ne se justifie pas au volume actuel, et la
- * sobriete fait partie des regles du projet.
+ * Realtime SOBRE (decision Nicolas 2026-07-30, supersede le "pas de Realtime"
+ * du 2026-07-22) : les echanges des AUTRES apparaissent en direct, sans refresh
+ * ("je veux voir le compteur monter sans refresh"). Pour rester sobre, on
+ * n'ouvre un canal QUE pendant qu'un fil est REELLEMENT ouvert (`useRealtimeEchanges`,
+ * cf. bas de fichier), filtre par `post_id`, et on le ferme au demontage. Pas
+ * d'abonnement pour chaque post du feed.
  *
  * Affichage optimiste a l'envoi : sur mobile en reseau lent, attendre l'aller
  * retour donne l'impression que le bouton n'a pas fonctionne, et pousse a
@@ -13,7 +15,9 @@
  * la verite serveur ensuite.
  */
 
+import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import {
   listerEchanges,
   publierEchange,
@@ -29,6 +33,45 @@ import {
 } from '@/services/echangeService'
 
 export const cleEchanges = (postId: string) => ['echanges', postId] as const
+
+// Topic unique par abonnement : jamais de reutilisation d'un canal deja
+// souscrit (meme garde-fou que useNotifications, sinon supabase-js jette).
+let realtimeEchSeq = 0
+
+/**
+ * Abonnement Realtime au fil d'echanges D'UN post, actif seulement tant que le
+ * composant appelant est monte (donc tant que le fil est ouvert). A tout
+ * changement sur `comments` de ce post (nouvel echange, edition, suppression),
+ * on invalide le fil ET les compteurs (post + feed) : le 💬 monte/descend en
+ * direct, meme quand c'est un autre utilisateur.
+ *
+ * `comment_reactions` n'est pas dans la publication realtime : les reactions
+ * d'echange ne sont donc pas live (l'optimistic couvre les siennes).
+ */
+export function useRealtimeEchanges(postId: string | undefined): void {
+  const qc = useQueryClient()
+
+  useEffect(() => {
+    if (!postId || !isSupabaseConfigured || !supabase) return
+    realtimeEchSeq += 1
+    const channel = supabase
+      .channel(`echanges:${postId}:${realtimeEchSeq}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'comments', filter: `post_id=eq.${postId}` },
+        () => {
+          qc.invalidateQueries({ queryKey: cleEchanges(postId) })
+          qc.invalidateQueries({ queryKey: ['post', postId] })
+          qc.invalidateQueries({ queryKey: ['feed'] })
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase?.removeChannel(channel)
+    }
+  }, [postId, qc])
+}
 
 /** Liste des echanges d'une publication. */
 export function useEchanges(postId: string | undefined) {
@@ -111,9 +154,14 @@ export function usePublierEchange(
 
     onSettled: () => {
       qc.invalidateQueries({ queryKey: cleEchanges(postId) })
-      // Le compteur du pied de publication vient des posts : on le rafraichit.
+      // Le compteur du pied de publication (💬 N) vient du post. On rafraichit
+      // TOUTES ses sources : le detail (`post`/`posts`) ET le FEED (`feed`).
+      // Sans `feed`, le compteur ne montait pas quand on echangeait depuis le
+      // fil d'actualite -> l'utilisateur devait refresh (retour Nicolas
+      // 2026-07-30 "je veux voir le compteur monter sans refresh").
       qc.invalidateQueries({ queryKey: ['posts'] })
       qc.invalidateQueries({ queryKey: ['post', postId] })
+      qc.invalidateQueries({ queryKey: ['feed'] })
     },
   })
 }
@@ -163,6 +211,8 @@ export function useSupprimerEchange(postId: string) {
       qc.invalidateQueries({ queryKey: cleEchanges(postId) })
       qc.invalidateQueries({ queryKey: ['posts'] })
       qc.invalidateQueries({ queryKey: ['post', postId] })
+      // Idem ajout : le compteur du feed doit redescendre sans refresh.
+      qc.invalidateQueries({ queryKey: ['feed'] })
     },
   })
 }
