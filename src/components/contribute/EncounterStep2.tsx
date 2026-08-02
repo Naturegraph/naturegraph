@@ -19,6 +19,7 @@ import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
 import { searchTaxonomy, type TaxonomyHit } from '@/services/searchService'
+import { trackFailure } from '@/lib/monitoring'
 import type { Notebook } from '@/services/notebookService'
 import { highlightMatch } from '@/utils/highlightMatch'
 import { Button } from '@/components/ui/Button'
@@ -291,6 +292,12 @@ function SpeciesSearchBar({
           // V1.1.4 NG-027 (Nicolas 2026-06-03) : exception = panne reseau
           // ou Supabase indisponible. On marque l etat pour affichage.
           console.error('[EncounterStep2] searchTaxonomy failed', err)
+          // C'est le "ca chargeait et me disait de me connecter a un reseau"
+          // (soft launch) : on trace la longueur de la requete + le message pour
+          // savoir si c'est un cold start, un timeout, ou une vraie panne.
+          trackFailure('search.species', err instanceof Error ? err.message : 'inconnue', {
+            queryLen: trimmed.length,
+          })
           setResults([])
           setIsLoading(false)
           setHasNetworkError(true)

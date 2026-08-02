@@ -354,6 +354,14 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
                 `[${formLabel}] process failed for ${rawFile.name}: ${result.code}`,
                 result.details,
               )
+              // Traitement image echoue AVANT l'envoi (decode HEIC iPhone,
+              // format, taille...). C'est le "il ne prend pas mes photos / pb de
+              // droits" (Hebus13) : on voit enfin le CODE d'erreur exact + le
+              // type/taille du fichier, cote appareil, dans Sentry.
+              trackFailure(`${formLabel}.upload.process`, result.code, {
+                fileType: rawFile.type,
+                sizeMo: Math.round(sizeMo * 10) / 10,
+              })
               failedUploads.push({ name: rawFile.name, reason: result.message })
               continue
             }
@@ -409,6 +417,13 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
             }
 
             if (!succeeded && lastError) {
+              // Upload storage definitivement echoue apres retries : on trace la
+              // CATEGORIE (auth / reseau / timeout / serveur) -> on saura si le
+              // "pb de droits" vient d'une session morte, d'un reseau mobile, ou
+              // du serveur, au lieu de deviner.
+              trackFailure(`${formLabel}.upload.storage`, lastError.kind, {
+                attempts: MAX_ATTEMPTS,
+              })
               const reason =
                 lastError.kind === 'auth'
                   ? 'Session expirée, reconnecte-toi.'
