@@ -12,6 +12,20 @@ import pkg from './package.json'
 // localiser un crash. Le token n'existe qu'au BUILD (jamais expose au client).
 const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN
 
+// Diagnostic build (booleen uniquement, aucun secret logue) : dit clairement,
+// dans les logs Vercel, si le token d'upload des source maps est bien vu au
+// build. Sans ca, l'echec du plugin est silencieux (retour Nicolas 2026-07-30).
+if (process.env.VERCEL) {
+  // eslint-disable-next-line no-console
+  console.log(
+    `[build] Sentry source maps : ${
+      sentryAuthToken
+        ? 'ACTIF (token detecte au build)'
+        : 'INACTIF (SENTRY_AUTH_TOKEN absent du build)'
+    }`,
+  )
+}
+
 export default defineConfig({
   // Injection de la version du package à la compilation
   // Usage dans les composants : __APP_VERSION__ (string, ex: "0.1.0")
