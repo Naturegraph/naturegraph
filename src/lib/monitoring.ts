@@ -61,6 +61,53 @@ export function captureException(error: unknown, context?: Record<string, unknow
   }
 }
 
+/**
+ * Fil d'Ariane d'une ACTION utilisateur (tap sur un bouton, ouverture d'un
+ * panneau, envoi d'un formulaire...). N'envoie RIEN tout seul : il enrichit le
+ * contexte des erreurs/replays a venir. Quand quelque chose casse ensuite, on
+ * lit la suite des gestes ("a tape Partager -> a ouvert le composer -> ...").
+ * Toujours safe / no-op si Sentry est absent.
+ */
+export function trackAction(action: string, data?: Record<string, unknown>): void {
+  try {
+    console.debug(`[action] ${action}`, data ?? '')
+  } catch {
+    /* ignore */
+  }
+  try {
+    sentryRef?.addBreadcrumb?.({ category: 'ui.action', level: 'info', message: action, data })
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Signale un ECHEC SILENCIEUX a Sentry : un cas ou l'app ABANDONNE une action
+ * sans lancer d'exception (session expiree geree en douce, watchdog, garde-fou
+ * qui bloque, bouton qui "ne fait rien"). Sentry ne capte QUE les exceptions ;
+ * sans cet appel explicite, ces echecs restent invisibles (retour Nicolas
+ * 2026-07-30 : "le bouton ne marche plus et aucune erreur sur Sentry").
+ *
+ * Remonte en `warning` (pas `error`) : c'est un abandon gere, pas un crash. Avec
+ * le Session Replay actif, l'evenement embarque la video de la session.
+ */
+export function trackFailure(action: string, reason: string, data?: Record<string, unknown>): void {
+  try {
+    console.warn(`[echec silencieux] ${action} : ${reason}`, data ?? '')
+  } catch {
+    /* ignore */
+  }
+  try {
+    sentryRef?.captureMessage?.(`Echec silencieux : ${action} (${reason})`, {
+      level: 'warning',
+      tags: { silent_failure: action },
+      extra: { action, reason, ...data },
+    })
+  } catch {
+    /* ignore */
+  }
+}
+
 export async function initMonitoring(): Promise<void> {
   const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined
   if (!dsn) return
@@ -91,7 +138,20 @@ export async function initMonitoring(): Promise<void> {
       // detection auto des regressions. `__APP_VERSION__` = pkg.version injecte
       // au build (cf. vite.config `define`).
       release: __APP_VERSION__,
+      // Integrations EXPLICITES : sans elles, le Session Replay et le tracing
+      // Web Vitals ne s'activent pas (Sentry affichait "Set up Session Replay"
+      // malgre replaysOnErrorSampleRate). L'optional chaining + filter protege
+      // des bumps de version (Dependabot) ou une integration serait renommee.
+      integrations: [
+        Sentry.browserTracingIntegration?.(),
+        Sentry.replayIntegration?.({ maskAllText: true, blockAllMedia: true }),
+      ].filter(Boolean),
       tracesSampleRate: 0.1,
+      // Session Replay : PAS d'enregistrement systematique (sobriete + RGPD),
+      // mais 100% des sessions QUI PLANTENT sont rejouables. C'est l'arme pour
+      // les bugs "le bouton ne fait plus rien" (retour Nicolas 2026-07-30) :
+      // on regarde la video de la session au lieu de deviner. maskAllText +
+      // blockAllMedia = aucun contenu perso/photo dans le replay.
       replaysSessionSampleRate: 0,
       replaysOnErrorSampleRate: 1.0,
       // RGPD : pas de PII
