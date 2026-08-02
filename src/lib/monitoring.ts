@@ -85,6 +85,12 @@ export async function initMonitoring(): Promise<void> {
     Sentry.init({
       dsn,
       environment: import.meta.env.VITE_APP_ENV ?? 'development',
+      // Version de l'app = release Sentry. DOIT etre identique au `release` du
+      // sentryVitePlugin (vite.config.ts) pour que les source maps s'associent.
+      // Permet : "apparu en V0.6.0", suspect commits, "Resolve in next release",
+      // detection auto des regressions. `__APP_VERSION__` = pkg.version injecte
+      // au build (cf. vite.config `define`).
+      release: __APP_VERSION__,
       tracesSampleRate: 0.1,
       replaysSessionSampleRate: 0,
       replaysOnErrorSampleRate: 1.0,
