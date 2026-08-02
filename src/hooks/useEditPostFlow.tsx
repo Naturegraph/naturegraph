@@ -29,6 +29,7 @@
  */
 
 import { lazy, Suspense, useState, type ReactNode } from 'react'
+import { trackAction } from '@/lib/monitoring'
 
 // Lazy-loaded - chunk separe, ne charge que quand un panel s ouvre vraiment.
 const ContributeEncounterForm = lazy(() =>
@@ -65,6 +66,11 @@ export function useEditPostFlow(): UseEditPostFlowResult {
   }
 
   function openCreate(postType: PanelType): void {
+    // Fil d'Ariane : on trace l'ouverture du panneau de partage. Si le bouton
+    // "Partager une observation" semble mort (retour Nicolas 2026-07-30), soit
+    // ce breadcrumb apparait (le clic est bien arrive, le souci est apres), soit
+    // il manque (le clic n'arrive meme pas au handler -> piste DOM/state fige).
+    trackAction('contribute.open', { postType })
     setEditingPostId(null)
     setActiveType(postType)
   }

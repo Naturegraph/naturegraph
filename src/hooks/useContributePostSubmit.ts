@@ -34,6 +34,7 @@ import type { CreatePostPayload } from '@/services/postService'
 import { processMediaForUpload, isProcessMediaError } from '@/utils/processMediaForUpload'
 import { PostValidationError, validatePostContent } from '@/lib/postValidation'
 import { isTechnicalMessage } from '@/lib/sanitizeError'
+import { trackAction, trackFailure, captureException } from '@/lib/monitoring'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -185,10 +186,21 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
 
   const submit = useCallback(
     async ({ payload, files, editingPostId, onSuccess }: ContributeSubmitParams) => {
+      // Fil d'Ariane : on sait desormais que l'utilisateur a bien DECLENCHE une
+      // publication (le clic est arrive au handler). Si "rien ne se passe"
+      // ensuite, la suite des breadcrumbs + les trackFailure ci-dessous disent
+      // OU ca a coince (retour Nicolas 2026-07-30).
+      trackAction(`${formLabel}.submit`, {
+        editing: !!editingPostId,
+        files: files.length,
+        hasSpecies: !!payload.species_name,
+      })
+
       // Anti-doublon (NG-012 #1) : si un pipeline est deja en cours, on bloque
       // toute nouvelle soumission. Cas typique : le watchdog a reactive le
       // bouton Publier alors que l'upload tourne encore en arriere-plan.
       if (inFlightRef.current) {
+        trackFailure(formLabel, 'deja-en-cours')
         setUploadError(
           t('contribute.errors.alreadySubmitting', {
             defaultValue: 'Publication deja en cours, patiente un instant.',
@@ -198,6 +210,9 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
       }
 
       if (!user?.id) {
+        // "Bouton mort" typique au retour d'arriere-plan : le state React montre
+        // encore un user mais l'id est vide -> on le VOIT maintenant dans Sentry.
+        trackFailure(formLabel, 'non-authentifie')
         setUploadError(
           t('contribute.errors.notAuthenticated', { defaultValue: 'Connecte-toi pour publier' }),
         )
@@ -237,7 +252,10 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         await assertActiveSession()
       } catch (err) {
         if (err instanceof SessionExpiredError) {
-          // La redirection a deja ete declenchee, on stoppe ici proprement
+          // La redirection a deja ete declenchee, on stoppe ici proprement.
+          // On le TRACE : c'est LA cause probable du "j'ai quitte l'app, je
+          // reviens, publier ne marche plus" (session morte au retour de veille).
+          trackFailure(formLabel, 'session-expiree-au-submit')
           return
         }
         // Autre erreur (reseau), on continue, le watchdog gerera
@@ -267,6 +285,11 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         if (watchdogId) clearTimeout(watchdogId)
         watchdogId = setTimeout(() => {
           console.warn(`[${formLabel}] watchdog : aucune progression depuis 60s, force release`)
+          // Blocage reel (aucune progression 60s) : visible dans Sentry avec le
+          // replay de la session -> on voit enfin OU ca fige.
+          trackFailure(formLabel, 'watchdog-60s-sans-progression', {
+            createdPost: !!createdPostId,
+          })
           // Vrai blocage : on libere le verrou pour que l'utilisateur puisse
           // reessayer. Reste un cas rare (upload tres lent qui se debloque juste
           // apres) a couvrir plus tard via AbortController (NG-012 suite).
@@ -473,6 +496,14 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
             ),
           )
           console.error(`[${formLabel}] submit failed:`, err)
+          // Vraie erreur de publication : jusqu'ici elle ne partait PAS a Sentry
+          // (juste un toast). On la capture avec le contexte du geste -> une
+          // publication qui echoue devient visible et diagnosticable.
+          captureException(err, {
+            flow: formLabel,
+            files: files.length,
+            editing: !!editingPostId,
+          })
         }
       } finally {
         if (watchdogId) clearTimeout(watchdogId)
