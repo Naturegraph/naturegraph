@@ -37,6 +37,7 @@ import { readDraft, useDraftAutoSave, clearDraft } from '@/hooks/useContributeDr
 // NG-038 : persistance des PHOTOS de brouillon via IndexedDB (les File ne
 // tiennent pas en localStorage -> photos perdues au refresh sans ce store).
 import { loadDraftPhotos, saveDraftPhotos, clearDraftPhotos } from '@/lib/draftPhotoStore'
+import { trackAction, trackFailure } from '@/lib/monitoring'
 import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
 import { POST_LIMITS } from '@/lib/postValidation'
 import { createProposal } from '@/services/identificationService'
@@ -549,13 +550,24 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
       handleNext()
       return
     }
+    // Le clic Publier a bien atteint le code : si ce breadcrumb manque dans une
+    // session ou "le bouton ne fait rien", c'est que le clic n'arrive meme pas
+    // au handler (piste DOM/state fige). Sinon, les trackFailure ci-dessous
+    // disent OU ca bail (retour Nicolas 2026-07-30).
+    trackAction('encounter.publish.click', { step, observations: form.observations.length })
     setSubmitAttempted(true)
     const errs = validateStep3()
     if (Object.keys(errs).length > 0) {
+      // Bouton qui "ne fait rien" alors qu'il manque juste un champ : on le voit.
+      trackFailure('encounter.publish', 'validation-etape3', { champs: Object.keys(errs) })
       setErrors(errs)
       return
     }
     if (!user?.id) {
+      // LE bug "j'ai quitte l'app, je reviens, Publier est mort" : la session a
+      // saute (user.id vide) et on bail ici, en silence, AVANT le hook. Trace +
+      // video de session desormais.
+      trackFailure('encounter.publish', 'session-perdue-composant')
       setErrors({
         description: t('contribute.errors.notAuthenticated', 'Connecte-toi pour publier'),
       })

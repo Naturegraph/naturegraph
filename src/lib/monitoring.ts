@@ -106,6 +106,18 @@ export function trackFailure(action: string, reason: string, data?: Record<strin
   } catch {
     /* ignore */
   }
+  // Force l'envoi de la VIDEO de session (Session Replay) meme pour un warning :
+  // par defaut le replay ne part que sur une erreur. Or un echec silencieux (le
+  // fameux "bouton mort") n'est PAS une erreur -> sans ce flush on aurait le
+  // contexte mais pas la video. Ici on capture les ~60 dernieres secondes.
+  try {
+    sentryRef
+      ?.getReplay?.()
+      ?.flush?.()
+      ?.catch?.(() => {})
+  } catch {
+    /* Replay absent ou non bufferise : ignore */
+  }
 }
 
 export async function initMonitoring(): Promise<void> {
