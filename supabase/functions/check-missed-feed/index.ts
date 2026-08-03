@@ -217,77 +217,109 @@ Deno.serve(async (req: Request) => {
         .filter((p) => (pubParCompte.get(p.id as string) ?? 0) <= 2) as Destinataire[]
     }
 
+    // Envoi ISOLE par destinataire : une erreur (follows KO, fetch reseau,
+    // dispatcher HS) NE DOIT PLUS couper tout le batch. Avant, `throw folErr`
+    // remontait au catch global -> HTTP 500 en plein milieu, et seuls les
+    // destinataires deja traites recevaient l'email (23/42 le 02/08).
+    async function envoyerA(dest: Destinataire): Promise<boolean> {
+      try {
+        // BLOC PERSO. Comptes suivis par ce destinataire, parmi ceux qui ont
+        // publie cette semaine, tries du plus recemment actif.
+        const { data: suivis, error: folErr } = await admin
+          .from('follows')
+          .select('following_id, profiles!follows_following_id_fkey(username)')
+          .eq('follower_id', dest.id)
+        if (folErr) throw folErr
+
+        const suivisActifs = (suivis ?? [])
+          .map((f) => ({
+            id: f.following_id as string,
+            username: (f.profiles as { username?: string } | null)?.username ?? null,
+            derniere: derniereParAuteur.get(f.following_id as string) ?? null,
+          }))
+          .filter((s) => s.derniere !== null && s.username)
+          .sort((a, b) => (b.derniere! > a.derniere! ? 1 : -1))
+
+        let blocPerso = ''
+        if (suivisActifs.length > 0) {
+          const vedette = suivisActifs[0]
+          const autres = suivisActifs.length - 1
+          const suffixe =
+            autres > 0
+              ? ` et ${autres} autre${autres > 1 ? 's' : ''} que tu suis ont publié cette semaine`
+              : " : ses dernières observations viennent d'arriver sur le fil"
+          blocPerso =
+            `<p style="margin:0 0 16px 0;padding:12px 16px;background:#f3f4fb;border-radius:8px;">` +
+            `Tu suis <strong>${vedette.username}</strong>${suffixe}. ` +
+            `<a href="${APP_URL}/profile/${vedette.username}" style="color:#5f5dd8;">Voir son profil</a></p>`
+        }
+
+        const greeting = dest.first_name?.trim() ? `${dest.first_name.trim()},` : 'Bonjour,'
+        const bodyHtml =
+          `<p style="margin:0 0 16px 0;">${greeting}</p>` +
+          `<p style="margin:0 0 16px 0;"><strong>${totalObs} nouvelles observations</strong> ont été partagées cette semaine par les migrateurs de la communauté.</p>` +
+          ligneEspeces +
+          ligneIdentif +
+          blocPerso +
+          `<p style="margin:0;">Elles t'attendent sur le fil, avec les personnes qui les ont photographiées.</p>`
+
+        const resp = await fetch(`${SUPABASE_URL}/functions/v1/send-notification-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-cron-secret': CRON_SECRET },
+          body: JSON.stringify({
+            user_id: dest.id,
+            to_email: dest.email,
+            email_type: 'e2_missed',
+            // Categorie 'event' (decision Nicolas 2026-07-27) : E2 sort du cap
+            // partage 'weekly_marketing' (E1-E4). Le dispatcher lui applique alors
+            // une dedup PROPRE (max 1 `e2_missed` / 168h), ce qui garantit le
+            // rendez-vous du dimanche sans etre bloque par E3/E4 (semaine) ni les
+            // faire sauter. Le dimanche, seul E2 tourne de toute facon (E3 jeudi,
+            // E4 samedi, E1 desactive). L'opt-out reste applique en amont via
+            // `pref_type` (independant de la categorie), donc CASL / Loi 25 OK.
+            category: 'event',
+            pref_type: 'weekly_digest',
+            min_interval_hours: 168,
+            subject: 'Cette semaine sur Naturegraph',
+            heroTitle: 'Cette semaine sur Naturegraph',
+            bodyHtml,
+            cta: { label: 'Découvrir le fil', url: `${APP_URL}/home` },
+          }),
+        })
+        if (!resp.ok) {
+          console.error('[check-missed-feed] dispatch failed for', dest.id, await resp.text())
+          return false
+        }
+        const result = await resp.json()
+        return !!result.sent
+      } catch (err) {
+        // ISOLATION : ce destinataire est ignore, les suivants continuent.
+        console.error(
+          '[check-missed-feed] destinataire ignore',
+          dest.id,
+          err instanceof Error ? err.message : err,
+        )
+        return false
+      }
+    }
+
+    // Envoi par LOTS PARALLELES bornes (section 7 du spec) : l'envoi sequentiel
+    // prenait ~1 s/destinataire -> >40 s pour ~42 comptes, au-dela du timeout
+    // cron (~30 s), d'ou le run coupe. Des lots de 5 en parallele ramenent le
+    // run bien sous la limite, et le court delai entre lots menage le rate-limit
+    // Resend. Promise.allSettled = aucun destinataire ne peut faire tomber le lot.
+    const TAILLE_LOT = 5
+    const DELAI_ENTRE_LOTS_MS = 300
     let sent = 0
-    for (const dest of candidats) {
-      // BLOC PERSO. Comptes suivis par ce destinataire, parmi ceux qui ont
-      // publie cette semaine, tries du plus recemment actif.
-      const { data: suivis, error: folErr } = await admin
-        .from('follows')
-        .select('following_id, profiles!follows_following_id_fkey(username)')
-        .eq('follower_id', dest.id)
-      if (folErr) throw folErr
-
-      const suivisActifs = (suivis ?? [])
-        .map((f) => ({
-          id: f.following_id as string,
-          username: (f.profiles as { username?: string } | null)?.username ?? null,
-          derniere: derniereParAuteur.get(f.following_id as string) ?? null,
-        }))
-        .filter((s) => s.derniere !== null && s.username)
-        .sort((a, b) => (b.derniere! > a.derniere! ? 1 : -1))
-
-      let blocPerso = ''
-      if (suivisActifs.length > 0) {
-        const vedette = suivisActifs[0]
-        const autres = suivisActifs.length - 1
-        const suffixe =
-          autres > 0
-            ? ` et ${autres} autre${autres > 1 ? 's' : ''} que tu suis ont publié cette semaine`
-            : " : ses dernières observations viennent d'arriver sur le fil"
-        blocPerso =
-          `<p style="margin:0 0 16px 0;padding:12px 16px;background:#f3f4fb;border-radius:8px;">` +
-          `Tu suis <strong>${vedette.username}</strong>${suffixe}. ` +
-          `<a href="${APP_URL}/profile/${vedette.username}" style="color:#5f5dd8;">Voir son profil</a></p>`
+    for (let i = 0; i < candidats.length; i += TAILLE_LOT) {
+      const lot = candidats.slice(i, i + TAILLE_LOT)
+      const resultats = await Promise.allSettled(lot.map((dest) => envoyerA(dest)))
+      for (const r of resultats) {
+        if (r.status === 'fulfilled' && r.value) sent += 1
       }
-
-      const greeting = dest.first_name?.trim() ? `${dest.first_name.trim()},` : 'Bonjour,'
-      const bodyHtml =
-        `<p style="margin:0 0 16px 0;">${greeting}</p>` +
-        `<p style="margin:0 0 16px 0;"><strong>${totalObs} nouvelles observations</strong> ont été partagées cette semaine par les migrateurs de la communauté.</p>` +
-        ligneEspeces +
-        ligneIdentif +
-        blocPerso +
-        `<p style="margin:0;">Elles t'attendent sur le fil, avec les personnes qui les ont photographiées.</p>`
-
-      const resp = await fetch(`${SUPABASE_URL}/functions/v1/send-notification-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-cron-secret': CRON_SECRET },
-        body: JSON.stringify({
-          user_id: dest.id,
-          to_email: dest.email,
-          email_type: 'e2_missed',
-          // Categorie 'event' (decision Nicolas 2026-07-27) : E2 sort du cap
-          // partage 'weekly_marketing' (E1-E4). Le dispatcher lui applique alors
-          // une dedup PROPRE (max 1 `e2_missed` / 168h), ce qui garantit le
-          // rendez-vous du dimanche sans etre bloque par E3/E4 (semaine) ni les
-          // faire sauter. Le dimanche, seul E2 tourne de toute facon (E3 jeudi,
-          // E4 samedi, E1 desactive). L'opt-out reste applique en amont via
-          // `pref_type` (independant de la categorie), donc CASL / Loi 25 OK.
-          category: 'event',
-          pref_type: 'weekly_digest',
-          min_interval_hours: 168,
-          subject: 'Cette semaine sur Naturegraph',
-          heroTitle: 'Cette semaine sur Naturegraph',
-          bodyHtml,
-          cta: { label: 'Découvrir le fil', url: `${APP_URL}/home` },
-        }),
-      })
-      if (!resp.ok) {
-        console.error('[check-missed-feed] dispatch failed for', dest.id, await resp.text())
-        continue
+      if (i + TAILLE_LOT < candidats.length) {
+        await new Promise((r) => setTimeout(r, DELAI_ENTRE_LOTS_MS))
       }
-      const result = await resp.json()
-      if (result.sent) sent += 1
     }
 
     return new Response(
