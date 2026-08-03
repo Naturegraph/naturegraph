@@ -12,6 +12,7 @@ import { CookieBanner } from '@/components/layout/CookieBanner'
 import { InstallPromptBanner } from '@/components/layout/InstallPromptBanner'
 import { AppBadgeSync } from '@/components/layout/AppBadgeSync'
 import { ActivityHeartbeat } from '@/components/layout/ActivityHeartbeat'
+import { SentryRouteTracker } from '@/components/layout/SentryRouteTracker'
 import loadingVideo from '@/assets/branding/app-loading.webm'
 
 /**
@@ -156,6 +157,8 @@ export default function App() {
                       au niveau app (active sur toutes les pages, pas seulement Home). */}
                     <AppBadgeSync />
                     <ActivityHeartbeat />
+                    {/* Tag Sentry `route` a chaque navigation (triage par ecran). */}
+                    <SentryRouteTracker />
                   </ToastProvider>
                 </NotebookProvider>
               </SpeciesProvider>
