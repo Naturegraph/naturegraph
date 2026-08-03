@@ -1,4 +1,5 @@
-import { QueryClient } from '@tanstack/react-query'
+import { QueryClient, MutationCache } from '@tanstack/react-query'
+import { captureException } from './monitoring'
 
 /**
  * React Query global client.
@@ -35,7 +36,35 @@ function is5xxError(error: unknown): boolean {
   return false
 }
 
+/** Hors-ligne : un echec est ATTENDU, inutile de le reporter (bruit). */
+function estHorsLigne(): boolean {
+  return typeof navigator !== 'undefined' && navigator.onLine === false
+}
+
+/** Nom lisible d'une mutation depuis sa `mutationKey` (sinon "inconnue"). */
+function nomMutation(mutation: { options: { mutationKey?: unknown } }): string {
+  const key = mutation.options.mutationKey
+  if (Array.isArray(key)) {
+    const parts = key.filter((k): k is string => typeof k === 'string')
+    if (parts.length) return parts.join('.')
+  }
+  return 'inconnue'
+}
+
 export const queryClient = new QueryClient({
+  // FILET GLOBAL (Nicolas 2026-08-03 : "pousser au maximum le suivi") : toute
+  // MUTATION qui echoue = une action utilisateur qui n'a pas marche (reagir,
+  // suivre, echanger, sauvegarder, supprimer, publier, modifier son profil...).
+  // Un SEUL endroit couvre TOUTE la plateforme -> on ne rate plus une action
+  // ratee, sans avoir a instrumenter chaque bouton. Le message d'erreur Supabase
+  // (table/RLS/RPC) suffit souvent a identifier l'action meme sans mutationKey.
+  // On ignore le hors-ligne (attendu, pas un bug) pour ne pas polluer Sentry.
+  mutationCache: new MutationCache({
+    onError: (error, _variables, _context, mutation) => {
+      if (estHorsLigne()) return
+      captureException(error, { kind: 'mutation', action: nomMutation(mutation) })
+    },
+  }),
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000,

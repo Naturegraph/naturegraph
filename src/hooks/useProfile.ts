@@ -82,6 +82,7 @@ export function useUpdateProfile(userId: string) {
   const queryClient = useQueryClient()
 
   return useMutation<Profile, Error, UpdateProfilePayload>({
+    mutationKey: ['profile', 'update'],
     mutationFn: (payload) => updateProfile(userId, payload),
     onSuccess: (updatedProfile) => {
       // Mettre à jour le cache sans refetch réseau

@@ -102,6 +102,7 @@ export function usePublierEchange(
   const qc = useQueryClient()
 
   return useMutation({
+    mutationKey: ['echange', 'publier'],
     mutationFn: (params: {
       contenu: string
       intention: IntentionEchange
@@ -177,6 +178,7 @@ export function useModifierEchange(postId: string) {
   const qc = useQueryClient()
 
   return useMutation({
+    mutationKey: ['echange', 'modifier'],
     mutationFn: ({ echangeId, contenu }: { echangeId: string; contenu: string }) =>
       modifierEchange(echangeId, contenu),
 
@@ -206,6 +208,7 @@ export function useSupprimerEchange(postId: string) {
   const qc = useQueryClient()
 
   return useMutation({
+    mutationKey: ['echange', 'supprimer'],
     mutationFn: (echangeId: string) => supprimerEchange(echangeId),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: cleEchanges(postId) })
@@ -222,6 +225,7 @@ export function useBasculerEchangeUtile(postId: string) {
   const qc = useQueryClient()
 
   return useMutation({
+    mutationKey: ['echange', 'utile'],
     mutationFn: (echangeId: string) => basculerEchangeUtile(echangeId),
     onSettled: () => qc.invalidateQueries({ queryKey: cleEchanges(postId) }),
   })
@@ -237,6 +241,7 @@ export function useBasculerReactionEchange(postId: string) {
   const qc = useQueryClient()
 
   return useMutation({
+    mutationKey: ['echange', 'reaction'],
     mutationFn: (p: {
       echangeId: string
       type: TypeReactionEchange
