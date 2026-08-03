@@ -1,5 +1,5 @@
-import { QueryClient, MutationCache } from '@tanstack/react-query'
-import { captureException } from './monitoring'
+import { QueryClient, MutationCache, QueryCache } from '@tanstack/react-query'
+import { captureException, trackAction } from './monitoring'
 
 /**
  * React Query global client.
@@ -63,6 +63,22 @@ export const queryClient = new QueryClient({
     onError: (error, _variables, _context, mutation) => {
       if (estHorsLigne()) return
       captureException(error, { kind: 'mutation', action: nomMutation(mutation) })
+    },
+  }),
+  // QUERIES qui echouent APRES retries = une donnee qui n'a pas charge (feed,
+  // fil, profil...). Souvent transitoire (reseau mobile) -> on ne cree PAS
+  // d'issue (bruit), mais un simple FIL D'ARIANE : quand une VRAIE erreur ou un
+  // echec d'action survient ensuite, on voit "la query X venait d'echouer".
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      if (estHorsLigne()) return
+      const cle = Array.isArray(query.queryKey)
+        ? query.queryKey.filter((k) => typeof k === 'string').join('.')
+        : 'inconnue'
+      trackAction('query.echec', {
+        cle,
+        message: error instanceof Error ? error.message.slice(0, 120) : 'echec',
+      })
     },
   }),
   defaultOptions: {
