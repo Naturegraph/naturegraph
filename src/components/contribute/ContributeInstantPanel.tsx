@@ -31,6 +31,7 @@ import { readDraft, useDraftAutoSave, clearDraft } from '@/hooks/useContributeDr
 import { loadDraftPhotos, saveDraftPhotos, clearDraftPhotos } from '@/lib/draftPhotoStore'
 import { useToast } from '@/contexts/ToastContext'
 import { safeDetail } from '@/lib/sanitizeError'
+import { trackAction, trackFailure } from '@/lib/monitoring'
 import { toStorageTimestamp, toDateInputValue } from '@/utils/observationDate'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
@@ -359,9 +360,13 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
     // exception non capturee remontait sans feedback visible (le bouton
     // paraissait inerte, retour QA). On surface desormais via toast.error.
     try {
+      // Meme logique que la Rencontre : trace du clic (present = le clic arrive
+      // au handler) + trace de l'abandon silencieux sur validation.
+      trackAction('instant.publish.click', { step })
       setSubmitAttempted(true)
       const errs = validateStep2()
       if (Object.keys(errs).length > 0) {
+        trackFailure('instant.publish', 'validation-etape2', { champs: Object.keys(errs) })
         setErrors(errs)
         return
       }
