@@ -120,6 +120,32 @@ export function trackFailure(action: string, reason: string, data?: Record<strin
   }
 }
 
+/**
+ * Associe l'utilisateur courant a Sentry (id SEUL, jamais email/nom : le
+ * `beforeSend` scrubbe deja, et un UUID n'est pas une donnee sensible). Permet a
+ * Sentry de compter "combien d'UTILISATEURS touches" par incident -> on priorise
+ * ce qui frappe le plus de monde. `null` = deconnexion (on efface).
+ */
+export function setMonitoringUser(userId: string | null): void {
+  try {
+    sentryRef?.setUser?.(userId ? { id: userId } : null)
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Tag la ROUTE courante sur tous les evenements a venir. Rend le triage
+ * instantane ("cet incident frappe /post/:id"). Appele a chaque navigation.
+ */
+export function setMonitoringRoute(route: string): void {
+  try {
+    sentryRef?.setTag?.('route', route)
+  } catch {
+    /* ignore */
+  }
+}
+
 export async function initMonitoring(): Promise<void> {
   const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined
   if (!dsn) return
