@@ -49,6 +49,7 @@ export function useToggleSavedPost() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    mutationKey: ['post', 'save'],
     mutationFn: ({ postId, currentlySaved }: { postId: string; currentlySaved: boolean }) => {
       if (!user?.id) throw new Error('Non authentifié')
       return toggleSavedPost(user.id, postId, currentlySaved)

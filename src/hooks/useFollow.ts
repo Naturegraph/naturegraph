@@ -72,6 +72,7 @@ export function useToggleFollow() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    mutationKey: ['follow', 'toggle'],
     mutationFn: ({
       targetUserId,
       currentlyFollowing,

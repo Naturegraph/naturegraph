@@ -177,6 +177,7 @@ export function useToggleReaction(userId: string | undefined) {
   const queryClient = useQueryClient()
 
   return useMutation<ToggleReactionResult, Error, ToggleReactionVars, ToggleReactionContext>({
+    mutationKey: ['post', 'reaction'],
     mutationFn: ({ postId, type }) => {
       if (!userId) throw new Error('Utilisateur non connecté')
       return toggleReaction(postId, userId, type)
@@ -302,6 +303,7 @@ export function useCreatePost(userId: string) {
   // un post sans media et le mettrait en cache. L'invalidation doit être
   // déclenchée par le form après l'upload media (voir Contribute*Form).
   return useMutation({
+    mutationKey: ['post', 'create'],
     mutationFn: (payload: CreatePostPayload) => createPost(userId, payload),
   })
 }
@@ -313,6 +315,7 @@ export function useCreatePost(userId: string) {
 export function useDeletePost() {
   const queryClient = useQueryClient()
   return useMutation({
+    mutationKey: ['post', 'delete'],
     mutationFn: (postId: string) => deletePost(postId),
     onSuccess: (_data, postId) => {
       // Invalider toutes les variantes du feed + le profil (galerie user).
@@ -336,6 +339,7 @@ export function useDeletePost() {
 export function useUpdatePost() {
   const queryClient = useQueryClient()
   return useMutation({
+    mutationKey: ['post', 'update'],
     mutationFn: ({ postId, payload }: { postId: string; payload: Partial<CreatePostPayload> }) =>
       updatePost(postId, payload),
     onSuccess: (_data, vars) => {
