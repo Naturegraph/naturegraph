@@ -32,6 +32,7 @@
  */
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import { serveWithSentry, captureEdgeMessage, captureEdgeException } from '../_shared/sentry.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -70,7 +71,7 @@ function enumererEspeces(noms: string[]): string {
   return `${avecArticle.slice(0, -1).join(', ')} et ${avecArticle[avecArticle.length - 1]}`
 }
 
-Deno.serve(async (req: Request) => {
+serveWithSentry('check-missed-feed', async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (req.method !== 'POST') {
     return new Response('Method not allowed', { status: 405, headers: CORS })
@@ -293,12 +294,13 @@ Deno.serve(async (req: Request) => {
         const result = await resp.json()
         return !!result.sent
       } catch (err) {
-        // ISOLATION : ce destinataire est ignore, les suivants continuent.
-        console.error(
-          '[check-missed-feed] destinataire ignore',
-          dest.id,
-          err instanceof Error ? err.message : err,
-        )
+        // ISOLATION : ce destinataire est ignore, les suivants continuent. On
+        // remonte l'echec a Sentry en warning (avec l'id destinataire) pour VOIR
+        // les envois rates un par un, au lieu de les deviner dans les logs.
+        void captureEdgeMessage('check-missed-feed', 'destinataire ignore', {
+          dest_id: dest.id,
+          reason: err instanceof Error ? err.message : String(err),
+        })
         return false
       }
     }
@@ -322,12 +324,28 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // Bilan du run : si une part des destinataires n'a pas recu l'email, on le
+    // signale (warning) avec le detail chiffre. C'est LE signal "E2 n'a pas
+    // touche tout le monde" (ex 23/42) qui restait invisible jusqu'ici.
+    const rates = candidats.length - sent
+    if (rates > 0) {
+      void captureEdgeMessage('check-missed-feed', 'E2 envoi partiel', {
+        candidats: candidats.length,
+        sent,
+        rates,
+        obs: totalObs,
+      })
+    }
+
     return new Response(
       JSON.stringify({ ok: true, candidats: candidats.length, sent, obs: totalObs }),
       { headers: { ...CORS, 'Content-Type': 'application/json' } },
     )
   } catch (err) {
-    console.error('[check-missed-feed]', err)
+    // Crash global du run (avant/pendant la selection) : capture explicite en
+    // exception (le filet serveWithSentry ne voit pas ce catch local qui renvoie
+    // un 500 gere). C'est le cas "run coupe" d'origine.
+    void captureEdgeException('check-missed-feed', err, { phase: 'run' })
     const message = err instanceof Error ? err.message : 'unknown error'
     return new Response(JSON.stringify({ error: message }), {
       status: 500,

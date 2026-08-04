@@ -3,13 +3,14 @@
 // Authentifié par JWT du user demandeur. Utilise service_role pour appeler auth.admin.deleteUser().
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import { serveWithSentry } from '../_shared/sentry.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { buildCors, rejectDisallowedOrigin } from '../_shared/cors.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-Deno.serve(async (req: Request) => {
+serveWithSentry('delete-account', async (req: Request) => {
   // NG-041 : rejet actif (403) des origines tierces. Les appels serveur (sans
   // Origin) passent ; seule une origine navigateur hors allowlist est rejetee.
   const originReject = rejectDisallowedOrigin(req)

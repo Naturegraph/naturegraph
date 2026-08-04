@@ -21,6 +21,7 @@
 //   - Rate limiting basique en memoire (Edge Runtime singleton)
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { serveWithSentry } from '../_shared/sentry.ts'
 import { buildCors, rejectDisallowedOrigin } from '../_shared/cors.ts'
 
 // ─── Types ───────────────────────────────────────────────────────────────
@@ -76,7 +77,7 @@ setInterval(() => {
 const CODE_REGEX = /^NG-[A-Z0-9]{4}-[A-Z0-9]{4}$/
 
 // ─── Handler ─────────────────────────────────────────────────────────────
-Deno.serve(async (req: Request) => {
+serveWithSentry('validate-beta-key', async (req: Request) => {
   // NG-041 : rejet actif (403) des origines tierces. Les appels serveur (sans
   // Origin) passent ; seule une origine navigateur hors allowlist est rejetee.
   const originReject = rejectDisallowedOrigin(req)
