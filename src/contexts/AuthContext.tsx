@@ -18,7 +18,7 @@ import type { User } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { setRememberMe, clearAuthStorage, hasStoredAuthToken } from '@/lib/authStorage'
 import { markSessionExpired } from '@/lib/sessionExpiredFlag'
-import { authBreadcrumb } from '@/lib/monitoring'
+import { authBreadcrumb, trackFailure } from '@/lib/monitoring'
 import { generateAndStoreOtp, validateOtp } from '@/lib/demoAuth'
 import type { Profile } from '@/types/database'
 import {
@@ -714,15 +714,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: emailOrPhone,
         options: { shouldCreateUser: true },
       })
-      if (error)
+      if (error) {
+        trackFailure('auth.otp.send', error.message.slice(0, 80))
         return {
           success: false,
           requiresVerification: false,
           error: sanitizeAuthError(error.message),
         }
+      }
       lastOtpSentAtRef.current = Date.now()
       return { success: true, requiresVerification: true }
     } catch {
+      trackFailure('auth.otp.send', 'exception')
       return {
         success: false,
         requiresVerification: false,
@@ -768,6 +771,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       options: { shouldCreateUser: true },
     })
     if (!error) lastOtpSentAtRef.current = Date.now()
+    else trackFailure('auth.otp.send', error.message.slice(0, 80))
     return { error: error ? new Error(sanitizeAuthError(error.message)) : null }
   }
 
@@ -798,6 +802,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!supabase) return { error: new Error('Supabase not configured') }
     const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
     if (error) {
+      // Point le plus critique : l'utilisateur a saisi son code et n'arrive PAS
+      // a se connecter. Sans email (PII), juste le motif Supabase (code expire,
+      // invalide, rate-limit...). Visible + rejouable (Session Replay).
+      trackFailure('auth.otp.verify', error.message.slice(0, 80))
       return { error: new Error(error.message) }
     }
     // Update state synchrone depuis la response, evite la race condition

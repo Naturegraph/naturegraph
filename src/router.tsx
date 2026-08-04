@@ -44,6 +44,7 @@ import { BetaAccessGuard } from '@/components/guards/BetaAccessGuard'
 import { LABS_ENABLED } from '@/lib/featureFlags'
 import { AdminGuard } from '@/components/admin/AdminGuard'
 import { AppLoader } from '@/components/ui/AppLoader'
+import { SectionErrorBoundary } from '@/components/layout/SectionErrorBoundary'
 
 // ─── Lazy-loaded pages (code splitting pour éco-conception) ────────
 
@@ -85,7 +86,16 @@ const AdminAnalytics = lazy(() => import('./pages/Admin/AdminAnalytics'))
  */
 // eslint-disable-next-line react-refresh/only-export-components
 function LazyPage({ children }: { children: React.ReactNode }) {
-  return <Suspense fallback={<AppLoader size="md" />}>{children}</Suspense>
+  // Filet d'erreur AU NIVEAU PAGE : un crash de rendu dans N'IMPORTE QUELLE page
+  // (28 routes passent par ici) affiche un encart "Reessayer" au lieu de faire
+  // tomber toute l'app sur la 500. La nav/header restent debout, et changer de
+  // route remonte un boundary neuf (recuperation naturelle). Complete les filets
+  // de section (feed, echanges, detail post) pour une couverture totale.
+  return (
+    <SectionErrorBoundary label="page">
+      <Suspense fallback={<AppLoader size="md" />}>{children}</Suspense>
+    </SectionErrorBoundary>
+  )
 }
 
 /**
