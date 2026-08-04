@@ -14,6 +14,7 @@
 //   - Insertion d'un log dans admin_audit_logs avant la suppression (sinon FK perdue)
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import { serveWithSentry } from '../_shared/sentry.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { buildCors, rejectDisallowedOrigin } from '../_shared/cors.ts'
 
@@ -22,7 +23,7 @@ const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 const STORAGE_BUCKETS = ['avatars', 'banners', 'post-media', 'notebook-covers', 'exports'] as const
 
-Deno.serve(async (req: Request) => {
+serveWithSentry('admin-delete-user', async (req: Request) => {
   // NG-041 : rejet actif (403) des origines tierces. Les appels serveur (sans
   // Origin) passent ; seule une origine navigateur hors allowlist est rejetee.
   const originReject = rejectDisallowedOrigin(req)

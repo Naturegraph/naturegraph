@@ -30,6 +30,7 @@
  */
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import { serveWithSentry } from '../_shared/sentry.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { detectFormat, parseStorageUrl } from './mediaMagic.ts'
 
@@ -94,7 +95,7 @@ interface Payload {
   url?: string
 }
 
-Deno.serve(async (req: Request) => {
+serveWithSentry('validate-media', async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*' } })
   }

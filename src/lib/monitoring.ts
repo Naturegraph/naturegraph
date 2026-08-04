@@ -185,12 +185,16 @@ export async function initMonitoring(): Promise<void> {
         Sentry.replayIntegration?.({ maskAllText: true, blockAllMedia: true }),
       ].filter(Boolean),
       tracesSampleRate: 0.1,
-      // Session Replay : PAS d'enregistrement systematique (sobriete + RGPD),
-      // mais 100% des sessions QUI PLANTENT sont rejouables. C'est l'arme pour
-      // les bugs "le bouton ne fait plus rien" (retour Nicolas 2026-07-30) :
-      // on regarde la video de la session au lieu de deviner. maskAllText +
-      // blockAllMedia = aucun contenu perso/photo dans le replay.
-      replaysSessionSampleRate: 0,
+      // Session Replay. maskAllText + blockAllMedia = aucun contenu perso/photo.
+      //
+      // replaysSessionSampleRate = 1.0 : ENREGISTRE TOUTES LES SESSIONS, meme
+      // SANS erreur. C'EST LE REGLAGE MANQUANT (Nicolas 2026-08-03) : le bug
+      // "bouton mort au retour d'arriere-plan" ne lance AUCUNE exception -> avec
+      // un enregistrement uniquement-sur-erreur, rien n'etait capture. Le replay
+      // se fait au niveau DOM (rrweb), independamment de React : on verra la
+      // video meme si React est fige. TEMPORAIRE / DEBUG : a REBAISSER (ex 0.1)
+      // une fois le bug diagnostique, pour le quota Sentry.
+      replaysSessionSampleRate: 1.0,
       replaysOnErrorSampleRate: 1.0,
       // RGPD : pas de PII
       sendDefaultPii: false,

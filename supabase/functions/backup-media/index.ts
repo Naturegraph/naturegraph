@@ -31,6 +31,7 @@
  */
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import { serveWithSentry } from '../_shared/sentry.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -46,7 +47,7 @@ interface Pending {
   taille: number | null
 }
 
-Deno.serve(async (req: Request) => {
+serveWithSentry('backup-media', async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*' } })
   }

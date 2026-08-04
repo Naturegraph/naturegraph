@@ -30,6 +30,7 @@
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { serveWithSentry } from '../_shared/sentry.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -59,7 +60,7 @@ function timingSafeEqual(a: string, b: string): boolean {
   return diff === 0
 }
 
-Deno.serve(async (req: Request) => {
+serveWithSentry('send-waitlist-confirmation', async (req: Request) => {
   // ── Authentification de l'appelant (secret partagé avec le trigger DB) ──
   if (TRIGGER_SECRET) {
     const provided = req.headers.get('x-waitlist-secret') ?? ''

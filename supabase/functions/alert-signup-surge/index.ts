@@ -21,6 +21,7 @@
  */
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import { serveWithSentry } from '../_shared/sentry.ts'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? ''
 const RESEND_FROM = Deno.env.get('RESEND_FROM') ?? 'Naturegraph <support@naturegraph.ca>'
@@ -37,7 +38,7 @@ interface Payload {
   threshold?: number
 }
 
-Deno.serve(async (req: Request) => {
+serveWithSentry('alert-signup-surge', async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*' } })
   }

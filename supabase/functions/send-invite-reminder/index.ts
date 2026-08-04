@@ -34,6 +34,7 @@
  */
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import { serveWithSentry } from '../_shared/sentry.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { buildEmailShell } from '../_shared/emailTemplate.ts'
 import { buildUnsubscribeUrl } from '../_shared/unsubscribeToken.ts'
@@ -64,7 +65,7 @@ function estOnboarde(p: Profile): boolean {
   return Array.isArray(p.interests) && p.interests.length > 0
 }
 
-Deno.serve(async (req: Request) => {
+serveWithSentry('send-invite-reminder', async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*' } })
   }

@@ -26,6 +26,7 @@
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { serveWithSentry } from '../_shared/sentry.ts'
 import { buildEmailShell } from '../_shared/emailTemplate.ts'
 import { buildUnsubscribeUrl } from '../_shared/unsubscribeToken.ts'
 
@@ -79,7 +80,7 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-Deno.serve(async (req: Request) => {
+serveWithSentry('send-notification-email', async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (req.method !== 'POST') {
     return new Response('Method not allowed', { status: 405, headers: CORS })

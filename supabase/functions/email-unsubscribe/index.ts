@@ -21,6 +21,7 @@
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { serveWithSentry } from '../_shared/sentry.ts'
 import { verifyUnsubscribeToken } from '../_shared/unsubscribeToken.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -86,7 +87,7 @@ function redirect(result: UnsubResult): Response {
   return new Response(null, { status: 302, headers: { Location: url.toString() } })
 }
 
-Deno.serve(async (req: Request) => {
+serveWithSentry('email-unsubscribe', async (req: Request) => {
   const url = new URL(req.url)
   const userId = url.searchParams.get('u') ?? ''
   const type = url.searchParams.get('t') ?? ''

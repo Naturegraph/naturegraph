@@ -34,6 +34,7 @@
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { serveWithSentry } from '../_shared/sentry.ts'
 import { buildCors, rejectDisallowedOrigin } from '../_shared/cors.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -115,7 +116,7 @@ const WAITLIST_INVITE_BATCH = 99
 /** Durée de validité de la clé personnelle d'invitation (1 an : beta longue). */
 const INVITE_KEY_EXPIRES_DAYS = 365
 
-Deno.serve(async (req: Request) => {
+serveWithSentry('send-beta-invite', async (req: Request) => {
   // NG-041 : rejet actif (403) des origines tierces. Les appels serveur (sans
   // Origin) passent ; seule une origine navigateur hors allowlist est rejetee.
   const originReject = rejectDisallowedOrigin(req)

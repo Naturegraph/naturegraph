@@ -27,6 +27,7 @@
  */
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import { serveWithSentry } from '../_shared/sentry.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -106,7 +107,7 @@ interface ResendEvent {
   }
 }
 
-Deno.serve(async (req: Request) => {
+serveWithSentry('resend-webhook', async (req: Request) => {
   if (req.method !== 'POST') {
     return new Response('Method not allowed', { status: 405, headers: JSON_HEADERS })
   }

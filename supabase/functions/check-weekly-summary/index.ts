@@ -17,6 +17,7 @@
  */
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import { serveWithSentry } from '../_shared/sentry.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -46,7 +47,7 @@ function thisMondayUtc(): string {
   ).toISOString()
 }
 
-Deno.serve(async (req: Request) => {
+serveWithSentry('check-weekly-summary', async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (req.method !== 'POST') {
     return new Response('Method not allowed', { status: 405, headers: CORS })

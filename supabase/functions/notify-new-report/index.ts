@@ -18,6 +18,7 @@
  */
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import { serveWithSentry, captureEdgeMessage } from '../_shared/sentry.ts'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? ''
 const RESEND_FROM = Deno.env.get('RESEND_FROM') ?? 'Naturegraph <support@naturegraph.ca>'
@@ -46,7 +47,7 @@ function esc(s: string): string {
     .replace(/"/g, '&quot;')
 }
 
-Deno.serve(async (req: Request) => {
+serveWithSentry('notify-new-report', async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*' } })
   }
@@ -129,7 +130,14 @@ Deno.serve(async (req: Request) => {
 
     if (!resendResp.ok) {
       const errText = await resendResp.text()
-      console.error('[notify-new-report] Resend error:', errText)
+      // Alerte moderation qui n'est PAS partie : signalement (potentiellement
+      // urgent) qui reste sans notification a l'equipe. On remonte en error.
+      void captureEdgeMessage(
+        'notify-new-report',
+        'alerte moderation non envoyee (Resend)',
+        { status: resendResp.status, detail: errText.slice(0, 300), urgent },
+        'error',
+      )
       return new Response(JSON.stringify({ ok: false, reason: 'resend_error', detail: errText }), {
         status: 502,
         headers: JSON_HEADERS,
