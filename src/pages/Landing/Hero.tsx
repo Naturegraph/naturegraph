@@ -380,8 +380,14 @@ export function Hero({ onNavigate }: HeroProps) {
           className="relative z-10 flex flex-col items-center text-center px-6 md:px-16 flex-1 justify-center pt-20 md:pt-24 lg:pt-0 pb-16 lg:pb-20"
         >
           {/* Titre H1 (BATCH 114 : ajout sm pour éviter écrasement sur 360px) */}
+          {/* aria-label : le titre est coupe en 2 lignes (titleLine1 + <br> +
+              span colore). Sans aria-label, le nom accessible concatene les deux
+              sans espace ("donnonsvie...") -> lu de travers par un lecteur d'ecran.
+              On force le libelle complet avec l'espace ; le rendu visuel (2 lignes,
+              degrade) reste identique. */}
           <motion.h1
             variants={fadeUp}
+            aria-label={`${t('landing.hero.titleLine1')} ${t('landing.hero.titleLine2')}`}
             className="text-3xl sm:text-4xl md:text-5xl lg:text-[72px] font-bold text-[var(--color-text-white)] leading-[1.1] font-[var(--font-title)] max-w-full sm:max-w-[600px] md:max-w-[900px]"
           >
             {t('landing.hero.titleLine1')}
