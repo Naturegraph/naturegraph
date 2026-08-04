@@ -10,6 +10,37 @@
 
 ---
 
+## ÉTAT D'AVANCEMENT (mis à jour 2026-08-03)
+
+**FAIT et en prod (V0.6.1 → V0.6.8) :**
+
+- ✅ **Phase 0 complète** : source maps uploadées + `release` taggée (V0.6.1),
+  environnements, intégrations explicites (browserTracing + Session Replay),
+  contexte **route** + **utilisateur** (V0.6.7). Piège Vercel résolu :
+  `SENTRY_AUTH_TOKEN` au niveau **Projet** (pas Shared équipe).
+- ✅ **Phase 2.1 (filets d'erreur)** : `SectionErrorBoundary` sur feed / échanges
+  / détail post, **+ filet au niveau PAGE dans `LazyPage`** (V0.6.8) → les 28
+  routes protégées d'un coup. Aucun écran ne fait plus tomber toute l'app.
+- ✅ **Phase 2.2 (gestes critiques)** : publier, upload photo, recherche espèce,
+  auth (OTP envoi/vérif) instrumentés (`trackAction`/`trackFailure`, capture des
+  échecs silencieux + garde-fous composant, V0.6.3-0.6.8).
+- ✅ **Filet GLOBAL mutations** (`MutationCache.onError`, V0.6.6) : toute action
+  utilisateur ratée capturée en un point, 12 actions labellisées. **Filet
+  queries** en fil d'Ariane (V0.6.8).
+- ✅ **Session Replay** actif (vidéo sur erreur ET sur échec silencieux via flush).
+- ✅ **Phase 2.3** : Web Vitals via browserTracing + Vercel Analytics.
+
+**RESTE (par ordre de valeur) :**
+
+1. **Phase 3, backend/edge** : capturer les erreurs des Edge Functions Deno
+   (les 10 fonctions email/crons NG-045) vers Sentry — aujourd'hui un crash edge
+   (ex : E2 coupé à 23/42) reste invisible tant que personne ne lit les logs.
+2. **Perf ciblée** : mesurer la durée des flux clés (publier/upload/recherche) et
+   flaguer les lents.
+3. **Phase 1, alertes Discord + uptime** (reporté par Nicolas : pas prioritaire).
+
+---
+
 ## 1. Constat, pourquoi on est dans le brouillard aujourd'hui
 
 Sentry EST installé et **actif en prod** (il reçoit des erreurs). Mais il lui
