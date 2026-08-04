@@ -44,14 +44,21 @@
 - ✅ **Session Replay** actif (vidéo sur erreur ET sur échec silencieux via flush).
 - ✅ **Phase 2.3** : Web Vitals via browserTracing + Vercel Analytics.
 
+- ✅ **Phase 3 backend/edge (2026-08-04)** : les **24 Edge Functions** remontent
+  désormais leurs erreurs à Sentry via `supabase/functions/_shared/sentry.ts`
+  (helper sans SDK, envelope HTTP, no-op sans DSN). Toutes enveloppées par
+  `serveWithSentry('<nom>', ...)` (tag `edge_function:<nom>`). Captures explicites
+  sur l'E2 (`check-missed-feed` : envois par destinataire ratés + bilan « envoi
+  partiel X/Y » + crash du run) et l'alerte modération (`notify-new-report` :
+  échec Resend). **ACTIVATION** : définir le secret `SENTRY_EDGE_DSN` sur le
+  projet Supabase + redéployer les fonctions (le DSN Sentry est public, réutiliser
+  celui du client est sans risque).
+
 **RESTE (par ordre de valeur) :**
 
-1. **Phase 3, backend/edge** : capturer les erreurs des Edge Functions Deno
-   (les 10 fonctions email/crons NG-045) vers Sentry — aujourd'hui un crash edge
-   (ex : E2 coupé à 23/42) reste invisible tant que personne ne lit les logs.
-2. **Perf ciblée** : mesurer la durée des flux clés (publier/upload/recherche) et
+1. **Perf ciblée** : mesurer la durée des flux clés (publier/upload/recherche) et
    flaguer les lents.
-3. **Phase 1, alertes Discord + uptime** (reporté par Nicolas : pas prioritaire).
+2. **Phase 1, alertes Discord + uptime** (reporté par Nicolas : pas prioritaire).
 
 ---
 
