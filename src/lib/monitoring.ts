@@ -187,14 +187,18 @@ export async function initMonitoring(): Promise<void> {
       tracesSampleRate: 0.1,
       // Session Replay. maskAllText + blockAllMedia = aucun contenu perso/photo.
       //
-      // replaysSessionSampleRate = 1.0 : ENREGISTRE TOUTES LES SESSIONS, meme
-      // SANS erreur. C'EST LE REGLAGE MANQUANT (Nicolas 2026-08-03) : le bug
-      // "bouton mort au retour d'arriere-plan" ne lance AUCUNE exception -> avec
-      // un enregistrement uniquement-sur-erreur, rien n'etait capture. Le replay
-      // se fait au niveau DOM (rrweb), independamment de React : on verra la
-      // video meme si React est fige. TEMPORAIRE / DEBUG : a REBAISSER (ex 0.1)
-      // une fois le bug diagnostique, pour le quota Sentry.
-      replaysSessionSampleRate: 1.0,
+      // replaysSessionSampleRate = 0.1 : on enregistre 10% des sessions SAINES
+      // (sans erreur). Etait a 1.0 TEMPORAIREMENT (2026-08-03) pour diagnostiquer
+      // le "bouton mort au retour d'arriere-plan", qui ne lance aucune exception.
+      // Ce bug est desormais corrige autrement (reprise arriere-plan V0.6.9 + CSP
+      // worker-src V0.6.10), donc on revient a une valeur sobre : le worker de
+      // compression rrweb ne tourne plus sur 100% des sessions (gain CPU/batterie/
+      // bande passante cote client + quota Sentry). L'echantillon a 10% garde un
+      // filet pour reperer d'eventuels echecs silencieux futurs.
+      //
+      // replaysOnErrorSampleRate = 1.0 : INCHANGE. Chaque session AVEC erreur
+      // garde sa video complete -> aucune perte pour l'analyse des bugs.
+      replaysSessionSampleRate: 0.1,
       replaysOnErrorSampleRate: 1.0,
       // RGPD : pas de PII
       sendDefaultPii: false,
