@@ -1,0 +1,90 @@
+# Supabase config, Naturegraph
+# =============================================================================
+# Cree le 2026-08-04. But PRINCIPAL a ce stade : figer le reglage `verify_jwt`
+# de CHAQUE Edge Function, pour qu'un futur `supabase functions deploy` (en bloc)
+# NE REINITIALISE PAS ces reglages a leur defaut (`true`) et ne casse pas les
+# crons/webhooks internes qui s'authentifient par secret custom (x-cron-secret).
+#
+# verify_jwt = false  -> fonction interne (cron, webhook, trigger DB) : PAS de JWT
+#                        utilisateur, l'auth se fait par secret/signature dans le
+#                        corps du handler.
+# verify_jwt = true   -> fonction appelee par le CLIENT avec le JWT de l'user
+#                        (actions authentifiees : suppression compte, export RGPD).
+#
+# Valeurs relevees sur le projet prod (list_edge_functions) le 2026-08-04.
+
+project_id = "hrxgduvworofnrjmgpcj"
+
+# ─── Actions utilisateur (JWT requis) ───────────────────────────────────────
+[functions.admin-delete-user]
+verify_jwt = true
+
+[functions.delete-account]
+verify_jwt = true
+
+[functions.export-data]
+verify_jwt = true
+
+[functions.send-beta-invite]
+verify_jwt = true
+
+# ─── Fonctions internes (cron / webhook / trigger : secret custom) ───────────
+[functions.alert-infra-health]
+verify_jwt = false
+
+[functions.alert-signup-surge]
+verify_jwt = false
+
+[functions.backup-media]
+verify_jwt = false
+
+[functions.check-activation-emails]
+verify_jwt = false
+
+[functions.check-followed-digest]
+verify_jwt = false
+
+[functions.check-goal-reminder]
+verify_jwt = false
+
+[functions.check-missed-feed]
+verify_jwt = false
+
+[functions.check-social-digest]
+verify_jwt = false
+
+[functions.check-species-milestones]
+verify_jwt = false
+
+[functions.check-streak-risk]
+verify_jwt = false
+
+[functions.check-weekly-summary]
+verify_jwt = false
+
+[functions.email-unsubscribe]
+verify_jwt = false
+
+[functions.notify-new-report]
+verify_jwt = false
+
+[functions.resend-webhook]
+verify_jwt = false
+
+[functions.send-invite-reminder]
+verify_jwt = false
+
+[functions.send-notification-email]
+verify_jwt = false
+
+[functions.send-waitlist-confirmation]
+verify_jwt = false
+
+[functions.validate-beta-key]
+verify_jwt = false
+
+[functions.validate-media]
+verify_jwt = false
+
+[functions.weekly-species-digest]
+verify_jwt = false
