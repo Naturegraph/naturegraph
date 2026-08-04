@@ -13,8 +13,9 @@
   | `check-missed-feed` | E2 : captures explicites (destinataire raté, envoi partiel X/Y, crash run) | false |
   | `notify-new-report` | Modération : capture explicite d'un échec Resend | false |
   | `alert-infra-health` | Alerte quotas/délivrabilité | false |
+  | `send-notification-email` | Dispatcher central (tous les emails E1-E8 passent par lui) | false |
 
-## Ce qui reste (21 fonctions)
+## Ce qui reste (20 fonctions)
 
 Elles n'ont que le filet `serveWithSentry` (aucune capture explicite ajoutée), et
 elles ont déjà leur propre try/catch interne : le gain est réel mais marginal
@@ -28,7 +29,7 @@ email-unsubscribe, export-data, resend-webhook, send-beta-invite,
 send-invite-reminder, send-notification-email, send-waitlist-confirmation,
 validate-beta-key, validate-media, weekly-species-digest.
 
-## Comment finir les 21 restantes
+## Comment finir les 20 restantes
 
 `config.toml` (à la racine `supabase/`) fige désormais le `verify_jwt` de chaque
 fonction : un déploiement en bloc ne cassera donc plus les crons/webhooks.
