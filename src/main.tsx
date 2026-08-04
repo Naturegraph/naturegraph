@@ -4,7 +4,8 @@ import { RouterProvider } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { Analytics } from '@vercel/analytics/react'
 import { queryClient } from './lib/queryClient'
-import { initMonitoring } from './lib/monitoring'
+import { initMonitoring, trackAction } from './lib/monitoring'
+import { installResumeRecovery } from './lib/resumeRecovery'
 import { captureAuthUrlError } from './lib/authUrlNotice'
 import { router } from './router'
 import { AppErrorBoundary } from './components/layout/AppErrorBoundary'
@@ -20,6 +21,12 @@ captureAuthUrlError()
 
 // Initialise Sentry si VITE_SENTRY_DSN est defini (no-op sinon)
 void initMonitoring()
+
+// Reprise propre au retour d'arriere-plan (PWA mobile) : corrige le "bouton mort
+// au retour dans l'app" (page gelee par l'OS -> reload) et rafraichit les donnees
+// perimees apres une longue absence. Installe hors React pour survivre a un arbre
+// React fige. Cf. src/lib/resumeRecovery.ts pour le diagnostic complet.
+installResumeRecovery()
 
 /**
  * Recuperation des chunks perimes apres un deploiement (Nicolas 2026-06-04).
@@ -40,6 +47,13 @@ window.addEventListener('vite:preloadError', (event) => {
   const RELOAD_KEY = 'ng:chunk-reload-at'
   const last = Number(sessionStorage.getItem(RELOAD_KEY) ?? '0')
   if (Date.now() - last < 10_000) return // deja tente il y a moins de 10s
+  // Fil d'Ariane Sentry AVANT le reload : un chunk perime qui echoue est une
+  // cause frequente de "bouton qui ouvre rien" apres un deploiement (l'onglet
+  // reference un hash qui n'existe plus sur le CDN). Sans cette trace, le reload
+  // corrige mais on ne mesure jamais combien d'users sont touches.
+  trackAction('chunk.stale.reload', {
+    module: (event as unknown as { payload?: { message?: string } }).payload?.message,
+  })
   event.preventDefault()
   sessionStorage.setItem(RELOAD_KEY, String(Date.now()))
   window.location.reload()

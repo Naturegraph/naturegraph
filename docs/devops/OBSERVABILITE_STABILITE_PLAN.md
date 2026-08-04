@@ -10,7 +10,21 @@
 
 ---
 
-## ÉTAT D'AVANCEMENT (mis à jour 2026-08-03)
+## ÉTAT D'AVANCEMENT (mis à jour 2026-08-04)
+
+**FAIT et en prod (V0.6.1 → V0.6.9) :**
+
+- ✅ **Reprise au retour d'arrière-plan (V0.6.9)** : correction de LE bug le plus
+  frustrant, le « bouton Partage ta rencontre mort au retour dans l'app, et rien
+  dans Sentry ». Diagnostic : l'OS **gèle tout le contexte JS** (Sentry inclus)
+  quand la PWA est en arrière-plan ; aucune instrumentation in-page ne peut alors
+  remonter quoi que ce soit. Fix `src/lib/resumeRecovery.ts` (installé hors React
+  pour survivre à un arbre figé) : `pageshow`+`persisted` (bfcache) après ≥ 60 s
+  cachée → **reload** (app ressuscitée) ; retour visible après longue absence →
+  **refetch** des requêtes actives (sobre, pas de reload). + `SectionErrorBoundary`
+  autour du panneau de contribution : un chunk de formulaire qui échoue à charger
+  devient un encart « Réessayer » + un événement Sentry, au lieu d'un vide muet.
+  - remontée Sentry du reload sur chunk périmé (`vite:preloadError`).
 
 **FAIT et en prod (V0.6.1 → V0.6.8) :**
 
