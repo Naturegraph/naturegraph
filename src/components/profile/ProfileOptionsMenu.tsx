@@ -100,7 +100,7 @@ export function ProfileOptionsMenu({
         toast.success(
           t('profile.blockSuccess', {
             username,
-            defaultValue: `@${username} a été bloqué. Tu peux le débloquer depuis tes paramètres.`,
+            defaultValue: '@{{username}} a été bloqué. Tu peux le débloquer depuis tes paramètres.',
           }),
         )
       } catch (err) {

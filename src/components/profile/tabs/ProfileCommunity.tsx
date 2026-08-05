@@ -110,7 +110,7 @@ function UserCard({ user }: UserCardProps) {
           <span className="text-xs text-muted-foreground">
             {t('profile.community.migrateursCount', {
               count: user.followers_count,
-              defaultValue: `${user.followers_count} migrateurs`,
+              defaultValue: '{{count}} migrateurs',
             })}
           </span>
         </div>

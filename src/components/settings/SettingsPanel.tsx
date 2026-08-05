@@ -312,7 +312,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
             </div>
             <p className="font-body text-xs leading-5 text-[#424747] text-center">
               {t('settings.footer.version', {
-                defaultValue: `App version ${APP_VERSION}`,
+                defaultValue: 'App version {{version}}',
                 version: APP_VERSION,
               })}
             </p>

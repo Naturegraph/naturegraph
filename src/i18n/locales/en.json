@@ -22,7 +22,10 @@
     "yes": "Yes",
     "no": "No",
     "add": "Add",
-    "reset": "Reset"
+    "reset": "Reset",
+    "copied": "Link copied",
+    "dismiss": "Dismiss",
+    "optional": "optional"
   },
   "taxonomy": {
     "birds": "Birds",
@@ -241,7 +244,9 @@
       "noCode": "Didn't receive the code?",
       "resend": "Resend code",
       "timer": "Code valid for {{time}}",
-      "demoCode": "Demo mode, your OTP code: {{code}}"
+      "demoCode": "Demo mode, your OTP code: {{code}}",
+      "codeGroupLabel": "6-digit verification code",
+      "digitLabel": "Digit {{n}} of 6"
     },
     "beta": {
       "title": "Closed beta",
@@ -259,7 +264,16 @@
       "errorExpired": "Key expired. Contact us at support@naturegraph.ca to get a new one.",
       "errorRateLimited": "Too many attempts. Try again in 10 minutes.",
       "errorServer": "Server error. Try again in a moment.",
-      "errorGeneric": "An error occurred."
+      "errorGeneric": "An error occurred.",
+      "claimWarning": "Account created but key validation failed. Please contact support."
+    },
+    "inviteExpired": {
+      "desc": "No worries, access is open: create your account below to join Naturegraph.",
+      "title": "Your invitation link has expired"
+    },
+    "sessionExpired": {
+      "desc": "Log back in with your email to continue.",
+      "title": "Your session has expired"
     }
   },
   "onboarding": {
@@ -288,7 +302,8 @@
       "skip": "Skip",
       "continue": "Continue",
       "counter": "{{count}} / {{max}} selected",
-      "helperText": "You can update your preferences anytime in your profile"
+      "helperText": "You can update your preferences anytime in your profile",
+      "groupLabel": "Select your nature interests"
     },
     "frequency": {
       "title": "How often do you explore nature?",
@@ -449,7 +464,11 @@
       "notifications": "Notifications",
       "contribute": "Contribute",
       "profileMenu": "Profile menu",
-      "login": "Sign in"
+      "login": "Sign in",
+      "activeFilter": "Active filter",
+      "clearFilter": "Clear filter",
+      "radiusKm": "{{km}} km radius",
+      "statsSheet": "Trends & community"
     },
     "sidebar": {
       "joinTitle": "Join the community",
@@ -462,7 +481,8 @@
       "migratorsInterests": "Based on your interests",
       "migratorsEmpty": "Soon, discover active naturalists near you.",
       "migratorsFollow": "Follow",
-      "migratorsObsCount": "{{count}} obs"
+      "migratorsObsCount": "{{count}} obs",
+      "migratorsOpenProfile": "View {{username}}’s profile"
     },
     "profile": {
       "obs": "Obs",
@@ -500,7 +520,13 @@
         "createAccount": "Create my account",
         "continueDiscovery": "Continue without personalisation",
         "tabDisabledHint": "Sign in to access your personalised feed"
-      }
+      },
+      "activeFiltersCount": "{{count}} active filter(s)",
+      "emptyLocationDesc": "No public observations found within {{km}} km of {{city}}. Widen your radius or contribute to kick-start the local momentum.",
+      "emptyLocationTitle": "No observations within this radius",
+      "endOfList": "You’ve seen all observations for now.",
+      "loadError": "Try again in a moment. If the problem persists, check your connection.",
+      "loadErrorTitle": "Couldn’t load the feed"
     },
     "filters": {
       "title": "Filters",
@@ -568,7 +594,12 @@
         "edit": "Edit my observation",
         "editDesc": "You can correct the information",
         "delete": "Delete my observation",
-        "deleteDesc": "Are you sure you want to delete?"
+        "deleteDesc": "Are you sure you want to delete?",
+        "actionDone": "Done",
+        "addFavoriteDone": "Added to favorites",
+        "addFavoriteDoneDesc": "Find it in your collection",
+        "hidePostDone": "Post hidden",
+        "muteUserDone": "@{{username}} muted"
       },
       "reportModal": {
         "title": "Report",
@@ -582,7 +613,9 @@
         "cancel": "Cancel",
         "submit": "Submit",
         "successTitle": "Report sent",
-        "successDesc": "Thank you, our team will review this post."
+        "successDesc": "Thank you, our team will review this post.",
+        "errorGeneric": "Something went wrong. Try again.",
+        "submitting": "Sending…"
       },
       "deleteModal": {
         "title": "Delete observation?",
@@ -590,7 +623,12 @@
         "warning": "This action is irreversible.",
         "cancel": "Cancel",
         "confirm": "Confirm"
-      }
+      },
+      "filterByCategory": "Filter by {{category}}",
+      "nextImage": "Next image",
+      "openDetail": "View observation details",
+      "prevImage": "Previous image",
+      "unknownSpecies": "Species not determined"
     },
     "stats": {
       "impact": "Impact",
@@ -666,7 +704,8 @@
       "messageCommentGrouped": "joined your exchanges",
       "messageCommentReply": "replied to your exchange",
       "messageIdentification": "suggested a species on your encounter",
-      "messageEchangeReaction": "liked your exchange"
+      "messageEchangeReaction": "liked your exchange",
+      "delete": "Delete this notification"
     },
     "profileMenu": {
       "principal": "Main",
@@ -691,6 +730,15 @@
       "natureEncounter": "Nature encounter",
       "natureEncounterDesc": "Document the observation of a species with location and identification.",
       "share": "Share"
+    },
+    "share": {
+      "copied": "Link copied!",
+      "copyLink": "Copy link",
+      "copyLinkLabel": "Copy the link:",
+      "title": "Share observation"
+    },
+    "statsSheet": {
+      "title": "Trends & community"
     }
   },
   "contribute": {
@@ -735,7 +783,27 @@
       "advancedOptions": "Advanced options",
       "obsTitle": "Title of your encounter",
       "obsTitlePlaceholder": "Morning encounter in the forest...",
-      "publicLocation": "Make location public"
+      "publicLocation": "Make location public",
+      "activeFiltersCount": "{{count}} active filter(s)",
+      "familyBadge": "Family",
+      "filterByCategory": "By species category",
+      "filterPrecisionHint": "You can combine both to see species + families",
+      "filterPrecisionTitle": "Identification precision",
+      "filtersTitle": "Filters",
+      "immortaliseInstant": "Capture your encounter!",
+      "instantHint": "Describe the conditions, the natural phenomenon, or anything you find important!",
+      "noSpeciesFound": "No species found for “{{query}}”",
+      "noSpeciesHint": "Check the spelling or use “I don’t know the species” below to share anyway.",
+      "precisionExact": "Exact species",
+      "precisionFamily": "Family only",
+      "reportMissingBody": "Hello,\n\nI couldn’t find this species in the search: “{{query}}”.\n\nPlease add it to the database if possible.\n\n(Write the exact name or a link below if you have one.)",
+      "reportMissingSpecies": "Report a missing species",
+      "reportMissingSubject": "Missing species on Naturegraph",
+      "saveFilters": "Save filters",
+      "searchLoading": "Searching…",
+      "sectionFamilies": "Families",
+      "sectionSpecies": "Species",
+      "updateBtn": "Update"
     },
     "media": {
       "label": "Photos",
@@ -772,7 +840,13 @@
         "altLabel": "Accessibility description",
         "altPlaceholder": "e.g. Great tit perched on an oak branch",
         "altHint": "Describe what's shown. Read by screen readers."
-      }
+      },
+      "formatLabel": "Photo display format",
+      "partialUploadError": "{{failed}} of {{total}} photo(s) couldn’t be added. You can add them again via “Edit my observation”.",
+      "uploadError": "Submission is taking too long. Check your internet connection and try again.",
+      "uploadErrorTitle": "Upload failed",
+      "uploadingHint": "We’re uploading your photos. This can take a few seconds…",
+      "uploadingTitle": "Uploading…"
     },
     "description": {
       "label": "Description",
@@ -782,7 +856,9 @@
     },
     "phenomenon": {
       "label": "Phenomenon or atmosphere",
-      "placeholder": "Morning mist, bloom, migration..."
+      "placeholder": "Morning mist, bloom, migration...",
+      "showLess": "Show less",
+      "showMore": "Show more"
     },
     "date": {
       "label": "Observation date",
@@ -791,7 +867,8 @@
       "afternoon": "Afternoon",
       "dusk": "Dusk",
       "evening": "Evening",
-      "night": "Night"
+      "night": "Night",
+      "simpleLabel": "Date"
     },
     "weather": {
       "label": "Weather",
@@ -800,7 +877,8 @@
       "rainy": "Rainy",
       "windy": "Windy",
       "snowy": "Snowy",
-      "foggy": "Foggy"
+      "foggy": "Foggy",
+      "captureLabel": "Shooting conditions"
     },
     "habitat": {
       "label": "Habitat",
@@ -824,7 +902,14 @@
       "placeholder": "City, forest, place name...",
       "hide": "Hide precise location",
       "hideDesc": "If disabled, only the region is visible. Enable to share the exact spot.",
-      "makePublic": "Enable to make the location public"
+      "makePublic": "Enable to make the location public",
+      "infoButton": "Learn more about location",
+      "privacy": {
+        "intro": "By default, your location data is private. It won’t be shared with other users.",
+        "publicAnswer": "Yes, you can choose to make your location public. However, it will be tied to the city where the observation took place to protect your privacy.",
+        "publicTitle": "Can I make my location public?",
+        "usage": "We’ll use your location to improve the quality of scientific data and track how species evolve. This information may be shared with organizations for studies, but only anonymously."
+      }
     },
     "species": {
       "label": "Observed species",
@@ -878,7 +963,18 @@
       "descriptionRequired": "Description is required",
       "descriptionTooLong": "Maximum {{max}} characters",
       "titleTooLong": "The title cannot exceed {{max}} characters",
-      "emptyPost": "Add at least a photo, a species or a description before publishing."
+      "emptyPost": "Add at least a photo, a species or a description before publishing.",
+      "alreadySubmitting": "Publishing already in progress, please wait a moment.",
+      "locationNetworkError": "Slow connection. Check your connection or try again in a moment.",
+      "notAuthenticated": "Log in to publish",
+      "speciesNetworkError": "Slow or interrupted connection. Check your connection or try again in a moment.",
+      "submitFailed": "Couldn’t publish right now."
+    },
+    "instant": {
+      "photoOptionalHint": "You can also continue without adding a photo."
+    },
+    "title": {
+      "label": "Title"
     }
   },
   "observation": {
@@ -930,20 +1026,37 @@
     "journal": {
       "recent": "Recent",
       "popular": "Popular",
-      "noObs": "No observations shared yet."
+      "noObs": "No observations shared yet.",
+      "endOfList": "End of the journal, all observations are shown.",
+      "noObsSubtitle": "Come back later to discover their next findings",
+      "noObsTitle": "No encounters shared on this profile",
+      "viewGrid": "Grid view",
+      "viewList": "List view"
     },
     "inspirations": {
-      "empty": "No inspirations saved yet."
+      "empty": "No inspirations saved yet.",
+      "aria": "{{username}}’s collection",
+      "emptySubtitle": "Observations you save will appear here to inspire you later.",
+      "emptyTitle": "No saved inspirations"
     },
     "community": {
       "migrateursList": "Followers",
       "migrationsList": "Following",
       "noMigrateurs": "Nobody follows this profile yet.",
-      "noMigrations": "This profile doesn't follow anyone yet."
+      "noMigrations": "This profile doesn't follow anyone yet.",
+      "migrateursCount": "{{count}} migrators",
+      "migrateursListAria": "List of migrators",
+      "migrationsListAria": "List of migrations",
+      "noMigrateursSubtitle": "Naturalists who follow this profile will appear here as soon as they join its migration.",
+      "noMigrateursTitle": "No migrators yet",
+      "noMigrationsSubtitle": "This profile hasn’t joined anyone’s migration yet, come back later to discover its inspirations.",
+      "noMigrationsTitle": "No shared migrations",
+      "toggleAria": "Show migrators or migrations"
     },
     "stats": {
       "comingSoon": "Coming soon",
-      "comingSoonDesc": "Detailed statistics are coming soon."
+      "comingSoonDesc": "Detailed statistics are coming soon.",
+      "comingSoonTitle": "Statistics coming soon"
     },
     "edit": {
       "title": "Edit profile",
@@ -969,13 +1082,36 @@
       "photoBannerHint": "Recommended format: 1200 × 400 px (3:1 ratio)",
       "change": "Change",
       "delete": "Delete",
-      "save": "Save changes"
+      "save": "Save changes",
+      "avatarAlt": "Current profile photo",
+      "bannerAlt": "Current banner",
+      "errorImageSize": "File too large (50 MB max).",
+      "errorImageType": "Unsupported file, an image is expected.",
+      "facebookUrlError": "Enter a valid Facebook link (https://facebook.com/your-page).",
+      "instagramUrlError": "Enter a valid Instagram link (https://instagram.com/your-handle).",
+      "saveError": "Couldn’t save right now.",
+      "saveSuccess": "Profile updated",
+      "uploadError": "Couldn’t upload the image right now.",
+      "usernameHelper": "Letters, numbers, “.” and “_” allowed.",
+      "usernameInvalid": "Letters, numbers, “.” or “_” only. No “..” or “__” repeats.",
+      "usernameTooLong": "Username too long (max {{max}} characters)",
+      "usernameTooShort": "Username too short (min {{min}} characters)",
+      "website": "Website"
     },
     "shareSheet": {
       "title": "Share this profile",
       "copyLink": "Copy link:",
       "copied": "Link copied!"
-    }
+    },
+    "blockError": "Couldn’t block this account.",
+    "blockSuccess": "@{{username}} has been blocked. You can unblock them from your settings.",
+    "blockUser": "Block this user",
+    "copyLink": "Copy link",
+    "followError": "Action failed for now, please try again.",
+    "followSuccess": "You now migrate with @{{username}}.",
+    "reportUser": "Report this profile",
+    "settings": "Settings",
+    "unfollowSuccess": "You no longer migrate with @{{username}}."
   },
   "settings": {
     "title": "Settings",
@@ -991,7 +1127,6 @@
     "fontSizeSmall": "Small",
     "fontSizeMedium": "Medium",
     "fontSizeLarge": "Large",
-    "notifications": "Notifications",
     "privacy": "Privacy",
     "languageFr": "Français",
     "languageEn": "English",
@@ -1056,7 +1191,6 @@
     "publicProfileDesc": "Your profile is visible to all users",
     "privateProfileDesc": "Your profile is visible only to your followers",
     "notificationsComingSoon": "Notification management is coming soon.",
-    "logout": "Log out",
     "logoutDesc": "You will be redirected to the home page",
     "logoutSuccess": "You are logged out. See you soon!",
     "deleteAccountDesc": "This action is irreversible. All your data will be deleted.",
@@ -1076,7 +1210,86 @@
     "weeklyGoalDecrease": "Decrease goal",
     "weeklyGoalIncrease": "Increase goal",
     "items": {
-      "darkMode": "Dark mode"
+      "darkMode": "Dark mode",
+      "blocking": "Blocking",
+      "deleteAccount": "Delete my account",
+      "feedback": "Share your ideas and feedback",
+      "help": "Need help?",
+      "license": "License and copyright",
+      "notifications": "Notifications",
+      "security": "Security",
+      "signOut": "Log out"
+    },
+    "footer": {
+      "privacy": "Privacy policy",
+      "terms": "Terms",
+      "version": "App version {{version}}"
+    },
+    "help": {
+      "errorSubmit": "Couldn’t send the message right now.",
+      "intro": "We’re listening! Your feedback helps us keep improving Naturegraph so it fits your needs even better.",
+      "messageLabel": "Your message",
+      "send": "Send",
+      "subjectLabel": "Subject",
+      "subjectPlaceholder": "Select a subject",
+      "successDesc": "Confirm the send in your mail app to finish.",
+      "successTitle": "Message ready to send",
+      "title": "Have a question?"
+    },
+    "license": {
+      "gbifDesc": "international taxonomic reference (Global Biodiversity Information Facility): CC0 public domain.",
+      "inaturalistDesc": "a global participatory biodiversity observation platform (CC-BY). Main source of species names, taxonomic hierarchies, and territorial presence status (France + Canada).",
+      "moreCguLink": "Terms of Service",
+      "morePrefix": "Unsure about the use of your photos or data? See our ",
+      "moreSuffix": " or contact us directly.",
+      "moreTitle": "Want to know more?",
+      "photosOwnership": "By posting a photo on Naturegraph, you keep ownership of your content.",
+      "photosTitle": "Rights on shared photos",
+      "photosUsage": "You agree that your photo may be displayed on the platform and used collaboratively for identification and data enrichment.",
+      "respectBody1": "Only share photos you took yourself or for which you have permission.",
+      "respectBody2": "Contributions must not contain protected content without explicit agreement.",
+      "respectTitle": "Respecting copyright",
+      "sourcesBody1": "To enrich species information (common names, taxonomy, reference photos), we use open and collaborative databases.",
+      "sourcesBody2": "Naturegraph relies mainly on three reference sources distributed under open licenses:",
+      "sourcesBody3": "Users remain free to suggest corrections and identifications through the “Request an identification” feature.",
+      "sourcesTitle": "Data from third-party sources",
+      "usageBody": "At Naturegraph, we place great importance on respecting copyright and using shared content responsibly. Here you’ll find the essential information about the licenses applied to photos and data.",
+      "usageTitle": "Content usage",
+      "wikidataDesc": "common names in French and Québec French: CC0 public domain."
+    },
+    "logout": {
+      "confirm": "Log out",
+      "description": "You’ll be logged out of Naturegraph. You can log back in anytime with your email.",
+      "title": "Are you sure you want to log out?"
+    },
+    "notifications": {
+      "freqDaily": "Once a day",
+      "freqRealtime": "Real time",
+      "freqTitle": "Notification frequency",
+      "freqWeekly": "Once a week",
+      "methodEmail": "By email",
+      "methodInApp": "In the app",
+      "methodNone": "No notifications",
+      "methodTitle": "Notification methods",
+      "newsTitle": "News and updates",
+      "productUpdates": "Get news about product and feature updates",
+      "typeFollow": "New migrators (followers)",
+      "typePost": "New posts from profiles you follow",
+      "typeReaction": "Reactions to my posts",
+      "typesTitle": "Which notifications to receive",
+      "updateError": "Couldn’t save right now."
+    },
+    "security": {
+      "emailNewLabel": "Your new email",
+      "emailNewPlaceholder": "Email address...",
+      "emailOldLabel": "Your old email",
+      "emailTitle": "Change your login email",
+      "emailUpdateError": "Couldn’t change the email right now.",
+      "emailUpdateSuccessDesc": "A link has been sent to {{email}} and to your current address. Click both links to validate the change.",
+      "emailUpdateSuccessTitle": "Confirm from both addresses",
+      "errorInvalidEmail": "Invalid email address.",
+      "errorSameEmail": "That’s already your current email.",
+      "update": "Update"
     }
   },
   "mobileNav": {
@@ -1107,7 +1320,11 @@
     },
     "copyright": "© 2026 Naturegraph. All rights reserved.",
     "madeWithLove": "Made with love",
-    "team": "by the Naturegraph team"
+    "team": "by the Naturegraph team",
+    "dataAttribution": "Taxonomic data: iNaturalist (CC-BY 4.0), GBIF (CC0), Wikidata (CC0).",
+    "legalLink": "Legal notice",
+    "navLabel": "Useful links",
+    "privacyLink": "Privacy policy"
   },
   "legal": {
     "privacy": {
@@ -1198,7 +1415,21 @@
       "messagePlaceholder": "Tell us everything...",
       "submit": "Send message",
       "success": "Message sent! We'll get back to you soon."
-    }
+    },
+    "directInfo": "You can also write to us directly at",
+    "intro": "A question, a bug, an idea? Write to us, we read every message.",
+    "messageLabel": "Your message",
+    "messagePlaceholder": "Describe your question or feedback in a few sentences…",
+    "minChars": "min. 20 characters",
+    "nameLabel": "Your first name",
+    "namePlaceholder": "Marie",
+    "sentDesc": "Your mail client should have opened with your message pre-filled. Confirm the send so we receive it. Otherwise, write to us directly at",
+    "sentTitle": "Message ready to send",
+    "subjectLabel": "Subject",
+    "subjectPlaceholder": "Select a subject",
+    "submit": "Send message",
+    "successDesc": "Confirm the send in your mail app to finish.",
+    "successTitle": "Mail client opened"
   },
   "notifications": {
     "success": "Success",
@@ -1442,7 +1673,8 @@
         "moderator": "moderator",
         "support": "support"
       }
-    }
+    },
+    "title": "Administration"
   },
   "notFound": {
     "title": "This page has migrated elsewhere",
@@ -1454,5 +1686,35 @@
     "suggestionsLabel": "Page suggestions",
     "search": "Search",
     "notifications": "Notifications"
+  },
+  "forbidden": {
+    "backHome": "Back to home",
+    "description": "You don’t have access to this page. Head back and we’ll take you to familiar ground.",
+    "eyebrow": "Access denied",
+    "login": "Log in",
+    "title": "This area is restricted"
+  },
+  "post": {
+    "backToFeed": "Back to the feed",
+    "related": {
+      "next": "Next",
+      "prev": "Previous",
+      "title": "Observations you might like"
+    }
+  },
+  "pwa": {
+    "installCta": "Install",
+    "installHint": "Reach your observations faster, like a real app.",
+    "installIosHint": "Tap Share, then “Add to Home Screen”.",
+    "installRegion": "Install Naturegraph",
+    "installTitle": "Install Naturegraph on your device"
+  },
+  "serverError": {
+    "backHome": "Back to home",
+    "description": "Something didn’t go as planned. We’re on it. No data is lost, you can reload or head back to familiar ground.",
+    "eyebrow": "Unexpected error",
+    "reload": "Reload the app",
+    "support": "Still having trouble?",
+    "title": "A glitch in the forest"
   }
 }

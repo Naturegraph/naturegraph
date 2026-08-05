@@ -463,7 +463,10 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
           // sait qu'il manque des photos. Il peut les rajouter via Modifier.
           setUploadError(
             t('contribute.media.partialUploadError', {
-              defaultValue: `${failedUploads.length} photo(s) sur ${files.length} n'ont pas pu être ajoutées. Tu peux les rajouter via « Modifier mon observation ».`,
+              failed: failedUploads.length,
+              total: files.length,
+              defaultValue:
+                "{{failed}} photo(s) sur {{total}} n'ont pas pu être ajoutées. Tu peux les rajouter via « Modifier mon observation ».",
             }),
           )
         }
