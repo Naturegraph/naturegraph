@@ -1,62 +1,30 @@
 /**
- * ChipScroller : rangee de chips a defilement horizontal.
+ * ChipScroller : groupe de chips (sélection unique par groupe).
  * =============================================================================
- * Derniere etape de publication (Rencontre + Instant Nature) : les selecteurs
- * (habitat, phenomene, meteo, moment) etaient en `flex-wrap` -> plusieurs lignes
- * -> beaucoup de scroll vertical, surtout avec les nouvelles options.
+ * AFFICHAGE ACTUEL = wrap multi-lignes (identique a l'historique). La variante
+ * "defilement horizontal" (une seule ligne a swipe, degrade + recentrage du chip
+ * actif) a ete RETIREE a la demande de Nicolas (2026-08-05) : jugee moins pratique
+ * et trop perturbante pour les habitudes des users. Les nouvelles OPTIONS
+ * (habitat decoupe, centre de soins, phenomenes coucher de soleil / pleine lune,
+ * meteo brumeux) restent en place.
  *
- * Ce wrapper met chaque groupe sur UNE seule ligne a defilement horizontal :
- *   - reduit fortement le scroll vertical SANS masquer aucune option (tous les
- *     choix restent accessibles au swipe, ce que Nicolas voulait : pas de
- *     collapsible qui cache et fait oublier les champs) ;
- *   - degrade discret sur les bords (indice "il y a d'autres choix a cote") ;
- *   - scrollbar masquee (l'affordance = chips partiellement coupes + degrade) ;
- *   - `activeKey` : quand la valeur selectionnee change (ou au montage, cas
- *     edition d'un post ou le chip actif serait hors ecran a droite), on recentre
- *     le chip actif DANS le conteneur, sans bouger la page.
- *
- * Non-cassant : memes chips, meme selection ; le defilement horizontal de chips
- * est un pattern mobile standard. Accessibilite : le focus clavier ramene
- * automatiquement le chip focus dans la zone visible (scroll natif).
+ * Le wrapper est conserve (DRY + reactivable en 1 fichier) : pour revenir au
+ * scroll horizontal, restaurer le rendu overflow-x + mask + effet de recentrage
+ * sur `activeKey` (cf historique git de ce fichier). En attendant, `activeKey`
+ * est accepte mais inutilise.
  */
-import { useEffect, useRef } from 'react'
 
 interface ChipScrollerProps {
   children: React.ReactNode
   /** Libelle du groupe pour les lecteurs d'ecran. */
   ariaLabel?: string
-  /** Valeur selectionnee : declenche le recentrage du chip actif quand elle change. */
+  /** Reserve pour la variante scroll (recentrage du chip actif) : inactif en wrap. */
   activeKey?: string | null
 }
 
-// Degrade sur les bords (les deux prefixes pour Safari iOS, plateforme principale).
-const FADE_MASK =
-  'linear-gradient(to right, transparent, #000 14px, #000 calc(100% - 24px), transparent)'
-
-export function ChipScroller({ children, ariaLabel, activeKey }: ChipScrollerProps) {
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const container = ref.current
-    if (!container || !activeKey) return
-    const el = container.querySelector<HTMLElement>('[aria-pressed="true"]')
-    if (!el) return
-    // Recentre le chip actif horizontalement, uniquement dans le conteneur
-    // (scrollBy relatif -> ne scrolle jamais la page).
-    const cRect = container.getBoundingClientRect()
-    const eRect = el.getBoundingClientRect()
-    const delta = eRect.left - cRect.left - (container.clientWidth - el.clientWidth) / 2
-    container.scrollBy({ left: delta, behavior: 'auto' })
-  }, [activeKey])
-
+export function ChipScroller({ children, ariaLabel }: ChipScrollerProps) {
   return (
-    <div
-      ref={ref}
-      role="group"
-      aria-label={ariaLabel}
-      className="flex flex-nowrap gap-2 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      style={{ WebkitMaskImage: FADE_MASK, maskImage: FADE_MASK }}
-    >
+    <div className="flex flex-wrap gap-2" role="group" aria-label={ariaLabel}>
       {children}
     </div>
   )
