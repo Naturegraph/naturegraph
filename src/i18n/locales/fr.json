@@ -799,7 +799,8 @@
       "cloudy": "Nuageux",
       "rainy": "Pluvieux",
       "windy": "Venteux",
-      "snowy": "Neigeux"
+      "snowy": "Neigeux",
+      "foggy": "Brumeux"
     },
     "habitat": {
       "label": "Type d'habitat lors de l'observation ?",
@@ -807,10 +808,16 @@
       "park_garden": "Parc et jardin",
       "prairie_heath": "Prairie et lande",
       "urban": "Milieu urbain",
-      "river": "Rivière, lac et zone humide",
+      "river": "Rivière et cours d'eau",
+      "lake_pond": "Lac et étang",
+      "wetland_marsh": "Zone humide et tourbière",
       "lake_wetland": "Rivière, lac et zone humide",
       "mountain": "Montagne",
-      "sea_coast": "Mer et littoral"
+      "sea_coast": "Mer et littoral",
+      "rural_agricultural": "Zone rurale et agricole",
+      "care_center": "Centre de soins",
+      "showMore": "Afficher plus",
+      "showLess": "Afficher moins"
     },
     "location": {
       "label": "Localisation",

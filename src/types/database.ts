@@ -31,7 +31,7 @@ export type Visibility = 'public' | 'private' | 'followers'
 export type IdentificationStatus = 'identified' | 'pending' | 'disputed'
 
 export type TimeOfDay = 'morning' | 'afternoon' | 'dusk' | 'evening' | 'night'
-export type WeatherCondition = 'sunny' | 'cloudy' | 'rainy' | 'windy' | 'snowy'
+export type WeatherCondition = 'sunny' | 'cloudy' | 'rainy' | 'windy' | 'snowy' | 'foggy'
 export type HabitatType =
   | 'forest'
   | 'park_garden'
@@ -39,8 +39,16 @@ export type HabitatType =
   | 'urban'
   | 'river'
   | 'lake_wetland'
+  // NG-055 : decoupe de l'ancien 'lake_wetland' (trop large) en habitats distincts.
+  // 'lake_wetland' conserve pour l'affichage des posts existants (retire du selecteur).
+  | 'lake_pond'
+  | 'wetland_marsh'
   | 'mountain'
   | 'sea_coast'
+  // NG-055 : zone rurale/agricole + centre de soins (animal sauvage blesse en
+  // rehabilitation avant relacher, propose dans Rencontre Nature uniquement).
+  | 'rural_agricultural'
+  | 'care_center'
 
 export type TaxonomicGroup =
   | 'birds'

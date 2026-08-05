@@ -23,6 +23,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, X, Calendar, Info, MapPin, Loader2, ImageUp } from 'lucide-react'
 import type { TimeOfDay, WeatherCondition, DisplayFormat } from '@/types/database'
+import { ChipScroller } from '@/components/ui/ChipScroller'
 import { EncounterStep1 } from './EncounterStep1'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import { useContributePostSubmit } from '@/hooks/useContributePostSubmit'
@@ -40,20 +41,40 @@ import type { CityResult } from '@/types/location'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-/** Types de phénomènes (selon Nicolas : chips Step 2). */
+/**
+ * Types de phénomènes (chips Step 2), triés du plus COURANT au plus RARE.
+ * Les 6 premiers (quotidien : coucher de soleil, pleine lune, arc-en-ciel,
+ * marée, glace, aurore) restent visibles ; les 6 derniers (rares : tempête,
+ * foudre, feu, éclipse, comète, éruption) sont repliés sous « Afficher plus »
+ * pour raccourcir la dernière étape.
+ * NB : le phénomène est stocké par LABEL (tags), donc réordonner est sans
+ * risque pour les posts existants (lookup par label, cf. édition).
+ */
 const PHENOMENON_OPTIONS = [
-  { id: 'aurora_borealis', label: 'Aurore boréale', emoji: '🌌' },
+  // Courants (visibles par défaut)
+  { id: 'sunset', label: 'Coucher / lever de soleil', emoji: '🌅' },
+  { id: 'moon', label: 'Pleine lune', emoji: '🌕' },
   { id: 'rainbow', label: 'Arc-en-ciel', emoji: '🌈' },
-  { id: 'storm', label: 'Tempête', emoji: '🌪️' },
-  { id: 'eclipse', label: 'Éclipse', emoji: '🌒' },
-  { id: 'comet', label: 'Comète', emoji: '☄️' },
   { id: 'tide', label: 'Marée', emoji: '🌊' },
   { id: 'ice', label: 'Glace', emoji: '❄️' },
-  { id: 'wildfire', label: 'Feu de forêt', emoji: '🔥' },
+  { id: 'aurora_borealis', label: 'Aurore boréale', emoji: '🌌' },
+  // Rares (repliés sous « Afficher plus »)
+  { id: 'storm', label: 'Tempête', emoji: '🌪️' },
   { id: 'lightning', label: 'Foudre', emoji: '⚡' },
+  { id: 'wildfire', label: 'Feu de forêt', emoji: '🔥' },
+  { id: 'eclipse', label: 'Éclipse', emoji: '🌒' },
+  { id: 'comet', label: 'Comète', emoji: '☄️' },
   { id: 'volcanic_eruption', label: 'Éruption volcanique', emoji: '🌋' },
 ] as const
 type PhenomenonId = (typeof PHENOMENON_OPTIONS)[number]['id']
+/**
+ * Nombre de phénomènes repliés par défaut (les rares, en fin de liste).
+ * Une seule constante à ajuster pour montrer plus / moins de choix d'emblée.
+ */
+const PHENOMENON_COLLAPSED_COUNT = 6
+const PHENOMENON_HIDDEN: PhenomenonId[] = PHENOMENON_OPTIONS.slice(-PHENOMENON_COLLAPSED_COUNT).map(
+  (o) => o.id,
+)
 
 interface InstantFormData {
   files: File[]
@@ -80,13 +101,14 @@ const MAX_DESC = 1500
 const MAX_TITLE = 80
 
 const TIME_OPTIONS: TimeOfDay[] = ['morning', 'afternoon', 'dusk', 'evening', 'night']
-const WEATHER_OPTIONS: WeatherCondition[] = ['sunny', 'cloudy', 'rainy', 'windy', 'snowy']
+const WEATHER_OPTIONS: WeatherCondition[] = ['sunny', 'cloudy', 'rainy', 'windy', 'snowy', 'foggy']
 const WEATHER_EMOJI: Record<WeatherCondition, string> = {
   sunny: '☀️',
   cloudy: '⛅',
   rainy: '🌧️',
   windy: '🌬️',
   snowy: '🌨️',
+  foggy: '🌫️',
 }
 
 interface ContributeInstantPanelProps {
@@ -767,6 +789,19 @@ function InstantStep2({
   const dateId = useId()
   const locId = useId()
   const switchId = useId()
+  const phenomenonGroupId = useId()
+
+  // « Afficher plus » phénomènes : on replie les rares (fin de liste) pour
+  // raccourcir l'étape. `showAllPhenomena` = clic explicite ; on force en plus
+  // l'ouverture si le phénomène déjà choisi (ex : édition) fait partie des
+  // repliés. Dérivé au rendu (pas d'effet) : évite les re-rendus en cascade et
+  // gère l'arrivée asynchrone du prop en mode édition.
+  const [showAllPhenomena, setShowAllPhenomena] = useState(false)
+  const phenomenonForcedOpen = !!phenomenon && PHENOMENON_HIDDEN.includes(phenomenon)
+  const phenomenaExpanded = showAllPhenomena || phenomenonForcedOpen
+  const visiblePhenomena = phenomenaExpanded
+    ? PHENOMENON_OPTIONS
+    : PHENOMENON_OPTIONS.slice(0, PHENOMENON_OPTIONS.length - PHENOMENON_COLLAPSED_COUNT)
 
   // Popover info localisation : même UX qu'Encounter.
   const [locationInfoOpen, setLocationInfoOpen] = useState(false)
@@ -1089,8 +1124,12 @@ function InstantStep2({
         <span className="text-sm text-foreground">
           {t('contribute.phenomenon.label', { defaultValue: 'Type de phénomène ?' })}
         </span>
-        <div className="flex flex-wrap gap-2" role="group">
-          {PHENOMENON_OPTIONS.map((opt) => {
+        <ChipScroller
+          id={phenomenonGroupId}
+          ariaLabel={t('contribute.phenomenon.label', { defaultValue: 'Type de phénomène ?' })}
+          activeKey={phenomenon || null}
+        >
+          {visiblePhenomena.map((opt) => {
             const active = phenomenon === opt.id
             return (
               <button
@@ -1110,7 +1149,21 @@ function InstantStep2({
               </button>
             )
           })}
-        </div>
+        </ChipScroller>
+        {/* Lien « Afficher plus / moins » : révèle ou replie les phénomènes rares. */}
+        {PHENOMENON_OPTIONS.length > PHENOMENON_COLLAPSED_COUNT && (
+          <button
+            type="button"
+            onClick={() => setShowAllPhenomena((v) => !v)}
+            aria-expanded={phenomenaExpanded}
+            aria-controls={phenomenonGroupId}
+            className="self-start rounded text-sm font-medium text-[var(--color-link)] underline underline-offset-2 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-link)]"
+          >
+            {phenomenaExpanded
+              ? t('contribute.phenomenon.showLess', { defaultValue: 'Afficher moins' })
+              : t('contribute.phenomenon.showMore', { defaultValue: 'Afficher plus' })}
+          </button>
+        )}
       </div>
 
       {/* Conditions de prise de vue (météo) */}
@@ -1118,7 +1171,12 @@ function InstantStep2({
         <span className="text-sm text-foreground">
           {t('contribute.weather.captureLabel', { defaultValue: 'Conditions de prise de vue' })}
         </span>
-        <div className="flex flex-wrap gap-2" role="group">
+        <ChipScroller
+          ariaLabel={t('contribute.weather.captureLabel', {
+            defaultValue: 'Conditions de prise de vue',
+          })}
+          activeKey={weather || null}
+        >
           {WEATHER_OPTIONS.map((opt) => {
             const active = weather === opt
             return (
@@ -1139,7 +1197,7 @@ function InstantStep2({
               </button>
             )
           })}
-        </div>
+        </ChipScroller>
       </div>
 
       {/* Moment de la journée */}
@@ -1147,7 +1205,10 @@ function InstantStep2({
         <span className="text-sm text-foreground">
           {t('contribute.date.timeLabel', { defaultValue: 'Moment de la journée' })}
         </span>
-        <div className="flex flex-wrap gap-2" role="group">
+        <ChipScroller
+          ariaLabel={t('contribute.date.timeLabel', { defaultValue: 'Moment de la journée' })}
+          activeKey={timeOfDay || null}
+        >
           {TIME_OPTIONS.map((opt) => {
             const active = timeOfDay === opt
             return (
@@ -1167,7 +1228,7 @@ function InstantStep2({
               </button>
             )
           })}
-        </div>
+        </ChipScroller>
       </div>
     </div>
   )
