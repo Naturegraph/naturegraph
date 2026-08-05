@@ -815,7 +815,9 @@
       "mountain": "Montagne",
       "sea_coast": "Mer et littoral",
       "rural_agricultural": "Zone rurale et agricole",
-      "care_center": "Centre de soins"
+      "care_center": "Centre de soins",
+      "showMore": "Afficher plus",
+      "showLess": "Afficher moins"
     },
     "location": {
       "label": "Localisation",

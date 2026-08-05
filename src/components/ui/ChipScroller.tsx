@@ -20,11 +20,13 @@ interface ChipScrollerProps {
   ariaLabel?: string
   /** Reserve pour la variante scroll (recentrage du chip actif) : inactif en wrap. */
   activeKey?: string | null
+  /** id du conteneur, pour cibler le groupe via aria-controls (ex : « Afficher plus »). */
+  id?: string
 }
 
-export function ChipScroller({ children, ariaLabel }: ChipScrollerProps) {
+export function ChipScroller({ children, ariaLabel, id }: ChipScrollerProps) {
   return (
-    <div className="flex flex-wrap gap-2" role="group" aria-label={ariaLabel}>
+    <div id={id} className="flex flex-wrap gap-2" role="group" aria-label={ariaLabel}>
       {children}
     </div>
   )

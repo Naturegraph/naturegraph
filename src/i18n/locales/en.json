@@ -815,7 +815,9 @@
       "mountain": "Mountain",
       "sea_coast": "Sea / Coast",
       "rural_agricultural": "Rural / Farmland",
-      "care_center": "Wildlife care center"
+      "care_center": "Wildlife care center",
+      "showMore": "Show more",
+      "showLess": "Show less"
     },
     "location": {
       "label": "Location",

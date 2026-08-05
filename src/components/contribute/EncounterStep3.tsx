@@ -71,6 +71,14 @@ const HABITAT_OPTIONS: HabitatType[] = [
   'rural_agricultural',
   'care_center',
 ]
+/**
+ * Nombre d'habitats repliés par défaut sous le lien « Afficher plus ».
+ * On masque les derniers de la liste (les moins fréquents / plus spécifiques :
+ * zone humide, rurale, centre de soins) pour raccourcir la dernière étape sans
+ * rien retirer. Le reste est révélé au clic.
+ */
+const HABITAT_COLLAPSED_COUNT = 3
+const HABITAT_HIDDEN: HabitatType[] = HABITAT_OPTIONS.slice(-HABITAT_COLLAPSED_COUNT)
 const WEATHER_OPTIONS: WeatherCondition[] = ['sunny', 'cloudy', 'rainy', 'windy', 'snowy', 'foggy']
 const TIME_OPTIONS: TimeOfDay[] = ['morning', 'afternoon', 'dusk', 'evening', 'night']
 
@@ -184,6 +192,20 @@ export function EncounterStep3({
   const dateId = useId()
   const locId = useId()
   const switchId = useId()
+  const habitatGroupId = useId()
+
+  // « Afficher plus » habitats : on replie les derniers choix (moins courants)
+  // pour raccourcir la dernière étape. `showAllHabitats` = clic explicite de
+  // l'utilisateur ; on force en plus l'ouverture si l'habitat déjà sélectionné
+  // (ex : édition d'un post) fait partie des repliés, pour qu'il voie toujours
+  // sa sélection. Dérivé au rendu (pas d'effet) : évite les re-rendus en
+  // cascade et gère nativement l'arrivée asynchrone du prop en mode édition.
+  const [showAllHabitats, setShowAllHabitats] = useState(false)
+  const habitatForcedOpen = !!habitat && HABITAT_HIDDEN.includes(habitat)
+  const habitatsExpanded = showAllHabitats || habitatForcedOpen
+  const visibleHabitats = habitatsExpanded
+    ? HABITAT_OPTIONS
+    : HABITAT_OPTIONS.slice(0, HABITAT_OPTIONS.length - HABITAT_COLLAPSED_COUNT)
 
   // Options avancées dépliées par défaut si au moins une option est pré-remplie
   // (ex : EXIF a détecté un moment de la journée). Sinon fermé.
@@ -581,12 +603,13 @@ export function EncounterStep3({
               })}
             </span>
             <ChipScroller
+              id={habitatGroupId}
               ariaLabel={t('contribute.habitat.label', {
                 defaultValue: "Type d'habitat",
               })}
               activeKey={habitat || null}
             >
-              {HABITAT_OPTIONS.map((opt) => (
+              {visibleHabitats.map((opt) => (
                 <Chip
                   key={opt}
                   label={t(`contribute.habitat.${opt}`)}
@@ -596,6 +619,24 @@ export function EncounterStep3({
                 />
               ))}
             </ChipScroller>
+            {/* Lien « Afficher plus / moins » : révèle ou replie les derniers
+                habitats. On ne le montre que s'il y a réellement des choix à
+                replier (garde-fou si la liste raccourcit un jour). */}
+            {HABITAT_OPTIONS.length > HABITAT_COLLAPSED_COUNT && (
+              <button
+                type="button"
+                onClick={() => setShowAllHabitats((v) => !v)}
+                aria-expanded={habitatsExpanded}
+                aria-controls={habitatGroupId}
+                className="self-start rounded text-sm font-medium text-[var(--color-link)] underline underline-offset-2 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-link)]"
+              >
+                {habitatsExpanded
+                  ? t('contribute.habitat.showLess', { defaultValue: 'Afficher moins' })
+                  : t('contribute.habitat.showMore', {
+                      defaultValue: `Afficher plus (+${HABITAT_COLLAPSED_COUNT})`,
+                    })}
+              </button>
+            )}
           </div>
 
           {/* Conditions météo */}

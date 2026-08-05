@@ -93,6 +93,12 @@ export interface MockPost {
   timeOfDay?: string
   /** Enum DB brut (`'forest' | 'sea_coast' | 'park_garden' | ...`) : traduit côté composant. */
   habitat?: string
+  /**
+   * NG-055 : phénomène des posts Instant Nature (label FR, ex « Aurore boréale »),
+   * stocké dans `posts.tags[0]`. Affiché en tête de la rangée méta. Undefined
+   * pour les posts Rencontre (qui utilisent `habitat` à la place).
+   */
+  phenomenon?: string
   category: { icon: string; label: string }
   /** Nom commun (si identifié) : sinon laisser undefined / null pour fallback i18n. */
   species?: string | null
@@ -207,6 +213,27 @@ const HABITAT_EMOJI: Record<string, string> = {
 }
 
 /**
+ * NG-055 : emoji par phénomène (posts Instant). Clé = label FR stocké dans
+ * `posts.tags[0]`. Doit rester aligné avec PHENOMENON_OPTIONS de
+ * ContributeInstantPanel. Si un label est absent (post ancien / tag libre),
+ * on affiche le label sans emoji (fallback silencieux).
+ */
+const PHENOMENON_EMOJI: Record<string, string> = {
+  'Coucher / lever de soleil': '🌅',
+  'Pleine lune': '🌕',
+  'Arc-en-ciel': '🌈',
+  Marée: '🌊',
+  Glace: '❄️',
+  'Aurore boréale': '🌌',
+  Tempête: '🌪️',
+  Foudre: '⚡',
+  'Feu de forêt': '🔥',
+  Éclipse: '🌒',
+  Comète: '☄️',
+  'Éruption volcanique': '🌋',
+}
+
+/**
  * Icône d'en-tête + couleur par type de post (règle globale projet).
  * Voir second-agent/04-feedpost-icon-color-by-type.md.
  *   · nature_encounter → Bird teal/vert (token --color-highlight-primary)
@@ -313,6 +340,7 @@ export function FeedPost({
   clouds,
   timeOfDay,
   habitat,
+  phenomenon,
   // category : prop conservée dans l'interface mais l'affichage est maintenant
   // dérivé de taxonomic_group + species (cf. règle catégorie+espèce unifiée).
   category: _category,
@@ -660,20 +688,51 @@ export function FeedPost({
 
           const labelClouds = clouds || null
 
-          // Construire le pipeline de segments dans l'ordre demandé
+          // NG-055 : phénomène (posts Instant) en TÊTE de la rangée méta.
+          // Les posts Instant n'ont pas d'habitat : le phénomène prend sa place.
+          const emojiPhenomenon = phenomenon ? (PHENOMENON_EMOJI[phenomenon] ?? null) : null
+
+          // Construire le pipeline de segments dans l'ordre demandé.
+          // NG-055 (Nicolas 2026-08-05) : la rangée tient TOUJOURS sur une seule
+          // ligne. Le conteneur est un bloc `whitespace-nowrap overflow-hidden
+          // text-ellipsis` (pas un flex, sinon l'ellipsis « … » ne s'applique
+          // pas). Les libellés complets restent affichés tant qu'ils rentrent
+          // (cas majoritaire) ; seul l'excédent est coupé par « … », en
+          // commençant par la fin (le moment de la journée, le moins critique).
+          // Segments en inline (pas inline-flex) pour un rendu texte continu.
           const segments: React.ReactNode[] = []
+          if (phenomenon) {
+            segments.push(
+              <span key="phenomenon">
+                {emojiPhenomenon && (
+                  <span aria-hidden="true" className="mr-1">
+                    {emojiPhenomenon}
+                  </span>
+                )}
+                {phenomenon}
+              </span>,
+            )
+          }
           if (labelHabitat) {
             segments.push(
-              <span key="habitat" className="inline-flex items-center gap-1">
-                {emojiHabitat && <span aria-hidden="true">{emojiHabitat}</span>}
+              <span key="habitat">
+                {emojiHabitat && (
+                  <span aria-hidden="true" className="mr-1">
+                    {emojiHabitat}
+                  </span>
+                )}
                 {labelHabitat}
               </span>,
             )
           }
           if (labelWeather) {
             segments.push(
-              <span key="weather" className="inline-flex items-center gap-1">
-                {emojiWeather && <span aria-hidden="true">{emojiWeather}</span>}
+              <span key="weather">
+                {emojiWeather && (
+                  <span aria-hidden="true" className="mr-1">
+                    {emojiWeather}
+                  </span>
+                )}
                 {labelWeather}
               </span>,
             )
@@ -687,13 +746,15 @@ export function FeedPost({
 
           if (segments.length === 0) return null
 
-          // Joindre avec separateur " • " entre chaque segment
+          // Bloc mono-ligne avec ellipsis (cf commentaire ci-dessus). `min-w-0`
+          // garantit que le bloc peut rétrécir sous la largeur de son contenu
+          // pour déclencher la coupe, même imbriqué dans un parent flex.
           return (
-            <div className="flex gap-2 items-center flex-wrap text-sm text-foreground">
+            <div className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-sm text-foreground">
               {segments.map((seg, i) => (
                 <React.Fragment key={i}>
                   {i > 0 && (
-                    <span aria-hidden="true" className="text-xs">
+                    <span aria-hidden="true" className="mx-1 text-xs text-muted-foreground">
                       •
                     </span>
                   )}
