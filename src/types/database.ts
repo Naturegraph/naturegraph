@@ -41,6 +41,10 @@ export type HabitatType =
   | 'lake_wetland'
   | 'mountain'
   | 'sea_coast'
+  // NG-055 : zone rurale/agricole + centre de soins (animal sauvage blesse en
+  // rehabilitation avant relacher, propose dans Rencontre Nature uniquement).
+  | 'rural_agricultural'
+  | 'care_center'
 
 export type TaxonomicGroup =
   | 'birds'

@@ -810,7 +810,9 @@
       "river": "Rivière, lac et zone humide",
       "lake_wetland": "Rivière, lac et zone humide",
       "mountain": "Montagne",
-      "sea_coast": "Mer et littoral"
+      "sea_coast": "Mer et littoral",
+      "rural_agricultural": "Zone rurale et agricole",
+      "care_center": "Centre de soins"
     },
     "location": {
       "label": "Localisation",

@@ -199,6 +199,8 @@ const HABITAT_EMOJI: Record<string, string> = {
   lake_wetland: '💧',
   mountain: '⛰️',
   sea_coast: '🌊',
+  rural_agricultural: '🚜',
+  care_center: '🏥',
 }
 
 /**

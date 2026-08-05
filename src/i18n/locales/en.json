@@ -810,7 +810,9 @@
       "river": "River",
       "lake_wetland": "Lake / Wetland",
       "mountain": "Mountain",
-      "sea_coast": "Sea / Coast"
+      "sea_coast": "Sea / Coast",
+      "rural_agricultural": "Rural / Farmland",
+      "care_center": "Wildlife care center"
     },
     "location": {
       "label": "Location",

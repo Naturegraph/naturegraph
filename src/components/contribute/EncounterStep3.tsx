@@ -40,6 +40,8 @@ const HABITAT_EMOJI: Record<HabitatType, string> = {
   lake_wetland: '🦆',
   mountain: '⛰️',
   sea_coast: '🌊',
+  rural_agricultural: '🚜',
+  care_center: '🏥',
 }
 
 // Emojis Figma 6385:55806 (second-agent/05) : alignés sur FeedPost.WEATHER_EMOJI.
@@ -60,6 +62,8 @@ const HABITAT_OPTIONS: HabitatType[] = [
   'prairie_heath',
   'urban',
   'lake_wetland',
+  'rural_agricultural',
+  'care_center',
 ]
 const WEATHER_OPTIONS: WeatherCondition[] = ['sunny', 'cloudy', 'rainy', 'windy', 'snowy']
 const TIME_OPTIONS: TimeOfDay[] = ['morning', 'afternoon', 'dusk', 'evening', 'night']
