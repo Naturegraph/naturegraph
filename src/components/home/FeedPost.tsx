@@ -187,6 +187,7 @@ const WEATHER_EMOJI: Record<string, string> = {
   rainy: '🌧️',
   windy: '🌬️',
   snowy: '🌨️',
+  foggy: '🌫️',
 }
 
 /** Emoji par type d'habitat : affiche en premier dans la rangee meta du post. */
@@ -196,6 +197,8 @@ const HABITAT_EMOJI: Record<string, string> = {
   prairie_heath: '🌾',
   urban: '🏙️',
   river: '🏞️',
+  lake_pond: '💧',
+  wetland_marsh: '🪷',
   lake_wetland: '💧',
   mountain: '⛰️',
   sea_coast: '🌊',

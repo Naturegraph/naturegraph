@@ -21,6 +21,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Calendar, Info, MapPin, X } from 'lucide-react'
 import type { TimeOfDay, WeatherCondition, HabitatType } from '@/types/database'
+import { ChipScroller } from '@/components/ui/ChipScroller'
 import { useLocationAutocomplete } from '@/hooks/useLocationAutocomplete'
 import type { CityResult } from '@/types/location'
 import { POST_LIMITS } from '@/lib/postValidation'
@@ -36,7 +37,9 @@ const HABITAT_EMOJI: Record<HabitatType, string> = {
   park_garden: '🏡',
   prairie_heath: '🌾',
   urban: '🏙️',
-  river: '🦆',
+  river: '🏞️',
+  lake_pond: '💧',
+  wetland_marsh: '🪷',
   lake_wetland: '🦆',
   mountain: '⛰️',
   sea_coast: '🌊',
@@ -51,6 +54,7 @@ const WEATHER_EMOJI: Record<WeatherCondition, string> = {
   rainy: '🌧️',
   windy: '🌬️',
   snowy: '🌨️',
+  foggy: '🌫️',
 }
 
 // Options exposées (ordre Figma)
@@ -61,11 +65,13 @@ const HABITAT_OPTIONS: HabitatType[] = [
   'mountain',
   'prairie_heath',
   'urban',
-  'lake_wetland',
+  'river',
+  'lake_pond',
+  'wetland_marsh',
   'rural_agricultural',
   'care_center',
 ]
-const WEATHER_OPTIONS: WeatherCondition[] = ['sunny', 'cloudy', 'rainy', 'windy', 'snowy']
+const WEATHER_OPTIONS: WeatherCondition[] = ['sunny', 'cloudy', 'rainy', 'windy', 'snowy', 'foggy']
 const TIME_OPTIONS: TimeOfDay[] = ['morning', 'afternoon', 'dusk', 'evening', 'night']
 
 // ─── Sous-composants ────────────────────────────────────────────────────────
@@ -574,12 +580,11 @@ export function EncounterStep3({
                 defaultValue: "Type d'habitat lors de l'observation ?",
               })}
             </span>
-            <div
-              className="flex flex-wrap gap-2"
-              role="group"
-              aria-label={t('contribute.habitat.label', {
+            <ChipScroller
+              ariaLabel={t('contribute.habitat.label', {
                 defaultValue: "Type d'habitat",
               })}
+              activeKey={habitat || null}
             >
               {HABITAT_OPTIONS.map((opt) => (
                 <Chip
@@ -590,7 +595,7 @@ export function EncounterStep3({
                   onClick={() => onHabitatChange(habitat === opt ? '' : opt)}
                 />
               ))}
-            </div>
+            </ChipScroller>
           </div>
 
           {/* Conditions météo */}
@@ -598,12 +603,11 @@ export function EncounterStep3({
             <span className="text-sm text-foreground">
               {t('contribute.weather.label', { defaultValue: 'Conditions de prise de vue' })}
             </span>
-            <div
-              className="flex flex-wrap gap-2"
-              role="group"
-              aria-label={t('contribute.weather.label', {
+            <ChipScroller
+              ariaLabel={t('contribute.weather.label', {
                 defaultValue: 'Conditions météo',
               })}
+              activeKey={weather || null}
             >
               {WEATHER_OPTIONS.map((opt) => (
                 <Chip
@@ -614,7 +618,7 @@ export function EncounterStep3({
                   onClick={() => onWeatherChange(weather === opt ? '' : opt)}
                 />
               ))}
-            </div>
+            </ChipScroller>
           </div>
 
           {/* Moment de la journée */}
@@ -622,12 +626,11 @@ export function EncounterStep3({
             <span className="text-sm text-foreground">
               {t('contribute.date.timeLabel', { defaultValue: 'Moment de la journée' })}
             </span>
-            <div
-              className="flex flex-wrap gap-2"
-              role="group"
-              aria-label={t('contribute.date.timeLabel', {
+            <ChipScroller
+              ariaLabel={t('contribute.date.timeLabel', {
                 defaultValue: 'Moment de la journée',
               })}
+              activeKey={timeOfDay || null}
             >
               {TIME_OPTIONS.map((opt) => (
                 <Chip
@@ -637,7 +640,7 @@ export function EncounterStep3({
                   onClick={() => onTimeChange(timeOfDay === opt ? '' : opt)}
                 />
               ))}
-            </div>
+            </ChipScroller>
           </div>
         </div>
       </div>

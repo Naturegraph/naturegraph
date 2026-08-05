@@ -23,6 +23,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, X, Calendar, Info, MapPin, Loader2, ImageUp } from 'lucide-react'
 import type { TimeOfDay, WeatherCondition, DisplayFormat } from '@/types/database'
+import { ChipScroller } from '@/components/ui/ChipScroller'
 import { EncounterStep1 } from './EncounterStep1'
 import type { PhotoMetadata } from '@/utils/extractPhotoMetadata'
 import { useContributePostSubmit } from '@/hooks/useContributePostSubmit'
@@ -52,6 +53,8 @@ const PHENOMENON_OPTIONS = [
   { id: 'wildfire', label: 'Feu de forêt', emoji: '🔥' },
   { id: 'lightning', label: 'Foudre', emoji: '⚡' },
   { id: 'volcanic_eruption', label: 'Éruption volcanique', emoji: '🌋' },
+  { id: 'sunset', label: 'Coucher / lever de soleil', emoji: '🌅' },
+  { id: 'moon', label: 'Pleine lune', emoji: '🌕' },
 ] as const
 type PhenomenonId = (typeof PHENOMENON_OPTIONS)[number]['id']
 
@@ -80,13 +83,14 @@ const MAX_DESC = 1500
 const MAX_TITLE = 80
 
 const TIME_OPTIONS: TimeOfDay[] = ['morning', 'afternoon', 'dusk', 'evening', 'night']
-const WEATHER_OPTIONS: WeatherCondition[] = ['sunny', 'cloudy', 'rainy', 'windy', 'snowy']
+const WEATHER_OPTIONS: WeatherCondition[] = ['sunny', 'cloudy', 'rainy', 'windy', 'snowy', 'foggy']
 const WEATHER_EMOJI: Record<WeatherCondition, string> = {
   sunny: '☀️',
   cloudy: '⛅',
   rainy: '🌧️',
   windy: '🌬️',
   snowy: '🌨️',
+  foggy: '🌫️',
 }
 
 interface ContributeInstantPanelProps {
@@ -1089,7 +1093,10 @@ function InstantStep2({
         <span className="text-sm text-foreground">
           {t('contribute.phenomenon.label', { defaultValue: 'Type de phénomène ?' })}
         </span>
-        <div className="flex flex-wrap gap-2" role="group">
+        <ChipScroller
+          ariaLabel={t('contribute.phenomenon.label', { defaultValue: 'Type de phénomène ?' })}
+          activeKey={phenomenon || null}
+        >
           {PHENOMENON_OPTIONS.map((opt) => {
             const active = phenomenon === opt.id
             return (
@@ -1110,7 +1117,7 @@ function InstantStep2({
               </button>
             )
           })}
-        </div>
+        </ChipScroller>
       </div>
 
       {/* Conditions de prise de vue (météo) */}
@@ -1118,7 +1125,12 @@ function InstantStep2({
         <span className="text-sm text-foreground">
           {t('contribute.weather.captureLabel', { defaultValue: 'Conditions de prise de vue' })}
         </span>
-        <div className="flex flex-wrap gap-2" role="group">
+        <ChipScroller
+          ariaLabel={t('contribute.weather.captureLabel', {
+            defaultValue: 'Conditions de prise de vue',
+          })}
+          activeKey={weather || null}
+        >
           {WEATHER_OPTIONS.map((opt) => {
             const active = weather === opt
             return (
@@ -1139,7 +1151,7 @@ function InstantStep2({
               </button>
             )
           })}
-        </div>
+        </ChipScroller>
       </div>
 
       {/* Moment de la journée */}
@@ -1147,7 +1159,10 @@ function InstantStep2({
         <span className="text-sm text-foreground">
           {t('contribute.date.timeLabel', { defaultValue: 'Moment de la journée' })}
         </span>
-        <div className="flex flex-wrap gap-2" role="group">
+        <ChipScroller
+          ariaLabel={t('contribute.date.timeLabel', { defaultValue: 'Moment de la journée' })}
+          activeKey={timeOfDay || null}
+        >
           {TIME_OPTIONS.map((opt) => {
             const active = timeOfDay === opt
             return (
@@ -1167,7 +1182,7 @@ function InstantStep2({
               </button>
             )
           })}
-        </div>
+        </ChipScroller>
       </div>
     </div>
   )

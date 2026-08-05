@@ -799,7 +799,8 @@
       "cloudy": "Cloudy",
       "rainy": "Rainy",
       "windy": "Windy",
-      "snowy": "Snowy"
+      "snowy": "Snowy",
+      "foggy": "Foggy"
     },
     "habitat": {
       "label": "Habitat",
@@ -807,7 +808,9 @@
       "park_garden": "Park / Garden",
       "prairie_heath": "Prairie / Heath",
       "urban": "Urban",
-      "river": "River",
+      "river": "River / Stream",
+      "lake_pond": "Lake / Pond",
+      "wetland_marsh": "Wetland / Bog",
       "lake_wetland": "Lake / Wetland",
       "mountain": "Mountain",
       "sea_coast": "Sea / Coast",
