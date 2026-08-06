@@ -845,6 +845,8 @@
       "partialUploadError": "{{failed}} photo(s) sur {{total}} n'ont pas pu être ajoutées. Tu peux les rajouter via « Modifier mon observation ».",
       "uploadError": "La soumission prend trop de temps. Vérifie ta connexion internet et réessaie.",
       "uploadErrorTitle": "Erreur lors du chargement",
+      "fileUnreadableError": "Impossible de lire une de tes photos (elle a peut-être été déplacée ou son accès a expiré). Re-sélectionne-la puis réessaie.",
+      "uploadTimeout": "La publication a pris trop de temps et a été interrompue. Vérifie ta connexion et réessaie.",
       "uploadingHint": "Nous importons tes photos. Cela peut prendre quelques secondes…",
       "uploadingTitle": "Importation en cours !"
     },

@@ -503,25 +503,59 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
           setUploadError(err.message)
           console.warn(`[${formLabel}] validation refusee:`, err.code)
         } else {
-          const raw = err instanceof Error ? err.message : ''
-          setUploadError(
-            friendlyError(
-              raw,
-              t('contribute.media.uploadError', {
+          // Tri des erreurs "attendues" cote client (etat de l'appareil, pas un
+          // bug de notre code) : message ACTIONNABLE + remontee en 'warning'
+          // (trackFailure) plutot qu'en issue d'erreur Sentry, pour mesurer la
+          // frequence sans bruit. Le reste = vraie erreur -> captureException.
+          const errName =
+            err && typeof err === 'object' && 'name' in err
+              ? String((err as { name: unknown }).name)
+              : ''
+          const errMsg = err instanceof Error ? err.message : ''
+          const isFileUnreadable =
+            errName === 'NotReadableError' || /could not be read|not be read/i.test(errMsg)
+          const isAborted = errName === 'AbortError' || /\baborted\b/i.test(errMsg)
+
+          if (isFileUnreadable) {
+            // Reference fichier perimee / permission revoquee / photo cloud non
+            // encore telechargee : la photo redevient illisible au moment de lire
+            // ses octets (issue Sentry "NotReadableError", "pb de droits" soft launch).
+            setUploadError(
+              t('contribute.media.fileUnreadableError', {
                 defaultValue:
-                  'Vérifie ta connexion ou réessaye un peu plus tard pour importer tes photos.',
+                  'Impossible de lire une de tes photos (elle a peut-etre ete deplacee ou son acces a expire). Re-selectionne-la puis reessaie.',
               }),
-            ),
-          )
-          console.error(`[${formLabel}] submit failed:`, err)
-          // Vraie erreur de publication : jusqu'ici elle ne partait PAS a Sentry
-          // (juste un toast). On la capture avec le contexte du geste -> une
-          // publication qui echoue devient visible et diagnosticable.
-          captureException(err, {
-            flow: formLabel,
-            files: files.length,
-            editing: !!editingPostId,
-          })
+            )
+            trackFailure(`${formLabel}.upload`, 'file-unreadable', { files: files.length })
+          } else if (isAborted) {
+            // Abandon attendu : watchdog (delai depasse) ou annulation. Pas un crash.
+            setUploadError(
+              t('contribute.media.uploadTimeout', {
+                defaultValue:
+                  'La publication a pris trop de temps et a ete interrompue. Verifie ta connexion et reessaie.',
+              }),
+            )
+            trackFailure(`${formLabel}.submit`, 'aborted', { files: files.length })
+          } else {
+            const raw = err instanceof Error ? err.message : ''
+            setUploadError(
+              friendlyError(
+                raw,
+                t('contribute.media.uploadError', {
+                  defaultValue:
+                    'Vérifie ta connexion ou réessaye un peu plus tard pour importer tes photos.',
+                }),
+              ),
+            )
+            console.error(`[${formLabel}] submit failed:`, err)
+            // Vraie erreur de publication : capture avec le contexte du geste ->
+            // une publication qui echoue devient visible et diagnosticable.
+            captureException(err, {
+              flow: formLabel,
+              files: files.length,
+              editing: !!editingPostId,
+            })
+          }
         }
       } finally {
         if (watchdogId) clearTimeout(watchdogId)
