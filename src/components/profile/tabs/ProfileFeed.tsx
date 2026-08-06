@@ -62,7 +62,7 @@ export function ProfileFeed({
   fetchNextPage,
 }: ProfileFeedProps) {
   const { t } = useTranslation()
-  const { user } = useAuth()
+  const { user, isAuthenticated } = useAuth()
   const [sort, setSort] = useState<SortMode>('recent')
 
   // V1.1.4 NG-026 (Nicolas 2026-06-03) : sentinel scroll infini. Le
@@ -88,6 +88,11 @@ export function ProfileFeed({
 
   const reactionMutation = useToggleReaction(user?.id)
   function handleReact(postId: string, type: ReactionType) {
+    // Garde-fou : un invité (liens publics NG-054) ne doit jamais declencher la
+    // mutation de reaction (sinon useToggleReaction throw "Utilisateur non
+    // connecte" -> bruit Sentry). FeedPost redirige deja vers /signup via
+    // canInteract, ceci est la defense en profondeur.
+    if (!user) return
     const post = userPosts.find((p) => p.id === postId)
     reactionMutation.mutate({
       postId,
@@ -200,6 +205,7 @@ export function ProfileFeed({
                 <FeedPost
                   {...post}
                   isOwnPost={isOwnProfile}
+                  canInteract={isAuthenticated}
                   onReact={handleReact}
                   onEditPost={isOwnProfile ? onEditPost : undefined}
                   hideEndBorder={idx === sortedPosts.length - 1}

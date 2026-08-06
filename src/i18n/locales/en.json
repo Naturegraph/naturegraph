@@ -845,6 +845,9 @@
       "partialUploadError": "{{failed}} of {{total}} photo(s) couldn’t be added. You can add them again via “Edit my observation”.",
       "uploadError": "Submission is taking too long. Check your internet connection and try again.",
       "uploadErrorTitle": "Upload failed",
+      "fileUnreadableError": "We couldn’t read one of your photos (it may have been moved or its access expired). Re-select it and try again.",
+      "uploadTimeout": "Publishing took too long and was interrupted. Check your connection and try again.",
+      "fileReadError": "unreadable photo, please re-select it",
       "uploadingHint": "We’re uploading your photos. This can take a few seconds…",
       "uploadingTitle": "Uploading…"
     },
