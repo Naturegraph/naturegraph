@@ -340,21 +340,46 @@ export function EncounterStep1({
   const safeIndex = totalSlots > 0 ? Math.min(selectedIndex, totalSlots - 1) : 0
 
   const handleFiles = useCallback(
-    (incoming: FileList | null) => {
+    async (incoming: FileList | null) => {
       if (!incoming) return
       const errors: string[] = []
-      const accepted: File[] = []
+      const candidates: File[] = []
       const remaining = MAX_FILES - files.length
 
+      // 1. Validation synchrone (type / taille) + snapshot des File AVANT tout
+      //    await : l'input est vide juste apres l'appel (onChange), on capture
+      //    donc les references maintenant.
       Array.from(incoming).forEach((file) => {
-        if (accepted.length >= remaining) return
+        if (candidates.length >= remaining) return
         const err = validateFile(file)
         if (err) {
           errors.push(`${file.name} : ${err}`)
           return
         }
-        accepted.push(file)
+        candidates.push(file)
       })
+
+      // 2. Prevention NotReadableError (issue Sentry / "pb de droits" soft launch) :
+      //    on lit les octets MAINTENANT, tant que la reference fichier est fraiche,
+      //    et on reconstruit un File 100 % en memoire. Ainsi la reference OS ne peut
+      //    plus se perimer d'ici l'upload (photo deplacee, acces revoque, photo cloud
+      //    pas encore telechargee). Si la lecture echoue des la selection, on le dit
+      //    tout de suite au lieu de laisser la publication planter plus tard.
+      const accepted: File[] = []
+      for (const file of candidates) {
+        try {
+          const bytes = await file.arrayBuffer()
+          accepted.push(
+            new File([bytes], file.name, { type: file.type, lastModified: file.lastModified }),
+          )
+        } catch {
+          errors.push(
+            `${file.name} : ${t('contribute.media.fileReadError', {
+              defaultValue: 'photo illisible, re-selectionne-la',
+            })}`,
+          )
+        }
+      }
 
       setValidationErrors(errors)
       if (accepted.length > 0) {
@@ -363,7 +388,7 @@ export function EncounterStep1({
         if (onMetadataExtracted) void extractBatchMetadata(next).then(onMetadataExtracted)
       }
     },
-    [files, onFilesChange, onMetadataExtracted],
+    [files, onFilesChange, onMetadataExtracted, t],
   )
 
   const openPicker = () => inputRef.current?.click()

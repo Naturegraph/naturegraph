@@ -847,6 +847,7 @@
       "uploadErrorTitle": "Erreur lors du chargement",
       "fileUnreadableError": "Impossible de lire une de tes photos (elle a peut-être été déplacée ou son accès a expiré). Re-sélectionne-la puis réessaie.",
       "uploadTimeout": "La publication a pris trop de temps et a été interrompue. Vérifie ta connexion et réessaie.",
+      "fileReadError": "photo illisible, re-sélectionne-la",
       "uploadingHint": "Nous importons tes photos. Cela peut prendre quelques secondes…",
       "uploadingTitle": "Importation en cours !"
     },
