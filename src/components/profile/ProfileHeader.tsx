@@ -103,11 +103,11 @@ export function ProfileHeader({
         isFollowing
           ? t('profile.unfollowSuccess', {
               username: profile.username,
-              defaultValue: `Tu ne migres plus avec @${profile.username}.`,
+              defaultValue: 'Tu ne migres plus avec @{{username}}.',
             })
           : t('profile.followSuccess', {
               username: profile.username,
-              defaultValue: `Tu migres maintenant avec @${profile.username}.`,
+              defaultValue: 'Tu migres maintenant avec @{{username}}.',
             }),
       )
     } catch (err) {

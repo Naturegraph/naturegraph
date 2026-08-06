@@ -122,7 +122,8 @@ export function SettingsSecurityView() {
           defaultValue: 'Confirme depuis tes deux adresses',
         }),
         t('settings.security.emailUpdateSuccessDesc', {
-          defaultValue: `Un lien a été envoyé à ${trimmed} et à ton adresse actuelle. Clique sur les deux liens pour valider le changement.`,
+          defaultValue:
+            'Un lien a été envoyé à {{email}} et à ton adresse actuelle. Clique sur les deux liens pour valider le changement.',
           email: trimmed,
         }),
       )

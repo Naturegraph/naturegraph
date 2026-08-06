@@ -13,13 +13,14 @@
  * TAXREF/INPN retiré du produit (cf. PRD_SPECIES_DATABASE.md).
  */
 
-import { useState, useId, useEffect, useMemo } from 'react'
+import { useState, useId, useEffect, useMemo, useRef } from 'react'
 import { Search, Trash2, HelpCircle, Filter, X, Check, Loader2, BookOpen } from 'lucide-react'
 import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
 import { useTranslation } from 'react-i18next'
 import type { TaxonomicGroup } from '@/types/database'
 import { searchTaxonomy, type TaxonomyHit } from '@/services/searchService'
-import { trackFailure } from '@/lib/monitoring'
+import { trackAction, trackFailure } from '@/lib/monitoring'
+import { SUPPORT_EMAIL, mailtoLink } from '@/constants/contact'
 import type { Notebook } from '@/services/notebookService'
 import { highlightMatch } from '@/utils/highlightMatch'
 import { Button } from '@/components/ui/Button'
@@ -340,6 +341,20 @@ function SpeciesSearchBar({
   // distingués pour donner un feedback clair sur ce qu'il se passe.
   const hasQuery = query.trim().length >= 1
   const showEmpty = hasQuery && !isLoading && !hasNetworkError && results.length === 0
+
+  // NG-064 : monitoring des termes qui ne renvoient AUCUNE espèce. Ces termes
+  // alimentent la liste d'enrichissement de la base (lié NG-057). On dédoublonne
+  // par terme (ref) pour ne logguer chaque terme sans résultat qu'une seule fois,
+  // et seulement une fois la recherche stabilisée (showEmpty, donc hors chargement
+  // et hors erreur réseau) : pas de bruit Sentry à chaque frappe.
+  const lastZeroLoggedRef = useRef<string | null>(null)
+  useEffect(() => {
+    const term = query.trim()
+    if (!showEmpty || !term) return
+    if (lastZeroLoggedRef.current === term) return
+    lastZeroLoggedRef.current = term
+    trackAction('search.species.zero_result', { term })
+  }, [showEmpty, query])
 
   return (
     <div className="flex flex-col gap-3">
@@ -759,6 +774,28 @@ function SpeciesSearchBar({
                     "Vérifie l'orthographe ou utilise « Je ne connais pas l'espèce » en bas pour partager quand même.",
                 })}
               </p>
+              {/* NG-064 : signaler une espèce manquante. mailto vers le support
+                  avec le terme cherché pré-rempli. Ne bloque jamais la
+                  publication (l'utilisateur peut publier via « Je ne connais
+                  pas l'espèce »). */}
+              <a
+                href={mailtoLink(
+                  t('contribute.panel.reportMissingSubject', {
+                    defaultValue: 'Espèce manquante sur Naturegraph',
+                  }),
+                  SUPPORT_EMAIL,
+                  t('contribute.panel.reportMissingBody', {
+                    query,
+                    defaultValue:
+                      'Bonjour,\n\nJe n’ai pas trouvé cette espèce dans la recherche : « {{query}} ».\n\nMerci de l’ajouter à la base si possible.\n\n(Écris ci-dessous le nom exact ou un lien si tu en as un.)',
+                  }),
+                )}
+                className="mt-1 rounded text-xs font-medium text-[var(--color-link)] underline underline-offset-2 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-link)]"
+              >
+                {t('contribute.panel.reportMissingSpecies', {
+                  defaultValue: 'Signaler une espèce manquante',
+                })}
+              </a>
             </div>
           )}
           {/* V1.1.4 NG-027 (Nicolas 2026-06-03) : panne reseau affichee

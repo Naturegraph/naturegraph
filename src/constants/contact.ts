@@ -38,11 +38,16 @@ export const FOUNDER_EMAIL = 'nicolas@naturegraph.ca'
 export const CONTACT_EMAIL = SUPPORT_EMAIL
 
 /**
- * Wrapper mailto: avec sujet optionnel pour les liens email du site.
+ * Wrapper mailto: avec sujet et corps optionnels pour les liens email du site.
  * Usage : `<a href={mailtoLink('Question RGPD')}>...</a>`
  * Le second argument permet de cibler une adresse précise (ex: PRIVACY_EMAIL).
+ * Le troisième pré-remplit le corps du message (ex: signalement avec contexte).
+ * On encode via encodeURIComponent (espaces -> %20) plutôt que via
+ * URLSearchParams (qui produit des `+`, mal interprétés par certains clients mail).
  */
-export function mailtoLink(subject?: string, email: string = CONTACT_EMAIL): string {
-  if (!subject) return `mailto:${email}`
-  return `mailto:${email}?subject=${encodeURIComponent(subject)}`
+export function mailtoLink(subject?: string, email: string = CONTACT_EMAIL, body?: string): string {
+  const params: string[] = []
+  if (subject) params.push(`subject=${encodeURIComponent(subject)}`)
+  if (body) params.push(`body=${encodeURIComponent(body)}`)
+  return params.length ? `mailto:${email}?${params.join('&')}` : `mailto:${email}`
 }

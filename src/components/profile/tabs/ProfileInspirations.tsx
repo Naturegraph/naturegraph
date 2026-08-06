@@ -57,7 +57,7 @@ export function ProfileInspirations({ savedPosts, username }: ProfileInspiration
     <div
       className="-mx-4 md:mx-0"
       aria-label={t('profile.inspirations.aria', {
-        defaultValue: `Collection de ${username}`,
+        defaultValue: 'Collection de {{username}}',
         username,
       })}
     >

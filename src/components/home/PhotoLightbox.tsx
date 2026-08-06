@@ -1,16 +1,19 @@
 /**
  * PhotoLightbox : Visionneuse photo plein écran
  *
- * Affiche une photo en grand en respectant son format original :
- *   - object-contain pour ne rien rogner
- *   - Navigation prev/next (flèches + clavier)
+ * Affiche une photo en grand en respectant le format choisi à la création
+ * (16:9, portrait, 1:1) via object-cover, pour rester cohérent avec le feed :
+ *   - Navigation prev/next (flèches + clavier + swipe tactile sur mobile)
  *   - Compteur 1/N
  *   - Miniatures de navigation
+ *   - Contexte naturaliste (espèce + lieu) affiché en bas (NG-053)
  *   - Auteur (@username) affiché en bas
  *   - Boutons partage et fermer
  *   - Escape pour fermer
  *
  * Accessibilité : role="dialog" + aria-modal, navigation clavier, focus trap.
+ * Le swipe est un plus tactile : les flèches/clavier/miniatures restent la
+ * navigation de référence (desktop + lecteurs d'écran).
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -70,6 +73,12 @@ const FORMAT_ASPECT: Record<NonNullable<LightboxData['format']>, string> = {
   '1:1': 'aspect-square',
 }
 
+/**
+ * Distance horizontale minimale (px) pour valider un swipe de navigation mobile
+ * (NG-053). En dessous, ou si le geste est majoritairement vertical, on ignore.
+ */
+const SWIPE_MIN_PX = 50
+
 interface PhotoLightboxProps {
   data: LightboxData
   onClose: () => void
@@ -96,6 +105,9 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
   const hasPrev = currentIndex > 0
   const hasNext = currentIndex < images.length - 1
   const closeBtnRef = useRef<HTMLButtonElement>(null)
+  // Navigation tactile (NG-053) : positions de départ du swipe horizontal.
+  const touchStartXRef = useRef<number | null>(null)
+  const touchStartYRef = useRef<number | null>(null)
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -130,6 +142,28 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
       document.body.style.overflow = prev
     }
   }, [])
+
+  // Navigation tactile (NG-053) : swipe horizontal pour changer de photo sur
+  // mobile. On mémorise le point de départ puis, au relâchement, on navigue si
+  // le déplacement horizontal dépasse le seuil ET domine le vertical (sinon
+  // c'est un geste vertical, on ignore). Flèches, clavier et miniatures restent
+  // les moyens de navigation sur desktop et pour l'accessibilité.
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartXRef.current = e.touches[0].clientX
+    touchStartYRef.current = e.touches[0].clientY
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartXRef.current === null || touchStartYRef.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartXRef.current
+    const dy = e.changedTouches[0].clientY - touchStartYRef.current
+    touchStartXRef.current = null
+    touchStartYRef.current = null
+    if (Math.abs(dx) < SWIPE_MIN_PX || Math.abs(dx) <= Math.abs(dy)) return
+    // Swipe vers la gauche → photo suivante ; vers la droite → précédente.
+    if (dx < 0 && hasNext) onNavigate(currentIndex + 1)
+    else if (dx > 0 && hasPrev) onNavigate(currentIndex - 1)
+  }
 
   if (!current) return null
 
@@ -187,7 +221,11 @@ export function PhotoLightbox({ data, onClose, onNavigate }: PhotoLightboxProps)
       </div>
 
       {/* ── Zone image centrale ─────────────────────────────────────────── */}
-      <div className="flex-1 relative flex items-center justify-center min-h-0 px-4 md:px-16">
+      <div
+        className="flex-1 relative flex items-center justify-center min-h-0 px-4 md:px-16"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {hasPrev && (
           <button
             type="button"
