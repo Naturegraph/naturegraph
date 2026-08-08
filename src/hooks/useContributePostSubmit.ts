@@ -542,6 +542,12 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
           )
         }
 
+        // Le post est desormais COMPLET (photos uploadees ou post texte) : il n'est
+        // plus un "orphelin a nettoyer". On coupe le lien AVANT toute pause possible
+        // pour que l'ecouteur de reprise arriere-plan ne puisse JAMAIS supprimer un
+        // post reussi (course etroite onSuccess/finally). Zero risque de perte.
+        createdPostIdRef.current = null
+
         // 3. Invalide TOUTES les variantes du feed (peu importe le contexte
         //    actif : tabs, filtres, page, currentUserId). Le post apparaît
         //    immédiatement dans la liste. On invalide aussi les posts du
