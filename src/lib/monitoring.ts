@@ -180,26 +180,14 @@ export async function initMonitoring(): Promise<void> {
       // Web Vitals ne s'activent pas (Sentry affichait "Set up Session Replay"
       // malgre replaysOnErrorSampleRate). L'optional chaining + filter protege
       // des bumps de version (Dependabot) ou une integration serait renommee.
-      integrations: [
-        Sentry.browserTracingIntegration?.(),
-        Sentry.replayIntegration?.({ maskAllText: true, blockAllMedia: true }),
-      ].filter(Boolean),
+      // Session Replay DESACTIVE (Nicolas 2026-08) : il saturait le forfait gratuit
+      // Sentry. Le diagnostic reste assure par les erreurs + breadcrumbs +
+      // trackFailure (echecs silencieux) + rage-click : largement suffisant (toute
+      // la session de debug 2026-08 a ete resolue sans une seule video). Reactivable
+      // en re-ajoutant replayIntegration + replaysOnErrorSampleRate si le quota le
+      // permet un jour.
+      integrations: [Sentry.browserTracingIntegration?.()].filter(Boolean),
       tracesSampleRate: 0.1,
-      // Session Replay. maskAllText + blockAllMedia = aucun contenu perso/photo.
-      //
-      // replaysSessionSampleRate = 0.1 : on enregistre 10% des sessions SAINES
-      // (sans erreur). Etait a 1.0 TEMPORAIREMENT (2026-08-03) pour diagnostiquer
-      // le "bouton mort au retour d'arriere-plan", qui ne lance aucune exception.
-      // Ce bug est desormais corrige autrement (reprise arriere-plan V0.6.9 + CSP
-      // worker-src V0.6.10), donc on revient a une valeur sobre : le worker de
-      // compression rrweb ne tourne plus sur 100% des sessions (gain CPU/batterie/
-      // bande passante cote client + quota Sentry). L'echantillon a 10% garde un
-      // filet pour reperer d'eventuels echecs silencieux futurs.
-      //
-      // replaysOnErrorSampleRate = 1.0 : INCHANGE. Chaque session AVEC erreur
-      // garde sa video complete -> aucune perte pour l'analyse des bugs.
-      replaysSessionSampleRate: 0.1,
-      replaysOnErrorSampleRate: 1.0,
       // RGPD : pas de PII
       sendDefaultPii: false,
       // Bruit connu a ignorer : ce ne sont PAS des erreurs de notre app.
@@ -213,6 +201,11 @@ export async function initMonitoring(): Promise<void> {
         'sendDataToNative',
         'sendPageHideMessage',
         /ResizeObserver loop/i,
+        // Navigateurs in-app Instagram/Facebook (Android WebView) : leur script
+        // d'instrumentation plante CHEZ EUX (pas dans notre code) des qu'un lien
+        // est ouvert depuis l'app -> bruit pur dans Sentry.
+        /Java object is gone/i,
+        /navigation_performance_logger/i,
       ],
       beforeSend(event: { user?: { email?: string; ip_address?: string } }) {
         if (event.user) {

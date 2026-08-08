@@ -968,6 +968,7 @@
       "titleTooLong": "Le titre ne peut pas dépasser {{max}} caractères",
       "emptyPost": "Ajoute au moins une photo, une espèce ou une description avant de publier.",
       "alreadySubmitting": "Publication deja en cours, patiente un instant.",
+      "submitInterrupted": "La connexion a été interrompue pendant l'envoi (mise en veille). Ta saisie est gardée : réappuie sur Publier.",
       "locationNetworkError": "Connexion lente. Verifie ta connexion ou reessaye dans un instant.",
       "notAuthenticated": "Connecte-toi pour publier",
       "speciesNetworkError": "Connexion lente ou interrompue. Verifie ta connexion ou reessaye dans un instant.",

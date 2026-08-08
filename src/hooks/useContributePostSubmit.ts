@@ -22,7 +22,7 @@
  * `uploadProgress`, `uploadError` : à câbler dans l'UI du caller.
  */
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/AuthContext'
@@ -182,7 +182,69 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
   // synchroniquement, sans re-render.
   const inFlightRef = useRef(false)
 
+  // Reprise arriere-plan (bug "bouton mort") :
+  //  - createdPostIdRef : le post eventuellement cree AVANT un gel, pour pouvoir
+  //    nettoyer l'orphelin (evite les fausses notifs "X a publie" sur un post vide).
+  //  - submitEpochRef : jeton de generation. Chaque submit prend un epoch ; une
+  //    reprise arriere-plan l'incremente pour NEUTRALISER un pipeline "zombie" qui
+  //    repartirait apres le gel (pas de double post, pas de reset d'une nouvelle
+  //    tentative).
+  //  - hiddenAtRef : instant de passage en arriere-plan, pour mesurer l'absence.
+  const createdPostIdRef = useRef<string | null>(null)
+  const submitEpochRef = useRef(0)
+  const hiddenAtRef = useRef<number | null>(null)
+
   const clearError = useCallback(() => setUploadError(null), [])
+
+  // Coeur du fix "bouton mort au retour d'arriere-plan" (Nicolas 2026-08). Quand
+  // l'app est gelee pendant une publication, la requete meurt SANS rejeter et le
+  // watchdog (setTimeout) est gele : le verrou reste bloque -> bouton Publier mort
+  // et RIEN dans Sentry (une page gelee ne peut rien envoyer). Ici, dans React, on
+  // ecoute le retour au premier plan : si une soumission est encore "en vol" apres
+  // une absence non triviale, on considere le pipeline mort, on relache le verrou
+  // (le bouton revit, la saisie est gardee via le brouillon), on neutralise le
+  // zombie, on nettoie l'orphelin, et on trace enfin le cas dans Sentry.
+  useEffect(() => {
+    function onVisibility() {
+      if (document.visibilityState === 'hidden') {
+        hiddenAtRef.current = Date.now()
+        return
+      }
+      const hiddenMs = hiddenAtRef.current ? Date.now() - hiddenAtRef.current : 0
+      hiddenAtRef.current = null
+      // Seuil 4 s : un app-switch eclair pendant un envoi sain ne doit pas le tuer.
+      if (!inFlightRef.current || hiddenMs <= 4000) return
+
+      submitEpochRef.current += 1 // neutralise le pipeline gele s'il repart
+      inFlightRef.current = false
+      setIsSubmitting(false)
+      setUploadProgress(null)
+      setUploadError(
+        t('contribute.errors.submitInterrupted', {
+          defaultValue:
+            "La connexion a ete interrompue pendant l'envoi (mise en veille). Ta saisie est gardee : reappuie sur Publier.",
+        }),
+      )
+      trackFailure(`${formLabel}.submit`, 'interrompu-arriere-plan', {
+        hiddenSec: Math.round(hiddenMs / 1000),
+      })
+      // Best-effort : supprime l'orphelin cree avant le gel (fausse notif "X a
+      // publie" sur un post sans photo).
+      const orphan = createdPostIdRef.current
+      createdPostIdRef.current = null
+      if (orphan && supabase) {
+        void (async () => {
+          try {
+            await supabase.from('posts').delete().eq('id', orphan)
+          } catch {
+            /* best-effort : le cron GC (Phase 2) ramassera le reste */
+          }
+        })()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [t, formLabel])
 
   const submit = useCallback(
     async ({ payload, files, editingPostId, onSuccess }: ContributeSubmitParams) => {
@@ -263,6 +325,11 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
 
       const isEditing = !!editingPostId
       inFlightRef.current = true
+      // Epoch de CETTE tentative : si une reprise arriere-plan l'incremente, ce
+      // pipeline se sait "abandonne" et ne finalise ni ne stompe l'etat.
+      submitEpochRef.current += 1
+      const myEpoch = submitEpochRef.current
+      createdPostIdRef.current = null
       setIsSubmitting(true)
       setUploadError(null)
       let createdPostId: string | null = null
@@ -322,7 +389,11 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
           : await withTimeout(createPost.mutateAsync(payload), 20_000, 'création du post')
         // createdPostId reste null en mode édition → pas de rollback sur erreur
         // d'upload (on garde le post existant tel quel).
-        if (!isEditing) createdPostId = post.id
+        if (!isEditing) {
+          createdPostId = post.id
+          // Expose l'orphelin potentiel a l'ecouteur de reprise arriere-plan.
+          createdPostIdRef.current = post.id
+        }
         armWatchdog() // post cree : etape franchie, on re-arme le garde-fou
 
         // 2. Upload des médias (si fournis) : pipeline robuste avec retry
@@ -484,6 +555,10 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         // evite une navigation tardive deroutante. Le post est quand meme cree et
         // le feed invalide ci-dessus, donc l'observation apparaitra au prochain
         // affichage.
+        // Reprise arriere-plan : si ce pipeline a ete abandonne (l'utilisateur est
+        // revenu au premier plan et l'ecouteur a relache le verrou), on ne navigue
+        // pas / on ne finalise pas ici.
+        if (submitEpochRef.current !== myEpoch) return
         if (!watchdogReleased) await onSuccess(post)
       } catch (err) {
         // Rollback best-effort : supprime le post orphelin si l'upload média
@@ -512,8 +587,14 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
               ? String((err as { name: unknown }).name)
               : ''
           const errMsg = err instanceof Error ? err.message : ''
+          // NotReadableError ET NotFoundError (DOMException) : la photo est illisible
+          // ou sa reference a disparu (deplacee, permission revoquee, cloud non
+          // telechargee). Meme famille cote appareil, meme traitement. Vu sur mobile
+          // ET desktop Safari (issues Sentry 2026-08).
           const isFileUnreadable =
-            errName === 'NotReadableError' || /could not be read|not be read/i.test(errMsg)
+            errName === 'NotReadableError' ||
+            errName === 'NotFoundError' ||
+            /could not be read|not be read|not be found/i.test(errMsg)
           const isAborted = errName === 'AbortError' || /\baborted\b/i.test(errMsg)
 
           if (isFileUnreadable) {
@@ -559,10 +640,16 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         }
       } finally {
         if (watchdogId) clearTimeout(watchdogId)
-        // Pipeline reellement termine (succes ou echec) : on libere le verrou.
-        inFlightRef.current = false
-        setIsSubmitting(false)
-        setUploadProgress(null)
+        // On ne libere le verrou / reset le state QUE si ce pipeline est toujours
+        // le pipeline courant. Sinon (reprise arriere-plan qui a deja tout reset,
+        // ou nouvelle tentative demarree entre-temps), on ne stompe pas l'etat de
+        // la tentative active.
+        if (submitEpochRef.current === myEpoch) {
+          inFlightRef.current = false
+          setIsSubmitting(false)
+          setUploadProgress(null)
+          createdPostIdRef.current = null
+        }
       }
     },
     [user?.id, createPost, queryClient, t, formLabel],
