@@ -1116,12 +1116,17 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
                 variant="primary"
                 size="md"
                 className="flex-1"
-                disabled={isSubmitting}
+                // Volontairement PAS `disabled` : un bouton desactive AVALE le tap en
+                // silence (le fameux "je clique, rien ne se passe"). On garde le bouton
+                // toujours tactile -> chaque tap declenche onClick et donne un retour.
+                // L'anti-doublon est assure par inFlightRef DANS le hook (toast "deja
+                // en cours"), pas par un disabled. aria-busy conserve pour l'a11y.
                 aria-busy={isSubmitting}
                 onClick={(e) => {
-                  // Soumission programmatique via React (pas de form natif HTML)
-                  // : handleSubmit accepte un FormEvent-like mais on lui passe
-                  // une SyntheticEvent qui supporte preventDefault.
+                  // Mouchard AU PREMIER geste : prouve dans Sentry que le tap a bien
+                  // atteint le bouton (vs clic avale par un overlay). Si l'user spamme
+                  // 15x sans effet, on verra 15 taps ici -> le blocage est APRES.
+                  trackAction('encounter.publish.tap', { step, isSubmitting })
                   handleSubmit(e as unknown as React.FormEvent)
                 }}
               >
