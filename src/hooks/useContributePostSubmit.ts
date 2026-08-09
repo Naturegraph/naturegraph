@@ -91,13 +91,21 @@ type UploadErrorKind = 'network' | 'timeout' | 'auth' | 'server' | 'client' | 'u
 function classifyError(err: unknown): { kind: UploadErrorKind; message: string } {
   const message = err instanceof Error ? err.message : String(err)
   const lower = message.toLowerCase()
-  if (lower.includes('timeout') || lower.includes('aborted')) {
+  if (lower.includes('timeout') || lower.includes('aborted') || lower.includes('timed out')) {
     return { kind: 'timeout', message }
   }
   if (
     lower.includes('failed to fetch') ||
     lower.includes('networkerror') ||
     lower.includes('network request failed') ||
+    // WebKit / Safari iOS (dont navigateur in-app Instagram/FB) : au retour
+    // d'arriere-plan la connexion TLS est morte, la 1ere requete part dessus et
+    // rejette avec ces libelles. C'etait LE « Load failed » du va-et-vient (Sentry
+    // 2026-08). Les classer « reseau » -> retry automatique sur connexion fraiche.
+    lower.includes('load failed') ||
+    lower.includes('network connection was lost') ||
+    lower.includes('the network connection was lost') ||
+    lower.includes('cancelled') ||
     !navigator.onLine
   ) {
     return { kind: 'network', message }
@@ -271,16 +279,6 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         return
       }
 
-      if (!user?.id) {
-        // "Bouton mort" typique au retour d'arriere-plan : le state React montre
-        // encore un user mais l'id est vide -> on le VOIT maintenant dans Sentry.
-        trackFailure(formLabel, 'non-authentifie')
-        setUploadError(
-          t('contribute.errors.notAuthenticated', { defaultValue: 'Connecte-toi pour publier' }),
-        )
-        return
-      }
-
       // Garde-fou "post vide" INFRANCHISSABLE (BUGFIX 2026-06-11 : Nicolas a pu
       // publier une Rencontre sans rien en prod, le check du formulaire etant
       // contourne par l'observation "Je ne sais pas"). Ici on a le payload FINAL
@@ -310,17 +308,33 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
       // serveur avant de lancer le pipeline upload (cas Flo.d, JWT expire
       // localement alors que React state montre user authentifie). Si invalide,
       // assertActiveSession redirige vers /welcome avec un toast clair.
+      // Auteur = SESSION VIVANTE, pas l'etat React (qui peut etre perime au retour
+      // d'arriere-plan). assertActiveSession REPARE la session (refresh de l'access
+      // token expire) au lieu de bloquer, et ne redirige que si le refresh token est
+      // vraiment mort. On en tire l'id auteur AUTORITAIRE, utilise pour l'upload media.
+      let authorId = user?.id ?? ''
       try {
-        await assertActiveSession()
+        const session = await assertActiveSession()
+        authorId = session.user.id
       } catch (err) {
         if (err instanceof SessionExpiredError) {
-          // La redirection a deja ete declenchee, on stoppe ici proprement.
-          // On le TRACE : c'est LA cause probable du "j'ai quitte l'app, je
-          // reviens, publier ne marche plus" (session morte au retour de veille).
+          // forceReauth a deja purge + redirige vers /login : rien a afficher ici.
           trackFailure(formLabel, 'session-expiree-au-submit')
           return
         }
-        // Autre erreur (reseau), on continue, le watchdog gerera
+        // Echec TRANSITOIRE (reseau) : on ne detruit rien. Si on a deja un id React,
+        // on tente quand meme (createPost re-derive l'auteur de la session cote
+        // serveur + retente sur erreur reseau). Sinon on ne peut pas publier -> on
+        // le dit VISIBLEMENT (plus jamais de bail muet, retour Nicolas 2026-08).
+        if (!authorId) {
+          trackFailure(formLabel, 'session-indisponible-au-submit')
+          setUploadError(
+            t('contribute.errors.sessionUnavailable', {
+              defaultValue: 'Session momentanement indisponible. Reessaie dans un instant.',
+            }),
+          )
+          return
+        }
       }
 
       const isEditing = !!editingPostId
@@ -380,13 +394,45 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         //    trop court rejetait alors que l'INSERT reussissait cote serveur ->
         //    fausse erreur + post cree sans rollback (createdPostId reste null).
         //    En mode édition, aucune nouvelle row n'est créée donc pas de rollback.
-        const post = isEditing
-          ? await withTimeout(
-              updatePost.mutateAsync({ postId: editingPostId!, payload }),
-              20_000,
-              'mise à jour du post',
+        // Retry du POST createPost/updatePost sur erreur RESEAU (Nicolas 2026-08).
+        // C'est la 1ere requete reseau du pipeline : au retour d'arriere-plan iOS a
+        // tue la connexion TLS, donc cette 1ere requete part sur une socket morte et
+        // rejette avec « Load failed » (Sentry confirme : Instant Nature, navigateur
+        // in-app Instagram, iPhone). C'etait LE « bouton mort / La publication a
+        // echoue » du va-et-vient. On retente jusqu'a 3x : la 2e tentative ouvre une
+        // connexion fraiche et passe. On ne retente QUE les erreurs reseau/timeout :
+        // un 4xx (validation, RLS) est definitif, et on evite ainsi de dupliquer un
+        // INSERT qui aurait pu aboutir cote serveur (le cas 5xx n'est pas retente).
+        const MAX_POST_ATTEMPTS = 3
+        let post: { id: string } | undefined
+        for (let attempt = 1; attempt <= MAX_POST_ATTEMPTS; attempt++) {
+          armWatchdog() // chaque tentative = progression, on re-arme le garde-fou
+          try {
+            post = isEditing
+              ? await withTimeout(
+                  updatePost.mutateAsync({ postId: editingPostId!, payload }),
+                  20_000,
+                  'mise à jour du post',
+                )
+              : await withTimeout(createPost.mutateAsync(payload), 20_000, 'création du post')
+            break
+          } catch (err) {
+            const { kind } = classifyError(err)
+            // Seules les erreurs reseau/timeout/inconnues valent un retry ici : elles
+            // signifient le plus souvent que la requete n'a PAS abouti (connexion
+            // morte). auth/client/serveur = pas de retry (definitif ou risque de
+            // doublon). Derniere tentative epuisee -> on relance vers le catch global.
+            const retryable = kind === 'network' || kind === 'timeout' || kind === 'unknown'
+            if (!retryable || attempt === MAX_POST_ATTEMPTS) throw err
+            console.warn(
+              `[${formLabel}] createPost echec tentative ${attempt}/${MAX_POST_ATTEMPTS} (${kind}), nouvelle connexion...`,
             )
-          : await withTimeout(createPost.mutateAsync(payload), 20_000, 'création du post')
+            trackAction(`${formLabel}.createPost.retry`, { attempt, kind })
+            await sleep(1000 * attempt) // backoff 1s, 2s : laisse le temps a une socket fraiche
+          }
+        }
+        // Garde TypeScript : la boucle sort soit avec `post` defini, soit en throw.
+        if (!post) throw new Error('création du post')
         // createdPostId reste null en mode édition → pas de rollback sur erreur
         // d'upload (on garde le post existant tel quel).
         if (!isEditing) {
@@ -459,7 +505,7 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
                   uploadPostMedia({
                     file: fileToUpload,
                     postId: post.id,
-                    userId: user.id,
+                    userId: authorId,
                     copyrightNotice: '',
                     displayOrder,
                     isCover,

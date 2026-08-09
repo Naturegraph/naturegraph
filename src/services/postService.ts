@@ -434,8 +434,24 @@ export async function createPost(userId: string, payload: CreatePostPayload): Pr
     enforceNonEmpty: false,
   })
 
+  // Auteur : on prefere l'id de la SESSION VIVANTE a l'id passe par le caller
+  // (issu de l'etat React, potentiellement perime au retour d'arriere-plan sur
+  // mobile). C'est aussi l'id que verifie la RLS (auth.uid() = user_id), donc le
+  // plus sur. Fallback sur l'id passe si getUser echoue (reseau) : le hook appelant
+  // retente le POST sur erreur reseau.
+  let authorId = userId
+  try {
+    const { data: authData } = await supabase.auth.getUser()
+    if (authData?.user?.id) authorId = authData.user.id
+  } catch {
+    /* garde l'id passe en fallback */
+  }
+  if (!authorId) {
+    throw new Error('La publication a echoue. Verifie ta connexion et reessaie.')
+  }
+
   const insertPayload = {
-    user_id: userId,
+    user_id: authorId,
     ...payload,
     status: 'published' as const,
     published_at: new Date().toISOString(),

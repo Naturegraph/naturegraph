@@ -563,16 +563,15 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
       setErrors(errs)
       return
     }
-    if (!user?.id) {
-      // LE bug "j'ai quitte l'app, je reviens, Publier est mort" : la session a
-      // saute (user.id vide) et on bail ici, en silence, AVANT le hook. Trace +
-      // video de session desormais.
-      trackFailure('encounter.publish', 'session-perdue-composant')
-      setErrors({
-        description: t('contribute.errors.notAuthenticated', 'Connecte-toi pour publier'),
-      })
-      return
-    }
+    // NOTE (Nicolas 2026-08) : on NE bloque PLUS ici sur `user?.id` de l'etat React.
+    // C'etait LE "bouton Partager mort" silencieux de Rencontre au retour d'arriere-
+    // plan : au reveil, le contexte Auth peut avoir un `user` momentanement vide (il
+    // se re-hydrate), alors que la VRAIE session Supabase est encore vivante. Ce garde
+    // posait alors une erreur sur le champ description (invisible a l'etape 3) -> "rien
+    // ne se passe", et rien dans le feed Sentry (simple warning). La source de verite
+    // de l'auteur est desormais la SESSION vivante, cote hook (assertActiveSession, qui
+    // repare la session par refresh) + createPost (qui derive l'auteur de la session).
+    // Tout echec y est soit visible (toast uploadError), soit une redirection claire.
 
     // Premier observation identifiée → champs species_* du post.
     const firstKnown = form.observations.find((o) => !o.isUnknown && o.species)
