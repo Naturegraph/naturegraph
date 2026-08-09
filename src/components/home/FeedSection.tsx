@@ -210,12 +210,15 @@ export function postFeedItemToMockPost(item: PostFeedItem, _index = 0): MockPost
     weather: item.weather ?? undefined,
     timeOfDay: item.time_of_day ?? undefined,
     habitat: item.habitat ?? undefined,
-    // NG-055 : phénomène des posts Instant Nature. Stocké dans tags[0] (le
-    // label, ex « Coucher / lever de soleil »). Affiché dans la rangée méta
+    // NG-055 : phénomène des posts Instant Nature, lu depuis la colonne dédiée
+    // posts.phenomenon (fallback tags[0] pour les anciens posts créés via le
+    // workaround tags, avant le fix 2026-08). Affiché dans la rangée méta
     // uniquement pour les nature_instant (les encounters n'ont pas de phénomène).
     phenomenon:
       item.type === 'nature_instant'
-        ? ((item.tags as string[] | null)?.[0] ?? undefined)
+        ? ((item as { phenomenon?: string | null }).phenomenon ??
+          (item.tags as string[] | null)?.[0] ??
+          undefined)
         : undefined,
     category: {
       icon: getTaxonomicEmoji(item.taxonomic_group),
