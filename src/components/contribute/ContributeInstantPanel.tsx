@@ -690,10 +690,17 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
               type="button"
               size="md"
               className="flex-1"
-              disabled={isSubmitting}
-              onClick={(e) =>
-                step < TOTAL_STEPS ? handleNext(e) : handleSubmit(e as React.FormEvent)
-              }
+              // Volontairement PAS `disabled` : un bouton desactive avale le tap en
+              // silence. On garde le bouton tactile ; l'anti-doublon est gere par
+              // inFlightRef DANS le hook (toast "deja en cours"). aria-busy pour l'a11y.
+              aria-busy={isSubmitting}
+              onClick={(e) => {
+                // Mouchard au premier geste (cf. Encounter) : prouve dans Sentry que
+                // le tap atteint bien le bouton.
+                trackAction('instant.publish.tap', { step, isSubmitting })
+                if (step < TOTAL_STEPS) handleNext(e)
+                else handleSubmit(e as React.FormEvent)
+              }}
             >
               {isSubmitting ? (
                 <span className="inline-flex items-center gap-2">
