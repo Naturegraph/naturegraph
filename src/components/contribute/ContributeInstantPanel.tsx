@@ -188,15 +188,18 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
       const { data: post, error } = await supabase
         .from('posts')
         .select(
-          'title, description, encounter_date, time_of_day, weather, location_name, latitude, longitude, country, region, location_hidden, tags, display_format',
+          'title, description, encounter_date, time_of_day, weather, location_name, latitude, longitude, country, region, location_hidden, phenomenon, tags, display_format',
         )
         .eq('id', editingPostId)
         .maybeSingle()
       if (cancelled || error || !post) return
-      // Reconstruit la sélection de phénomène depuis tags[0] (le label).
-      const tagLabel = (post.tags as string[] | null)?.[0]
+      // Reconstruit la sélection depuis la colonne phenomenon (fallback tags[0]
+      // pour les anciens posts créés via le workaround tags).
+      const phenLabel =
+        (post.phenomenon as string | null) ?? (post.tags as string[] | null)?.[0] ?? null
       const phenomenonId =
-        (PHENOMENON_OPTIONS.find((o) => o.label === tagLabel)?.id as PhenomenonId | undefined) ?? ''
+        (PHENOMENON_OPTIONS.find((o) => o.label === phenLabel)?.id as PhenomenonId | undefined) ??
+        ''
       setForm((prev) => ({
         ...prev,
         title: post.title ?? '',
@@ -401,8 +404,12 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
       const cityFromInput = locSegments[0] || undefined
       const regionFromInput = locSegments[locSegments.length - 1] || undefined
 
-      // Phenomenon stocké en tags (la colonne posts.phenomenon existe en DB
-      // mais l'UI feed ne l'expose pas encore, tag = workaround simple).
+      // Phénomène : stocké dans la VRAIE colonne posts.phenomenon (VARCHAR 255,
+      // libre). AVANT il partait dans `tags` (workaround), mais la contrainte DB
+      // des tags (lettres/chiffres/tirets, 50 car.) rejetait les libellés avec
+      // espaces/accents/« / » -> 400 « Tag invalide » = TOUTE publication Instant
+      // avec phénomène échouait (Sentry 2026-08). Corrigé : phenomenon = label,
+      // tags = [] (la contrainte accepte un tableau vide).
       const phenomenonLabel = form.phenomenon
         ? PHENOMENON_OPTIONS.find((o) => o.id === form.phenomenon)?.label
         : undefined
@@ -429,7 +436,10 @@ export function ContributeInstantPanel({ onClose, editingPostId }: ContributeIns
           longitude: form.locationLng ?? undefined,
           country: form.locationCountry ?? undefined,
           location_hidden: form.locationHidden,
-          tags: phenomenonLabel ? [phenomenonLabel] : [],
+          // Phénomène dans la colonne dédiée (PAS dans tags : cf. commentaire plus
+          // haut, la contrainte tags rejetait les libellés -> 400 bloquant).
+          phenomenon: phenomenonLabel,
+          tags: [],
           display_format: form.displayFormat,
         },
         files: form.files,

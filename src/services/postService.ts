@@ -95,6 +95,14 @@ export interface CreatePostPayload {
    *  posts.individuals_count en DB pour afficher « (N) » sur le chip espèce. */
   individuals_count?: number
   tags?: string[]
+  /**
+   * Phénomène des posts Instant Nature (label FR, ex « Coucher / lever de soleil »).
+   * Stocké dans la VRAIE colonne `posts.phenomenon` (VARCHAR 255, libre). NE PAS
+   * mettre dans `tags` : la contrainte DB des tags (lettres/chiffres/tirets, 50 car.)
+   * rejette les libellés avec espaces/accents/« / » -> 400 « Tag invalide » qui
+   * bloquait toute publication Instant (Sentry 2026-08).
+   */
+  phenomenon?: string
   /** Format d'affichage choisi par l'utilisateur (Figma 6385:47324).
    *  Default DB = '16:9' si non fourni. */
   display_format?: Post['display_format']
