@@ -33,7 +33,7 @@
  */
 
 import { queryClient } from './queryClient'
-import { trackAction } from './monitoring'
+import { trackAction, trackFailure } from './monitoring'
 
 // Anti-boucle : jamais deux reloads en rafale (une vraie panne ne doit pas nous
 // coincer dans un cycle). Meme garde que le handler `vite:preloadError` de main.tsx.
@@ -44,9 +44,13 @@ const RELOAD_MIN_INTERVAL_MS = 10_000
 // detectee vite apres le degel (le prochain tick).
 const HEARTBEAT_MS = 2_000
 // Ecart de battement au-dela duquel on considere que le JS a ete GELE -> reload.
-// 8 s : au-dessus du clamp des timers de fond (desktop reste ~2 s les 5 premieres
-// min), atteint des qu'un mobile passe ~8 s en arriere-plan (le cas va-et-vient).
-const FREEZE_GAP_MS = 8_000
+// 6 s : au-dessus du clamp des timers de fond (desktop reste ~2 s les 5 premieres
+// min), atteint des qu'un mobile passe ~6 s en arriere-plan (le cas va-et-vient).
+const FREEZE_GAP_MS = 6_000
+
+// Marqueur pose AVANT un reload-de-gel : au boot suivant, on remonte un EVENEMENT
+// Sentry (pas un breadcrumb) pour CONFIRMER que le rechargement a bien eu lieu.
+const FROZE_RELOAD_KEY = 'ng:froze-reload-gap'
 
 // JS reste VIVANT mais onglet endormi ce temps -> donnees perimees : refetch doux
 // (sans reload).
@@ -82,6 +86,14 @@ function checkFreeze(source: string): boolean {
   const gap = now - lastBeat
   lastBeat = now
   if (gap >= FREEZE_GAP_MS && document.visibilityState === 'visible') {
+    // Pose le marqueur AVANT le reload : Sentry est peut-etre gele et n'a pas le
+    // temps d'emettre ici. Au boot suivant, installResumeRecovery() le lira et
+    // remontera un EVENEMENT visible confirmant le rechargement.
+    try {
+      sessionStorage.setItem(FROZE_RELOAD_KEY, String(Math.round(gap / 1000)))
+    } catch {
+      /* ignore */
+    }
     reloadOnce(`${source}:${Math.round(gap / 1000)}s`)
     return true
   }
@@ -94,6 +106,21 @@ function checkFreeze(source: string): boolean {
 export function installResumeRecovery(): void {
   if (typeof window === 'undefined') return
   lastBeat = Date.now()
+
+  // Confirmation : si le boot precedent s'est termine par un reload-de-gel, on
+  // remonte un EVENEMENT Sentry (trackFailure = captureMessage, visible dans la
+  // liste des issues, contrairement aux breadcrumbs). Permet de VERIFIER que la
+  // reprise du va-et-vient s'est bien declenchee, meme quand la page gelee n'avait
+  // rien pu envoyer.
+  try {
+    const froze = sessionStorage.getItem(FROZE_RELOAD_KEY)
+    if (froze) {
+      sessionStorage.removeItem(FROZE_RELOAD_KEY)
+      trackFailure('app.resume', 'reload-after-freeze', { frozenSec: Number(froze) })
+    }
+  } catch {
+    /* ignore */
+  }
 
   // DETECTEUR PRINCIPAL (independant des evenements, fiable en PWA) : au degel, le
   // premier tick voit l'ecart et recharge.
