@@ -51,11 +51,19 @@ function BootSplash({ children }: { children: React.ReactNode }) {
   // session Supabase est en cours de restore.
   const { isLoading: isAuthLoading } = useAuth()
   const [skipSplash] = useState(() => {
-    if (typeof window === 'undefined') return false
+    if (typeof window === 'undefined') return true
     try {
+      // Le splash video ne sert QU'AU lancement mobile / PWA (retour Nicolas
+      // 2026-08-10). Sur desktop (et a chaque refresh), le carton creme "pollue"
+      // visuellement entre le loader et le squelette. Desktop = viewport large ->
+      // JAMAIS de splash, l'app rend directement (chaque route gere son loader).
+      // Mobile (browser ou PWA installee) = viewport etroit -> splash au 1er
+      // lancement de la session uniquement (flag ci-dessous).
+      const isMobile = window.matchMedia('(max-width: 767px)').matches
+      if (!isMobile) return true
       return window.sessionStorage.getItem(SPLASH_SEEN_KEY) === '1'
     } catch {
-      return false
+      return true
     }
   })
   const [animFinished, setAnimFinished] = useState(false)
