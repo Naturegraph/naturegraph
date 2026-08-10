@@ -108,6 +108,27 @@ async function isBackendReachable(): Promise<boolean> {
 }
 
 /**
+ * Primitive de self-healing reutilisable : verifie que le client backend repond
+ * ENCORE, et si NON (client supabase-js bloque), recharge la page pour repartir sur
+ * un client + des sockets neufs. A appeler depuis un chemin critique qui vient de
+ * TIMEOUTER alors qu'il ne devrait pas (ex : une recherche qui "ne repond plus" et
+ * pousse l'utilisateur a fermer l'app). Distinct de la reprise d'arriere-plan : ce
+ * stall peut survenir EN COURS de session. Fire-and-forget ; garde anti-boucle 10 s ;
+ * le brouillon (NG-004) + le panneau (sessionStorage) sont restaures au reload.
+ */
+export async function probeBackendAndReloadIfStalled(reason: string): Promise<void> {
+  try {
+    const reachable = await isBackendReachable()
+    if (!reachable) {
+      trackFailure('backend.stalled', reason)
+      reloadOnce(`stall:${reason}`)
+    }
+  } catch {
+    /* best-effort : ne jamais faire echouer l'appelant a cause de la sonde */
+  }
+}
+
+/**
  * Recharge la page UNE fois (garde anti-boucle). Seul moyen fiable de sortir d'un
  * instantane fige : reinstalle un JS vivant, une session fraiche, les bons chunks.
  */
