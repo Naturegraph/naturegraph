@@ -28,9 +28,19 @@
  *   }
  */
 
-import { lazy, Suspense, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { trackAction, trackFailure } from '@/lib/monitoring'
 import { SectionErrorBoundary } from '@/components/layout/SectionErrorBoundary'
+
+// Cle de persistance de l'etat du panneau (type actif + id en edition). Sert a
+// ROUVRIR le panneau apres un rechargement : le brouillon (NG-004) + les photos
+// (NG-038) restaurent deja le CONTENU + l'etape, mais l'etat "panneau ouvert" vivait
+// en memoire React et disparaissait au reload -> l'utilisateur retombait sur le feed.
+// Depuis 2026-08, resumeRecovery recharge la page quand le client backend est bloque
+// au retour d'arriere-plan (va-et-vient mobile) : sans cette restauration, le reload
+// fermait le panneau de publication en cours. sessionStorage : survit au reload (et a
+// un F5 manuel), mais pas a la fermeture de l'onglet -> exactement le bon perimetre.
+const PANEL_STATE_KEY = 'ng:contribute-panel'
 
 // Lazy-loaded - chunk separe, ne charge que quand un panel s ouvre vraiment.
 const ContributeEncounterForm = lazy(() =>
@@ -46,6 +56,31 @@ const ContributeInstantPanel = lazy(() =>
 
 type PanelType = 'nature_encounter' | 'nature_instant'
 
+/** Lit l'etat de panneau persiste (pour rouvrir apres un rechargement). */
+function readPersistedPanel(): { type: PanelType | null; editingPostId: string | null } {
+  try {
+    const raw = sessionStorage.getItem(PANEL_STATE_KEY)
+    if (!raw) return { type: null, editingPostId: null }
+    const parsed = JSON.parse(raw) as { type?: string; editingPostId?: string | null }
+    if (parsed.type === 'nature_encounter' || parsed.type === 'nature_instant') {
+      return { type: parsed.type, editingPostId: parsed.editingPostId ?? null }
+    }
+  } catch {
+    /* sessionStorage indispo ou JSON casse : on n'ouvre rien */
+  }
+  return { type: null, editingPostId: null }
+}
+
+/** Persiste (type != null) ou efface (type == null) l'etat du panneau. */
+function persistPanel(type: PanelType | null, editingPostId: string | null): void {
+  try {
+    if (!type) sessionStorage.removeItem(PANEL_STATE_KEY)
+    else sessionStorage.setItem(PANEL_STATE_KEY, JSON.stringify({ type, editingPostId }))
+  } catch {
+    /* sessionStorage indispo (Safari prive) : tant pis, pas de restauration */
+  }
+}
+
 export interface UseEditPostFlowResult {
   /** Callback edition - a passer aux FeedPost / PostOptionsMenu */
   onEditPost: (postId: string, postType: PanelType) => void
@@ -58,8 +93,17 @@ export interface UseEditPostFlowResult {
 }
 
 export function useEditPostFlow(): UseEditPostFlowResult {
-  const [activeType, setActiveType] = useState<PanelType | null>(null)
-  const [editingPostId, setEditingPostId] = useState<string | null>(null)
+  // Etat initial restaure depuis sessionStorage : si un panneau etait ouvert avant
+  // un rechargement (reprise d'arriere-plan ou F5), on le rouvre a l'identique.
+  const persisted = readPersistedPanel()
+  const [activeType, setActiveType] = useState<PanelType | null>(persisted.type)
+  const [editingPostId, setEditingPostId] = useState<string | null>(persisted.editingPostId)
+
+  // Miroir sessionStorage a chaque changement : ouverture -> on memorise, fermeture
+  // -> on efface. C'est ce qui permet de retrouver le panneau apres un reload.
+  useEffect(() => {
+    persistPanel(activeType, editingPostId)
+  }, [activeType, editingPostId])
 
   function onEditPost(postId: string, postType: PanelType): void {
     setEditingPostId(postId)

@@ -63,7 +63,18 @@ const PROBE_MIN_HIDDEN_MS = 3_000
 // Delai max de la sonde. Un getUser() sain repond en <1 s ; au-dela on considere le
 // client supabase-js bloque. Marge confortable pour ne pas faire de faux positif sur
 // reseau mobile lent, tout en restant sous le timeout de submit (8 s).
-const PROBE_TIMEOUT_MS = 5_000
+const PROBE_TIMEOUT_MS = 3_500
+
+// Absence au-dela de laquelle, SI un panneau de publication est ouvert, on recharge
+// IMMEDIATEMENT au retour (sans attendre la sonde). Retour Nicolas 2026-08 : etre
+// coupe en pleine action au bout de qq secondes est une horrible experience. Quand
+// l'utilisateur est en train de publier et revient d'un vrai passage en arriere-plan
+// (ex. Instagram), on lui rend une app fraiche TOUT DE SUITE, AVANT qu'il ne tape quoi
+// que ce soit -> aucune coupure en cours d'action, et le panneau est restaure.
+const PANEL_OPEN_RELOAD_MIN_HIDDEN_MS = 8_000
+// Cle miroir de l'etat du panneau de contribution (ecrite par useEditPostFlow). Sa
+// presence = un panneau de publication est ouvert.
+const CONTRIBUTE_PANEL_KEY = 'ng:contribute-panel'
 
 let lastBeat = Date.now()
 let hiddenAt: number | null = null
@@ -191,6 +202,24 @@ export function installResumeRecovery(): void {
     if (hiddenMs > 0) trackAction('app.resume', { hiddenSec: Math.round(hiddenMs / 1000) })
     // Bascule eclair : rien a faire (la socket n'a pas eu le temps de mourir).
     if (hiddenMs < PROBE_MIN_HIDDEN_MS) return
+
+    // Utilisateur EN PLEINE PUBLICATION (panneau ouvert) qui revient d'un vrai
+    // passage en arriere-plan : on recharge IMMEDIATEMENT, sans attendre la sonde.
+    // Objectif : lui rendre une app fraiche AVANT qu'il ne retape Publier -> jamais
+    // coupe en cours d'action, et le panneau + la saisie sont restaures au reload
+    // (useEditPostFlow + brouillon NG-004 + photos NG-038).
+    let panelOpen = false
+    try {
+      panelOpen = !!sessionStorage.getItem(CONTRIBUTE_PANEL_KEY)
+    } catch {
+      /* sessionStorage indispo : on retombe sur la sonde ci-dessous */
+    }
+    if (panelOpen && hiddenMs >= PANEL_OPEN_RELOAD_MIN_HIDDEN_MS) {
+      trackAction('app.resume', { reason: 'panneau-ouvert-reload-immediat' })
+      reloadOnce('panneau-ouvert-au-retour')
+      return
+    }
+
     void (async () => {
       const reachable = await isBackendReachable()
       if (!reachable) {
