@@ -168,13 +168,15 @@ export function ContributeEncounterForm({ onClose, editingPostId }: ContributeEn
   const restoredDraft = !editingPostId ? readDraft<DraftPayload>(DRAFT_KEY) : null
 
   // En mode edition -> step 3 force. Sinon : si brouillon avec step memorise,
-  // on reprend ou l user etait. Sinon : step 1 (debut neuf).
-  // Cap a 2 max : sans photos persistees on ne peut pas valider step 3, donc
-  // on s arrete a step 2 (especes) qui permet de continuer logiquement.
+  // on reprend EXACTEMENT ou l user etait (retour Nicolas 2026-08 : au reload de
+  // reprise, on revenait a l'etape 2 au lieu de 3). Le plafond a l'etape 2 n'a plus
+  // lieu d'etre depuis que les photos sont persistees (NG-038, draftPhotoStore) :
+  // elles sont rechargees, l'etape 3 (details) est donc valide au retour. On borne
+  // juste au nombre total d'etapes par securite.
   const [step, setStep] = useState<number>(() => {
     if (editingPostId) return 3
     if (restoredDraft?.step && restoredDraft.step > 1) {
-      return Math.min(restoredDraft.step, 2)
+      return Math.min(restoredDraft.step, 3)
     }
     return 1
   })
