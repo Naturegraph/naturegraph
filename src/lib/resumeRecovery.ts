@@ -33,6 +33,7 @@
  */
 
 import { queryClient } from './queryClient'
+import { supabase } from './supabase'
 import { trackAction, trackFailure } from './monitoring'
 
 // Anti-boucle : jamais deux reloads en rafale (une vraie panne ne doit pas nous
@@ -59,43 +60,40 @@ const STALE_SOFT_MS = 2 * 60 * 1000
 // Absence minimale (arriere-plan) au-dela de laquelle on SONDE le backend au retour.
 // En dessous (bascule eclair), inutile : la socket n'a pas eu le temps de mourir.
 const PROBE_MIN_HIDDEN_MS = 3_000
-// Delai max de la sonde de vivacite backend. Une reponse saine arrive en <1 s ;
-// au-dela on considere la socket morte. Court pour ne pas faire attendre l'user.
-const PROBE_TIMEOUT_MS = 4_000
-
-// URL Supabase (meme origine que les requetes de publication). Sert a sonder que la
-// socket vers le backend est VIVANTE au retour d'arriere-plan.
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined
+// Delai max de la sonde. Un getUser() sain repond en <1 s ; au-dela on considere le
+// client supabase-js bloque. Marge confortable pour ne pas faire de faux positif sur
+// reseau mobile lent, tout en restant sous le timeout de submit (8 s).
+const PROBE_TIMEOUT_MS = 5_000
 
 let lastBeat = Date.now()
 let hiddenAt: number | null = null
 
 /**
  * Sonde de vivacite du backend (fix "va-et-vient : publier tourne en rond puis
- * timeout"). Au retour d'arriere-plan sur mobile, la radio a pu tuer la socket TCP
- * vers Supabase SANS geler le JS : les prochaines requetes (auth, insert) PENDENT
- * jusqu'au timeout OS. On envoie un GET leger sur l'endpoint de sante, borne par un
- * court AbortController. `no-cors` : on ne lit pas la reponse, on veut seulement
- * savoir si le serveur REPOND (une reponse opaque suffit). Retourne false si ca
- * pend / rejette (socket morte) -> l'appelant recharge pour repartir sur du neuf.
+ * timeout"). Au retour d'arriere-plan sur mobile, les appels du client supabase-js
+ * (auth `getUser`, puis l'insert) PENDENT indefiniment (Sentry prod 2026-08 :
+ * `session-timeout-on-continue` + `Timeout creation du post apres 20s`). Une sonde
+ * reseau BRUTE ne suffit pas : le TCP peut repondre alors que le CLIENT supabase-js
+ * reste bloque. On teste donc l'appel EXACT qui pend (`auth.getUser`), borne par un
+ * timeout court.
+ *
+ * Cle : on distingue "PEND" (probleme) de "repond avec une erreur" (pas un probleme,
+ * l'app sait gerer). Une resolution OU un rejet dans le delai = client vivant. Seul
+ * un depassement du timeout (aucune reponse) = client bloque -> l'appelant recharge.
  */
 async function isBackendReachable(): Promise<boolean> {
-  if (!SUPABASE_URL) return true // pas d'URL connue : on ne peut pas prober, on ne recharge pas
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS)
-  try {
-    await fetch(`${SUPABASE_URL}/auth/v1/health`, {
-      method: 'GET',
-      mode: 'no-cors',
-      cache: 'no-store',
-      signal: controller.signal,
-    })
-    return true
-  } catch {
-    return false // abort (timeout) ou erreur reseau : socket probablement morte
-  } finally {
-    clearTimeout(timer)
-  }
+  if (!supabase) return true // pas de client : rien a sonder, on ne recharge pas
+  const timeout = new Promise<'timeout'>((resolve) =>
+    setTimeout(() => resolve('timeout'), PROBE_TIMEOUT_MS),
+  )
+  // getUser() resolue OU rejetee = le serveur a repondu = client vivant. On mappe les
+  // deux sur 'ok' ; seul le timeout signale un blocage.
+  const probe = supabase.auth
+    .getUser()
+    .then(() => 'ok' as const)
+    .catch(() => 'ok' as const)
+  const res = await Promise.race([probe, timeout])
+  return res !== 'timeout'
 }
 
 /**
