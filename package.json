@@ -1,7 +1,7 @@
 {
   "name": "naturegraph",
   "private": true,
-  "version": "0.7.10",
+  "version": "0.7.11",
   "description": "Naturegraph : Explorez, documentez et partagez la biodiversite",
   "author": "Nicolas",
   "type": "module",
