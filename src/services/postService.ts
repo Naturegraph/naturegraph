@@ -434,8 +434,27 @@ export async function createPost(userId: string, payload: CreatePostPayload): Pr
     enforceNonEmpty: false,
   })
 
+  // Auteur : on prefere l'id de la SESSION VIVANTE a l'id passe par le caller
+  // (issu de l'etat React, potentiellement perime au retour d'arriere-plan sur
+  // mobile). C'est aussi l'id que verifie la RLS (auth.uid() = user_id), donc le
+  // plus sur. IMPORTANT : getUser() peut PENDRE sur une socket morte au retour
+  // d'arriere-plan -> on le borne par une course avec un timeout (5 s), sinon on
+  // gelerait la publication. Au timeout ou a l'echec, on retombe sur l'id passe
+  // par le caller (le hook appelant retente le POST sur erreur reseau).
+  let authorId = userId
+  try {
+    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000))
+    const res = await Promise.race([supabase.auth.getUser(), timeout])
+    if (res && 'data' in res && res.data?.user?.id) authorId = res.data.user.id
+  } catch {
+    /* garde l'id passe en fallback */
+  }
+  if (!authorId) {
+    throw new Error('La publication a echoue. Verifie ta connexion et reessaie.')
+  }
+
   const insertPayload = {
-    user_id: userId,
+    user_id: authorId,
     ...payload,
     status: 'published' as const,
     published_at: new Date().toISOString(),
