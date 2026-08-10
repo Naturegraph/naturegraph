@@ -218,25 +218,43 @@ serveWithSentry('check-missed-feed', async (req: Request) => {
         .filter((p) => (pubParCompte.get(p.id as string) ?? 0) <= 2) as Destinataire[]
     }
 
+    // Pre-charge TOUS les follows des candidats en UNE requete (au lieu d'une par
+    // destinataire). Indispensable pour tenir le budget temps du cron maintenant
+    // qu'on RALENTIT le rythme d'envoi (anti rate-limit Resend, cf. boucle plus bas).
+    const suivisParUser = new Map<string, Array<{ id: string; username: string | null }>>()
+    if (candidats.length > 0) {
+      const { data: tousSuivis } = await admin
+        .from('follows')
+        .select('follower_id, following_id, profiles!follows_following_id_fkey(username)')
+        .in(
+          'follower_id',
+          candidats.map((c) => c.id),
+        )
+      for (const f of tousSuivis ?? []) {
+        const fol = f.follower_id as string
+        const arr = suivisParUser.get(fol) ?? []
+        arr.push({
+          id: f.following_id as string,
+          username: (f.profiles as { username?: string } | null)?.username ?? null,
+        })
+        suivisParUser.set(fol, arr)
+      }
+    }
+
     // Envoi ISOLE par destinataire : une erreur (follows KO, fetch reseau,
     // dispatcher HS) NE DOIT PLUS couper tout le batch. Avant, `throw folErr`
     // remontait au catch global -> HTTP 500 en plein milieu, et seuls les
     // destinataires deja traites recevaient l'email (23/42 le 02/08).
     async function envoyerA(dest: Destinataire): Promise<boolean> {
       try {
-        // BLOC PERSO. Comptes suivis par ce destinataire, parmi ceux qui ont
-        // publie cette semaine, tries du plus recemment actif.
-        const { data: suivis, error: folErr } = await admin
-          .from('follows')
-          .select('following_id, profiles!follows_following_id_fkey(username)')
-          .eq('follower_id', dest.id)
-        if (folErr) throw folErr
-
-        const suivisActifs = (suivis ?? [])
-          .map((f) => ({
-            id: f.following_id as string,
-            username: (f.profiles as { username?: string } | null)?.username ?? null,
-            derniere: derniereParAuteur.get(f.following_id as string) ?? null,
+        // BLOC PERSO. Comptes suivis par ce destinataire (pre-charges en amont, une
+        // seule requete pour tout le batch), parmi ceux qui ont publie cette semaine,
+        // tries du plus recemment actif.
+        const suivisActifs = (suivisParUser.get(dest.id) ?? [])
+          .map((s) => ({
+            id: s.id,
+            username: s.username,
+            derniere: derniereParAuteur.get(s.id) ?? null,
           }))
           .filter((s) => s.derniere !== null && s.username)
           .sort((a, b) => (b.derniere! > a.derniere! ? 1 : -1))
@@ -305,22 +323,25 @@ serveWithSentry('check-missed-feed', async (req: Request) => {
       }
     }
 
-    // Envoi par LOTS PARALLELES bornes (section 7 du spec) : l'envoi sequentiel
-    // prenait ~1 s/destinataire -> >40 s pour ~42 comptes, au-dela du timeout
-    // cron (~30 s), d'ou le run coupe. Des lots de 5 en parallele ramenent le
-    // run bien sous la limite, et le court delai entre lots menage le rate-limit
-    // Resend. Promise.allSettled = aucun destinataire ne peut faire tomber le lot.
-    const TAILLE_LOT = 5
-    const DELAI_ENTRE_LOTS_MS = 300
+    // Envoi SEQUENTIEL au pas (section 7 du spec, revu 2026-08-10). Resend (offre
+    // gratuite) limite a ~2 requetes/seconde. AVANT : lots de 5 en PARALLELE ->
+    // rafales de 5 appels quasi simultanes -> 429 "Rate limit exceeded / Retry after
+    // 26 s" -> ~40 % des destinataires ne recevaient PAS l'email (Sentry "destinataire
+    // ignore" + "E2 envoi partiel", en escalade). Desormais on envoie UN par UN avec
+    // un pas mini de 550 ms (~1,8/s, sous la limite). Les follows etant pre-charges,
+    // le run tient bien sous le timeout du cron (~45 envois x 0,55 s ~= 25 s).
+    // Note montee en charge : au-dela de ~90 destinataires, passer a l'API batch
+    // Resend (jusqu'a 100 emails / requete) pour ne pas approcher le timeout.
+    const PAS_MIN_MS = 550
     let sent = 0
-    for (let i = 0; i < candidats.length; i += TAILLE_LOT) {
-      const lot = candidats.slice(i, i + TAILLE_LOT)
-      const resultats = await Promise.allSettled(lot.map((dest) => envoyerA(dest)))
-      for (const r of resultats) {
-        if (r.status === 'fulfilled' && r.value) sent += 1
-      }
-      if (i + TAILLE_LOT < candidats.length) {
-        await new Promise((r) => setTimeout(r, DELAI_ENTRE_LOTS_MS))
+    for (let idx = 0; idx < candidats.length; idx++) {
+      const t0 = Date.now()
+      const ok = await envoyerA(candidats[idx])
+      if (ok) sent += 1
+      // Pas de pause apres le dernier envoi.
+      if (idx < candidats.length - 1) {
+        const reste = PAS_MIN_MS - (Date.now() - t0)
+        if (reste > 0) await new Promise((r) => setTimeout(r, reste))
       }
     }
 
