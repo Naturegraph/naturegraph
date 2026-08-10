@@ -22,6 +22,7 @@
  */
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { probeBackendAndReloadIfStalled } from '@/lib/resumeRecovery'
 
 // ─── Types exportés ───────────────────────────────────────────────────────────
 
@@ -180,6 +181,14 @@ async function rpcWithRetry(
       /* best-effort */
     }
     result = await tryOnce()
+  }
+  // Self-healing : si APRES tous les retries on est TOUJOURS en timeout, le client
+  // supabase-js est probablement bloque (stall au retour d'arriere-plan, ou en cours
+  // de session). On sonde et, si confirme, on recharge -> la recherche remarche sans
+  // que l'utilisateur ait a fermer l'app (retour Nicolas 2026-08 : "on tape une fois
+  // puis plus rien, il faut fermer / refresh"). Fire-and-forget, non bloquant.
+  if (result.error && /timeout/i.test((result.error as Error).message ?? '')) {
+    void probeBackendAndReloadIfStalled(`rpc:${label}`)
   }
   return result
 }
@@ -349,16 +358,27 @@ export async function searchProfiles(query: string, limit = 10): Promise<Profile
 
   const pattern = `%${q}%`
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, username, first_name, last_name, avatar_url')
-    .or(
-      `username.ilike.${pattern},` + `first_name.ilike.${pattern},` + `last_name.ilike.${pattern}`,
-    )
-    .limit(limit)
+  // Meme robustesse que la recherche d'especes : timeout 15 s + retry cold-start +
+  // retry sur token expire (refreshSession). AVANT : `await` nu -> sur un client
+  // supabase-js bloque (retour d'arriere-plan) la requete pendait indefiniment et
+  // la recherche de comptes "ne repondait plus" jusqu'a fermeture de l'app.
+  const { data, error } = await rpcWithRetry(
+    () =>
+      supabase!
+        .from('profiles')
+        .select('id, username, first_name, last_name, avatar_url')
+        .or(
+          `username.ilike.${pattern},` +
+            `first_name.ilike.${pattern},` +
+            `last_name.ilike.${pattern}`,
+        )
+        .limit(limit),
+    15000,
+    'profile search',
+  )
 
   if (error) {
-    console.warn('[searchService] profile search failed:', error.message)
+    console.warn('[searchService] profile search failed:', (error as Error).message ?? error)
     return []
   }
 
