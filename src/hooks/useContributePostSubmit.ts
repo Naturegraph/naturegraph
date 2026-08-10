@@ -304,39 +304,14 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         }
       }
 
-      // Nicolas 2026-05-25 : verifie que la session est vraiment vivante cote
-      // serveur avant de lancer le pipeline upload (cas Flo.d, JWT expire
-      // localement alors que React state montre user authentifie). Si invalide,
-      // assertActiveSession redirige vers /welcome avec un toast clair.
-      // Auteur = SESSION VIVANTE, pas l'etat React (qui peut etre perime au retour
-      // d'arriere-plan). assertActiveSession REPARE la session (refresh de l'access
-      // token expire) au lieu de bloquer, et ne redirige que si le refresh token est
-      // vraiment mort. On en tire l'id auteur AUTORITAIRE, utilise pour l'upload media.
-      let authorId = user?.id ?? ''
-      try {
-        const session = await assertActiveSession()
-        authorId = session.user.id
-      } catch (err) {
-        if (err instanceof SessionExpiredError) {
-          // forceReauth a deja purge + redirige vers /login : rien a afficher ici.
-          trackFailure(formLabel, 'session-expiree-au-submit')
-          return
-        }
-        // Echec TRANSITOIRE (reseau) : on ne detruit rien. Si on a deja un id React,
-        // on tente quand meme (createPost re-derive l'auteur de la session cote
-        // serveur + retente sur erreur reseau). Sinon on ne peut pas publier -> on
-        // le dit VISIBLEMENT (plus jamais de bail muet, retour Nicolas 2026-08).
-        if (!authorId) {
-          trackFailure(formLabel, 'session-indisponible-au-submit')
-          setUploadError(
-            t('contribute.errors.sessionUnavailable', {
-              defaultValue: 'Session momentanement indisponible. Reessaie dans un instant.',
-            }),
-          )
-          return
-        }
-      }
-
+      // VERROU + RETOUR VISUEL IMMEDIATS, AVANT tout appel reseau (fix du "bouton
+      // mort" silencieux, Nicolas 2026-08). Les appels d'auth ci-dessous
+      // (getUser/refreshSession) n'ont pas de timeout cote client et peuvent PENDRE
+      // longtemps sur une socket morte au retour d'arriere-plan. Si on attendait la
+      // session AVANT d'allumer le spinner, le bouton restait muet (ni spinner, ni
+      // erreur, rien dans Sentry car rien ne throw) et un 2e tap relançait un appel
+      // qui pendait aussi. On verrouille et on montre le spinner TOUT DE SUITE ; le
+      // timeout de session + le watchdog garantissent qu'on ne reste jamais bloque.
       const isEditing = !!editingPostId
       inFlightRef.current = true
       // Epoch de CETTE tentative : si une reprise arriere-plan l'incremente, ce
@@ -345,8 +320,53 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
       const myEpoch = submitEpochRef.current
       createdPostIdRef.current = null
       setIsSubmitting(true)
+      setUploadProgress(null)
       setUploadError(null)
       let createdPostId: string | null = null
+
+      // Petit utilitaire local : relache le verrou + le spinner UNIQUEMENT si ce
+      // pipeline est toujours le pipeline courant (une reprise arriere-plan a pu
+      // deja tout reset). Utilise par les retours anticipes ci-dessous.
+      const releaseIfCurrent = () => {
+        if (submitEpochRef.current === myEpoch) {
+          inFlightRef.current = false
+          setIsSubmitting(false)
+        }
+      }
+
+      // Auteur = SESSION VIVANTE, pas l'etat React (qui peut etre perime au retour
+      // d'arriere-plan). assertActiveSession REPARE la session (refresh de l'access
+      // token expire) au lieu de bloquer, et ne redirige que si le refresh token est
+      // vraiment mort. ENVELOPPE DANS UN TIMEOUT : sans ca, un getUser/refreshSession
+      // qui pend sur une socket morte gelait tout le submit sans aucun retour ->
+      // bouton mort. Au timeout, on NE bloque PAS : createPost re-derive l'auteur de
+      // la session cote serveur (avec repli) + retente sur erreur reseau.
+      let authorId = user?.id ?? ''
+      try {
+        const session = await withTimeout(assertActiveSession(), 8000, 'verification de la session')
+        authorId = session.user.id
+      } catch (err) {
+        if (err instanceof SessionExpiredError) {
+          // forceReauth a deja purge + redirige vers /login : rien a afficher ici.
+          trackFailure(formLabel, 'session-expiree-au-submit')
+          releaseIfCurrent()
+          return
+        }
+        // Timeout ou echec reseau : on ne detruit rien. Si on a un id React, on tente
+        // quand meme (createPost re-derive l'auteur + retente sur erreur reseau).
+        // Sinon on ne peut pas publier -> message VISIBLE (plus jamais de bail muet).
+        if (!authorId) {
+          trackFailure(formLabel, 'session-indisponible-au-submit')
+          setUploadError(
+            t('contribute.errors.sessionUnavailable', {
+              defaultValue: 'Session momentanement indisponible. Reessaie dans un instant.',
+            }),
+          )
+          releaseIfCurrent()
+          return
+        }
+        trackFailure(formLabel, 'session-timeout-on-continue')
+      }
 
       // Watchdog "sans progression" (NG-012 #1). AVANT : timeout fixe de 60 s sur
       // la duree TOTALE. Probleme : sur reseau mobile lent (3G/4G rurale) avec
