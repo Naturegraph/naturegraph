@@ -13,6 +13,51 @@ useContributePostSubmit) et d'une grappe de retours users + issues Sentry (2026-
 
 ---
 
+## STATUT DE LIVRAISON (mis à jour 2026-08-10, prod V0.7.15)
+
+**Chantier substantiellement livré.** Le parcours critique est stable et confirmé par
+Nicolas (va-et-vient surtout).
+
+**Livré en prod :**
+
+- **C4 Phase 1** (anti-bouton-mort / va-et-vient) — V0.7.8 → V0.7.12. Cause racine
+  réelle : supabase-js PEND au retour d'arrière-plan (pas un gel JS). Fix : sonde
+  `getUser()` + reload invisible + panneau restauré (sessionStorage) + reload immédiat
+  si un panneau de publication est ouvert. **Confirmé OK par Nicolas.**
+- **Feed / commentaires / réactions instantanés** — V0.7.13. Bug de clé
+  `feed` vs `feed-infinite` (helper `invalidateFeeds`). + étape 3 restaurée au reload.
+- **Recherche résiliente + self-healing** — V0.7.14. `searchProfiles` borné ;
+  `probeBackendAndReloadIfStalled` (reload auto si RPC bloquée, même en session).
+- **C6** (échecs d'action visibles) — V0.7.15. Toast d'erreur sur échec
+  commentaire / réaction (+ rollback optimiste + capture Sentry déjà en place).
+- **C1** (retry auth) — V0.7.15. Sur 401/JWT expiré : `refreshSession()` + 1 retry.
+- **C5** (NotFoundError), **C7** (Session Replay off + `ignoreErrors` in-app) — livrés.
+- **C3** : couvert par `resumeRecovery` (soft-invalidate au réveil) +
+  `refetchOnWindowFocus/Reconnect`. Pas de listener d'activité continu (anti éco).
+- **C10** (audit CSP) : `vercel.json` vérifié 2026-08-10 — sain, aucune correction.
+
+**Observabilité :** capture Sentry complète (filet global mutations + `trackFailure`
+échecs silencieux + `backend.stalled` + recherche + contexte route/user + Edge
+Functions). Actif en prod uniquement (`VITE_SENTRY_DSN`). Alertes proactives
+(Discord/email) = config dashboard, non mises (reportées par Nicolas).
+
+**Reste (parqué, non bloquant) :**
+
+- **C4 Phase 2** (colonne `posts.status` pending→published + GC + digest filtré).
+  MIGRATION SCHÉMA PROD -> à faire dans une **fenêtre supervisée** (dev = prod).
+  Urgence RÉDUITE depuis C4 P1 : le pipeline ne gèle plus en silence + nettoyage
+  d'orphelin au retour -> posts fantômes déjà quasi éliminés.
+- **C2** (reconnexion Realtime au réveil) : impact limité (auto-reconnect phoenix +
+  reload de reprise + invalidate-on-action). À faire avec test réel (risque de boucle).
+- **C9** (dédup notifications), redéploiement des 20/24 Edge Functions restantes (CLI,
+  signal marginal).
+- **C8** (OTP) : hors scope volontaire (on garde l'OTP).
+
+Prochaine étape : **observer les retours réels en prod** (Sentry + users) pour valider
+que c'est réglé pour de bon, puis planifier C4 P2 en fenêtre supervisée si besoin.
+
+---
+
 ## 0. Définition de « fixé pour de bon » (Definition of Done globale)
 
 Un utilisateur, sur n'importe quelle plateforme, peut :
