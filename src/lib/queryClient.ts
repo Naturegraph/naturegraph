@@ -1,5 +1,6 @@
 import { QueryClient, MutationCache, QueryCache } from '@tanstack/react-query'
 import { captureException, trackAction } from './monitoring'
+import { supabase } from './supabase'
 
 /**
  * React Query global client.
@@ -34,6 +35,22 @@ function is5xxError(error: unknown): boolean {
   const msg = obj.message ?? ''
   if (/PGRST5\d{2}|503|502|504|server error|gateway timeout/i.test(msg)) return true
   return false
+}
+
+/**
+ * Erreur d'authentification (token JWT expire / invalide). Typiquement au retour
+ * de veille : `autoRefreshToken` (timer) a ete gele, le token a expire, la requete
+ * part avec ce token -> PostgREST renvoie 401 / PGRST301. AVANT : les 4xx ne
+ * retentaient jamais -> echec silencieux -> page vide jusqu'a un refresh manuel
+ * (R1/C1 du plan de fiabilite). On veut alors tenter UN refresh de session + UN retry.
+ */
+function isAuthError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false
+  const obj = error as { status?: number; statusCode?: number; code?: string; message?: string }
+  const status = obj.status ?? obj.statusCode
+  if (status === 401 || status === 403) return true
+  if (obj.code === 'PGRST301') return true
+  return /jwt (expired|invalid)|invalid token|not authenticated|\b401\b/i.test(obj.message ?? '')
 }
 
 /** Hors-ligne : un echec est ATTENDU, inutile de le reporter (bruit). */
@@ -92,6 +109,17 @@ export const queryClient = new QueryClient({
       // pour eviter les refetch inutiles quand l user revient sur une page.
       gcTime: 10 * 60 * 1000,
       retry: (failureCount, error) => {
+        // Auth (401 apres veille) : token probablement expire. On declenche UN
+        // refresh de session (non bloquant) et on rejoue UNE fois -> la query
+        // repart avec un token frais au lieu d'echouer en silence (page vide).
+        // Le retryDelay (~1 s) laisse le temps au refresh d'aboutir avant le rejeu.
+        if (isAuthError(error)) {
+          if (failureCount === 0) {
+            void supabase?.auth.refreshSession()
+            return true
+          }
+          return false
+        }
         if (!is5xxError(error)) return false
         return failureCount < 3
       },

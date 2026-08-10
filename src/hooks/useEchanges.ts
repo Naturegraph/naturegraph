@@ -19,6 +19,7 @@ import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { invalidateFeeds } from '@/hooks/useFeed'
+import { useToast } from '@/contexts/ToastContext'
 import {
   listerEchanges,
   publierEchange,
@@ -101,6 +102,7 @@ export function usePublierEchange(
   },
 ) {
   const qc = useQueryClient()
+  const toast = useToast()
 
   return useMutation({
     mutationKey: ['echange', 'publier'],
@@ -149,9 +151,15 @@ export function usePublierEchange(
     },
 
     // En cas d'echec on remet exactement l'etat d'avant : sans ca, l'echange
-    // resterait affiche alors qu'il n'existe pas en base.
+    // resterait affiche alors qu'il n'existe pas en base. On PREVIENT desormais
+    // l'utilisateur (retour Nicolas 2026-08 : "je publie mon commentaire mais il
+    // n'est jamais enregistre") : sans ce toast, l'optimistic disparaissait en
+    // silence et l'user croyait que ca avait marche. Persistant : il doit le voir.
     onError: (_err, _params, contexte) => {
       if (contexte?.precedent) qc.setQueryData(cleEchanges(postId), contexte.precedent)
+      toast.error("Ton message n'a pas pu etre publie", 'Verifie ta connexion et reessaie.', {
+        persistent: true,
+      })
     },
 
     onSettled: () => {
@@ -240,6 +248,7 @@ export function useBasculerEchangeUtile(postId: string) {
  */
 export function useBasculerReactionEchange(postId: string) {
   const qc = useQueryClient()
+  const toast = useToast()
 
   return useMutation({
     mutationKey: ['echange', 'reaction'],
@@ -268,6 +277,7 @@ export function useBasculerReactionEchange(postId: string) {
 
     onError: (_e, _p, ctx) => {
       if (ctx?.precedent) qc.setQueryData(cleEchanges(postId), ctx.precedent)
+      toast.error("Ta reaction n'a pas ete enregistree", 'Reessaie dans un instant.')
     },
 
     onSettled: () => qc.invalidateQueries({ queryKey: cleEchanges(postId) }),

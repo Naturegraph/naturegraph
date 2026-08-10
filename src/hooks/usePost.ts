@@ -21,6 +21,7 @@ import {
 import type { PostFeedItem, ReactionType } from '@/types/database'
 import { useAuth } from '@/contexts/AuthContext'
 import { invalidateFeeds } from '@/hooks/useFeed'
+import { useToast } from '@/contexts/ToastContext'
 
 export const postQueryKey = {
   byId: (postId: string) => ['post', postId] as const,
@@ -176,6 +177,7 @@ type ToggleReactionContext = { previousData: unknown; feedQueryKey: readonly unk
 
 export function useToggleReaction(userId: string | undefined) {
   const queryClient = useQueryClient()
+  const toast = useToast()
 
   return useMutation<ToggleReactionResult, Error, ToggleReactionVars, ToggleReactionContext>({
     mutationKey: ['post', 'reaction'],
@@ -279,6 +281,9 @@ export function useToggleReaction(userId: string | undefined) {
       if (context?.previousData !== undefined) {
         queryClient.setQueryData(context.feedQueryKey, context.previousData)
       }
+      // Echec reel cote serveur : l'optimistic vient d'etre annule. On PREVIENT
+      // (retour Nicolas 2026-08 : reactions "pas enregistrees" en silence).
+      toast.error("Ta reaction n'a pas ete enregistree", 'Reessaie dans un instant.')
     },
 
     onSettled: (_data, _error, { feedQueryKey, postId }) => {
