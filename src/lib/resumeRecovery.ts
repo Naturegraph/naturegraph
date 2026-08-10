@@ -56,8 +56,47 @@ const FROZE_RELOAD_KEY = 'ng:froze-reload-gap'
 // (sans reload).
 const STALE_SOFT_MS = 2 * 60 * 1000
 
+// Absence minimale (arriere-plan) au-dela de laquelle on SONDE le backend au retour.
+// En dessous (bascule eclair), inutile : la socket n'a pas eu le temps de mourir.
+const PROBE_MIN_HIDDEN_MS = 3_000
+// Delai max de la sonde de vivacite backend. Une reponse saine arrive en <1 s ;
+// au-dela on considere la socket morte. Court pour ne pas faire attendre l'user.
+const PROBE_TIMEOUT_MS = 4_000
+
+// URL Supabase (meme origine que les requetes de publication). Sert a sonder que la
+// socket vers le backend est VIVANTE au retour d'arriere-plan.
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined
+
 let lastBeat = Date.now()
 let hiddenAt: number | null = null
+
+/**
+ * Sonde de vivacite du backend (fix "va-et-vient : publier tourne en rond puis
+ * timeout"). Au retour d'arriere-plan sur mobile, la radio a pu tuer la socket TCP
+ * vers Supabase SANS geler le JS : les prochaines requetes (auth, insert) PENDENT
+ * jusqu'au timeout OS. On envoie un GET leger sur l'endpoint de sante, borne par un
+ * court AbortController. `no-cors` : on ne lit pas la reponse, on veut seulement
+ * savoir si le serveur REPOND (une reponse opaque suffit). Retourne false si ca
+ * pend / rejette (socket morte) -> l'appelant recharge pour repartir sur du neuf.
+ */
+async function isBackendReachable(): Promise<boolean> {
+  if (!SUPABASE_URL) return true // pas d'URL connue : on ne peut pas prober, on ne recharge pas
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS)
+  try {
+    await fetch(`${SUPABASE_URL}/auth/v1/health`, {
+      method: 'GET',
+      mode: 'no-cors',
+      cache: 'no-store',
+      signal: controller.signal,
+    })
+    return true
+  } catch {
+    return false // abort (timeout) ou erreur reseau : socket probablement morte
+  } finally {
+    clearTimeout(timer)
+  }
+}
 
 /**
  * Recharge la page UNE fois (garde anti-boucle). Seul moyen fiable de sortir d'un
@@ -145,12 +184,32 @@ export function installResumeRecovery(): void {
       return
     }
     if (checkFreeze('visible')) return
-    // Pas de gel : juste endormi. Refetch doux si l'absence a ete longue.
+    // Pas de gel JS. Mais la socket vers le backend a pu mourir en arriere-plan
+    // (mobile : la radio coupe les connexions au repos) SANS geler le JS -> les
+    // prochaines requetes PENDENT (publier "tourne en rond" puis timeout, confirme
+    // Sentry 2026-08). On mesure l'absence, puis on SONDE le backend.
     const hiddenMs = hiddenAt ? Date.now() - hiddenAt : 0
     hiddenAt = null
     if (hiddenMs > 0) trackAction('app.resume', { hiddenSec: Math.round(hiddenMs / 1000) })
-    if (hiddenMs >= STALE_SOFT_MS) {
-      queryClient.invalidateQueries().catch(() => {})
-    }
+    // Bascule eclair : rien a faire (la socket n'a pas eu le temps de mourir).
+    if (hiddenMs < PROBE_MIN_HIDDEN_MS) return
+    void (async () => {
+      const reachable = await isBackendReachable()
+      if (!reachable) {
+        // Backend injoignable = socket morte : on recharge pour repartir sur des
+        // sockets neuves (equivaut a la "relance complete" qui debloquait tout).
+        // Le brouillon (NG-004) + les photos (NG-038) sont restaures : zero perte.
+        trackFailure('app.resume', 'backend-injoignable-reload', {
+          hiddenSec: Math.round(hiddenMs / 1000),
+        })
+        reloadOnce('backend-injoignable')
+        return
+      }
+      // Backend vivant : juste des donnees potentiellement perimees -> refetch doux
+      // si l'absence a ete longue.
+      if (hiddenMs >= STALE_SOFT_MS) {
+        queryClient.invalidateQueries().catch(() => {})
+      }
+    })()
   })
 }
