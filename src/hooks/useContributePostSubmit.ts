@@ -27,6 +27,7 @@ import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCreatePost, useUpdatePost } from '@/hooks/usePost'
+import { invalidateFeeds } from '@/hooks/useFeed'
 import { uploadPostMedia } from '@/services/mediaService'
 import { supabase } from '@/lib/supabase'
 import { assertActiveSession, SessionExpiredError } from '@/lib/authGuard'
@@ -619,7 +620,10 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         //    immédiatement dans la liste. On invalide aussi les posts du
         //    profil pour que l'ADN d'observateur + journal nature se
         //    rafraîchissent dès la première observation (Nicolas 2026-05-24).
-        queryClient.invalidateQueries({ queryKey: ['feed'] })
+        // invalidateFeeds : invalide le feed boutons ET le scroll infini
+        // (feed-infinite), sinon le post publie n'apparait pas dans le fil affiche
+        // sans refresh manuel (piege de match de cle, cf. useFeed.invalidateFeeds).
+        invalidateFeeds(queryClient)
         queryClient.invalidateQueries({ queryKey: ['posts', 'by-user'] })
 
         // NG-012 #3 : si le watchdog a deja abandonne (l'user a vu l'erreur "trop

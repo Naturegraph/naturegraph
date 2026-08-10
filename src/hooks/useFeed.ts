@@ -13,7 +13,7 @@
  * invalidation ciblée quand n'importe quel filtre change.
  */
 
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import {
   getFeed,
   getUserReactions,
@@ -70,6 +70,24 @@ export const FEED_QUERY_KEY = (params: FeedParams) =>
     // change (login/logout). Pas critique sinon.
     params.currentUserId ?? '',
   ] as const
+
+/**
+ * Invalide TOUTES les vues de feed en cache : la pagination boutons
+ * (`['feed', ...]`) ET le scroll infini (`['feed-infinite', ...]`, celui reellement
+ * affiche sur /home via useInfiniteFeed).
+ *
+ * PIEGE corrige 2026-08 (Nicolas : "je dois refresh pour voir mon post / mon
+ * commentaire") : `invalidateQueries({ queryKey: ['feed'] })` NE matche PAS
+ * `['feed-infinite', ...]` (le 1er segment 'feed' n'est pas egal a 'feed-infinite',
+ * le match se fait segment par segment). Resultat : apres une publication, un
+ * echange ou une reaction, le feed AFFICHE n'etait jamais rafraichi -> il fallait
+ * refresh a la main. On invalide donc les DEUX prefixes. A utiliser partout ou on
+ * invalidait `['feed']`.
+ */
+export function invalidateFeeds(queryClient: QueryClient): void {
+  queryClient.invalidateQueries({ queryKey: ['feed'] })
+  queryClient.invalidateQueries({ queryKey: ['feed-infinite'] })
+}
 
 // ─── Hook principal ───────────────────────────────────────────────────────────
 

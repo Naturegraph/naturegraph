@@ -18,6 +18,7 @@
 import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { invalidateFeeds } from '@/hooks/useFeed'
 import {
   listerEchanges,
   publierEchange,
@@ -62,7 +63,7 @@ export function useRealtimeEchanges(postId: string | undefined): void {
         () => {
           qc.invalidateQueries({ queryKey: cleEchanges(postId) })
           qc.invalidateQueries({ queryKey: ['post', postId] })
-          qc.invalidateQueries({ queryKey: ['feed'] })
+          invalidateFeeds(qc)
         },
       )
       .subscribe()
@@ -162,7 +163,7 @@ export function usePublierEchange(
       // 2026-07-30 "je veux voir le compteur monter sans refresh").
       qc.invalidateQueries({ queryKey: ['posts'] })
       qc.invalidateQueries({ queryKey: ['post', postId] })
-      qc.invalidateQueries({ queryKey: ['feed'] })
+      invalidateFeeds(qc)
     },
   })
 }
@@ -215,7 +216,7 @@ export function useSupprimerEchange(postId: string) {
       qc.invalidateQueries({ queryKey: ['posts'] })
       qc.invalidateQueries({ queryKey: ['post', postId] })
       // Idem ajout : le compteur du feed doit redescendre sans refresh.
-      qc.invalidateQueries({ queryKey: ['feed'] })
+      invalidateFeeds(qc)
     },
   })
 }

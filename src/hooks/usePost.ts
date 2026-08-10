@@ -20,6 +20,7 @@ import {
 } from '@/services/postService'
 import type { PostFeedItem, ReactionType } from '@/types/database'
 import { useAuth } from '@/contexts/AuthContext'
+import { invalidateFeeds } from '@/hooks/useFeed'
 
 export const postQueryKey = {
   byId: (postId: string) => ['post', postId] as const,
@@ -286,7 +287,7 @@ export function useToggleReaction(userId: string | undefined) {
       // post detail). Sans cette invalidation globale, une reaction faite
       // dans le feed n etait pas visible dans le profil et vice versa.
       queryClient.invalidateQueries({ queryKey: feedQueryKey as readonly unknown[] })
-      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      invalidateFeeds(queryClient)
       queryClient.invalidateQueries({ queryKey: ['posts', 'by-user'] })
       queryClient.invalidateQueries({ queryKey: postQueryKey.byId(postId) })
     },
@@ -319,7 +320,7 @@ export function useDeletePost() {
     mutationFn: (postId: string) => deletePost(postId),
     onSuccess: (_data, postId) => {
       // Invalider toutes les variantes du feed + le profil (galerie user).
-      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      invalidateFeeds(queryClient)
       queryClient.invalidateQueries({ queryKey: ['posts', 'by-user'] })
       queryClient.invalidateQueries({ queryKey: postQueryKey.byId(postId) })
     },
@@ -343,7 +344,7 @@ export function useUpdatePost() {
     mutationFn: ({ postId, payload }: { postId: string; payload: Partial<CreatePostPayload> }) =>
       updatePost(postId, payload),
     onSuccess: (_data, vars) => {
-      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      invalidateFeeds(queryClient)
       queryClient.invalidateQueries({ queryKey: postQueryKey.byId(vars.postId) })
     },
   })
