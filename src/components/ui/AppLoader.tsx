@@ -92,8 +92,18 @@ export function AppLoader({
   const prefersReducedMotion = usePrefersReducedMotion()
   const accessibleLabel = label ?? t('common.loading', { defaultValue: 'Chargement' })
 
-  // Si reduced-motion ou pas de support webm : spinner CSS de secours
-  const useFallback = prefersReducedMotion || !canPlayWebm()
+  // La video de marque ne s'affiche QU'AU mobile / PWA (viewport etroit). Sur desktop,
+  // elle "polluait" a chaque chargement de route (Suspense du router + gardes d'auth) :
+  // un petit carton video ~1 s a chaque refresh (retour Nicolas). On retombe donc sur
+  // un spinner CSS discret sur desktop.
+  // IMPORTANT (incident 2026-08-10) : le comportement MOBILE reste STRICTEMENT
+  // identique a l'existant stable (video conservee) -> aucune regression au lancement
+  // mobile. Sur mobile, la video "masque" un chargement parfois lent ; la retirer
+  // faisait paraitre l'ecran "noir" pendant ce temps (V0.7.18 rollback).
+  const isMobileViewport =
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+  // Si reduced-motion, pas de support webm, ou DESKTOP : spinner CSS de secours.
+  const useFallback = prefersReducedMotion || !canPlayWebm() || !isMobileViewport
 
   // V1.1.4 QA round 9 : si fullSize, on prend toute la place du parent
   const videoClass = fullSize
