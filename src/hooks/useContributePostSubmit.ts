@@ -424,16 +424,6 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
         // connexion fraiche et passe. On ne retente QUE les erreurs reseau/timeout :
         // un 4xx (validation, RLS) est definitif, et on evite ainsi de dupliquer un
         // INSERT qui aurait pu aboutir cote serveur (le cas 5xx n'est pas retente).
-        // Anti-fantome (C4 Phase 2) : s'il y a des PHOTOS a attacher, on cree le post
-        // en 'pending' -> il n'apparait PAS au feed et ne notifie PAS tant que les
-        // medias ne sont pas la (le feed + les triggers ignorent 'pending'). On le
-        // passe 'published' apres l'upload (flip plus bas). Un post texte (sans photo)
-        // est cree directement 'published'. Un 'pending' orphelin (submit interrompu,
-        // ou doublon d'un retour reseau) est nettoye/republié par le cron GC.
-        const createdAsPending = !isEditing && files.length > 0
-        const createPayload: CreatePostPayload = createdAsPending
-          ? { ...payload, status: 'pending' }
-          : payload
         const MAX_POST_ATTEMPTS = 3
         let post: { id: string } | undefined
         for (let attempt = 1; attempt <= MAX_POST_ATTEMPTS; attempt++) {
@@ -445,7 +435,7 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
                   20_000,
                   'mise à jour du post',
                 )
-              : await withTimeout(createPost.mutateAsync(createPayload), 20_000, 'création du post')
+              : await withTimeout(createPost.mutateAsync(payload), 20_000, 'création du post')
             break
           } catch (err) {
             const { kind } = classifyError(err)
@@ -617,22 +607,6 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
                 "{{failed}} photo(s) sur {{total}} n'ont pas pu être ajoutées. Tu peux les rajouter via « Modifier mon observation ».",
             }),
           )
-        }
-
-        // FLIP anti-fantome (C4 Phase 2) : le post cree en 'pending' passe 'published'
-        // maintenant que ses medias sont attaches -> il apparait au feed ET notifie les
-        // abonnes (trigger notify_on_new_post au passage a 'published'). Un post texte
-        // (createdAsPending=false) etait deja 'published' des la creation. Si le flip
-        // echoue (reseau), le cron GC republiera ce post (il a des medias) : rien n'est
-        // perdu, juste un court delai. On trace l'echec pour le mesurer.
-        if (createdAsPending && supabase) {
-          const { error: flipErr } = await supabase
-            .from('posts')
-            .update({ status: 'published' })
-            .eq('id', post.id)
-          if (flipErr) {
-            trackFailure(`${formLabel}.publish`, 'flip-pending-echoue', { postId: post.id })
-          }
         }
 
         // Le post est desormais COMPLET (photos uploadees ou post texte) : il n'est

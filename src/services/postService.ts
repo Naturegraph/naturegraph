@@ -106,14 +106,6 @@ export interface CreatePostPayload {
   /** Format d'affichage choisi par l'utilisateur (Figma 6385:47324).
    *  Default DB = '16:9' si non fourni. */
   display_format?: Post['display_format']
-  /**
-   * Statut initial (anti-fantome C4 Phase 2, 2026-08-10). Par defaut 'published'.
-   * Le pipeline de publication cree en 'pending' quand il y a des PHOTOS a attacher,
-   * puis passe 'published' APRES l'upload (le feed + les notifs ne comptent que
-   * 'published'). Un post texte (sans photo) est cree directement en 'published'.
-   * Un orphelin 'pending' (submit interrompu) est nettoye par le cron GC.
-   */
-  status?: 'pending' | 'published'
 }
 
 // Sélecteur de colonnes utilisé dans les requêtes feed : centralisé pour cohérence.
@@ -464,10 +456,7 @@ export async function createPost(userId: string, payload: CreatePostPayload): Pr
   const insertPayload = {
     user_id: authorId,
     ...payload,
-    // Anti-fantome : 'pending' si le caller le demande (creation avec photos, le
-    // temps de l'upload), sinon 'published' (post texte, ou defaut). Le feed et les
-    // notifs ignorent les 'pending' -> pas de post fantome ni de fausse notif.
-    status: payload.status ?? ('published' as const),
+    status: 'published' as const,
     published_at: new Date().toISOString(),
     identification_status: (payload.species_name
       ? 'identified'
