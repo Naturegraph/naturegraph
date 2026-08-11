@@ -92,11 +92,21 @@ export function AppLoader({
   const prefersReducedMotion = usePrefersReducedMotion()
   const accessibleLabel = label ?? t('common.loading', { defaultValue: 'Chargement' })
 
-  // Si reduced-motion ou pas de support webm : spinner CSS de secours
-  const useFallback = prefersReducedMotion || !canPlayWebm()
+  // La video de marque (carton creme) ne sert QU'AU mobile / PWA (retour Nicolas
+  // 2026-08-10). Sur desktop, elle "polluait" a chaque chargement de route (Suspense
+  // du router + ProtectedRoute/PublicRoute) entre le fond et le squelette. Sur
+  // desktop, on retombe donc sur un simple spinner discret pose sur le fond
+  // thematise : aucun carton, transition fond -> squelette propre.
+  const isMobileViewport =
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+
+  // Si reduced-motion, pas de support webm, ou desktop : spinner CSS de secours.
+  const useFallback = prefersReducedMotion || !canPlayWebm() || !isMobileViewport
 
   // V1.1.4 QA round 9 : si fullSize, on prend toute la place du parent
-  const videoClass = fullSize ? 'w-full h-full object-contain' : `${sizeClasses[size]} object-contain`
+  const videoClass = fullSize
+    ? 'w-full h-full object-contain'
+    : `${sizeClasses[size]} object-contain`
 
   const content = useFallback ? (
     <Spinner size={fullSize || size === 'lg' ? 'lg' : size} label={accessibleLabel} />
@@ -116,7 +126,11 @@ export function AppLoader({
 
   if (inline) {
     return (
-      <span className="inline-flex items-center justify-center" role="status" aria-label={accessibleLabel}>
+      <span
+        className="inline-flex items-center justify-center"
+        role="status"
+        aria-label={accessibleLabel}
+      >
         {content}
         <span className="sr-only">{accessibleLabel}</span>
       </span>
