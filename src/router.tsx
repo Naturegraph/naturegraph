@@ -43,7 +43,6 @@ import { ProtectedRoute, PublicRoute, OnboardingGuard } from '@/components/guard
 import { BetaAccessGuard } from '@/components/guards/BetaAccessGuard'
 import { LABS_ENABLED } from '@/lib/featureFlags'
 import { AdminGuard } from '@/components/admin/AdminGuard'
-import { AppLoader } from '@/components/ui/AppLoader'
 import { SectionErrorBoundary } from '@/components/layout/SectionErrorBoundary'
 
 // ─── Lazy-loaded pages (code splitting pour éco-conception) ────────
@@ -93,7 +92,14 @@ function LazyPage({ children }: { children: React.ReactNode }) {
   // de section (feed, echanges, detail post) pour une couverture totale.
   return (
     <SectionErrorBoundary label="page">
-      <Suspense fallback={<AppLoader size="md" />}>{children}</Suspense>
+      {/* Fallback VOLONTAIREMENT null (retour Nicolas 2026-08-10) : le chunk de page
+          se charge tres vite (souvent deja pret pendant le splash) et chaque page a
+          DEJA son propre etat de chargement (Home -> squelette du feed, garde d'auth
+          -> loader). Mettre un AppLoader ici ajoutait un "deuxieme loader" entre le
+          splash et le squelette. En null, on garde le fond thematise le temps
+          (tres bref) du chunk, puis la page rend son squelette : un seul enchainement
+          loader -> squelette. */}
+      <Suspense fallback={null}>{children}</Suspense>
     </SectionErrorBoundary>
   )
 }
