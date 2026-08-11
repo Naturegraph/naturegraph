@@ -505,8 +505,10 @@ export function EchangeItem({
                 Répondre
               </Action>
               {/* "Proposer une espèce" masque sur un Instant nature (paysage :
-                  rien a identifier). Les echanges classiques restent. */}
-              {especesAutorisees && (
+                  rien a identifier) ET sur une reponse : proposer une espece
+                  reste un geste de premier niveau, une reponse dans le fil ne
+                  fait que continuer la conversation. */}
+              {especesAutorisees && !estUneReponse && (
                 <>
                   <Puce />
                   <Action
