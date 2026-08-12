@@ -532,7 +532,7 @@
       "title": "Filters",
       "sortResults": "Sort results",
       "byCategory": "By species category",
-      "helpOnly": "Show help requests only",
+      "helpOnly": "Encounters whose species is still to be identified",
       "byShareType": "By share type",
       "natureEncounter": "Nature encounter",
       "instantNature": "Nature instant",

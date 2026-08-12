@@ -532,7 +532,7 @@
       "title": "Filtres",
       "sortResults": "Trier les résultats",
       "byCategory": "Par catégorie d'espèces",
-      "helpOnly": "Afficher uniquement les demandes d'aide",
+      "helpOnly": "Rencontres dont l'espèce reste à identifier",
       "byShareType": "Par type de partages",
       "natureEncounter": "Rencontre nature",
       "instantNature": "Instant nature",

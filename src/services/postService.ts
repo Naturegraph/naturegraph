@@ -211,9 +211,22 @@ export async function getFeed(params: FeedParams = {}): Promise<FeedResult> {
   }
 
   if (filters?.helpOnly) {
-    // Proxy "demandes d'aide" : posts encore en attente d'identification.
-    // À remplacer par une colonne dédiée help_request lors d'une future migration.
-    query = query.eq('identification_status', 'pending')
+    // "Demandes d'aide" = observations SANS espece determinee : exactement ce qui
+    // affiche le badge "Espece non determinee" dans le fil, c.-a-d. la case
+    // "Je ne connais pas l'espece" cochee a la publication (aucun nom commun ni
+    // scientifique enregistre).
+    //
+    // On se cale sur l'ABSENCE DE NOM, et NON sur identification_status='pending' :
+    //  - certains posts 'pending' portent malgre tout un nom d'espece (ils
+    //    affichent donc une espece dans le fil) -> ce ne sont pas des demandes
+    //    d'aide, on ne les veut pas ;
+    //  - les Instant nature (paysages) n'ont jamais d'espece -> on les exclut
+    //    explicitement (type = nature_encounter), ce ne sont pas des demandes
+    //    d'identification.
+    query = query
+      .eq('type', 'nature_encounter')
+      .is('species_name', null)
+      .is('scientific_name', null)
   }
 
   if (filters?.shareTypes) {

@@ -28,7 +28,7 @@
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, ChevronDown, Check, Bird, MountainSnow } from 'lucide-react'
+import { X, ChevronDown, Check, Bird, MountainSnow, HelpCircle } from 'lucide-react'
 import type { FeedTab } from './FeedSection'
 import { Button } from '@/components/ui/Button'
 import { useLocation } from '@/contexts/LocationContext'
@@ -276,12 +276,59 @@ export function FeedFilterPanel({
         </div>
       </div>
 
-      {/* Le filtre "Demandes d'aide uniquement" a ete RETIRE (Nicolas
-          2026-07-23) : la fonctionnalite ne verra pas le jour, et une case
-          grisee "Bientot" qui ne s'activera jamais est une promesse en trop
-          dans un panneau de filtres.
-          Le separateur, lui, RESTE : il ne dependait pas du filtre mais separe
-          les categories d'especes du type de partages. */}
+      <hr className={dividerClass} />
+
+      {/* ───── 2. Demandes d'aide ─────
+          Re-active (Nicolas 2026-08-11) apres avoir ete retiree en 2026-07-23.
+          Ne garde QUE les Rencontres nature dont l'espece n'est pas determinee :
+          exactement les posts qui affichent le badge "Espece non determinee"
+          (case "Je ne connais pas l'espece" a la publication). Les Instant nature
+          (paysages) n'ont pas d'espece a identifier -> exclus. Cablage backend :
+          type=nature_encounter + species_name/scientific_name nuls (postService
+          `helpOnly`). Case seule + sous-texte, calquee sur les cases type de
+          partage. */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-4 select-none">
+          <FilterCheckbox
+            checked={local.helpOnly}
+            onChange={(next) =>
+              setLocal((prev) => ({
+                ...prev,
+                helpOnly: next,
+                // Le filtre ne concerne QUE les Rencontres nature : l'activer
+                // decoche les Instant nature (paysages). Un paysage n'a pas
+                // d'espece a identifier, l'afficher ici serait incoherent.
+                shareTypes: next ? { ...prev.shareTypes, instant: false } : prev.shareTypes,
+              }))
+            }
+            ariaLabel={t('home.filters.helpOnly')}
+          />
+          {/* Carre PLEIN + icone blanche, exactement au meme format que les cases
+              Rencontre / Instant juste en dessous (size-6, icone size-[18px],
+              strokeWidth 1.8). Icone HelpCircle : reprend l'identite de "Je ne
+              connais pas l'espece". Violet pour se distinguer du teal (Rencontre)
+              et de l'orange (Instant).
+              `text-balance` : sur mobile, le titre s'equilibre sur deux lignes
+              ("Rencontres dont l'espece" / "reste a identifier") au lieu de laisser
+              un mot orphelin en bas. */}
+          <span className="flex items-center gap-2.5 min-w-0">
+            <span
+              aria-hidden="true"
+              className="flex items-center justify-center size-6 shrink-0 rounded-[4px] bg-primary"
+            >
+              <HelpCircle
+                className="size-[18px] text-primary-foreground"
+                strokeWidth={1.8}
+                aria-hidden="true"
+              />
+            </span>
+            <span className="font-body text-base text-balance text-foreground">
+              {t('home.filters.helpOnly')}
+            </span>
+          </span>
+        </div>
+      </div>
+
       <hr className={dividerClass} />
 
       {/* ───── 3. Par type de partages ─────
@@ -328,6 +375,9 @@ export function FeedFilterPanel({
                 setLocal((prev) => ({
                   ...prev,
                   shareTypes: { ...prev.shareTypes, instant: checked },
+                  // Cocher les Instant nature sort du filtre "demandes d'aide"
+                  // (reserve aux Rencontres) : les deux sont incompatibles.
+                  helpOnly: checked ? false : prev.helpOnly,
                 }))
               }
               ariaLabel={t('home.filters.instantNature')}
