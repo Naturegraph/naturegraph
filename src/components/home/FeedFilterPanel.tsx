@@ -303,18 +303,26 @@ export function FeedFilterPanel({
             }
             ariaLabel={t('home.filters.helpOnly')}
           />
-          {/* Icone HelpCircle dans un carre violet clair : reprend l'identite
-              visuelle de "Je ne connais pas l'espece" (meme icone) et le format
-              carre des cases Rencontre / Instant juste en dessous. Le titre peut
-              passer sur deux lignes (pas de nowrap). */}
+          {/* Carre PLEIN + icone blanche, exactement au meme format que les cases
+              Rencontre / Instant juste en dessous (size-6, icone size-[18px],
+              strokeWidth 1.8). Icone HelpCircle : reprend l'identite de "Je ne
+              connais pas l'espece". Violet pour se distinguer du teal (Rencontre)
+              et de l'orange (Instant).
+              `text-balance` : sur mobile, le titre s'equilibre sur deux lignes
+              ("Rencontres dont l'espece" / "reste a identifier") au lieu de laisser
+              un mot orphelin en bas. */}
           <span className="flex items-center gap-2.5 min-w-0">
             <span
               aria-hidden="true"
-              className="flex items-center justify-center size-6 shrink-0 rounded-[4px] bg-primary-light"
+              className="flex items-center justify-center size-6 shrink-0 rounded-[4px] bg-primary"
             >
-              <HelpCircle className="size-[18px] text-[var(--color-link)]" strokeWidth={1.8} />
+              <HelpCircle
+                className="size-[18px] text-primary-foreground"
+                strokeWidth={1.8}
+                aria-hidden="true"
+              />
             </span>
-            <span className="font-body text-base text-foreground">
+            <span className="font-body text-base text-balance text-foreground">
               {t('home.filters.helpOnly')}
             </span>
           </span>
