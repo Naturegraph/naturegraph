@@ -28,7 +28,7 @@
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, ChevronDown, Check, Bird, MountainSnow } from 'lucide-react'
+import { X, ChevronDown, Check, Bird, MountainSnow, HelpCircle } from 'lucide-react'
 import type { FeedTab } from './FeedSection'
 import { Button } from '@/components/ui/Button'
 import { useLocation } from '@/contexts/LocationContext'
@@ -288,18 +288,34 @@ export function FeedFilterPanel({
           `helpOnly`). Case seule + sous-texte, calquee sur les cases type de
           partage. */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-start gap-4 select-none">
+        <div className="flex items-center gap-4 select-none">
           <FilterCheckbox
             checked={local.helpOnly}
-            onChange={(next) => setLocal((prev) => ({ ...prev, helpOnly: next }))}
+            onChange={(next) =>
+              setLocal((prev) => ({
+                ...prev,
+                helpOnly: next,
+                // Le filtre ne concerne QUE les Rencontres nature : l'activer
+                // decoche les Instant nature (paysages). Un paysage n'a pas
+                // d'espece a identifier, l'afficher ici serait incoherent.
+                shareTypes: next ? { ...prev.shareTypes, instant: false } : prev.shareTypes,
+              }))
+            }
             ariaLabel={t('home.filters.helpOnly')}
           />
-          <span className="flex flex-col">
+          {/* Icone HelpCircle dans un carre violet clair : reprend l'identite
+              visuelle de "Je ne connais pas l'espece" (meme icone) et le format
+              carre des cases Rencontre / Instant juste en dessous. Le titre peut
+              passer sur deux lignes (pas de nowrap). */}
+          <span className="flex items-center gap-2.5 min-w-0">
+            <span
+              aria-hidden="true"
+              className="flex items-center justify-center size-6 shrink-0 rounded-[4px] bg-primary-light"
+            >
+              <HelpCircle className="size-[18px] text-[var(--color-link)]" strokeWidth={1.8} />
+            </span>
             <span className="font-body text-base text-foreground">
               {t('home.filters.helpOnly')}
-            </span>
-            <span className="font-body text-sm text-muted-foreground">
-              {t('home.filters.helpOnlyHint')}
             </span>
           </span>
         </div>
@@ -351,6 +367,9 @@ export function FeedFilterPanel({
                 setLocal((prev) => ({
                   ...prev,
                   shareTypes: { ...prev.shareTypes, instant: checked },
+                  // Cocher les Instant nature sort du filtre "demandes d'aide"
+                  // (reserve aux Rencontres) : les deux sont incompatibles.
+                  helpOnly: checked ? false : prev.helpOnly,
                 }))
               }
               ariaLabel={t('home.filters.instantNature')}
