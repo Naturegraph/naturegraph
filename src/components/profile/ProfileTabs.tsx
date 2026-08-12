@@ -33,8 +33,14 @@ interface ProfileTabsProps {
   profileId: string
   /** Données complètes du profil affiché */
   profile: ProfileDisplayData
-  /** Posts de cet utilisateur pour l'onglet Journal */
+  /** Posts de cet utilisateur pour l'onglet Journal (liste paginee, scroll infini) */
   userPosts: MockPost[]
+  /**
+   * Total denormalise des observations de la personne (profiles.posts_count),
+   * pour le badge de l'onglet Journal. Independant de la pagination : le nombre
+   * ne bouge pas quand on scrolle la liste.
+   */
+  journalTotal: number
   /** Posts sauvegardés par l'utilisateur (collection : table saved_posts) */
   savedPosts: MockPost[]
   /** L'utilisateur connecté regarde-t-il son propre profil ?
@@ -56,7 +62,11 @@ interface TabDef {
   id: TabId
   labelKey: string
   icon: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>
-  getBadge?: (props: { userPosts: MockPost[]; savedPosts: MockPost[] }) => number | null
+  getBadge?: (props: {
+    userPosts: MockPost[]
+    savedPosts: MockPost[]
+    journalTotal: number
+  }) => number | null
   soonBadge?: boolean
   /** Si true, ce tab est masqué sur desktop (cards visibles direct au-dessus) */
   mobileOnly?: boolean
@@ -68,7 +78,11 @@ const TABS: TabDef[] = [
     id: 'journal',
     labelKey: 'profile.tabs.journal',
     icon: Camera,
-    getBadge: ({ userPosts }) => userPosts.length,
+    // Compteur = TOTAL denormalise des observations (profiles.posts_count),
+    // pas la longueur de la liste chargee. Avant, `userPosts.length` grimpait
+    // a chaque page du scroll infini (20, 40, ...), ce qui faisait "bouger" le
+    // nombre et ne reflétait jamais le vrai total (retour Nicolas).
+    getBadge: ({ journalTotal }) => journalTotal,
   },
   {
     id: 'inspirations',
@@ -94,6 +108,7 @@ export function ProfileTabs({
   profileId,
   profile,
   userPosts,
+  journalTotal,
   savedPosts,
   isOwnProfile,
   onEditPost,
@@ -123,7 +138,7 @@ export function ProfileTabs({
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id
           const Icon = tab.icon
-          const count = tab.getBadge?.({ userPosts, savedPosts }) ?? null
+          const count = tab.getBadge?.({ userPosts, savedPosts, journalTotal }) ?? null
           // Tab "À propos" masqué sur desktop (md+) : les 2 cards le remplacent
           const visibilityClass = tab.mobileOnly ? 'flex md:hidden' : 'flex'
 

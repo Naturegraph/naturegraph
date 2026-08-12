@@ -380,6 +380,7 @@ export default function Profile() {
               profileId={profileId ?? ''}
               profile={profileData}
               userPosts={userPosts}
+              journalTotal={profileData.stats.observations}
               savedPosts={savedPosts}
               isOwnProfile={isOwnProfile}
               onEditPost={handleEditFromProfile}
