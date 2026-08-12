@@ -393,45 +393,49 @@ export function EchangeItem({
         <div
           className={`max-w-full rounded-sm bg-surface-bubble p-3 ${peutAgir ? 'w-full' : 'w-fit'}`}
         >
-          {/* Ligne d'identite : pseudo, badge Auteur, date, puis le menu tout a
-              droite. Place en bas de la barre d'actions, il se retrouvait seul
-              et sans rattachement visible au message (retour Nicolas). */}
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-sm font-bold text-foreground">{pseudo}</span>
+          {/* Ligne d'identite : le menu ellipsis est ANCRE en haut a droite,
+              hors du flux d'enroulement. L'identite (pseudo + badge + date)
+              s'enroule dans l'espace restant a gauche : quand tout ne tient pas
+              (typiquement avec le badge "Auteur"), c'est la DATE qui passe a la
+              ligne, jamais le menu. Avant, le menu etait pousse par `ml-auto`
+              DANS le meme flex : des qu'une ligne debordait, il partait seul sur
+              une 2e ligne et laissait un decalage vide a droite (retour Nicolas). */}
+          <div className="flex items-start gap-x-2">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">
+              <span className="text-sm font-bold text-foreground">{pseudo}</span>
 
-            {/* Badge NEUTRE et non vert (retour Nicolas 2026-07-22) : depuis que
-                le niveau de confiance porte une rampe de quatre couleurs, un
-                badge colore de plus ferait cinq teintes dans la meme bulle. Le
-                fond clair sur la bulle grise suffit a le detacher, et la
-                couleur ne signale plus qu'UNE chose : la confiance. */}
-            {ecritParAuteurPublication && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-background px-2 py-0.5 text-xs font-medium text-foreground">
-                <Leaf className="size-3" aria-hidden="true" />
-                Auteur
+              {/* Badge NEUTRE et non vert (retour Nicolas 2026-07-22) : depuis que
+                  le niveau de confiance porte une rampe de quatre couleurs, un
+                  badge colore de plus ferait cinq teintes dans la meme bulle. Le
+                  fond clair sur la bulle grise suffit a le detacher, et la
+                  couleur ne signale plus qu'UNE chose : la confiance. */}
+              {ecritParAuteurPublication && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-background px-2 py-0.5 text-xs font-medium text-foreground">
+                  <Leaf className="size-3" aria-hidden="true" />
+                  Auteur
+                </span>
+              )}
+
+              <span className="text-xs text-muted-foreground">
+                {dateRelative(echange.creeLe)}
+                {/* "modifié" plutot que la date de modification : la date de
+                    publication reste le repere du fil, on signale seulement que
+                    le texte n'est plus celui d'origine. */}
+                {echange.modifieLe && <span className="ml-1">(modifié)</span>}
               </span>
-            )}
-
-            <span className="text-xs text-muted-foreground">
-              {dateRelative(echange.creeLe)}
-              {/* "modifié" plutot que la date de modification : la date de
-                  publication reste le repere du fil, on signale seulement que
-                  le texte n'est plus celui d'origine. */}
-              {echange.modifieLe && <span className="ml-1">(modifié)</span>}
-            </span>
+            </div>
 
             {peutAgir && (
-              <div className="ml-auto">
-                <EchangeMenu
-                  estLeMien={estLeMien}
-                  peutAgir={peutAgir}
-                  suit={suitAuteur}
-                  pseudoAuteur={pseudo}
-                  onModifier={ouvrirEdition}
-                  onSupprimer={onSupprimer}
-                  onSignaler={onSignaler}
-                  onBasculerSuivi={onBasculerSuivi}
-                />
-              </div>
+              <EchangeMenu
+                estLeMien={estLeMien}
+                peutAgir={peutAgir}
+                suit={suitAuteur}
+                pseudoAuteur={pseudo}
+                onModifier={ouvrirEdition}
+                onSupprimer={onSupprimer}
+                onSignaler={onSignaler}
+                onBasculerSuivi={onBasculerSuivi}
+              />
             )}
           </div>
 
@@ -505,8 +509,10 @@ export function EchangeItem({
                 Répondre
               </Action>
               {/* "Proposer une espèce" masque sur un Instant nature (paysage :
-                  rien a identifier). Les echanges classiques restent. */}
-              {especesAutorisees && (
+                  rien a identifier) ET sur une reponse : proposer une espece
+                  reste un geste de premier niveau, une reponse dans le fil ne
+                  fait que continuer la conversation. */}
+              {especesAutorisees && !estUneReponse && (
                 <>
                   <Puce />
                   <Action
