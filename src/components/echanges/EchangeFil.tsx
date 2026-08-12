@@ -176,9 +176,6 @@ export function EchangeFil({
             <ul className="mt-2 flex flex-col gap-3 border-l border-border pl-3 sm:pl-5">
               {reponses.map((r) => {
                 const pseudoR = r.auteurPseudo ?? 'ce message'
-                // Mention pre-remplie pour dire a qui l'on repond. Absente si le
-                // pseudo manque (cas limite) : on ouvre alors un champ vide.
-                const mention = r.auteurPseudo ? `@${r.auteurPseudo} ` : undefined
                 const repondAcetteReponse =
                   redaction?.cibleId === r.id && redaction.intention === 'reaction'
                 return (
@@ -210,7 +207,6 @@ export function EchangeFil({
                           enCours={false}
                           compact
                           invite={`Répondre à ${pseudoR}…`}
-                          valeurInitiale={mention}
                           onPublier={(contenu) => {
                             // parent.id (RACINE), pas r.id : la reponse reste a plat.
                             onRepondre(contenu, 'reaction', parent.id, null)

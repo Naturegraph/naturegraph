@@ -34,7 +34,7 @@
  * banniere, l'invitation vient a l'action).
  */
 
-import { useEffect, useId, useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Send, MessageSquarePlus } from 'lucide-react'
 import { Button } from '@/components/ui'
@@ -54,12 +54,6 @@ interface EchangeComposerProps {
   compact?: boolean
   /** Invite du champ. Par defaut celle des maquettes. */
   invite?: string
-  /**
-   * Texte pre-rempli a l'ouverture (ex. "@Nathalie " quand on repond a une
-   * reponse). Quand il est fourni, le champ prend le focus et le curseur se
-   * place en fin de texte, pret a ecrire apres la mention.
-   */
-  valeurInitiale?: string
   /** Especes deja proposees par la personne connectee, pour bloquer le doublon. */
   especesDejaProposees?: string[]
   /** `false` sur un Instant nature (paysage) : pas de bouton "Proposer une espèce". */
@@ -80,27 +74,13 @@ export function EchangeComposer({
   onPublier,
   compact = false,
   invite,
-  valeurInitiale,
   especesDejaProposees,
   especesAutorisees = true,
 }: EchangeComposerProps) {
   const navigate = useNavigate()
   const champ = useRef<HTMLTextAreaElement>(null)
   const idChamp = useId()
-  const [contenu, setContenu] = useState(valeurInitiale ?? '')
-
-  // Champ ouvert avec une mention pre-remplie : on donne le focus et on place le
-  // curseur APRES le "@pseudo " pour ecrire directement. On ne le fait que dans
-  // ce cas (reponse a une reponse) pour ne pas voler le focus ailleurs. Le
-  // composant est remonte a chaque cible (voir EchangeFil), l'effet rejoue donc
-  // a chaque ouverture sans dependance supplementaire.
-  useEffect(() => {
-    if (!valeurInitiale || !champ.current) return
-    const el = champ.current
-    el.focus()
-    el.setSelectionRange(el.value.length, el.value.length)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const [contenu, setContenu] = useState('')
   // Le panneau d'espece REMPLACE le champ au lieu de s'ouvrir a cote : les deux
   // aboutissent au meme message, en afficher deux laisserait croire a deux
   // envois possibles.
