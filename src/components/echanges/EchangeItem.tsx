@@ -95,22 +95,6 @@ function dateRelative(iso: string): string {
 }
 
 /**
- * Puce de separation entre deux actions (ellipse 4px des maquettes).
- *
- * Masquee sous 640px : les trois actions passent alors sur deux lignes, et une
- * puce orpheline en debut de ligne se lit comme une erreur d'affichage. L'ecart
- * suffit a les separer.
- */
-function Puce() {
-  return (
-    <span
-      aria-hidden="true"
-      className="hidden size-1 shrink-0 rounded-full bg-[var(--color-border-dark)] sm:block"
-    />
-  )
-}
-
-/**
  * Action d'un echange : icone 14px + libelle 12px, sans cadre.
  *
  * Hauteur forcee a 24px : c'est la taille des frames "Button" de la maquette,
@@ -138,7 +122,7 @@ function Action({
       onClick={onClick}
       aria-expanded={actif || undefined}
       className={[
-        'inline-flex h-6 items-center gap-1 rounded-full px-2 text-xs transition-colors',
+        'inline-flex h-6 items-center gap-1 rounded-full px-1.5 text-xs transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
         danger
           ? 'text-muted-foreground hover:text-[var(--color-error)]'
@@ -192,7 +176,7 @@ function BoutonReagir({
       aria-pressed={actif}
       aria-label={libelle}
       className={[
-        'inline-flex h-6 items-center gap-1 rounded-full px-2 text-xs transition-colors',
+        'inline-flex h-6 items-center gap-1 rounded-full px-1.5 text-xs transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
         actif ? 'font-semibold text-foreground' : 'text-foreground hover:text-[var(--color-link)]',
       ].join(' ')}
@@ -495,12 +479,15 @@ export function EchangeItem({
           {echange.suggestion && <BlocSuggestion suggestion={echange.suggestion} />}
         </div>
 
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+        {/* Barre d'actions resserree pour tenir sur UNE ligne (retour Nicolas) :
+            gap reduit (gap-x-1) et plus de puces de separation, qui mangeaient le
+            plus de largeur et faisaient tomber "Proposer une espece" a la ligne.
+            `flex-wrap` conserve en filet de securite sur les tres petits ecrans. */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-1 gap-y-1">
           <BoutonReagir nombre={echange.reactions.coeur} actif={jaimeCoeur} onClick={onReagir} />
 
           {onRepondre && (
             <>
-              <Puce />
               <Action
                 icone={Pencil}
                 actif={redactionOuverte === 'reaction'}
@@ -513,16 +500,13 @@ export function EchangeItem({
                   reste un geste de premier niveau, une reponse dans le fil ne
                   fait que continuer la conversation. */}
               {especesAutorisees && !estUneReponse && (
-                <>
-                  <Puce />
-                  <Action
-                    icone={MessageSquarePlus}
-                    actif={redactionOuverte === 'identification'}
-                    onClick={() => onRepondre('identification')}
-                  >
-                    Proposer une espèce
-                  </Action>
-                </>
+                <Action
+                  icone={MessageSquarePlus}
+                  actif={redactionOuverte === 'identification'}
+                  onClick={() => onRepondre('identification')}
+                >
+                  Proposer une espèce
+                </Action>
               )}
             </>
           )}
