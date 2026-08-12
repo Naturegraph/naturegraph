@@ -276,12 +276,35 @@ export function FeedFilterPanel({
         </div>
       </div>
 
-      {/* Le filtre "Demandes d'aide uniquement" a ete RETIRE (Nicolas
-          2026-07-23) : la fonctionnalite ne verra pas le jour, et une case
-          grisee "Bientot" qui ne s'activera jamais est une promesse en trop
-          dans un panneau de filtres.
-          Le separateur, lui, RESTE : il ne dependait pas du filtre mais separe
-          les categories d'especes du type de partages. */}
+      <hr className={dividerClass} />
+
+      {/* ───── 2. Demandes d'aide ─────
+          Re-active (Nicolas 2026-08-11) apres avoir ete retiree en 2026-07-23.
+          Ne garde QUE les Rencontres nature dont l'espece n'est pas determinee :
+          exactement les posts qui affichent le badge "Espece non determinee"
+          (case "Je ne connais pas l'espece" a la publication). Les Instant nature
+          (paysages) n'ont pas d'espece a identifier -> exclus. Cablage backend :
+          type=nature_encounter + species_name/scientific_name nuls (postService
+          `helpOnly`). Case seule + sous-texte, calquee sur les cases type de
+          partage. */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start gap-4 select-none">
+          <FilterCheckbox
+            checked={local.helpOnly}
+            onChange={(next) => setLocal((prev) => ({ ...prev, helpOnly: next }))}
+            ariaLabel={t('home.filters.helpOnly')}
+          />
+          <span className="flex flex-col">
+            <span className="font-body text-base text-foreground">
+              {t('home.filters.helpOnly')}
+            </span>
+            <span className="font-body text-sm text-muted-foreground">
+              {t('home.filters.helpOnlyHint')}
+            </span>
+          </span>
+        </div>
+      </div>
+
       <hr className={dividerClass} />
 
       {/* ───── 3. Par type de partages ─────
