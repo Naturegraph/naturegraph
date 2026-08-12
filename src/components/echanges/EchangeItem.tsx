@@ -140,15 +140,17 @@ function Action({
 /**
  * Bouton de reaction : un seul coeur en phase 1 (decision Nicolas 2026-07-22).
  *
- * TROIS ETATS, et un seul visible a la fois :
+ * On affiche TOUJOURS le compteur, jamais le mot "Réagir" (retour Nicolas
+ * 2026-08-11) :
  *
- *   1. personne n'a reagi      -> coeur vide + le mot "Réagir"
- *   2. des gens ont reagi      -> coeur vide + le nombre, sans libelle
- *   3. j'ai reagi              -> l'emoji ❤️ plein + le nombre
+ *   1. personne n'a reagi  -> coeur vide + "0"
+ *   2. des gens ont reagi  -> coeur vide + le nombre
+ *   3. j'ai reagi          -> l'emoji ❤️ plein + le nombre
  *
- * Le libelle ne sert qu'a amorcer le geste. Des qu'un compteur existe il
- * devient du bruit : le chiffre dit deja de quoi il s'agit, et le retirer
- * raccourcit une barre d'actions qui doit tenir sur une ligne en mobile.
+ * Pourquoi retirer le libelle "Réagir" : le mot allongeait la barre d'actions
+ * et la faisait passer sur deux lignes. Un compteur a 0 est plus court et plus
+ * logique : cliquer fait passer le coeur en emoji et le "0" en "1". Le libelle
+ * reste porte par `aria-label` pour les lecteurs d'ecran.
  *
  * L'etat "j'ai reagi" passe a l'emoji plutot qu'a une icone coloree, pour etre
  * reconnaissable d'un coup d'oeil et rester coherent avec les reactions des
@@ -189,11 +191,10 @@ function BoutonReagir({
         <Heart className="size-3.5 shrink-0" aria-hidden="true" />
       )}
 
-      {nombre > 0 ? (
-        <span className="tabular-nums">{nombre}</span>
-      ) : (
-        <span aria-hidden="true">Réagir</span>
-      )}
+      {/* Toujours le compteur, jamais le mot "Réagir" : a 0 le bouton reste
+          court (coeur + "0"), cliquer fait passer le coeur en emoji et le "0" a
+          "1". Le libelle accessible reste porte par aria-label ci-dessus. */}
+      <span className="tabular-nums">{nombre}</span>
     </button>
   )
 }
