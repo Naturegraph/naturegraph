@@ -16,6 +16,7 @@
     "test:coverage": "vitest run --coverage",
     "prepare": "husky",
     "seed:cities": "node scripts/seed-cities.mjs",
+    "migration:new": "node scripts/new-migration.mjs",
     "ci:health": "node scripts/ci-health.mjs",
     "check:types-drift": "node scripts/check-supabase-types-drift.mjs",
     "test:e2e": "playwright test",

@@ -5,6 +5,44 @@
 
 ---
 
+## ⚠️ MISE A JOUR 2026-08-19 : dev et prod sont 2 BASES SEPAREES (NG-007 resolu)
+
+Le document ci-dessous decrivait la "Phase 1" ou dev/staging/prod partageaient la
+MEME base Supabase. **Ce n'est PLUS le cas.** Etat REEL desormais :
+
+| Environnement | Branche              | Vercel     | Base Supabase                      |
+| ------------- | -------------------- | ---------- | ---------------------------------- |
+| DEV           | `develop`, `staging` | Preview    | **DEV** `nkgdgxwejqqnqmwqwegy`     |
+| PROD          | `main`               | Production | **PROD** `hrxgduvworofnrjmgpcj`    |
+
+- Le dev = copie du schema prod (40 tables) + donnees de reference seedees, ZERO
+  donnee utilisateur. Isole : crons off + triggers vers la prod neutralises.
+- Vercel : variables `VITE_SUPABASE_*` scope **Preview** -> dev, scope **Production**
+  -> prod. **NE JAMAIS modifier les variables Production** (casse naturegraph.ca).
+
+### Processus FIXE (a tenir dans le temps)
+
+1. **Developper sur `develop`** : la preview lit le DEV -> experimentation sans
+   risque pour la prod. Puis `develop -> staging` (tests), puis PR `staging -> main`
+   (release notes + validation Nicolas) pour la prod.
+2. **Migrations DB** : creer via `npm run migration:new -- "description"` (fichier
+   HORODATE unique `YYYYMMDDHHMMSS_nom.sql`). L'appliquer et la TESTER sur le DEV
+   d'abord, puis sur la PROD au merge vers main. Idempotence recommandee.
+   - Pourquoi horodate : les migrations historiques (format `YYYYMMDD`) ont des
+     versions dupliquees qui cassent la CLI supabase. Toute NOUVELLE migration doit
+     etre unique.
+3. **Re-synchroniser le dev** depuis la prod quand le schema a diverge :
+   `scripts/run-dev-rebuild.mjs` (schema) + `scripts/copy-refdata-prod-to-dev.mjs`
+   (donnees de reference). Cf. `SUPABASE_DEV_PARITY_RUNBOOK.md`.
+4. **Ce qui reste protege vs ce qui demande de la vigilance** :
+   - PROTEGE par construction : le travail de dev (code + experiences DB) ne touche
+     plus jamais la prod.
+   - DEMANDE DE LA DISCIPLINE (aucun outil ne remplace la prudence) : ce qui va sur
+     `main` part en prod ; toute operation manuelle sur la base prod (MCP prod /
+     dashboard) est reelle. Toujours passer par develop -> staging -> main.
+
+---
+
 ## Vue d ensemble
 
 ```
