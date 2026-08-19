@@ -164,10 +164,30 @@ l'appliquer sur le dev. Ne touche JAMAIS la prod en ecriture (uniquement une lec
 A faire posement, verif a chaque etape. Alternative long terme (pour CI/CLI) : renommer les migrations
 en versions uniques `YYYYMMDDHHMMSS`, mais le dump prod->dev suffit pour cloisonner sans ce chantier.
 
-## Definition of Done
+## ✅ RESOLU (2026-08-19)
 
-- [ ] Dev rebuild a partir du schema prod (ou migrations renommees) : `app_config` presente
-- [ ] `species_master` seede sur dev
-- [ ] Variables Vercel Preview repointees sur le projet dev
-- [ ] Preview develop valide (app OK, donnees de test dev, zero donnee prod)
-- [ ] SECURITY_VERCEL.md addendum : passer le finding de 🔴 a resolu
+Cloisonnement livre. Methode finale (la CLI ne pouvant pas rejouer les migrations
+et Docker etant absent) : rebuild via un runner Node maison, INSTRUCTION PAR
+INSTRUCTION en PLUSIEURS PASSES (re-essaie les echecs -> resout seul les erreurs
+d'ordre fichiers-vs-prod).
+
+- `scripts/dev-rebuild.sql` (genere localement, gitignore) : entete (DROP SCHEMA,
+  extensions, wrapper immutable_unaccent) + concatenation des 142 migrations +
+  reconciliation (colonnes de derive `license`/`facebook`/`short_id` ; DROP VIEW
+  posts_public et DROP nearby_posts avant recreation).
+- `scripts/run-dev-rebuild.mjs` : applique sur le dev (garde-fou dev-only), multi-passes.
+  Resultat : 40 tables = prod. Residus cosmetiques (perf RLS, REVOKE sur fonctions
+  de derive absentes) sans impact.
+- `scripts/copy-refdata-prod-to-dev.mjs` : seed taxonomy_nodes (45769), species_master
+  (4835), fr_cities (35457) prod->dev. Aucune donnee utilisateur.
+- Dev isole : tous les crons desactives + 3 triggers appelant la prod neutralises.
+- Vercel Preview (URL + ANON_KEY) repointe sur le dev ; verifie : bundle develop
+  reference nkgd, zero hrxg.
+
+Definition of Done :
+
+- [x] Dev rebuild a parite (40 tables = prod)
+- [x] `species_master` + taxonomy + cities seedes sur dev
+- [x] Variables Vercel Preview repointees sur le projet dev
+- [x] Preview develop valide (bundle = dev, zero donnee prod)
+- [x] Finding "Preview = base PROD" : RESOLU
