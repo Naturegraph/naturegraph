@@ -22,6 +22,11 @@ MEME base Supabase. **Ce n'est PLUS le cas.** Etat REEL desormais :
 
 ### Processus FIXE (a tenir dans le temps)
 
+> **Pipeline complet a portes de validation : `PIPELINE_DEV.md`.** Chaque tache
+> traverse les portes G0 -> G10 (cadrage, implementation, optim, qualite, securite,
+> DB, docs, preview/UX, staging, release prod, suivi), chaque porte validee avant
+> de passer a la suivante. Le resume ci-dessous en est la version courte.
+
 1. **Developper sur `develop`** : la preview lit le DEV -> experimentation sans
    risque pour la prod. Puis `develop -> staging` (tests), puis PR `staging -> main`
    (release notes + validation Nicolas) pour la prod.

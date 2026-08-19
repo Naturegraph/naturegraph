@@ -8,6 +8,11 @@ Plateforme web citoyenne biodiversite. React 19 + TypeScript + Vite + Tailwind +
 
 > **Document central** : `PROJECT_MASTER.md` au root du repo, a lire en premier
 > pour comprendre l etat du projet, sa roadmap, sa TODO, son workflow.
+>
+> **Pipeline de dev officiel (portes de validation sequentielles)** :
+> `docs/devops/PIPELINE_DEV.md`. Toute tache traverse les portes G0 -> G10, chacune
+> validee avant la suivante, avec un suivi remis a Nicolas. Environnements dev/prod
+> separes : `docs/devops/environments.md`.
 
 ## Regles obligatoires
 
