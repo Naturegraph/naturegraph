@@ -172,15 +172,23 @@ Le chantier est « terminé » et la base éligible au tag V1 quand **tout** est
 
 > Ce chantier s'étale sur plusieurs jours. **On reprend ici** au début de chaque session.
 
-| Lot                                 | État                                   | Note                                                                   |
-| ----------------------------------- | -------------------------------------- | ---------------------------------------------------------------------- |
-| Lot 0 — Beta (AdminBeta)            | **FAIT** `07116fd`/`88a3678`           | AdminBeta retiré (~1900 l.), gate + flag conservés.                    |
-| Lot 1 — Docs (Registre A)           | **FAIT** `084cc55`                     | 70 docs archivées ; environments/PROJECT_MASTER/CLAUDE/index corrigés. |
-| Lot 2 — Commentaires (Registre C)   | **FAIT** `c7dee9e`/`cbbb032`/`64dd5e1` | 16 TODO/specs obsolètes retirés (prouvés) ; vrais TODO gardés.         |
-| Lot 3 — Code mort (Registre D)      | **FAIT** `57408d8`                     | 7 fichiers morts supprimés (cluster location) ; design system gardé.   |
-| Lot 4+ — Factorisation (Registre B) | **À FAIRE (prochain lot)**             | un composant par PR, FeedPost d'abord, preview mobile requise.         |
-| Lot 5 — Migrations                  | optionnel                              | non urgent.                                                            |
+| Lot                                 | État                                   | Note                                                                                                                                             |
+| ----------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Lot 0 — Beta (AdminBeta)            | **FAIT** `07116fd`/`88a3678`           | AdminBeta retiré (~1900 l.), gate + flag conservés.                                                                                              |
+| Lot 1 — Docs (Registre A)           | **FAIT** `084cc55`                     | 70 docs archivées ; environments/PROJECT_MASTER/CLAUDE/index corrigés.                                                                           |
+| Lot 2 — Commentaires (Registre C)   | **FAIT** `c7dee9e`/`cbbb032`/`64dd5e1` | 16 TODO/specs obsolètes retirés (prouvés) ; vrais TODO gardés.                                                                                   |
+| Lot 3 — Code mort (Registre D)      | **FAIT** `57408d8`                     | 7 fichiers morts supprimés (cluster location) ; design system gardé.                                                                             |
+| Lot 4+ — Factorisation (Registre B) | **SUBSTANTIELLEMENT FAIT**             | FeedPost 1232→913, FeedSection 861→640, EncounterStep2 1025→260 (+ SpeciesSearchBar sorti). +36 tests. Gros restants documentés comme légitimes. |
+| Lot 5 — Migrations                  | optionnel                              | non urgent.                                                                                                                                      |
 
-**Lots 0-3 : tous sur `develop`, buildés + testés (148/148) + lintés + knip verts,
-PAS en prod** (groupage à la prochaine release, OK Nicolas en G9). **Prochaine
-action** : Lot 4 (factorisation), un composant à la fois, quand tout est validé.
+**Bilan : Lots 0-3 FAITS + Lot 4 substantiellement fait. ~21 commits sur `develop`,
+PAS en prod.** Vérif de clôture verte : build · tests **184** · eslint 0 err · knip 0 mort ·
+npm audit 0 vuln · arbre propre.
+
+**Conformité dev corrigée (2026-08-19)** : le dev local pointait par erreur sur la prod
+(`.env.local`), et le dev manquait les GRANTs + reload PostgREST après rebuild. Corrigé +
+durci dans `SUPABASE_DEV_PARITY_RUNBOOK.md`. Schéma dev = prod (40 tables, 6 vues, ~848 fn).
+
+**Prochaine action** : validation visuelle en dev par Nicolas, puis **préparer la release
+groupée des Lots 0-4 vers la prod** (2 release notes + OK Nicolas, G9). Restes optionnels
+(non requis V1) : barre d'actions FeedPost, découpage interne éventuel de gros composants.
