@@ -3,7 +3,7 @@
  *
  * Options :
  *   - Rencontre nature  : observation documentée d'une espèce : icône oiseau teal (disponible)
- *   - Instant nature    : capture spontanée paysage/ambiance : icône montagne orange (bientôt)
+ *   - Instant nature    : capture spontanée paysage/ambiance : icône montagne orange (disponible)
  *
  * Design (couleurs theme-aware, Figma dark 6858:13212, Nicolas 2026-07-28) :
  *   - Conteneur : bg surface, border gris-clair 0.5px, rounded-lg, shadow-lg
@@ -22,12 +22,6 @@
  *   - role="menu" + role="menuitem" + aria-disabled
  *   - Escape pour fermer, clic backdrop (mobile) ferme
  *   - Focus sur le premier item à l'ouverture
- *
- * TODO [FEATURE] Instant nature : activer quand le formulaire est prêt :
- *   1. Retirer `disabled: true` dans CONTRIBUTION_TYPES
- *   2. Créer le formulaire /contribute?type=nature_instant
- *   3. POST /posts { type: 'nature_instant', ... } via postService
- *   4. Invalider le cache TanStack Query ['feed']
  */
 
 import { useEffect, useRef } from 'react'

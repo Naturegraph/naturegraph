@@ -6,9 +6,8 @@
  *
  * Design : modal centré sur desktop, bottom sheet sur mobile.
  *
- * TODO [BACKEND], onConfirm → DELETE /posts/:id
- *   via postService.deletePost(postId)
- *   puis invalider le cache TanStack Query ['feed']
+ * Composant de présentation : la suppression réelle (postService.deletePost +
+ * invalidation du cache feed) est faite par le parent via le callback onConfirm.
  */
 
 import { useEffect, useRef, useState } from 'react'

@@ -270,8 +270,8 @@ export async function getSuggestedUsers({
 }
 
 /**
- * Suit / ne suit plus un utilisateur.
- * TODO : implémenter avec table `follows` et trigger de compteur.
+ * Suit / ne suit plus un utilisateur (table `follows` ; compteurs maintenus par
+ * trigger PostgreSQL, pas côté client).
  */
 export async function toggleFollow(
   followerId: string,

@@ -2,10 +2,9 @@
  * ProfileFeed : Onglet "Journal nature" du profil
  *
  * Affiche les observations partagées par l'utilisateur sous forme de liste.
- * Sous-onglets : Récent | Populaire (filtre côté client sur les mocks).
+ * Sous-onglets : Récent | Populaire (tri côté client sur les posts déjà chargés).
+ * Données réelles : le parent fournit `userPosts` via la query ['posts','by-user'].
  * État vide : illustration hermine + message.
- *
- * TODO [BACKEND] : Remplacer par postService.getPostsByUser(userId, { sort })
  */
 
 import { useState } from 'react'
@@ -102,7 +101,7 @@ export function ProfileFeed({
     })
   }
 
-  /** Tri côté client sur les données mock */
+  /** Tri côté client sur les posts déjà chargés */
   const sortedPosts =
     sort === 'popular'
       ? [...userPosts].sort(

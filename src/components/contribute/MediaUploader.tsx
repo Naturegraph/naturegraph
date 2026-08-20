@@ -5,12 +5,9 @@
  *   - Drag & drop ou sélection via bouton "parcourir"
  *   - Prévisualisation locale (URL.createObjectURL : nettoyée automatiquement)
  *   - Limite configurable (défaut : 4 photos)
- *   - Aucun upload réel : les File[] sont renvoyés au parent via onChange
- *
- * TODO [BACKEND] : Upload vers Supabase Storage :
- *   bucket 'post-media', policy RLS : authentifié seulement
- *   Utiliser supabase.storage.from('post-media').upload(path, file)
- *   Stocker l'URL publique dans media.url après upload réussi.
+ *   - Aucun upload réel ici : les File[] sont renvoyés au parent via onChange.
+ *     L'upload Storage (bucket 'post-media') est fait par le pipeline du parent
+ *     (processMediaForUpload -> uploadPostMedia), pas par ce composant de sélection.
  */
 
 import { useCallback, useRef, useState, useMemo, useEffect } from 'react'
@@ -56,8 +53,9 @@ const ALLOWED_MIME_TYPES = new Set([
 /**
  * Valide un fichier avant ajout à la liste.
  * Retourne un message d'erreur localisé, ou null si le fichier est valide.
- * TODO [BACKEND] : Ajouter une vérification du "magic number" (en-têtes binaires)
- * côté serveur : le MIME type client peut être falsifié.
+ * NB : ce filtre client (MIME + taille) est surtout UX. La vérification
+ * anti-falsification par "magic number" (en-têtes binaires) est faite côté
+ * serveur (edge function `validate-media` / `mediaMagic.ts`).
  */
 function validateFile(file: File): string | null {
   // V1.1.4 NG-025 (Nicolas 2026-06-03) : aligne avec EncounterStep1 et
