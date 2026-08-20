@@ -6,15 +6,15 @@
 
 ## Cibles (composants > 200 lignes, ordre valeur/risque)
 
-| #   | Composant                                          | LOC initial | État                                       |
-| --- | -------------------------------------------------- | ----------- | ------------------------------------------ |
-| 1   | `components/home/FeedPost.tsx`                     | 1232        | **EN COURS** (config+chips+méta, → 913 l.) |
-| 2   | `components/contribute/EncounterStep2.tsx`         | 1025        | **EN COURS** (logique extraite, → 971 l.)  |
-| 3   | `components/home/FeedSection.tsx`                  | 863         | **EN COURS** (mapper extrait, → 640 l.)    |
-| 4   | `components/settings/SettingsPanel.tsx`            | 913         | à faire                                    |
-| 5   | `pages/Admin/AdminModeration.tsx`                  | 1453        | à faire (en dernier, peu exposé)           |
-| 6   | `components/contribute/ContributeInstantPanel.tsx` | 1252        | à faire                                    |
-| …   | (autres > 200 l.)                                  |             | à faire                                    |
+| #   | Composant                                          | LOC initial | État                                            |
+| --- | -------------------------------------------------- | ----------- | ----------------------------------------------- |
+| 1   | `components/home/FeedPost.tsx`                     | 1232        | **EN COURS** (config+chips+méta, → 913 l.)      |
+| 2   | `components/contribute/EncounterStep2.tsx`         | 1025        | **FAIT** (logique + SpeciesSearchBar, → 260 l.) |
+| 3   | `components/home/FeedSection.tsx`                  | 863         | **EN COURS** (mapper extrait, → 640 l.)         |
+| 4   | `components/settings/SettingsPanel.tsx`            | 913         | à faire                                         |
+| 5   | `pages/Admin/AdminModeration.tsx`                  | 1453        | à faire (en dernier, peu exposé)                |
+| 6   | `components/contribute/ContributeInstantPanel.tsx` | 1252        | à faire                                         |
+| …   | (autres > 200 l.)                                  |             | à faire                                         |
 
 > AdminBeta (1671, était le plus gros) a été **supprimé** au Lot 0 (mort), pas factorisé.
 
@@ -75,9 +75,14 @@ pour **chaque** bloc :
       `groupConfig`, `groupObservations` (groupement par groupe taxonomique + ordre),
       `TAXONOMIC_FILTERS`. **1025 → 971 l.** + **7 tests** (`encounterSpeciesLogic.test.ts`).
       Build + tests (184) + lint verts.
-- [ ] **`SpeciesSearchBar`** (sous-composant inline ~670 l.) : gros gain LOC si extrait dans
-      son propre fichier (déplacement verbatim, filet = build+types). Prochain pas EncounterStep2.
-- [ ] `ObservationRow` (sous-composant) : extractible aussi.
+- [x] **`SpeciesSearchBar`** extrait dans `SpeciesSearchBar.tsx` (715 l., avec ses helpers
+      exclusifs SpeciesCategoryIcon + CLASS*TO_GROUP). **Déplacement VERBATIM** vérifié par
+      TypeScript (compile parfaitement), imports orphelins nettoyés dans EncounterStep2.
+      **971 → 260 l.** (1025 → 260 depuis le début). Build + tests (184) + lint verts.
+      \_SpeciesSearchBar reste gros (715 l.) mais c'est un composant de recherche
+      légitimement complexe ; il vit désormais dans son propre fichier au lieu de gonfler
+      l'étape 2. Découpage interne possible plus tard si un bloc à logique isolable ressort.*
+- [ ] `ObservationRow` (sous-composant, ~70 l.) : petit, peut rester dans EncounterStep2.
 
 ## Principe (rappel)
 
