@@ -40,12 +40,10 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { Loader2 } from 'lucide-react'
 import { useHiddenPostIds } from '@/hooks/useHiddenPosts'
 import { useToggleReaction } from '@/hooks/usePost'
-// LocationPermissionModal + useLocationCTA + requestBrowserLocation retirés
-// de la Phase 1 (Nicolas 2026-05-19) : peu de données, modale prématurée.
-// Réactiver Phase 2 quand le volume justifiera le CTA géoloc.
-// import { useLocationCTA } from '@/hooks/useLocationCTA'
-// import { LocationPermissionModal } from '@/components/location/LocationPermissionModal'
-// import { requestBrowserLocation } from '@/lib/location/geocoding'
+// CTA géoloc (modale de permission + useLocationCTA) retiré en Phase 1 (Nicolas
+// 2026-05-19) : peu de données, modale prématurée. Les composants ont été
+// supprimés du repo (Lot 3 chantier qualité) ; à reconstruire en Phase 2 si le
+// volume justifie un CTA géoloc.
 // import type { LocationFormData } from '@/types/location'
 import type { PostFeedItem, ReactionType } from '@/types/database'
 import { formatObservationDate } from '@/utils/observationDate'
