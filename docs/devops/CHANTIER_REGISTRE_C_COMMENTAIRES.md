@@ -2,7 +2,7 @@
 
 > Preuve de couverture du Lot 2. Chaque TODO a un **verdict** après vérification
 > que la feature existe (ou non) en prod. Mis à jour 2026-08-19.
-> Statut : **partie 1 faite** (obsolètes mock-data traités) ; reste une 2e passe tracée.
+> Statut : **parties 1 et 2 faites** ; reste 2 gros blocs de spec (Settings) + les sweeps.
 
 ## Corrigés / supprimés (TODO « backend » déjà branché en prod)
 
@@ -33,21 +33,34 @@
 | `components/settings/SettingsPanel.tsx:80` | exposer Discord via env : petit TODO                                                 |
 | `ui/SpeciesResultsList.tsx:15`             | explicitement « hors périmètre NG-049 »                                              |
 
-## Reste à vérifier (Lot 2, 2e passe)
+## Partie 2 — traités
 
-Non encore tranchés (chacun exige de confirmer si la feature « Phase 2/3 » est faite) :
+Corrigés (obsolètes, feature vérifiée présente) :
 
-- `contribute/ContributeEncounterForm.tsx:11` (header TODO [BACKEND])
-- `home/ProfileMenu.tsx:34` (sync textSize -> profiles.preferences)
-- `onboarding/OnboardingInterests.tsx:25`, `OnboardingStep2.tsx:27`, `OnboardingStep4.tsx:45`
-- `profile/EditPrefsTab.tsx:13`, `contexts/AccessibilityContext.tsx:20` (sync préférences)
-- `settings/SettingsHelpView.tsx:20`, `SettingsPanel.tsx:23`, `SettingsSecurityView.tsx:20`
-  (« Phase 2 : voir second-agent/03-profil-backend-notes.md » : vérifier si le doc existe encore)
-- `contexts/LocationContext.tsx:14`, `Admin/AdminAnalytics.tsx:601`
-- `home/FeedPost.tsx:56` (refactor -> **Lot 4**), `:843` (individuals_count Phase 2), `:1147` (saved_posts)
-- `components/auth/AuthForm.tsx:279/285` (liés au TODO OAuth réel)
+| Fichier                                     | TODO retiré/corrigé                                | Preuve                                                                  |
+| ------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------- |
+| `contribute/ContributeEncounterForm.tsx:11` | header « Upload/POST »                             | création câblée via useContributePostSubmit                             |
+| `profile/EditPrefsTab.tsx:13`               | « Phase 2 useUpdateProfile »                       | useUpdateProfile existe (useProfile.ts:81) et utilisé (Profile.tsx:166) |
+| `home/FeedPost.tsx:1147`                    | « État optimiste local, câbler saved_posts »       | déjà câblé (useToggleSavedPost, ligne 1159)                             |
+| `components/settings/SettingsPanel.tsx:23`  | pointeur mort vers `second-agent/…` (doc supprimé) | dossier second-agent absent                                             |
 
-## Sweeps restants (avant clôture Lot 2)
+Gardés (vrais TODO confirmés) :
 
-- [ ] `mock`, `provisoire`, `pour la beta`, dates passées (au-delà des TODO).
-- [ ] En-têtes de fichiers + JSDoc exports, dossier par dossier.
+| Fichier                                                           | Raison                                                                           |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `home/ProfileMenu.tsx:34`, `contexts/AccessibilityContext.tsx:20` | préférences en localStorage, sync `profiles.preferences` vraiment à faire        |
+| `onboarding/OnboardingStep4.tsx:45`                               | table serveur `banned_usernames` + validation DB non faite (durcissement)        |
+| `onboarding/OnboardingInterests.tsx:25`, `OnboardingStep2.tsx:27` | validation serveur / mapping notifications à confirmer plus tard                 |
+| `contexts/LocationContext.tsx:14`                                 | `locationDistance` pas encore lié à `location_radius_km`                         |
+| `Admin/AdminAnalytics.tsx:601`                                    | note de calibration des seuils (prod scalera)                                    |
+| `components/auth/AuthForm.tsx:279/285`                            | décision OAuth valide (non configuré) ; seul le cadrage « beta privée » est daté |
+
+## Reste (à faire avant clôture Lot 2)
+
+- [ ] `settings/SettingsHelpView.tsx:20` + `SettingsSecurityView.tsx:20` : **gros blocs
+      de spec** référençant le doc supprimé `second-agent/03…`. Les features (support,
+      changement d'email) semblent faites -> relecture ciblée pour retirer les specs
+      obsolètes en gardant les vraies notes. Non fait ici (éviter de couper un bloc à l'aveugle).
+- [ ] `home/FeedPost.tsx:56` (TODO refactor) -> traité au **Lot 4** (factorisation FeedPost).
+- [ ] Références mortes `second-agent/NN` restantes (ex. FeedPost share) : nettoyage au sweep.
+- [ ] Sweeps : `mock`, `provisoire`, `pour la beta`, dates passées ; en-têtes + JSDoc dossier par dossier.

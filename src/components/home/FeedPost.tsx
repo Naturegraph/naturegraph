@@ -1143,9 +1143,8 @@ export function FeedPost({
           </div>
           <div className="flex gap-1">
             {/*
-              Bouton Sauvegarder : second-agent/13.
-              État optimiste local, TODO BACKEND : câbler à `saved_posts`.
-              Visuel actif : icône BookmarkCheck + couleur primary.
+              Bouton Sauvegarder : persistance via `saved_posts` (useToggleSavedPost),
+              optimistic update géré dans le hook. Visuel actif : BookmarkCheck primary.
             */}
             <button
               type="button"

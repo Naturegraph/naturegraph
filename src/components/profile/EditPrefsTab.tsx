@@ -10,7 +10,8 @@
  *   - Tuiles non sélectionnées : bg-background + border 0.5px
  *   - Pas de compteur "X/3" : Figma ne le montre pas
  *
- * TODO [BACKEND] : Phase 2 : `useUpdateProfile()` mutation invalide la query.
+ * Sauvegarde : orchestrée par le parent (Profile.tsx) via `useUpdateProfile`
+ * (mutation qui met à jour le profil et invalide la query).
  */
 
 import { forwardRef, useImperativeHandle, useState } from 'react'
