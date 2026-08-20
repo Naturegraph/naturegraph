@@ -19,7 +19,6 @@ import {
   Users,
   FileText,
   AlertTriangle,
-  Activity,
   ArrowRight,
   Eye,
   Leaf,
@@ -349,13 +348,6 @@ export default function AdminDashboard() {
           icon={AlertTriangle}
           color={reportsColor}
           linkTo="/admin/moderation"
-        />
-        <KPIBox
-          label="Beta quota"
-          value={`${stats.betaUsers}/${stats.betaMaxUsers}`}
-          icon={Activity}
-          color="blue"
-          linkTo="/admin/beta"
         />
       </div>
 
