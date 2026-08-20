@@ -27,17 +27,28 @@ présentationnels un par un (avec preview).
       météo/habitat/phénomène, POST_TYPE_ICON, classes de chips. Import de `NotifItem`
       repointé. Import lucide `Bird`/`MountainSnow` orphelins retirés. **1232 → 1131 l.**
       Build + lint + tests (148/148) verts. Zéro changement de comportement.
-- [ ] **Pas 2 — Chips espèce** (les 3 cas catégorie/espèce) -> `FeedPostSpeciesChips.tsx`.
-      Nécessite preview (rendu visuel des chips + filtres).
-- [ ] **Pas 3 — Barre d'actions** (réagir / échanges / sauvegarder / partager) ->
-      `FeedPostActions.tsx`.
-- [ ] **Pas 4 — Bloc média / galerie** -> sous-composant dédié.
+- [ ] **Pas 2 — Chips espèce** (les 3 cas catégorie/espèce).
+- [ ] **Pas 3 — Barre d'actions** (réagir / échanges / sauvegarder / partager).
+- [ ] **Pas 4 — Bloc média / galerie**.
 - [ ] Résoudre le `TODO` de refactor l.56 (accepter `PostFeedItem` directement) si pertinent.
 
-Note : certains blocs partagent beaucoup d'état (échanges, expand, reactions, saved).
-On extrait par **props explicites**, sans changer la logique. Chaque pas = build + tests
+### ⚠️ BLOCAGE VÉRIFICATION (décision 2026-08-19)
 
-- preview avant de committer.
+Les pas 2-4 sont des extractions **JSX** (rendu vivant). Or FeedPost **n'a aucun test
+unitaire**, et son rendu n'est **pas vérifiable facilement** : le **feed** est derrière
+l'auth, et la **page détail publique** (`/post/:id`) renvoie « Ce post n'existe plus » en
+rôle **anon** pour les posts de test (RLS anon).
+
+Refactorer une UI de ~1130 lignes non testée **sans filet visuel** = risque de régression
+silencieuse -> contraire à « améliorer sans casser ». **Décision : on N'ENCHAÎNE PAS les
+pas JSX à l'aveugle.** Prérequis avant de reprendre (au choix) :
+
+1. Écrire des **tests de rendu** FeedPost (testing-library) couvrant les 3 cas de chips +
+   la barre d'actions -> filet automatique, puis extraire.
+2. OU une **session preview connectée** (login base DEV) pour diff visuel avant/après.
+3. OU rendre les posts de test **visibles en anon** sur `/post/:id` (seed/RLS de test).
+
+Le **pas 1 (config)** reste acquis et vérifié. FeedPost est **mis en pause** à ce stade.
 
 ## Principe (rappel)
 
