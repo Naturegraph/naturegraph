@@ -26,14 +26,9 @@ import { buildPostPath } from '@/lib/postSlug'
 import { NotebookCardInFeed } from '@/components/notebook/NotebookCardInFeed'
 import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
 import { FeedPostSpeciesChips } from './FeedPostSpeciesChips'
-// Config (emojis, réactions) extraite pour alléger le composant.
-import {
-  REACTION_CONFIG,
-  WEATHER_EMOJI,
-  HABITAT_EMOJI,
-  PHENOMENON_EMOJI,
-  POST_TYPE_ICON,
-} from './feedPostConfig'
+import { FeedPostMeta } from './FeedPostMeta'
+// Config (réactions, icône par type) extraite pour alléger le composant.
+import { REACTION_CONFIG, POST_TYPE_ICON } from './feedPostConfig'
 
 /**
  * Fil d'Echanges charge a la DEMANDE (NG-049).
@@ -551,105 +546,16 @@ export function FeedPost({
           </div>
         )}
 
-        {/* Habitat / météo / moment : ordre demandé Nicolas 2026-05-04 :
-            1. Habitat (en premier si renseigné)
-            2. Météo (avec emoji)
-            3. Moment de la journée
-            Bloc séparé du titre/description : reste affiché même si l'utilisateur
-            n'a pas renseigné de titre/description (collapse propre du bloc texte). */}
-        {(() => {
-          const labelHabitat = habitat
-            ? t(`contribute.habitat.${habitat}`, { defaultValue: habitat })
-            : null
-          const emojiHabitat = habitat ? HABITAT_EMOJI[habitat] : null
-
-          const labelWeather = weather
-            ? t(`contribute.weather.${weather}`, { defaultValue: weather })
-            : null
-          const emojiWeather = weather ? WEATHER_EMOJI[weather] : null
-
-          const labelTimeOfDay = timeOfDay
-            ? t(`contribute.date.${timeOfDay}`, { defaultValue: timeOfDay })
-            : null
-
-          const labelClouds = clouds || null
-
-          // NG-055 : phénomène (posts Instant) en TÊTE de la rangée méta.
-          // Les posts Instant n'ont pas d'habitat : le phénomène prend sa place.
-          const emojiPhenomenon = phenomenon ? (PHENOMENON_EMOJI[phenomenon] ?? null) : null
-
-          // Construire le pipeline de segments dans l'ordre demandé.
-          // NG-055 (Nicolas 2026-08-05) : la rangée tient TOUJOURS sur une seule
-          // ligne. Le conteneur est un bloc `whitespace-nowrap overflow-hidden
-          // text-ellipsis` (pas un flex, sinon l'ellipsis « … » ne s'applique
-          // pas). Les libellés complets restent affichés tant qu'ils rentrent
-          // (cas majoritaire) ; seul l'excédent est coupé par « … », en
-          // commençant par la fin (le moment de la journée, le moins critique).
-          // Segments en inline (pas inline-flex) pour un rendu texte continu.
-          const segments: React.ReactNode[] = []
-          if (phenomenon) {
-            segments.push(
-              <span key="phenomenon">
-                {emojiPhenomenon && (
-                  <span aria-hidden="true" className="mr-1">
-                    {emojiPhenomenon}
-                  </span>
-                )}
-                {phenomenon}
-              </span>,
-            )
-          }
-          if (labelHabitat) {
-            segments.push(
-              <span key="habitat">
-                {emojiHabitat && (
-                  <span aria-hidden="true" className="mr-1">
-                    {emojiHabitat}
-                  </span>
-                )}
-                {labelHabitat}
-              </span>,
-            )
-          }
-          if (labelWeather) {
-            segments.push(
-              <span key="weather">
-                {emojiWeather && (
-                  <span aria-hidden="true" className="mr-1">
-                    {emojiWeather}
-                  </span>
-                )}
-                {labelWeather}
-              </span>,
-            )
-          }
-          if (labelClouds) {
-            segments.push(<span key="clouds">{labelClouds}</span>)
-          }
-          if (labelTimeOfDay) {
-            segments.push(<span key="time">{labelTimeOfDay}</span>)
-          }
-
-          if (segments.length === 0) return null
-
-          // Bloc mono-ligne avec ellipsis (cf commentaire ci-dessus). `min-w-0`
-          // garantit que le bloc peut rétrécir sous la largeur de son contenu
-          // pour déclencher la coupe, même imbriqué dans un parent flex.
-          return (
-            <div className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-sm text-foreground">
-              {segments.map((seg, i) => (
-                <React.Fragment key={i}>
-                  {i > 0 && (
-                    <span aria-hidden="true" className="mx-1 text-xs text-muted-foreground">
-                      •
-                    </span>
-                  )}
-                  {seg}
-                </React.Fragment>
-              ))}
-            </div>
-          )
-        })()}
+        {/* Rangée méta (habitat / météo / moment / nuages / phénomène). Ordre et
+            règles dans feedPostMetaLogic.ts ; rendu dans FeedPostMeta. Reste affichée
+            même sans titre/description (collapse propre du bloc texte). */}
+        <FeedPostMeta
+          weather={weather}
+          clouds={clouds}
+          timeOfDay={timeOfDay}
+          habitat={habitat}
+          phenomenon={phenomenon}
+        />
 
         {/*
          * Chips catégorie + espèce : règle Nicolas 2026-05-01 :

@@ -6,15 +6,15 @@
 
 ## Cibles (composants > 200 lignes, ordre valeur/risque)
 
-| #   | Composant                                          | LOC initial | État                              |
-| --- | -------------------------------------------------- | ----------- | --------------------------------- |
-| 1   | `components/home/FeedPost.tsx`                     | 1232        | **EN COURS** (pas 2/4, → 1007 l.) |
-| 2   | `components/contribute/EncounterStep2.tsx`         | 1025        | à faire                           |
-| 3   | `components/home/FeedSection.tsx`                  | 863         | à faire                           |
-| 4   | `components/settings/SettingsPanel.tsx`            | 913         | à faire                           |
-| 5   | `pages/Admin/AdminModeration.tsx`                  | 1453        | à faire (en dernier, peu exposé)  |
-| 6   | `components/contribute/ContributeInstantPanel.tsx` | 1252        | à faire                           |
-| …   | (autres > 200 l.)                                  |             | à faire                           |
+| #   | Composant                                          | LOC initial | État                                       |
+| --- | -------------------------------------------------- | ----------- | ------------------------------------------ |
+| 1   | `components/home/FeedPost.tsx`                     | 1232        | **EN COURS** (config+chips+méta, → 913 l.) |
+| 2   | `components/contribute/EncounterStep2.tsx`         | 1025        | à faire                                    |
+| 3   | `components/home/FeedSection.tsx`                  | 863         | à faire                                    |
+| 4   | `components/settings/SettingsPanel.tsx`            | 913         | à faire                                    |
+| 5   | `pages/Admin/AdminModeration.tsx`                  | 1453        | à faire (en dernier, peu exposé)           |
+| 6   | `components/contribute/ContributeInstantPanel.tsx` | 1252        | à faire                                    |
+| …   | (autres > 200 l.)                                  |             | à faire                                    |
 
 > AdminBeta (1671, était le plus gros) a été **supprimé** au Lot 0 (mort), pas factorisé.
 
@@ -31,8 +31,15 @@ présentationnels un par un (avec preview).
       Logique de décision extraite en **fonction pure** `feedPostSpeciesChipsLogic.ts` + **9 tests** (`.test.ts`) qui verrouillent les 3 cas + la cliquabilité. Composant
       fin `FeedPostSpeciesChips.tsx` (JSX déplacé **verbatim**, a11y préservée). Build +
       tests (157) + lint verts.
-- [ ] **Pas 3 — Barre d'actions** (réagir / échanges / sauvegarder / partager).
-- [ ] **Pas 4 — Bloc média / galerie**.
+- [x] **Pas 3 — Rangée méta** (habitat / météo / moment / nuages / phénomène). **1007 → 913 l.**
+      Logique (ordre + présence + emoji + clé i18n) en fonction pure `feedPostMetaLogic.ts` + **9 tests**. Composant fin `FeedPostMeta.tsx` (JSX verbatim). Build + tests (166) + lint verts.
+      _Pivot depuis « barre d'actions » : la méta colle au pattern (logique isolable), la barre est
+      du câblage lourd peu testable -> reportée ci-dessous._
+- [ ] **Barre d'actions** (réagir / échanges / sauvegarder / partager) : **reportée**. Câblage
+      lourd (state picker/share, ~15 props), peu de logique pure à tester. À faire soit en
+      déplaçant l'état picker/share DANS le sous-composant (verbatim, filet = build+types), soit
+      après avoir écrit des tests d'interaction. Moins prioritaire que les blocs à logique isolable.
+- [ ] **Bloc média / galerie**.
 - [ ] Résoudre le `TODO` de refactor l.56 (accepter `PostFeedItem` directement) si pertinent.
 
 ### ✅ Pattern de sécurité trouvé (résout le blocage vérification)
