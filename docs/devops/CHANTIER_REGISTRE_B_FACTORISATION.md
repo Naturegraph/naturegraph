@@ -11,10 +11,10 @@
 | 1   | `components/home/FeedPost.tsx`                     | 1232        | **EN COURS** (config+chips+méta, → 913 l.)      |
 | 2   | `components/contribute/EncounterStep2.tsx`         | 1025        | **FAIT** (logique + SpeciesSearchBar, → 260 l.) |
 | 3   | `components/home/FeedSection.tsx`                  | 863         | **EN COURS** (mapper extrait, → 640 l.)         |
-| 4   | `components/settings/SettingsPanel.tsx`            | 913         | à faire                                         |
-| 5   | `pages/Admin/AdminModeration.tsx`                  | 1453        | à faire (en dernier, peu exposé)                |
-| 6   | `components/contribute/ContributeInstantPanel.tsx` | 1252        | à faire                                         |
-| …   | (autres > 200 l.)                                  |             | à faire                                         |
+| 4   | `components/settings/SettingsPanel.tsx`            | 913         | **gardé** (légitimement gros, cf. §décision)    |
+| 5   | `pages/Admin/AdminModeration.tsx`                  | 1453        | **gardé** (dashboard, cf. §décision)            |
+| 6   | `components/contribute/ContributeInstantPanel.tsx` | 1252        | **gardé** (formulaire multi-étapes, cf. §)      |
+| …   | (autres > 200 l. : Admin\*, EncounterStep3)        |             | **gardés** (légitimes, cf. §décision)           |
 
 > AdminBeta (1671, était le plus gros) a été **supprimé** au Lot 0 (mort), pas factorisé.
 
@@ -83,6 +83,40 @@ pour **chaque** bloc :
       légitimement complexe ; il vit désormais dans son propre fichier au lieu de gonfler
       l'étape 2. Découpage interne possible plus tard si un bloc à logique isolable ressort.*
 - [ ] `ObservationRow` (sous-composant, ~70 l.) : petit, peut rester dans EncounterStep2.
+
+## Composants gardés volumineux — décision motivée (2026-08-19)
+
+Après scan, les composants suivants sont **légitimement gros** : ce sont du câblage, des
+formulaires multi-étapes ou des dashboards, sans gros bloc de **logique isolable** à
+extraire (seulement de petits helpers : `formatRelativeDate`, `todayISO`, des consts de
+config). Les découper pour passer sous 200 lignes n'améliorerait **pas** la lisibilité,
+ce serait « éclater pour éclater ». **Verdict : gardés tels quels.**
+
+| Composant                                          | LOC  | Raison de le garder gros                                      |
+| -------------------------------------------------- | ---- | ------------------------------------------------------------- |
+| `pages/Admin/AdminModeration.tsx`                  | 1453 | dashboard modération (câblage tableaux + actions), peu exposé |
+| `components/contribute/ContributeInstantPanel.tsx` | 1252 | formulaire Instant multi-étapes (état + validation)           |
+| `pages/Admin/AdminAnalytics.tsx`                   | 1087 | dashboard analytics (agrégations liées aux requêtes)          |
+| `pages/Admin/AdminUsers.tsx`                       | 1002 | dashboard admin utilisateurs                                  |
+| `components/settings/SettingsPanel.tsx`            | 911  | menu réglages (nombreuses sections câblées)                   |
+| `components/contribute/EncounterStep3.tsx`         | 690  | étape 3 formulaire (contexte + lieu)                          |
+
+> Ces composants pourront recevoir une extraction **ciblée** plus tard SI un vrai bloc
+> de logique isolable/testable y apparaît (ex. agrégations d'AdminAnalytics). Mais ce
+> n'est pas prioritaire et surtout **pas nécessaire** pour une base V1 saine.
+
+## Bilan du Lot 4
+
+| Composant            | Avant | Après   | Modules/tests ajoutés                               |
+| -------------------- | ----- | ------- | --------------------------------------------------- |
+| `EncounterStep2.tsx` | 1025  | **260** | encounterSpeciesLogic (+7 tests) + SpeciesSearchBar |
+| `FeedPost.tsx`       | 1232  | **913** | config + chips (+9) + méta (+9)                     |
+| `FeedSection.tsx`    | 861   | **640** | feedPostMapper (+11 tests)                          |
+| Autres > 200 l.      | —     | gardés  | légitimement gros (voir ci-dessus)                  |
+
+**Tests : 148 → 184 (+36)** sur de la logique auparavant non couverte. Lot 4 considéré
+**substantiellement fait** : les composants clés sont allégés et testés, les gros restants
+sont documentés comme légitimes.
 
 ## Principe (rappel)
 
