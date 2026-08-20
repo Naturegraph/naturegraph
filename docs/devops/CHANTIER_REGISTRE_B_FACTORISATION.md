@@ -10,7 +10,7 @@
 | --- | -------------------------------------------------- | ----------- | ------------------------------------------ |
 | 1   | `components/home/FeedPost.tsx`                     | 1232        | **EN COURS** (config+chips+méta, → 913 l.) |
 | 2   | `components/contribute/EncounterStep2.tsx`         | 1025        | à faire                                    |
-| 3   | `components/home/FeedSection.tsx`                  | 863         | à faire                                    |
+| 3   | `components/home/FeedSection.tsx`                  | 863         | **EN COURS** (mapper extrait, → 640 l.)    |
 | 4   | `components/settings/SettingsPanel.tsx`            | 913         | à faire                                    |
 | 5   | `pages/Admin/AdminModeration.tsx`                  | 1453        | à faire (en dernier, peu exposé)           |
 | 6   | `components/contribute/ContributeInstantPanel.tsx` | 1252        | à faire                                    |
@@ -57,6 +57,17 @@ pour **chaque** bloc :
 
 > ⚠️ Piège rencontré : sur Windows, `FeedPostSpeciesChips.tsx` et `feedPostSpeciesChips.ts`
 > = même nom (casse) -> collision TS. Nommer la logique `*Logic.ts` pour éviter ça.
+
+## FeedSection.tsx — décomposition (en cours)
+
+- [x] **Adaptateur `postFeedItemToMockPost`** extrait vers `feedPostMapper.ts` (avec ses
+      helpers purs getTaxonomicEmoji / derivePostFormat / getAuthorPreferenceEmoji /
+      formatPostDate). **861 → 640 l.** Importeurs repointés (Profile, PostDetail).
+      **11 tests** (`feedPostMapper.test.ts`) verrouillent une transformation critique
+      (titre, confidentialité du lieu, phénomène, réactions, date d'obs) jusqu'ici NON testée.
+      Build + tests (177) + lint verts.
+- [ ] Suite FeedSection (tabs, filtres, scroll infini) : à évaluer (surtout du câblage +
+      hooks ; découper seulement si un bloc à logique isolable ressort).
 
 ## Principe (rappel)
 

@@ -38,7 +38,7 @@ import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
 import { SettingsPanel } from '@/components/settings/SettingsPanel'
 // SharePopover du feed réutilisé pour cohérence (Nicolas 2026-05-01).
 import { SharePopover } from '@/components/home/SharePopover'
-import { postFeedItemToMockPost } from '@/components/home/FeedSection'
+import { postFeedItemToMockPost } from '@/components/home/feedPostMapper'
 import type { MockPost } from '@/components/home/FeedPost'
 import type { Profile } from '@/types/database'
 import hermineEmptyState from '@/assets/images/hermine-empty-state.png'
