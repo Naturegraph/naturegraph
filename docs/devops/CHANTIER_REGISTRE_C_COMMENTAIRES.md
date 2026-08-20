@@ -2,7 +2,8 @@
 
 > Preuve de couverture du Lot 2. Chaque TODO a un **verdict** après vérification
 > que la feature existe (ou non) en prod. Mis à jour 2026-08-19.
-> Statut : **parties 1 et 2 faites** ; reste 2 gros blocs de spec (Settings) + les sweeps.
+> Statut : **Lot 2 TERMINÉ** (parties 1-2 + blocs de spec Settings + sweeps).
+> Ne restent que les vrais TODO (gardés, tracés) et FeedPost:56 (-> Lot 4 factorisation).
 
 ## Corrigés / supprimés (TODO « backend » déjà branché en prod)
 
@@ -55,12 +56,27 @@ Gardés (vrais TODO confirmés) :
 | `Admin/AdminAnalytics.tsx:601`                                    | note de calibration des seuils (prod scalera)                                    |
 | `components/auth/AuthForm.tsx:279/285`                            | décision OAuth valide (non configuré) ; seul le cadrage « beta privée » est daté |
 
-## Reste (à faire avant clôture Lot 2)
+## Clôture Lot 2 (blocs Settings + sweeps)
 
-- [ ] `settings/SettingsHelpView.tsx:20` + `SettingsSecurityView.tsx:20` : **gros blocs
-      de spec** référençant le doc supprimé `second-agent/03…`. Les features (support,
-      changement d'email) semblent faites -> relecture ciblée pour retirer les specs
-      obsolètes en gardant les vraies notes. Non fait ici (éviter de couper un bloc à l'aveugle).
-- [ ] `home/FeedPost.tsx:56` (TODO refactor) -> traité au **Lot 4** (factorisation FeedPost).
-- [ ] Références mortes `second-agent/NN` restantes (ex. FeedPost share) : nettoyage au sweep.
-- [ ] Sweeps : `mock`, `provisoire`, `pour la beta`, dates passées ; en-têtes + JSDoc dossier par dossier.
+Blocs de spec traités (features vérifiées présentes -> spec obsolète retirée) :
+
+| Fichier                             | Verdict                       | Preuve                                                                     |
+| ----------------------------------- | ----------------------------- | -------------------------------------------------------------------------- |
+| `settings/SettingsHelpView.tsx`     | spec « à construire » retirée | soumission via supportService.submitHelpRequest -> table `support_tickets` |
+| `settings/SettingsSecurityView.tsx` | spec « à construire » retirée | changement d'email via `supabase.auth.updateUser` implémenté               |
+
+Sweeps (verdict par motif) :
+
+- **`second-agent/NN`** (59 occurrences) : **gardées**. Citations historiques de décisions
+  de conception (doc archivé), non trompeuses sur le comportement. Un strip mécanique
+  serait du churn/risque élevé pour valeur faible ; à faire éventuellement en passe dédiée.
+- **`mock`** : **rien à corriger**. Tous légitimes (type `MockPost`, mockups, mocks de
+  tests) ou notes historiques exactes (« suppression du mock COMMON_SPECIES »).
+- `home/FeedPost.tsx:56` (TODO refactor) : **gardé**, traité au **Lot 4** (factorisation FeedPost).
+
+## Conclusion
+
+Tous les TODO obsolètes « backend déjà fait » ont été retirés/corrigés et prouvés.
+Les TODO restants sont **réels** (OAuth, sync préférences DB, `banned_usernames` serveur,
+`get_profile_stats`, calibration admin, `individuals_count`…) et **tracés** ci-dessus.
+Le Lot 2 est clos ; les vrais TODO pourront être ticketisés (Notion) à la clôture du chantier.
