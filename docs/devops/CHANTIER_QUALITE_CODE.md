@@ -172,14 +172,15 @@ Le chantier est « terminé » et la base éligible au tag V1 quand **tout** est
 
 > Ce chantier s'étale sur plusieurs jours. **On reprend ici** au début de chaque session.
 
-| Lot                                 | État                                | Note                                                                                                                                                                                                                                               |
-| ----------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Lot 0 — Beta (AdminBeta)            | **FAIT sur `develop`** (2026-08-19) | AdminBeta + route + carte dashboard + 3 fn betaService retirés. Build/lint/test/knip verts (148/148). Gate + flag conservés. À grouper dans la prochaine release prod (G9, OK Nicolas). `checkBetaAccessKey` reste orphelin -> Registre D (Lot 3). |
-| Lot 1 — Docs (Registre A)           | à faire                             | candidats archive/correction déjà repérés                                                                                                                                                                                                          |
-| Lot 2 — Commentaires (Registre C)   | à faire                             | 49 TODO localisés, catégorisation ébauchée                                                                                                                                                                                                         |
-| Lot 3 — Code mort (Registre D)      | à faire                             | lancer `knip` pour mesurer                                                                                                                                                                                                                         |
-| Lot 4+ — Factorisation (Registre B) | à faire                             | ordre défini (FeedPost d'abord)                                                                                                                                                                                                                    |
-| Lot 5 — Migrations                  | optionnel                           | non urgent                                                                                                                                                                                                                                         |
+| Lot                                 | État                                   | Note                                                                   |
+| ----------------------------------- | -------------------------------------- | ---------------------------------------------------------------------- |
+| Lot 0 — Beta (AdminBeta)            | **FAIT** `07116fd`/`88a3678`           | AdminBeta retiré (~1900 l.), gate + flag conservés.                    |
+| Lot 1 — Docs (Registre A)           | **FAIT** `084cc55`                     | 70 docs archivées ; environments/PROJECT_MASTER/CLAUDE/index corrigés. |
+| Lot 2 — Commentaires (Registre C)   | **FAIT** `c7dee9e`/`cbbb032`/`64dd5e1` | 16 TODO/specs obsolètes retirés (prouvés) ; vrais TODO gardés.         |
+| Lot 3 — Code mort (Registre D)      | **FAIT** `57408d8`                     | 7 fichiers morts supprimés (cluster location) ; design system gardé.   |
+| Lot 4+ — Factorisation (Registre B) | **À FAIRE (prochain lot)**             | un composant par PR, FeedPost d'abord, preview mobile requise.         |
+| Lot 5 — Migrations                  | optionnel                              | non urgent.                                                            |
 
-**Prochaine action concrète** : exécuter le Lot 0 sur `develop` (retrait AdminBeta),
-build/test/lint/knip verts, preview admin, puis enchaîner Lot 1.
+**Lots 0-3 : tous sur `develop`, buildés + testés (148/148) + lintés + knip verts,
+PAS en prod** (groupage à la prochaine release, OK Nicolas en G9). **Prochaine
+action** : Lot 4 (factorisation), un composant à la fois, quand tout est validé.
