@@ -10,6 +10,43 @@
 > **Action externe** : etapes CLI/dashboard a executer par le fondateur. Claude prepare et verifie
 > (mon acces MCP Supabase est branche sur la PROD, je ne peux pas appliquer sur le dev).
 
+## ✅ MISE A JOUR 2026-08-19 : dev a parite + 2 etapes OBLIGATOIRES post-rebuild
+
+La separation est faite : dev (`nkgdgxwejqqnqmwqwegy`) a le MEME schema que la prod
+(40 tables, 6 vues, ~848 fonctions, memes signatures). Preview -> dev, Production -> prod.
+
+**PIEGE decouvert (2026-08-19)** : apres un rebuild du dev, deux choses manquaient et
+cassaient TOUT (tout en 401/404, feed vide) :
+
+1. **Les GRANTs des roles `anon`/`authenticated`** n'etaient pas reappliques -> "permission
+   denied for view/table ...". Le rebuild recree les objets sans les grants Supabase par defaut.
+2. **Le cache de schema PostgREST** n'etait pas recharge apres les grants -> les RPC en 404.
+
+### A EXECUTER apres CHAQUE rebuild/reseed du dev (via MCP dev ou SQL editor DEV)
+
+```sql
+-- 1. Restaurer les grants standard Supabase (la RLS controle toujours les lignes)
+grant usage on schema public to anon, authenticated, service_role;
+grant all on all tables in schema public to anon, authenticated, service_role;
+grant all on all sequences in schema public to anon, authenticated, service_role;
+grant all on all routines in schema public to anon, authenticated, service_role;
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema public grant all on routines to anon, authenticated, service_role;
+-- 2. Recharger le cache PostgREST (sinon les RPC restent en 404)
+notify pgrst, 'reload schema';
+```
+
+### Exigence `.env.local` (dev LOCAL)
+
+Le `npm run dev` LOCAL lit `.env.local`. Il DOIT pointer sur le **DEV** (`nkgdgxwejqqnqmwqwegy`),
+avec la cle **legacy anon JWT** (pas `sb_publishable_*`, qui casse silencieusement les
+DELETE/UPDATE/RPC). Si `.env.local` pointe sur `hrxg` (prod), le dev local montre les vraies
+donnees users ET toute ecriture touche la prod. Verifier : la console navigateur doit ne taper
+QUE `nkgd...supabase.co`.
+
+---
+
 ## BLOCKER decouvert (2026-06-17) : versions de migration non uniques
 
 Tentative de `supabase db reset --linked` sur le dev : echec a la 2e migration avec
