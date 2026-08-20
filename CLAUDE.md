@@ -4,7 +4,9 @@
 
 Plateforme web citoyenne biodiversite. React 19 + TypeScript + Vite + Tailwind + SCSS.
 
-**Version actuelle** : V1.0.0 (stabilisee 2026-05-25).
+**Version actuelle** : V0.8.2 (aout 2026). NB : versioning renumerote depuis l ancien
+schema V1.x vers V0.0.1 (NG-025) ; un nouveau V1 sera fige a la fin du chantier qualite.
+Source de verite = `package.json`. Details : `PROJECT_MASTER.md`.
 
 > **Document central** : `PROJECT_MASTER.md` au root du repo, a lire en premier
 > pour comprendre l etat du projet, sa roadmap, sa TODO, son workflow.

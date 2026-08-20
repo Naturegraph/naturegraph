@@ -1,21 +1,28 @@
-# Archive des releases Naturegraph
+# Release notes Naturegraph
 
-Chaque version a 2 fichiers :
+Format d'une version (selon les époques) :
 
-- `V[X.Y.Z]_TECHNICAL.md` : note technique interne (audit, debug, tracabilite)
-- `V[X.Y.Z]_USER.md` : note user-friendly (notif in-app, Discord, mail)
+- récent : un seul fichier `V[X.Y.Z].md`
+- ancien : `V[X.Y.Z]_TECHNICAL.md` (interne) + `V[X.Y.Z]_USER.md` (user-friendly)
 
-Process complet dans `../RELEASE_PROCESS.md`.
+Process complet dans `../RELEASE_PROCESS.md`. Convention de versions : `../VERSIONING.md`.
 
-## Versions
+## Versions récentes (schéma V0.x actuel)
 
-| Version                       | Date       | Type  | Resume                                                                                          |
-| ----------------------------- | ---------- | ----- | ----------------------------------------------------------------------------------------------- |
-| [V0.0.1](V0.0.1_TECHNICAL.md) | 2026-06-17 | BASE  | Renumerotation officielle 1.2.25 -> 0.0.1 (track prelancement public) + norme versioning NG-025 |
-| [V1.1.0](V1.1.0_TECHNICAL.md) | 2026-05-26 | MINOR | BDD taxonomique 45 764 nodes en prod + family fallback + 8 categories + footer legal partout    |
-| [V1.0.5](V1.0.5_TECHNICAL.md) | 2026-05-26 | PATCH | Attribution iNat (legal compliance) + nouvelle BDD taxonomy_nodes (43 823 nodes seedes)         |
-| [V1.0.4](V1.0.4_TECHNICAL.md) | 2026-05-26 | PATCH | Hotfix critique OTP (refresh manuel obligatoire) + security overrides Dependabot                |
-| [V1.0.3](V1.0.3_TECHNICAL.md) | 2026-05-25 | PATCH | Supabase Pro Phase B (lockdown securite + cleanup DB + Realtime) + fix bug claim beta key       |
-| [V1.0.2](V1.0.2_TECHNICAL.md) | 2026-05-25 | PATCH | Fix UX navigation, Landing protegee par PublicRoute (back button mobile)                        |
-| [V1.0.1](V1.0.1_TECHNICAL.md) | 2026-05-25 | PATCH | Admin only, motivation waitlist visible en entier + lien code Claire                            |
-| [V1.0.0](V1.0.0_TECHNICAL.md) | 2026-05-25 | MAJOR | Premiere version officielle stable, cleanup documentation complet                               |
+| Version             | Date    | Note                                                       |
+| ------------------- | ------- | ---------------------------------------------------------- |
+| [V0.8.2](V0.8.2.md) | 2026-08 | Échanges (réactions/actions) + filtre « demandes d'aide »  |
+| [V0.8.1](V0.8.1.md) | 2026-08 | Réponses aux réponses (échanges) + compteur journal profil |
+| [V0.8.0](V0.8.0.md) | 2026-08 | Voir la note                                               |
+
+> Historique lié : `NOTIFICATIONS_HISTORY.md` (notifications in-app envoyées).
+
+## Historique complet
+
+Toutes les versions antérieures à V0.8 (V0.0.x → V0.7.x) **et** les versions de
+l'ancien schéma legacy (V1.0.x → V1.2.x, avant la renumérotation NG-025) sont dans
+[`archive/`](archive/).
+
+> Rappel versioning (NG-025) : la prod a été renumérotée de `V1.x` (mai 2026) vers
+> `V0.0.1`, puis a progressé jusqu'à V0.8.2. Un **nouveau V1** sera défini à la fin
+> du chantier qualité. Cf. `../../../PROJECT_MASTER.md`.

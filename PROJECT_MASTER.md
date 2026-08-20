@@ -4,19 +4,19 @@
 > compris en arrivant sur le repo est ici, ou pointé depuis ici.
 > Mis à jour à chaque release.
 
-**Version actuelle** : V1.1.0
-**Date de stabilisation** : 2026-05-25 (V1.0.0) : derniere release 2026-05-26 (V1.1.0)
-**Statut** : Beta privée Québec + France, BDD taxonomique complete (45 764 nodes) + family fallback
+**Version actuelle** : **V0.8.2** (source de verite = `package.json`), aout 2026.
+**Statut** : accès **ouvert à tous** (plus de gate beta depuis NG-029), Québec + France,
+BDD taxonomique complete (45 764 nodes) + family fallback.
 
-**Historique recent** :
+> ⚠️ **Note versioning (NG-025)** : la prod a été **renumérotée** de l'ancien schéma
+> `V1.x` (mai 2026) vers `V0.0.1`, puis a progressé jusqu'à **V0.8.2**. Les mentions
+> `V1.0.x` / `V1.1.0` / `V1.2.x` plus bas dans ce document appartiennent à l'**ancien
+> schéma legacy** (leurs notes sont archivées dans `docs/devops/releases/archive/`).
+> L'historique courant est dans `docs/devops/releases/` (V0.8.x visibles).
+> Un **nouveau V1** sera défini à la fin du chantier qualité (`docs/devops/CHANTIER_QUALITE_CODE.md`).
+> Ce document reste à réharmoniser en profondeur (tâche tracée, Registre A du chantier).
 
-- V1.1.0 (2026-05-26) : BDD taxonomique en prod + family fallback + 8 categories + footer legal partout
-- V1.0.5 (2026-05-26) : attribution iNat (legal) + nouvelle BDD taxonomy_nodes 43 823 nodes + RPC search_taxonomy
-- V1.0.4 (2026-05-26) : hotfix critique OTP refresh + lockdown SSRF + 8 vulns Dependabot + cleanup GitHub
-- V1.0.3 (2026-05-25) : Supabase Pro Phase B (security DEFINER lockdown + pg_cron + Realtime + fix bug claim beta)
-- V1.0.2 (2026-05-25) : fix navigation mobile (PublicRoute sur Landing)
-- V1.0.1 (2026-05-25) : admin fix motivation waitlist + security route /post
-- V1.0.0 (2026-05-25) : premiere version officielle stable
+**Historique récent (schéma V0.x actuel)** : voir `docs/devops/releases/` (V0.8.0 → V0.8.2).
 
 ---
 

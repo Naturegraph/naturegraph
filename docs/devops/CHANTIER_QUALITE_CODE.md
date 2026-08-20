@@ -55,12 +55,12 @@ par dossier avant clôture du chantier.
 
 ---
 
-## Lot 0 — Nettoyage beta (AdminBeta) — EN COURS
+## Lot 0 — Nettoyage beta (AdminBeta) — FAIT sur `develop`
 
 Détail complet : `PLAN_DEMANTELEMENT_BETA.md`. Retrait d'AdminBeta (1671 l., inutilisé)
-
-- 3 fonctions `betaService` orphelines. Gate + flag `OPEN_ACCESS_ENABLED` **conservés**
-  (interrupteur réversible, décision Nicolas). Risque faible, zéro impact utilisateur.
+et de 3 fonctions `betaService` orphelines. Gate + flag `OPEN_ACCESS_ENABLED`
+**conservés** (interrupteur réversible, décision Nicolas). Risque faible, zéro impact
+utilisateur. Build/lint/test (148/148)/knip verts. À grouper dans la prochaine release (G9).
 
 ---
 
