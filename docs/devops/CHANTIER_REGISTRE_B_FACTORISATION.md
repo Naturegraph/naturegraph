@@ -9,7 +9,7 @@
 | #   | Composant                                          | LOC initial | État                                       |
 | --- | -------------------------------------------------- | ----------- | ------------------------------------------ |
 | 1   | `components/home/FeedPost.tsx`                     | 1232        | **EN COURS** (config+chips+méta, → 913 l.) |
-| 2   | `components/contribute/EncounterStep2.tsx`         | 1025        | à faire                                    |
+| 2   | `components/contribute/EncounterStep2.tsx`         | 1025        | **EN COURS** (logique extraite, → 971 l.)  |
 | 3   | `components/home/FeedSection.tsx`                  | 863         | **EN COURS** (mapper extrait, → 640 l.)    |
 | 4   | `components/settings/SettingsPanel.tsx`            | 913         | à faire                                    |
 | 5   | `pages/Admin/AdminModeration.tsx`                  | 1453        | à faire (en dernier, peu exposé)           |
@@ -68,6 +68,16 @@ pour **chaque** bloc :
       Build + tests (177) + lint verts.
 - [ ] Suite FeedSection (tabs, filtres, scroll infini) : à évaluer (surtout du câblage +
       hooks ; découper seulement si un bloc à logique isolable ressort).
+
+## EncounterStep2.tsx — décomposition (en cours)
+
+- [x] **Logique du carnet d'espèces** extraite vers `encounterSpeciesLogic.ts` :
+      `groupConfig`, `groupObservations` (groupement par groupe taxonomique + ordre),
+      `TAXONOMIC_FILTERS`. **1025 → 971 l.** + **7 tests** (`encounterSpeciesLogic.test.ts`).
+      Build + tests (184) + lint verts.
+- [ ] **`SpeciesSearchBar`** (sous-composant inline ~670 l.) : gros gain LOC si extrait dans
+      son propre fichier (déplacement verbatim, filet = build+types). Prochain pas EncounterStep2.
+- [ ] `ObservationRow` (sous-composant) : extractible aussi.
 
 ## Principe (rappel)
 

@@ -25,43 +25,9 @@ import type { Notebook } from '@/services/notebookService'
 import { highlightMatch } from '@/utils/highlightMatch'
 import { Button } from '@/components/ui/Button'
 import { CountStepper } from '@/components/ui/CountStepper'
-import { TAXONOMIC_GROUP_CONFIG } from '@/constants/commonSpecies'
+// Logique pure du carnet d'espèces extraite dans encounterSpeciesLogic.ts (Lot 4).
+import { groupConfig, groupObservations, TAXONOMIC_FILTERS } from './encounterSpeciesLogic'
 import hermineImg from '@/assets/images/hermine-empty-state.png'
-
-/**
- * Emoji + libellé FR d'un groupe taxonomique : strictement aligné sur le
- * rendu de `SearchPanel` côté Home (cohérence design produit demandée par
- * Nicolas 2026-05-21). Source de vérité unique : `TAXONOMIC_GROUP_CONFIG`.
- *
- * Fallback "Autre" (✨) si le groupe est null ou inconnu : évite l'emoji 🌍
- * générique des anciennes maps locales.
- */
-function groupConfig(group: string | null): { emoji: string; label: string } {
-  const key = (group ?? 'other').toLowerCase()
-  return TAXONOMIC_GROUP_CONFIG[key] ?? TAXONOMIC_GROUP_CONFIG.other
-}
-
-/**
- * Regroupe les observations par groupe taxonomique (sections + pill de classe),
- * pour un affichage strictement aligne sur le Carnet d'observations
- * (NotebookSpeciesList). Especes non determinees -> groupe "Autre". L'ordre
- * suit la premiere apparition de chaque groupe.
- */
-function groupObservations(
-  entries: ObservationEntry[],
-): { key: string; label: string; items: ObservationEntry[] }[] {
-  const order: string[] = []
-  const map = new Map<string, { key: string; label: string; items: ObservationEntry[] }>()
-  for (const e of entries) {
-    const key = e.isUnknown || !e.species ? 'other' : e.species.group
-    if (!map.has(key)) {
-      map.set(key, { key, label: groupConfig(key === 'other' ? null : key).label, items: [] })
-      order.push(key)
-    }
-    map.get(key)!.items.push(e)
-  }
-  return order.map((k) => map.get(k)!)
-}
 
 /**
  * Icône catégorie espèce : emoji du groupe dans un cercle violet clair.
@@ -103,28 +69,6 @@ export interface ObservationEntry {
 }
 
 // ─── Sous-composants ──────────────────────────────────────────────────────────
-
-/**
- * Groupes taxonomiques filtrables dans la recherche.
- * Aligné strictement sur `SPECIES_CATEGORIES` du `FeedFilterPanel` :
- * 5 catégories les plus courantes au MVP, sans emoji, pour cohérence
- * stricte produit (cf. second-agent/26 : itération Nicolas 2026-05-01).
- *
- * Les autres groupes (fish, plants, arachnids, mollusks, other) restent
- * supportés côté DB (`TaxonomicGroup`) mais ne sont pas exposés en filtre
- * tant que la masse critique de contributions n'est pas atteinte.
- */
-const TAXONOMIC_FILTERS: { value: TaxonomicGroup; labelKey: string }[] = [
-  { value: 'birds', labelKey: 'taxonomy.birds' },
-  { value: 'mammals', labelKey: 'taxonomy.mammals' },
-  { value: 'insects', labelKey: 'taxonomy.insects' },
-  { value: 'amphibians', labelKey: 'taxonomy.amphibians' },
-  { value: 'reptiles', labelKey: 'taxonomy.reptiles' },
-  // V1.1.0 (Nicolas 2026-05-26) : nouvelles categories suite seed iNat
-  { value: 'arachnids', labelKey: 'taxonomy.arachnids' },
-  { value: 'mollusks', labelKey: 'taxonomy.mollusks' },
-  { value: 'fish', labelKey: 'taxonomy.fish' },
-]
 
 /**
  * Barre de recherche avec autocomplétion + bouton filtre circulaire (Figma 6385-50262).
