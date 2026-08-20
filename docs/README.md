@@ -16,6 +16,7 @@
 - [`devops/monitoring.md`](devops/monitoring.md), logs et alerting (Sentry)
 - [`devops/FORCE_LOGOUT_RUNBOOK.md`](devops/FORCE_LOGOUT_RUNBOOK.md), scripts SQL revoke sessions
 - [`devops/ROLLBACK_OPEN_ACCESS.md`](devops/ROLLBACK_OPEN_ACCESS.md), procedure pour re-fermer l'acces si besoin
+- [`devops/ROLLBACK_URGENCE.md`](devops/ROLLBACK_URGENCE.md), rollback d'urgence apres release (Vercel Instant Rollback + tag prod-stable-\*)
 - [`devops/releases/`](devops/releases/), release notes recentes (historique dans `releases/archive/`)
 
 **Chantier qualite -> V1 (en cours)** :
