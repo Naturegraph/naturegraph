@@ -13,16 +13,7 @@
 import React, { lazy, Suspense, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
-import {
-  Bookmark,
-  BookmarkCheck,
-  Share2,
-  MoreHorizontal,
-  Bird,
-  MountainSnow,
-  Heart,
-  MessageCircle,
-} from 'lucide-react'
+import { Bookmark, BookmarkCheck, Share2, MoreHorizontal, Heart, MessageCircle } from 'lucide-react'
 import { SharePopover } from './SharePopover'
 import { useSavedPostIds, useToggleSavedPost } from '@/hooks/useSavedPosts'
 import { PostOptionsMenu } from './PostOptionsMenu'
@@ -37,6 +28,17 @@ import { buildPostPath } from '@/lib/postSlug'
 import { NotebookCardInFeed } from '@/components/notebook/NotebookCardInFeed'
 import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
 import { RevealableText } from '@/components/ui/RevealableText'
+// Config (emojis, réactions, classes de chips) extraite pour alléger le composant.
+import {
+  REACTION_CONFIG,
+  WEATHER_EMOJI,
+  HABITAT_EMOJI,
+  PHENOMENON_EMOJI,
+  POST_TYPE_ICON,
+  CHIP_BASE_CLASS,
+  CHIP_INTERACTIVE_CLASS,
+  CHIP_PASSIVE_CLASS,
+} from './feedPostConfig'
 
 /**
  * Fil d'Echanges charge a la DEMANDE (NG-049).
@@ -153,116 +155,6 @@ export interface MockPost {
   /** Nombre d'echanges sous la publication (NG-049). */
   comments: number
 }
-
-// ─── Configuration ──────────────────────────────────────────────────────────
-
-/**
- * Source unique des emojis et labels de réactions (second-agent/10).
- * Doit rester alignée avec ReactionType dans @/types/database.
- *
- * Ordre Figma 6385:103293 : love → fire → admire → wow → curious.
- * Emoji curious = 🤨 (Figma) : était 🧐 avant.
- *
- * Note : 'disappointed' (😕) existe encore dans ReactionType côté DB pour
- * compatibilité, mais n'est PLUS dans REACTION_CONFIG (pas dans le Figma).
- * Si un post historique a une réaction 'disappointed' en DB, elle ne sera
- * pas affichée. Quand le backend décidera de la retirer, on supprimera
- * aussi 'disappointed' de ReactionType.
- *
- * Exporté pour réutilisation par d'autres composants (jamais redéfinir un
- * mapping local) : règle d'unification "source de vérité unique".
- */
-export const REACTION_CONFIG = [
-  { key: 'love' as const, emoji: '❤️', labelKey: 'home.post.reactions.love' },
-  { key: 'fire' as const, emoji: '🔥', labelKey: 'home.post.reactions.fire' },
-  { key: 'admire' as const, emoji: '😍', labelKey: 'home.post.reactions.admire' },
-  { key: 'wow' as const, emoji: '😱', labelKey: 'home.post.reactions.wow' },
-  { key: 'curious' as const, emoji: '🤨', labelKey: 'home.post.reactions.curious' },
-]
-
-/**
- * Emojis météo : conformes Figma 6385:55806 (second-agent/05).
- * Source unique : si modifié, mettre à jour aussi EncounterStep3.tsx.
- *
- * Note Figma : pas d'emoji pour le moment de la journée : uniquement le label.
- * Donc TIME_OF_DAY_EMOJI a été retiré pour rester conforme.
- */
-const WEATHER_EMOJI: Record<string, string> = {
-  sunny: '☀️',
-  cloudy: '⛅',
-  rainy: '🌧️',
-  windy: '🌬️',
-  snowy: '🌨️',
-  foggy: '🌫️',
-}
-
-/** Emoji par type d'habitat : affiche en premier dans la rangee meta du post. */
-const HABITAT_EMOJI: Record<string, string> = {
-  forest: '🌳',
-  park_garden: '🌷',
-  prairie_heath: '🌾',
-  urban: '🏙️',
-  river: '🏞️',
-  lake_pond: '💧',
-  wetland_marsh: '🪷',
-  lake_wetland: '💧',
-  mountain: '⛰️',
-  sea_coast: '🌊',
-  rural_agricultural: '🚜',
-  care_center: '🏥',
-}
-
-/**
- * NG-055 : emoji par phénomène (posts Instant). Clé = label FR stocké dans
- * `posts.tags[0]`. Doit rester aligné avec PHENOMENON_OPTIONS de
- * ContributeInstantPanel. Si un label est absent (post ancien / tag libre),
- * on affiche le label sans emoji (fallback silencieux).
- */
-const PHENOMENON_EMOJI: Record<string, string> = {
-  'Coucher / lever de soleil': '🌅',
-  'Pleine lune': '🌕',
-  'Arc-en-ciel': '🌈',
-  Marée: '🌊',
-  Glace: '❄️',
-  'Aurore boréale': '🌌',
-  Tempête: '🌪️',
-  Foudre: '⚡',
-  'Feu de forêt': '🔥',
-  Éclipse: '🌒',
-  Comète: '☄️',
-  'Éruption volcanique': '🌋',
-}
-
-/**
- * Icône d'en-tête + couleur par type de post (règle globale projet).
- * Voir second-agent/04-feedpost-icon-color-by-type.md.
- *   · nature_encounter → Bird teal/vert (token --color-highlight-primary)
- *   · nature_instant   → MountainSnow amber/orange (#cc7a00)
- */
-const POST_TYPE_ICON: Record<MockPost['postType'], { Icon: typeof Bird; colorClass: string }> = {
-  nature_encounter: {
-    Icon: Bird,
-    colorClass: 'text-[var(--color-highlight-primary)]',
-  },
-  nature_instant: {
-    Icon: MountainSnow,
-    // Amber brand primary : token CSS (BATCH 42).
-    colorClass: 'text-[var(--color-amber-primary)]',
-  },
-}
-
-// Tailwind du chip Figma (node 6385:60456) : bg Content/Action/Light, h-32,
-// px-12 py-8, rounded-99, Mulish Bold 16px. Réutilisé pour catégorie + espèce.
-const CHIP_BASE_CLASS =
-  'bg-primary-light text-foreground text-base font-bold px-3 py-2 h-8 rounded-full leading-tight inline-flex items-center gap-2'
-const CHIP_INTERACTIVE_CLASS =
-  'hover:bg-primary/15 transition-colors cursor-pointer ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1'
-// Variante neutre : utilisée pour "Espèce non déterminée" qui n'est PAS un filtre
-// activable. Garde la hauteur/forme pour rester aligné avec les chips voisins,
-// mais retire le langage "bouton" (fond plein, texte gras).
-const CHIP_PASSIVE_CLASS =
-  'bg-transparent border border-border text-muted-foreground text-base font-medium px-3 py-2 h-8 rounded-full leading-tight inline-flex items-center gap-2'
 
 interface FeedPostProps extends MockPost {
   /** true = utilisateur connecté : boutons actifs. false = redirige /signup */
