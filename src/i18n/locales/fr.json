@@ -638,7 +638,8 @@
       "thisWeek": "Cette semaine",
       "thisMonth": "Ce mois-ci",
       "thisQuarter": "Ce trimestre",
-      "observationCount": "{{count}} observations"
+      "observationCount_one": "{{count}} observation",
+      "observationCount_other": "{{count}} observations"
     },
     "search": {
       "title": "Recherche",

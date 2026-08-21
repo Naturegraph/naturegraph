@@ -14,7 +14,7 @@
  *
  * Eco-conception :
  *  - Pagination 50 cote serveur (raisonnable pour une liste de masquages)
- *  - Lazy load des images via OptimizedImage avec preset thumbnail
+ *  - Lazy load des images (loading="lazy") + transformation Supabase preset thumbnail (ImagePresets.thumbnail)
  *  - Pas de scroll infini, pagination explicite si > 50 (rare)
  *
  * A11y :
