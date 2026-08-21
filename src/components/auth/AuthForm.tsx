@@ -24,6 +24,7 @@ import { Logo } from './Logo'
 import { AuthInput } from './AuthInput'
 import { SocialButton } from './SocialButton'
 import { AuthHeroPhoto } from './AuthHeroPhoto'
+import { DevQuickLogin } from './DevQuickLogin'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -270,6 +271,9 @@ export function AuthForm({
             </div>
           )}
         </form>
+
+        {/* Connexion rapide DEV (ne rend rien en prod, cf. DevQuickLogin). */}
+        <DevQuickLogin />
 
         {/*
           ⚠️ BETA : OAuth providers caches (BATCH 49, decision Nicolas 2026-05-14)
