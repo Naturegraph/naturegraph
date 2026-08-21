@@ -17,44 +17,9 @@
  *   - Liste : card border 0.5px, items au hover bg-primary-light + text-[var(--color-link)]
  *   - Item sélectionné : bg-primary-light + text-[var(--color-link)] persistant
  *
- * TODO [BACKEND] Phase 2 : voir second-agent/03-profil-backend-notes.md §15
- *
- *   ## Soumission du formulaire
- *
- *   Option A (recommandée MVP) : Discord webhook :
- *     - Edge Function `submit_help_request(subject, message)` qui POST sur
- *       l'URL d'un webhook Discord configuré côté secrets
- *     - Avantage : pas de DB, pas de service email, déploiement instantané
- *     - L'équipe répond directement dans Discord à l'utilisateur
- *
- *   Option B (Phase 3) : Table support_tickets :
- *     CREATE TABLE support_tickets (
- *       id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
- *       user_id     UUID REFERENCES profiles(id) ON DELETE SET NULL,
- *       subject     TEXT NOT NULL CHECK (subject IN ('technical','help',
- *                       'suggestion','report','other')),
- *       message     TEXT NOT NULL,
- *       status      TEXT NOT NULL DEFAULT 'new'
- *                       CHECK (status IN ('new','in_progress','resolved','closed')),
- *       email_sent  BOOLEAN NOT NULL DEFAULT FALSE,
- *       created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
- *       resolved_at TIMESTAMPTZ
- *     );
- *     -- Email transactionnel (Resend) à support@naturegraph.ca + accusé user
- *     -- ⚠️ Pendant la beta : utiliser support@naturegraph.ca (cf src/constants/contact.ts).
- *     -- Migrer vers support@naturegraph.ca quand le domaine sera transféré côté Hostinger.
- *     -- RLS : user peut SELECT ses propres tickets (transparence RGPD)
- *
- *   ## Validation côté serveur (Edge Function)
- *
- *   - Anti-spam : limit 3 messages / 24h / user (cooldown)
- *   - Sanitize message (DOMPurify ou markdown only : pas de HTML brut)
- *   - Min message length : 20 caractères
- *
- *   ## i18n (clés à ajouter)
- *
- *   - settings.help.title, intro, subjectLabel, subjectPlaceholder, messageLabel,
- *     subjects.* (technical, help, suggestion, report, other), send
+ * Soumission : le formulaire envoie via `supportService.submitHelpRequest`
+ * (INSERT dans la table `support_tickets`, RLS user-own ; anti-spam + sanitize
+ * côté service/DB). Un relais Discord reste optionnel (Phase 2).
  */
 
 import { useEffect, useRef, useState } from 'react'

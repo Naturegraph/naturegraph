@@ -57,3 +57,9 @@ scripts/.taxonomy-seed-cache/
 # Artefact genere par scripts/run-dev-rebuild.mjs (dump dev, regenerable, ~360K)
 # Ne pas versionner : il se regenere lors de la reprise du rebuild dev (NG-007).
 scripts/dev-rebuild.sql
+
+# NG-007 : gros SQL generes localement (rebuild dev), non versionnes
+scripts/dev-rebuild.sql
+scripts/dev-rebuild-full.sql
+scripts/chunks/
+supabase/prod_schema.sql

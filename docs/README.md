@@ -7,11 +7,22 @@
 
 ### Devops
 
+- [`devops/PIPELINE_DEV.md`](devops/PIPELINE_DEV.md), pipeline officiel a portes de validation (G0->G10, un role par porte)
+- [`devops/environments.md`](devops/environments.md), config dev / staging / prod (2 bases Supabase separees, NG-007)
+- [`devops/SUPABASE_DEV_PARITY_RUNBOOK.md`](devops/SUPABASE_DEV_PARITY_RUNBOOK.md), rebuild + seed de la base DEV
 - [`devops/RELEASE_PROCESS.md`](devops/RELEASE_PROCESS.md), workflow release + template release note
-- [`devops/FORCE_LOGOUT_RUNBOOK.md`](devops/FORCE_LOGOUT_RUNBOOK.md), scripts SQL revoke sessions
+- [`devops/VERSIONING.md`](devops/VERSIONING.md), convention de versions
 - [`devops/deployment.md`](devops/deployment.md), procedure deploiement Vercel
-- [`devops/environments.md`](devops/environments.md), config dev / staging / prod
-- [`devops/monitoring.md`](devops/monitoring.md), logs et alerting
+- [`devops/monitoring.md`](devops/monitoring.md), logs et alerting (Sentry)
+- [`devops/FORCE_LOGOUT_RUNBOOK.md`](devops/FORCE_LOGOUT_RUNBOOK.md), scripts SQL revoke sessions
+- [`devops/ROLLBACK_OPEN_ACCESS.md`](devops/ROLLBACK_OPEN_ACCESS.md), procedure pour re-fermer l'acces si besoin
+- [`devops/ROLLBACK_URGENCE.md`](devops/ROLLBACK_URGENCE.md), rollback d'urgence apres release (Vercel Instant Rollback + tag prod-stable-\*)
+- [`devops/releases/`](devops/releases/), release notes recentes (historique dans `releases/archive/`)
+
+**Chantier qualite -> V1 (en cours)** :
+
+- [`devops/CHANTIER_QUALITE_CODE.md`](devops/CHANTIER_QUALITE_CODE.md), plan maitre (lots + registres, cap V1)
+- [`devops/PLAN_DEMANTELEMENT_BETA.md`](devops/PLAN_DEMANTELEMENT_BETA.md), Lot 0 (retrait AdminBeta)
 
 ### Security
 
@@ -72,6 +83,11 @@
 - [`PRD_LOCALIZATION.md`](PRD_LOCALIZATION.md), specs localisation + autocomplete villes
 - [`PRD_SPECIES_DATABASE.md`](PRD_SPECIES_DATABASE.md), specs base especes + taxonomie
 - [`PRD_IDENTIFICATIONS_COLLABORATIVE.md`](PRD_IDENTIFICATIONS_COLLABORATIVE.md), specs identification collaborative
+
+### Archive
+
+- [`_archive/`](_archive/), documents historiques non maintenus (prelancement, vieux audits).
+- [`devops/releases/archive/`](devops/releases/archive/), release notes anterieures a V0.8.
 
 ---
 

@@ -22,7 +22,7 @@ import {
   Bell,
 } from 'lucide-react'
 import type { Notification, NotificationType } from '@/services/notificationService'
-import { REACTION_CONFIG } from '@/components/home/FeedPost'
+import { REACTION_CONFIG } from '@/components/home/feedPostConfig'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 
 // ─── Icône par type ───────────────────────────────────────────────────────────

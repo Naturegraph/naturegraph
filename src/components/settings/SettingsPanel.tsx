@@ -19,8 +19,6 @@
  *   7. Supprimer compte   → modal confirmation (DeleteAccountModal)
  *
  * Footer : CGU + Politique de confidentialité + version app.
- *
- * TODO [BACKEND] Phase 2 : voir second-agent/03-profil-backend-notes.md §15.
  */
 
 import { useEffect, useRef, useState } from 'react'

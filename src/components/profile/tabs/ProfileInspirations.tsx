@@ -12,8 +12,8 @@
  *
  * État vide : card hermine + titre/sous-titre, même style que ProfileFeed.
  *
- * TODO [BACKEND] : Remplacer par savedPostService.getSavedPostsByUser(userId).
- *   Schéma : `saved_posts (user_id, post_id, created_at)` + JOIN sur `posts`.
+ * Données réelles : le parent fournit `savedPosts` via savedPostsService
+ * (table `saved_posts` + JOIN sur `posts`).
  */
 
 import { useTranslation } from 'react-i18next'

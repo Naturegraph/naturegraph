@@ -6,11 +6,8 @@
  *
  * Type de post créé : 'nature_instant'
  *
- * TODO [BACKEND] : Brancher la création de post :
- *   1. Upload médias → Supabase Storage bucket 'post-media'
- *      supabase.storage.from('post-media').upload(path, file)
- *   2. Insérer le post → table 'posts' via postService.createPost()
- *   3. Invalider le cache : queryClient.invalidateQueries({ queryKey: ['feed'] })
+ * Création : upload médias (processMediaForUpload -> uploadPostMedia, bucket
+ * 'post-media') puis insertion via useCreatePost, et invalidation du cache feed.
  */
 
 import { useState } from 'react'

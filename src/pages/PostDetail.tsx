@@ -43,7 +43,7 @@ import {
   getUserReactions,
   getReactionsBreakdown,
 } from '@/services/postService'
-import { postFeedItemToMockPost } from '@/components/home/FeedSection'
+import { postFeedItemToMockPost } from '@/components/home/feedPostMapper'
 import { extractPostId } from '@/lib/postSlug'
 import { HomeNavbar } from '@/components/home/HomeNavbar'
 import { MobileNavLayer } from '@/components/home/MobileNavLayer'

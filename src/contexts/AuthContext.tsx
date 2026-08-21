@@ -693,6 +693,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return 'Une erreur est survenue. Réessaie plus tard.'
   }
 
+  // Messages Supabase quand on (re)demande un code trop vite ("For security
+  // purposes, you can only request this after 21 seconds", "email rate limit
+  // exceeded"...). C'est de l'ANTI-ABUS NORMAL, pas une panne : on ne le remonte
+  // PAS a Sentry (bruit), on renvoie juste un message clair a l'utilisateur.
+  function estThrottleOtpAttendu(message: string): boolean {
+    const m = message.toLowerCase()
+    return (
+      m.includes('only request this after') ||
+      m.includes('for security purposes') ||
+      m.includes('rate limit') ||
+      m.includes('too many requests')
+    )
+  }
+
+  // Reprend le nombre de secondes du message serveur ("...after 21 seconds.")
+  // pour une consigne actionnable ; repli generique s'il est absent.
+  function messageAttenteOtp(message: string): string {
+    const s = message.match(/after (\d+)\s*second/i)?.[1]
+    return s
+      ? `Attends ${s} secondes avant de renvoyer un code.`
+      : 'Attends un instant avant de renvoyer un code.'
+  }
+
   // ─── Magic link OTP signup/login ─────────────────────────────────────────
   async function signUp(emailOrPhone: string): Promise<SignUpResult> {
     if (!supabase)
@@ -709,12 +732,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
+    // Throttle client pose AVANT l'appel reseau : un 2e clic rapide (double-tap)
+    // est alors bloque cote client au lieu de taper le rate-limit serveur (429).
+    // Le cooldown client (30 s) couvre le cooldown serveur (~21 s).
+    lastOtpSentAtRef.current = now
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email: emailOrPhone,
         options: { shouldCreateUser: true },
       })
       if (error) {
+        // Rate-limit attendu (demande trop rapprochee) : message clair, pas de
+        // Sentry, et on GARDE le throttle pose (l'utilisateur doit patienter).
+        if (estThrottleOtpAttendu(error.message)) {
+          return {
+            success: false,
+            requiresVerification: false,
+            error: messageAttenteOtp(error.message),
+          }
+        }
+        // Vraie erreur : on relache le throttle (retour possible) et on la trace.
+        lastOtpSentAtRef.current = 0
         trackFailure('auth.otp.send', error.message.slice(0, 80))
         return {
           success: false,
@@ -722,9 +760,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           error: sanitizeAuthError(error.message),
         }
       }
-      lastOtpSentAtRef.current = Date.now()
       return { success: true, requiresVerification: true }
     } catch {
+      lastOtpSentAtRef.current = 0
       trackFailure('auth.otp.send', 'exception')
       return {
         success: false,
@@ -766,13 +804,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Pose le choix "Se souvenir de moi" AVANT que la session soit créée
     setRememberMe(remember)
 
+    // Throttle pose AVANT l'appel (cf. signUp) : bloque le double-clic cote client
+    // au lieu de laisser le 2e envoi taper le rate-limit serveur (429).
+    lastOtpSentAtRef.current = now
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { shouldCreateUser: true },
     })
-    if (!error) lastOtpSentAtRef.current = Date.now()
-    else trackFailure('auth.otp.send', error.message.slice(0, 80))
-    return { error: error ? new Error(sanitizeAuthError(error.message)) : null }
+    if (error) {
+      // Rate-limit attendu (demande trop rapprochee) : message clair, pas de
+      // Sentry, throttle conserve.
+      if (estThrottleOtpAttendu(error.message)) {
+        return { error: new Error(messageAttenteOtp(error.message)) }
+      }
+      // Vraie erreur : on relache le throttle (retour possible) et on la trace.
+      lastOtpSentAtRef.current = 0
+      trackFailure('auth.otp.send', error.message.slice(0, 80))
+      return { error: new Error(sanitizeAuthError(error.message)) }
+    }
+    return { error: null }
   }
 
   // ─── OAuth social (stub) ─────────────────────────────────────────────────

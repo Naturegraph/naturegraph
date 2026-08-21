@@ -15,13 +15,11 @@
  *   - Escape pour fermer
  *   - Focus sur le premier item à l'ouverture
  *
- * Actions fonctionnelles :
+ * Actions fonctionnelles (toutes câblées) :
  *   - Copier le lien : Clipboard API + feedback visuel 2s
- *
- * Actions TODO [BACKEND] :
- *   - Unfollow, Favoris, Masquer, Signaler → endpoints dédiés
- *   - Supprimer → DELETE /posts/:id (avec confirmation)
- *   - Modifier  → navigate('/contribute/edit/:id')
+ *   - Suivre/Ne plus suivre, Favoris, Masquer l'user, Masquer la publication,
+ *     Signaler, Supprimer, Modifier : persistées via mutations/services dédiés
+ *     (détail sur `handleTodo` plus bas).
  */
 
 import { useEffect, useRef, useState } from 'react'
@@ -244,9 +242,8 @@ export function PostOptionsMenu({
   //   au lieu de createPost. Les RLS posts UPDATE filtrent par user_id.
 
   /**
-   * Suppression du post
-   * TODO [BACKEND] : appeler postService.deletePost(postId)
-   * puis invalider le cache TanStack Query ['feed']
+   * Suppression du post : délègue au parent via onDelete si fourni, sinon ouvre
+   * la modale de confirmation (qui appelle postService.deletePost + invalide le feed).
    */
   function handleDelete() {
     if (onDelete) {

@@ -13,16 +13,7 @@
 import React, { lazy, Suspense, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
-import {
-  Bookmark,
-  BookmarkCheck,
-  Share2,
-  MoreHorizontal,
-  Bird,
-  MountainSnow,
-  Heart,
-  MessageCircle,
-} from 'lucide-react'
+import { Bookmark, BookmarkCheck, Share2, MoreHorizontal, Heart, MessageCircle } from 'lucide-react'
 import { SharePopover } from './SharePopover'
 import { useSavedPostIds, useToggleSavedPost } from '@/hooks/useSavedPosts'
 import { PostOptionsMenu } from './PostOptionsMenu'
@@ -31,12 +22,13 @@ import hermineIcon from '@/assets/images/hermine-icon.png'
 
 import { ImagePresets } from '@/lib/supabaseImage'
 import type { ReactionType } from '@/types/database'
-import { useSpecies } from '@/contexts/SpeciesContext'
-import { TAXONOMIC_GROUP_CONFIG } from '@/constants/commonSpecies'
 import { buildPostPath } from '@/lib/postSlug'
 import { NotebookCardInFeed } from '@/components/notebook/NotebookCardInFeed'
 import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
-import { RevealableText } from '@/components/ui/RevealableText'
+import { FeedPostSpeciesChips } from './FeedPostSpeciesChips'
+import { FeedPostMeta } from './FeedPostMeta'
+// Config (réactions, icône par type) extraite pour alléger le composant.
+import { REACTION_CONFIG, POST_TYPE_ICON } from './feedPostConfig'
 
 /**
  * Fil d'Echanges charge a la DEMANDE (NG-049).
@@ -153,116 +145,6 @@ export interface MockPost {
   /** Nombre d'echanges sous la publication (NG-049). */
   comments: number
 }
-
-// ─── Configuration ──────────────────────────────────────────────────────────
-
-/**
- * Source unique des emojis et labels de réactions (second-agent/10).
- * Doit rester alignée avec ReactionType dans @/types/database.
- *
- * Ordre Figma 6385:103293 : love → fire → admire → wow → curious.
- * Emoji curious = 🤨 (Figma) : était 🧐 avant.
- *
- * Note : 'disappointed' (😕) existe encore dans ReactionType côté DB pour
- * compatibilité, mais n'est PLUS dans REACTION_CONFIG (pas dans le Figma).
- * Si un post historique a une réaction 'disappointed' en DB, elle ne sera
- * pas affichée. Quand le backend décidera de la retirer, on supprimera
- * aussi 'disappointed' de ReactionType.
- *
- * Exporté pour réutilisation par d'autres composants (jamais redéfinir un
- * mapping local) : règle d'unification "source de vérité unique".
- */
-export const REACTION_CONFIG = [
-  { key: 'love' as const, emoji: '❤️', labelKey: 'home.post.reactions.love' },
-  { key: 'fire' as const, emoji: '🔥', labelKey: 'home.post.reactions.fire' },
-  { key: 'admire' as const, emoji: '😍', labelKey: 'home.post.reactions.admire' },
-  { key: 'wow' as const, emoji: '😱', labelKey: 'home.post.reactions.wow' },
-  { key: 'curious' as const, emoji: '🤨', labelKey: 'home.post.reactions.curious' },
-]
-
-/**
- * Emojis météo : conformes Figma 6385:55806 (second-agent/05).
- * Source unique : si modifié, mettre à jour aussi EncounterStep3.tsx.
- *
- * Note Figma : pas d'emoji pour le moment de la journée : uniquement le label.
- * Donc TIME_OF_DAY_EMOJI a été retiré pour rester conforme.
- */
-const WEATHER_EMOJI: Record<string, string> = {
-  sunny: '☀️',
-  cloudy: '⛅',
-  rainy: '🌧️',
-  windy: '🌬️',
-  snowy: '🌨️',
-  foggy: '🌫️',
-}
-
-/** Emoji par type d'habitat : affiche en premier dans la rangee meta du post. */
-const HABITAT_EMOJI: Record<string, string> = {
-  forest: '🌳',
-  park_garden: '🌷',
-  prairie_heath: '🌾',
-  urban: '🏙️',
-  river: '🏞️',
-  lake_pond: '💧',
-  wetland_marsh: '🪷',
-  lake_wetland: '💧',
-  mountain: '⛰️',
-  sea_coast: '🌊',
-  rural_agricultural: '🚜',
-  care_center: '🏥',
-}
-
-/**
- * NG-055 : emoji par phénomène (posts Instant). Clé = label FR stocké dans
- * `posts.tags[0]`. Doit rester aligné avec PHENOMENON_OPTIONS de
- * ContributeInstantPanel. Si un label est absent (post ancien / tag libre),
- * on affiche le label sans emoji (fallback silencieux).
- */
-const PHENOMENON_EMOJI: Record<string, string> = {
-  'Coucher / lever de soleil': '🌅',
-  'Pleine lune': '🌕',
-  'Arc-en-ciel': '🌈',
-  Marée: '🌊',
-  Glace: '❄️',
-  'Aurore boréale': '🌌',
-  Tempête: '🌪️',
-  Foudre: '⚡',
-  'Feu de forêt': '🔥',
-  Éclipse: '🌒',
-  Comète: '☄️',
-  'Éruption volcanique': '🌋',
-}
-
-/**
- * Icône d'en-tête + couleur par type de post (règle globale projet).
- * Voir second-agent/04-feedpost-icon-color-by-type.md.
- *   · nature_encounter → Bird teal/vert (token --color-highlight-primary)
- *   · nature_instant   → MountainSnow amber/orange (#cc7a00)
- */
-const POST_TYPE_ICON: Record<MockPost['postType'], { Icon: typeof Bird; colorClass: string }> = {
-  nature_encounter: {
-    Icon: Bird,
-    colorClass: 'text-[var(--color-highlight-primary)]',
-  },
-  nature_instant: {
-    Icon: MountainSnow,
-    // Amber brand primary : token CSS (BATCH 42).
-    colorClass: 'text-[var(--color-amber-primary)]',
-  },
-}
-
-// Tailwind du chip Figma (node 6385:60456) : bg Content/Action/Light, h-32,
-// px-12 py-8, rounded-99, Mulish Bold 16px. Réutilisé pour catégorie + espèce.
-const CHIP_BASE_CLASS =
-  'bg-primary-light text-foreground text-base font-bold px-3 py-2 h-8 rounded-full leading-tight inline-flex items-center gap-2'
-const CHIP_INTERACTIVE_CLASS =
-  'hover:bg-primary/15 transition-colors cursor-pointer ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1'
-// Variante neutre : utilisée pour "Espèce non déterminée" qui n'est PAS un filtre
-// activable. Garde la hauteur/forme pour rester aligné avec les chips voisins,
-// mais retire le langage "bouton" (fond plein, texte gras).
-const CHIP_PASSIVE_CLASS =
-  'bg-transparent border border-border text-muted-foreground text-base font-medium px-3 py-2 h-8 rounded-full leading-tight inline-flex items-center gap-2'
 
 interface FeedPostProps extends MockPost {
   /** true = utilisateur connecté : boutons actifs. false = redirige /signup */
@@ -381,7 +263,6 @@ export function FeedPost({
    * brancher et renvoie l'utilisateur ailleurs pour une action identique.
    */
   const [echangesOuverts, setEchangesOuverts] = useState(echangesOuvertsParDefaut)
-  const { setActiveSpecies } = useSpecies()
   const [isExpanded, setIsExpanded] = useState(false)
   const [showOptions, setShowOptions] = useState(false)
   const [showReactionPicker, setShowReactionPicker] = useState(false)
@@ -665,105 +546,16 @@ export function FeedPost({
           </div>
         )}
 
-        {/* Habitat / météo / moment : ordre demandé Nicolas 2026-05-04 :
-            1. Habitat (en premier si renseigné)
-            2. Météo (avec emoji)
-            3. Moment de la journée
-            Bloc séparé du titre/description : reste affiché même si l'utilisateur
-            n'a pas renseigné de titre/description (collapse propre du bloc texte). */}
-        {(() => {
-          const labelHabitat = habitat
-            ? t(`contribute.habitat.${habitat}`, { defaultValue: habitat })
-            : null
-          const emojiHabitat = habitat ? HABITAT_EMOJI[habitat] : null
-
-          const labelWeather = weather
-            ? t(`contribute.weather.${weather}`, { defaultValue: weather })
-            : null
-          const emojiWeather = weather ? WEATHER_EMOJI[weather] : null
-
-          const labelTimeOfDay = timeOfDay
-            ? t(`contribute.date.${timeOfDay}`, { defaultValue: timeOfDay })
-            : null
-
-          const labelClouds = clouds || null
-
-          // NG-055 : phénomène (posts Instant) en TÊTE de la rangée méta.
-          // Les posts Instant n'ont pas d'habitat : le phénomène prend sa place.
-          const emojiPhenomenon = phenomenon ? (PHENOMENON_EMOJI[phenomenon] ?? null) : null
-
-          // Construire le pipeline de segments dans l'ordre demandé.
-          // NG-055 (Nicolas 2026-08-05) : la rangée tient TOUJOURS sur une seule
-          // ligne. Le conteneur est un bloc `whitespace-nowrap overflow-hidden
-          // text-ellipsis` (pas un flex, sinon l'ellipsis « … » ne s'applique
-          // pas). Les libellés complets restent affichés tant qu'ils rentrent
-          // (cas majoritaire) ; seul l'excédent est coupé par « … », en
-          // commençant par la fin (le moment de la journée, le moins critique).
-          // Segments en inline (pas inline-flex) pour un rendu texte continu.
-          const segments: React.ReactNode[] = []
-          if (phenomenon) {
-            segments.push(
-              <span key="phenomenon">
-                {emojiPhenomenon && (
-                  <span aria-hidden="true" className="mr-1">
-                    {emojiPhenomenon}
-                  </span>
-                )}
-                {phenomenon}
-              </span>,
-            )
-          }
-          if (labelHabitat) {
-            segments.push(
-              <span key="habitat">
-                {emojiHabitat && (
-                  <span aria-hidden="true" className="mr-1">
-                    {emojiHabitat}
-                  </span>
-                )}
-                {labelHabitat}
-              </span>,
-            )
-          }
-          if (labelWeather) {
-            segments.push(
-              <span key="weather">
-                {emojiWeather && (
-                  <span aria-hidden="true" className="mr-1">
-                    {emojiWeather}
-                  </span>
-                )}
-                {labelWeather}
-              </span>,
-            )
-          }
-          if (labelClouds) {
-            segments.push(<span key="clouds">{labelClouds}</span>)
-          }
-          if (labelTimeOfDay) {
-            segments.push(<span key="time">{labelTimeOfDay}</span>)
-          }
-
-          if (segments.length === 0) return null
-
-          // Bloc mono-ligne avec ellipsis (cf commentaire ci-dessus). `min-w-0`
-          // garantit que le bloc peut rétrécir sous la largeur de son contenu
-          // pour déclencher la coupe, même imbriqué dans un parent flex.
-          return (
-            <div className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-sm text-foreground">
-              {segments.map((seg, i) => (
-                <React.Fragment key={i}>
-                  {i > 0 && (
-                    <span aria-hidden="true" className="mx-1 text-xs text-muted-foreground">
-                      •
-                    </span>
-                  )}
-                  {seg}
-                </React.Fragment>
-              ))}
-            </div>
-          )
-        })()}
+        {/* Rangée méta (habitat / météo / moment / nuages / phénomène). Ordre et
+            règles dans feedPostMetaLogic.ts ; rendu dans FeedPostMeta. Reste affichée
+            même sans titre/description (collapse propre du bloc texte). */}
+        <FeedPostMeta
+          weather={weather}
+          clouds={clouds}
+          timeOfDay={timeOfDay}
+          habitat={habitat}
+          phenomenon={phenomenon}
+        />
 
         {/*
          * Chips catégorie + espèce : règle Nicolas 2026-05-01 :
@@ -813,126 +605,15 @@ export function FeedPost({
             carnet, OU carnet retombe a <=1 espece). */}
         {postType !== 'nature_instant' &&
           !(NOTEBOOKS_ENABLED && notebookId && (notebookSpeciesCount ?? 2) > 1) && (
-            // nowrap : categorie + espece restent sur UNE ligne (l'espece se tronque
-            // pour tenir, cf. RevealableText), au lieu de passer a la ligne sur mobile.
-            <div className="flex flex-nowrap items-center gap-2">
-              {(() => {
-                const taxonomicCfg = taxonomic_group
-                  ? TAXONOMIC_GROUP_CONFIG[taxonomic_group]
-                  : null
-                const categoryLabel = taxonomicCfg?.label ?? null
-
-                // Espèce identifiée = on a au moins le nom commun OU scientifique.
-                // V1.1.4 NG-023 (Nicolas 2026-06-01) : reactivation du chip
-                // cliquable maintenant que NG-022 a connecte le Species Context
-                // Layer au backend (filter par taxref_id). Cliquer sur l espece
-                // dans un post -> feed filtre par cette espece + bandeau qui
-                // permet de reset au feed global.
-                const speciesName = species || scientific_name || null
-                const hasIdentifiedSpecies = !!speciesName
-                // V1.1.5 (Nicolas) : disableChipFilters rend le chip espece passif
-                // (post principal de PostDetail).
-                const isSpeciesClickable = !!taxref_id && !disableChipFilters
-                const unknownLabel = t('home.post.unknownSpecies', {
-                  defaultValue: 'Espèce non déterminée',
-                })
-
-                // Suffixe "({count})" SEULEMENT si on a un nombre exact > 1.
-                // Pas de "(plusieurs)" : toujours un chiffre exact (Nicolas
-                // 2026-05-01) ou rien.
-                // TODO Phase 2 backend : exposer `posts.individuals_count` pour
-                // que le compteur soit toujours disponible.
-                const multipleSuffix =
-                  individualsCount && individualsCount > 1 ? ` (${individualsCount})` : ''
-
-                // Chip catégorie : texte uniquement, pas d'emoji (règle DS Nicolas
-                // 2026-05-02 : alléger le design, jamais d'emoji dans les chips
-                // pour garder la cohérence visuelle avec le reste du produit).
-                // V1.1.4 NG-023 ext final (Nicolas 2026-06-01) : click chip cat ->
-                // coche la categorie dans FeedFilterPanel (badge "1" naturel).
-                // L user reset via le panneau filtres standard. Sur Profile et
-                // PostDetail (onSelectCategory undefined), le chip reste passif.
-                const isCategoryClickable =
-                  !!onSelectCategory && !!taxonomic_group && !disableChipFilters
-                const categoryChip = categoryLabel ? (
-                  isCategoryClickable ? (
-                    <button
-                      type="button"
-                      onClick={() => onSelectCategory!(taxonomic_group!)}
-                      aria-label={t('home.post.filterByCategory', {
-                        defaultValue: 'Filtrer par {{category}}',
-                        category: categoryLabel,
-                      })}
-                      className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS} shrink-0`}
-                    >
-                      <span>{categoryLabel}</span>
-                    </button>
-                  ) : (
-                    <span className={`${CHIP_BASE_CLASS} shrink-0`}>
-                      <span>{categoryLabel}</span>
-                    </span>
-                  )
-                ) : null
-
-                // ─── Cas 1 : catégorie + espèce identifiée → 2 chips séparés ───
-                // Si taxref_id présent → chip cliquable (filtre). Sinon → chip
-                // passif qui affiche quand même le nom (anciens posts).
-                if (hasIdentifiedSpecies) {
-                  return (
-                    <>
-                      {categoryChip}
-                      {isSpeciesClickable ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActiveSpecies({
-                              taxref_id: taxref_id!,
-                              scientific_name: scientific_name ?? speciesName!,
-                              common_name:
-                                speciesName !== scientific_name ? (speciesName ?? null) : null,
-                              group_label: taxonomic_group ?? null,
-                            })
-                            // QA Nicolas : scroll up auto, coherence avec chip categorie
-                            window.scrollTo({ top: 0, behavior: 'auto' })
-                          }}
-                          aria-label={t('home.post.filterBySpecies', {
-                            species: speciesName ?? '',
-                          })}
-                          className={`${CHIP_BASE_CLASS} ${CHIP_INTERACTIVE_CLASS} min-w-0 max-w-full`}
-                        >
-                          <RevealableText text={`${speciesName}${multipleSuffix}`} />
-                        </button>
-                      ) : (
-                        <span className={`${CHIP_BASE_CLASS} min-w-0 max-w-full`}>
-                          <RevealableText text={`${speciesName}${multipleSuffix}`} />
-                        </span>
-                      )}
-                    </>
-                  )
-                }
-
-                // ─── Cas 2 : catégorie connue + espèce non identifiée → 2 chips ──
-                if (categoryLabel) {
-                  return (
-                    <>
-                      {categoryChip}
-                      <span className={CHIP_PASSIVE_CLASS}>
-                        {unknownLabel}
-                        {multipleSuffix}
-                      </span>
-                    </>
-                  )
-                }
-
-                // ─── Cas 3 : rien d'identifié → 1 chip neutre (non cliquable) ───
-                return (
-                  <span className={CHIP_PASSIVE_CLASS}>
-                    {unknownLabel}
-                    {multipleSuffix}
-                  </span>
-                )
-              })()}
-            </div>
+            <FeedPostSpeciesChips
+              taxonomicGroup={taxonomic_group}
+              species={species}
+              scientificName={scientific_name}
+              taxrefId={taxref_id}
+              disableChipFilters={disableChipFilters}
+              individualsCount={individualsCount}
+              onSelectCategory={onSelectCategory}
+            />
           )}
 
         {/* Images : clic ouvre la lightbox plein écran */}
@@ -1143,9 +824,8 @@ export function FeedPost({
           </div>
           <div className="flex gap-1">
             {/*
-              Bouton Sauvegarder : second-agent/13.
-              État optimiste local, TODO BACKEND : câbler à `saved_posts`.
-              Visuel actif : icône BookmarkCheck + couleur primary.
+              Bouton Sauvegarder : persistance via `saved_posts` (useToggleSavedPost),
+              optimistic update géré dans le hook. Visuel actif : BookmarkCheck primary.
             */}
             <button
               type="button"

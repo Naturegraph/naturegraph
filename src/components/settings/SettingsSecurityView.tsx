@@ -17,33 +17,10 @@
  * Style des inputs : pill (rounded-full) avec focus state primary-light, même
  * pattern que EditInfoTab (cohérence DS).
  *
- * TODO [BACKEND] Phase 2 : voir second-agent/03-profil-backend-notes.md §15
- *
- *   ## Changement d'email (Supabase Auth : magic link)
- *   1. UI bloque le bouton "Mettre à jour" si :
- *      - Format invalide (regex email)
- *      - Email = ancien email
- *      - Email déjà pris (validation côté serveur via RPC `check_email_unique`)
- *   2. Au clic :
- *      - `supabase.auth.updateUser({ email: newEmail })`
- *      - Supabase envoie automatiquement 2 magic links de confirmation
- *        (un sur l'ancien, un sur le nouveau)
- *      - Affichage d'un toast "Lien de confirmation envoyé sur {newEmail}.
- *        Clique sur le lien pour valider le changement."
- *      - L'ancien email reste actif tant que le nouveau n'est pas confirmé
- *   3. Quand le user clique le lien dans l'email :
- *      - Supabase met à jour `auth.users.email`
- *      - Trigger SQL met à jour `profiles.email` (si on stocke aussi côté profile)
- *
- *   ## Anti-fraude / sécurité (Edge Function)
- *   - Limit 3 tentatives de changement / 24h / IP (anti spam)
- *   - Logger chaque changement (table `security_audit_log`)
- *   - Email de notification à l'ANCIEN email à chaque demande de changement
- *     ("Un changement d'email a été demandé. Si ce n'était pas vous, contactez-nous.")
- *
- *   ## i18n (clés à ajouter dans fr.json / en.json)
- *   - settings.security.emailTitle, emailOldLabel, emailNewLabel,
- *     emailNewPlaceholder, update, updateSuccess
+ * Changement d'email : `supabase.auth.updateUser({ email })`. Supabase envoie
+ * automatiquement les liens de confirmation sur l'ancien ET le nouveau email ;
+ * l'ancien reste actif tant que le nouveau n'est pas confirmé. Toast de
+ * confirmation côté UI, erreurs assainies (sanitizeError).
  */
 
 import { useState } from 'react'

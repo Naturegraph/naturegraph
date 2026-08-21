@@ -10,6 +10,43 @@
 > **Action externe** : etapes CLI/dashboard a executer par le fondateur. Claude prepare et verifie
 > (mon acces MCP Supabase est branche sur la PROD, je ne peux pas appliquer sur le dev).
 
+## ✅ MISE A JOUR 2026-08-19 : dev a parite + 2 etapes OBLIGATOIRES post-rebuild
+
+La separation est faite : dev (`nkgdgxwejqqnqmwqwegy`) a le MEME schema que la prod
+(40 tables, 6 vues, ~848 fonctions, memes signatures). Preview -> dev, Production -> prod.
+
+**PIEGE decouvert (2026-08-19)** : apres un rebuild du dev, deux choses manquaient et
+cassaient TOUT (tout en 401/404, feed vide) :
+
+1. **Les GRANTs des roles `anon`/`authenticated`** n'etaient pas reappliques -> "permission
+   denied for view/table ...". Le rebuild recree les objets sans les grants Supabase par defaut.
+2. **Le cache de schema PostgREST** n'etait pas recharge apres les grants -> les RPC en 404.
+
+### A EXECUTER apres CHAQUE rebuild/reseed du dev (via MCP dev ou SQL editor DEV)
+
+```sql
+-- 1. Restaurer les grants standard Supabase (la RLS controle toujours les lignes)
+grant usage on schema public to anon, authenticated, service_role;
+grant all on all tables in schema public to anon, authenticated, service_role;
+grant all on all sequences in schema public to anon, authenticated, service_role;
+grant all on all routines in schema public to anon, authenticated, service_role;
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema public grant all on routines to anon, authenticated, service_role;
+-- 2. Recharger le cache PostgREST (sinon les RPC restent en 404)
+notify pgrst, 'reload schema';
+```
+
+### Exigence `.env.local` (dev LOCAL)
+
+Le `npm run dev` LOCAL lit `.env.local`. Il DOIT pointer sur le **DEV** (`nkgdgxwejqqnqmwqwegy`),
+avec la cle **legacy anon JWT** (pas `sb_publishable_*`, qui casse silencieusement les
+DELETE/UPDATE/RPC). Si `.env.local` pointe sur `hrxg` (prod), le dev local montre les vraies
+donnees users ET toute ecriture touche la prod. Verifier : la console navigateur doit ne taper
+QUE `nkgd...supabase.co`.
+
+---
+
 ## BLOCKER decouvert (2026-06-17) : versions de migration non uniques
 
 Tentative de `supabase db reset --linked` sur le dev : echec a la 2e migration avec
@@ -164,10 +201,30 @@ l'appliquer sur le dev. Ne touche JAMAIS la prod en ecriture (uniquement une lec
 A faire posement, verif a chaque etape. Alternative long terme (pour CI/CLI) : renommer les migrations
 en versions uniques `YYYYMMDDHHMMSS`, mais le dump prod->dev suffit pour cloisonner sans ce chantier.
 
-## Definition of Done
+## ✅ RESOLU (2026-08-19)
 
-- [ ] Dev rebuild a partir du schema prod (ou migrations renommees) : `app_config` presente
-- [ ] `species_master` seede sur dev
-- [ ] Variables Vercel Preview repointees sur le projet dev
-- [ ] Preview develop valide (app OK, donnees de test dev, zero donnee prod)
-- [ ] SECURITY_VERCEL.md addendum : passer le finding de 🔴 a resolu
+Cloisonnement livre. Methode finale (la CLI ne pouvant pas rejouer les migrations
+et Docker etant absent) : rebuild via un runner Node maison, INSTRUCTION PAR
+INSTRUCTION en PLUSIEURS PASSES (re-essaie les echecs -> resout seul les erreurs
+d'ordre fichiers-vs-prod).
+
+- `scripts/dev-rebuild.sql` (genere localement, gitignore) : entete (DROP SCHEMA,
+  extensions, wrapper immutable_unaccent) + concatenation des 142 migrations +
+  reconciliation (colonnes de derive `license`/`facebook`/`short_id` ; DROP VIEW
+  posts_public et DROP nearby_posts avant recreation).
+- `scripts/run-dev-rebuild.mjs` : applique sur le dev (garde-fou dev-only), multi-passes.
+  Resultat : 40 tables = prod. Residus cosmetiques (perf RLS, REVOKE sur fonctions
+  de derive absentes) sans impact.
+- `scripts/copy-refdata-prod-to-dev.mjs` : seed taxonomy_nodes (45769), species_master
+  (4835), fr_cities (35457) prod->dev. Aucune donnee utilisateur.
+- Dev isole : tous les crons desactives + 3 triggers appelant la prod neutralises.
+- Vercel Preview (URL + ANON_KEY) repointe sur le dev ; verifie : bundle develop
+  reference nkgd, zero hrxg.
+
+Definition of Done :
+
+- [x] Dev rebuild a parite (40 tables = prod)
+- [x] `species_master` + taxonomy + cities seedes sur dev
+- [x] Variables Vercel Preview repointees sur le projet dev
+- [x] Preview develop valide (bundle = dev, zero donnee prod)
+- [x] Finding "Preview = base PROD" : RESOLU

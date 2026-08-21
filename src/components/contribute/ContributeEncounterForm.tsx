@@ -8,10 +8,8 @@
  * Étape 2 : Carnet d'observations (espèces + compteurs)
  * Étape 3 : Contexte & détails (titre, description, date, lieu, visibilité)
  *
- * TODO [BACKEND] :
- *   1. Upload médias → Supabase Storage 'post-media'
- *   2. POST /posts { type: 'nature_encounter', ... }
- *   3. queryClient.invalidateQueries({ queryKey: ['feed'] })
+ * Soumission : upload médias (bucket 'post-media') puis création/édition du post
+ * via useContributePostSubmit (createPost / updatePost) + invalidation du feed.
  */
 
 import { useState, useEffect, useRef } from 'react'

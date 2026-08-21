@@ -5,6 +5,49 @@
 
 ---
 
+## ⚠️ MISE A JOUR 2026-08-19 : dev et prod sont 2 BASES SEPAREES (NG-007 resolu)
+
+Le document ci-dessous decrivait la "Phase 1" ou dev/staging/prod partageaient la
+MEME base Supabase. **Ce n'est PLUS le cas.** Etat REEL desormais :
+
+| Environnement | Branche              | Vercel     | Base Supabase                   |
+| ------------- | -------------------- | ---------- | ------------------------------- |
+| DEV           | `develop`, `staging` | Preview    | **DEV** `nkgdgxwejqqnqmwqwegy`  |
+| PROD          | `main`               | Production | **PROD** `hrxgduvworofnrjmgpcj` |
+
+- Le dev = copie du schema prod (40 tables) + donnees de reference seedees, ZERO
+  donnee utilisateur. Isole : crons off + triggers vers la prod neutralises.
+- Vercel : variables `VITE_SUPABASE_*` scope **Preview** -> dev, scope **Production**
+  -> prod. **NE JAMAIS modifier les variables Production** (casse naturegraph.ca).
+
+### Processus FIXE (a tenir dans le temps)
+
+> **Pipeline complet a portes de validation : `PIPELINE_DEV.md`.** Chaque tache
+> traverse les portes G0 -> G10 (cadrage, implementation, optim, qualite, securite,
+> DB, docs, preview/UX, staging, release prod, suivi), chaque porte validee avant
+> de passer a la suivante. Le resume ci-dessous en est la version courte.
+
+1. **Developper sur `develop`** : la preview lit le DEV -> experimentation sans
+   risque pour la prod. Puis `develop -> staging` (tests), puis PR `staging -> main`
+   (release notes + validation Nicolas) pour la prod.
+2. **Migrations DB** : creer via `npm run migration:new -- "description"` (fichier
+   HORODATE unique `YYYYMMDDHHMMSS_nom.sql`). L'appliquer et la TESTER sur le DEV
+   d'abord, puis sur la PROD au merge vers main. Idempotence recommandee.
+   - Pourquoi horodate : les migrations historiques (format `YYYYMMDD`) ont des
+     versions dupliquees qui cassent la CLI supabase. Toute NOUVELLE migration doit
+     etre unique.
+3. **Re-synchroniser le dev** depuis la prod quand le schema a diverge :
+   `scripts/run-dev-rebuild.mjs` (schema) + `scripts/copy-refdata-prod-to-dev.mjs`
+   (donnees de reference). Cf. `SUPABASE_DEV_PARITY_RUNBOOK.md`.
+4. **Ce qui reste protege vs ce qui demande de la vigilance** :
+   - PROTEGE par construction : le travail de dev (code + experiences DB) ne touche
+     plus jamais la prod.
+   - DEMANDE DE LA DISCIPLINE (aucun outil ne remplace la prudence) : ce qui va sur
+     `main` part en prod ; toute operation manuelle sur la base prod (MCP prod /
+     dashboard) est reelle. Toujours passer par develop -> staging -> main.
+
+---
+
 ## Vue d ensemble
 
 ```
@@ -16,7 +59,7 @@ Domaine          naturegraph.ca          beta.naturegraph.ca      preview Vercel
 Audience         public                  testeurs autorises       Nicolas + collab
 Stabilite        ULTRA stable            instable OK              tres instable
 Validation       QA complete obligatoire QA UX requise            aucune
-Donnees          prod reelles            prod reelles ou copie    prod reelles
+Donnees          prod reelles            donnees de test          donnees de test
 Features         seulement stables       experimentales OK        toutes
 Deploy           apres validation Nicolas auto sur push staging   auto sur push develop
 ```
@@ -75,7 +118,7 @@ Deploy           apres validation Nicolas auto sur push staging   auto sur push 
 - **Branche** : `staging`
 - **Domaine** : `beta.naturegraph.ca` (a configurer cote Hostinger DNS + Vercel)
 - **Vercel deploy** : automatique sur push staging
-- **Supabase project** : meme que prod (`naturegraph-prod`) en Phase 1, project separe `naturegraph-beta` en Phase 2 si besoin
+- **Supabase project** : base **DEV** `naturegraph-dev` (nkgdgxwejqqnqmwqwegy), comme develop (cf. bandeau en tete). La beta ne touche jamais la base prod.
 
 ### Public
 
@@ -120,7 +163,7 @@ Deploy           apres validation Nicolas auto sur push staging   auto sur push 
 - **Branche** : `develop`
 - **Domaine** : preview Vercel auto (`naturegraph-eight.vercel.app` ou equivalent)
 - **Vercel deploy** : automatique sur push develop
-- **Supabase project** : `naturegraph-prod` (Phase 1, pas de dev DB separee pour eviter friction)
+- **Supabase project** : base **DEV** separee `naturegraph-dev` (nkgdgxwejqqnqmwqwegy), cf. bandeau en tete. Copie du schema prod + donnees de reference, zero donnee utilisateur.
 
 ### Public
 
@@ -174,15 +217,16 @@ Config Vercel par environnement :
 
 ### Variables d environnement
 
-Phase 1 (actuel) :
+Etat actuel (dev et prod = 2 bases separees, cf. bandeau en tete) :
 
-| Variable               | Prod                             | Beta                   | Dev  |
-| ---------------------- | -------------------------------- | ---------------------- | ---- |
-| VITE_SUPABASE_URL      | hrxgduvworofnrjmgpcj.supabase.co | meme                   | meme |
-| VITE_SUPABASE_ANON_KEY | prod                             | meme                   | meme |
-| VITE*FEATURE*\*        | false (sauf si validee)          | true pour les en-cours | true |
+| Variable               | Production (main)                | Preview (develop + staging)      |
+| ---------------------- | -------------------------------- | -------------------------------- |
+| VITE_SUPABASE_URL      | hrxgduvworofnrjmgpcj.supabase.co | nkgdgxwejqqnqmwqwegy.supabase.co |
+| VITE_SUPABASE_ANON_KEY | cle PROD                         | cle DEV                          |
+| VITE*FEATURE*\*        | false (sauf si validee)          | true pour les en-cours           |
 
-Phase 2 (long terme) : projects Supabase separes prod / beta pour isoler les donnees, eviter qu un test casse les vrais users.
+Cote Vercel : ces variables sont definies par scope (Production vs Preview).
+**Ne JAMAIS modifier les variables Production** (casse naturegraph.ca).
 
 ### Cles API et callbacks
 
@@ -202,23 +246,21 @@ Phase 2 (long terme) : projects Supabase separes prod / beta pour isoler les don
 
 ### Existe
 
-- `main` branche + naturegraph.ca + Supabase prod : ✅ en place
-- `develop` branche + preview Vercel : ✅ en place
-- Beta gate (clé NG-XXXX-XXXX) sur naturegraph.ca : ✅ en place
+- `main` + naturegraph.ca + base **PROD** (hrxg) : ✅ en place
+- `develop` + `staging` + preview Vercel + base **DEV** separee (nkgd) : ✅ en place (NG-007 resolu)
+- Variables Vercel par scope (Production vs Preview) : ✅ en place
+- Feature flags (`src/lib/featureFlags.ts`) : ✅ en place
+- Acces ouvert a tous (`OPEN_ACCESS_ENABLED = true`, plus de gate beta) : ✅ actif depuis NG-029
+- Pipeline de validation `PIPELINE_DEV.md` (G0->G10) : ✅ en place
 - CI build / lint / TypeScript / bundle budget : ✅ en place
 
-### A mettre en place
+### A mettre en place / a decider
 
-- [ ] Reset `staging` branch depuis `main` (actuellement desynchronisee de 177 commits)
-- [ ] Configurer domaine `beta.naturegraph.ca` cote Hostinger DNS + Vercel
-- [ ] Setup robots.txt + meta noindex sur le domaine beta
-- [ ] Allowlist beta : utiliser beta keys existantes ou ajouter logique allowlist email
+- [ ] Domaine dedie `beta.naturegraph.ca` (aujourd'hui la beta = URL preview Vercel de `staging`)
 - [ ] Documenter le workflow develop -> staging -> main dans CONTRIBUTING.md
-- [ ] Mettre en place feature flags (`src/lib/featureFlags.ts`) si besoin de cacher des features incompletes sur prod
 
 ### Long terme (V1.X+)
 
-- Project Supabase separe pour beta (`naturegraph-beta`) avec snapshot regulier de prod
 - Github Actions deploy specifique par environnement
 - Database branching Supabase Pro pour les feature branches lourdes
 

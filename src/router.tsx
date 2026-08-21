@@ -73,7 +73,6 @@ const DevEchangesPreview = lazy(() => import('./pages/DevEchangesPreview'))
 // Admin (BATCH 31-32) : chunks separes (eco-conception : code admin lazy)
 const AdminLayout = lazy(() => import('./pages/Admin/AdminLayout'))
 const AdminDashboard = lazy(() => import('./pages/Admin/AdminDashboard'))
-const AdminBeta = lazy(() => import('./pages/Admin/AdminBeta'))
 const AdminUsers = lazy(() => import('./pages/Admin/AdminUsers'))
 const AdminModeration = lazy(() => import('./pages/Admin/AdminModeration'))
 const AdminAuditLogs = lazy(() => import('./pages/Admin/AdminAuditLogs'))
@@ -220,14 +219,6 @@ export const router = createBrowserRouter([
             element: (
               <LazyPage>
                 <AdminModeration />
-              </LazyPage>
-            ),
-          },
-          {
-            path: 'beta',
-            element: (
-              <LazyPage>
-                <AdminBeta />
               </LazyPage>
             ),
           },
