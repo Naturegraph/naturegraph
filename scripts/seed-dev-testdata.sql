@@ -18,12 +18,28 @@ delete from public.follows where follower_id in ('a1111111-1111-1111-1111-111111
 -- 4 comptes de test (le trigger on_auth_user_created cree les profils).
 -- NB : prefixes d'UUID DISTINCTS obligatoires (le username auto derive des 8
 -- premiers caracteres de l'UUID -> doit rester unique).
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data) values
- ('a1111111-1111-1111-1111-111111111111','00000000-0000-0000-0000-000000000000','authenticated','authenticated','flore@dev.local',now(),now(),now(),'{"provider":"email"}'::jsonb,'{}'::jsonb),
- ('a2222222-2222-2222-2222-222222222222','00000000-0000-0000-0000-000000000000','authenticated','authenticated','marc@dev.local',now(),now(),now(),'{"provider":"email"}'::jsonb,'{}'::jsonb),
- ('a3333333-3333-3333-3333-333333333333','00000000-0000-0000-0000-000000000000','authenticated','authenticated','julie@dev.local',now(),now(),now(),'{"provider":"email"}'::jsonb,'{}'::jsonb),
- ('a4444444-4444-4444-4444-444444444444','00000000-0000-0000-0000-000000000000','authenticated','authenticated','sam@dev.local',now(),now(),now(),'{"provider":"email"}'::jsonb,'{}'::jsonb)
+-- IMPORTANT (piege decouvert 2026-08-20) : GoTrue exige que les colonnes token
+-- soient des chaines VIDES (pas NULL), sinon /auth/v1/otp renvoie 500
+-- "Database error finding user" (scan Go d'un NULL sur un champ string). D'ou les
+-- '' explicites ci-dessous. ET il faut une ligne auth.identities par compte
+-- (creee plus bas), sinon meme erreur.
+insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data,
+  confirmation_token, recovery_token, email_change, email_change_token_new, email_change_token_current, phone_change, phone_change_token, reauthentication_token) values
+ ('a1111111-1111-1111-1111-111111111111','00000000-0000-0000-0000-000000000000','authenticated','authenticated','flore@dev.local',now(),now(),now(),'{"provider":"email"}'::jsonb,'{}'::jsonb,'','','','','','','',''),
+ ('a2222222-2222-2222-2222-222222222222','00000000-0000-0000-0000-000000000000','authenticated','authenticated','marc@dev.local',now(),now(),now(),'{"provider":"email"}'::jsonb,'{}'::jsonb,'','','','','','','',''),
+ ('a3333333-3333-3333-3333-333333333333','00000000-0000-0000-0000-000000000000','authenticated','authenticated','julie@dev.local',now(),now(),now(),'{"provider":"email"}'::jsonb,'{}'::jsonb,'','','','','','','',''),
+ ('a4444444-4444-4444-4444-444444444444','00000000-0000-0000-0000-000000000000','authenticated','authenticated','sam@dev.local',now(),now(),now(),'{"provider":"email"}'::jsonb,'{}'::jsonb,'','','','','','','','')
 on conflict (id) do nothing;
+
+-- Identites GoTrue (provider email) : OBLIGATOIRE pour que la connexion OTP marche.
+-- Sans identite, /auth/v1/otp -> 500 "Database error finding user".
+insert into auth.identities (id, user_id, provider, provider_id, identity_data, created_at, updated_at, last_sign_in_at)
+select gen_random_uuid(), u.id, 'email', u.id::text,
+  jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true, 'phone_verified', false),
+  now(), now(), now()
+from auth.users u
+where u.email in ('flore@dev.local','marc@dev.local','julie@dev.local','sam@dev.local')
+  and not exists (select 1 from auth.identities i where i.user_id = u.id);
 
 -- Onboarding des profils
 update public.profiles set username='flore_bota',   first_name='Flore', last_name='Demo', bio='Botanique & jardins (compte de test dev).',   interests=array['plants','insects'],    is_public=true, city='Montreal',   region='Quebec', country='CA' where id='a1111111-1111-1111-1111-111111111111';
