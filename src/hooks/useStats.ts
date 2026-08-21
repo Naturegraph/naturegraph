@@ -27,9 +27,9 @@ const STATS_STALE_TIME = 60 * 60 * 1000
 
 /**
  * Hook pour les stats "Impact" (observations + migrateurs avec trend).
- * @param period - Période de référence ('week' | 'month' | 'quarter')
+ * @param period - Période de référence ('last7Days' | 'currentMonth' | 'currentQuarter' | 'currentYear')
  */
-export function useImpactStats(period: StatsPeriod = 'month') {
+export function useImpactStats(period: StatsPeriod = 'currentMonth') {
   return useQuery<ImpactStats, Error>({
     queryKey: ['impactStats', period],
     queryFn: () => getImpactStats(period),
@@ -44,7 +44,7 @@ export function useImpactStats(period: StatsPeriod = 'month') {
  * @param period - Période de référence
  * @param region - Région pour filtrage territorial (null = global)
  */
-export function useTrendingSpecies(period: StatsPeriod = 'week', region?: string | null) {
+export function useTrendingSpecies(period: StatsPeriod = 'last7Days', region?: string | null) {
   return useQuery<TrendingSpecies[], Error>({
     queryKey: ['trendingSpecies', period, region ?? 'global'],
     queryFn: () => getTrendingSpecies(period, region),
