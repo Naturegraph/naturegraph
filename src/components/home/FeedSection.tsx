@@ -580,42 +580,47 @@ export function FeedSection({
           {viewMode === 'grid' ? (
             <FeedGallery posts={posts} />
           ) : activeTab === 'recent' ? (
-            // Fil chronologique enrichi (onglet Récent) : bandeau "contenus
-            // manqués" + séparateurs de jour + frontière "déjà vu". Cf.
+            // Fil chronologique enrichi (onglet Récent) : bandeau "nouveaux
+            // moments" + séparateurs de jour + frontière "arrêté ici". Cf.
             // feedTimeline (logique pure) + FeedTimelineParts (rendu).
-            <>
-              {!feedVisit.loading && feedVisit.missedCount > 0 && (
-                <FeedMissedBanner count={feedVisit.missedCount} />
-              )}
-              {/* gap-3 mobile : un peu plus d'air entre les moments (gap-4 desktop). */}
-              <div className="flex flex-col md:gap-4 gap-3">
-                {(() => {
-                  const total = visibleRaw.length
-                  const rows = buildFeedTimeline(
-                    visibleRaw,
-                    feedVisit.lastVisitRef,
-                    new Date(),
-                    (k, o) => t(k, o) as string,
-                  )
-                  let pIdx = -1
-                  return rows.map((row, i) => {
-                    if (row.kind === 'day')
-                      return <FeedDaySeparator key={row.key} label={row.label} />
-                    if (row.kind === 'seen-divider') return <FeedSeenDivider key={row.key} />
-                    pIdx += 1
-                    // Masque la bordure quand un separateur suit (pas de double ligne).
-                    const nextIsSeparator = i + 1 < rows.length && rows[i + 1].kind !== 'post'
-                    const hideBorder = i === rows.length - 1 || nextIsSeparator
-                    return renderFeedPost(
-                      postFeedItemToMockPost(row.post, pIdx),
-                      pIdx,
-                      total,
-                      hideBorder,
-                    )
-                  })
-                })()}
-              </div>
-            </>
+            (() => {
+              const total = visibleRaw.length
+              const rows = buildFeedTimeline(
+                visibleRaw,
+                feedVisit.lastVisitRef,
+                new Date(),
+                (k, o) => t(k, o) as string,
+              )
+              const showBanner = !feedVisit.loading && feedVisit.missedCount > 0
+              // Padding haut sauf si le fil commence par un post (le post gère déjà
+              // son espacement) : évite de coller le bandeau/séparateur à la topbar.
+              const firstIsPost = !showBanner && rows[0]?.kind === 'post'
+              let pIdx = -1
+              return (
+                <div className={firstIsPost ? undefined : 'pt-6'}>
+                  {showBanner && <FeedMissedBanner count={feedVisit.missedCount} />}
+                  {/* gap-0 mobile : les posts sont collés ; l'air ne vient que des
+                      séparateurs (date / "arrêté ici"). Cartes espacées en desktop. */}
+                  <div className="flex flex-col md:gap-4 gap-0">
+                    {rows.map((row, i) => {
+                      if (row.kind === 'day')
+                        return <FeedDaySeparator key={row.key} label={row.label} />
+                      if (row.kind === 'seen-divider') return <FeedSeenDivider key={row.key} />
+                      pIdx += 1
+                      // Masque la bordure quand un separateur suit (pas de double ligne).
+                      const nextIsSeparator = i + 1 < rows.length && rows[i + 1].kind !== 'post'
+                      const hideBorder = i === rows.length - 1 || nextIsSeparator
+                      return renderFeedPost(
+                        postFeedItemToMockPost(row.post, pIdx),
+                        pIdx,
+                        total,
+                        hideBorder,
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()
           ) : (
             <div className="flex flex-col md:gap-4 gap-0">
               {posts.map((post, idx) => renderFeedPost(post, idx, posts.length))}

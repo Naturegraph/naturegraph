@@ -14,12 +14,15 @@ import { useTranslation } from 'react-i18next'
 import { Sparkles, Leaf } from 'lucide-react'
 
 /**
- * Meme geometrie horizontale que le CONTENU des posts (FeedPost) : pleine largeur
- * mobile avec padding px-5 (20px), colonne centree md:max-w-[704px] + md:p-6 sur
- * desktop. Garantit que separateurs et bandeau s'alignent sur le contenu des posts
- * (et ne collent pas aux bords sur mobile).
+ * Meme geometrie horizontale que la CARTE FeedPost.
+ *  - Mobile : la carte est pleine largeur, on inset de px-5 (20px) pour aligner
+ *    sur le CONTENU du post (et ne pas coller aux bords).
+ *  - Desktop : la carte est `md:max-w-[704px] md:mx-auto`. On reprend la MEME
+ *    largeur/centrage, SANS padding horizontal (md:px-0), pour que bandeau,
+ *    boite "arrete ici" et separateurs s'alignent exactement sur la carte du
+ *    post (et les tabs au-dessus), pas plus etroit.
  */
-const FEED_ALIGN = 'w-full md:max-w-[704px] md:mx-auto px-5 md:px-6'
+const FEED_ALIGN = 'w-full md:max-w-[704px] md:mx-auto px-5 md:px-0'
 
 /** Entete de jour : libelle + filet. `role="separator"` annonce la coupure. */
 export function FeedDaySeparator({ label }: { label: string }) {
@@ -27,8 +30,9 @@ export function FeedDaySeparator({ label }: { label: string }) {
     <div
       role="separator"
       aria-label={label}
-      // pt genereux : le filet ne colle pas au post precedent (respire).
-      className={`flex items-center gap-3 pt-6 pb-3 md:pt-4 ${FEED_ALIGN}`}
+      // Espacement SYMETRIQUE (autant en haut qu'en bas) : c'est le seul ecart
+      // entre deux posts de jours differents (les posts eux-memes sont colles).
+      className={`flex items-center gap-3 py-4 ${FEED_ALIGN}`}
     >
       <span className="text-sm font-bold text-[var(--color-text-secondary)]">{label}</span>
       <span className="flex-1 h-px bg-[var(--color-border)]" aria-hidden="true" />
@@ -47,7 +51,7 @@ export function FeedMissedBanner({ count }: { count: number }) {
     <div className={`mb-3 ${FEED_ALIGN}`}>
       <div
         role="status"
-        className="flex items-center gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-4 py-3"
+        className="flex items-center gap-3 rounded-card border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-4 py-3"
       >
         <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-action-default)]/12 text-[var(--color-action-default)]">
           <Sparkles className="size-5" aria-hidden="true" />
@@ -71,21 +75,25 @@ export function FeedMissedBanner({ count }: { count: number }) {
 export function FeedSeenDivider() {
   const { t } = useTranslation()
   return (
-    // Boite bordee, coherente avec le bandeau des nouveaux moments.
-    <div className={`my-3 ${FEED_ALIGN}`}>
+    // Meme structure que le bandeau des nouveaux moments : icone a gauche + texte.
+    <div className={`mt-6 mb-3 ${FEED_ALIGN}`}>
       <div
         role="separator"
-        className="flex flex-col items-center gap-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-4 py-4 text-center"
+        className="flex items-center gap-3 rounded-card border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-4 py-3"
       >
-        <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--color-text-primary)]">
-          <Leaf className="size-4 text-[var(--color-action-default)]" aria-hidden="true" />
-          {t('home.feed.stoppedHere.title', { defaultValue: "Tu t'étais arrêté ici" })}
-        </p>
-        <p className="text-xs text-[var(--color-text-secondary)]">
-          {t('home.feed.stoppedHere.subtitle', {
-            defaultValue: 'Tu as découvert les derniers moments partagés.',
-          })}
-        </p>
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-action-default)]/12 text-[var(--color-action-default)]">
+          <Leaf className="size-5" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-[var(--color-text-primary)]">
+            {t('home.feed.stoppedHere.title', { defaultValue: "Tu t'étais arrêté ici" })}
+          </p>
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            {t('home.feed.stoppedHere.subtitle', {
+              defaultValue: 'Tu as découvert les derniers moments.',
+            })}
+          </p>
+        </div>
       </div>
     </div>
   )
