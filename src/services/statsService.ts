@@ -14,6 +14,12 @@
  */
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { getStatsPeriodBounds, type StatsPeriod } from '@/utils/statsPeriods'
+
+// Source de verite des periodes (glissante 7j + calendaires mois/trimestre/annee) :
+// src/utils/statsPeriods.ts. Re-exporte ici pour les consommateurs historiques
+// (useStats, StatsSidebar) qui importent StatsPeriod depuis ce service.
+export type { StatsPeriod }
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -43,8 +49,6 @@ export interface UserObservationStats {
   /** Repartition par groupe app (birds/mammals/...) pour l'ADN observateur. */
   classes: Record<string, number>
 }
-
-export type StatsPeriod = 'week' | 'month' | 'quarter'
 
 export interface ImpactStats {
   /** Nombre total d'observations publiées sur la période */
@@ -79,28 +83,6 @@ function ensureClient() {
     throw new Error('Supabase non configuré, statsService indisponible')
   }
   return supabase
-}
-
-/** Calcule les bornes ISO de la période courante et précédente */
-function getPeriodBounds(period: StatsPeriod): {
-  current: string
-  previous: string
-  oldest: string
-} {
-  const now = new Date()
-  const msPerDay = 86_400_000
-
-  const daysMap: Record<StatsPeriod, number> = {
-    week: 7,
-    month: 30,
-    quarter: 90,
-  }
-
-  const days = daysMap[period]
-  const current = new Date(now.getTime() - days * msPerDay).toISOString()
-  const previous = new Date(now.getTime() - 2 * days * msPerDay).toISOString()
-
-  return { current, previous, oldest: previous }
 }
 
 /** Calcule le pourcentage de variation entre deux valeurs */
@@ -177,9 +159,12 @@ export async function getPlatformStats(): Promise<PlatformStats> {
  * Migrateurs = comptes créés sur la période.
  * Chaque valeur inclut un trend % vs la période précédente identique.
  */
-export async function getImpactStats(period: StatsPeriod = 'month'): Promise<ImpactStats> {
+export async function getImpactStats(period: StatsPeriod = 'currentMonth'): Promise<ImpactStats> {
   const c = ensureClient()
-  const { current, oldest } = getPeriodBounds(period)
+  // previousStart..previousEnd = MEME portion ecoulee de la periode precedente
+  // (ex : "ce mois-ci au jour J" vs "le mois dernier au jour J"), pour un trend %
+  // comparable et non fausse par une periode courante encore partielle.
+  const { current, previousStart, previousEnd } = getStatsPeriodBounds(period)
 
   // Observations = CUMUL D'ESPECES (RPC get_observations_count), pas le nombre
   // de posts (Nicolas 2026-06-08 : vrai nombre d'observations reel). Un post
@@ -196,8 +181,8 @@ export async function getImpactStats(period: StatsPeriod = 'month'): Promise<Imp
     // Observations (cumul d'especes), période courante
     rpc('get_observations_count', { p_start: current }),
 
-    // Observations, période précédente
-    rpc('get_observations_count', { p_start: oldest, p_end: current }),
+    // Observations, période précédente (même portion écoulée)
+    rpc('get_observations_count', { p_start: previousStart, p_end: previousEnd }),
 
     // Migrateurs (comptes créés), période courante, exclut les is_internal.
     // Nicolas 2026-06-06 : on ne compte QUE les comptes réellement finalisés.
@@ -217,8 +202,8 @@ export async function getImpactStats(period: StatsPeriod = 'month'): Promise<Imp
       .select('id', { count: 'exact', head: true })
       .eq('is_internal', false)
       .not('username', 'like', 'user\\_%')
-      .gte('created_at', oldest)
-      .lt('created_at', current),
+      .gte('created_at', previousStart)
+      .lt('created_at', previousEnd),
   ])
 
   const obsCount = Number(obsCurrent.data ?? 0)
@@ -246,11 +231,11 @@ export async function getImpactStats(period: StatsPeriod = 'month'): Promise<Imp
  * Récupère aussi la dernière photo associée à chaque espèce (via media).
  */
 export async function getTrendingSpecies(
-  period: StatsPeriod = 'week',
+  period: StatsPeriod = 'last7Days',
   region?: string | null,
 ): Promise<TrendingSpecies[]> {
   const c = ensureClient()
-  const { current } = getPeriodBounds(period)
+  const { current } = getStatsPeriodBounds(period)
 
   /**
    * Requête + agrégation pour une zone donnée (ou globale si region = null).

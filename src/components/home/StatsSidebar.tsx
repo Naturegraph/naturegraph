@@ -20,10 +20,13 @@ import type { StatsPeriod } from '@/services/statsService'
 // ─── Constantes ─────────────────────────────────────────────────────────────
 
 /** Options du sélecteur de période Impact */
+// Ordre : de la vision courte a la vision globale (7 jours -> mois -> trimestre -> annee).
+// Valeurs = periodes de src/utils/statsPeriods.ts (7 jours glissants + calendaires).
 const IMPACT_PERIODS: { value: StatsPeriod; labelKey: string }[] = [
-  { value: 'week', labelKey: 'home.stats.thisWeek' },
-  { value: 'month', labelKey: 'home.stats.thisMonth' },
-  { value: 'quarter', labelKey: 'home.stats.thisQuarter' },
+  { value: 'last7Days', labelKey: 'home.stats.last7Days' },
+  { value: 'currentMonth', labelKey: 'home.stats.thisMonth' },
+  { value: 'currentQuarter', labelKey: 'home.stats.thisQuarter' },
+  { value: 'currentYear', labelKey: 'home.stats.thisYear' },
 ]
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -69,8 +72,8 @@ export function StatsSidebar({ onItemSelected }: { onItemSelected?: () => void }
   }
 
   // Périodes sélectionnées par l'utilisateur (Impact + Tendances indépendants)
-  const [impactPeriod, setImpactPeriod] = useState<StatsPeriod>('month')
-  const [trendingPeriod, setTrendingPeriod] = useState<StatsPeriod>('week')
+  const [impactPeriod, setImpactPeriod] = useState<StatsPeriod>('currentMonth')
+  const [trendingPeriod, setTrendingPeriod] = useState<StatsPeriod>('last7Days')
 
   // État d'ouverture des dropdowns
   const [impactDropdownOpen, setImpactDropdownOpen] = useState(false)

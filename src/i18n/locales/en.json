@@ -635,10 +635,12 @@
       "changePeriod": "Change period",
       "observations": "Observations",
       "migrators": "Migrators",
-      "thisWeek": "This week",
+      "last7Days": "Last 7 days",
       "thisMonth": "This month",
       "thisQuarter": "This quarter",
-      "observationCount": "{{count}} observations"
+      "thisYear": "This year",
+      "observationCount_one": "{{count}} observation",
+      "observationCount_other": "{{count}} observations"
     },
     "search": {
       "title": "Search",

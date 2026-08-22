@@ -12,9 +12,11 @@ Source de verite = `package.json`. Details : `PROJECT_MASTER.md`.
 > pour comprendre l etat du projet, sa roadmap, sa TODO, son workflow.
 >
 > **Pipeline de dev officiel (portes de validation sequentielles)** :
-> `docs/devops/PIPELINE_DEV.md`. Toute tache traverse les portes G0 -> G10, chacune
-> validee avant la suivante, avec un suivi remis a Nicolas. Environnements dev/prod
-> separes : `docs/devops/environments.md`.
+> `docs/devops/PIPELINE_DEV.md`. Toute tache traverse les portes G0 -> G11 (dont
+> G3 Product Designer : design system + accessibilite WCAG AA), chacune validee avant
+> la suivante, avec un suivi remis a Nicolas. Deux skills operent ce process :
+> `pipeline-dev` (les portes) et `release-prod` (la release G10). Environnements
+> dev/prod separes : `docs/devops/environments.md`.
 
 ## Regles obligatoires
 
