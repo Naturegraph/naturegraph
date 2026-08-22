@@ -39,14 +39,20 @@ export type StatsPeriod = 'last7Days' | 'currentMonth' | 'currentQuarter' | 'cur
 
 /** Bornes d'une periode, en ISO 8601 (UTC), pretes pour les requetes Supabase. */
 export interface StatsPeriodBounds {
-  /** Debut de la periode courante (inclus). */
+  /** Debut de la periode courante. La periode affichee est `[current, now]`. */
   current: string
   /**
-   * Debut de la periode PRECEDENTE de meme duree (pour le calcul du trend %).
-   * La periode precedente est la fenetre `[previous, current)` de meme longueur
-   * que la portion ecoulee de la periode courante `[current, now]`.
+   * Debut de la periode PRECEDENTE de MEME TYPE (mois/trimestre/annee precedent,
+   * ou bloc de 7 jours precedent), pour un trend % "a periode comparable".
    */
-  previous: string
+  previousStart: string
+  /**
+   * Fin de la fenetre precedente = `previousStart` + la duree DEJA ECOULEE de la
+   * periode courante. On compare ainsi "ce mois-ci au jour J" a "le mois dernier
+   * au jour J" (meme point d'avancement), et non a un mois complet. La fenetre
+   * precedente est donc `[previousStart, previousEnd)`.
+   */
+  previousEnd: string
 }
 
 /** Fuseau de reference du projet (Quebec). */
@@ -141,12 +147,48 @@ export function getPeriodStartISO(period: StatsPeriod, now: Date = new Date()): 
 }
 
 /**
- * Bornes { current, previous } d'une periode, pour les requetes stats.
+ * Debut de la periode PRECEDENTE de meme type (ISO UTC), calcule dans le fuseau TZ :
+ * mois precedent, trimestre precedent, annee precedente, ou bloc de 7 jours precedent.
+ * Le passage d'annee (janvier -> decembre annee-1, T1 -> T4 annee-1) est gere par
+ * l'arithmetique calendaire de `Date.UTC` (mois negatif -> annee precedente).
+ * Exporte pour les tests.
+ */
+export function getPreviousPeriodStartISO(period: StatsPeriod, now: Date = new Date()): string {
+  const { year, month, day } = ymdInTZ(now)
+
+  switch (period) {
+    case 'last7Days': {
+      // Bloc des 7 jours PRECEDENTS : minuit (today - 13) = 7 jours avant (today - 6).
+      const d = new Date(Date.UTC(year, month - 1, day - 13))
+      return zonedMidnightISO(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate())
+    }
+    case 'currentMonth': {
+      // 1er jour du mois precedent.
+      const d = new Date(Date.UTC(year, month - 2, 1))
+      return zonedMidnightISO(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)
+    }
+    case 'currentQuarter': {
+      const quarterStartMonth = Math.floor((month - 1) / 3) * 3 + 1
+      // -3 mois = 1er jour du trimestre precedent.
+      const d = new Date(Date.UTC(year, quarterStartMonth - 1 - 3, 1))
+      return zonedMidnightISO(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)
+    }
+    case 'currentYear':
+      // 1er janvier de l'annee precedente.
+      return zonedMidnightISO(year - 1, 1, 1)
+  }
+}
+
+/**
+ * Bornes { current, previousStart, previousEnd } d'une periode, pour les stats.
  *
- * - `current` = debut de la periode courante (voir tableau en tete de fichier).
- * - `previous` = debut d'une fenetre de MEME duree juste avant `current`, pour
- *   comparer "periode courante ecoulee" vs "meme duree precedente" (trend %).
- *   La periode precedente est donc `[previous, current)`.
+ * - `current` = debut de la periode courante ; la periode affichee est `[current, now]`.
+ * - `previousStart` = debut de la periode PRECEDENTE de meme type (mois/trimestre/
+ *   annee precedent, ou bloc 7j precedent).
+ * - `previousEnd` = `previousStart` + duree deja ecoulee de la periode courante :
+ *   on compare donc "au meme point d'avancement" (ex : "ce mois-ci au jour 2" vs
+ *   "le mois dernier a son jour 2"), et non a une periode complete. Fenetre
+ *   precedente = `[previousStart, previousEnd)`.
  *
  * @param period Periode demandee.
  * @param now Instant de reference (injectable pour les tests).
@@ -157,10 +199,16 @@ export function getStatsPeriodBounds(
 ): StatsPeriodBounds {
   const currentISO = getPeriodStartISO(period, now)
   const currentMs = new Date(currentISO).getTime()
-  const elapsed = now.getTime() - currentMs // duree deja ecoulee de la periode
-  const previousMs = currentMs - elapsed // fenetre de meme duree, juste avant
+  const elapsed = now.getTime() - currentMs // duree deja ecoulee de la periode courante
+
+  const previousStartISO = getPreviousPeriodStartISO(period, now)
+  const previousStartMs = new Date(previousStartISO).getTime()
+  // Meme portion ecoulee, projetee dans la periode precedente.
+  const previousEndISO = new Date(previousStartMs + elapsed).toISOString()
+
   return {
     current: currentISO,
-    previous: new Date(previousMs).toISOString(),
+    previousStart: previousStartISO,
+    previousEnd: previousEndISO,
   }
 }

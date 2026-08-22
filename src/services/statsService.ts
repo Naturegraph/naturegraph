@@ -161,7 +161,10 @@ export async function getPlatformStats(): Promise<PlatformStats> {
  */
 export async function getImpactStats(period: StatsPeriod = 'currentMonth'): Promise<ImpactStats> {
   const c = ensureClient()
-  const { current, previous } = getStatsPeriodBounds(period)
+  // previousStart..previousEnd = MEME portion ecoulee de la periode precedente
+  // (ex : "ce mois-ci au jour J" vs "le mois dernier au jour J"), pour un trend %
+  // comparable et non fausse par une periode courante encore partielle.
+  const { current, previousStart, previousEnd } = getStatsPeriodBounds(period)
 
   // Observations = CUMUL D'ESPECES (RPC get_observations_count), pas le nombre
   // de posts (Nicolas 2026-06-08 : vrai nombre d'observations reel). Un post
@@ -178,8 +181,8 @@ export async function getImpactStats(period: StatsPeriod = 'currentMonth'): Prom
     // Observations (cumul d'especes), période courante
     rpc('get_observations_count', { p_start: current }),
 
-    // Observations, période précédente
-    rpc('get_observations_count', { p_start: previous, p_end: current }),
+    // Observations, période précédente (même portion écoulée)
+    rpc('get_observations_count', { p_start: previousStart, p_end: previousEnd }),
 
     // Migrateurs (comptes créés), période courante, exclut les is_internal.
     // Nicolas 2026-06-06 : on ne compte QUE les comptes réellement finalisés.
@@ -199,8 +202,8 @@ export async function getImpactStats(period: StatsPeriod = 'currentMonth'): Prom
       .select('id', { count: 'exact', head: true })
       .eq('is_internal', false)
       .not('username', 'like', 'user\\_%')
-      .gte('created_at', previous)
-      .lt('created_at', current),
+      .gte('created_at', previousStart)
+      .lt('created_at', previousEnd),
   ])
 
   const obsCount = Number(obsCurrent.data ?? 0)

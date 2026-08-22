@@ -6,7 +6,7 @@
  * `now` est fixe a midi UTC pour lever toute ambiguite de date cote Toronto.
  */
 import { describe, it, expect } from 'vitest'
-import { getPeriodStartISO, getStatsPeriodBounds } from './statsPeriods'
+import { getPeriodStartISO, getPreviousPeriodStartISO, getStatsPeriodBounds } from './statsPeriods'
 
 /** Relit un instant ISO en heure murale Toronto -> "YYYY-MM-DD HH:MM:SS". */
 function torontoWall(iso: string): string {
@@ -108,14 +108,47 @@ describe('statsPeriods : passage a l heure d hiver (DST)', () => {
   })
 })
 
-describe('statsPeriods : periode precedente (trend)', () => {
-  it('previous < current, et fenetre precedente de meme duree que l ecoule', () => {
-    const now = new Date('2026-08-20T16:00:00Z')
-    const { current, previous } = getStatsPeriodBounds('currentMonth', now)
-    const cur = new Date(current).getTime()
-    const prev = new Date(previous).getTime()
-    expect(prev).toBeLessThan(cur)
-    // duree ecoulee de la periode courante == duree de la periode precedente
-    expect(cur - prev).toBe(now.getTime() - cur)
+describe('statsPeriods : debut de periode precedente (comparable)', () => {
+  it('mois precedent (janvier -> decembre annee-1)', () => {
+    expect(
+      torontoWall(getPreviousPeriodStartISO('currentMonth', new Date('2026-08-15T16:00:00Z'))),
+    ).toBe('2026-07-01 00:00:00')
+    expect(
+      torontoWall(getPreviousPeriodStartISO('currentMonth', new Date('2026-01-10T16:00:00Z'))),
+    ).toBe('2025-12-01 00:00:00')
+  })
+  it('trimestre precedent (T3 -> T2 ; T1 -> T4 annee-1)', () => {
+    expect(
+      torontoWall(getPreviousPeriodStartISO('currentQuarter', new Date('2026-08-15T16:00:00Z'))),
+    ).toBe('2026-04-01 00:00:00')
+    expect(
+      torontoWall(getPreviousPeriodStartISO('currentQuarter', new Date('2026-02-15T16:00:00Z'))),
+    ).toBe('2025-10-01 00:00:00')
+  })
+  it('annee precedente', () => {
+    expect(
+      torontoWall(getPreviousPeriodStartISO('currentYear', new Date('2026-08-15T16:00:00Z'))),
+    ).toBe('2025-01-01 00:00:00')
+  })
+  it('bloc de 7 jours precedent', () => {
+    // today = 20 aout -> 7 jours courants debutent le 14 ; les 7 precedents le 7.
+    expect(
+      torontoWall(getPreviousPeriodStartISO('last7Days', new Date('2026-08-20T16:00:00Z'))),
+    ).toBe('2026-08-07 00:00:00')
+  })
+})
+
+describe('statsPeriods : trend compare au MEME point de la periode precedente', () => {
+  it('ce mois-ci au jour 2 -> compare au mois dernier a son jour 2 (meme duree)', () => {
+    const now = new Date('2026-08-02T14:00:00Z') // 2e jour d aout
+    const { current, previousStart, previousEnd } = getStatsPeriodBounds('currentMonth', now)
+    // periode courante = aout ; precedente demarre le 1er juillet
+    expect(torontoWall(current)).toBe('2026-08-01 00:00:00')
+    expect(torontoWall(previousStart)).toBe('2026-07-01 00:00:00')
+    // la fenetre precedente couvre la MEME duree ecoulee que la periode courante
+    const elapsed = now.getTime() - new Date(current).getTime()
+    expect(new Date(previousEnd).getTime() - new Date(previousStart).getTime()).toBe(elapsed)
+    // ... et se termine au "meme point" dans juillet (2 juillet, meme heure)
+    expect(torontoWall(previousEnd)).toBe('2026-07-02 10:00:00')
   })
 })
