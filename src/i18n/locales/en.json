@@ -532,13 +532,12 @@
         "yesterday": "Yesterday"
       },
       "missed": {
-        "title": "Since your last visit",
-        "count_one": "{{count}} new observation to discover",
-        "count_other": "{{count}} new observations to discover"
+        "count_one": "1 new moment since your last visit",
+        "count_other": "{{count}} new moments since your last visit"
       },
-      "upToDate": {
-        "title": "You’re all caught up",
-        "subtitle": "You’ve seen all the new encounters."
+      "stoppedHere": {
+        "title": "Where you left off",
+        "subtitle": "You’ve seen the latest shared moments."
       }
     },
     "filters": {

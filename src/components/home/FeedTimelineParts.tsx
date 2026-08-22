@@ -2,11 +2,12 @@
  * FeedTimelineParts : petits reperes visuels du fil "oriente decouverte".
  * =============================================================================
  *  - FeedDaySeparator : entete de jour ("Aujourd'hui", "Hier", date).
- *  - FeedMissedBanner : "depuis ta derniere visite, X nouvelles observations".
- *  - FeedSeenDivider  : frontiere "tu es a jour" entre nouveautes et deja vu.
+ *  - FeedMissedBanner : "X nouveaux moments depuis ta derniere visite".
+ *  - FeedSeenDivider  : "Tu t'etais arrete ici" entre nouveaux moments et anciens.
  *
- * Volontairement sobres (ton Naturegraph, non anxiogene) et 100% tokens DS
- * (aucune couleur en dur), coherents light/dark.
+ * Wording Naturegraph : terme generique = "moment" (englobe Rencontres + Instants).
+ * Ton decouverte (jamais "rattraper" / "deja vu" / "contenu"), tutoiement partout.
+ * Sobres et 100% tokens DS (aucune couleur en dur), coherents light/dark.
  */
 
 import { useTranslation } from 'react-i18next'
@@ -27,8 +28,9 @@ export function FeedDaySeparator({ label }: { label: string }) {
 }
 
 /**
- * Bandeau "contenus manques" : cadre doux + compteur. Formulation orientee
- * DECOUVERTE (pas "rattrapage"). Masque par l'appelant si count = 0 ou 1ere visite.
+ * Bandeau des nouveaux moments : "X nouveaux moments depuis ta derniere visite".
+ * "Moment" = terme generique (Rencontre OU Instant). Ton decouverte, une ligne.
+ * Masque par l'appelant si count = 0 ou premiere visite.
  */
 export function FeedMissedBanner({ count }: { count: number }) {
   const { t } = useTranslation()
@@ -40,24 +42,20 @@ export function FeedMissedBanner({ count }: { count: number }) {
       <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-action-default)]/12 text-[var(--color-action-default)]">
         <Sparkles className="size-5" aria-hidden="true" />
       </span>
-      <div className="min-w-0">
-        <p className="text-sm font-bold text-[var(--color-text-primary)]">
-          {t('home.feed.missed.title', { defaultValue: 'Depuis ta dernière visite' })}
-        </p>
-        <p className="text-sm text-[var(--color-text-secondary)]">
-          {t('home.feed.missed.count', {
-            count,
-            defaultValue: '{{count}} nouvelles observations à découvrir',
-          })}
-        </p>
-      </div>
+      <p className="min-w-0 text-sm font-bold text-[var(--color-text-primary)]">
+        {t('home.feed.missed.count', {
+          count,
+          defaultValue: '{{count}} nouveaux moments depuis ta dernière visite',
+        })}
+      </p>
     </div>
   )
 }
 
 /**
- * Frontiere "tu es a jour" : point de fin identifiable entre les nouvelles
- * observations et les publications deja vues.
+ * Frontiere "Tu t'etais arrete ici" : repere ou l'utilisateur s'etait arrete a sa
+ * derniere visite, entre les nouveaux moments et les moments deja parcourus.
+ * Formulation positive (pas de "rattrapage"), independante du type de contenu.
  */
 export function FeedSeenDivider() {
   const { t } = useTranslation()
@@ -65,11 +63,11 @@ export function FeedSeenDivider() {
     <div role="separator" className="flex flex-col items-center gap-1 py-6 text-center">
       <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--color-text-primary)]">
         <Leaf className="size-4 text-[var(--color-action-default)]" aria-hidden="true" />
-        {t('home.feed.upToDate.title', { defaultValue: 'Tu es à jour' })}
+        {t('home.feed.stoppedHere.title', { defaultValue: "Tu t'étais arrêté ici" })}
       </p>
       <p className="text-xs text-[var(--color-text-secondary)]">
-        {t('home.feed.upToDate.subtitle', {
-          defaultValue: 'Tu as découvert toutes les nouvelles rencontres.',
+        {t('home.feed.stoppedHere.subtitle', {
+          defaultValue: 'Tu as découvert les derniers moments partagés.',
         })}
       </p>
     </div>
