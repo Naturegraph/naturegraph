@@ -51,7 +51,7 @@ export function FeedMissedBanner({ count }: { count: number }) {
     <div className={`mb-3 ${FEED_ALIGN}`}>
       <div
         role="status"
-        className="flex items-center gap-3 rounded-card border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-4 py-3"
+        className="flex items-center gap-3 rounded-card border border-[var(--color-border)] bg-background px-4 py-3"
       >
         <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-action-default)]/12 text-[var(--color-action-default)]">
           <Sparkles className="size-5" aria-hidden="true" />
@@ -79,7 +79,7 @@ export function FeedSeenDivider() {
     <div className={`mt-6 mb-3 ${FEED_ALIGN}`}>
       <div
         role="separator"
-        className="flex items-center gap-3 rounded-card border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-4 py-3"
+        className="flex items-center gap-3 rounded-card border border-[var(--color-border)] bg-background px-4 py-3"
       >
         <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-action-default)]/12 text-[var(--color-action-default)]">
           <Leaf className="size-5" aria-hidden="true" />
