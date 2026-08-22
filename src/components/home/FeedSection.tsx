@@ -292,7 +292,7 @@ export function FeedSection({
    * (onglets Populaire / Pour vous) ET par la timeline chronologique (onglet
    * Récent, avec séparateurs de jour et frontière "déjà vu").
    */
-  function renderFeedPost(post: MockPost, idx: number, total: number) {
+  function renderFeedPost(post: MockPost, idx: number, total: number, forceHideBorder?: boolean) {
     return (
       <FeedPost
         key={post.id}
@@ -309,8 +309,9 @@ export function FeedSection({
           )
           window.scrollTo({ top: 0, behavior: 'auto' })
         }}
-        // Dernier item du feed : on retire la bordure de fin (pas de barre orpheline).
-        hideEndBorder={idx === total - 1}
+        // Bordure de fin retiree : dernier item OU quand un separateur (jour /
+        // "arrete ici") suit, pour eviter une double ligne collee au separateur.
+        hideEndBorder={forceHideBorder ?? idx === total - 1}
         // NG-026 : seul le 1er post (above-the-fold, LCP) charge sa cover en eager.
         priority={idx === 0}
       />
@@ -586,21 +587,31 @@ export function FeedSection({
               {!feedVisit.loading && feedVisit.missedCount > 0 && (
                 <FeedMissedBanner count={feedVisit.missedCount} />
               )}
-              <div className="flex flex-col md:gap-4 gap-0">
+              {/* gap-3 mobile : un peu plus d'air entre les moments (gap-4 desktop). */}
+              <div className="flex flex-col md:gap-4 gap-3">
                 {(() => {
                   const total = visibleRaw.length
-                  let pIdx = -1
-                  return buildFeedTimeline(
+                  const rows = buildFeedTimeline(
                     visibleRaw,
                     feedVisit.lastVisitRef,
                     new Date(),
                     (k, o) => t(k, o) as string,
-                  ).map((row) => {
+                  )
+                  let pIdx = -1
+                  return rows.map((row, i) => {
                     if (row.kind === 'day')
                       return <FeedDaySeparator key={row.key} label={row.label} />
                     if (row.kind === 'seen-divider') return <FeedSeenDivider key={row.key} />
                     pIdx += 1
-                    return renderFeedPost(postFeedItemToMockPost(row.post, pIdx), pIdx, total)
+                    // Masque la bordure quand un separateur suit (pas de double ligne).
+                    const nextIsSeparator = i + 1 < rows.length && rows[i + 1].kind !== 'post'
+                    const hideBorder = i === rows.length - 1 || nextIsSeparator
+                    return renderFeedPost(
+                      postFeedItemToMockPost(row.post, pIdx),
+                      pIdx,
+                      total,
+                      hideBorder,
+                    )
                   })
                 })()}
               </div>
