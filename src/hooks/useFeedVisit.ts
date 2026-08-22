@@ -15,6 +15,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { markFeedVisit, countNewFeedPosts } from '@/services/feedVisitService'
 
+/**
+ * Cle sessionStorage : reference de visite FIGEE pour toute la session de
+ * navigation (onglet). Sans ca, le fil se re-marquerait a chaque ouverture et
+ * le bandeau "contenus manques" disparaitrait des le 1er rechargement. Valeur =
+ * ISO de la visite precedente, ou chaine vide pour "premiere visite / invite".
+ */
+const SESSION_KEY = 'naturegraph:feed-visit-ref'
+
 export interface UseFeedVisitResult {
   /** Visite precedente (ISO) : reference pour la frontiere "deja vu". null = 1ere visite/invite. */
   lastVisitRef: string | null
@@ -31,16 +39,35 @@ export function useFeedVisit(enabled: boolean): UseFeedVisitResult {
   const done = useRef(false)
 
   useEffect(() => {
-    // Garde `done` : un SEUL marquage par montage, y compris avec le double-invoke
-    // de StrictMode en dev. On n'annule PAS le resultat au cleanup : en StrictMode
-    // le cleanup precede un re-run bloque par le garde, et le composant reste monte
-    // (annuler jetterait la reference deja recuperee). setState apres unmount reel
-    // est inoffensif en React 18.
+    // Garde `done` : un SEUL traitement par montage (dont double-invoke StrictMode).
     if (!enabled || done.current) return
     done.current = true
 
+    // Tout le travail (dont les setState) est dans l'IIFE async : on ne fait aucun
+    // setState synchrone dans le corps de l'effet (regle set-state-in-effect).
     void (async () => {
-      const prev = await markFeedVisit()
+      // Reference deja figee pour cette session (onglet) ? On la reutilise : le fil
+      // ne se re-marque pas, le bandeau reste stable au fil des rechargements et
+      // allers-retours. Le marquage serveur n'a lieu qu'une fois par session.
+      let cached: string | null = null
+      try {
+        cached = sessionStorage.getItem(SESSION_KEY)
+      } catch {
+        /* sessionStorage indisponible (mode prive) : on marquera a ce montage */
+      }
+
+      let prev: string | null
+      if (cached !== null) {
+        prev = cached === '' ? null : cached
+      } else {
+        prev = await markFeedVisit()
+        try {
+          sessionStorage.setItem(SESSION_KEY, prev ?? '')
+        } catch {
+          /* ignore : reference juste non persistee pour la session */
+        }
+      }
+
       setLastVisitRef(prev)
       if (prev) setMissedCount(await countNewFeedPosts(prev))
       setLoading(false)
