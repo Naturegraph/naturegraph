@@ -526,7 +526,20 @@
       "emptyLocationTitle": "No observations within this radius",
       "endOfList": "You’ve seen all observations for now.",
       "loadError": "Try again in a moment. If the problem persists, check your connection.",
-      "loadErrorTitle": "Couldn’t load the feed"
+      "loadErrorTitle": "Couldn’t load the feed",
+      "timeline": {
+        "today": "Today",
+        "yesterday": "Yesterday"
+      },
+      "missed": {
+        "title": "Since your last visit",
+        "count_one": "{{count}} new observation to discover",
+        "count_other": "{{count}} new observations to discover"
+      },
+      "upToDate": {
+        "title": "You’re all caught up",
+        "subtitle": "You’ve seen all the new encounters."
+      }
     },
     "filters": {
       "title": "Filters",

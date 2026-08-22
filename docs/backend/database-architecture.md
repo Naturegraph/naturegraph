@@ -401,6 +401,16 @@ CREATE TRIGGER on_auth_user_created
 
 **BE** : Indispensable. Sinon le client doit créer le profil après signup, et on a un trou de cohérence si l'app crashe entre les deux.
 
+### Fil : dernière visite & contenus manqués (migration `20260821204509`)
+
+Repères "fil orienté découverte" (séparateurs temporels + contenus manqués) :
+
+- `profiles.last_feed_visit_at` (`timestamptz`, nullable) : dernière consultation du **fil** (distincte de `last_login_at`/`last_active_at`). `NULL` = première visite.
+- `mark_feed_visit()` → `timestamptz` : renvoie la visite **précédente** (référence figée pour la session) puis pose `now()`, atomiquement. `SECURITY DEFINER`, scopée à `auth.uid()`. Grant `authenticated`.
+- `count_new_feed_posts(p_since timestamptz)` → `int` : nombre d'observations **publiques publiées** depuis `p_since` (mêmes filtres que le feed public : `published` + `public` + hors comptes internes). `SECURITY DEFINER` `STABLE` (ne lit que du public). Grant `authenticated`. Index `idx_posts_published_public_created_at`.
+
+Pas de tracking par post : « vu » = `created_at <= last_feed_visit_at`. Logique client pure dans `feedTimeline.ts` (séparateurs + frontière « déjà vu »), état de visite via `useFeedVisit`.
+
 ---
 
 ## 5. Décisions différées (V1+)

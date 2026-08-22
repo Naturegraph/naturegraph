@@ -56,6 +56,9 @@ export type FeedTab = 'recent' | 'popular' | 'for-you'
 
 // Adaptateur PostFeedItem -> MockPost extrait dans feedPostMapper.ts (Lot 4).
 import { postFeedItemToMockPost } from './feedPostMapper'
+import { buildFeedTimeline } from './feedTimeline'
+import { FeedDaySeparator, FeedMissedBanner, FeedSeenDivider } from './FeedTimelineParts'
+import { useFeedVisit } from '@/hooks/useFeedVisit'
 
 // ─── Skeleton de chargement ──────────────────────────────────────────────────
 
@@ -249,9 +252,14 @@ export function FeedSection({
   const { data: hiddenIds } = useHiddenPostIds()
   const hiddenSet = new Set(hiddenIds ?? [])
 
-  const posts: MockPost[] = rawPosts
-    .filter((item) => !hiddenSet.has(item.id))
-    .map((item, idx) => postFeedItemToMockPost(item, idx))
+  // Items bruts visibles (avec created_at) : base des separateurs temporels.
+  const visibleRaw = rawPosts.filter((item) => !hiddenSet.has(item.id))
+  const posts: MockPost[] = visibleRaw.map((item, idx) => postFeedItemToMockPost(item, idx))
+
+  // Fil "oriente decouverte" (reperes temporels + contenus manques) : seulement
+  // sur l'onglet chronologique "Recent" (created_at desc). Les autres onglets
+  // ("Populaire" = tri par likes, non chronologique) gardent la liste simple.
+  const feedVisit = useFeedVisit(isAuthenticated)
 
   // V1.1.4 NG-026 : cle de cache InfiniteFeed pour l'optimistic update des
   // reactions. Le useToggleReaction reconnait maintenant le shape useInfiniteQuery
@@ -277,6 +285,36 @@ export function FeedSection({
       currentReaction: post?.user_reaction ?? null,
       feedQueryKey: currentFeedQueryKey,
     })
+  }
+
+  /**
+   * Rendu d'un post du fil, factorisé : utilisé tel quel par la liste simple
+   * (onglets Populaire / Pour vous) ET par la timeline chronologique (onglet
+   * Récent, avec séparateurs de jour et frontière "déjà vu").
+   */
+  function renderFeedPost(post: MockPost, idx: number, total: number) {
+    return (
+      <FeedPost
+        key={post.id}
+        {...post}
+        canInteract={isAuthenticated}
+        isOwnPost={!!user?.id && post.authorId === user.id}
+        onReact={handleReact}
+        onEditPost={onEditPost}
+        onSelectCategory={(group) => {
+          setFilters((prev) =>
+            prev.categories.includes(group)
+              ? prev
+              : { ...prev, categories: [...prev.categories, group] },
+          )
+          window.scrollTo({ top: 0, behavior: 'auto' })
+        }}
+        // Dernier item du feed : on retire la bordure de fin (pas de barre orpheline).
+        hideEndBorder={idx === total - 1}
+        // NG-026 : seul le 1er post (above-the-fold, LCP) charge sa cover en eager.
+        priority={idx === 0}
+      />
+    )
   }
 
   /**
@@ -540,38 +578,36 @@ export function FeedSection({
         <>
           {viewMode === 'grid' ? (
             <FeedGallery posts={posts} />
+          ) : activeTab === 'recent' ? (
+            // Fil chronologique enrichi (onglet Récent) : bandeau "contenus
+            // manqués" + séparateurs de jour + frontière "déjà vu". Cf.
+            // feedTimeline (logique pure) + FeedTimelineParts (rendu).
+            <>
+              {!feedVisit.loading && feedVisit.missedCount > 0 && (
+                <FeedMissedBanner count={feedVisit.missedCount} />
+              )}
+              <div className="flex flex-col md:gap-4 gap-0">
+                {(() => {
+                  const total = visibleRaw.length
+                  let pIdx = -1
+                  return buildFeedTimeline(
+                    visibleRaw,
+                    feedVisit.lastVisitRef,
+                    new Date(),
+                    (k, o) => t(k, o) as string,
+                  ).map((row) => {
+                    if (row.kind === 'day')
+                      return <FeedDaySeparator key={row.key} label={row.label} />
+                    if (row.kind === 'seen-divider') return <FeedSeenDivider key={row.key} />
+                    pIdx += 1
+                    return renderFeedPost(postFeedItemToMockPost(row.post, pIdx), pIdx, total)
+                  })
+                })()}
+              </div>
+            </>
           ) : (
             <div className="flex flex-col md:gap-4 gap-0">
-              {posts.map((post, idx) => (
-                <FeedPost
-                  key={post.id}
-                  {...post}
-                  canInteract={isAuthenticated}
-                  isOwnPost={!!user?.id && post.authorId === user.id}
-                  onReact={handleReact}
-                  onEditPost={onEditPost}
-                  /* V1.1.4 NG-023 ext : click chip categorie -> coche dans
-                     filters.categories (badge "1" naturel via FeedFilterPanel).
-                     L user reset via le panneau filtres standard.
-                     QA Nicolas 2026-06-01 : scroll up auto, l user etait
-                     laisse au milieu de la page apres click ce qui etait
-                     perturbant ("je suis ou ?"). */
-                  onSelectCategory={(group) => {
-                    setFilters((prev) =>
-                      prev.categories.includes(group)
-                        ? prev
-                        : { ...prev, categories: [...prev.categories, group] },
-                    )
-                    window.scrollTo({ top: 0, behavior: 'auto' })
-                  }}
-                  /* Dernier item du feed : on retire la bordure de fin pour
-                     éviter une barre orpheline en bas de liste. */
-                  hideEndBorder={idx === posts.length - 1}
-                  /* NG-026 : seul le 1er post (above-the-fold, LCP) charge sa
-                     cover en eager ; les autres en lazy (eco-conception). */
-                  priority={idx === 0}
-                />
-              ))}
+              {posts.map((post, idx) => renderFeedPost(post, idx, posts.length))}
             </div>
           )}
 
