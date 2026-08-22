@@ -1,8 +1,10 @@
 -- seed-dev-testdata.sql
 -- Donnees de TEST (fictives) pour le projet DEV uniquement : 4 comptes fictifs +
--- 18 posts VARIES (rencontres + instants, toutes combinaisons avec/sans titre,
--- description, espece, habitat, meteo, phenomene, photo) + photos data-URI +
--- interactions sociales. Alimente aussi les Tendances (especes repetees avec photo).
+-- 18 posts VARIES recents (rencontres + instants, toutes combinaisons avec/sans
+-- titre, description, espece, habitat, meteo, phenomene, photo) + 18 posts ETALES
+-- dans le temps (aout/juillet/mai/fevrier) pour donner du sens aux 4 periodes des
+-- stats (7 jours < mois < trimestre < annee). Photos data-URI + interactions sociales.
+-- Alimente aussi les Tendances (especes repetees avec photo, variables par periode).
 -- =============================================================================
 -- PREREQUIS : le dev doit avoir ete rebuild (run-dev-rebuild.mjs) ET seede en
 -- donnees de reference (copy-refdata-prod-to-dev.mjs : taxonomy_nodes non vide).
@@ -188,6 +190,59 @@ join (values
   ('b0000000-0000-0000-0000-00000000000e'::uuid, '#5F5DD8', 800, 600, 'landscape', 'horizontal'),
   ('b0000000-0000-0000-0000-000000000010'::uuid, '#B5462E', 800, 600, 'landscape', 'horizontal')
 ) as v(pid, hex, w, h, fmt, ori) on v.pid = p.id;
+
+-- ============================================================================
+-- Posts ETALES DANS LE TEMPS (prefixe c0000000) : donnent du sens aux 4 periodes
+-- des stats (Impact & Tendances). Sans ca, tous les posts seraient sur ~48h et
+-- les periodes "7 jours / mois / trimestre / annee" afficheraient les memes
+-- chiffres. Reference temporelle = 2026-08-21. Repartition croissante :
+--   aout (hors 7 jours) < +juillet (trimestre) < +mai/fevrier (annee).
+-- Toutes en region Quebec pour alimenter aussi les tendances zone Quebec.
+-- ============================================================================
+insert into public.posts
+ (id, user_id, type, status, visibility, title, description, encounter_date,
+  species_name, scientific_name, taxonomic_group, taxonomy_node_id, identification_status,
+  individuals_count, display_format, city, region, country, latitude, longitude, location_hidden,
+  published_at, created_at)
+values
+ ('c0000000-0000-0000-0000-000000000001','a1111111-1111-1111-1111-111111111111','nature_encounter','published','public','Colvert debut aout','Observation de debut de mois.','2026-08-08T14:00:00Z','Canard colvert','Anas platyrhynchos','birds','bf179817-c0e2-4451-a660-9fd6d1443a32','identified',1,'16:9','Montreal','Quebec','CA',45.51,-73.61,false,'2026-08-08T14:00:00Z','2026-08-08T14:00:00Z'),
+ ('c0000000-0000-0000-0000-000000000002','a3333333-3333-3333-3333-333333333333','nature_encounter','published','public','Monarque aout','Papillon en debut de mois.','2026-08-08T14:00:00Z','Monarque','Danaus plexippus','insects','94b8c78c-7194-4b67-be82-762a5a93551e','identified',1,'16:9','Laval','Quebec','CA',45.57,-73.69,false,'2026-08-08T14:00:00Z','2026-08-08T14:00:00Z'),
+ ('c0000000-0000-0000-0000-000000000003','a4444444-4444-4444-4444-444444444444','nature_encounter','published','public','Ecureuil aout','Petit visiteur.','2026-08-08T14:00:00Z','Ecureuil gris','Sciurus carolinensis','mammals','9b928b7d-79ac-4f73-b09c-d518c175b955','identified',1,'16:9','Sherbrooke','Quebec','CA',45.40,-71.89,false,'2026-08-08T14:00:00Z','2026-08-08T14:00:00Z'),
+ ('c0000000-0000-0000-0000-000000000004','a1111111-1111-1111-1111-111111111111','nature_encounter','published','public','Heron aout','A l affut.','2026-08-08T14:00:00Z','Grand Heron','Ardea herodias','birds','850f12fa-0b36-470a-ad60-0213d71e5276','identified',1,'16:9','Montreal','Quebec','CA',45.52,-73.62,false,'2026-08-08T14:00:00Z','2026-08-08T14:00:00Z'),
+ ('c0000000-0000-0000-0000-000000000005','a2222222-2222-2222-2222-222222222222','nature_encounter','published','public','Bernache juillet','Groupe estival.','2026-07-15T14:00:00Z','Bernache du Canada','Branta canadensis','birds','39b78935-566d-4680-b710-dd63daf59290','identified',8,'16:9','Quebec','Quebec','CA',46.81,-71.21,false,'2026-07-15T14:00:00Z','2026-07-15T14:00:00Z'),
+ ('c0000000-0000-0000-0000-000000000006','a2222222-2222-2222-2222-222222222222','nature_encounter','published','public','Merle juillet','Chant du soir.','2026-07-15T14:00:00Z','Merle d''Amerique','Turdus migratorius','birds','133bd85a-04b1-4615-91a5-47c3ced7111d','identified',1,'16:9','Quebec','Quebec','CA',46.82,-71.22,false,'2026-07-15T14:00:00Z','2026-07-15T14:00:00Z'),
+ ('c0000000-0000-0000-0000-000000000007','a3333333-3333-3333-3333-333333333333','nature_encounter','published','public','Tortue juillet','Au soleil.','2026-07-15T14:00:00Z','Tortue peinte','Chrysemys picta','reptiles','4beaa958-d05c-4944-9ec3-0d3d066c0e1c','identified',1,'16:9','Laval','Quebec','CA',45.58,-73.70,false,'2026-07-15T14:00:00Z','2026-07-15T14:00:00Z'),
+ ('c0000000-0000-0000-0000-000000000008','a2222222-2222-2222-2222-222222222222','nature_encounter','published','public','Carouge juillet','Bord de l eau.','2026-07-15T14:00:00Z','Carouge a epaulettes','Agelaius phoeniceus','birds','ba5fa7bd-4cd4-4c53-aa19-42bee8b3c6c4','identified',1,'16:9','Quebec','Quebec','CA',46.83,-71.23,false,'2026-07-15T14:00:00Z','2026-07-15T14:00:00Z'),
+ ('c0000000-0000-0000-0000-000000000009','a4444444-4444-4444-4444-444444444444','nature_encounter','published','public','Bruant juillet','Petit chanteur.','2026-07-15T14:00:00Z','Bruant chanteur','Melospiza melodia','birds','45afb3cc-0940-4bc4-9bd4-7fa096ef6256','identified',1,'16:9','Sherbrooke','Quebec','CA',45.41,-71.90,false,'2026-07-15T14:00:00Z','2026-07-15T14:00:00Z'),
+ ('c0000000-0000-0000-0000-00000000000a','a1111111-1111-1111-1111-111111111111','nature_encounter','published','public','Colvert mai','Printemps.','2026-05-10T14:00:00Z','Canard colvert','Anas platyrhynchos','birds','bf179817-c0e2-4451-a660-9fd6d1443a32','identified',1,'16:9','Montreal','Quebec','CA',45.53,-73.63,false,'2026-05-10T14:00:00Z','2026-05-10T14:00:00Z'),
+ ('c0000000-0000-0000-0000-00000000000b','a2222222-2222-2222-2222-222222222222','nature_encounter','published','public','Mesange mai','Aux mangeoires.','2026-05-10T14:00:00Z','mesange a tete noire','Poecile atricapillus','birds','2fcfa604-9b71-4d60-a607-2cbd2fc7c103','identified',1,'16:9','Quebec','Quebec','CA',46.84,-71.24,false,'2026-05-10T14:00:00Z','2026-05-10T14:00:00Z'),
+ ('c0000000-0000-0000-0000-00000000000c','a3333333-3333-3333-3333-333333333333','nature_encounter','published','public','Monarque mai','Retour de migration.','2026-05-10T14:00:00Z','Monarque','Danaus plexippus','insects','94b8c78c-7194-4b67-be82-762a5a93551e','identified',1,'16:9','Laval','Quebec','CA',45.59,-73.71,false,'2026-05-10T14:00:00Z','2026-05-10T14:00:00Z'),
+ ('c0000000-0000-0000-0000-00000000000d','a4444444-4444-4444-4444-444444444444','nature_encounter','published','public','Ecureuil mai','Actif.','2026-05-10T14:00:00Z','Ecureuil gris','Sciurus carolinensis','mammals','9b928b7d-79ac-4f73-b09c-d518c175b955','identified',1,'16:9','Sherbrooke','Quebec','CA',45.42,-71.91,false,'2026-05-10T14:00:00Z','2026-05-10T14:00:00Z'),
+ ('c0000000-0000-0000-0000-00000000000e','a1111111-1111-1111-1111-111111111111','nature_encounter','published','public','Heron mai','Zone humide.','2026-05-10T14:00:00Z','Grand Heron','Ardea herodias','birds','850f12fa-0b36-470a-ad60-0213d71e5276','identified',1,'16:9','Montreal','Quebec','CA',45.54,-73.64,false,'2026-05-10T14:00:00Z','2026-05-10T14:00:00Z'),
+ ('c0000000-0000-0000-0000-00000000000f','a2222222-2222-2222-2222-222222222222','nature_encounter','published','public','Bernache mai','En vol.','2026-05-10T14:00:00Z','Bernache du Canada','Branta canadensis','birds','39b78935-566d-4680-b710-dd63daf59290','identified',5,'16:9','Quebec','Quebec','CA',46.85,-71.25,false,'2026-05-10T14:00:00Z','2026-05-10T14:00:00Z'),
+ ('c0000000-0000-0000-0000-000000000010','a4444444-4444-4444-4444-444444444444','nature_encounter','published','public','Colvert fevrier','Riviere gelee.','2026-02-20T14:00:00Z','Canard colvert','Anas platyrhynchos','birds','bf179817-c0e2-4451-a660-9fd6d1443a32','identified',1,'16:9','Sherbrooke','Quebec','CA',45.43,-71.92,false,'2026-02-20T14:00:00Z','2026-02-20T14:00:00Z'),
+ ('c0000000-0000-0000-0000-000000000011','a3333333-3333-3333-3333-333333333333','nature_encounter','published','public','Tortue fevrier','Rare en hiver.','2026-02-20T14:00:00Z','Tortue peinte','Chrysemys picta','reptiles','4beaa958-d05c-4944-9ec3-0d3d066c0e1c','identified',1,'16:9','Laval','Quebec','CA',45.60,-73.72,false,'2026-02-20T14:00:00Z','2026-02-20T14:00:00Z'),
+ ('c0000000-0000-0000-0000-000000000012','a2222222-2222-2222-2222-222222222222','nature_encounter','published','public','Merle fevrier','Precoce.','2026-02-20T14:00:00Z','Merle d''Amerique','Turdus migratorius','birds','133bd85a-04b1-4615-91a5-47c3ced7111d','identified',1,'16:9','Quebec','Quebec','CA',46.86,-71.26,false,'2026-02-20T14:00:00Z','2026-02-20T14:00:00Z');
+
+-- Photos (data-URI SVG) sur un sous-ensemble des posts etales, pour que les
+-- Tendances different aussi selon la periode (especes repetees avec photo).
+insert into public.media
+ (post_id, user_id, type, status, url, display_order, is_cover, role, format, orientation, alt, width, height, mime_type, license)
+select p.id, p.user_id, 'photo', 'ready',
+  'data:image/svg+xml;base64,' || encode(convert_to(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="100%" height="100%" fill="' || v.hex || '"/><text x="50%" y="53%" font-size="52" fill="#fff" text-anchor="middle" font-family="sans-serif">' || coalesce(p.species_name, 'Obs') || '</text></svg>', 'UTF8'), 'base64'),
+  0, true, 'star', 'landscape', 'horizontal',
+  coalesce(p.species_name, 'Observation') || ' (photo test dev)', 800, 600, 'image/svg+xml', 'cc0'
+from public.posts p
+join (values
+  ('c0000000-0000-0000-0000-000000000001'::uuid, '#2E6F8E'),
+  ('c0000000-0000-0000-0000-000000000004'::uuid, '#3B7A57'),
+  ('c0000000-0000-0000-0000-000000000005'::uuid, '#37637A'),
+  ('c0000000-0000-0000-0000-000000000008'::uuid, '#B5462E'),
+  ('c0000000-0000-0000-0000-00000000000a'::uuid, '#2E6F8E'),
+  ('c0000000-0000-0000-0000-00000000000c'::uuid, '#C77D2E'),
+  ('c0000000-0000-0000-0000-00000000000f'::uuid, '#37637A')
+) as v(pid, hex) on v.pid = p.id;
 
 -- Interactions sociales
 insert into public.follows (follower_id, following_id) values
