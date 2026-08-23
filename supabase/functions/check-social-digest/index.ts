@@ -10,10 +10,15 @@
  * livres par NG-049. Sans eux, quelqu'un pouvait recevoir dix echanges sur sa
  * publication sans qu'aucun email ne le lui dise.
  *
+ * Refonte email (2026-08-22, Lot 2) : E7 est desormais le DIGEST HEBDOMADAIRE
+ * UNIQUE (cron dimanche 18h). Les autres digests quotidiens (E8 posts suivis) et
+ * nudges (E4 streak, E3 objectif) sont desactives, E1 resume hebdo aussi. Ce mail
+ * est donc le seul email d'activite recurrent : ~1/semaine, pertinence > frequence.
+ *
  * Regles (validees avec Nicolas) :
- *   - Digest QUOTIDIEN, jamais toutes les 30 min.
- *   - Respecte notif_frequency du profil : 'realtime'/'daily' -> digest quotidien ;
- *     'weekly' -> rien ici (couvert par le resume hebdo E1).
+ *   - Digest HEBDOMADAIRE (dimanche), jamais toutes les 30 min.
+ *   - Envoye a TOUS les profils eligibles quelle que soit notif_frequency (ne plus
+ *     sauter les 'weekly' : E1 est desactive, ils n'auraient plus rien).
  *   - N'envoie QUE du non-vu : notifs reaction/follow read=false ET emailed_at IS NULL.
  *     Si tout est lu/deja emaile -> rien.
  *   - N'envoie PAS si l'user est deja revenu aujourd'hui (last_active_at >= debut
@@ -154,9 +159,12 @@ serveWithSentry('check-social-digest', async (req: Request) => {
     for (const prof of profiles ?? []) {
       const uid = prof.id as string
 
-      // Frequence : weekly -> couvert par E1, pas de digest quotidien ici.
-      const freq = freqById.get(uid) ?? 'weekly'
-      if (freq === 'weekly') continue
+      // NOTE 2026-08-22 (refonte email Lot 2) : E7 est desormais le DIGEST HEBDO
+      // unique (cron dimanche), et E1 (resume hebdo) est desactive. On ne saute
+      // donc PLUS les profils en frequence 'weekly' : sinon ils ne recevraient
+      // plus AUCUN email (34 users = la majorite). Tous les profils eligibles
+      // recoivent ce digest hebdomadaire ; la frequence in-app reste geree ailleurs.
+      void freqById
 
       // Deja revenu aujourd'hui -> il a vu la cloche, on ne double pas.
       const lastActive = prof.last_active_at as string | null
@@ -252,7 +260,9 @@ serveWithSentry('check-social-digest', async (req: Request) => {
           email_type: 'e7_reactions',
           category: 'event',
           pref_type: 'reaction',
-          min_interval_hours: 20,
+          // Digest HEBDO (cron dimanche) : 144h (6j) garantit au plus 1 E7 par
+          // semaine meme si la fonction est reinvoquee (test, relance manuelle).
+          min_interval_hours: 144,
           reference_key: dateKey,
           subject,
           heroTitle: 'Ce que tu as manqué',
