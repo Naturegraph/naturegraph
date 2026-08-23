@@ -526,7 +526,19 @@
       "emptyLocationTitle": "Aucune observation dans ce rayon",
       "endOfList": "Tu as vu toutes les observations pour le moment.",
       "loadError": "Réessaie dans un instant. Si le probleme persiste, verifie ta connexion.",
-      "loadErrorTitle": "Impossible de charger le feed"
+      "loadErrorTitle": "Impossible de charger le feed",
+      "timeline": {
+        "today": "Aujourd'hui",
+        "yesterday": "Hier"
+      },
+      "missed": {
+        "count_one": "1 nouveau moment depuis ta dernière visite",
+        "count_other": "{{count}} nouveaux moments depuis ta dernière visite"
+      },
+      "stoppedHere": {
+        "title": "Tu t'étais arrêté ici",
+        "subtitle": "Tu as découvert les derniers moments."
+      }
     },
     "filters": {
       "title": "Filtres",
