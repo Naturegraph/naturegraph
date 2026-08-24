@@ -2,33 +2,34 @@
  * SettingsNotificationsView : Sous-vue "Notifications" du SettingsPanel
  * =====================================================================
  *
- * Panneau ENTIEREMENT FONCTIONNEL depuis NG-045 (systeme email live). Chaque
- * section ecrit dans la vraie source et est respectee par le backend :
+ * Refonte 2026-08-24 (« repenser le panneau ») : on repond a DEUX questions
+ * claires au lieu de trois sections qui se chevauchaient.
  *
- *   1. "Quelles notifications recevoir" (reaction / follow / post)
- *      -> notification_preferences.enabled + email_enabled (les 2 canaux).
- *         Couper un type coupe la cloche (is_notif_enabled, triggers) ET
- *         l'email de ce type (is_email_enabled, dispatcher NG-045).
- *
- *   2. "Methodes de notification" : 2 toggles INDEPENDANTS (cochables ensemble)
- *      · "Dans l'application" : cloche = au moins un type actif (enabled).
- *        La bascule active/coupe les 3 types en preservant leur canal email.
+ *   1. "Comment etre prevenu·e" (les CANAUX) : 2 toggles independants.
+ *      · "Dans l'application" : cloche = au moins un type actif (enabled). La
+ *        bascule active/coupe les types en preservant leur canal email.
  *      · "Par courriel" : user_settings.email_notifications (master email
- *        global, is_email_enabled le verifie en premier).
- *      · "Aucune notification" : raccourci, coche quand tout est coupe et
- *        coupe cloche + email au clic.
+ *        global). Sous-titre honnete : un resume, une fois par semaine (E7).
+ *
+ *   2. "De quoi etre prevenu·e" (les TYPES) -> notification_preferences
+ *      (enabled + email_enabled, les 2 canaux d'un coup). Couper un type coupe
+ *      la cloche ET l'email de ce type (is_notif_enabled + is_email_enabled,
+ *      backend NG-045). Le type "Echanges et identifications" (pref `comment`)
+ *      etait invisible avant cette refonte : il gouverne pourtant le digest.
  *
  *   3. "Nouvelles et mises a jour" -> user_settings.newsletter.
  *
- *   4. "Frequence de notification" -> user_settings.notif_frequency
- *      (realtime / daily / weekly). Respecte par les digests E7/E8/E1.
+ *   + Lien discret "Tout desactiver" (remplace l'ancien gros toggle "Aucune") :
+ *     coupe cloche + email en un clic.
  *
- * Layout : chaque option est une "card" bordured (rounded-md border-[0.5px])
- * avec label gauche + ToggleSwitch droite. Ecritures optimistes via React Query.
+ * Disparu : la section "Frequence par courriel" (temps reel / quotidien / hebdo)
+ * ne pilotait plus rien depuis la refonte email (un seul resume hebdo), on l'a
+ * retiree pour ne pas mentir. Le temps reel reste dans l'application (canal 1).
  *
- * Note design (a revoir avec Nicolas) : le radio 3 etats "Methodes" est un peu
- * ambigu vs le modele de donnees (un simple booleen email). Il pourrait etre
- * simplifie en un seul toggle "Recevoir par courriel".
+ * Layout : chaque option est une "card" relevee (bg-card + border) avec label
+ * (et sous-titre optionnel) a gauche + ToggleSwitch a droite. Couleurs 100 %
+ * tokens design system -> rendu correct en clair ET en sombre. Ecritures
+ * optimistes via React Query.
  */
 
 import { useTranslation } from 'react-i18next'
@@ -37,20 +38,17 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings'
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences'
+import type { NotificationType } from '@/services/notificationService'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /**
- * Fréquence de notification (digest) : stockée dans `user_settings.notif_frequency`.
- *
- * 'realtime' = notif immédiate dès qu'un événement survient.
- * 'daily'    = digest quotidien (NG-045 : E7/E8 respectent cette valeur).
- * 'weekly'   = digest hebdomadaire (couvert par le resume E1).
+ * Types exposes dans "De quoi etre prevenu·e", dans l'ordre d'affichage.
+ * 'comment' couvre les echanges ET les identifications (meme preference cote
+ * backend). Ces 4 types forment aussi le perimetre du master "Dans l'application"
+ * et du "Tout desactiver".
  */
-type Frequency = 'realtime' | 'daily' | 'weekly'
-
-/** Types de notification exposes dans "Quelles notifications recevoir". */
-const NOTIF_TYPES = ['reaction', 'follow', 'post'] as const
+const NOTIF_TYPES: NotificationType[] = ['reaction', 'comment', 'follow', 'post']
 
 // ─── Composant ────────────────────────────────────────────────────────────────
 
@@ -74,14 +72,12 @@ export function SettingsNotificationsView() {
 
   // Valeurs courantes : lues directement depuis `settings` (pas de state local)
   // pour rester synchro avec React Query (optimistic update via setQueryData).
-  // Les 2 methodes sont INDEPENDANTES (cochables ensemble) :
   //   - "Par courriel" = user_settings.email_notifications (master email global).
   //   - "Dans l'application" = cloche = au moins un type actif (enabled).
   // email_notifications defaut true si pas de row (compte existant).
   const emailOn: boolean = settings?.email_notifications ?? true
   const inAppOn = NOTIF_TYPES.some((tp) => isTypeEnabled(tp))
   const productUpdates: boolean = settings?.newsletter ?? false
-  const frequency: Frequency = settings?.notif_frequency ?? 'weekly'
 
   /**
    * Wrapper mutation : update settings + toast d'erreur si échec.
@@ -100,9 +96,14 @@ export function SettingsNotificationsView() {
     })
   }
 
+  /** Bascule les 2 canaux d'un type d'un coup (cloche + email ensemble). */
+  function toggleType(type: NotificationType, value: boolean) {
+    setTypePref({ type, enabled: value, emailEnabled: value })
+  }
+
   /**
    * Canal "Dans l'application" (independant de l'email) : active/coupe la cloche
-   * pour les 3 types d'un coup, en PRESERVANT le canal email de chaque type
+   * pour tous les types d'un coup, en PRESERVANT le canal email de chaque type
    * (les 2 canaux sont independants : couper la cloche ne coupe pas l'email).
    */
   function setInAppChannel(value: boolean) {
@@ -111,26 +112,69 @@ export function SettingsNotificationsView() {
     }
   }
 
-  /** "Aucune notification" : coupe TOUT (cloche + email + les 2 canaux par type). */
-  function setNoneAll() {
+  /** "Tout desactiver" : coupe TOUT (cloche + email + les 2 canaux par type). */
+  function disableAll() {
     handleUpdate({ email_notifications: false })
     for (const tp of NOTIF_TYPES) setTypePref({ type: tp, enabled: false, emailEnabled: false })
   }
 
   const disabled = isLoading || !user?.id
   const typePrefsDisabled = !user?.id
+  const alreadyAllOff = !inAppOn && !emailOn
 
   return (
     <div className="flex flex-col">
-      {/* ── Section 0 : Types de notifications (FONCTIONNEL) ──────────────
-          Branche sur notification_preferences. L'utilisateur choisit ce qu'il
-          recoit ; desactiver un type coupe reellement la notif (trigger DB). */}
+      {/* ── Section 1 : Comment etre prevenu·e (les canaux) ───────────────
+          Deux toggles INDEPENDANTS (cochables ensemble). "Par courriel" annonce
+          sa vraie cadence : un resume hebdomadaire (E7), plus de radios. */}
       <section className="flex flex-col gap-4 px-6 pt-4 pb-6">
         <h3 className="font-title font-bold text-lg text-foreground leading-tight">
-          {t('settings.notifications.typesTitle', {
-            defaultValue: 'Quelles notifications recevoir',
+          {t('settings.notifications.channelsTitle', {
+            defaultValue: 'Comment être prévenu·e',
           })}
         </h3>
+        <div className="flex flex-col gap-3" role="group">
+          <ToggleCard
+            label={t('settings.notifications.methodInApp', { defaultValue: "Dans l'application" })}
+            description={t('settings.notifications.methodInAppDesc', {
+              defaultValue: 'En temps réel, dans la cloche',
+            })}
+            checked={inAppOn}
+            disabled={disabled}
+            onChange={(v) => setInAppChannel(v)}
+          />
+          <ToggleCard
+            label={t('settings.notifications.methodEmail', { defaultValue: 'Par courriel' })}
+            description={t('settings.notifications.methodEmailDesc', {
+              defaultValue: 'Un résumé, une fois par semaine',
+            })}
+            checked={emailOn}
+            disabled={disabled}
+            onChange={(v) => handleUpdate({ email_notifications: v })}
+          />
+        </div>
+      </section>
+
+      {/* Séparateur 4px solid bg-border edge-to-edge (cohérence DS produit). */}
+      <div className="h-1 bg-border" aria-hidden="true" />
+
+      {/* ── Section 2 : De quoi etre prevenu·e (les types) ────────────────
+          Branche sur notification_preferences. Chaque type coupe la cloche ET
+          l'email de ce type. "Echanges et identifications" (pref comment) est
+          expose ici pour la premiere fois. */}
+      <section className="flex flex-col gap-3 px-6 pt-6 pb-6">
+        <div className="flex flex-col gap-1">
+          <h3 className="font-title font-bold text-lg text-foreground leading-tight">
+            {t('settings.notifications.typesTitle', {
+              defaultValue: 'De quoi être prévenu·e',
+            })}
+          </h3>
+          <p className="text-xs text-muted-foreground leading-snug">
+            {t('settings.notifications.typesHint', {
+              defaultValue: 'S’applique à la cloche et au résumé hebdomadaire.',
+            })}
+          </p>
+        </div>
         <div className="flex flex-col gap-3">
           <ToggleCard
             label={t('settings.notifications.typeReaction', {
@@ -138,15 +182,29 @@ export function SettingsNotificationsView() {
             })}
             checked={isTypeEnabled('reaction')}
             disabled={typePrefsDisabled}
-            onChange={(v) => setTypePref({ type: 'reaction', enabled: v, emailEnabled: v })}
+            onChange={(v) => toggleType('reaction', v)}
+          />
+          <ToggleCard
+            label={t('settings.notifications.typeComment', {
+              defaultValue: 'Échanges et identifications',
+            })}
+            description={t('settings.notifications.typeCommentDesc', {
+              defaultValue: 'Commentaires et espèces proposées',
+            })}
+            checked={isTypeEnabled('comment')}
+            disabled={typePrefsDisabled}
+            onChange={(v) => toggleType('comment', v)}
           />
           <ToggleCard
             label={t('settings.notifications.typeFollow', {
               defaultValue: 'Nouveaux migrateurs (abonnés)',
             })}
+            description={t('settings.notifications.typeFollowDesc', {
+              defaultValue: 'Quand on commence à te suivre',
+            })}
             checked={isTypeEnabled('follow')}
             disabled={typePrefsDisabled}
-            onChange={(v) => setTypePref({ type: 'follow', enabled: v, emailEnabled: v })}
+            onChange={(v) => toggleType('follow', v)}
           />
           <ToggleCard
             label={t('settings.notifications.typePost', {
@@ -154,57 +212,15 @@ export function SettingsNotificationsView() {
             })}
             checked={isTypeEnabled('post')}
             disabled={typePrefsDisabled}
-            onChange={(v) => setTypePref({ type: 'post', enabled: v, emailEnabled: v })}
+            onChange={(v) => toggleType('post', v)}
           />
         </div>
       </section>
 
+      {/* Séparateur 4px solid bg-border edge-to-edge (cohérence DS produit). */}
       <div className="h-1 bg-border" aria-hidden="true" />
 
-      {/* ── Section 1 : Méthodes de notification (master email) ─────────── */}
-      <section className="flex flex-col gap-4 px-6 pt-6 pb-6">
-        <h3 className="font-title font-bold text-lg text-foreground leading-tight">
-          {t('settings.notifications.methodTitle', {
-            defaultValue: 'Méthodes de notification',
-          })}
-        </h3>
-        {/* Toggles INDEPENDANTS : in-app et email peuvent etre actifs ensemble.
-            "Aucune" est un raccourci (coche quand tout est coupe, coupe tout au clic). */}
-        <div className="flex flex-col gap-3" role="group">
-          <ToggleCard
-            label={t('settings.notifications.methodInApp', {
-              defaultValue: "Dans l'application",
-            })}
-            checked={inAppOn}
-            disabled={disabled}
-            onChange={(v) => setInAppChannel(v)}
-          />
-          <ToggleCard
-            label={t('settings.notifications.methodEmail', {
-              defaultValue: 'Par courriel',
-            })}
-            checked={emailOn}
-            disabled={disabled}
-            onChange={(v) => handleUpdate({ email_notifications: v })}
-          />
-          <ToggleCard
-            label={t('settings.notifications.methodNone', {
-              defaultValue: 'Aucune notification',
-            })}
-            checked={!inAppOn && !emailOn}
-            disabled={disabled}
-            onChange={(v) => {
-              if (v) setNoneAll()
-            }}
-          />
-        </div>
-      </section>
-
-      {/* Séparateur 4px solid bg-border edge-to-edge (mêmes specs que
-          FeedPost mobile + EditPhotoTab : cohérence DS produit). */}
-      <div className="h-1 bg-border" aria-hidden="true" />
-
-      {/* ── Section 2 : Nouvelles et mises à jour ──────────────────────── */}
+      {/* ── Section 3 : Nouvelles et mises à jour ──────────────────────── */}
       <section className="flex flex-col gap-4 px-6 pt-6 pb-6">
         <h3 className="font-title font-bold text-lg text-foreground leading-tight">
           {t('settings.notifications.newsTitle', {
@@ -222,46 +238,19 @@ export function SettingsNotificationsView() {
         />
       </section>
 
-      {/* Séparateur 4px solid bg-border edge-to-edge (mêmes specs que
-          FeedPost mobile + EditPhotoTab : cohérence DS produit). */}
-      <div className="h-1 bg-border" aria-hidden="true" />
-
-      {/* ── Section 3 : Fréquence de notification ──────────────────────── */}
-      <section className="flex flex-col gap-4 px-6 pt-6 pb-6">
-        <h3 className="font-title font-bold text-lg text-foreground leading-tight">
-          {t('settings.notifications.freqTitle', {
-            defaultValue: 'Fréquence de notification',
-          })}
-        </h3>
-        {/* Ordre Figma : Temps réel → Une fois par jour → Une fois par semaine
-            (du plus fréquent au moins fréquent : Nicolas 2026-05-02). */}
-        <div className="flex flex-col gap-3" role="radiogroup">
-          <ToggleCard
-            label={t('settings.notifications.freqRealtime', {
-              defaultValue: 'Temps réel',
-            })}
-            checked={frequency === 'realtime'}
-            disabled={disabled}
-            onChange={(v) => v && handleUpdate({ notif_frequency: 'realtime' })}
-          />
-          <ToggleCard
-            label={t('settings.notifications.freqDaily', {
-              defaultValue: 'Une fois par jour',
-            })}
-            checked={frequency === 'daily'}
-            disabled={disabled}
-            onChange={(v) => v && handleUpdate({ notif_frequency: 'daily' })}
-          />
-          <ToggleCard
-            label={t('settings.notifications.freqWeekly', {
-              defaultValue: 'Une fois par semaine',
-            })}
-            checked={frequency === 'weekly'}
-            disabled={disabled}
-            onChange={(v) => v && handleUpdate({ notif_frequency: 'weekly' })}
-          />
-        </div>
-      </section>
+      {/* ── "Tout desactiver" : lien discret (couleur lien produit) ──────
+          Remplace l'ancien gros toggle "Aucune notification" : action rare,
+          donc moins de poids visuel. Grise si tout est deja coupe. */}
+      <div className="px-6 pb-6 pt-1">
+        <button
+          type="button"
+          onClick={disableAll}
+          disabled={disabled || alreadyAllOff}
+          className="text-sm font-medium text-[var(--color-link)] underline underline-offset-2 hover:no-underline disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+        >
+          {t('settings.notifications.disableAll', { defaultValue: 'Tout désactiver' })}
+        </button>
+      </div>
     </div>
   )
 }
@@ -270,23 +259,32 @@ export function SettingsNotificationsView() {
 
 interface ToggleCardProps {
   label: string
+  /** Sous-titre optionnel affiché sous le label (contexte, cadence...). */
+  description?: string
   checked: boolean
   onChange: (next: boolean) => void
   disabled?: boolean
 }
 
 /**
- * Card bordured avec label à gauche + ToggleSwitch à droite.
- * Pattern Figma : rounded-md border-[0.5px], padding 16px, h-12.
+ * Card relevée (bg-card sur le fond du panneau) avec label + sous-titre optionnel
+ * à gauche et ToggleSwitch à droite. Couleurs 100 % tokens -> clair + sombre OK.
  */
-function ToggleCard({ label, checked, onChange, disabled }: ToggleCardProps) {
+function ToggleCard({ label, description, checked, onChange, disabled }: ToggleCardProps) {
   return (
     <label
-      className={`flex items-center gap-4 px-4 py-3 rounded-md border-[0.5px] border-border bg-background transition-colors ${
+      className={`flex items-center gap-4 px-4 py-3 rounded-md border-[0.5px] border-border bg-card transition-colors ${
         disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-primary/50'
       }`}
     >
-      <span className="flex-1 text-sm font-medium text-foreground leading-snug">{label}</span>
+      <span className="flex-1 min-w-0">
+        <span className="block text-sm font-medium text-foreground leading-snug">{label}</span>
+        {description && (
+          <span className="mt-0.5 block text-xs text-muted-foreground leading-snug">
+            {description}
+          </span>
+        )}
+      </span>
       <ToggleSwitch checked={checked} onChange={onChange} ariaLabel={label} disabled={disabled} />
     </label>
   )

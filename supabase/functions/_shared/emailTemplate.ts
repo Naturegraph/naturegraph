@@ -24,13 +24,20 @@ export interface EmailShellParams {
   unsubscribeUrl: string
 }
 
-/** Bouton CTA email-safe : <a> stylé en bloc, tolère bien Gmail/Outlook/Apple Mail. */
+/**
+ * Bouton CTA email-safe : <a> stylé en bloc, tolère bien Gmail/Outlook/Apple Mail.
+ *
+ * `white-space:nowrap` garantit que le libellé reste sur UNE seule ligne : un
+ * bouton dont le texte passe à la ligne (ex. un label long sur mobile) casse la
+ * pilule et fait mauvais effet. La cellule garde une marge laterale reduite
+ * (24px) pour laisser de la place au libellé sur les petits ecrans.
+ */
 function ctaButtonHtml(cta: { label: string; url: string } | undefined): string {
   if (!cta) return ''
   return `
       <tr>
-        <td align="center" style="padding:8px 48px 32px 48px;">
-          <a href="${cta.url}" style="display:inline-block;background-color:#5f5dd8;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 32px;border-radius:999px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+        <td align="center" style="padding:8px 24px 32px 24px;">
+          <a href="${cta.url}" style="display:inline-block;background-color:#5f5dd8;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 32px;border-radius:999px;white-space:nowrap;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
             ${cta.label}
           </a>
         </td>
