@@ -1,10 +1,10 @@
 /**
- * check-social-digest : E7 (digest social quotidien), NG-045
+ * check-social-digest : E7 (digest social HEBDOMADAIRE), NG-045
  *
- * Un email par jour MAXIMUM qui resume l'activite sociale qu'un user n'a PAS
- * encore vue : reactions recues, nouveaux migrateurs (follows), echanges sous
- * ses publications et propositions d'espece. Objectif : ramener 1x/jour ceux
- * qui ont decroche, sans micro-spam.
+ * Un email par SEMAINE maximum (cron dimanche 18h) qui resume l'activite sociale
+ * qu'un user n'a PAS encore vue : reactions recues, nouveaux migrateurs (follows),
+ * echanges sous ses publications et propositions d'espece. Objectif : ramener une
+ * fois par semaine ceux qui ont decroche, sans micro-spam.
  *
  * NG-045 residuel (2026-07-23) : ajout des types 'comment' et 'identification',
  * livres par NG-049. Sans eux, quelqu'un pouvait recevoir dix echanges sur sa
@@ -139,32 +139,22 @@ serveWithSentry('check-social-digest', async (req: Request) => {
       })
     }
 
-    // 2. Profils + reglages (email, frequence, derniere activite) en un lot
+    // 2. Profils (email, prenom, derniere activite) en un lot.
+    //
+    // On ne lit PLUS user_settings.notif_frequency : depuis la refonte email
+    // (Lot 2), E7 est le DIGEST HEBDO unique et E1 (resume hebdo) est desactive.
+    // Sauter les profils en frequence 'weekly' les priverait de TOUT email
+    // (34 users = la majorite). Tous les profils eligibles recoivent ce digest ;
+    // la cadence in-app reste geree ailleurs, notif_frequency n'a plus d'effet ici.
     const { data: profiles, error: profErr } = await admin
       .from('profiles')
       .select('id, email, first_name, last_active_at')
       .in('id', userIds)
     if (profErr) throw profErr
 
-    const { data: settings, error: setErr } = await admin
-      .from('user_settings')
-      .select('user_id, notif_frequency')
-      .in('user_id', userIds)
-    if (setErr) throw setErr
-    const freqById = new Map(
-      (settings ?? []).map((s) => [s.user_id as string, s.notif_frequency as string]),
-    )
-
     let sent = 0
     for (const prof of profiles ?? []) {
       const uid = prof.id as string
-
-      // NOTE 2026-08-22 (refonte email Lot 2) : E7 est desormais le DIGEST HEBDO
-      // unique (cron dimanche), et E1 (resume hebdo) est desactive. On ne saute
-      // donc PLUS les profils en frequence 'weekly' : sinon ils ne recevraient
-      // plus AUCUN email (34 users = la majorite). Tous les profils eligibles
-      // recoivent ce digest hebdomadaire ; la frequence in-app reste geree ailleurs.
-      void freqById
 
       // Deja revenu aujourd'hui -> il a vu la cloche, on ne double pas.
       const lastActive = prof.last_active_at as string | null
@@ -249,7 +239,7 @@ serveWithSentry('check-social-digest', async (req: Request) => {
 
       // 4. Envoi via le dispatcher. pref_type='reaction' : le digest social est
       // gate par la preference reaction (le desabonnement de ce mail coupe E7).
-      // reference_key = date du jour -> au plus 1 E7 par jour.
+      // reference_key = date du jour + fenetre 144h -> au plus 1 E7 par semaine.
       const dateKey = todayStart.slice(0, 10)
       const resp = await fetch(`${SUPABASE_URL}/functions/v1/send-notification-email`, {
         method: 'POST',
@@ -267,7 +257,7 @@ serveWithSentry('check-social-digest', async (req: Request) => {
           subject,
           heroTitle: 'Ce que tu as manqué',
           bodyHtml,
-          cta: { label: 'Voir mes notifications', url: `${APP_URL}/notifications` },
+          cta: { label: 'Faire un tour sur Naturegraph', url: `${APP_URL}/notifications` },
         }),
       })
       if (!resp.ok) {
