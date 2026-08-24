@@ -122,11 +122,19 @@ export function useNotificationsInfinite(
   })
 }
 
-/** Compteur non lues. */
-export function useUnreadCount(userId: string | undefined) {
+/**
+ * Compteur non lues, global (cloche) ou par sous-ensemble de types (badges
+ * d'onglet echanges/reactions). Sans `types`, la cle de cache reste IDENTIQUE a
+ * avant (la cloche n'est pas impactee) ; avec `types`, on suffixe la cle. Les
+ * mutations invalident par prefixe `['notifications', userId, 'unread']`, donc
+ * les deux variantes sont rafraichies ensemble.
+ */
+export function useUnreadCount(userId: string | undefined, types?: NotificationType[]) {
+  const base = unreadCountQueryKey(userId ?? '')
+  const key = types && types.length > 0 ? [...base, types.join(',')] : base
   return useQuery<number, Error>({
-    queryKey: unreadCountQueryKey(userId ?? ''),
-    queryFn: () => countUnread(userId!),
+    queryKey: key,
+    queryFn: () => countUnread(userId!, types),
     enabled: !!userId,
     staleTime: 30 * 1000,
   })

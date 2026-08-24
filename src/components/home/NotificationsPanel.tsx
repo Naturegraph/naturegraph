@@ -34,6 +34,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import {
   useNotificationsInfinite,
+  useUnreadCount,
   useMarkManyAsRead,
   useMarkAllAsRead,
   useDeleteNotification,
@@ -44,6 +45,7 @@ import {
   FILTER_KEYS,
   FILTER_LABEL_KEYS,
   FILTER_EMPTY_KEYS,
+  BADGED_FILTER_KEYS,
   type FilterKey,
 } from '@/utils/notificationFilters'
 import { SwipeableNotifItem } from './SwipeableNotifItem'
@@ -158,6 +160,16 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
   const markAllAsRead = useMarkAllAsRead(user?.id)
   const deleteNotif = useDeleteNotification(user?.id)
 
+  // Compteurs de non-lus des onglets Echanges + Social, toujours visibles dans la
+  // barre meme depuis un autre onglet : repond a "quelqu'un m'a ecrit / a reagi ?"
+  // sans changer d'onglet. Meme invalidation que la cloche (Realtime + mutations).
+  const echangesUnread = useUnreadCount(user?.id, FILTER_TYPES.echanges ?? undefined)
+  const socialUnread = useUnreadCount(user?.id, FILTER_TYPES.social ?? undefined)
+  const unreadByTab: Partial<Record<FilterKey, number>> = {
+    echanges: echangesUnread.data ?? 0,
+    social: socialUnread.data ?? 0,
+  }
+
   // Aplatit les pages, puis regroupe les notifs identiques < 24h
   // (ex : "Alice & Bob ont réagi à ton post").
   const brutes = useMemo(() => query.data?.pages.flatMap((p) => p.items) ?? [], [query.data])
@@ -251,6 +263,85 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
     }
   }
 
+  /**
+   * Rendu d'une liste d'items (avec separateurs), partage entre le mode par date
+   * (onglets Tous/Publications/Systeme) et le mode par sections (onglet Social).
+   */
+  const renderRows = (items: GroupedNotification[]) =>
+    items.map((notif, i) => (
+      <div key={notif.id}>
+        {i > 0 && <div className="h-px bg-border mx-5" aria-hidden="true" />}
+        <SwipeableNotifItem
+          onDelete={() => {
+            // Supprime tous les IDs du groupe (notif peut etre groupee).
+            const ids = notif.group_ids ?? [notif.id]
+            ids.forEach((id) => deleteNotif.mutate(id))
+          }}
+          deleteLabel={t('home.notifications.delete', {
+            defaultValue: 'Supprimer cette notification',
+          })}
+        >
+          <button
+            type="button"
+            onClick={() => handleClick(notif)}
+            className="w-full text-left flex items-start gap-3 px-5 py-3 hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            {/* Avatar + icone type en surcouche */}
+            <div className="relative shrink-0 mt-0.5">
+              <Avatar
+                url={notif.actor_avatar_url}
+                fallback={notif.actor_username ?? notif.title ?? '?'}
+              />
+              <NotifIcon type={notif.type} />
+            </div>
+
+            {/* Contenu */}
+            <div className="flex-1 min-w-0">
+              <div className="mb-1">
+                <NotifChip type={notif.type} t={t} />
+              </div>
+              <p className="text-sm text-foreground leading-snug">
+                <span className="font-bold">
+                  {formatGroupedActors(notif, (n) =>
+                    n === 1
+                      ? t('home.notifications.othersOne')
+                      : t('home.notifications.othersMany', { count: n }),
+                  ) ??
+                    notif.actor_username ??
+                    notif.title ??
+                    ''}
+                </span>{' '}
+                <span className="text-muted-foreground">
+                  {getMessage(notif.type, t, notif.group_count, notif.reference_type)}
+                </span>
+              </p>
+              {/* Corps : traduit la cle de reaction (emoji + libelle), line-clamp
+                  sauf pour les annonces system (lisibles en entier). */}
+              {notif.body &&
+                !(notif.type === 'post' && notif.group_count > 1) &&
+                (notif.type !== 'reaction' || getReactionLabel(notif.body, t)) && (
+                  <p
+                    className={`mt-1 text-sm text-muted-foreground leading-snug whitespace-pre-line ${
+                      notif.type === 'system' ? '' : 'line-clamp-2'
+                    }`}
+                  >
+                    {notif.type === 'reaction' ? getReactionLabel(notif.body, t) : notif.body}
+                  </p>
+                )}
+            </div>
+
+            {/* Heure + point non-lu */}
+            <div className="flex flex-col items-end gap-2 shrink-0 ml-1">
+              <span className="text-xs text-muted-foreground">{formatTime(notif.created_at)}</span>
+              {!notif.read && (
+                <div className="size-2.5 rounded-full bg-primary" aria-label="Non lu" />
+              )}
+            </div>
+          </button>
+        </SwipeableNotifItem>
+      </div>
+    ))
+
   const panelContent = (
     <>
       {/* Header : pas de badge unreadCount ici : doublon avec la cloche header
@@ -301,6 +392,17 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
               }`}
             >
               {t(FILTER_LABEL_KEYS[k])}
+              {BADGED_FILTER_KEYS.includes(k) && (unreadByTab[k] ?? 0) > 0 && (
+                <span
+                  className="ml-1.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold tabular-nums bg-primary-light text-[var(--color-link)] align-middle"
+                  aria-label={t('home.notifications.unreadCount', {
+                    count: unreadByTab[k] ?? 0,
+                    defaultValue: '{{count}} non lus',
+                  })}
+                >
+                  {unreadByTab[k]}
+                </span>
+              )}
               {actif && (
                 <span
                   aria-hidden="true"
@@ -336,104 +438,16 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
             />
           </div>
         )}
+        {/* Liste chronologique groupee par jour (tous les onglets, Social inclus).
+            La distinction echanges/reactions se lit a la COULEUR de l'item (teal
+            vs amber), pas via des sections (retour Nicolas 2026-08-24). */}
         {groups.map((group, gi) => (
           <div key={group.key}>
             {gi > 0 && <div className="h-px bg-border mx-5" aria-hidden="true" />}
-
             <p className="px-5 pt-4 pb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
               {formatGroupLabel(group.labelKey, t)}
             </p>
-
-            {group.items.map((notif, i) => (
-              <div key={notif.id}>
-                {i > 0 && <div className="h-px bg-border mx-5" aria-hidden="true" />}
-
-                <SwipeableNotifItem
-                  onDelete={() => {
-                    // Supprime tous les IDs du groupe (notif peut être groupée :
-                    // ex « ClaireD & Papidou ont réagi à ton post » → 2 IDs).
-                    const ids = notif.group_ids ?? [notif.id]
-                    ids.forEach((id) => deleteNotif.mutate(id))
-                  }}
-                  deleteLabel={t('home.notifications.delete', {
-                    defaultValue: 'Supprimer cette notification',
-                  })}
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleClick(notif)}
-                    className="w-full text-left flex items-start gap-3 px-5 py-3 hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                  >
-                    {/* Avatar + icône type en surcouche */}
-                    <div className="relative shrink-0 mt-0.5">
-                      <Avatar
-                        url={notif.actor_avatar_url}
-                        fallback={notif.actor_username ?? notif.title ?? '?'}
-                      />
-                      <NotifIcon type={notif.type} />
-                    </div>
-
-                    {/* Contenu */}
-                    <div className="flex-1 min-w-0">
-                      <div className="mb-1">
-                        <NotifChip type={notif.type} t={t} />
-                      </div>
-                      <p className="text-sm text-foreground leading-snug">
-                        <span className="font-bold">
-                          {formatGroupedActors(notif, (n) =>
-                            n === 1
-                              ? t('home.notifications.othersOne')
-                              : t('home.notifications.othersMany', { count: n }),
-                          ) ??
-                            notif.actor_username ??
-                            notif.title ??
-                            ''}
-                        </span>{' '}
-                        <span className="text-muted-foreground">
-                          {getMessage(notif.type, t, notif.group_count, notif.reference_type)}
-                        </span>
-                      </p>
-                      {/*
-                        Corps de la notification. Utilise principalement par les notifs
-                        type=system ou l administrateur ecrit un message libre, ainsi que
-                        les captions de posts. Pour type=reaction, le body brut stocke en
-                        base est la cle anglaise du trigger SQL (ex: "love") : on le
-                        traduit via getReactionLabel (emoji + libelle FR, NG-046 #2).
-
-                        line-clamp-2 evite les paves denses (NG-046 #1), SAUF pour
-                        type=system : une annonce officielle doit rester lisible en
-                        entier, sinon elle est tronquee sans aucun endroit ou lire la
-                        suite (decision Nicolas 2026-07-21, meme regle que la page).
-                        whitespace-pre-line preserve les retours a la ligne.
-                      */}
-                      {notif.body &&
-                        !(notif.type === 'post' && notif.group_count > 1) &&
-                        (notif.type !== 'reaction' || getReactionLabel(notif.body, t)) && (
-                          <p
-                            className={`mt-1 text-sm text-muted-foreground leading-snug whitespace-pre-line ${
-                              notif.type === 'system' ? '' : 'line-clamp-2'
-                            }`}
-                          >
-                            {notif.type === 'reaction'
-                              ? getReactionLabel(notif.body, t)
-                              : notif.body}
-                          </p>
-                        )}
-                    </div>
-
-                    {/* Heure + point non-lu */}
-                    <div className="flex flex-col items-end gap-2 shrink-0 ml-1">
-                      <span className="text-xs text-muted-foreground">
-                        {formatTime(notif.created_at)}
-                      </span>
-                      {!notif.read && (
-                        <div className="size-2.5 rounded-full bg-primary" aria-label="Non lu" />
-                      )}
-                    </div>
-                  </button>
-                </SwipeableNotifItem>
-              </div>
-            ))}
+            {renderRows(group.items)}
           </div>
         ))}
 

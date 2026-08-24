@@ -79,16 +79,23 @@ export async function listNotificationsPage(
   return { items, nextCursor }
 }
 
-/** Compte les notifications non lues. */
-export async function countUnread(userId: string): Promise<number> {
+/**
+ * Compte les notifications non lues, globalement ou pour un sous-ensemble de
+ * types (`types`). Sert a la fois la cloche (global) et les badges par onglet
+ * (ex: echanges = comment + mention) sans dupliquer de requete.
+ */
+export async function countUnread(userId: string, types?: NotificationType[]): Promise<number> {
   if (!isSupabaseConfigured || !supabase) return 0
 
-  const { count, error } = await supabase
+  let q = supabase
     .from('notifications')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
     .eq('read', false)
 
+  if (types && types.length > 0) q = q.in('type', types)
+
+  const { count, error } = await q
   if (error) throw new Error(error.message)
   return count ?? 0
 }
