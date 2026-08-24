@@ -31,7 +31,11 @@ import { ArrowLeft, CheckCheck } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMarkAsRead, useMarkAllAsRead, useUnreadCount } from '@/hooks/useNotifications'
 import { listNotificationsPage, type Notification } from '@/services/notificationService'
-import { groupNotifications, formatGroupedActors } from '@/utils/groupNotifications'
+import {
+  groupNotifications,
+  formatGroupedActors,
+  type GroupedNotification,
+} from '@/utils/groupNotifications'
 import {
   NotifIcon,
   NotifChip,
@@ -78,13 +82,13 @@ export default function NotificationsPage() {
 
   const markAsRead = useMarkAsRead(user?.id)
 
-  // Compteurs de non-lus par onglet (echanges / reactions) pour les badges de
-  // la barre : memes que le panneau cloche (source config partagee).
+  // Compteurs de non-lus des onglets Echanges + Social (badges de la barre),
+  // meme source que le panneau cloche (config partagee).
   const echangesUnread = useUnreadCount(user?.id, FILTER_TYPES.echanges ?? undefined)
-  const reactionsUnread = useUnreadCount(user?.id, FILTER_TYPES.reactions ?? undefined)
+  const socialUnread = useUnreadCount(user?.id, FILTER_TYPES.social ?? undefined)
   const unreadByTab: Partial<Record<FilterKey, number>> = {
     echanges: echangesUnread.data ?? 0,
-    reactions: reactionsUnread.data ?? 0,
+    social: socialUnread.data ?? 0,
   }
   const markAllAsRead = useMarkAllAsRead(user?.id)
 
@@ -128,6 +132,65 @@ export default function NotificationsPage() {
     trackNotifEvent('tab_changed', { tab: k })
     setFilter(k)
   }
+
+  /** Rendu d'une ligne (partage entre la liste plate et les sections sociales). */
+  const renderPageRow = (n: GroupedNotification) => (
+    <li key={n.id}>
+      <button
+        type="button"
+        onClick={() => handleClick(n)}
+        className={`w-full text-left flex items-start gap-3 px-4 py-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${
+          n.read ? 'hover:bg-muted/30' : 'bg-primary-light/30 hover:bg-primary-light/50'
+        }`}
+      >
+        {/* Avatar + icone */}
+        <div className="relative shrink-0 mt-0.5">
+          <Avatar url={n.actor_avatar_url} fallback={n.actor_username ?? n.title ?? '?'} />
+          <NotifIcon type={n.type} />
+        </div>
+
+        {/* Contenu */}
+        <div className="flex-1 min-w-0">
+          <div className="mb-1">
+            <NotifChip type={n.type} t={t} />
+          </div>
+          <p className="text-sm text-foreground leading-snug">
+            <span className="font-bold">
+              {formatGroupedActors(n, (nb) =>
+                nb === 1
+                  ? t('home.notifications.othersOne')
+                  : t('home.notifications.othersMany', { count: nb }),
+              ) ??
+                n.actor_username ??
+                n.title ??
+                ''}
+            </span>{' '}
+            <span className="text-muted-foreground">
+              {getMessage(n.type, t, n.group_count, n.reference_type)}
+            </span>
+          </p>
+          {/* Body : traduit la cle de reaction, line-clamp sauf system (lisible entier). */}
+          {n.body &&
+            !(n.type === 'post' && n.group_count > 1) &&
+            (n.type !== 'reaction' || getReactionLabel(n.body, t)) && (
+              <p
+                className={`mt-1 text-sm text-muted-foreground leading-snug whitespace-pre-line ${
+                  n.type === 'system' ? '' : 'line-clamp-2'
+                }`}
+              >
+                {n.type === 'reaction' ? getReactionLabel(n.body, t) : n.body}
+              </p>
+            )}
+        </div>
+
+        {/* Heure + point non-lu */}
+        <div className="flex flex-col items-end gap-2 shrink-0 ml-1">
+          <span className="text-xs text-muted-foreground">{formatTime(n.created_at)}</span>
+          {!n.read && <div className="size-2.5 rounded-full bg-primary" aria-label="Non lu" />}
+        </div>
+      </button>
+    </li>
+  )
 
   // ── Rendu ──────────────────────────────────────────────────────────────────
   return (
@@ -225,91 +288,11 @@ export default function NotificationsPage() {
           />
         )}
 
+        {/* Liste chronologique (tous les onglets, Social inclus). La distinction
+            echanges/reactions se lit a la couleur de l'item, pas via des sections. */}
         {grouped.length > 0 && (
           <ul className="divide-y divide-border bg-cream-lighter border border-border rounded-lg overflow-hidden">
-            {grouped.map((n) => (
-              <li key={n.id}>
-                <button
-                  type="button"
-                  onClick={() => handleClick(n)}
-                  className={`w-full text-left flex items-start gap-3 px-4 py-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${
-                    n.read ? 'hover:bg-muted/30' : 'bg-primary-light/30 hover:bg-primary-light/50'
-                  }`}
-                >
-                  {/* Avatar + icône */}
-                  <div className="relative shrink-0 mt-0.5">
-                    <Avatar
-                      url={n.actor_avatar_url}
-                      fallback={n.actor_username ?? n.title ?? '?'}
-                    />
-                    <NotifIcon type={n.type} />
-                  </div>
-
-                  {/* Contenu */}
-                  <div className="flex-1 min-w-0">
-                    <div className="mb-1">
-                      <NotifChip type={n.type} t={t} />
-                    </div>
-                    <p className="text-sm text-foreground leading-snug">
-                      <span className="font-bold">
-                        {formatGroupedActors(n, (nb) =>
-                          nb === 1
-                            ? t('home.notifications.othersOne')
-                            : t('home.notifications.othersMany', { count: nb }),
-                        ) ??
-                          n.actor_username ??
-                          n.title ??
-                          ''}
-                      </span>{' '}
-                      <span className="text-muted-foreground">
-                        {getMessage(n.type, t, n.group_count, n.reference_type)}
-                      </span>
-                    </p>
-                    {/*
-                      Body sur plusieurs lignes (whitespace-pre-line preserve les \n).
-
-                      Troncature à 2 lignes, même règle que le panneau (Nicolas
-                      2026-07-21) : les légendes de rencontres restaient trop longues
-                      et rendaient la liste dense.
-
-                      UNE exception : type=system. Le panneau tronque tout, et c'est
-                      acceptable parce que cette page sert justement de version
-                      complète : l'utilisateur clique pour lire la suite. Si la page
-                      tronquait aussi, il n'existerait plus AUCUN endroit où lire une
-                      annonce officielle en entier. La règle du 2026-05-25 (laisser
-                      respirer les notifs system) reste donc valable pour ce seul type.
-
-                      Deux règles alignées sur le panneau (NG-046) :
-                        - type=reaction : le body brut en base est la clé anglaise du
-                          trigger SQL (ex "love"), il faut la traduire.
-                        - publications regroupées : le body d'UNE seule publication
-                          n'a plus de sens sous "a publié 3 publications".
-                    */}
-                    {n.body &&
-                      !(n.type === 'post' && n.group_count > 1) &&
-                      (n.type !== 'reaction' || getReactionLabel(n.body, t)) && (
-                        <p
-                          className={`mt-1 text-sm text-muted-foreground leading-snug whitespace-pre-line ${
-                            n.type === 'system' ? '' : 'line-clamp-2'
-                          }`}
-                        >
-                          {n.type === 'reaction' ? getReactionLabel(n.body, t) : n.body}
-                        </p>
-                      )}
-                  </div>
-
-                  {/* Heure + point non-lu */}
-                  <div className="flex flex-col items-end gap-2 shrink-0 ml-1">
-                    <span className="text-xs text-muted-foreground">
-                      {formatTime(n.created_at)}
-                    </span>
-                    {!n.read && (
-                      <div className="size-2.5 rounded-full bg-primary" aria-label="Non lu" />
-                    )}
-                  </div>
-                </button>
-              </li>
-            ))}
+            {grouped.map(renderPageRow)}
           </ul>
         )}
 

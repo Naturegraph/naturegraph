@@ -48,18 +48,23 @@ export function NotifIcon({ type }: { type: NotificationType }) {
       bg: 'bg-[var(--color-highlight-bg)]',
       color: 'text-[var(--color-highlight-primary)]',
     },
-    // Echange = interaction SOCIALE : meme famille de couleur que les reactions
-    // (amber) plutot que le violet d'action, pour ne pas melanger la couleur de
-    // marque avec les notifs sociales (decision Nicolas 2026-07-28). L'icone
-    // (bulle) le distingue d'un coeur.
+    // Echange = conversation. Couleur PROPRE (teal --color-highlight, #006666)
+    // pour se distinguer des reactions (amber) dans l'onglet "Tous" : sans ca,
+    // un commentaire et un coeur avaient la meme couleur et se melangeaient
+    // (retour Nicolas 2026-08-24, remplace la decision amber du 2026-07-28).
+    // comment, mention et identification partagent ce teal (tous des echanges).
     comment: {
       Icon: MessageCircle,
-      bg: 'bg-[var(--color-warning-bg)]',
-      color: 'text-[var(--color-warning)]',
+      bg: 'bg-[var(--color-highlight-bg)]',
+      color: 'text-[var(--color-highlight-primary)]',
     },
-    mention: { Icon: AtSign, bg: 'bg-primary-light', color: 'text-[var(--color-link)]' },
+    mention: {
+      Icon: AtSign,
+      bg: 'bg-[var(--color-highlight-bg)]',
+      color: 'text-[var(--color-highlight-primary)]',
+    },
     // Icone "Proposer une espece" (MessageSquarePlus), pas une medaille (Award)
-    // qui n'avait aucun rapport. Fond -bg highlight comme le violet/orange.
+    // qui n'avait aucun rapport. Teal comme les autres echanges.
     identification: {
       Icon: MessageSquarePlus,
       bg: 'bg-[var(--color-highlight-bg)]',
@@ -96,9 +101,10 @@ export function NotifChip({ type, t }: { type: NotificationType; t: (k: string) 
     follow: 'bg-[var(--color-success-bg)] text-[var(--color-success)]',
     post: 'bg-primary-light text-[var(--color-link)]',
     species_digest: 'bg-[var(--color-highlight-bg)] text-[var(--color-highlight-primary)]',
-    // Echange = social : meme amber que les reactions (cf. NotifIcon).
-    comment: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
-    mention: 'bg-primary-light text-[var(--color-link)]',
+    // Echanges (comment/mention/identification) : teal --color-highlight, couleur
+    // propre distincte des reactions amber (cf. NotifIcon, retour 2026-08-24).
+    comment: 'bg-[var(--color-highlight-bg)] text-[var(--color-highlight-primary)]',
+    mention: 'bg-[var(--color-highlight-bg)] text-[var(--color-highlight-primary)]',
     identification: 'bg-[var(--color-highlight-bg)] text-[var(--color-highlight-primary)]',
     system: 'bg-muted text-muted-foreground',
   }
@@ -184,6 +190,8 @@ export function getMessage(
         : t('home.notifications.messageComment')
     case 'identification':
       return t('home.notifications.messageIdentification')
+    case 'mention':
+      return t('home.notifications.messageMention')
     default:
       return ''
   }
