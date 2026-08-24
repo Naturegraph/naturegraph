@@ -9,23 +9,43 @@
 
 import type { NotificationType } from '@/services/notificationService'
 
-export type FilterKey = 'all' | 'social' | 'species' | 'system'
+export type FilterKey = 'all' | 'echanges' | 'reactions' | 'species' | 'system'
 
-/** Ordre d'affichage des onglets. */
-export const FILTER_KEYS: FilterKey[] = ['all', 'social', 'species', 'system']
+/**
+ * Ordre d'affichage des onglets. « Echanges » AVANT « Reactions » : priorite
+ * d'attention (un echange peut demander une reponse ; une reaction non). Le
+ * ticket "separer echanges/reactions" remplace l'ancien onglet unique "Social".
+ */
+export const FILTER_KEYS: FilterKey[] = ['all', 'echanges', 'reactions', 'species', 'system']
 
-/** Types inclus dans chaque onglet. `null` = aucun filtre (tout afficher). */
+/**
+ * Types inclus dans chaque onglet. `null` = aucun filtre (tout afficher).
+ *   - echanges : ce qui cree une CONVERSATION (commentaires, reponses = type
+ *     `comment`, et mentions). C'est ce qui peut necessiter une reponse.
+ *   - reactions : signaux d'APPRECIATION sans reponse attendue (reactions +
+ *     nouveaux abonnes).
+ */
 export const FILTER_TYPES: Record<FilterKey, NotificationType[] | null> = {
   all: null,
-  social: ['reaction', 'follow', 'comment', 'mention'],
+  echanges: ['comment', 'mention'],
+  reactions: ['reaction', 'follow'],
   species: ['post', 'species_digest', 'identification'],
   system: ['system'],
 }
 
+/**
+ * Onglets qui portent un compteur de NON-LUS dans la barre (toujours visible,
+ * meme depuis un autre onglet) : c'est le coeur du ticket "ne pas rater un
+ * echange". On badge echanges (priorite) et reactions (info), pas le firehose
+ * "all" (deja porte par la cloche) ni species/system.
+ */
+export const BADGED_FILTER_KEYS: FilterKey[] = ['echanges', 'reactions']
+
 /** Clé i18n du libellé de chaque onglet. */
 export const FILTER_LABEL_KEYS: Record<FilterKey, string> = {
   all: 'home.notifications.page.tabAll',
-  social: 'home.notifications.page.tabSocial',
+  echanges: 'home.notifications.page.tabEchanges',
+  reactions: 'home.notifications.page.tabReactions',
   species: 'home.notifications.page.tabSpecies',
   system: 'home.notifications.page.tabSystem',
 }
@@ -43,9 +63,13 @@ export const FILTER_EMPTY_KEYS: Record<FilterKey, { title: string; hint: string 
     title: 'home.notifications.empty',
     hint: 'home.notifications.emptyHint',
   },
-  social: {
-    title: 'home.notifications.emptySocial',
-    hint: 'home.notifications.emptySocialHint',
+  echanges: {
+    title: 'home.notifications.emptyEchanges',
+    hint: 'home.notifications.emptyEchangesHint',
+  },
+  reactions: {
+    title: 'home.notifications.emptyReactions',
+    hint: 'home.notifications.emptyReactionsHint',
   },
   species: {
     title: 'home.notifications.emptySpecies',

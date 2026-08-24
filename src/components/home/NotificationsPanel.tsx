@@ -34,6 +34,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import {
   useNotificationsInfinite,
+  useUnreadCount,
   useMarkManyAsRead,
   useMarkAllAsRead,
   useDeleteNotification,
@@ -44,6 +45,7 @@ import {
   FILTER_KEYS,
   FILTER_LABEL_KEYS,
   FILTER_EMPTY_KEYS,
+  BADGED_FILTER_KEYS,
   type FilterKey,
 } from '@/utils/notificationFilters'
 import { SwipeableNotifItem } from './SwipeableNotifItem'
@@ -157,6 +159,17 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
   const markManyAsRead = useMarkManyAsRead(user?.id)
   const markAllAsRead = useMarkAllAsRead(user?.id)
   const deleteNotif = useDeleteNotification(user?.id)
+
+  // Compteurs de non-lus par onglet badge (echanges / reactions), toujours
+  // visibles dans la barre meme depuis un autre onglet : c'est ce qui permet de
+  // repondre a "quelqu'un m'a ecrit ?" sans changer d'onglet. Meme invalidation
+  // que la cloche (Realtime + mutations), donc jamais perimes.
+  const echangesUnread = useUnreadCount(user?.id, FILTER_TYPES.echanges ?? undefined)
+  const reactionsUnread = useUnreadCount(user?.id, FILTER_TYPES.reactions ?? undefined)
+  const unreadByTab: Partial<Record<FilterKey, number>> = {
+    echanges: echangesUnread.data ?? 0,
+    reactions: reactionsUnread.data ?? 0,
+  }
 
   // Aplatit les pages, puis regroupe les notifs identiques < 24h
   // (ex : "Alice & Bob ont réagi à ton post").
@@ -301,6 +314,17 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
               }`}
             >
               {t(FILTER_LABEL_KEYS[k])}
+              {BADGED_FILTER_KEYS.includes(k) && (unreadByTab[k] ?? 0) > 0 && (
+                <span
+                  className="ml-1.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold tabular-nums bg-primary-light text-[var(--color-link)] align-middle"
+                  aria-label={t('home.notifications.unreadCount', {
+                    count: unreadByTab[k] ?? 0,
+                    defaultValue: '{{count}} non lus',
+                  })}
+                >
+                  {unreadByTab[k]}
+                </span>
+              )}
               {actif && (
                 <span
                   aria-hidden="true"

@@ -29,7 +29,7 @@ import { useTranslation } from 'react-i18next'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { ArrowLeft, CheckCheck } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useMarkAsRead, useMarkAllAsRead } from '@/hooks/useNotifications'
+import { useMarkAsRead, useMarkAllAsRead, useUnreadCount } from '@/hooks/useNotifications'
 import { listNotificationsPage, type Notification } from '@/services/notificationService'
 import { groupNotifications, formatGroupedActors } from '@/utils/groupNotifications'
 import {
@@ -45,6 +45,7 @@ import {
   FILTER_KEYS,
   FILTER_LABEL_KEYS,
   FILTER_EMPTY_KEYS,
+  BADGED_FILTER_KEYS,
   type FilterKey,
 } from '@/utils/notificationFilters'
 import { trackNotifEvent } from '@/utils/notificationAnalytics'
@@ -76,6 +77,15 @@ export default function NotificationsPage() {
   usePageTitle(t('nav.notifications'))
 
   const markAsRead = useMarkAsRead(user?.id)
+
+  // Compteurs de non-lus par onglet (echanges / reactions) pour les badges de
+  // la barre : memes que le panneau cloche (source config partagee).
+  const echangesUnread = useUnreadCount(user?.id, FILTER_TYPES.echanges ?? undefined)
+  const reactionsUnread = useUnreadCount(user?.id, FILTER_TYPES.reactions ?? undefined)
+  const unreadByTab: Partial<Record<FilterKey, number>> = {
+    echanges: echangesUnread.data ?? 0,
+    reactions: reactionsUnread.data ?? 0,
+  }
   const markAllAsRead = useMarkAllAsRead(user?.id)
 
   // ── Requête paginée par curseur ─────────────────────────────────────────────
@@ -174,6 +184,17 @@ export default function NotificationsPage() {
                 }`}
               >
                 {t(FILTER_LABEL_KEYS[k])}
+                {BADGED_FILTER_KEYS.includes(k) && (unreadByTab[k] ?? 0) > 0 && (
+                  <span
+                    className="ml-1.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold tabular-nums bg-primary-light text-[var(--color-link)] align-middle"
+                    aria-label={t('home.notifications.unreadCount', {
+                      count: unreadByTab[k] ?? 0,
+                      defaultValue: '{{count}} non lus',
+                    })}
+                  >
+                    {unreadByTab[k]}
+                  </span>
+                )}
                 {active && (
                   <span
                     aria-hidden="true"
