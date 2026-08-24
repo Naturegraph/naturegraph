@@ -39,12 +39,12 @@ describe('buildFeedTimeline : separateurs temporels', () => {
     p('2026-08-19T12:00:00Z'), // 19 aout
   ]
 
-  it('un seul separateur par jour, pas entre chaque post', () => {
+  it('un separateur par jour SAUF aujourd hui (masque)', () => {
     const rows = buildFeedTimeline(posts, null, NOW)
-    // 3 jours distincts -> 3 separateurs "day"
-    expect(rows.filter((r) => r.kind === 'day')).toHaveLength(3)
-    // structure : day, post, post, day, post, day, post
-    expect(kinds(rows)).toEqual(['day', 'post', 'post', 'day', 'post', 'day', 'post'])
+    // 3 jours distincts, mais "Aujourd'hui" est masque -> 2 separateurs (Hier, 19 aout).
+    expect(rows.filter((r) => r.kind === 'day')).toHaveLength(2)
+    // Les 2 posts du jour n'ont PAS d'entete ; "Hier" puis "19 aout" apparaissent.
+    expect(kinds(rows)).toEqual(['post', 'post', 'day', 'post', 'day', 'post'])
   })
 
   it('ordre des posts preserve', () => {
@@ -75,12 +75,11 @@ describe('buildFeedTimeline : frontiere "deja vu"', () => {
     const rows = buildFeedTimeline(posts, lastVisit, NOW)
     const seen = rows.filter((r) => r.kind === 'seen-divider')
     expect(seen).toHaveLength(1)
-    // structure attendue : les 3 nouveaux (avec leurs jours), puis seen-divider,
-    // puis la section deja vu avec son propre entete de jour.
+    // structure attendue : "Aujourd'hui" masque (2 posts sans entete), puis "Hier",
+    // puis seen-divider, puis la section deja vu avec ses entetes de jour.
     expect(kinds(rows)).toEqual([
-      'day',
       'post',
-      'post', // aujourd hui (2 posts)
+      'post', // aujourd hui (2 posts, separateur masque)
       'day',
       'post', // hier (1 post nouveau)
       'seen-divider',

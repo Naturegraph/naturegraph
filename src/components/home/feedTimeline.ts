@@ -110,7 +110,14 @@ export function buildFeedTimeline<T extends TimelineItem>(
 
     const label = feedDayLabel(post.created_at, now, t)
     if (label !== lastDayLabel) {
-      rows.push({ kind: 'day', label, key: `day-${index}-${label}` })
+      // Le separateur du JOUR COURANT ("Aujourd'hui") est MASQUE : le haut du fil
+      // est evidemment recent, et couple au bandeau "nouveaux moments" ca fait
+      // doublon (retour Nicolas 2026-08-24). On garde "Hier" et les dates ; on met
+      // quand meme a jour lastDayLabel pour que le passage a la veille montre bien
+      // "Hier". `jours <= 0` = aujourd'hui (meme regle que feedDayLabel).
+      if (joursCivilsEcoules(post.created_at, now) > 0) {
+        rows.push({ kind: 'day', label, key: `day-${index}-${label}` })
+      }
       lastDayLabel = label
     }
 
