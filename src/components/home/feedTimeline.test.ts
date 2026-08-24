@@ -102,3 +102,27 @@ describe('buildFeedTimeline : frontiere "deja vu"', () => {
     expect(rows.some((r) => r.kind === 'seen-divider')).toBe(false)
   })
 })
+
+describe('buildFeedTimeline : mes propres posts ne comptent pas comme "nouveaux"', () => {
+  const lastVisit = '2026-08-20T12:00:00Z'
+
+  it('mon propre post recent ne declenche NI bandeau NI frontiere', () => {
+    const posts = [
+      { id: 'a', created_at: '2026-08-21T10:00:00Z', authorId: 'me' }, // mien, plus recent que la visite
+      { id: 'b', created_at: '2026-08-19T12:00:00Z', authorId: 'other' }, // deja vu
+    ]
+    const rows = buildFeedTimeline(posts, lastVisit, NOW, undefined, 'me')
+    // Seul "nouveau" est le mien -> aucune frontiere "deja vu".
+    expect(rows.some((r) => r.kind === 'seen-divider')).toBe(false)
+  })
+
+  it('un nouveau post d un AUTRE declenche bien la frontiere, meme si j ai aussi publie', () => {
+    const posts = [
+      { id: 'a', created_at: '2026-08-21T10:00:00Z', authorId: 'me' }, // mien, nouveau
+      { id: 'b', created_at: '2026-08-21T09:00:00Z', authorId: 'other' }, // autre, nouveau
+      { id: 'c', created_at: '2026-08-19T12:00:00Z', authorId: 'other' }, // deja vu
+    ]
+    const rows = buildFeedTimeline(posts, lastVisit, NOW, undefined, 'me')
+    expect(rows.some((r) => r.kind === 'seen-divider')).toBe(true)
+  })
+})

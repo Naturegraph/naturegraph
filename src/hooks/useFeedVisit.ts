@@ -12,7 +12,7 @@
  *   compris en StrictMode (double effet en dev).
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { markFeedVisit, countNewFeedPosts } from '@/services/feedVisitService'
 
 /**
@@ -26,17 +26,45 @@ const SESSION_KEY = 'naturegraph:feed-visit-ref'
 export interface UseFeedVisitResult {
   /** Visite precedente (ISO) : reference pour la frontiere "deja vu". null = 1ere visite/invite. */
   lastVisitRef: string | null
-  /** Nombre d'observations publiees depuis la derniere visite (0 si 1ere visite). */
+  /** Nombre d'observations publiees depuis la derniere visite (0 si 1ere visite ou rattrape). */
   missedCount: number
   /** True tant que le marquage initial n'est pas revenu (evite un flash de bandeau). */
   loading: boolean
+  /**
+   * A appeler quand l'utilisateur ATTEINT la frontiere "Tu t'etais arrete ici"
+   * (il a donc rattrape le fil). Effets : masque le bandeau tout de suite, vide
+   * la reference figee de la session et avance la reference serveur a maintenant,
+   * pour que les rechargements suivants repartent propres. Sans ca, le bandeau
+   * restait colle a la session entiere, meme apres avoir tout vu.
+   */
+  markCaughtUp: () => void
 }
 
 export function useFeedVisit(enabled: boolean): UseFeedVisitResult {
   const [lastVisitRef, setLastVisitRef] = useState<string | null>(null)
   const [missedCount, setMissedCount] = useState(0)
   const [loading, setLoading] = useState(enabled)
+  const [caughtUp, setCaughtUp] = useState(false)
   const done = useRef(false)
+  const caughtUpDone = useRef(false)
+
+  /**
+   * Rattrapage atteint : idempotent (une seule fois par montage). Identite stable
+   * (deps vides + garde ref) pour ne pas re-armer l'IntersectionObserver appelant.
+   */
+  const markCaughtUp = useCallback(() => {
+    if (caughtUpDone.current) return
+    caughtUpDone.current = true
+    setCaughtUp(true)
+    try {
+      sessionStorage.removeItem(SESSION_KEY)
+    } catch {
+      /* sessionStorage indisponible : le prochain montage re-marquera de toute facon */
+    }
+    // Avance la reference serveur a maintenant : le prochain montage (nouvelle
+    // session) comptera 0 nouveau moment. Best-effort, on n'attend pas le retour.
+    void markFeedVisit()
+  }, [])
 
   useEffect(() => {
     // Garde `done` : un SEUL traitement par montage (dont double-invoke StrictMode).
@@ -74,5 +102,7 @@ export function useFeedVisit(enabled: boolean): UseFeedVisitResult {
     })()
   }, [enabled])
 
-  return { lastVisitRef, missedCount, loading }
+  // Rattrape -> plus de bandeau (meme si des posts restent "nouveaux" a l'ecran :
+  // la frontiere actuelle reste pour ce rendu, le prochain chargement sera propre).
+  return { lastVisitRef, missedCount: caughtUp ? 0 : missedCount, loading, markCaughtUp }
 }

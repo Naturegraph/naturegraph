@@ -590,6 +590,7 @@ export function FeedSection({
                 feedVisit.lastVisitRef,
                 new Date(),
                 (k, o) => t(k, o) as string,
+                user?.id ?? null,
               )
               const showBanner = !feedVisit.loading && feedVisit.missedCount > 0
               // Padding haut sauf si le fil commence par un post (le post gère déjà
@@ -605,7 +606,8 @@ export function FeedSection({
                     {rows.map((row, i) => {
                       if (row.kind === 'day')
                         return <FeedDaySeparator key={row.key} label={row.label} />
-                      if (row.kind === 'seen-divider') return <FeedSeenDivider key={row.key} />
+                      if (row.kind === 'seen-divider')
+                        return <FeedSeenDivider key={row.key} onSeen={feedVisit.markCaughtUp} />
                       pIdx += 1
                       // Masque la bordure quand un separateur suit (pas de double ligne).
                       const nextIsSeparator = i + 1 < rows.length && rows[i + 1].kind !== 'post'
