@@ -273,7 +273,7 @@ interface ToggleCardProps {
 function ToggleCard({ label, description, checked, onChange, disabled }: ToggleCardProps) {
   return (
     <label
-      className={`flex items-center gap-4 px-4 py-3 rounded-md border-[0.5px] border-border bg-card shadow-sm transition-colors ${
+      className={`flex items-center gap-4 px-4 py-3 rounded-md border-[0.5px] border-border bg-card transition-colors ${
         disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-primary/50'
       }`}
     >
