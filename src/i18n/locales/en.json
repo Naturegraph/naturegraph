@@ -1281,10 +1281,8 @@
       "title": "Are you sure you want to log out?"
     },
     "notifications": {
-      "freqDaily": "Once a day",
-      "freqRealtime": "Real time",
-      "freqTitle": "Notification frequency",
-      "freqWeekly": "Once a week",
+      "emailFreqInfo": "By email, you only get a weekly summary of your activity, never daily. Instant notifications stay in the app.",
+      "emailFreqTitle": "Email frequency",
       "methodEmail": "By email",
       "methodInApp": "In the app",
       "methodNone": "No notifications",

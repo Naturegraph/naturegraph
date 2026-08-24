@@ -20,15 +20,14 @@
  *
  *   3. "Nouvelles et mises a jour" -> user_settings.newsletter.
  *
- *   4. "Frequence de notification" -> user_settings.notif_frequency
- *      (realtime / daily / weekly). Respecte par les digests E7/E8/E1.
+ *   4. "Frequence par courriel" (refonte email 2026-08-22) : INFORMATIF. On
+ *      n'envoie plus qu'UN resume hebdomadaire par courriel (E7, dimanche) ; les
+ *      anciens radios temps reel/quotidien/hebdo pilotaient `notif_frequency` que
+ *      les digests n'utilisent plus, on les a retires pour ne pas mentir. Le temps
+ *      reel reste dans l'application (canal "Dans l'application", section 1).
  *
  * Layout : chaque option est une "card" bordured (rounded-md border-[0.5px])
  * avec label gauche + ToggleSwitch droite. Ecritures optimistes via React Query.
- *
- * Note design (a revoir avec Nicolas) : le radio 3 etats "Methodes" est un peu
- * ambigu vs le modele de donnees (un simple booleen email). Il pourrait etre
- * simplifie en un seul toggle "Recevoir par courriel".
  */
 
 import { useTranslation } from 'react-i18next'
@@ -39,15 +38,6 @@ import { useSettings, useUpdateSettings } from '@/hooks/useSettings'
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-/**
- * Fréquence de notification (digest) : stockée dans `user_settings.notif_frequency`.
- *
- * 'realtime' = notif immédiate dès qu'un événement survient.
- * 'daily'    = digest quotidien (NG-045 : E7/E8 respectent cette valeur).
- * 'weekly'   = digest hebdomadaire (couvert par le resume E1).
- */
-type Frequency = 'realtime' | 'daily' | 'weekly'
 
 /** Types de notification exposes dans "Quelles notifications recevoir". */
 const NOTIF_TYPES = ['reaction', 'follow', 'post'] as const
@@ -81,7 +71,6 @@ export function SettingsNotificationsView() {
   const emailOn: boolean = settings?.email_notifications ?? true
   const inAppOn = NOTIF_TYPES.some((tp) => isTypeEnabled(tp))
   const productUpdates: boolean = settings?.newsletter ?? false
-  const frequency: Frequency = settings?.notif_frequency ?? 'weekly'
 
   /**
    * Wrapper mutation : update settings + toast d'erreur si échec.
@@ -226,41 +215,24 @@ export function SettingsNotificationsView() {
           FeedPost mobile + EditPhotoTab : cohérence DS produit). */}
       <div className="h-1 bg-border" aria-hidden="true" />
 
-      {/* ── Section 3 : Fréquence de notification ──────────────────────── */}
-      <section className="flex flex-col gap-4 px-6 pt-6 pb-6">
+      {/* ── Section 3 : Fréquence par courriel ─────────────────────────────
+          Refonte email (2026-08-22) : on n'envoie plus qu'UN resume hebdomadaire
+          par courriel (fini les emails quotidiens/temps reel). Les 3 radios
+          d'avant (temps reel / quotidien / hebdo) pilotaient notif_frequency, que
+          les digests n'utilisent plus -> on remplace par une info honnete. Le
+          temps reel, lui, reste dans l'application (section Methodes ci-dessus). */}
+      <section className="flex flex-col gap-3 px-6 pt-6 pb-6">
         <h3 className="font-title font-bold text-lg text-foreground leading-tight">
-          {t('settings.notifications.freqTitle', {
-            defaultValue: 'Fréquence de notification',
+          {t('settings.notifications.emailFreqTitle', {
+            defaultValue: 'Fréquence par courriel',
           })}
         </h3>
-        {/* Ordre Figma : Temps réel → Une fois par jour → Une fois par semaine
-            (du plus fréquent au moins fréquent : Nicolas 2026-05-02). */}
-        <div className="flex flex-col gap-3" role="radiogroup">
-          <ToggleCard
-            label={t('settings.notifications.freqRealtime', {
-              defaultValue: 'Temps réel',
-            })}
-            checked={frequency === 'realtime'}
-            disabled={disabled}
-            onChange={(v) => v && handleUpdate({ notif_frequency: 'realtime' })}
-          />
-          <ToggleCard
-            label={t('settings.notifications.freqDaily', {
-              defaultValue: 'Une fois par jour',
-            })}
-            checked={frequency === 'daily'}
-            disabled={disabled}
-            onChange={(v) => v && handleUpdate({ notif_frequency: 'daily' })}
-          />
-          <ToggleCard
-            label={t('settings.notifications.freqWeekly', {
-              defaultValue: 'Une fois par semaine',
-            })}
-            checked={frequency === 'weekly'}
-            disabled={disabled}
-            onChange={(v) => v && handleUpdate({ notif_frequency: 'weekly' })}
-          />
-        </div>
+        <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+          {t('settings.notifications.emailFreqInfo', {
+            defaultValue:
+              'Par courriel, tu reçois seulement un résumé hebdomadaire de ton activité, jamais de quotidien. Les notifications instantanées, elles, restent dans l’application.',
+          })}
+        </p>
       </section>
     </div>
   )

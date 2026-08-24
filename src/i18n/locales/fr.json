@@ -1281,10 +1281,8 @@
       "title": "Es-tu sûr·e de vouloir te déconnecter ?"
     },
     "notifications": {
-      "freqDaily": "Une fois par jour",
-      "freqRealtime": "Temps réel",
-      "freqTitle": "Fréquence de notification",
-      "freqWeekly": "Une fois par semaine",
+      "emailFreqInfo": "Par courriel, tu reçois seulement un résumé hebdomadaire de ton activité, jamais de quotidien. Les notifications instantanées, elles, restent dans l'application.",
+      "emailFreqTitle": "Fréquence par courriel",
       "methodEmail": "Par courriel",
       "methodInApp": "Dans l'application",
       "methodNone": "Aucune notification",
