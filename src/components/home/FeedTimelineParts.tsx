@@ -10,6 +10,7 @@
  * Sobres et 100% tokens DS (aucune couleur en dur), coherents light/dark.
  */
 
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Sparkles, Leaf } from 'lucide-react'
 
@@ -71,12 +72,37 @@ export function FeedMissedBanner({ count }: { count: number }) {
  * Frontiere "Tu t'etais arrete ici" : repere ou l'utilisateur s'etait arrete a sa
  * derniere visite, entre les nouveaux moments et les moments deja parcourus.
  * Formulation positive (pas de "rattrapage"), independante du type de contenu.
+ *
+ * `onSeen` (optionnel) est appele UNE fois quand la frontiere entre dans le
+ * viewport : l'utilisateur a rattrape le fil, on peut donc masquer le bandeau et
+ * cesser de le figer pour toute la session (cf. useFeedVisit.markCaughtUp).
  */
-export function FeedSeenDivider() {
+export function FeedSeenDivider({ onSeen }: { onSeen?: () => void }) {
   const { t } = useTranslation()
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!onSeen) return
+    const el = ref.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          onSeen()
+          obs.disconnect()
+        }
+      },
+      // Se declenche quand la frontiere est vraiment entree dans l'ecran (marge
+      // basse pour eviter un faux positif si elle n'affleure que d'un pixel).
+      { rootMargin: '0px 0px -15% 0px' },
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [onSeen])
+
   return (
     // Meme structure que le bandeau des nouveaux moments : icone a gauche + texte.
-    <div className={`mt-6 mb-3 ${FEED_ALIGN}`}>
+    <div ref={ref} className={`mt-6 mb-3 ${FEED_ALIGN}`}>
       <div
         role="separator"
         className="flex items-center gap-3 rounded-card border border-[var(--color-border)] bg-background px-4 py-3"
