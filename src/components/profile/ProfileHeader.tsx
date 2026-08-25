@@ -10,20 +10,21 @@
  *    centré, stats centrées, boutons centrés en row. Tab "À propos" présent.
  *
  * Modes :
- *  - isOwnProfile = true  → boutons "Modifier" (Pencil, primary) + "Paramètres"
- *                            (Settings, outlined). Pas de menu options ni partage
- *                            ici : les paramètres ouvrent un panel dédié.
+ *  - isOwnProfile = true  → boutons "Modifier le profil" (Pencil, primary) +
+ *                            "Partager" (Share2). Sur mobile, "Modifier le profil"
+ *                            remplit la largeur, "Partager" reste un bouton icone
+ *                            a cote. "Paramètres" a ete retire d'ici (redondant :
+ *                            accessible depuis le menu du bas -> panel profil).
  *  - isOwnProfile = false → bouton "Migrer" / "Tu migres avec" + partage + options
  *
  * Figma owner : 6385:77470 (desktop) / 6385:77493 (boutons détaillés).
  *
- * Les callbacks onEditProfile, onShare, onOptions, onSettings sont gérés
- * dans Profile.tsx.
+ * Les callbacks onEditProfile, onShare, onOptions sont gérés dans Profile.tsx.
  */
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pencil, Share2, MoreHorizontal, TreeDeciduous, Settings } from 'lucide-react'
+import { Pencil, Share2, MoreHorizontal, TreeDeciduous } from 'lucide-react'
 import hermineIcon from '@/assets/images/hermine-icon.png'
 import { ImagePresets } from '@/lib/supabaseImage'
 import { getBadgeEmoji } from '@/utils/badgeHelpers'
@@ -63,8 +64,6 @@ interface ProfileHeaderProps {
   isOwnProfile: boolean
   /** Owner only : ouvre le panel de modification du profil */
   onEditProfile?: () => void
-  /** Owner only : ouvre la page / panel de paramètres compte (notifs, langue, etc.) */
-  onSettings?: () => void
   /** Owner ET visiteur : ouvre le SharePopover (bouton Partager). */
   onShare?: () => void
   /** Visiteur uniquement : ouvre le menu options (block / report / copy link) */
@@ -77,7 +76,6 @@ export function ProfileHeader({
   profile,
   isOwnProfile,
   onEditProfile,
-  onSettings,
   onShare,
   onOptions,
 }: ProfileHeaderProps) {
@@ -226,37 +224,31 @@ export function ProfileHeader({
             </div>
 
             {/* Boutons d'action : alignés en haut sur desktop (self-start) */}
-            <div className="flex items-center gap-2 self-center md:self-start">
+            <div className="flex items-center gap-2 w-full md:w-auto self-center md:self-start">
               {isOwnProfile ? (
-                /* ── Owner : [Modifier] (primary) + [Partager] + [Paramètres] ──
-                   Le bouton Partager (Share2) est le MEME que sur un profil
-                   visite (meme icone, meme SharePopover) : partager son propre
-                   profil doit etre aussi simple et coherent (retour Nicolas
-                   2026-08-24). block/report/copy-only n'ont pas de sens ici. */
+                /* ── Owner : [Modifier le profil] (primary, remplit) + [Partager] ──
+                   Le bouton Partager (Share2) est le MEME que sur un profil visite
+                   (meme icone, meme SharePopover). "Parametres" a ete retire d'ici
+                   (redondant : accessible depuis le menu du bas -> panel profil,
+                   retour Nicolas 2026-08-24) : la barre est plus equilibree. Sur
+                   mobile, "Modifier le profil" remplit la largeur, "Partager" reste
+                   un bouton icone a cote. */
                 <>
                   <button
                     type="button"
                     onClick={onEditProfile}
-                    className="inline-flex items-center gap-2 h-10 px-5 rounded-full bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 h-10 px-5 rounded-full bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                   >
                     <Pencil className="size-4" aria-hidden="true" />
-                    {t('profile.editProfile', { defaultValue: 'Modifier' })}
+                    {t('profile.editProfile', { defaultValue: 'Modifier le profil' })}
                   </button>
                   <button
                     type="button"
                     onClick={onShare}
                     aria-label={t('profile.share', { defaultValue: 'Partager mon profil' })}
-                    className="size-10 flex items-center justify-center rounded-full border border-border hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    className="size-10 shrink-0 flex items-center justify-center rounded-full border border-border hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                   >
                     <Share2 className="size-4 text-foreground" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onSettings}
-                    className="inline-flex items-center gap-2 h-10 px-5 rounded-full bg-background border-[0.5px] border-border text-foreground text-sm font-bold hover:border-primary hover:text-[var(--color-link)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                  >
-                    <Settings className="size-4" aria-hidden="true" />
-                    {t('profile.settings', { defaultValue: 'Paramètres' })}
                   </button>
                 </>
               ) : (

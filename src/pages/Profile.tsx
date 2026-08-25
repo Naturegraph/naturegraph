@@ -35,7 +35,6 @@ import { EditProfilePanel } from '@/components/profile/EditProfilePanel'
 import { ContributeModal } from '@/components/home/ContributeModal'
 import { NotebookPanel } from '@/components/notebook/NotebookPanel'
 import { NOTEBOOKS_ENABLED } from '@/lib/featureFlags'
-import { SettingsPanel } from '@/components/settings/SettingsPanel'
 // SharePopover du feed réutilisé pour cohérence (Nicolas 2026-05-01).
 import { SharePopover } from '@/components/home/SharePopover'
 import { postFeedItemToMockPost } from '@/components/home/feedPostMapper'
@@ -126,7 +125,6 @@ export default function Profile() {
 
   // Panneaux superposés
   const [showEditPanel, setShowEditPanel] = useState(false)
-  const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [showShareSheet, setShowShareSheet] = useState(false)
   // V1.1.5 hotfix (Nicolas 2026-05-31) : ContributeModal sur Profile mobile
   // pour que l user puisse choisir entre Rencontre Nature et Instant Nature
@@ -358,7 +356,6 @@ export default function Profile() {
           profile={profileData}
           isOwnProfile={isOwnProfile}
           onEditProfile={() => setShowEditPanel(true)}
-          onSettings={() => setShowSettingsPanel(true)}
           onShare={() => setShowShareSheet(true)}
         />
 
@@ -417,8 +414,6 @@ export default function Profile() {
           onSave={handleSave}
         />
       )}
-
-      {showSettingsPanel && <SettingsPanel onClose={() => setShowSettingsPanel(false)} />}
 
       {/* NG-002 : panel d edition rendu directement dans le profil via le hook
           partage useEditPostFlow (coherence avec Home et PostDetail). */}
