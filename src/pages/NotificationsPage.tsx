@@ -55,6 +55,7 @@ import {
 import { trackNotifEvent } from '@/utils/notificationAnalytics'
 import { EmptyState, LoadingState } from '@/components/ui'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useHorizontalTabScroll } from '@/hooks/useHorizontalTabScroll'
 
 // ─── Catégories de filtres ────────────────────────────────────────────────────
 // Definies dans utils/notificationFilters, partagees avec le panneau de la
@@ -76,6 +77,8 @@ export default function NotificationsPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [filter, setFilter] = useState<FilterKey>('all')
+  // Barre d'onglets scrollable : recentre l'onglet actif + molette horizontale.
+  const tablistRef = useHorizontalTabScroll<HTMLDivElement>(filter)
 
   // BATCH 10 / QW-UX1 : titre dynamique pour onglet navigateur
   usePageTitle(t('nav.notifications'))
@@ -224,6 +227,7 @@ export default function NotificationsPage() {
 
         {/* Tabs */}
         <div
+          ref={tablistRef}
           role="tablist"
           aria-label={t('home.notifications.page.title')}
           // Barre de defilement masquee, comme dans le panneau : sur 4 onglets
