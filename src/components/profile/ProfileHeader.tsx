@@ -65,7 +65,7 @@ interface ProfileHeaderProps {
   onEditProfile?: () => void
   /** Owner only : ouvre la page / panel de paramètres compte (notifs, langue, etc.) */
   onSettings?: () => void
-  /** Visiteur uniquement : ouvre le SharePopover */
+  /** Owner ET visiteur : ouvre le SharePopover (bouton Partager). */
   onShare?: () => void
   /** Visiteur uniquement : ouvre le menu options (block / report / copy link) */
   onOptions?: () => void
@@ -228,10 +228,11 @@ export function ProfileHeader({
             {/* Boutons d'action : alignés en haut sur desktop (self-start) */}
             <div className="flex items-center gap-2 self-center md:self-start">
               {isOwnProfile ? (
-                /* ── Owner : [Modifier] (primary) + [Paramètres] (outlined) ──
-                   Figma 6385:77493 : boutons texte+icône, pas de menu 3-pts.
-                   Les actions block/report/copy-link n'ont pas de sens sur son
-                   propre profil → on les retire complètement. */
+                /* ── Owner : [Modifier] (primary) + [Partager] + [Paramètres] ──
+                   Le bouton Partager (Share2) est le MEME que sur un profil
+                   visite (meme icone, meme SharePopover) : partager son propre
+                   profil doit etre aussi simple et coherent (retour Nicolas
+                   2026-08-24). block/report/copy-only n'ont pas de sens ici. */
                 <>
                   <button
                     type="button"
@@ -240,6 +241,14 @@ export function ProfileHeader({
                   >
                     <Pencil className="size-4" aria-hidden="true" />
                     {t('profile.editProfile', { defaultValue: 'Modifier' })}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onShare}
+                    aria-label={t('profile.share', { defaultValue: 'Partager mon profil' })}
+                    className="size-10 flex items-center justify-center rounded-full border border-border hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  >
+                    <Share2 className="size-4 text-foreground" aria-hidden="true" />
                   </button>
                   <button
                     type="button"
