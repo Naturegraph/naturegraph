@@ -448,9 +448,13 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
         {groups.map((group, gi) => (
           <div key={group.key}>
             {gi > 0 && <div className="h-px bg-border mx-5" aria-hidden="true" />}
-            <p className="px-5 pt-4 pb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              {formatGroupLabel(group.labelKey, t)}
-            </p>
+            {/* Le libelle "Aujourd'hui" est masque (comme dans le fil) : le haut de
+                la liste est evidemment recent. "Hier" et les dates restent. */}
+            {group.labelKey.kind !== 'today' && (
+              <p className="px-5 pt-4 pb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                {formatGroupLabel(group.labelKey, t)}
+              </p>
+            )}
             {renderRows(group.items)}
           </div>
         ))}

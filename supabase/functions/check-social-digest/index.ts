@@ -202,16 +202,14 @@ serveWithSentry('check-social-digest', async (req: Request) => {
 
       const lines: string[] = []
       if (reactionNames.length > 0) {
-        lines.push(`${joinNames(reactionNames)} ${verbe(reactionNames)} réagi à tes observations.`)
+        lines.push(`${joinNames(reactionNames)} ${verbe(reactionNames)} réagi à tes moments.`)
       }
       if (commentNames.length > 0) {
-        lines.push(`${joinNames(commentNames)} ${verbe(commentNames)} réagi dans tes échanges.`)
+        lines.push(`${joinNames(commentNames)} ${verbe(commentNames)} commenté tes moments.`)
       }
       if (identificationNames.length > 0) {
         const v = verbe(identificationNames)
-        lines.push(
-          `${joinNames(identificationNames)} ${v} proposé une espèce sur tes observations.`,
-        )
+        lines.push(`${joinNames(identificationNames)} ${v} proposé une espèce sur tes moments.`)
       }
       if (followNames.length > 0) {
         lines.push(`${joinNames(followNames)} ${verbe(followNames)} commencé à te suivre.`)
@@ -226,11 +224,11 @@ serveWithSentry('check-social-digest', async (req: Request) => {
       // qu'un coeur, et un sujet qui ment sur le contenu use la confiance.
       const subject =
         identificationNames.length > 0
-          ? 'On a proposé une espèce sur tes observations'
+          ? 'On a proposé une espèce sur tes moments'
           : commentNames.length > 0
             ? 'Tu as de nouveaux échanges'
             : reactionNames.length > 0
-              ? 'On a réagi à tes observations'
+              ? 'On a réagi à tes moments'
               : 'Tu as de nouveaux migrateurs'
       const bodyHtml =
         `<p style="margin:0 0 16px 0;">${greeting}</p>` +

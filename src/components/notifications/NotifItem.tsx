@@ -183,6 +183,10 @@ export function getMessage(
     // affiches sans aucune phrase. Une notification qui ne dit pas ce qui s'est
     // passe ne sert a rien : on la lit, on ne comprend pas, on l'ignore.
     case 'comment':
+      // Une REPONSE a mon commentaire (reference_type 'echange', pose par le
+      // trigger notify_on_comment) se distingue d'un commentaire sur ma
+      // publication : "a repondu a ton echange" plutot que "a commente ton moment".
+      if (referenceType === 'echange') return t('home.notifications.messageCommentReply')
       // Groupes : message PROPRE aux echanges (avant, ils reprenaient le message
       // des publications "a publie N rencontres", ce qui n'avait aucun sens).
       return groupCount > 1
