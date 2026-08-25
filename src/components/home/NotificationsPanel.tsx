@@ -48,6 +48,7 @@ import {
   BADGED_FILTER_KEYS,
   type FilterKey,
 } from '@/utils/notificationFilters'
+import { useHorizontalTabScroll } from '@/hooks/useHorizontalTabScroll'
 import { SwipeableNotifItem } from './SwipeableNotifItem'
 import {
   NotifIcon,
@@ -153,6 +154,8 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
   // ecran (notificationFilters), jamais redefinies ici.
   const [filtre, setFiltre] = useState<FilterKey>('all')
   const types = FILTER_TYPES[filtre] ?? undefined
+  // Barre d'onglets scrollable : recentre l'onglet actif + molette horizontale.
+  const tablistRef = useHorizontalTabScroll<HTMLDivElement>(filtre)
 
   const query = useNotificationsInfinite(user?.id, types)
   const isLoading = query.isLoading
@@ -367,6 +370,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
 
       {/* Onglets de filtrage par type. */}
       <div
+        ref={tablistRef}
         role="tablist"
         aria-label={t('home.notifications.title')}
         // Barre de defilement masquee : sur une rangee de 4 onglets qui tient
