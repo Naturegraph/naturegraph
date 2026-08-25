@@ -11,10 +11,11 @@
  *
  * Modes :
  *  - isOwnProfile = true  → boutons "Modifier le profil" (Pencil, primary) +
- *                            "Partager" (Share2). Sur mobile, "Modifier le profil"
- *                            remplit la largeur, "Partager" reste un bouton icone
- *                            a cote. "Paramètres" a ete retire d'ici (redondant :
- *                            accessible depuis le menu du bas -> panel profil).
+ *                            "Partager" (Share2), a leur taille naturelle.
+ *                            Mobile : groupe centre (self-center). Desktop/tablette :
+ *                            aligne en haut a droite (self-start), comme le Figma.
+ *                            "Paramètres" a ete retire d'ici (redondant : accessible
+ *                            depuis le menu profil -> panel).
  *  - isOwnProfile = false → bouton "Migrer" / "Tu migres avec" + partage + options
  *
  * Figma owner : 6385:77470 (desktop) / 6385:77493 (boutons détaillés).
@@ -224,20 +225,20 @@ export function ProfileHeader({
             </div>
 
             {/* Boutons d'action : alignés en haut sur desktop (self-start) */}
-            <div className="flex items-center gap-2 w-full md:w-auto self-center md:self-start">
+            <div className="flex items-center gap-2 self-center md:self-start">
               {isOwnProfile ? (
-                /* ── Owner : [Modifier le profil] (primary, remplit) + [Partager] ──
+                /* ── Owner : [Modifier le profil] (primary) + [Partager] ──
                    Le bouton Partager (Share2) est le MEME que sur un profil visite
                    (meme icone, meme SharePopover). "Parametres" a ete retire d'ici
-                   (redondant : accessible depuis le menu du bas -> panel profil,
-                   retour Nicolas 2026-08-24) : la barre est plus equilibree. Sur
-                   mobile, "Modifier le profil" remplit la largeur, "Partager" reste
-                   un bouton icone a cote. */
+                   (redondant : accessible depuis le menu profil -> panel, retour
+                   Nicolas 2026-08-24). Les deux boutons gardent leur taille naturelle ;
+                   le groupe est centre sur mobile (self-center) et aligne a droite
+                   sur desktop/tablette (self-start), voir la rangee ci-dessus. */
                 <>
                   <button
                     type="button"
                     onClick={onEditProfile}
-                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 h-10 px-5 rounded-full bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    className="inline-flex items-center justify-center gap-2 h-10 px-5 rounded-full bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                   >
                     <Pencil className="size-4" aria-hidden="true" />
                     {t('profile.editProfile', { defaultValue: 'Modifier le profil' })}
@@ -246,7 +247,7 @@ export function ProfileHeader({
                     type="button"
                     onClick={onShare}
                     aria-label={t('profile.share', { defaultValue: 'Partager mon profil' })}
-                    className="size-10 shrink-0 flex items-center justify-center rounded-full border border-border hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    className="size-10 flex items-center justify-center rounded-full border border-border hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                   >
                     <Share2 className="size-4 text-foreground" aria-hidden="true" />
                   </button>
