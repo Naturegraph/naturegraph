@@ -42,6 +42,9 @@ interface SharePopoverProps {
   title: string
   /** Nom de l'espèce : fallback pour construire le slug URL si pas de titre. */
   species?: string | null
+  /** Titre du modal (defaut : "Partager l'observation"). Ex : "Partager le
+   *  profil" quand on partage un profil et non un post. */
+  heading?: string
   /** Callback de fermeture */
   onClose: () => void
 }
@@ -92,10 +95,19 @@ function SocialIcon({ label, href, iconNode }: SocialIconProps) {
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 
-export function SharePopover({ postId, shareUrl, title, species, onClose }: SharePopoverProps) {
+export function SharePopover({
+  postId,
+  shareUrl,
+  title,
+  species,
+  heading,
+  onClose,
+}: SharePopoverProps) {
   const { t } = useTranslation()
   const [linkCopied, setLinkCopied] = useState(false)
   const closeBtnRef = useRef<HTMLButtonElement>(null)
+  // Titre du modal : override optionnel (profil), sinon libelle post par defaut.
+  const modalTitle = heading ?? t('home.share.title', { defaultValue: "Partager l'observation" })
 
   // Priorité : shareUrl explicite > URL canonique post avec slug > origin.
   // buildPostPath() préfixe l'UUID d'un slug humain pour les URLs partagées
@@ -173,9 +185,7 @@ export function SharePopover({ postId, shareUrl, title, species, onClose }: Shar
     <>
       {/* Header : titre + close */}
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-lg font-bold text-foreground">
-          {t('home.share.title', { defaultValue: "Partager l'observation" })}
-        </h2>
+        <h2 className="text-lg font-bold text-foreground">{modalTitle}</h2>
         <button
           ref={closeBtnRef}
           type="button"
@@ -241,7 +251,7 @@ export function SharePopover({ postId, shareUrl, title, species, onClose }: Shar
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={t('home.share.title', { defaultValue: "Partager l'observation" })}
+          aria-label={modalTitle}
           className="bg-background rounded-2xl shadow-2xl w-full max-w-md p-6"
         >
           {content}
@@ -254,7 +264,7 @@ export function SharePopover({ postId, shareUrl, title, species, onClose }: Shar
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={t('home.share.title', { defaultValue: "Partager l'observation" })}
+          aria-label={modalTitle}
           className="bg-background rounded-t-2xl shadow-2xl px-5 pt-4 pb-5"
         >
           <div className="flex justify-center mb-3" aria-hidden="true">

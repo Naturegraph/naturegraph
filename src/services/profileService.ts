@@ -88,21 +88,25 @@ export async function getProfileById(userId: string): Promise<Profile | null> {
 }
 
 /**
- * Récupère un profil par son username.
+ * Récupère un profil par son username, INSENSIBLE A LA CASSE.
+ *
+ * Passe par la RPC `get_profile_by_username_ci` (matche `lower(username)`, casse
+ * exacte prioritaire) : un lien `/profile/Nicolas` mis en minuscules par Facebook
+ * (`/profile/nicolas`) continue de pointer sur le bon profil (§5/§6 du ticket
+ * partage profil). La RLS de `profiles` s'applique (SECURITY INVOKER).
  */
 export async function getProfileByUsername(username: string): Promise<Profile | null> {
   if (!supabase) throw new Error('Supabase non configuré')
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('username', username)
-    .single()
-  if (error) {
-    if (error.code === 'PGRST116') return null
-    throw new Error(error.message)
-  }
-  return data as unknown as Profile
+  // Les types Supabase generes n'incluent pas encore cette RPC (regeneration a
+  // faire post-migration prod, comme mark_feed_visit / count_new_feed_posts).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc('get_profile_by_username_ci', {
+    p_username: username,
+  })
+  if (error) throw new Error(error.message)
+  const rows = (data ?? []) as unknown as Profile[]
+  return rows[0] ?? null
 }
 
 /**

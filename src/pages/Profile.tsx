@@ -428,6 +428,7 @@ export default function Profile() {
         <SharePopover
           shareUrl={`${window.location.origin}/profile/${profileData.username}`}
           title={`Découvre le profil de @${profileData.username} sur Naturegraph`}
+          heading={t('profile.shareHeading', { defaultValue: 'Partager le profil' })}
           onClose={() => setShowShareSheet(false)}
         />
       )}
