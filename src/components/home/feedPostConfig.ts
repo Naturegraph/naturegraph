@@ -10,25 +10,28 @@ import { Bird, MountainSnow } from 'lucide-react'
 import type { MockPost } from './FeedPost'
 
 /**
- * Source unique des emojis et labels de réactions.
+ * Source unique des emojis et labels de réactions (SEUL point de verite : le
+ * moment ET les notifications lisent ceci, cf. getReactionLabel).
  * Doit rester alignée avec ReactionType dans @/types/database.
  *
  * Ordre Figma 6385:103293 : love → fire → admire → wow → curious.
  *
- * Note : 'disappointed' (😕) existe encore dans ReactionType côté DB pour
- * compatibilité, mais n'est PLUS dans REACTION_CONFIG (pas dans le Figma).
- * Si un post historique a une réaction 'disappointed' en DB, elle ne sera pas
- * affichée. Quand le backend la retirera, on l'ôtera aussi de ReactionType.
+ * Refonte 2026-08-24 (decision Nicolas) : le SOCLE (love/fire/admire/wow) est
+ * INCHANGE, et le LABEL "Intéressant !" (curious) est conserve. On change UNIQUEMENT
+ * son EMOJI 🤨 -> 🔍 : le sourcil leve donnait un ton sceptique/distant, la loupe
+ * traduit "ca m'intrigue, j'ai envie d'y regarder de plus pres" (esprit observation
+ * nature, positif). Identifiant DB inchange, reactions historiques intactes, aucune
+ * migration.
  *
- * Exporté pour réutilisation par d'autres composants (jamais redéfinir un mapping
- * local) : règle d'unification "source de vérité unique".
+ * Note : 'disappointed' (😕) reste dans le fallback de getReactionLabel pour les
+ * rares reactions historiques, mais n'est ni selectionnable ni dans ce config.
  */
 export const REACTION_CONFIG = [
   { key: 'love' as const, emoji: '❤️', labelKey: 'home.post.reactions.love' },
   { key: 'fire' as const, emoji: '🔥', labelKey: 'home.post.reactions.fire' },
   { key: 'admire' as const, emoji: '😍', labelKey: 'home.post.reactions.admire' },
   { key: 'wow' as const, emoji: '😱', labelKey: 'home.post.reactions.wow' },
-  { key: 'curious' as const, emoji: '🤨', labelKey: 'home.post.reactions.curious' },
+  { key: 'curious' as const, emoji: '🔍', labelKey: 'home.post.reactions.curious' },
 ]
 
 /**
