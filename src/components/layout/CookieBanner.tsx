@@ -48,13 +48,6 @@ const STORAGE_KEY = 'naturegraph-cookies-acknowledged'
 const STORAGE_VERSION = 'v1'
 
 /**
- * DEV uniquement : masque le bandeau pour ne pas gêner les tests (il intercepte
- * les clics). true SEULEMENT si l'app pointe sur la base DEV (`nkgd…`). En prod
- * (`hrxg…`), c'est false -> le bandeau RGPD/Loi 25 reste affiché normalement.
- */
-const IS_DEV_DB = (import.meta.env.VITE_SUPABASE_URL ?? '').includes('nkgdgxwejqqnqmwqwegy')
-
-/**
  * Pages d'accueil TOUJOURS en clair (landing, login, signup, onboarding), cf.
  * decision Nicolas 2026-07-28. Le banner est monte globalement dans App.tsx
  * (fixed, hors des wrappers de route), il ne peut donc PAS heriter du
@@ -99,8 +92,6 @@ export function CookieBanner() {
   // `typeof window` est défensif (Vite SPA n'a pas de SSR mais bonne pratique).
   const [open, setOpen] = useState(() => {
     if (typeof window === 'undefined') return false
-    // DEV : jamais afficher le bandeau (gêne les tests). En prod il reste (RGPD).
-    if (IS_DEV_DB) return false
     return !readAcknowledged()
   })
 
