@@ -36,6 +36,7 @@ import { processMediaForUpload, isProcessMediaError } from '@/utils/processMedia
 import { PostValidationError, validatePostContent } from '@/lib/postValidation'
 import { isTechnicalMessage } from '@/lib/sanitizeError'
 import { trackAction, trackFailure, captureException } from '@/lib/monitoring'
+import { probeBackendAndReloadIfStalled } from '@/lib/resumeRecovery'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -712,6 +713,21 @@ export function useContributePostSubmit(formLabel: string): UseContributePostSub
               files: files.length,
               editing: !!editingPostId,
             })
+            // Auto-reparation (parite avec la recherche, cf. searchService) : si
+            // l'echec vient d'un client supabase-js FIGE (timeout/reseau au retour
+            // d'arriere-plan iOS), la sonde recharge l'app sur un client + des
+            // sockets neufs. No-op si le backend repond (erreur transitoire) : le
+            // toast ci-dessus reste alors visible et l'utilisateur retente. Cible
+            // les issues Sentry "Timeout creation du post apres 20s" +
+            // "session-timeout-on-continue". Brouillon + panneau restaures au reload.
+            const { kind: submitFailKind } = classifyError(err)
+            if (
+              submitFailKind === 'timeout' ||
+              submitFailKind === 'network' ||
+              submitFailKind === 'server'
+            ) {
+              void probeBackendAndReloadIfStalled(`${formLabel}.submit`)
+            }
           }
         }
       } finally {
