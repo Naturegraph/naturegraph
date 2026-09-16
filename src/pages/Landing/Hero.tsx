@@ -260,6 +260,7 @@ function ScrollIndicator() {
         />
         <motion.circle
           cx="10"
+          cy={10}
           r="2"
           fill="var(--color-text-white)"
           animate={{ cy: [10, 22, 10] }}
