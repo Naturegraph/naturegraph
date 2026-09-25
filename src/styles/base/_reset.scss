@@ -66,8 +66,15 @@
     border: none;
   }
 
+  // Focus visible global (retour QA a11y 2026-07 "Etat de focus") :
+  // l'outline accent seul devenait invisible quand l'element reposait sur une
+  // surface de meme teinte (ex. focus teal sur une zone teal). On ajoute un
+  // anneau de SEPARATION a la couleur du fond, dessine entre l'element et
+  // l'outline : l'indicateur garde ainsi un contraste suffisant sur n'importe
+  // quel arriere-plan (WCAG 2.4.11 / 1.4.11).
   :focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--color-action-default);
     outline-offset: 2px;
+    box-shadow: 0 0 0 2px var(--color-bg-primary);
   }
 }

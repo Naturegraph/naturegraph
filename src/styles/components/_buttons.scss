@@ -56,6 +56,9 @@
 .btn-press:not(:disabled):focus-visible {
   outline: 2px solid var(--color-action-default);
   outline-offset: 2px;
+  // Anneau de separation a la couleur du fond : garde le focus visible meme
+  // sur un bouton plein de meme teinte que l'outline (retour QA a11y 2026-07).
+  box-shadow: 0 0 0 2px var(--color-bg-primary);
 }
 
 // ── Primary ─────────────────────────────────────────────────────────────────
