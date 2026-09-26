@@ -306,12 +306,14 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Espèce, utilisateur..."
+            // Retour QA a11y : le placeholder reprend integralement le nom
+            // accessible (aria-label) pour la coherence lecteur d'ecran / visuel.
+            placeholder="Rechercher une espèce, un utilisateur..."
             // Garde-fou : recherche en lecture seule (RPC), mais on borne la
             // saisie pour eviter d'envoyer une requete pathologique au serveur.
             maxLength={80}
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-            aria-label="Rechercher une espèce ou un utilisateur"
+            aria-label="Rechercher une espèce, un utilisateur"
             aria-autocomplete="list"
           />
           {query && (

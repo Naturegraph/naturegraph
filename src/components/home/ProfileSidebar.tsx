@@ -234,7 +234,7 @@ export function ProfileSidebar() {
                 aria-valuemin={0}
                 aria-valuemax={weekGoal}
                 aria-label={t('home.profile.progressLabel', {
-                  current: weekCurrent,
+                  count: weekCurrent,
                   goal: weekGoal,
                 })}
                 className="h-2 rounded-full bg-muted/30 overflow-hidden relative"

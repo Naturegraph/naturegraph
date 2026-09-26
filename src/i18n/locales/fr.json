@@ -405,15 +405,15 @@
       "noLocation": "Active ta localisation pour voir les observations près de chez toi",
       "activateCta": "Activer ma zone",
       "emptyTitle": "Aucune observation dans ta zone",
-      "emptyDescription": "Il n'y a pas encore d'observations dans un rayon de {{km}} km. Élargis ton rayon ou consulte le feed global.",
+      "emptyDescription": "Il n'y a pas encore d'observations dans un rayon de {{km}} km. Élargis ton rayon ou consulte le fil global.",
       "expandRadius": "Élargir le rayon",
-      "globalFeed": "Feed global"
+      "globalFeed": "Fil global"
     },
     "settings": {
       "title": "Localisation",
-      "description": "Définit ta zone pour personnaliser ton feed et tes suggestions.",
+      "description": "Définit ta zone pour personnaliser ton fil et tes suggestions.",
       "clearButton": "Effacer ma localisation",
-      "clearConfirm": "Es-tu sûr(e) de vouloir effacer ta localisation ? Ton feed repassera en mode global.",
+      "clearConfirm": "Es-tu sûr(e) de vouloir effacer ta localisation ? Ton fil repassera en mode global.",
       "clearSuccess": "Localisation effacée",
       "saveSuccess": "Localisation mise à jour",
       "rateLimited": "Tu as modifié ta localisation récemment. Réessaie dans {{minutes}} minutes.",
@@ -492,13 +492,14 @@
       "days_other": "Semaines",
       "thisWeek": "Cette semaine",
       "avatarAlt": "Photo de profil de {{name}}",
-      "progressLabel": "{{current}} observations sur {{goal}} cette semaine"
+      "progressLabel_one": "{{count}} observation sur {{goal}} cette semaine",
+      "progressLabel_other": "{{count}} observations sur {{goal}} cette semaine"
     },
     "feed": {
       "recent": "Récent",
       "forYou": "Pour vous",
       "popular": "Populaire",
-      "filterFeed": "Filtrer le feed",
+      "filterFeed": "Filtrer le fil",
       "listView": "Vue liste",
       "gridView": "Vue grille",
       "filterObs": "Filtrer les observations",
@@ -513,20 +514,20 @@
       "emptyContribute": "Partager une observation",
       "forYouModal": {
         "title": "Votre expérience Naturegraph commence ici",
-        "description": "Créez votre compte pour débloquer un feed personnalisé et découvrir la nature qui vous passionne, partout autour de vous.",
+        "description": "Créez votre compte pour débloquer un fil personnalisé et découvrir la nature qui vous passionne, partout autour de vous.",
         "point1": "Du contenu adapté à vos intérêts",
         "point2": "Les observations de votre communauté",
         "point3": "Une découverte locale et vivante",
         "createAccount": "Créer mon compte",
         "continueDiscovery": "Continuer sans personnalisation",
-        "tabDisabledHint": "Connectez-vous pour accéder à votre feed personnalisé"
+        "tabDisabledHint": "Connectez-vous pour accéder à votre fil personnalisé"
       },
       "activeFiltersCount": "{{count}} filtre(s) actif(s)",
       "emptyLocationDesc": "Aucune observation publique trouvée dans un rayon de {{km}} km autour de {{city}}. Élargis ton rayon ou contribue pour démarrer la dynamique locale.",
       "emptyLocationTitle": "Aucune observation dans ce rayon",
       "endOfList": "Tu as vu toutes les observations pour le moment.",
       "loadError": "Réessaie dans un instant. Si le probleme persiste, verifie ta connexion.",
-      "loadErrorTitle": "Impossible de charger le feed",
+      "loadErrorTitle": "Impossible de charger le fil",
       "timeline": {
         "today": "Aujourd'hui",
         "yesterday": "Hier"
@@ -577,7 +578,7 @@
       "yourReaction": "Ta réaction",
       "observedOn": "Observé le : {{date}}",
       "chooseReaction": "Choisir une réaction",
-      "filterBySpecies": "Filtrer le feed par {{species}}",
+      "filterBySpecies": "Filtrer le fil par {{species}}",
       "reactions": {
         "love": "J'adore !",
         "fire": "Woow !!!!",
@@ -589,7 +590,7 @@
       "commentCount_other": "{{count}} commentaires",
       "options": {
         "follow": "Migrer vers @{{username}}",
-        "followDesc": "Tu verras ses publications dans ton feed",
+        "followDesc": "Tu verras ses publications dans ton fil",
         "unfollow": "Ne plus migrer avec @{{username}}",
         "unfollowDesc": "Tu ne verras plus ses publications",
         "addFavorite": "Ajouter aux favoris",
@@ -1163,24 +1164,24 @@
       "hint": "Coupe les types qui ne t'intéressent pas. Le digest espèces est opt-in (RGPD)."
     },
     "privacySection": "Confidentialité",
-    "privacyHint": "Gère les publications et les comptes que tu as choisi d'écarter de ton feed.",
+    "privacyHint": "Gère les publications et les comptes que tu as choisi d'écarter de ton fil.",
     "hidden": {
       "pageTitle": "Publications masquées",
       "title": "Publications masquées",
-      "navDescription": "Réaffiche les publications retirées de ton feed.",
-      "description": "Les publications masquées ne s'affichent plus dans ton feed. Tu peux les réafficher à tout moment.",
+      "navDescription": "Réaffiche les publications retirées de ton fil.",
+      "description": "Les publications masquées ne s'affichent plus dans ton fil. Tu peux les réafficher à tout moment.",
       "emptyTitle": "Aucune publication masquée",
       "emptyBody": "Tu n'as masqué aucune publication. Quand tu masques une publication depuis son menu, elle apparaîtra ici pour pouvoir être réaffichée.",
       "hiddenSince": "Masquée le {{date}}",
       "unhideAction": "Réafficher",
       "unhideAria": "Réafficher la publication de @{{username}}",
-      "unhideSuccess": "Publication de @{{username}} réaffichée dans ton feed.",
+      "unhideSuccess": "Publication de @{{username}} réaffichée dans ton fil.",
       "unhideError": "Impossible de réafficher cette publication."
     },
     "blocked": {
       "pageTitle": "Comptes bloqués",
       "title": "Comptes bloqués",
-      "navDescription": "Débloque les comptes pour les revoir dans ton feed.",
+      "navDescription": "Débloque les comptes pour les revoir dans ton fil.",
       "description": "Les comptes bloqués ne peuvent pas voir ton profil ni interagir avec tes publications. Tu peux les débloquer à tout moment.",
       "emptyTitle": "Aucun compte bloqué",
       "emptyBody": "Tu n'as bloqué aucun compte. Si tu rencontres un comportement inapproprié, tu peux bloquer un utilisateur depuis son profil ou un de ses posts.",
@@ -1707,7 +1708,7 @@
     "eyebrow": "Page introuvable",
     "description": "L'adresse que tu cherches n'existe pas ou a été déplacée. Pas de panique, on te ramène en terrain connu.",
     "backHome": "Retour à l'accueil",
-    "exploreFeed": "Explorer le feed",
+    "exploreFeed": "Explorer le fil",
     "tryThese": "Ou essaie ces pages",
     "suggestionsLabel": "Suggestions de pages",
     "search": "Rechercher",
