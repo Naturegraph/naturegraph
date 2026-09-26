@@ -17,10 +17,11 @@ export function Logo({ onNavigateToLanding }: LogoProps) {
         type="button"
         onClick={onNavigateToLanding}
         className="focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-primary)] rounded"
-        aria-label="Naturegraph, Retour à l'accueil"
       >
-        {/* forceVariant light : pages auth toujours claires (cf. LogoWordmark). */}
-        <LogoWordmark forceVariant="light" />
+        {/* forceVariant light : pages auth toujours claires (cf. LogoWordmark).
+            Nom accessible du bouton porte par l'alt (retour QA a11y "Logo") :
+            pas d'aria-label redondant. */}
+        <LogoWordmark forceVariant="light" alt="Naturegraph, accueil" />
       </button>
     )
   }

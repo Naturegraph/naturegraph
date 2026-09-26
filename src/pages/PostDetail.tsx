@@ -246,7 +246,7 @@ export default function PostDetail() {
       <div className="flex flex-1 w-full">
         <div className="w-full xl:max-w-[1440px] mx-auto flex md:gap-6 gap-0 md:px-6 px-0 md:py-6 pb-20 md:pb-6">
           {/* Colonne gauche : Profile / Guest (cohérence Home, dès lg) */}
-          <aside className="hidden lg:block w-[320px] shrink-0">
+          <aside className="hidden lg:block w-[320px] shrink-0" aria-label="Profil et raccourcis">
             {isAuthenticated ? <ProfileSidebar /> : <GuestSidebar />}
           </aside>
 
@@ -392,7 +392,10 @@ export default function PostDetail() {
               (>=1280px), comme sur Home, pour ne pas creer un grand vide a
               droite du post (Nicolas 2026-06-04). Lazy : chunk charge seulement
               quand la colonne est rendue. */}
-          <aside className="hidden xl:block w-[320px] shrink-0">
+          <aside
+            className="hidden xl:block w-[320px] shrink-0"
+            aria-label="Communauté et tendances"
+          >
             <Suspense fallback={<div className="w-[320px] h-96 bg-muted/20 rounded-lg" />}>
               <StatsSidebar />
             </Suspense>

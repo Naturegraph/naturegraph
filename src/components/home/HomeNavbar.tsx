@@ -182,12 +182,13 @@ export function HomeNavbar({
             {/* Logo → /home */}
             <Link
               to="/home"
-              aria-label="Naturegraph, Retour au fil d'actualité"
               className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
             >
               {/* Mobile : h-6 (24px) pour laisser de la place aux boutons d'action.
-                  Desktop md+ : h-8 (32px), taille de base inchangée. */}
-              <LogoWordmark className="h-6 md:h-8 w-auto" />
+                  Desktop md+ : h-8 (32px), taille de base inchangée.
+                  Nom accessible du lien porte par l'alt (retour QA a11y "Logo") :
+                  pas d'aria-label redondant sur le <Link>. */}
+              <LogoWordmark className="h-6 md:h-8 w-auto" alt="Naturegraph, accueil" />
             </Link>
 
             {/* Actions droite */}

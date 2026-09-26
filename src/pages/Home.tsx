@@ -185,7 +185,7 @@ export default function Home() {
               objectif semaine) qui sont l'info la plus engageante. Avant
               elle n'apparaissait qu'à xl et un user sur iPad Air (1180px)
               perdait l'accès à ses propres stats. */}
-          <aside className="hidden lg:block w-[320px] shrink-0">
+          <aside className="hidden lg:block w-[320px] shrink-0" aria-label="Profil et raccourcis">
             {isAuthenticated ? <ProfileSidebar /> : <GuestSidebar />}
           </aside>
 
@@ -216,7 +216,10 @@ export default function Home() {
               (≥1280px). Sur lg (1024-1279px) on garde main + sidebar gauche
               seule pour ne pas écraser la largeur du feed (photos nature).
               Lazy-loaded : ne charge le chunk que si l'écran est >=1280px. */}
-          <aside className="hidden xl:block w-[320px] shrink-0">
+          <aside
+            className="hidden xl:block w-[320px] shrink-0"
+            aria-label="Communauté et tendances"
+          >
             <Suspense fallback={<div className="w-[320px] h-96 bg-muted/20 rounded-lg" />}>
               <StatsSidebar />
             </Suspense>

@@ -37,12 +37,21 @@ interface LogoWordmarkProps {
    * invisible sur la carte claire. Cf. decision Nicolas 2026-07-28.
    */
   forceVariant?: 'light' | 'dark'
+  /**
+   * Texte alternatif de l'image = nom accessible. Defaut "Naturegraph".
+   * Sur un logo cliquable vers l'accueil, passer "Naturegraph, accueil" : le
+   * lien/bouton tire alors son nom de l'alt, sans aria-label redondant (retour
+   * QA a11y "Logo").
+   */
+  alt?: string
 }
 
-export function LogoWordmark({ className = 'h-8 w-auto', forceVariant }: LogoWordmarkProps) {
+export function LogoWordmark({
+  className = 'h-8 w-auto',
+  forceVariant,
+  alt = 'Naturegraph',
+}: LogoWordmarkProps) {
   const { theme } = useThemeContext()
   const variant = forceVariant ?? theme
-  return (
-    <img src={variant === 'dark' ? logoDark : logoColor} alt="Naturegraph" className={className} />
-  )
+  return <img src={variant === 'dark' ? logoDark : logoColor} alt={alt} className={className} />
 }
