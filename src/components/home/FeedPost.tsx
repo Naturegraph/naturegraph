@@ -454,6 +454,9 @@ export function FeedPost({
             <button
               type="button"
               aria-label={t('home.post.optionsMenu')}
+              // title = nom accessible : tooltip au survol sur bouton icone-seul
+              // (retour QA a11y "Title sur les boutons icones").
+              title={t('home.post.optionsMenu')}
               aria-expanded={showOptions}
               aria-haspopup="menu"
               onClick={() => setShowOptions((v) => !v)}
@@ -840,6 +843,7 @@ export function FeedPost({
               }}
               aria-pressed={isSaved}
               aria-label={t('home.post.save')}
+              title={t('home.post.save')}
               className={[
                 'flex items-center justify-center h-8 w-8 rounded-full transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
@@ -869,6 +873,7 @@ export function FeedPost({
               aria-expanded={showShare}
               aria-haspopup="dialog"
               aria-label={t('home.post.share')}
+              title={t('home.post.share')}
               className="flex items-center justify-center h-8 w-8 rounded-full hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
             >
               <Share2 className="size-4 text-foreground" aria-hidden="true" />
