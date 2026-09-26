@@ -558,7 +558,11 @@
       "periodMonth": "Ce mois",
       "save": "Sauvegarder les filtres",
       "reset": "Réinitialiser",
-      "comingSoon": "Bientôt"
+      "comingSoon": "Bientôt",
+      "groupCategory": "Filtrer par catégorie d'espèces",
+      "groupShareType": "Filtrer par type de partage",
+      "groupRadius": "Filtrer par rayon géographique",
+      "groupPeriod": "Filtrer par période"
     },
     "post": {
       "seeMore": "Voir plus",

@@ -26,7 +26,7 @@
  *   - Reset         : text-[var(--color-link)] Muli 700 16px souligné
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, ChevronDown, Check, Bird, MountainSnow, HelpCircle } from 'lucide-react'
 import type { FeedTab } from './FeedSection'
@@ -203,6 +203,30 @@ export function FeedFilterPanel({
   // react-hooks/set-state-in-effect).
   const [local, setLocal] = useState<FeedFilters>({ ...filters })
 
+  /**
+   * Seul "Instant nature" est coche (Rencontre decochee). Dans ce cas les
+   * filtres propres aux Rencontres (categorie d'especes, demandes d'aide) sont
+   * masques : un paysage n'a ni espece ni identification. Retour QA "Filtrer le
+   * flux".
+   */
+  const onlyInstant = local.shareTypes.instant && !local.shareTypes.encounter
+
+  /**
+   * Verrouille le scroll de l'arriere-plan tant que le panneau (dialog modal)
+   * est ouvert. Retour QA "Filtrer le flux" : sans ce verrou la page derriere
+   * restait scrollable, ce qui faisait apparaitre deux barres de defilement.
+   * Le panneau se demonte a la fermeture, l'effet de montage suffit donc ; on
+   * restaure la valeur precedente au cleanup (meme pattern que les autres
+   * modales, cf. DeleteConfirmModal / ReportModal).
+   */
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [])
+
   /** Toggle d'une catégorie dans la sélection multiple */
   function toggleCategory(value: string) {
     setLocal((prev) => ({
@@ -260,85 +284,25 @@ export function FeedFilterPanel({
         </div>
       </div>
 
-      {/* ───── 1. Par catégorie d'espèces ───── */}
-      <div className="flex flex-col gap-3">
-        <p className={sectionLabelClass}>{t('home.filters.byCategory')}</p>
-        <div className="flex flex-wrap gap-2">
-          {SPECIES_CATEGORIES.map((cat) => (
-            <FilterChip
-              key={cat.value}
-              active={local.categories.includes(cat.value)}
-              onClick={() => toggleCategory(cat.value)}
-            >
-              {cat.label}
-            </FilterChip>
-          ))}
-        </div>
-      </div>
+      {/* ───── Par type de partage (remonté en tête) ─────
+          Retour QA "Filtrer le flux" : le type de partage conditionne les autres
+          filtres (categorie + demandes d'aide n'ont de sens que pour les
+          Rencontres). On le place donc EN PREMIER, avant les filtres qu'il
+          gouverne. Rencontre nature (actif) + Instant nature.
+          Couleurs et icônes Figma : teal-dark (#006666) + Bird / orange (#CC7A00) + MountainSnow.
 
-      <hr className={dividerClass} />
-
-      {/* ───── 2. Demandes d'aide ─────
-          Re-active (Nicolas 2026-08-11) apres avoir ete retiree en 2026-07-23.
-          Ne garde QUE les Rencontres nature dont l'espece n'est pas determinee :
-          exactement les posts qui affichent le badge "Espece non determinee"
-          (case "Je ne connais pas l'espece" a la publication). Les Instant nature
-          (paysages) n'ont pas d'espece a identifier -> exclus. Cablage backend :
-          type=nature_encounter + species_name/scientific_name nuls (postService
-          `helpOnly`). Case seule + sous-texte, calquee sur les cases type de
-          partage. */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-4 select-none">
-          <FilterCheckbox
-            checked={local.helpOnly}
-            onChange={(next) =>
-              setLocal((prev) => ({
-                ...prev,
-                helpOnly: next,
-                // Le filtre ne concerne QUE les Rencontres nature : l'activer
-                // decoche les Instant nature (paysages). Un paysage n'a pas
-                // d'espece a identifier, l'afficher ici serait incoherent.
-                shareTypes: next ? { ...prev.shareTypes, instant: false } : prev.shareTypes,
-              }))
-            }
-            ariaLabel={t('home.filters.helpOnly')}
-          />
-          {/* Carre PLEIN + icone blanche, exactement au meme format que les cases
-              Rencontre / Instant juste en dessous (size-6, icone size-[18px],
-              strokeWidth 1.8). Icone HelpCircle : reprend l'identite de "Je ne
-              connais pas l'espece". Violet pour se distinguer du teal (Rencontre)
-              et de l'orange (Instant).
-              `text-balance` : sur mobile, le titre s'equilibre sur deux lignes
-              ("Rencontres dont l'espece" / "reste a identifier") au lieu de laisser
-              un mot orphelin en bas. */}
-          <span className="flex items-center gap-2.5 min-w-0">
-            <span
-              aria-hidden="true"
-              className="flex items-center justify-center size-6 shrink-0 rounded-[4px] bg-primary"
-            >
-              <HelpCircle
-                className="size-[18px] text-primary-foreground"
-                strokeWidth={1.8}
-                aria-hidden="true"
-              />
-            </span>
-            <span className="font-body text-base text-balance text-foreground">
-              {t('home.filters.helpOnly')}
-            </span>
-          </span>
-        </div>
-      </div>
-
-      <hr className={dividerClass} />
-
-      {/* ───── 3. Par type de partages ─────
-          Rencontre nature (actif) + Instant nature (badge "Bientôt", disabled).
-          Couleurs et icônes Figma : teal-dark (#006666) + Bird / orange (#CC7A00) + MountainSnow. */}
+          role="group" (retour QA a11y "Boutons de filtres") : un lecteur d'ecran
+          qui navigue bouton par bouton entend le nom du groupe en entrant, il
+          sait ainsi qu'il s'agit de filtres et de quelle dimension. */}
       <div className="flex flex-col gap-3">
         <p className={sectionLabelClass}>{t('home.filters.byShareType')}</p>
 
         {/* Wrapper interne : les 2 rows restent collées l'une à l'autre (gap-3). */}
-        <div className="flex flex-col gap-3">
+        <div
+          className="flex flex-col gap-3"
+          role="group"
+          aria-label={t('home.filters.groupShareType')}
+        >
           {/* Rencontre nature : actif.
               Utilisation d'un <div> plutôt qu'un <label> car FilterCheckbox rend
               un <button role="checkbox"> custom (pas un <input> natif). */}
@@ -397,7 +361,92 @@ export function FeedFilterPanel({
         </div>
       </div>
 
-      {/* ───── 4. Rayon géographique ─────
+      {/* Filtres propres aux Rencontres nature : categorie d'especes + demandes
+          d'aide. Masques quand SEUL "Instant nature" est coche (retour QA
+          "Filtrer le flux") : un paysage n'a ni espece ni identification, ces
+          filtres seraient sans effet et incoherents. */}
+      {!onlyInstant && (
+        <>
+          <hr className={dividerClass} />
+
+          {/* ───── Par catégorie d'espèces ─────
+              role="group" + aria-label : contexte de filtre pour les chips
+              toggle (retour QA a11y "Boutons de filtres"). */}
+          <div className="flex flex-col gap-3">
+            <p className={sectionLabelClass}>{t('home.filters.byCategory')}</p>
+            <div
+              className="flex flex-wrap gap-2"
+              role="group"
+              aria-label={t('home.filters.groupCategory')}
+            >
+              {SPECIES_CATEGORIES.map((cat) => (
+                <FilterChip
+                  key={cat.value}
+                  active={local.categories.includes(cat.value)}
+                  onClick={() => toggleCategory(cat.value)}
+                >
+                  {cat.label}
+                </FilterChip>
+              ))}
+            </div>
+          </div>
+
+          <hr className={dividerClass} />
+
+          {/* ───── Demandes d'aide ─────
+              Re-active (Nicolas 2026-08-11) apres avoir ete retiree en 2026-07-23.
+              Ne garde QUE les Rencontres nature dont l'espece n'est pas determinee :
+              exactement les posts qui affichent le badge "Espece non determinee"
+              (case "Je ne connais pas l'espece" a la publication). Les Instant nature
+              (paysages) n'ont pas d'espece a identifier -> exclus. Cablage backend :
+              type=nature_encounter + species_name/scientific_name nuls (postService
+              `helpOnly`). Case seule + sous-texte, calquee sur les cases type de
+              partage. */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-4 select-none">
+              <FilterCheckbox
+                checked={local.helpOnly}
+                onChange={(next) =>
+                  setLocal((prev) => ({
+                    ...prev,
+                    helpOnly: next,
+                    // Le filtre ne concerne QUE les Rencontres nature : l'activer
+                    // decoche les Instant nature (paysages). Un paysage n'a pas
+                    // d'espece a identifier, l'afficher ici serait incoherent.
+                    shareTypes: next ? { ...prev.shareTypes, instant: false } : prev.shareTypes,
+                  }))
+                }
+                ariaLabel={t('home.filters.helpOnly')}
+              />
+              {/* Carre PLEIN + icone blanche, exactement au meme format que les cases
+                  Rencontre / Instant juste au dessus (size-6, icone size-[18px],
+                  strokeWidth 1.8). Icone HelpCircle : reprend l'identite de "Je ne
+                  connais pas l'espece". Violet pour se distinguer du teal (Rencontre)
+                  et de l'orange (Instant).
+                  `text-balance` : sur mobile, le titre s'equilibre sur deux lignes
+                  ("Rencontres dont l'espece" / "reste a identifier") au lieu de laisser
+                  un mot orphelin en bas. */}
+              <span className="flex items-center gap-2.5 min-w-0">
+                <span
+                  aria-hidden="true"
+                  className="flex items-center justify-center size-6 shrink-0 rounded-[4px] bg-primary"
+                >
+                  <HelpCircle
+                    className="size-[18px] text-primary-foreground"
+                    strokeWidth={1.8}
+                    aria-hidden="true"
+                  />
+                </span>
+                <span className="font-body text-base text-balance text-foreground">
+                  {t('home.filters.helpOnly')}
+                </span>
+              </span>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ───── Rayon géographique ─────
           Affiché UNIQUEMENT si l'utilisateur est localisé (second-agent/23).
           Sans localisation, le filtre n'a aucun effet : on cache la section
           plutôt que d'afficher des chips inactifs. */}
@@ -406,7 +455,11 @@ export function FeedFilterPanel({
           <hr className={dividerClass} />
           <div className="flex flex-col gap-3">
             <p className={sectionLabelClass}>{t('home.filters.radiusTitle')}</p>
-            <div className="flex flex-wrap gap-2">
+            <div
+              className="flex flex-wrap gap-2"
+              role="group"
+              aria-label={t('home.filters.groupRadius')}
+            >
               {RADIUS_OPTIONS.map((opt) => {
                 const label = 'labelKey' in opt ? t(opt.labelKey) : opt.label
                 return (
@@ -421,16 +474,19 @@ export function FeedFilterPanel({
               })}
             </div>
           </div>
-          <hr className={dividerClass} />
         </>
       )}
 
-      {!showRadiusFilter && <hr className={dividerClass} />}
+      <hr className={dividerClass} />
 
-      {/* ───── 5. Période ───── */}
+      {/* ───── Période ───── */}
       <div className="flex flex-col gap-3">
         <p className={sectionLabelClass}>{t('home.filters.period')}</p>
-        <div className="flex flex-wrap gap-2">
+        <div
+          className="flex flex-wrap gap-2"
+          role="group"
+          aria-label={t('home.filters.groupPeriod')}
+        >
           {PERIOD_OPTIONS.map((opt) => (
             <FilterChip
               key={opt.value}
